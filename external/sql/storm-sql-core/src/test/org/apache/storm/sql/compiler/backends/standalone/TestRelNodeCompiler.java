@@ -59,7 +59,7 @@ public class TestRelNodeCompiler {
       // standalone mode doesn't use inputstreams argument
       compiler.visitProject(project, Collections.EMPTY_LIST);
       pw.flush();
-      Assert.assertThat(sw.toString(), containsString("plus("));
+      Assert.assertThat(sw.toString(), containsString(" + 1"));
     }
   }
 }

@@ -17,6 +17,8 @@
  */
 package org.apache.storm.sql.kafka;
 
+import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
+import org.apache.storm.kafka.trident.TridentKafkaUpdater;
 import org.apache.storm.spout.SchemeAsMultiScheme;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
@@ -24,13 +26,10 @@ import org.apache.storm.sql.runtime.*;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.kafka.trident.OpaqueTridentKafkaSpout;
 import org.apache.storm.kafka.trident.TridentKafkaConfig;
-import org.apache.storm.kafka.trident.TridentKafkaState;
 import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.Function;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.operation.TridentOperationContext;
+import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
+import org.apache.storm.sql.runtime.serde.json.JsonScheme;
+import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.tuple.TridentTuple;
 
@@ -46,18 +45,6 @@ import java.util.*;
  */
 public class KafkaDataSourcesProvider implements DataSourcesProvider {
   private static final int DEFAULT_ZK_PORT = 2181;
-  private static class StaticTopicSelector implements KafkaTopicSelector {
-    private final String topic;
-
-    private StaticTopicSelector(String topic) {
-      this.topic = topic;
-    }
-
-    @Override
-    public String getTopic(TridentTuple tuple) {
-      return topic;
-    }
-  }
 
   private static class SqlKafkaMapper implements TridentTupleToKafkaMapper<Object, ByteBuffer> {
     private final int primaryKeyIndex;
@@ -76,42 +63,6 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     @Override
     public ByteBuffer getMessageFromTuple(TridentTuple tuple) {
       return serializer.write(tuple.getValues(), null);
-    }
-  }
-
-  static class KafkaTridentSink extends BaseFunction {
-    private transient TridentKafkaState state;
-    private final String topic;
-    private final int primaryKeyIndex;
-    private final Properties producerProperties;
-    private final List<String> fieldNames;
-
-    private KafkaTridentSink(String topic, int primaryKeyIndex, Properties producerProperties,
-                             List<String> fieldNames) {
-      this.topic = topic;
-      this.primaryKeyIndex = primaryKeyIndex;
-      this.producerProperties = producerProperties;
-      this.fieldNames = fieldNames;
-    }
-
-    @Override
-    public void cleanup() {
-      super.cleanup();
-    }
-
-    @Override
-    public void prepare(Map conf, TridentOperationContext context) {
-      JsonSerializer serializer = new JsonSerializer(fieldNames);
-      SqlKafkaMapper m = new SqlKafkaMapper(primaryKeyIndex, serializer);
-      state = new TridentKafkaState()
-          .withKafkaTopicSelector(new StaticTopicSelector(topic))
-          .withTridentTupleToKafkaMapper(m);
-      state.prepare(producerProperties);
-    }
-
-    @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
-      state.updateState(Collections.singletonList(tuple), collector);
     }
   }
 
@@ -136,7 +87,7 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     }
 
     @Override
-    public Function getConsumer() {
+    public SqlTridentConsumer getConsumer() {
       Preconditions.checkNotNull(producerProperties,
           "Writable Kafka Table " + topic + " must contain producer config");
       Properties props = new Properties();
@@ -152,7 +103,18 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
       }
       Preconditions.checkState(props.containsKey("bootstrap.servers"),
           "Writable Kafka Table " + topic + " must contain \"bootstrap.servers\" config");
-      return new KafkaTridentSink(topic, primaryKeyIndex, props, fields);
+
+      JsonSerializer serializer = new JsonSerializer(fields);
+      SqlKafkaMapper mapper = new SqlKafkaMapper(primaryKeyIndex, serializer);
+
+      TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
+              .withKafkaTopicSelector(new DefaultTopicSelector(topic))
+              .withProducerProperties(props)
+              .withTridentTupleToKafkaMapper(mapper);
+
+      TridentKafkaUpdater stateUpdater = new TridentKafkaUpdater();
+
+      return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
     }
   }
 

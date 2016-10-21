@@ -42,7 +42,7 @@ public interface CgroupCommonOperation {
     /**
      * get the PIDs of processes running in cgroup
      */
-    public Set<Integer> getPids() throws IOException;
+    public Set<Long> getPids() throws IOException;
 
     /**
      * to set notify_on_release config in cgroup

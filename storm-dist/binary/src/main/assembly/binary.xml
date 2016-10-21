@@ -305,6 +305,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-redis/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-redis</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
             <includes>
@@ -400,6 +407,27 @@
         <fileSet>
             <directory>${project.basedir}/../../external/storm-submit-tools/target</directory>
             <outputDirectory>external/storm-submit-tools</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms/core/target</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-jms/examples/target</directory>
+            <outputDirectory>external/storm-jms</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>

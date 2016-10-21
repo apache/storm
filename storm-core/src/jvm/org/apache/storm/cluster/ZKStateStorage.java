@@ -211,7 +211,7 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @Override
-    public Map get_data_with_version(String path, boolean watch) {
+    public VersionedData<byte[]> get_data_with_version(String path, boolean watch) {
         return Zookeeper.getDataWithVersion(zkReader, path, watch);
     }
 

@@ -320,18 +320,16 @@ $(document).ready(function() {
             });
 
             spoutStats.append(Mustache.render($(template).filter("#spout-stats-template").html(),response));
-            //id, executors, tasks, emitted, transferred, complete latency, acked, failed, Last error
             dtAutoPage("#spout-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 
             boltStats.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-            //id, executors, tasks, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed, last error
             dtAutoPage("#bolt-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 

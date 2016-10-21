@@ -224,6 +224,7 @@
         <commons-io.version>2.5</commons-io.version>
         <commons-lang.version>2.5</commons-lang.version>
         <commons-exec.version>1.1</commons-exec.version>
+        <commons-collections.version>3.2.2</commons-collections.version>
         <commons-fileupload.version>1.3.2</commons-fileupload.version>
         <commons-codec.version>1.6</commons-codec.version>
         <commons-cli.version>1.3.1</commons-cli.version>
@@ -264,12 +265,13 @@
         <junit.version>4.11</junit.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
-        <calcite.version>1.4.0-incubating</calcite.version>
-        <janino.version>2.7.8</janino.version>
+
+        <calcite.version>1.10.0</calcite.version>
+
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <!-- Kafka version used by old storm-kafka spout code -->
-        <storm.kafka.version>0.8.2.1</storm.kafka.version>
+        <storm.kafka.version>0.8.2.2</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
 
         <!-- kafka version used by new storm-kafka-client spout code -->
@@ -285,6 +287,8 @@
         <aetherVersion>1.0.0.v20140518</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
+        <qpid.version>0.32</qpid.version>
+        <eventhubs.client.version>1.0.1</eventhubs.client.version>
     </properties>
 
     <modules>
@@ -295,6 +299,9 @@
         <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-core</module>
         <module>storm-rename-hack</module>
+        <module>storm-clojure</module>
+
+        <!-- externals -->
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
@@ -310,14 +317,27 @@
         <module>external/storm-cassandra</module>
         <module>external/storm-mqtt</module>
         <module>external/storm-mongodb</module>
-        <module>examples/storm-starter</module>
-        <module>storm-clojure</module>
         <module>external/storm-kafka-client</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
         <module>external/storm-druid</module>
         <module>external/storm-submit-tools</module>
+        <module>external/storm-jms</module>
+
+        <!-- examples -->
+        <module>examples/storm-starter</module>
+        <module>examples/storm-mongodb-examples</module>
+        <module>examples/storm-redis-examples</module>
+        <module>examples/storm-opentsdb-examples</module>
+        <module>examples/storm-solr-examples</module>
+        <module>examples/storm-kafka-examples</module>
+        <module>examples/storm-jdbc-examples</module>
+        <module>examples/storm-hdfs-examples</module>
+        <module>examples/storm-hbase-examples</module>
+        <module>examples/storm-hive-examples</module>
+        <module>examples/storm-elasticsearch-examples</module>
+        <module>examples/storm-mqtt-examples</module>
     </modules>
 
     <dependencies>
@@ -338,7 +358,7 @@
                     <plugin>
                         <groupId>org.apache.rat</groupId>
                         <artifactId>apache-rat-plugin</artifactId>
-                        <version>0.11</version>
+                        <version>0.12</version>
                         <executions>
                             <execution>
                                 <phase>test</phase>
@@ -349,6 +369,7 @@
                         </executions>
                         <configuration>
                             <excludeSubProjects>false</excludeSubProjects>
+                            <consoleOutput>true</consoleOutput>
                             <excludes>
                                 <!-- exclude maven artifacts -->
                                 <exclude>**/target/**</exclude>
@@ -414,6 +435,9 @@
 
                                 <!-- Avro Serializer Test Resource -->
                                 <exclude>**/src/test/resources/FixedAvroSerializer.config</exclude>
+
+                                <!-- Vagrant related files -->
+                                <exclude>integration-test/config/.vagrant/**</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
@@ -564,6 +588,11 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-exec</artifactId>
                 <version>${commons-exec.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-collections</groupId>
+                <artifactId>commons-collections</artifactId>
+                <version>${commons-collections.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -887,12 +916,6 @@
                 <groupId>org.apache.calcite</groupId>
                 <artifactId>calcite-core</artifactId>
                 <version>${calcite.version}</version>
-            </dependency>
-            <!-- used by storm-sql-core and storm-sql-runtime -->
-            <dependency>
-                <groupId>org.codehaus.janino</groupId>
-                <artifactId>janino</artifactId>
-                <version>${janino.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>

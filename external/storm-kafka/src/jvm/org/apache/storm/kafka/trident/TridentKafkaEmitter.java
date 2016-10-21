@@ -20,7 +20,13 @@ package org.apache.storm.kafka.trident;
 import com.google.common.collect.ImmutableMap;
 
 import org.apache.storm.Config;
-import org.apache.storm.kafka.*;
+import org.apache.storm.kafka.DynamicPartitionConnections;
+import org.apache.storm.kafka.FailedFetchException;
+import org.apache.storm.kafka.KafkaUtils;
+import org.apache.storm.kafka.MessageMetadataSchemeAsMultiScheme;
+import org.apache.storm.kafka.Partition;
+import org.apache.storm.kafka.PartitionManager;
+import org.apache.storm.kafka.TopicOffsetOutOfRangeException;
 import org.apache.storm.metric.api.CombinedMetric;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -32,7 +38,11 @@ import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 
 import kafka.javaapi.consumer.SimpleConsumer;
 import kafka.javaapi.message.ByteBufferMessageSet;
@@ -65,7 +75,7 @@ public class TridentKafkaEmitter {
 
     private Map failFastEmitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map lastMeta) {
         SimpleConsumer consumer = _connections.register(partition);
-        Map ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta);
+        Map ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta, attempt);
         Long offset = (Long) ret.get("offset");
         Long endOffset = (Long) ret.get("nextOffset");
         _kafkaOffsetMetric.setOffsetData(partition, new PartitionManager.OffsetData(endOffset, offset));
@@ -92,7 +102,8 @@ public class TridentKafkaEmitter {
         }
     }
 
-    private Map doEmitNewPartitionBatch(SimpleConsumer consumer, Partition partition, TridentCollector collector, Map lastMeta) {
+    private Map doEmitNewPartitionBatch(SimpleConsumer consumer, Partition partition, TridentCollector collector, Map lastMeta, TransactionAttempt attempt) {
+        LOG.debug("Emitting new partition batch - [transaction = {}], [lastMeta = {}]", attempt, lastMeta);
         long offset;
         if (lastMeta != null) {
             String lastInstanceId = null;
@@ -108,6 +119,7 @@ public class TridentKafkaEmitter {
         } else {
             offset = KafkaUtils.getOffset(consumer, partition.topic, partition.partition, _config);
         }
+        LOG.debug("[transaction = {}], [OFFSET = {}]", attempt, offset);
 
         ByteBufferMessageSet msgs = null;
         try {
@@ -121,7 +133,7 @@ public class TridentKafkaEmitter {
 
         long endoffset = offset;
         for (MessageAndOffset msg : msgs) {
-            emit(collector, msg.message(), partition, msg.offset());
+            emit(collector, msg.message(), partition, msg.offset(), attempt);
             endoffset = msg.nextOffset();
         }
         Map newMeta = new HashMap();
@@ -132,6 +144,7 @@ public class TridentKafkaEmitter {
         newMeta.put("broker", ImmutableMap.of("host", partition.host.host, "port", partition.host.port));
         newMeta.put("topic", partition.topic);
         newMeta.put("topology", ImmutableMap.of("name", _topologyName, "id", _topologyInstanceId));
+        LOG.debug("[transaction = {}], [newMeta = {}]", attempt, newMeta);
         return newMeta;
     }
 
@@ -171,14 +184,14 @@ public class TridentKafkaEmitter {
                     if (offset > nextOffset) {
                         throw new RuntimeException("Error when re-emitting batch. overshot the end offset");
                     }
-                    emit(collector, msg.message(), partition, msg.offset());
+                    emit(collector, msg.message(), partition, msg.offset(), attempt);
                     offset = msg.nextOffset();
                 }
             }
         }
     }
 
-    private void emit(TridentCollector collector, Message msg, Partition partition, long offset) {
+    private void emit(TridentCollector collector, Message msg, Partition partition, long offset, TransactionAttempt attempt) {
         Iterable<List<Object>> values;
         if (_config.scheme instanceof MessageMetadataSchemeAsMultiScheme) {
             values = KafkaUtils.generateTuples((MessageMetadataSchemeAsMultiScheme) _config.scheme, msg, partition, offset);
@@ -188,8 +201,11 @@ public class TridentKafkaEmitter {
 
         if (values != null) {
             for (List<Object> value : values) {
+                LOG.debug("Emitting: [Transaction: {}], [Data: {}]", attempt, value);
                 collector.emit(value);
             }
+        } else {
+            LOG.debug("NOT Emitting NULL data. [Transaction: {}]", attempt);
         }
     }
 

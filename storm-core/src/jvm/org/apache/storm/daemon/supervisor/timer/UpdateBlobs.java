@@ -18,7 +18,7 @@
 package org.apache.storm.daemon.supervisor.timer;
 
 import org.apache.storm.Config;
-import org.apache.storm.daemon.supervisor.SupervisorData;
+import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -47,18 +47,18 @@ public class UpdateBlobs implements Runnable {
 
     private static final Logger LOG = LoggerFactory.getLogger(UpdateBlobs.class);
 
-    private SupervisorData supervisorData;
+    private Supervisor supervisor;
 
-    public UpdateBlobs(SupervisorData supervisorData) {
-        this.supervisorData = supervisorData;
+    public UpdateBlobs(Supervisor supervisor) {
+        this.supervisor = supervisor;
     }
 
     @Override
     public void run() {
         try {
-            Map conf = supervisorData.getConf();
-            Set<String> downloadedStormIds = SupervisorUtils.readDownLoadedStormIds(conf);
-            AtomicReference<Map<Long, LocalAssignment>> newAssignment = supervisorData.getCurrAssignment();
+            Map<String, Object> conf = supervisor.getConf();
+            Set<String> downloadedStormIds = SupervisorUtils.readDownloadedTopologyIds(conf);
+            AtomicReference<Map<Long, LocalAssignment>> newAssignment = supervisor.getCurrAssignment();
             Set<String> assignedStormIds = new HashSet<>();
             for (LocalAssignment localAssignment : newAssignment.get().values()) {
                 assignedStormIds.add(localAssignment.get_topology_id());
@@ -67,7 +67,7 @@ public class UpdateBlobs implements Runnable {
                 if (assignedStormIds.contains(stormId)) {
                     String stormRoot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
                     LOG.debug("Checking Blob updates for storm topology id {} With target_dir: {}", stormId, stormRoot);
-                    updateBlobsForTopology(conf, stormId, supervisorData.getLocalizer());
+                    updateBlobsForTopology(conf, stormId, supervisor.getLocalizer());
                 }
             }
         } catch (Exception e) {

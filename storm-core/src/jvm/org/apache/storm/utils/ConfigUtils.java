@@ -20,20 +20,16 @@ package org.apache.storm.utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
+import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.Reader;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
@@ -116,7 +112,7 @@ public class ConfigUtils {
         return mode;
     }
 
-    public static boolean isLocalMode(Map conf) {
+    public static boolean isLocalMode(Map<String, Object> conf) {
         String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
         if (mode != null) {
             if ("local".equals(mode)) {
@@ -125,8 +121,9 @@ public class ConfigUtils {
             if ("distributed".equals(mode)) {
                 return false;
             }
+            throw new IllegalArgumentException("Illegal cluster mode in conf: " + mode);
         }
-        throw new IllegalArgumentException("Illegal cluster mode in conf: " + mode);
+        return true;
     }
 
     public static int samplingRate(Map conf) {
@@ -161,12 +158,12 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static Map readStormConfig() {
+    public static Map<String, Object> readStormConfig() {
         return _instance.readStormConfigImpl();
     }
 
-    public Map readStormConfigImpl() {
-        Map conf = Utils.readStormConfig();
+    public Map<String, Object> readStormConfigImpl() {
+        Map<String, Object> conf = Utils.readStormConfig();
         ConfigValidation.validateFields(conf);
         return conf;
     }
@@ -246,14 +243,14 @@ public class ConfigUtils {
         return ret + FILE_SEPARATOR + "stormdist";
     }
 
-    public static Map readSupervisorStormConfGivenPath(Map conf, String stormConfPath) throws IOException {
-        Map ret = new HashMap(conf);
+    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf, String stormConfPath) throws IOException {
+        Map<String, Object> ret = new HashMap<>(conf);
         ret.putAll(Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(stormConfPath))));
         return ret;
     }
 
-    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath) throws IOException {
-        return Utils.deserialize(FileUtils.readFileToByteArray(new File(stormCodePath)), StormTopology.class);
+    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath, AdvancedFSOps ops) throws IOException {
+        return Utils.deserialize(ops.slurp(new File(stormCodePath)), StormTopology.class);
     }
 
     public static String masterStormJarPath(String stormRoot) {
@@ -353,25 +350,24 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static Map readSupervisorStormConf(Map conf, String stormId) throws IOException {
+    public static Map<String, Object> readSupervisorStormConf(Map<String, Object> conf, String stormId) throws IOException {
         return _instance.readSupervisorStormConfImpl(conf, stormId);
     }
 
-    public Map readSupervisorStormConfImpl(Map conf, String stormId) throws IOException {
+    public Map<String, Object> readSupervisorStormConfImpl(Map<String, Object> conf, String stormId) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String confPath = supervisorStormConfPath(stormRoot);
         return readSupervisorStormConfGivenPath(conf, confPath);
     }
 
-    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static StormTopology readSupervisorTopology(Map conf, String stormId) throws IOException {
-        return _instance.readSupervisorTopologyImpl(conf, stormId);
+    public static StormTopology readSupervisorTopology(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
+        return _instance.readSupervisorTopologyImpl(conf, stormId, ops);
     }
-
-    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId) throws IOException {
+  
+    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
-        return readSupervisorStormCodeGivenPath(topologyPath);
+        return readSupervisorStormCodeGivenPath(topologyPath, ops);
     }
 
     public static String workerUserRoot(Map conf) {
@@ -380,27 +376,6 @@ public class ConfigUtils {
 
     public static String workerUserFile(Map conf, String workerId) {
         return (workerUserRoot(conf) + FILE_SEPARATOR + workerId);
-    }
-
-    public static String getWorkerUser(Map conf, String workerId) {
-        LOG.info("GET worker-user for {}", workerId);
-        File file = new File(workerUserFile(conf, workerId));
-
-        try (InputStream in = new FileInputStream(file);
-             Reader reader = new InputStreamReader(in);
-             BufferedReader br = new BufferedReader(reader);) {
-            StringBuilder sb = new StringBuilder();
-            int r;
-            while ((r = br.read()) != -1) {
-                char ch = (char) r;
-                sb.append(ch);
-            }
-            String ret = sb.toString().trim();
-            return ret;
-        } catch (IOException e) {
-            LOG.error("Failed to get worker user for {}.", workerId);
-            return null;
-        }
     }
 
     public static String getIdFromBlobKey(String key) {
@@ -418,27 +393,6 @@ public class ConfigUtils {
             ret = key.substring(0, key.length() - STORM_CONF_SUFFIX.length());
         }
         return ret;
-    }
-
-    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static void setWorkerUserWSE(Map conf, String workerId, String user) throws IOException {
-        _instance.setWorkerUserWSEImpl(conf, workerId, user);
-    }
-
-    public void setWorkerUserWSEImpl(Map conf, String workerId, String user) throws IOException {
-        LOG.info("SET worker-user {} {}", workerId, user);
-        File file = new File(workerUserFile(conf, workerId));
-        file.getParentFile().mkdirs();
-
-        try (FileWriter fw = new FileWriter(file);
-             BufferedWriter writer = new BufferedWriter(fw);) {
-            writer.write(user);
-        }
-    }
-
-    public static void removeWorkerUserWSE(Map conf, String workerId) {
-        LOG.info("REMOVE worker-user {}", workerId);
-        new File(workerUserFile(conf, workerId)).delete();
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
@@ -511,6 +465,10 @@ public class ConfigUtils {
 
     public static String workerPidPath(Map conf, String id, String pid) {
         return (workerPidsRoot(conf, id) + FILE_SEPARATOR + pid);
+    }
+    
+    public static String workerPidPath(Map<String, Object> conf, String id, long pid) {
+        return workerPidPath(conf, id, String.valueOf(pid));
     }
 
     public static String workerHeartbeatsRoot(Map conf, String id) {

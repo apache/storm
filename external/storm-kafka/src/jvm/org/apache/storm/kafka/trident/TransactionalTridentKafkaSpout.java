@@ -17,13 +17,12 @@
  */
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.kafka.Partition;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
+import org.apache.storm.tuple.Fields;
 
 import java.util.Map;
-import java.util.UUID;
 
 
 public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<GlobalPartitionInformation, Partition, Map> {
@@ -42,8 +41,7 @@ public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<
 
     @Override
     public IPartitionedTridentSpout.Emitter getEmitter(Map conf, TopologyContext context) {
-        return new TridentKafkaEmitter(conf, context, _config, context
-                .getStormId()).asTransactionalEmitter();
+        return new TridentKafkaEmitter(conf, context, _config, context.getStormId()).asTransactionalEmitter();
     }
 
     @Override

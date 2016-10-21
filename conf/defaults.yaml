@@ -258,7 +258,7 @@ topology.bolts.outgoing.overflow.buffer.enable: false
 topology.disruptor.wait.timeout.millis: 1000
 topology.disruptor.batch.size: 100
 topology.disruptor.batch.timeout.millis: 1
-topology.disable.loadaware: false
+topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
 
 # Configs for Resource Aware Scheduler
@@ -275,7 +275,7 @@ resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource
 
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
-pacemaker.host: "localhost"
+pacemaker.servers: []
 pacemaker.port: 6699
 pacemaker.base.threads: 10
 pacemaker.max.threads: 50
@@ -295,10 +295,6 @@ storm.resource.isolation.plugin: "org.apache.storm.container.cgroup.CgroupManage
 # Also determines whether the unit tests for cgroup runs.  
 # If storm.resource.isolation.plugin.enable is set to false the unit tests for cgroups will not run
 storm.resource.isolation.plugin.enable: false
-
-
-# Default plugin to use for manager worker
-storm.supervisor.worker.manager.plugin: org.apache.storm.daemon.supervisor.workermanager.DefaultWorkerManager
 
 # Configs for CGroup support
 storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"

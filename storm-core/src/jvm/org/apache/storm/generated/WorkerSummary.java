@@ -1493,15 +1493,15 @@ public class WorkerSummary implements org.apache.thrift.TBase<WorkerSummary, Wor
           case 7: // COMPONENT_TO_NUM_TASKS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map418 = iprot.readMapBegin();
-                struct.component_to_num_tasks = new HashMap<String,Long>(2*_map418.size);
-                String _key419;
-                long _val420;
-                for (int _i421 = 0; _i421 < _map418.size; ++_i421)
+                org.apache.thrift.protocol.TMap _map428 = iprot.readMapBegin();
+                struct.component_to_num_tasks = new HashMap<String,Long>(2*_map428.size);
+                String _key429;
+                long _val430;
+                for (int _i431 = 0; _i431 < _map428.size; ++_i431)
                 {
-                  _key419 = iprot.readString();
-                  _val420 = iprot.readI64();
-                  struct.component_to_num_tasks.put(_key419, _val420);
+                  _key429 = iprot.readString();
+                  _val430 = iprot.readI64();
+                  struct.component_to_num_tasks.put(_key429, _val430);
                 }
                 iprot.readMapEnd();
               }
@@ -1630,10 +1630,10 @@ public class WorkerSummary implements org.apache.thrift.TBase<WorkerSummary, Wor
           oprot.writeFieldBegin(COMPONENT_TO_NUM_TASKS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, struct.component_to_num_tasks.size()));
-            for (Map.Entry<String, Long> _iter422 : struct.component_to_num_tasks.entrySet())
+            for (Map.Entry<String, Long> _iter432 : struct.component_to_num_tasks.entrySet())
             {
-              oprot.writeString(_iter422.getKey());
-              oprot.writeI64(_iter422.getValue());
+              oprot.writeString(_iter432.getKey());
+              oprot.writeI64(_iter432.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1765,10 +1765,10 @@ public class WorkerSummary implements org.apache.thrift.TBase<WorkerSummary, Wor
       if (struct.is_set_component_to_num_tasks()) {
         {
           oprot.writeI32(struct.component_to_num_tasks.size());
-          for (Map.Entry<String, Long> _iter423 : struct.component_to_num_tasks.entrySet())
+          for (Map.Entry<String, Long> _iter433 : struct.component_to_num_tasks.entrySet())
           {
-            oprot.writeString(_iter423.getKey());
-            oprot.writeI64(_iter423.getValue());
+            oprot.writeString(_iter433.getKey());
+            oprot.writeI64(_iter433.getValue());
           }
         }
       }
@@ -1828,15 +1828,15 @@ public class WorkerSummary implements org.apache.thrift.TBase<WorkerSummary, Wor
       }
       if (incoming.get(6)) {
         {
-          org.apache.thrift.protocol.TMap _map424 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, iprot.readI32());
-          struct.component_to_num_tasks = new HashMap<String,Long>(2*_map424.size);
-          String _key425;
-          long _val426;
-          for (int _i427 = 0; _i427 < _map424.size; ++_i427)
+          org.apache.thrift.protocol.TMap _map434 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I64, iprot.readI32());
+          struct.component_to_num_tasks = new HashMap<String,Long>(2*_map434.size);
+          String _key435;
+          long _val436;
+          for (int _i437 = 0; _i437 < _map434.size; ++_i437)
           {
-            _key425 = iprot.readString();
-            _val426 = iprot.readI64();
-            struct.component_to_num_tasks.put(_key425, _val426);
+            _key435 = iprot.readString();
+            _val436 = iprot.readI64();
+            struct.component_to_num_tasks.put(_key435, _val436);
           }
         }
         struct.set_component_to_num_tasks_isSet(true);

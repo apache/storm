@@ -73,6 +73,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Apache Solr Integration](storm-solr.html)
 * [Apache Cassandra Integration](storm-cassandra.html)
 * [JDBC Integration](storm-jdbc.html)
+* [JMS Integration](storm-jms.html)
 * [Redis Integration](storm-redis.html)
 * [Event Hubs Intergration](storm-eventhubs.html)
 * [Elasticsearch Integration](storm-elasticsearch.html)

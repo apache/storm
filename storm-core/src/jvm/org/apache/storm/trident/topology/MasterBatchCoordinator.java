@@ -22,20 +22,20 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.trident.spout.ITridentSpout;
+import org.apache.storm.trident.topology.state.TransactionalState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.WindowedTimeThrottler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
-import java.util.Random;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.trident.spout.ITridentSpout;
-import org.apache.storm.trident.topology.state.TransactionalState;
 
 public class MasterBatchCoordinator extends BaseRichSpout { 
     public static final Logger LOG = LoggerFactory.getLogger(MasterBatchCoordinator.class);
@@ -74,6 +74,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         }
         _managedSpoutIds = spoutIds;
         _spouts = spouts;
+        LOG.debug("Created {}", this);
     }
 
     public List<String> getManagedSpoutIds(){
@@ -112,6 +113,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
             String txId = _managedSpoutIds.get(i);
             _coordinators.add(_spouts.get(i).getCoordinator(txId, conf, context));
         }
+        LOG.debug("Opened {}", this);
     }
 
     @Override
@@ -119,6 +121,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         for(TransactionalState state: _states) {
             state.close();
         }
+        LOG.debug("Closed {}", this);
     }
 
     @Override
@@ -130,9 +133,11 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     public void ack(Object msgId) {
         TransactionAttempt tx = (TransactionAttempt) msgId;
         TransactionStatus status = _activeTx.get(tx.getTransactionId());
+        LOG.debug("Ack. [tx_attempt = {}], [tx_status = {}], [{}]", tx, status, this);
         if(status!=null && tx.equals(status.attempt)) {
             if(status.status==AttemptStatus.PROCESSING) {
                 status.status = AttemptStatus.PROCESSED;
+                LOG.debug("Changed status. [tx_attempt = {}] [tx_status = {}]", tx, status);
             } else if(status.status==AttemptStatus.COMMITTING) {
                 _activeTx.remove(tx.getTransactionId());
                 _attemptIds.remove(tx.getTransactionId());
@@ -141,6 +146,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 for(TransactionalState state: _states) {
                     state.setData(CURRENT_TX, _currTransaction);                    
                 }
+                LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", SUCCESS_STREAM_ID, tx, status, this);
             }
             sync();
         }
@@ -150,6 +156,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     public void fail(Object msgId) {
         TransactionAttempt tx = (TransactionAttempt) msgId;
         TransactionStatus stored = _activeTx.remove(tx.getTransactionId());
+        LOG.debug("Fail. [tx_attempt = {}], [tx_status = {}], [{}]", tx, stored, this);
         if(stored!=null && tx.equals(stored.attempt)) {
             _activeTx.tailMap(tx.getTransactionId()).clear();
             sync();
@@ -174,6 +181,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         if(maybeCommit!=null && maybeCommit.status == AttemptStatus.PROCESSED) {
             maybeCommit.status = AttemptStatus.COMMITTING;
             _collector.emit(COMMIT_STREAM_ID, new Values(maybeCommit.attempt), maybeCommit.attempt);
+            LOG.debug("Emitted on [stream = {}], [tx_status = {}], [{}]", COMMIT_STREAM_ID, maybeCommit, this);
         }
         
         if(_active) {
@@ -196,8 +204,10 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                         }
                         
                         TransactionAttempt attempt = new TransactionAttempt(curr, attemptId);
-                        _activeTx.put(curr, new TransactionStatus(attempt));
+                        final TransactionStatus newTransactionStatus = new TransactionStatus(attempt);
+                        _activeTx.put(curr, newTransactionStatus);
                         _collector.emit(BATCH_STREAM_ID, new Values(attempt), attempt);
+                        LOG.debug("Emitted on [stream = {}], [tx_attempt = {}], [tx_status = {}], [{}]", BATCH_STREAM_ID, attempt, newTransactionStatus, this);
                         _throttler.markEvent();
                     }
                     curr = nextTransactionId(curr);
@@ -285,5 +295,22 @@ public class MasterBatchCoordinator extends BaseRichSpout {
         ret.headMap(currTransaction).clear();
         ret.tailMap(currTransaction + maxBatches - 1).clear();
         return ret;
+    }
+
+    @Override
+    public String toString() {
+        return "MasterBatchCoordinator{" +
+                "_states=" + _states +
+                ", _activeTx=" + _activeTx +
+                ", _attemptIds=" + _attemptIds +
+                ", _collector=" + _collector +
+                ", _currTransaction=" + _currTransaction +
+                ", _maxTransactionActive=" + _maxTransactionActive +
+                ", _coordinators=" + _coordinators +
+                ", _managedSpoutIds=" + _managedSpoutIds +
+                ", _spouts=" + _spouts +
+                ", _throttler=" + _throttler +
+                ", _active=" + _active +
+                "}";
     }
 }

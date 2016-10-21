@@ -54,8 +54,9 @@ $.extend( $.fn.dataTableExt.oSort, {
     }
 });
 
+var minEntriesToShowPagination = 20;
 function dtAutoPage(selector, conf) {
-  if ($(selector.concat(" tr")).length <= 20) {
+  if ($(selector.concat(" tr")).length <= minEntriesToShowPagination) {
     $.extend(conf, {paging: false});
   }
   return $(selector).DataTable(conf);
@@ -389,25 +390,30 @@ var makeWorkerStatsTable = function (response, elId, parentId, type) {
             break;
     }
 
-    var workerStatsTable = dtAutoPage(elId, {
+    var initializeComponents = function (){
+        var show = $.cookies.get("showComponents") || false;
+
+        // toggle all components visibile/invisible
+        $(elId + ' tr').each(function (){
+            var dt = $(elId).dataTable();
+            showComponents(dt.api().row(this), show);
+        });
+    };
+
+    var pagingEnabled = response && response.workers && 
+                            response.workers.length > minEntriesToShowPagination;
+
+    var workerStatsTable = $(elId).DataTable({
+        paging: pagingEnabled,
         data: response.workers,
         autoWidth: false,
         columns: columns,
         initComplete: function (){
             // add a "Toggle Components" button
             renderToggleComponents ($(elId + '_filter'), elId);
-            var show = $.cookies.get("showComponents") || false;
-
-            // if the cookie is false, then we are done
-            if (!show) {
-                return;
-            }
-
-            // toggle all components visibile
-            $(elId + ' tr').each(function (){
-                var dt = $(elId).dataTable();
-                showComponents(dt.api().row(this), true);
-            });
+        },
+        drawCallback: function (){
+            initializeComponents();
         }
     });
 

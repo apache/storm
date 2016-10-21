@@ -51,7 +51,7 @@
 
   call :make_command_arguments %*
 
-  set shellcommands=classpath help version
+  set shellcommands=classpath help
   for %%i in ( %shellcommands% ) do (
     if %storm-command% == %%i set shellcommand=true
   )

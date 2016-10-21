@@ -25,7 +25,7 @@
            [org.apache.storm.utils]
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
-           [org.apache.storm.daemon.supervisor StandaloneSupervisor SupervisorData SupervisorManager SupervisorUtils SupervisorManager]
+           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils]
            [org.apache.storm.executor Executor]
            [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
@@ -139,8 +139,7 @@
         supervisor-conf (merge (:daemon-conf cluster-map)
                                conf
                                {STORM-LOCAL-DIR tmp-dir
-                                SUPERVISOR-SLOTS-PORTS port-ids
-                                STORM-SUPERVISOR-WORKER-MANAGER-PLUGIN "org.apache.storm.daemon.supervisor.workermanager.DefaultWorkerManager"})
+                                SUPERVISOR-SLOTS-PORTS port-ids})
         id-fn (if id id (Utils/uuid))
         isupervisor (proxy [StandaloneSupervisor] []
                         (generateSupervisorId [] id-fn))
@@ -178,18 +177,19 @@
   (let [zk-tmp (local-temp-path)
         [zk-port zk-handle] (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                               (Zookeeper/mkInprocessZookeeper zk-tmp nil))
+        nimbus-tmp (local-temp-path)
         daemon-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                            {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
                             ZMQ-LINGER-MILLIS 0
                             TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false
                             TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50
                             STORM-CLUSTER-MODE "local"
-                            BLOBSTORE-SUPERUSER (System/getProperty "user.name")}
+                            BLOBSTORE-SUPERUSER (System/getProperty "user.name")
+                            BLOBSTORE-DIR nimbus-tmp}
                            (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                              {STORM-ZOOKEEPER-PORT zk-port
                               STORM-ZOOKEEPER-SERVERS ["localhost"]})
                            daemon-conf)
-        nimbus-tmp (local-temp-path)
         port-counter (mk-counter supervisor-slot-port-min)
         nimbus (nimbus/service-handler
                 (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
@@ -233,7 +233,7 @@
                            supervisors)]
     ;; tmp-dir will be taken care of by shutdown
     (reset! (:supervisors cluster-map) (remove-first finder-fn supervisors))
-    (.shutdown sup)))
+    (.close sup)))
 
 (defn kill-local-storm-cluster [cluster-map]
   (.shutdown (:nimbus cluster-map))
@@ -249,7 +249,7 @@
   (doseq [s @(:supervisors cluster-map)]
     (.shutdownAllWorkers s)
     ;; race condition here? will it launch the workers again?
-    (.shutdown s))
+    (.close s))
   (ProcessSimulator/killAllProcesses)
   (if (not-nil? (:zookeeper cluster-map))
     (do
@@ -285,7 +285,7 @@
   ([timeout-ms apredicate]
     (while-timeout timeout-ms (not (apredicate))
       (Time/sleep 100))))
-(defn is-supervisor-waiting [^SupervisorManager supervisor]
+(defn is-supervisor-waiting [^Supervisor supervisor]
   (.isWaiting supervisor))
 
 (defn wait-until-cluster-waiting
@@ -395,15 +395,6 @@
                                                                           executor->node+port)]
         (submit-local-topology nimbus storm-name conf topology)))))
 
-(defn mk-capture-launch-fn [capture-atom]
-  (fn [supervisorData stormId port workerId resources]
-    (let [conf (.getConf supervisorData)
-          supervisorId (.getSupervisorId supervisorData)
-          existing (get @capture-atom [supervisorId port] [])]
-      (log-message "mk-capture-launch-fn")
-      (ConfigUtils/setWorkerUserWSE conf workerId "")
-      (swap! capture-atom assoc [supervisorId port] (conj existing stormId)))))
-
 (defn find-worker-id
   [supervisor-conf port]
   (let [supervisor-state (ConfigUtils/supervisorState supervisor-conf)
@@ -430,23 +421,6 @@
         (.shutdownWorker worker-manager supervisor-id workerId worker-pids)
         (if (.cleanupWorker worker-manager workerId)
           (.remove dead-workers workerId)))))
-(defmacro capture-changed-workers
-  [& body]
-  `(let [launch-captured# (atom {})
-         shutdown-captured# (atom {})]
-     (with-var-roots [local-supervisor/launch-local-worker (mk-capture-launch-fn launch-captured#)
-                      local-supervisor/shutdown-local-worker (mk-capture-shutdown-fn shutdown-captured#)]
-                     ~@body
-                     {:launched @launch-captured#
-                      :shutdown @shutdown-captured#})))
-
-(defmacro capture-launched-workers
-  [& body]
-  `(:launched (capture-changed-workers ~@body)))
-
-(defmacro capture-shutdown-workers
-  [& body]
-  `(:shutdown (capture-changed-workers ~@body)))
 
 (defnk aggregated-stat
   [cluster-map storm-name stat-key :component-ids nil]
@@ -603,7 +577,8 @@
       (startup spout))
 
     (submit-local-topology (:nimbus cluster-map) storm-name storm-conf topology)
-    (advance-cluster-time cluster-map 11)
+    (when (Time/isSimulating)
+      (advance-cluster-time cluster-map 11))
 
     (let [storm-id (StormCommon/getStormId state storm-name)]
       ;;Give the topology time to come up without using it to wait for the spouts to complete
@@ -722,13 +697,18 @@
     (let [target (+ amt @(:last-spout-emit tracked-topology))
           track-id (-> tracked-topology :cluster ::track-id)
           waiting? (fn []
-                     (or (not= target (global-amt track-id "spout-emitted"))
-                         (not= (global-amt track-id "transferred")
-                               (global-amt track-id "processed"))))]
+                     (let [spout-emitted (global-amt track-id "spout-emitted")
+                           transferred (global-amt track-id "transferred")
+                           processed (global-amt track-id "processed")]
+                       (log-message "emitted " spout-emitted " target " target " transferred " transferred " processed " processed)
+                       (or (not= target spout-emitted)
+                           (not= transferred
+                                 processed))))]
       (while-timeout timeout-ms (waiting?)
                      ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
                      ;; (println "Processed: " (global-amt track-id "processed"))
                      ;; (println "Transferred: " (global-amt track-id "transferred"))
+                    (advance-time-secs! 1)
                     (Thread/sleep (rand-int 200)))
       (reset! (:last-spout-emit tracked-topology) target))))
 
