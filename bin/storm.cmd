@@ -60,7 +60,7 @@
     goto :eof
   )
 
-  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui admin
+  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui version admin
   for %%i in ( %corecommands% ) do (
     if %storm-command% == %%i set corecommand=true  
   )
