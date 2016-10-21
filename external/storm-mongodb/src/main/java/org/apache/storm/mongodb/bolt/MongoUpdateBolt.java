@@ -19,7 +19,7 @@ package org.apache.storm.mongodb.bolt;
 
 import org.apache.commons.lang.Validate;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
-import org.apache.storm.mongodb.common.mapper.MongoMapper;
+import org.apache.storm.mongodb.common.mapper.MongoUpdateMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.bson.Document;
@@ -34,15 +34,16 @@ import org.bson.conversions.Bson;
 public class MongoUpdateBolt extends AbstractMongoBolt {
 
     private QueryFilterCreator queryCreator;
-    private MongoMapper mapper;
+    private MongoUpdateMapper mapper;
 
-    private boolean upsert;  //The default is false.
+    private boolean upsert;  //the default is false.
+    private boolean many;  //the default is false.
 
-    public MongoUpdateBolt(String url, String collectionName, QueryFilterCreator queryCreator, MongoMapper mapper) {
+    public MongoUpdateBolt(String url, String collectionName, QueryFilterCreator queryCreator, MongoUpdateMapper mapper) {
         super(url, collectionName);
 
         Validate.notNull(queryCreator, "QueryFilterCreator can not be null");
-        Validate.notNull(mapper, "MongoMapper can not be null");
+        Validate.notNull(mapper, "MongoUpdateMapper can not be null");
 
         this.queryCreator = queryCreator;
         this.mapper = mapper;
@@ -55,7 +56,7 @@ public class MongoUpdateBolt extends AbstractMongoBolt {
             Document doc = mapper.toDocument(tuple);
             //get query filter
             Bson filter = queryCreator.createFilter(tuple);
-            mongoClient.update(filter, doc, upsert);
+            mongoClient.update(filter, doc, upsert, many);
             this.collector.ack(tuple);
         } catch (Exception e) {
             this.collector.reportError(e);
@@ -65,6 +66,11 @@ public class MongoUpdateBolt extends AbstractMongoBolt {
 
     public MongoUpdateBolt withUpsert(boolean upsert) {
         this.upsert = upsert;
+        return this;
+    }
+
+    public MongoUpdateBolt withMany(boolean many) {
+        this.many = many;
         return this;
     }
 
