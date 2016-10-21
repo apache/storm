@@ -1268,9 +1268,18 @@ Please note that it supports only one letter for delimiter.
 
 | Data Source     | Artifact Name      | Location prefix     | Support Input data source | Support Output data source | Requires properties
 |:--------------- |:------------------ |:------------------- |:------------------------- |:-------------------------- |:-------------------
+| Socket | <built-in> | `socket://host:port` | Yes | Yes | No
 | Kafka | org.apache.storm:storm-sql-kafka | `kafka://zkhost:port/broker_path?topic=topic` | Yes | Yes | Yes
 | Redis | org.apache.storm:storm-sql-redis | `redis://:[password]@host:port/[dbIdx]` | No | Yes | Yes
 | MongoDB | org.apache.stormg:storm-sql-mongodb | `mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]` | No | Yes | Yes
+
+#### Socket
+
+Socket data source is a built-in feature so users don't need to add any artifacts to `--artifacts` options.
+
+Please note that Socket data source is only for testing: it doesn't guarantee exactly-once and at-least-once.
+
+TIP: `netcat` is a convenient tool for Socket: users can use netcat to connect Socket data source for either or both input and output purposes.
 
 #### Kafka
 
