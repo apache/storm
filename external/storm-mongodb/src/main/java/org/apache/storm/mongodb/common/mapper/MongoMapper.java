@@ -18,12 +18,13 @@
 package org.apache.storm.mongodb.common.mapper;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;
 
 /**
- * Given a Tuple, converts it to an MongoDB document.
+ * Given a Tuple/trident keys, converts it to an MongoDB document.
  */
 public interface MongoMapper extends Serializable {
 
@@ -35,4 +36,11 @@ public interface MongoMapper extends Serializable {
      */
     Document toDocument(ITuple tuple);
 
+    /**
+     * Converts a keys to a Document
+     *
+     * @param keys the trident keys
+     * @return the MongoDB document
+     */
+    Document toDocumentByKeys(List<Object> keys);
 }
