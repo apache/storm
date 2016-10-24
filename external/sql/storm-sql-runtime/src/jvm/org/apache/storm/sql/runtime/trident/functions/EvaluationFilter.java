@@ -21,58 +21,41 @@ package org.apache.storm.sql.runtime.trident.functions;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;
+import org.apache.storm.sql.runtime.calcite.DebuggableExecutableExpression;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 public class EvaluationFilter extends BaseFilter {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFilter.class);
 
-    private transient ScriptEvaluator evaluator;
-
-    private final String expression;
+    private final ExecutableExpression filterInstance;
     private final DataContext dataContext;
     private final Object[] outputValues;
 
-    public EvaluationFilter(String expression, DataContext dataContext) {
-        if (!expression.contains("return ")) {
-            // we use out parameter and don't use the return value but compile fails...
-            expression = expression + "\nreturn 0;";
-        }
-
-        this.expression = expression;
+    public EvaluationFilter(ExecutableExpression filterInstance, DataContext dataContext) {
+        this.filterInstance = filterInstance;
         this.dataContext = dataContext;
         this.outputValues = new Object[1];
     }
 
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
-        LOG.info("Expression: {}", expression);
-        try {
-            evaluator = new ScriptEvaluator(expression, int.class,
-                    new String[] {"context", "outputValues"},
-                    new Class[] { Context.class, Object[].class });
-        } catch (CompileException e) {
-            throw new RuntimeException(e);
+        if (filterInstance != null && filterInstance instanceof DebuggableExecutableExpression) {
+            LOG.info("Expression code for filter: \n{}", ((DebuggableExecutableExpression) filterInstance).getDelegateCode());
         }
     }
 
     @Override
     public boolean isKeep(TridentTuple tuple) {
-        try {
-            Context calciteContext = new StormContext(dataContext);
-            calciteContext.values = tuple.getValues().toArray();
-            evaluator.evaluate(new Object[] {calciteContext, outputValues});
-            return (outputValues[0] != null && (boolean) outputValues[0]);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        Context calciteContext = new StormContext(dataContext);
+        calciteContext.values = tuple.getValues().toArray();
+        filterInstance.execute(calciteContext, outputValues);
+        return (outputValues[0] != null && (boolean) outputValues[0]);
     }
 }

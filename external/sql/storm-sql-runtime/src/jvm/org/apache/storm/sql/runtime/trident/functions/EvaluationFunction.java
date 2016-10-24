@@ -21,47 +21,34 @@ package org.apache.storm.sql.runtime.trident.functions;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;
+import org.apache.storm.sql.runtime.calcite.DebuggableExecutableExpression;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.trident.operation.OperationAwareMapFunction;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
 public class EvaluationFunction implements OperationAwareMapFunction {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFunction.class);
 
-    private transient ScriptEvaluator evaluator;
-
-    private final String expression;
+    private final ExecutableExpression projectionInstance;
     private final Object[] outputValues;
     private final DataContext dataContext;
 
-    public EvaluationFunction(String expression, int outputCount, DataContext dataContext) {
-        if (!expression.contains("return ")) {
-            // we use out parameter and don't use the return value but compile fails...
-            expression = expression + "\nreturn 0;";
-        }
-
-        this.expression = expression;
+    public EvaluationFunction(ExecutableExpression projectionInstance, int outputCount, DataContext dataContext) {
+        this.projectionInstance = projectionInstance;
         this.outputValues = new Object[outputCount];
         this.dataContext = dataContext;
     }
 
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
-        LOG.info("Expression: {}", expression);
-        try {
-            evaluator = new ScriptEvaluator(expression, int.class,
-                    new String[] {"context", "outputValues"},
-                    new Class[] { Context.class, Object[].class });
-        } catch (CompileException e) {
-            throw new RuntimeException(e);
+        if (projectionInstance instanceof DebuggableExecutableExpression) {
+            LOG.info("Expression code: {}", ((DebuggableExecutableExpression) projectionInstance).getDelegateCode());
         }
     }
 
@@ -72,14 +59,9 @@ public class EvaluationFunction implements OperationAwareMapFunction {
 
     @Override
     public Values execute(TridentTuple input) {
-        try {
-            Context calciteContext = new StormContext(dataContext);
-            calciteContext.values = input.getValues().toArray();
-            evaluator.evaluate(
-                    new Object[]{calciteContext, outputValues});
-            return new Values(outputValues);
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
-        }
+        Context calciteContext = new StormContext(dataContext);
+        calciteContext.values = input.getValues().toArray();
+        projectionInstance.execute(calciteContext, outputValues);
+        return new Values(outputValues);
     }
 }
