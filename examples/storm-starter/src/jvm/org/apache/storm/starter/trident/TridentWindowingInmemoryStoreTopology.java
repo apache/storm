@@ -20,6 +20,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.base.BaseWindowedBolt;
@@ -83,10 +84,10 @@ public class TridentWindowingInmemoryStoreTopology {
             );
 
             for (WindowConfig windowConfig : list) {
-                LocalCluster cluster = new LocalCluster();
-                cluster.submitTopology("wordCounter", conf, buildTopology(mapState, windowConfig));
-                Utils.sleep(60 * 1000);
-                cluster.shutdown();
+                try (LocalCluster cluster = new LocalCluster();
+                     LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(mapState, windowConfig));) {
+                    Utils.sleep(60 * 1000);
+                }
             }
             System.exit(0);
         } else {
@@ -94,5 +95,4 @@ public class TridentWindowingInmemoryStoreTopology {
             StormSubmitter.submitTopologyWithProgressBar(args[0], conf, buildTopology(mapState, SlidingCountWindow.of(1000, 100)));
         }
     }
-
 }

@@ -28,6 +28,7 @@ import org.apache.storm.Config;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Test;
 
 public class ReportErrorTest {
@@ -49,8 +50,7 @@ public class ReportErrorTest {
         conf.put(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS, 10);
         conf.put(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL, 4);
         
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             ReportError report = new ReportError(conf, state, topo, comp, context);
             report.report(new RuntimeException("ERROR-1"));
             assertEquals(1, errorCount.get());
@@ -69,8 +69,6 @@ public class ReportErrorTest {
             Time.advanceTime(2000);
             report.report(new RuntimeException("ERROR-7"));
             assertEquals(5, errorCount.get());
-        } finally {
-            Time.stopSimulating();
         }
     }
 }

@@ -50,24 +50,6 @@
   [^Grouping grouping]
   (grouping-constants (.getSetField grouping)))
 
-(defn nimbus-client-and-conn
-  ([host port]
-    (nimbus-client-and-conn host port nil))
-  ([host port as-user]
-  (log-message "Connecting to Nimbus at " host ":" port " as user: " as-user)
-  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
-        nimbusClient (NimbusClient. conf host port nil as-user)
-        client (.getClient nimbusClient)
-        transport (.transport nimbusClient)]
-        [client transport] )))
-
-(defmacro with-nimbus-connection
-  [[client-sym host port] & body]
-  `(let [[^Nimbus$Client ~client-sym ^TTransport conn#] (nimbus-client-and-conn ~host ~port)]
-    (try
-      ~@body
-    (finally (.close conn#)))))
-
 (defmacro with-configured-nimbus-connection
   [client-sym & body]
   `(let [conf# (clojurify-structure (ConfigUtils/readStormConfig))

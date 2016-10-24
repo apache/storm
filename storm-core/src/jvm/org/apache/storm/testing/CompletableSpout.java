@@ -15,22 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm;
+package org.apache.storm.testing;
 
-import org.apache.storm.daemon.Shutdownable;
-import org.apache.storm.generated.DistributedRPC;
-import org.apache.storm.generated.DistributedRPCInvocations;
-
-
-public interface ILocalDRPC extends DistributedRPC.Iface, DistributedRPCInvocations.Iface, Shutdownable, AutoCloseable {
+public interface CompletableSpout {
     /**
-     * Get the ID of the service.  This is used internally if multiple local DRPC clusters are in use at one time.
+     * @return true if all the tuples have been completed else false.
      */
-    public String getServiceId();
+    public boolean isExhausted();
+
+    /**
+     * Cleanup any global state kept
+     */
+    default public void clean() {
+        //NOOP
+    }
     
     /**
-     * @deprecated use {@link #close()} instead
+     * Prepare the spout (globally) before starting the topology
      */
-    @Deprecated
-    public void shutdown();
+    default public void startup() {
+        //NOOP
+    }
 }

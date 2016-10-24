@@ -21,17 +21,23 @@
             DistributedRPCInvocations$Processor]
            [org.apache.storm.daemon DrpcServer])
   (:import [org.apache.storm Config])
+  (:import [org.apache.storm Testing Testing$Condition])
   (:import [org.apache.storm.security.auth ReqContext SingleUserPrincipal ThriftServer ThriftConnectionType])
-  (:import [org.apache.storm.utils DRPCClient ConfigUtils])
+  (:import [org.apache.storm.utils DRPCClient ConfigUtils Time])
   (:import [org.apache.storm.drpc DRPCInvocationsClient])
   (:import [java.util.concurrent TimeUnit])
   (:import [javax.security.auth Subject])
   (:use [org.apache.storm util config log])
-  (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm testing])
   (:import [org.apache.storm.utils Utils]))
 
-(def DRPC-TIMEOUT-SEC (* (/ TEST-TIMEOUT-MS 1000) 2))
+(defmacro with-timeout
+  [millis unit & body]
+  `(let [f# (future ~@body)]
+     (try
+       (.get f# ~millis ~unit)
+       (finally (future-cancel f#)))))
+
+(def DRPC-TIMEOUT-SEC (* (/ Testing/TEST_TIMEOUT_MS 1000) 2))
 
 (defn launch-server [conf drpcAznClass transportPluginClass login-cfg client-port invocations-port]
   (let [conf (if drpcAznClass (assoc conf DRPC-AUTHORIZER drpcAznClass) conf)
@@ -50,10 +56,10 @@
     (log-message "storm conf:" conf)
     (log-message "Starting DRPC invocation server ... " invocations-port)
     (.start (Thread. #(.serve invoke-server)))
-    (wait-for-condition #(.isServing invoke-server))
+    (Testing/whileTimeout (reify Testing$Condition (exec [this] (not (.isServing invoke-server)))) (fn [] (Time/sleep 100)))
     (log-message "Starting DRPC handler server ... " client-port)
     (.start (Thread. #(.serve handler-server)))
-    (wait-for-condition #(.isServing handler-server))
+    (Testing/whileTimeout (reify Testing$Condition (exec [this] (not (.isServing handler-server)))) (fn [] (Time/sleep 100)))
     [handler-server invoke-server]))
 
 (defmacro with-server [args & body]

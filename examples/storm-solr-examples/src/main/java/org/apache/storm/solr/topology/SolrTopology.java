@@ -22,6 +22,7 @@ import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.solr.config.SolrCommitStrategy;
@@ -49,13 +50,12 @@ public abstract class SolrTopology {
         StormSubmitter.submitTopology(arg, config, topology);
     }
 
-    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws InterruptedException {
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("test", config, topology);
-        Thread.sleep(10000);
-        System.out.println("Killing topology per client's request");
-        cluster.killTopology("test");
-        cluster.shutdown();
+    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws Exception {
+        try (LocalCluster cluster = new LocalCluster();
+             LocalTopology topo = cluster.submitTopology("test", config, topology);) {
+            Thread.sleep(10000);
+            System.out.println("Killing topology per client's request");
+        }
         System.exit(0);
     }
 

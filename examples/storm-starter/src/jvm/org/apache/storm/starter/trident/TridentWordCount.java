@@ -19,6 +19,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -70,12 +71,13 @@ public class TridentWordCount {
     Config conf = new Config();
     conf.setMaxSpoutPending(20);
     if (args.length == 0) {
-      LocalDRPC drpc = new LocalDRPC();
-      LocalCluster cluster = new LocalCluster();
-      cluster.submitTopology("wordCounter", conf, buildTopology(drpc));
-      for (int i = 0; i < 100; i++) {
-        System.out.println("DRPC RESULT: " + drpc.execute("words", "cat the dog jumped"));
-        Thread.sleep(1000);
+      try (LocalDRPC drpc = new LocalDRPC();
+           LocalCluster cluster = new LocalCluster();
+           LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(drpc));) {
+        for (int i = 0; i < 100; i++) {
+          System.out.println("DRPC RESULT: " + drpc.execute("words", "cat the dog jumped"));
+          Thread.sleep(1000);
+        }
       }
     }
     else {

@@ -58,10 +58,9 @@ public class KafkaSpoutTopologyMainNamedTopics {
         } else {
             submitTopologyRemoteCluster(args[0], getTopolgyKafkaSpout(), getConfig());
         }
-
     }
 
-    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws InterruptedException {
+    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws Exception {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("test", config, topology);
         stopWaitingForInput();

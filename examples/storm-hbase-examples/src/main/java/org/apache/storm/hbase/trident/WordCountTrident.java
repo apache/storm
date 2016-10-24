@@ -19,6 +19,7 @@ package org.apache.storm.hbase.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
@@ -86,11 +87,10 @@ public class WordCountTrident {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         if (args.length == 1) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));
-            Thread.sleep(60 * 1000);
-            cluster.killTopology("wordCounter");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));) {
+                Thread.sleep(60 * 1000);
+            }
             System.exit(0);
         }
         else if(args.length == 2) {

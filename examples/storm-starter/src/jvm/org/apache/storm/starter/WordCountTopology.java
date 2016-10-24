@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -95,12 +96,10 @@ public class WordCountTopology {
     else {
       conf.setMaxTaskParallelism(3);
 
-      LocalCluster cluster = new LocalCluster();
-      cluster.submitTopology("word-count", conf, builder.createTopology());
-
-      Thread.sleep(10000);
-
-      cluster.shutdown();
+      try (LocalCluster cluster = new LocalCluster();
+           LocalTopology topo = cluster.submitTopology("word-count", conf, builder.createTopology());) {
+        Thread.sleep(10000);
+      }
     }
   }
 }

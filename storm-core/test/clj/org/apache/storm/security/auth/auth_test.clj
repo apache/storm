@@ -31,17 +31,15 @@
   (:import [java.security Principal AccessController])
   (:import [javax.security.auth Subject])
   (:import [java.net InetAddress])
-  (:import [org.apache.storm Config])
+  (:import [org.apache.storm Config Testing Testing$Condition])
   (:import [org.apache.storm.generated AuthorizationException])
   (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
-  (:import [org.apache.storm.utils NimbusClient ConfigUtils])
+  (:import [org.apache.storm.utils NimbusClient ConfigUtils Time])
   (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
   (:import [org.apache.storm.daemon StormCommon])
   (:use [org.apache.storm util config])
-  (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm testing])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
             KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]
            (org.json.simple JSONValue))
@@ -137,7 +135,7 @@
                 ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop server))))
     (.start (Thread. #(.serve server)))
-    (wait-for-condition #(.isServing server))
+    (Testing/whileTimeout (reify Testing$Condition (exec [this] (not (.isServing server)))) (fn [] (Time/sleep 100)))
     server ))
 
 (defmacro with-server [args & body]

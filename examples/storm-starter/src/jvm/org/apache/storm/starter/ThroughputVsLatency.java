@@ -71,7 +71,7 @@ public class ThroughputVsLatency {
     LocalCluster _local = null;
     Nimbus.Client _client = null;
 
-    public C(Map conf) {
+    public C(Map conf) throws Exception {
       Map clusterConf = Utils.readStormConfig();
       if (conf != null) {
         clusterConf.putAll(conf);

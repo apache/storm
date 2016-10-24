@@ -15,11 +15,10 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.nimbus-auth-test
   (:use [clojure test])
-  (:require [org.apache.storm [testing :as testing]])
   (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
-  (:import [org.apache.storm Config])
+  (:import [org.apache.storm Config LocalCluster$Builder])
   (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.storm.utils NimbusClient ConfigUtils])
   (:import [org.apache.storm.generated NotAliveException StormBase])
@@ -30,32 +29,25 @@
   (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
   (:import [org.mockito Mockito Matchers])
-  (:use [org.apache.storm util config log testing])
+  (:use [org.apache.storm util config log])
   (:require [conjure.core])
   (:use [conjure core]))
 
-(defn launch-test-cluster [nimbus-port login-cfg aznClass transportPluginClass] 
-  (let [conf {NIMBUS-AUTHORIZER aznClass 
+(defn to-conf [nimbus-port login-cfg aznClass transportPluginClass]
+  (let [conf {NIMBUS-AUTHORIZER aznClass
               NIMBUS-THRIFT-PORT nimbus-port
               STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass }
-        conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)
-        cluster-map (testing/mk-local-storm-cluster :supervisors 0
-                                            :ports-per-supervisor 0
-                                            :daemon-conf conf)
-        nimbus-server (ThriftServer. (:daemon-conf cluster-map)
-                                     (Nimbus$Processor. (:nimbus cluster-map)) 
-                                     ThriftConnectionType/NIMBUS)]
-    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop nimbus-server))))
-    (.start (Thread. #(.serve nimbus-server)))
-    (testing/wait-for-condition #(.isServing nimbus-server))
-    [cluster-map nimbus-server]))
+         conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)]
+    conf))
 
 (defmacro with-test-cluster [args & body]
-  `(let [[cluster-map#  nimbus-server#] (launch-test-cluster  ~@args)]
-      ~@body
-      (log-debug "Shutdown cluster from macro")
-      (testing/kill-local-storm-cluster cluster-map#)
-      (.stop nimbus-server#)))
+  `(let [conf# (to-conf ~@args)]
+     (with-open [_# (.build (doto (LocalCluster$Builder. )
+                      (.withNimbusDaemon)
+                      (.withDaemonConf conf#)
+                      (.withSupervisors 0)
+                      (.withPortsPerSupervisor 0)))]
+       ~@body)))
 
 (deftest Simple-authentication-test
   (let [port (Utils/getAvailablePort)]
@@ -76,11 +68,15 @@
         blob-store (Mockito/mock BlobStore)
         topo-name "topo-name"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/empty))
-    (with-mocked-nimbus [cluster :cluster-state cluster-state :blob-store blob-store
-                         :nimbus-daemon true
-                         :daemon-conf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                                       NIMBUS-THRIFT-PORT port
-                                       STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"}]
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
                                 STORM-NIMBUS-RETRY-TIMES 0})
@@ -99,11 +95,15 @@
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
     (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
-    (with-mocked-nimbus [cluster :cluster-state cluster-state :blob-store blob-store
-                         :nimbus-daemon true
-                         :daemon-conf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                                       NIMBUS-THRIFT-PORT port
-                                       STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"}]
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
                                Config/NIMBUS_THRIFT_PORT port
@@ -159,12 +159,16 @@
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
     (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
-    (with-mocked-nimbus [cluster :cluster-state cluster-state :blob-store blob-store
-                         :nimbus-daemon true
-                         :daemon-conf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                                      "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                                       NIMBUS-THRIFT-PORT port
-                                       STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"}]
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"

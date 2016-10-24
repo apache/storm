@@ -19,6 +19,7 @@ package org.apache.storm.elasticsearch.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -39,7 +40,7 @@ public class TridentEsTopology {
 
     static final String TOPOLOGY_NAME = "elasticsearch-test-topology2";
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         int batchSize = 100;
         FixedBatchSpout spout = new FixedBatchSpout(batchSize);
         spout.setCycle(true);
@@ -55,13 +56,10 @@ public class TridentEsTopology {
         EsTestUtil.startEsNode();
         EsTestUtil.waitForSeconds(5);
 
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(TOPOLOGY_NAME, null, topology.build());
-        EsTestUtil.waitForSeconds(20);
-        cluster.killTopology(TOPOLOGY_NAME);
-        System.out.println("cluster begin to shutdown");
-        cluster.shutdown();
-        System.out.println("cluster shutdown");
+        try (LocalCluster cluster = new LocalCluster();
+             LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, null, topology.build());) {
+            EsTestUtil.waitForSeconds(20);
+        }
         System.exit(0);
     }
 

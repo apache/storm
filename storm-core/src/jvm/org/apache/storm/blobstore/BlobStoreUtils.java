@@ -30,6 +30,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,7 +49,8 @@ public class BlobStoreUtils {
     private static final String BLOB_DEPENDENCIES_PREFIX = "dep-";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreUtils.class);
 
-    public static CuratorFramework createZKClient(Map conf) {
+    public static CuratorFramework createZKClient(Map<String, Object> conf) {
+        @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
@@ -106,7 +108,7 @@ public class BlobStoreUtils {
     }
 
     // Download missing blobs from potential nimbodes
-    public static boolean downloadMissingBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
+    public static boolean downloadMissingBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
         NimbusClient client;
         ReadableBlobMeta rbm;
@@ -156,7 +158,7 @@ public class BlobStoreUtils {
     }
 
     // Download updated blobs from potential nimbodes
-    public static boolean downloadUpdatedBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
+    public static boolean downloadUpdatedBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
         NimbusClient client;
         ClientBlobStore remoteBlobStore;
@@ -215,17 +217,17 @@ public class BlobStoreUtils {
         return keyList;
     }
 
-    public static void createStateInZookeeper(Map conf, String key, NimbusInfo nimbusInfo) throws TTransportException {
+    public static void createStateInZookeeper(Map<String, Object> conf, String key, NimbusInfo nimbusInfo) throws TTransportException {
         ClientBlobStore cb = new NimbusBlobStore();
         cb.setClient(conf, new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null));
         cb.createStateInZookeeper(key);
     }
 
-    public static void updateKeyForBlobStore (Map conf, BlobStore blobStore, CuratorFramework zkClient, String key, NimbusInfo nimbusDetails) {
+    public static void updateKeyForBlobStore (Map<String, Object> conf, BlobStore blobStore, CuratorFramework zkClient, String key, NimbusInfo nimbusDetails) {
         try {
             // Most of clojure tests currently try to access the blobs using getBlob. Since, updateKeyForBlobStore
             // checks for updating the correct version of the blob as a part of nimbus ha before performing any
-            // operation on it, there is a neccessity to stub several test cases to ignore this method. It is a valid
+            // operation on it, there is a necessity to stub several test cases to ignore this method. It is a valid
             // trade off to return if nimbusDetails which include the details of the current nimbus host port data are
             // not initialized as a part of the test. Moreover, this applies to only local blobstore when used along with
             // nimbus ha.
@@ -238,6 +240,7 @@ public class BlobStoreUtils {
                 return;
             }
             stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
+
             LOG.debug("StateInfo for update {}", stateInfo);
             Set<NimbusInfo> nimbusInfoList = getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
 
@@ -252,6 +255,9 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
+        } catch (NoNodeException e) {
+            //race condition with a delete
+            return;
         } catch (Exception exp) {
             throw new RuntimeException(exp);
         }

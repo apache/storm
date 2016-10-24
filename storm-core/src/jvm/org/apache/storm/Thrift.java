@@ -278,7 +278,7 @@ public class Thrift {
 
     public static SpoutSpec prepareSerializedSpoutDetails(IRichSpout spout, Map<String, StreamInfo> outputs) {
         return new SpoutSpec(ComponentObject.serialized_java
-                (Utils.javaSerialize(spout)), prepareComponentCommon(new HashMap(), outputs, null, null));
+                (Utils.javaSerialize(spout)), prepareComponentCommon(new HashMap<>(), outputs, null, null));
     }
 
     public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, Map<String, StreamInfo> outputs,

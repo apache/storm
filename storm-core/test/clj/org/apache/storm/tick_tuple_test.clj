@@ -15,10 +15,9 @@
 ;; limitations under the License.
 (ns org.apache.storm.tick-tuple-test
   (:use [clojure test])
-  (:use [org.apache.storm testing config])
+  (:use [org.apache.storm config])
   (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon common])
-  (:import [org.apache.storm Thrift])
+  (:import [org.apache.storm Thrift LocalCluster$Builder])
   (:import [org.apache.storm.utils Utils]))
 
 (defbolt noop-bolt ["tuple"] {:prepare true}
@@ -32,7 +31,8 @@
    (nextTuple [])))
 
 (deftest test-tick-tuple-works-with-system-bolt
-  (with-simulated-time-local-cluster [cluster]
+    (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                    (.withSimulatedTime)))]
     (let [topology (Thrift/buildTopology
                     {"1" (Thrift/prepareSpoutDetails noop-spout)}
                     {"2" (Thrift/prepareBoltDetails
@@ -40,11 +40,11 @@
                             (Thrift/prepareFieldsGrouping ["tuple"])}
                            noop-bolt)})]
       (try
-        (submit-local-topology (:nimbus cluster)
+        (.submitTopology cluster
                                "test"
                                {TOPOLOGY-TICK-TUPLE-FREQ-SECS 1}
                                topology)
-        (advance-cluster-time cluster 2)
+        (.advanceClusterTime cluster 2)
         ;; if reaches here, it means everything works ok.
         (is true)
         (catch Exception e

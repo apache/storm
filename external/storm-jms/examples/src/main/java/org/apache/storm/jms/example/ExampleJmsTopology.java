@@ -24,6 +24,7 @@ import javax.jms.TextMessage;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
@@ -120,11 +121,10 @@ public class ExampleJmsTopology {
 
             conf.setDebug(true);
 
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("storm-jms-example", conf, builder.createTopology());
-            Utils.sleep(60000);
-            cluster.killTopology("storm-jms-example");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("storm-jms-example", conf, builder.createTopology());) {
+                Utils.sleep(60000);
+            }
         }
     }
 
