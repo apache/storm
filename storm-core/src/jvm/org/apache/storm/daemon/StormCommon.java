@@ -56,6 +56,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -94,31 +95,9 @@ public class StormCommon {
     public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
     public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
 
-    @SuppressWarnings("unchecked")
+    @Deprecated
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
-        List<String> activeTopologys = stormClusterState.activeStorms();
-        IPredicate pred = new IPredicate<String>() {
-            @Override
-            public boolean test(String obj) {
-                String name = stormClusterState.stormBase(obj, null).get_name();
-                return name.equals(topologyName);
-            }
-        };
-        return Utils.findOne(pred, activeTopologys);
-    }
-
-    public static Map<String, StormBase> topologyBases(IStormClusterState stormClusterState) {
-        return _instance.topologyBasesImpl(stormClusterState);
-    }
-
-    protected Map<String, StormBase> topologyBasesImpl(IStormClusterState stormClusterState) {
-        List<String> activeTopologys = stormClusterState.activeStorms();
-        Map<String, StormBase> stormBases = new HashMap<>();
-        for (String topologyId : activeTopologys) {
-            StormBase base = stormClusterState.stormBase(topologyId, null);
-            stormBases.put(topologyId, base);
-        }
-        return stormBases;
+        return stormClusterState.getTopoId(topologyName).get();
     }
 
     public static void validateDistributedMode(Map conf) {
@@ -181,13 +160,13 @@ public class StormCommon {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map componentConf(Object component) {
+    public static Map<String, Object> componentConf(Object component) {
         try {
-            Map<Object, Object> conf = new HashMap<>();
+            Map<String, Object> conf = new HashMap<>();
             ComponentCommon common = getComponentCommon(component);
             String jconf = common.get_json_conf();
             if (jconf != null) {
-                conf.putAll((Map<Object, Object>) JSONValue.parseWithException(jconf));
+                conf.putAll((Map<String, Object>) JSONValue.parseWithException(jconf));
             }
             return conf;
         } catch (Exception e) {

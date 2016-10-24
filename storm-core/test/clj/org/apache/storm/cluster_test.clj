@@ -17,7 +17,7 @@
   (:import [java.util Arrays]
            [org.apache.storm.nimbus NimbusInfo])
   (:import [org.apache.storm.daemon.common Assignment StormBase SupervisorInfo])
-  (:import [org.apache.storm.generated NimbusSummary])
+  (:import [org.apache.storm.generated NimbusSummary TopologyStatus])
   (:import [org.apache.zookeeper ZooDefs ZooDefs$Ids Watcher$Event$EventType])
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
@@ -187,8 +187,8 @@
           nimbusInfo2 (NimbusInfo. "nimbus2" 6667 false)
           nimbusSummary1 (NimbusSummary. "nimbus1" 6667 (Time/currentTimeSecs) false "v1")
           nimbusSummary2 (NimbusSummary. "nimbus2" 6667 (Time/currentTimeSecs) false "v2")
-          base1 (StormBase. "/tmp/storm1" 1 {:type :active} 2 {} "" nil nil {})
-          base2 (StormBase. "/tmp/storm2" 2 {:type :active} 2 {} "" nil nil {})]
+          base1 (StormBase. "/tmp/storm1" 1 {:type TopologyStatus/ACTIVE} 2 {} "" nil nil {})
+          base2 (StormBase. "/tmp/storm2" 2 {:type TopologyStatus/ACTIVE} 2 {} "" nil nil {})]
       (is (= [] (.assignments state nil)))
       (.setAssignment state "storm1" (thriftify-assignment assignment1))
       (is (= assignment1 (clojurify-assignment (.assignmentInfo state "storm1" nil))))

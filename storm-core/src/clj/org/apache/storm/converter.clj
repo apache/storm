@@ -17,6 +17,7 @@
   (:import [org.apache.storm.generated SupervisorInfo NodeInfo Assignment WorkerResources
             StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions
             TopologyActionOptions DebugOptions ProfileRequest]
+           [org.apache.storm.daemon.nimbus TopologyActions]
            [org.apache.storm.utils Utils]
            [org.apache.storm.stats StatsUtil])
   (:import [org.apache.storm.cluster ExecutorBeat])
@@ -121,28 +122,18 @@
       (clojurify-worker->resources (into {} (.get_worker_resources assignment))))))
 
 (defn convert-to-symbol-from-status [status]
-  (condp = status
-    TopologyStatus/ACTIVE {:type :active}
-    TopologyStatus/INACTIVE {:type :inactive}
-    TopologyStatus/REBALANCING {:type :rebalancing}
-    TopologyStatus/KILLED {:type :killed}
-    nil))
+  (if status {:type status} nil))
 
 (defn- convert-to-status-from-symbol [status]
   (if status
-    (condp = (:type status)
-      :active TopologyStatus/ACTIVE
-      :inactive TopologyStatus/INACTIVE
-      :rebalancing TopologyStatus/REBALANCING
-      :killed TopologyStatus/KILLED
-      nil)))
+    (:type status)))
 
 (defn assoc-non-nil
   [m k v]
   (if v (assoc m k v) m))
 
 (defn clojurify-rebalance-options [^RebalanceOptions rebalance-options]
-  (-> {:action :rebalance}
+  (-> {:action TopologyActions/REBALANCE}
     (assoc-non-nil :delay-secs (if (.is_set_wait_secs rebalance-options) (.get_wait_secs rebalance-options)))
     (assoc-non-nil :num-workers (if (.is_set_num_workers rebalance-options) (.get_num_workers rebalance-options)))
     (assoc-non-nil :component->executors (if (.is_set_num_executors rebalance-options) (into {} (.get_num_executors rebalance-options))))))
@@ -160,7 +151,7 @@
       thrift-rebalance-options)))
 
 (defn clojurify-kill-options [^KillOptions kill-options]
-  (-> {:action :kill}
+  (-> {:action TopologyActions/KILL}
     (assoc-non-nil :delay-secs (if (.is_set_wait_secs kill-options) (.get_wait_secs kill-options)))))
 
 (defn thriftify-kill-options [kill-options]
@@ -175,9 +166,9 @@
     (let [ topology-action-options (:topology-action-options storm-base)
            action (:action topology-action-options)
            thrift-topology-action-options (TopologyActionOptions.)]
-      (if (= action :kill)
+      (if (= action TopologyActions/KILL)
         (.set_kill_options thrift-topology-action-options (thriftify-kill-options topology-action-options)))
-      (if (= action :rebalance)
+      (if (= action TopologyActions/REBALANCE)
         (.set_rebalance_options thrift-topology-action-options (thriftify-rebalance-options topology-action-options)))
       thrift-topology-action-options)))
 
@@ -230,11 +221,6 @@
       (convert-to-symbol-from-status (.get_prev_status storm-base))
       (map-val clojurify-debugoptions (.get_component_debug storm-base)))))
 
-(defn thriftify-error [error]
-  (doto (ErrorInfo. (:error error) (:time-secs error))
-    (.set_host (:host error))
-    (.set_port (:port error))))
-
 (defn clojurify-profile-request
   [^ProfileRequest request]
   (when request
@@ -242,15 +228,6 @@
      :port (first (.get_port (.get_nodeInfo request)))
      :action     (.get_action request)
      :timestamp  (.get_time_stamp request)}))
-
-(defn thriftify-profile-request
-  [profile-request]
-  (let [nodeinfo (doto (NodeInfo.)
-                   (.set_node (:host profile-request))
-                   (.set_port (set [(:port profile-request)])))
-        request (ProfileRequest. nodeinfo (:action profile-request))]
-    (.set_time_stamp request (:timestamp profile-request))
-    request))
 
 (defn thriftify-credentials [credentials]
     (doto (Credentials.)

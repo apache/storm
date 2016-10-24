@@ -142,8 +142,12 @@ public class Worker implements Shutdownable, DaemonCommon {
         IStormClusterState stormClusterState =
             ClusterUtils.mkStormClusterState(stateStorage, acls, new ClusterStateContext());
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
+        Map<String, String> initCreds = new HashMap<>();
+        if (initialCredentials != null) {
+            initCreds.putAll(initialCredentials.get_creds());
+        }
         autoCreds = AuthUtils.GetAutoCredentials(topologyConf);
-        subject = AuthUtils.populateSubject(null, autoCreds, initialCredentials.get_creds());
+        subject = AuthUtils.populateSubject(null, autoCreds, initCreds);
 
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
             @Override public Object run() throws Exception {
@@ -187,11 +191,11 @@ public class Worker implements Shutdownable, DaemonCommon {
                 for (List<Long> e : workerState.getExecutors()) {
                     if (ConfigUtils.isLocalMode(topologyConf)) {
                         newExecutors.add(
-                            LocalExecutor.mkExecutor(workerState, e, initialCredentials.get_creds())
+                            LocalExecutor.mkExecutor(workerState, e, initCreds)
                                 .execute());
                     } else {
                         newExecutors.add(
-                            Executor.mkExecutor(workerState, e, initialCredentials.get_creds())
+                            Executor.mkExecutor(workerState, e, initCreds)
                                 .execute());
                     }
                 }

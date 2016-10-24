@@ -17,6 +17,8 @@
  */
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.utils.Utils.OR;
+
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
@@ -610,16 +612,6 @@ public class BasicContainer extends Container {
         return workerProfilerChildopts;
     }
     
-    /**
-     * a or b the first one that is not null
-     * @param a something
-     * @param b something else
-     * @return a or b the first one that is not null
-     */
-    private <V> V OR(V a, V b) {
-        return a == null ? b : a;
-    }
-    
     protected String javaCmd(String cmd) {
         String ret = null;
         String javaHome = System.getenv().get("JAVA_HOME");
@@ -663,7 +655,7 @@ public class BasicContainer extends Container {
         commandList.addAll(commonParams);
         commandList.addAll(substituteChildopts(_conf.get(Config.WORKER_CHILDOPTS), memOnheap));
         commandList.addAll(substituteChildopts(_topoConf.get(Config.TOPOLOGY_WORKER_CHILDOPTS), memOnheap));
-        commandList.addAll(substituteChildopts(OR(
+        commandList.addAll(substituteChildopts(Utils.OR(
                 _topoConf.get(Config.TOPOLOGY_WORKER_GC_CHILDOPTS),
                 _conf.get(Config.WORKER_GC_CHILDOPTS)), memOnheap));
         commandList.addAll(getWorkerProfilerChildOpts(memOnheap));

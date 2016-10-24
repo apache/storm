@@ -16,7 +16,6 @@
 
 (ns org.apache.storm.testing
   (:require [org.apache.storm.daemon
-             [nimbus :as nimbus]
              [local-supervisor :as local-supervisor]
              [common :as common]])
   (:import [org.apache.commons.io FileUtils]
@@ -33,6 +32,7 @@
   (:import [org.apache.storm.utils Time Utils IPredicate RegisteredGlobalState ConfigUtils LocalState StormCommonInstaller])
   (:import [org.apache.storm.tuple Fields Tuple TupleImpl])
   (:import [org.apache.storm.task TopologyContext])
+  (:import [org.apache.storm.nimbus ILeaderElector NimbusInfo])
   (:import [org.apache.storm.generated GlobalStreamId Bolt KillOptions])
   (:import [org.apache.storm.testing FeederSpout FixedTupleSpout FixedTuple
             TupleCaptureBolt SpoutTracker BoltTracker NonRichBoltTracker
@@ -49,9 +49,10 @@
   (:import [org.apache.storm Config])
   (:import [org.apache.storm.generated StormTopology])
   (:import [org.apache.storm.task TopologyContext]
-           (org.apache.storm.messaging IContext)
+           [org.apache.storm.messaging IContext]
            [org.json.simple JSONValue]
-           (org.apache.storm.daemon StormCommon Acker DaemonCommon))
+           [org.apache.storm.daemon.nimbus Nimbus Nimbus$StandaloneINimbus]
+           [org.apache.storm.daemon StormCommon Acker DaemonCommon])
   (:import [org.apache.storm.cluster ZKStateStorage ClusterStateContext StormClusterStateImpl ClusterUtils])
   (:use [org.apache.storm util config log local-state-converter converter])
   (:use [org.apache.storm.internal thrift]))
@@ -167,11 +168,60 @@
     (let [val (atom (dec start-val))]
       (fn [] (swap! val inc)))))
 
+(defnk mock-leader-elector [:is-leader true :leader-name "test-host" :leader-port 9999]
+  (let [leader-address (NimbusInfo. leader-name leader-port true)]
+    (reify ILeaderElector
+      (prepare [this conf] true)
+      (isLeader [this] is-leader)
+      (addToLeaderLockQueue [this] true)
+      (getLeader [this] leader-address)
+      (getAllNimbuses [this] `(leader-address))
+      (close [this] true))))
+
+(defn mk-nimbus
+  [conf inimbus blob-store leader-elector group-mapper cluster-state]
+  (Nimbus. conf inimbus cluster-state nil blob-store leader-elector group-mapper))
+
+(defnk mk-mocked-nimbus 
+  [:daemon-conf {} :inimbus nil :blob-store nil :cluster-state nil 
+   :leader-elector nil :group-mapper nil :nimbus-daemon false :mk-nimbus mk-nimbus]
+  (let [zk-tmp (local-temp-path)
+        [zk-port zk-handle] (if-not cluster-state
+                              (Zookeeper/mkInprocessZookeeper zk-tmp nil))
+        leader-elector (or leader-elector (if zk-handle leader-elector (mock-leader-elector)))
+        nimbus-tmp (local-temp-path)
+        daemon-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
+                           {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
+                            ZMQ-LINGER-MILLIS 0
+                            TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false
+                            TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50
+                            STORM-CLUSTER-MODE "local"
+                            BLOBSTORE-SUPERUSER (System/getProperty "user.name")
+                            BLOBSTORE-DIR nimbus-tmp}
+                           (if-not cluster-state
+                             {STORM-ZOOKEEPER-PORT zk-port
+                              STORM-ZOOKEEPER-SERVERS ["localhost"]})
+                           daemon-conf)
+        nimbus (mk-nimbus
+                (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
+                (if inimbus inimbus (Nimbus$StandaloneINimbus.))
+                blob-store
+                leader-elector
+                group-mapper
+                cluster-state)
+        _ (.launchServer nimbus)
+        nimbus-thrift-server (if nimbus-daemon (start-nimbus-daemon daemon-conf nimbus) nil)]
+    {:nimbus nimbus
+     :daemon-conf daemon-conf
+     :tmp-dirs (atom [nimbus-tmp zk-tmp])
+     :nimbus-thrift-server nimbus-thrift-server
+     :zookeeper (if (not-nil? zk-handle) zk-handle)}))
+
 ;; returns map containing cluster info
 ;; local dir is always overridden in maps
 ;; can customize the supervisors (except for ports) by passing in map for :supervisors parameter
 ;; if need to customize amt of ports more, can use add-supervisor calls afterwards
-(defnk mk-local-storm-cluster [:supervisors 2 :ports-per-supervisor 3 :daemon-conf {} :inimbus nil :supervisor-slot-port-min 1024 :nimbus-daemon false]
+(defnk mk-local-storm-cluster [:supervisors 2 :ports-per-supervisor 3 :daemon-conf {} :inimbus nil :group-mapper nil :supervisor-slot-port-min 1024 :nimbus-daemon false]
   (let [zk-tmp (local-temp-path)
         [zk-port zk-handle] (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                               (Zookeeper/mkInprocessZookeeper zk-tmp nil))
@@ -189,9 +239,14 @@
                               STORM-ZOOKEEPER-SERVERS ["localhost"]})
                            daemon-conf)
         port-counter (mk-counter supervisor-slot-port-min)
-        nimbus (nimbus/service-handler
-                (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
-                (if inimbus inimbus (nimbus/standalone-nimbus)))
+        nimbus (mk-nimbus
+                 (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
+                 (if inimbus inimbus (Nimbus$StandaloneINimbus.))
+                 nil
+                 nil
+                 group-mapper
+                 nil)
+        _ (.launchServer nimbus)
         context (mk-shared-context daemon-conf)
         nimbus-thrift-server (if nimbus-daemon (start-nimbus-daemon daemon-conf nimbus) nil)
         cluster-map {:nimbus nimbus
@@ -242,11 +297,12 @@
         (.stop (:nimbus-thrift-server cluster-map))
         (catch Exception e (log-message "failed to stop thrift")))
       ))
-  (.close (:state cluster-map))
-  (.disconnect (:storm-cluster-state cluster-map))
-  (doseq [s @(:supervisors cluster-map)]
-    (.shutdownAllWorkers s nil ReadClusterState/THREAD_DUMP_ON_ERROR)
-    (.close s))
+  (if (:state cluster-map) (.close (:state cluster-map)))
+  (if (:storm-cluster-state cluster-map) (.disconnect (:storm-cluster-state cluster-map)))
+  (if (:supervisors cluster-map)
+    (doseq [s @(:supervisors cluster-map)]
+      (.shutdownAllWorkers s nil ReadClusterState/THREAD_DUMP_ON_ERROR)
+      (.close s)))
   (ProcessSimulator/killAllProcesses)
   (if (not-nil? (:zookeeper cluster-map))
     (do
@@ -315,6 +371,21 @@
   ([cluster-map secs]
    (advance-cluster-time cluster-map secs 1)))
 
+(defmacro with-mocked-nimbus
+  [[nimbus-sym & args] & body]
+  `(let [~nimbus-sym (mk-mocked-nimbus ~@args)]
+     (try
+       ~@body
+       (catch Throwable t#
+         (log-error t# "Error in cluster")
+         (throw t#))
+       (finally
+         (let [keep-waiting?# (atom true)
+               f# (future (while @keep-waiting?# (simulate-wait ~nimbus-sym)))]
+           (kill-local-storm-cluster ~nimbus-sym)
+           (reset! keep-waiting?# false)
+            @f#)))))
+
 (defmacro with-local-cluster
   [[cluster-sym & args] & body]
   `(let [~cluster-sym (mk-local-storm-cluster ~@args)]
@@ -355,48 +426,6 @@
   (when-not (Utils/isValidConf conf)
     (throw (IllegalArgumentException. "Topology conf is not json-serializable")))
   (.submitTopologyWithOpts nimbus storm-name nil (JSONValue/toJSONString conf) topology submit-opts))
-
-(defn mocked-convert-assignments-to-worker->resources [storm-cluster-state storm-name worker->resources]
-  (fn [existing-assignments]
-    (let [topology-id (StormCommon/getStormId storm-cluster-state storm-name)
-          existing-assignments (into {} (for [[tid assignment] existing-assignments]
-                                          {tid (:worker->resources assignment)}))
-          new-assignments (assoc existing-assignments topology-id worker->resources)]
-      new-assignments)))
-
-(defn mocked-compute-new-topology->executor->node+port [storm-cluster-state storm-name executor->node+port]
-  (fn [new-scheduler-assignments existing-assignments]
-    (let [topology-id (StormCommon/getStormId storm-cluster-state storm-name)
-          existing-assignments (into {} (for [[tid assignment] existing-assignments]
-                                          {tid (:executor->node+port assignment)}))
-          new-assignments (assoc existing-assignments topology-id executor->node+port)]
-      new-assignments)))
-
-(defn mocked-compute-new-scheduler-assignments []
-  (fn [nimbus existing-assignments topologies scratch-topology-id]
-    existing-assignments))
-
-(defn submit-mocked-assignment
-  [nimbus storm-cluster-state storm-name conf topology task->component executor->node+port worker->resources]
-  (let [fake-common (proxy [StormCommon] []
-                      (stormTaskInfoImpl [_] task->component))]
-    (with-open [- (StormCommonInstaller. fake-common)]
-      (with-var-roots [nimbus/compute-new-scheduler-assignments (mocked-compute-new-scheduler-assignments)
-                       nimbus/convert-assignments-to-worker->resources (mocked-convert-assignments-to-worker->resources
-                                                              storm-cluster-state
-                                                              storm-name
-                                                              worker->resources)
-                       nimbus/compute-new-topology->executor->node+port (mocked-compute-new-topology->executor->node+port
-                                                                          storm-cluster-state
-                                                                          storm-name
-                                                                          executor->node+port)]
-        (submit-local-topology nimbus storm-name conf topology)))))
-
-(defn find-worker-id
-  [supervisor-conf port]
-  (let [supervisor-state (ConfigUtils/supervisorState supervisor-conf)
-        worker->port (.getApprovedWorkers ^LocalState supervisor-state)]
-    (first ((clojurify-structure (Utils/reverseMap worker->port)) port))))
 
 (defn find-worker-port
   [supervisor-conf worker-id]

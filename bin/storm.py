@@ -632,7 +632,7 @@ def get_log4j2_conf_dir():
         storm_log4j2_conf_dir = os.path.join(STORM_DIR, storm_log4j2_conf_dir)
     return storm_log4j2_conf_dir
 
-def nimbus(klass="org.apache.storm.daemon.nimbus"):
+def nimbus(klass="org.apache.storm.daemon.nimbus.Nimbus"):
     """Syntax: [storm nimbus]
 
     Launches the nimbus daemon. This command should be run under

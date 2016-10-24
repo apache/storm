@@ -1665,16 +1665,18 @@ public class Utils {
 
     /**
      * Creates a new map with a string value in the map replaced with an
-     * equivalently-lengthed string of '#'.
+     * equivalently-lengthed string of '#'.  (If the object is not a string
+     * to string will be called on it and replaced) 
      * @param m The map that a value will be redacted from
      * @param key The key pointing to the value to be redacted
      * @return a new map with the value redacted. The original map will not be modified.
      */
-    public static Map<Object, String> redactValue(Map<Object, String> m, Object key) {
-        if(m.containsKey(key)) {
-            HashMap<Object, String> newMap = new HashMap<>(m);
-            String value = newMap.get(key);
-            String redacted = new String(new char[value.length()]).replace("\0", "#");
+    public static Map<String, Object> redactValue(Map<String, Object> m, String key) {
+        if (m.containsKey(key)) {
+            HashMap<String, Object> newMap = new HashMap<>(m);
+            Object value = newMap.get(key);
+            String v = value.toString();
+            String redacted = new String(new char[v.length()]).replace("\0", "#");
             newMap.put(key, redacted);
             return newMap;
         }
@@ -1962,7 +1964,7 @@ public class Utils {
         return dir + FILE_PATH_SEPARATOR + "launch_container.sh";
     }
 
-    public static Object nullToZero (Object v) {
+    public static double nullToZero (Double v) {
         return (v != null ? v : 0);
     }
 
@@ -2068,6 +2070,16 @@ public class Utils {
     // Non-static impl methods exist for mocking purposes.
     public UptimeComputer makeUptimeComputerImpl() {
         return new UptimeComputer();
+    }
+
+    /**
+     * a or b the first one that is not null
+     * @param a something
+     * @param b something else
+     * @return a or b the first one that is not null
+     */
+    public static <V> V OR(V a, V b) {
+        return a == null ? b : a;
     }
 
     /**
