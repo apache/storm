@@ -28,6 +28,7 @@ import org.apache.storm.streams.operations.aggregators.Count;
 import org.apache.storm.streams.operations.mappers.PairValueMapper;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
 import org.apache.storm.streams.processors.BranchProcessor;
+import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichBolt;
@@ -35,6 +36,7 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
@@ -115,9 +117,9 @@ public class StreamBuilderTest {
 
     @Test
     public void testGroupBy() throws Exception {
-        PairStream<String, String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new PairValueMapper<>(0, 1));
+        PairStream<String, String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new PairValueMapper<>(0, 1), 2);
 
-        stream.groupByKey().aggregateByKey(new Count<>());
+        stream.window(TumblingWindows.of(BaseWindowedBolt.Count.of(10))).aggregateByKey(new Count<>());
 
         StormTopology topology = streamBuilder.build();
         assertEquals(2, topology.get_bolts_size());
@@ -129,7 +131,7 @@ public class StreamBuilderTest {
 
     @Test
     public void testGlobalAggregate() throws Exception {
-        Stream<String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
+        Stream<String> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0), 2);
 
         stream.aggregate(new Count<>());
 
@@ -142,6 +144,7 @@ public class StreamBuilderTest {
         expected1.put(new GlobalStreamId(spoutId, "default"), Grouping.shuffle(new NullStruct()));
         Map<GlobalStreamId, Grouping> expected2 = new HashMap<>();
         expected2.put(new GlobalStreamId("bolt1", "s1"), Grouping.fields(Collections.emptyList()));
+        expected2.put(new GlobalStreamId("bolt1", "s1__punctuation"), Grouping.all(new NullStruct()));
         assertEquals(expected1, bolt1.get_common().get_inputs());
         assertEquals(expected2, bolt2.get_common().get_inputs());
     }
@@ -169,10 +172,56 @@ public class StreamBuilderTest {
     public void testBranchAndJoin() throws Exception {
         TopologyContext mockContext = Mockito.mock(TopologyContext.class);
         OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
-        Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
+        Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0), 2);
         Stream<Integer>[] streams = stream.branch(x -> x % 2 == 0, x -> x % 2 == 1);
         PairStream<Integer, Pair<Integer, Integer>> joined = streams[0].mapToPair(x -> Pair.of(x, 1)).join(streams[1].mapToPair(x -> Pair.of(x, 1)));
         assertTrue(joined.getNode() instanceof ProcessorNode);
+        StormTopology topology = streamBuilder.build();
+        assertEquals(2, topology.get_bolts_size());
+    }
+
+    @Test
+    public void testMultiPartitionByKey() {
+        TopologyContext mockContext = Mockito.mock(TopologyContext.class);
+        OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
+        Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
+        stream.mapToPair(x -> Pair.of(x, x))
+                .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
+                .reduceByKey((x, y) -> x + y)
+                .reduceByKey((x, y) -> 0)
+                .print();
+        StormTopology topology = streamBuilder.build();
+        assertEquals(2, topology.get_bolts_size());
+    }
+
+    @Test
+    public void testMultiPartitionByKeyWithRepartition() {
+        TopologyContext mockContext = Mockito.mock(TopologyContext.class);
+        OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
+        Map<GlobalStreamId, Grouping> expected = new HashMap<>();
+        expected.put(new GlobalStreamId("bolt2", "s3"), Grouping.fields(Collections.singletonList("key")));
+        expected.put(new GlobalStreamId("bolt2", "s3__punctuation"), Grouping.all(new NullStruct()));
+        Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
+        stream.mapToPair(x -> Pair.of(x, x))
+                .window(TumblingWindows.of(BaseWindowedBolt.Count.of(10)))
+                .reduceByKey((x, y) -> x + y)
+                .repartition(10)
+                .reduceByKey((x, y) -> 0)
+                .print();
+        StormTopology topology = streamBuilder.build();
+        assertEquals(3, topology.get_bolts_size());
+        assertEquals(expected, topology.get_bolts().get("bolt3").get_common().get_inputs());
+
+    }
+
+    @Test
+    public void testPartitionByKeySinglePartition() {
+        TopologyContext mockContext = Mockito.mock(TopologyContext.class);
+        OutputCollector mockCollector = Mockito.mock(OutputCollector.class);
+        Stream<Integer> stream = streamBuilder.newStream(newSpout(Utils.DEFAULT_STREAM_ID), new ValueMapper<>(0));
+        stream.mapToPair(x -> Pair.of(x, x))
+                .reduceByKey((x, y) -> x + y)
+                .print();
         StormTopology topology = streamBuilder.build();
         assertEquals(1, topology.get_bolts_size());
     }

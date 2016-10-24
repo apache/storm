@@ -77,7 +77,7 @@ public class WindowedProcessorBoltTest {
         Mockito.verify(mockOutputCollector, Mockito.times(2)).emit(os.capture(), values.capture());
         assertEquals("outputstream", os.getAllValues().get(0));
         assertEquals(new Values(3L), values.getAllValues().get(0));
-        assertEquals("outputstream", os.getAllValues().get(1));
+        assertEquals("outputstream__punctuation", os.getAllValues().get(1));
         assertEquals(new Values(WindowNode.PUNCTUATION), values.getAllValues().get(1));
     }
 

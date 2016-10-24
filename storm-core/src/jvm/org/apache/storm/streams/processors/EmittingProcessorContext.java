@@ -46,11 +46,11 @@ public class EmittingProcessorContext implements ProcessorContext {
     private static final Logger LOG = LoggerFactory.getLogger(EmittingProcessorContext.class);
     private final ProcessorNode processorNode;
     private final String outputStreamId;
+    private final String punctuationStreamId;
     private final OutputCollector collector;
     private final Fields outputFields;
     private final Values punctuation;
     private final List<RefCountedTuple> anchors = new ArrayList<>();
-    private boolean emitPunctuation = true;
     private long eventTimestamp;
     private String timestampField;
 
@@ -59,23 +59,20 @@ public class EmittingProcessorContext implements ProcessorContext {
         this.outputStreamId = outputStreamId;
         this.collector = collector;
         outputFields = processorNode.getOutputFields();
-        punctuation = createPunctuation();
+        punctuation = new Values(PUNCTUATION);
+        punctuationStreamId = StreamUtil.getPunctuationStream(outputStreamId);
     }
 
     @Override
     public <T> void forward(T input) {
-        if (input instanceof Pair) {
-            Pair<?, ?> value = (Pair<?, ?>) input;
-            emit(new Values(value.getFirst(), value.getSecond()));
-        } else if (PUNCTUATION.equals(input)) {
-            if (emitPunctuation) {
-                emit(punctuation);
-            } else {
-                LOG.debug("Not emitting punctuation since emitPunctuation is false");
-            }
+        if (PUNCTUATION.equals(input)) {
+            emit(punctuation, punctuationStreamId);
             maybeAck();
+        } else if (processorNode.emitsPair()) {
+            Pair<?, ?> value = (Pair<?, ?>) input;
+            emit(new Values(value.getFirst(), value.getSecond()), outputStreamId);
         } else {
-            emit(new Values(input));
+            emit(new Values(input), outputStreamId);
         }
     }
 
@@ -94,10 +91,6 @@ public class EmittingProcessorContext implements ProcessorContext {
     @Override
     public Set<String> getWindowedParentStreams() {
         return processorNode.getWindowedParentStreams();
-    }
-
-    public void setEmitPunctuation(boolean emitPunctuation) {
-        this.emitPunctuation = emitPunctuation;
     }
 
     public void setTimestampField(String fieldName) {
@@ -128,14 +121,6 @@ public class EmittingProcessorContext implements ProcessorContext {
         this.eventTimestamp = timestamp;
     }
 
-    private Values createPunctuation() {
-        Values values = new Values();
-        for (int i = 0; i < outputFields.size(); i++) {
-            values.add(PUNCTUATION);
-        }
-        return values;
-    }
-
     private void maybeAck() {
         if (!anchors.isEmpty()) {
             for (RefCountedTuple anchor : anchors) {
@@ -154,7 +139,7 @@ public class EmittingProcessorContext implements ProcessorContext {
         return anchors.stream().map(RefCountedTuple::tuple).collect(Collectors.toList());
     }
 
-    private void emit(Values values) {
+    private void emit(Values values, String outputStreamId) {
         if (timestampField != null) {
             values.add(eventTimestamp);
         }

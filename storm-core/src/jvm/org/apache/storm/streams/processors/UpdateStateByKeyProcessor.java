@@ -19,14 +19,14 @@ package org.apache.storm.streams.processors;
 
 import org.apache.storm.state.KeyValueState;
 import org.apache.storm.streams.Pair;
-import org.apache.storm.streams.operations.Aggregator;
+import org.apache.storm.streams.operations.StateUpdater;
 
 public class UpdateStateByKeyProcessor<K, V, R> extends BaseProcessor<Pair<K, V>> implements StatefulProcessor<K, R> {
-    private final Aggregator<V, R> aggregator;
+    private final StateUpdater<V, R> stateUpdater;
     private KeyValueState<K, R> keyValueState;
 
-    public UpdateStateByKeyProcessor(Aggregator<V, R> aggregator) {
-        this.aggregator = aggregator;
+    public UpdateStateByKeyProcessor(StateUpdater<V, R> stateUpdater) {
+        this.stateUpdater = stateUpdater;
     }
 
     @Override
@@ -40,9 +40,9 @@ public class UpdateStateByKeyProcessor<K, V, R> extends BaseProcessor<Pair<K, V>
         V val = input.getSecond();
         R agg = keyValueState.get(key);
         if (agg == null) {
-            agg = aggregator.init();
+            agg = stateUpdater.init();
         }
-        R newAgg = aggregator.apply(val, agg);
+        R newAgg = stateUpdater.apply(agg, val);
         keyValueState.put(key, newAgg);
         context.forward(Pair.of(key, newAgg));
     }

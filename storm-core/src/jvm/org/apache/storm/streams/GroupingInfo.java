@@ -76,6 +76,22 @@ abstract class GroupingInfo implements Serializable {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        GroupingInfo that = (GroupingInfo) o;
+
+        return fields != null ? fields.equals(that.fields) : that.fields == null;
+
+    }
+
+    @Override
+    public int hashCode() {
+        return fields != null ? fields.hashCode() : 0;
+    }
+
+    @Override
     public String toString() {
         return "GroupingInfo{" +
                 "fields=" + fields +

@@ -17,21 +17,31 @@
  */
 package org.apache.storm.streams.operations.aggregators;
 
-import org.apache.storm.streams.operations.Aggregator;
+import org.apache.storm.streams.operations.CombinerAggregator;
 
 /**
  * Computes the count of values.
  *
  * @param <T> the value type
  */
-public class Count<T> implements Aggregator<T, Long> {
+public class Count<T> implements CombinerAggregator<T, Long, Long> {
     @Override
     public Long init() {
         return 0L;
     }
 
     @Override
-    public Long apply(T value, Long aggregate) {
-        return aggregate + 1;
+    public Long apply(Long accum, T value) {
+        return accum + 1;
+    }
+
+    @Override
+    public Long merge(Long accum1, Long accum2) {
+        return accum1 + accum2;
+    }
+
+    @Override
+    public Long result(Long accum) {
+        return accum;
     }
 }

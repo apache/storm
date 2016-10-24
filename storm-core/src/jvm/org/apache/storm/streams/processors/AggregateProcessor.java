@@ -17,14 +17,20 @@
  */
 package org.apache.storm.streams.processors;
 
-import org.apache.storm.streams.operations.Aggregator;
+import org.apache.storm.streams.operations.CombinerAggregator;
 
-public class AggregateProcessor<T, R> extends BaseProcessor<T> implements BatchProcessor {
-    private final Aggregator<T, R> aggregator;
-    private R state;
+public class AggregateProcessor<T, A, R> extends BaseProcessor<T> implements BatchProcessor {
+    private final CombinerAggregator<T, A, R> aggregator;
+    private final boolean emitAggregate;
+    private A state;
 
-    public AggregateProcessor(Aggregator<T, R> aggregator) {
+    public AggregateProcessor(CombinerAggregator<T, A, R> aggregator) {
+        this(aggregator, false);
+    }
+
+    public AggregateProcessor(CombinerAggregator<T, A, R> aggregator, boolean emitAggregate) {
         this.aggregator = aggregator;
+        this.emitAggregate = emitAggregate;
     }
 
     @Override
@@ -32,14 +38,32 @@ public class AggregateProcessor<T, R> extends BaseProcessor<T> implements BatchP
         if (state == null) {
             state = aggregator.init();
         }
-        R curAggregate = (state != null) ? state : aggregator.init();
-        state = aggregator.apply(input, curAggregate);
-        mayBeForwardAggUpdate(state);
+        state = aggregator.apply(state, input);
+        if (emitAggregate) {
+            mayBeForwardAggUpdate(state);
+        } else {
+            mayBeForwardAggUpdate(aggregator.result(state));
+        }
     }
 
     @Override
     public void finish() {
-        context.forward(state);
-        state = null;
+        if (state != null) {
+            if (emitAggregate) {
+                context.forward(state);
+            } else {
+                context.forward(aggregator.result(state));
+            }
+            state = null;
+        }
+    }
+
+    @Override
+    public String toString() {
+        return "AggregateProcessor{" +
+                "aggregator=" + aggregator +
+                ", emitAggregate=" + emitAggregate +
+                ", state=" + state +
+                "}";
     }
 }

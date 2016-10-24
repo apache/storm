@@ -23,7 +23,7 @@ package org.apache.storm.streams.operations;
  *
  * @param <T> the type of the arguments and the result
  */
-public interface Reducer<T> extends Operation {
+public interface Reducer<T> extends BiFunction<T, T, T> {
     /**
      * Applies this function to the given arguments.
      *

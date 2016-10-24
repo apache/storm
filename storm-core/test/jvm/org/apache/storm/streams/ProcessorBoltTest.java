@@ -18,6 +18,7 @@
 package org.apache.storm.streams;
 
 import com.google.common.collect.Multimap;
+import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.streams.operations.aggregators.Sum;
 import org.apache.storm.streams.processors.AggregateProcessor;
 import org.apache.storm.streams.processors.FilterProcessor;
@@ -34,10 +35,10 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -99,7 +100,7 @@ public class ProcessorBoltTest {
         assertArrayEquals(new Object[]{mockTuple2, mockTuple3, punctuation}, anchor.getAllValues().get(0).toArray());
         assertArrayEquals(new Object[]{mockTuple2, mockTuple3, punctuation}, anchor.getAllValues().get(1).toArray());
         assertArrayEquals(new Object[]{new Values(200L), new Values("__punctuation")}, values.getAllValues().toArray());
-        assertArrayEquals(new Object[]{"outputstream", "outputstream"}, os.getAllValues().toArray());
+        assertArrayEquals(new Object[]{"outputstream", "outputstream__punctuation"}, os.getAllValues().toArray());
         Mockito.verify(mockOutputCollector).ack(mockTuple2);
         Mockito.verify(mockOutputCollector).ack(mockTuple3);
         Mockito.verify(mockOutputCollector).ack(punctuation);
@@ -138,6 +139,14 @@ public class ProcessorBoltTest {
         node.setWindowedParentStreams(windowedParentStreams);
         node.setWindowed(isWindowed);
         Mockito.when(mockStreamToProcessors.get(Mockito.anyString())).thenReturn(Collections.singletonList(node));
+        Mockito.when(mockStreamToProcessors.keySet()).thenReturn(Collections.singleton("inputstream"));
+        Map mockSources = Mockito.mock(Map.class);
+        GlobalStreamId mockGlobalStreamId = Mockito.mock(GlobalStreamId.class);
+        Mockito.when(mockTopologyContext.getThisSources()).thenReturn(mockSources);
+        Mockito.when(mockSources.keySet()).thenReturn(Collections.singleton(mockGlobalStreamId));
+        Mockito.when(mockGlobalStreamId.get_streamId()).thenReturn("inputstream");
+        Mockito.when(mockGlobalStreamId.get_componentId()).thenReturn("bolt0");
+        Mockito.when(mockTopologyContext.getComponentTasks(Mockito.anyString())).thenReturn(Collections.singletonList(1));
         graph.addVertex(node);
         bolt = new ProcessorBolt("bolt1", graph, Collections.singletonList(node));
         if (tsFieldName != null && !tsFieldName.isEmpty()) {

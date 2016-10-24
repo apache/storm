@@ -23,14 +23,15 @@ import org.apache.storm.StormSubmitter;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.PairStream;
 import org.apache.storm.streams.StreamBuilder;
-import org.apache.storm.streams.operations.Aggregator;
-import org.apache.storm.streams.operations.aggregators.Count;
+import org.apache.storm.streams.operations.StateUpdater;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
+import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.testing.TestWordSpout;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.utils.Utils;
 
 /**
- * A stateful word count that uses {@link PairStream#updateStateByKey(Aggregator)} to
+ * A stateful word count that uses {@link PairStream#updateStateByKey(StateUpdater)} to
  * save the counts in a key value state. This example uses Redis state store.
  * <p>
  * You should start a local redis instance before running the 'storm jar' command. By default
@@ -48,19 +49,20 @@ public class StatefulWordCount {
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
         // a stream of words
-        builder.newStream(new TestWordSpout(), new ValueMapper<String>(0))
+        builder.newStream(new TestWordSpout(), new ValueMapper<String>(0), 2)
+                .window(TumblingWindows.of(BaseWindowedBolt.Duration.seconds(2)))
                 /*
                  * create a stream of (word, 1) pairs
                  */
                 .mapToPair(w -> Pair.of(w, 1))
                 /*
-                 * group by the word
+                 * compute the word counts in the last two second window
                  */
-                .groupByKey()
+                .countByKey()
                 /*
                  * update the word counts in the state
                  */
-                .updateStateByKey(new Count<>())
+                .updateStateByKey(0L, (x, y) -> x + y)
                  /*
                   * convert the state back to a stream and print the results
                   */

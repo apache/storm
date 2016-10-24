@@ -26,7 +26,6 @@ import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.StreamBuilder;
-import org.apache.storm.streams.operations.aggregators.Count;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
 import org.apache.storm.testing.TestWordSpout;
 import org.apache.storm.topology.IRichBolt;
@@ -56,13 +55,9 @@ public class WordCountToBolt {
                  */
                 .mapToPair(w -> Pair.of(w, 1))
                 /*
-                 * group by key (word)
-                 */
-                .groupByKey()
-                /*
                  * aggregate the count
                  */
-                .aggregateByKey(new Count<>())
+                .countByKey()
                 /*
                  * The result of aggregation is forwarded to
                  * the RedisStoreBolt. The forwarded tuple is a

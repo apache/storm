@@ -23,55 +23,32 @@ import org.apache.storm.streams.operations.CombinerAggregator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class AggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair<K, V>> implements BatchProcessor {
-    private final CombinerAggregator<V, A, R> aggregator;
-    private final boolean emitAggregate;
-    private final Map<K, A> state = new HashMap<>();
+public class MergeAggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair<K, A>> implements BatchProcessor {
+    protected final CombinerAggregator<V, A, R> aggregator;
+    protected final Map<K, A> state = new HashMap<>();
 
-    public AggregateByKeyProcessor(CombinerAggregator<V, A, R> aggregator) {
-        this(aggregator, false);
-    }
-
-    public AggregateByKeyProcessor(CombinerAggregator<V, A, R> aggregator, boolean emitAggregate) {
+    public MergeAggregateByKeyProcessor(CombinerAggregator<V, A, R> aggregator) {
         this.aggregator = aggregator;
-        this.emitAggregate = emitAggregate;
     }
 
     @Override
-    public void execute(Pair<K, V> input) {
+    public void execute(Pair<K, A> input) {
         K key = input.getFirst();
-        V val = input.getSecond();
+        A val = input.getSecond();
         A accumulator = state.get(key);
         if (accumulator == null) {
             accumulator = aggregator.init();
         }
-        state.put(key, aggregator.apply(accumulator, val));
-        if (emitAggregate) {
-            mayBeForwardAggUpdate(Pair.of(key, state.get(key)));
-        } else {
-            mayBeForwardAggUpdate(Pair.of(key, aggregator.result(state.get(key))));
-        }
+        state.put(key, aggregator.merge(accumulator, val));
+        mayBeForwardAggUpdate(Pair.of(key, aggregator.result(state.get(key))));
     }
 
     @Override
     public void finish() {
         for (Map.Entry<K, A> entry : state.entrySet()) {
-            if (emitAggregate) {
-                context.forward(Pair.of(entry.getKey(), entry.getValue()));
-            } else {
-                context.forward(Pair.of(entry.getKey(), aggregator.result(entry.getValue())));
-            }
-
+            context.forward(Pair.of(entry.getKey(), aggregator.result(entry.getValue())));
         }
         state.clear();
     }
 
-    @Override
-    public String toString() {
-        return "AggregateByKeyProcessor{" +
-                "aggregator=" + aggregator +
-                ", emitAggregate=" + emitAggregate +
-                ", state=" + state +
-                "}";
-    }
 }

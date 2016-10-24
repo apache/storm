@@ -17,19 +17,29 @@
  */
 package org.apache.storm.streams.operations.aggregators;
 
-import org.apache.storm.streams.operations.Aggregator;
+import org.apache.storm.streams.operations.CombinerAggregator;
 
 /**
  * Computes the long sum of the input values
  */
-public class Sum implements Aggregator<Number, Long> {
+public class Sum implements CombinerAggregator<Number, Long, Long> {
     @Override
     public Long init() {
         return 0L;
     }
 
     @Override
-    public Long apply(Number value, Long aggregate) {
+    public Long apply(Long aggregate, Number value) {
         return value.longValue() + aggregate;
+    }
+
+    @Override
+    public Long merge(Long accum1, Long accum2) {
+        return accum1 + accum2;
+    }
+
+    @Override
+    public Long result(Long accum) {
+        return accum;
     }
 }

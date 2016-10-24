@@ -17,10 +17,13 @@
  */
 package org.apache.storm.streams;
 
+import org.apache.storm.tuple.Fields;
 import org.jgrapht.DirectedGraph;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
 public class StreamUtil {
     @SuppressWarnings("unchecked")
@@ -43,20 +46,24 @@ public class StreamUtil {
         return ret;
     }
 
-
-    public static boolean isSinkStream(String streamId) {
-        return streamId.endsWith("__sink");
-    }
-
-    public static String getSinkStream(String streamId) {
-        return streamId + "__sink";
-    }
-
     public static boolean isPunctuation(Object value) {
-        if (value instanceof Pair) {
-            value = ((Pair) value).getFirst();
+        return PUNCTUATION.equals(value);
+    }
+
+    public static String getPunctuationStream(String stream) {
+        return stream + PUNCTUATION;
+    }
+
+    public static String getSourceStream(String stream) {
+        int idx = stream.lastIndexOf(PUNCTUATION);
+        if (idx > 0) {
+            return stream.substring(0, idx);
         }
-        return WindowNode.PUNCTUATION.equals(value);
+        return stream;
+    }
+
+    public static Fields getPunctuationFields() {
+        return new Fields(PUNCTUATION);
     }
 
 }

@@ -30,8 +30,10 @@ import org.apache.storm.streams.operations.mappers.PairValueMapper;
 import org.apache.storm.streams.operations.mappers.TupleValueMapper;
 import org.apache.storm.streams.processors.JoinProcessor;
 import org.apache.storm.streams.processors.MapProcessor;
+import org.apache.storm.streams.processors.Processor;
 import org.apache.storm.streams.processors.StateQueryProcessor;
 import org.apache.storm.streams.processors.StatefulProcessor;
+import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
 import org.apache.storm.streams.windowing.Window;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.IBasicBolt;
@@ -195,18 +197,30 @@ public class StreamBuilder {
     }
 
     Node addNode(Node parent, Node child) {
-        return addNode(parent, child, parent.getParallelism(), parent.getOutputStreams().iterator().next());
+        return addNode(parent, child, parent.getOutputStreams().iterator().next(), parent.getParallelism());
     }
 
     Node addNode(Node parent, Node child, int parallelism) {
-        return addNode(parent, child, parallelism, parent.getOutputStreams().iterator().next());
+        return addNode(parent, child, parent.getOutputStreams().iterator().next(), parallelism);
+    }
+
+    // insert child in-between parent and its current child nodes
+    Node insert(Node parent, Node child) {
+        Node newChild = addNode(parent, child);
+        for (Edge edge : graph.outgoingEdgesOf(parent)) {
+            Node oldChild = edge.getTarget();
+            graph.removeEdge(parent, oldChild);
+            oldChild.removeParentStreams(parent);
+            addNode(newChild, oldChild);
+        }
+        return newChild;
     }
 
     Node addNode(Node parent, Node child, String parentStreamId) {
-        return addNode(parent, child, parent.getParallelism(), parentStreamId);
+        return addNode(parent, child, parentStreamId, parent.getParallelism());
     }
 
-    Node addNode(Node parent, Node child, int parallelism, String parentStreamId) {
+    Node addNode(Node parent, Node child, String parentStreamId, int parallelism) {
         graph.addVertex(child);
         graph.addEdge(parent, child);
         child.setParallelism(parallelism);
@@ -215,33 +229,61 @@ public class StreamBuilder {
         } else {
             child.addParentStream(parent, parentStreamId);
         }
+        if (!(child instanceof PartitionNode)) {
+            if (child.getGroupingInfo() != null) {
+                if (!child.getGroupingInfo().equals(parent.getGroupingInfo())) {
+                    throw new IllegalStateException("Trying to assign grouping info for node" +
+                            " with current grouping info: " + child.getGroupingInfo() +
+                            " to: " + parent.getGroupingInfo() + " Node: " + child);
+                }
+            } else {
+                child.setGroupingInfo(parent.getGroupingInfo());
+            }
+        }
+        if (!(child instanceof WindowNode) && !child.isWindowed()) {
+            child.setWindowed(parent.isWindowed());
+        }
         return child;
     }
 
     private PriorityQueue<Node> queue() {
         // min-heap
         return new PriorityQueue<>(new Comparator<Node>() {
+            /*
+             * Nodes in the descending order of priority.
+             * ProcessorNode has higher priority than partition and window nodes
+             * so that the topological order iterator will group as many processor nodes together as possible.
+             * UpdateStateByKeyProcessor has a higher priority than StateQueryProcessor so that StateQueryProcessor
+             * can be mapped to the same StatefulBolt that UpdateStateByKeyProcessor is part of.
+             */
+            Map<Class<?>, Integer> p = new HashMap<>();
+            {
+                p.put(SpoutNode.class, 0);
+                p.put(UpdateStateByKeyProcessor.class, 1);
+                p.put(ProcessorNode.class, 2);
+                p.put(StateQueryProcessor.class, 3);
+                p.put(PartitionNode.class, 4);
+                p.put(WindowNode.class, 5);
+                p.put(SinkNode.class, 6);
+            }
             @Override
             public int compare(Node n1, Node n2) {
-                return getPriority(n1.getClass()) - getPriority(n2.getClass());
+                return getPriority(n1) - getPriority(n2);
             }
 
-            private int getPriority(Class<? extends Node> clazz) {
-                /*
-                 * Nodes in the descending order of priority.
-                 * ProcessorNode has the highest priority so that the topological order iterator
-                 * will group as many processor nodes together as possible.
-                 */
-                Class<?>[] p = new Class<?>[]{
-                        ProcessorNode.class,
-                        SpoutNode.class,
-                        SinkNode.class,
-                        PartitionNode.class,
-                        WindowNode.class};
-                for (int i = 0; i < p.length; i++) {
-                    if (clazz.equals(p[i])) {
-                        return i;
+            private int getPriority(Node node) {
+                Integer priority;
+                // check if processor has specific priority first
+                if (node instanceof ProcessorNode) {
+                    Processor processor = ((ProcessorNode) node).getProcessor();
+                    priority = p.get(processor.getClass());
+                    if (priority != null) {
+                        return priority;
                     }
+                }
+                priority = p.get(node.getClass());
+                if (priority != null) {
+                    return priority;
                 }
                 return Integer.MAX_VALUE;
             }
@@ -319,7 +361,7 @@ public class StreamBuilder {
         }
     }
 
-    private Node parentNode(Node curNode) {
+    Node parentNode(Node curNode) {
         Set<Node> parentNode = parentNodes(curNode);
         if (parentNode.size() > 1) {
             throw new IllegalArgumentException("Node " + curNode + " has more than one parent node.");
@@ -350,7 +392,6 @@ public class StreamBuilder {
         String boltId = UniqueIdGen.getInstance().getUniqueBoltId();
         for (ProcessorNode processorNode : curGroup) {
             processorNode.setComponentId(boltId);
-            processorNode.setWindowed(isWindowed(processorNode));
             processorNode.setWindowedParentStreams(getWindowedParentStreams(processorNode));
         }
         final Set<ProcessorNode> initialProcessors = initialProcessors(curGroup);
@@ -397,12 +438,7 @@ public class StreamBuilder {
         Set<WindowNode> windowNodes = new HashSet<>();
         Set<Node> parents;
         for (ProcessorNode processorNode : initialProcessors) {
-            if (processorNode.getProcessor() instanceof JoinProcessor) {
-                String leftStream = ((JoinProcessor) processorNode.getProcessor()).getLeftStream();
-                parents = processorNode.getParents(leftStream);
-            } else {
-                parents = parentNodes(processorNode);
-            }
+            parents = parentNodes(processorNode);
             for (Node node : parents) {
                 if (windowInfo.containsKey(node)) {
                     windowNodes.add(windowInfo.get(node));
@@ -438,7 +474,7 @@ public class StreamBuilder {
         }
         for (Node parent : parentNodes(sinkNode)) {
             for (String stream : sinkNode.getParentStreams(parent)) {
-                declareStream(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent, stream));
+                declareGrouping(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent, stream));
             }
         }
     }
@@ -511,16 +547,8 @@ public class StreamBuilder {
     private Set<String> getWindowedParentStreams(ProcessorNode processorNode) {
         Set<String> res = new HashSet<>();
         for (Node parent : parentNodes(processorNode)) {
-            if (parent instanceof ProcessorNode) {
-                ProcessorNode pn = (ProcessorNode) parent;
-                if (pn.isWindowed()) {
-                    res.addAll(Collections2.filter(pn.getOutputStreams(), new Predicate<String>() {
-                        @Override
-                        public boolean apply(String input) {
-                            return !StreamUtil.isSinkStream(input);
-                        }
-                    }));
-                }
+            if (parent instanceof ProcessorNode && parent.isWindowed()) {
+                res.addAll(parent.getOutputStreams());
             }
         }
         return res;
@@ -539,10 +567,14 @@ public class StreamBuilder {
                     LOG.debug("Parent {} of curNode {} is in curGroup {}", parent, curNode, curGroup);
                 } else {
                     for (String stream : curNode.getParentStreams(parent)) {
-                        declareStream(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent, stream));
+                        declareGrouping(boltDeclarer, parent, stream, nodeGroupingInfo.get(parent, stream));
                         // put global stream id for spouts
                         if (parent.getComponentId().startsWith("spout")) {
                             stream = parent.getComponentId() + stream;
+                        } else {
+                            // subscribe to parent's punctuation stream
+                            String punctuationStream = StreamUtil.getPunctuationStream(stream);
+                            declareGrouping(boltDeclarer, parent, punctuationStream, GroupingInfo.all());
                         }
                         streamToInitialProcessor.put(stream, curNode);
                     }
@@ -552,7 +584,7 @@ public class StreamBuilder {
         return streamToInitialProcessor;
     }
 
-    private void declareStream(BoltDeclarer boltDeclarer, Node parent, String streamId, GroupingInfo grouping) {
+    private void declareGrouping(BoltDeclarer boltDeclarer, Node parent, String streamId, GroupingInfo grouping) {
         if (grouping == null) {
             boltDeclarer.shuffleGrouping(parent.getComponentId(), streamId);
         } else {
@@ -571,21 +603,5 @@ public class StreamBuilder {
             }
         }
         return nodes;
-    }
-
-    private boolean isWindowed(Node curNode) {
-        for (Node parent : StreamUtil.<Node>getParents(graph, curNode)) {
-            if (parent instanceof WindowNode) {
-                return true;
-            } else if (parent instanceof ProcessorNode) {
-                ProcessorNode p = (ProcessorNode) parent;
-                if (p.isWindowed()) {
-                    return true;
-                }
-            } else {
-                return (parent instanceof PartitionNode) && isWindowed(parent);
-            }
-        }
-        return false;
     }
 }

@@ -38,28 +38,45 @@ import java.util.Set;
 abstract class Node implements Serializable {
     private final Set<String> outputStreams;
     protected final Fields outputFields;
+    protected GroupingInfo groupingInfo;
     protected String componentId;
     protected int parallelism;
     // the parent streams that this node subscribes to
     private final Multimap<Node, String> parentStreams = ArrayListMultimap.create();
+    private boolean windowed;
+    private boolean emitsPair;
 
-    Node(Set<String> outputStreams, Fields outputFields, String componentId, int parallelism) {
+    Node(Set<String> outputStreams, Fields outputFields, String componentId, int parallelism,
+         GroupingInfo groupingInfo) {
         this.outputStreams = new HashSet<>(outputStreams);
         this.outputFields = outputFields;
         this.componentId = componentId;
         this.parallelism = parallelism;
+        this.groupingInfo = groupingInfo;
     }
 
-    Node(String outputStream, Fields outputFields, String componentId, int parallelism) {
-        this(Collections.singleton(outputStream), outputFields, componentId, parallelism);
+    Node(String outputStream, Fields outputFields, String componentId, int parallelism, GroupingInfo groupingInfo) {
+        this(Collections.singleton(outputStream), outputFields, componentId, parallelism, groupingInfo);
     }
 
-    Node(String outputStream, Fields outputFields, String componentId) {
-        this(outputStream, outputFields, componentId, 1);
+    Node(String outputStream, Fields outputFields, String componentId, GroupingInfo groupingInfo) {
+        this(outputStream, outputFields, componentId, 1, groupingInfo);
     }
 
     Node(String outputStream, Fields outputFields) {
         this(outputStream, outputFields, null);
+    }
+
+    Node(String outputStream, Fields outputFields, GroupingInfo groupingInfo) {
+        this(outputStream, outputFields, null, groupingInfo);
+    }
+
+    GroupingInfo getGroupingInfo() {
+        return groupingInfo;
+    }
+
+    void setGroupingInfo(GroupingInfo groupingInfo) {
+        this.groupingInfo = groupingInfo;
     }
 
     public Fields getOutputFields() {
@@ -94,6 +111,14 @@ abstract class Node implements Serializable {
         return Collections.unmodifiableSet(outputStreams);
     }
 
+    public boolean isWindowed() {
+        return windowed;
+    }
+
+    public void setWindowed(boolean windowed) {
+        this.windowed = windowed;
+    }
+
     Collection<String> getParentStreams(Node parent) {
         return parentStreams.get(parent);
     }
@@ -101,6 +126,10 @@ abstract class Node implements Serializable {
     Set<Node> getParents(String stream) {
         Multimap<String, Node> rev = Multimaps.invertFrom(parentStreams, ArrayListMultimap.<String, Node>create());
         return new HashSet<>(rev.get(stream));
+    }
+
+    Set<Node> getParents() {
+        return parentStreams.keySet();
     }
 
     void addOutputStream(String streamId) {
@@ -117,13 +146,25 @@ abstract class Node implements Serializable {
         return new Fields();
     }
 
+    public boolean emitsPair() {
+        return emitsPair;
+    }
+
+    public void setEmitsPair(boolean emitsPair) {
+        this.emitsPair = emitsPair;
+    }
+
     @Override
     public String toString() {
         return "Node{" +
-                "outputStreams='" + outputStreams + '\'' +
+                "outputStreams=" + outputStreams +
                 ", outputFields=" + outputFields +
+                ", groupingInfo=" + groupingInfo +
                 ", componentId='" + componentId + '\'' +
                 ", parallelism=" + parallelism +
+                ", parentStreams=" + parentStreams +
+                ", windowed=" + windowed +
+                ", emitsPair=" + emitsPair +
                 '}';
     }
 }

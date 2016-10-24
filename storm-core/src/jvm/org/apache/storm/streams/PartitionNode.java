@@ -25,18 +25,13 @@ import org.apache.storm.tuple.Fields;
  * aggregate/reduce (global grouping), state query (all grouping).
  */
 class PartitionNode extends Node {
-    private final GroupingInfo groupingInfo;
 
     PartitionNode(String outputStream, Fields outputFields, GroupingInfo groupingInfo) {
-        super(outputStream, outputFields);
-        this.groupingInfo = groupingInfo;
+        super(outputStream, outputFields, groupingInfo);
     }
 
     PartitionNode(String outputStream, Fields outputFields) {
         this(outputStream, outputFields, GroupingInfo.shuffle());
     }
 
-    GroupingInfo getGroupingInfo() {
-        return groupingInfo;
-    }
 }

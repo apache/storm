@@ -19,7 +19,7 @@ package org.apache.storm.streams;
 
 import com.google.common.collect.Multimap;
 import org.apache.storm.state.KeyValueState;
-import org.apache.storm.streams.operations.aggregators.Count;
+import org.apache.storm.streams.operations.StateUpdater;
 import org.apache.storm.streams.processors.Processor;
 import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
 import org.apache.storm.task.OutputCollector;
@@ -65,7 +65,17 @@ public class StatefulProcessorBoltTest {
 
     @Test
     public void testEmitAndAck() throws Exception {
-        setUpStatefulProcessorBolt(new UpdateStateByKeyProcessor<>(new Count<>()));
+        setUpStatefulProcessorBolt(new UpdateStateByKeyProcessor<>(new StateUpdater<Object, Long>() {
+            @Override
+            public Long init() {
+                return 0L;
+            }
+
+            @Override
+            public Long apply(Long state, Object value) {
+                return state + 1;
+            }
+        }));
         bolt.execute(mockTuple1);
         ArgumentCaptor<Collection> anchor = ArgumentCaptor.forClass(Collection.class);
         ArgumentCaptor<Values> values = ArgumentCaptor.forClass(Values.class);
@@ -80,6 +90,7 @@ public class StatefulProcessorBoltTest {
 
     private void setUpStatefulProcessorBolt(Processor<?> processor) {
         ProcessorNode node = new ProcessorNode(processor, "outputstream", new Fields("value"));
+        node.setEmitsPair(true);
         Mockito.when(mockStreamToProcessors.get(Mockito.anyString())).thenReturn(Collections.singletonList(node));
         graph = new DefaultDirectedGraph(new StreamsEdgeFactory());
         graph.addVertex(node);

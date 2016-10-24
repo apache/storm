@@ -18,26 +18,31 @@
 package org.apache.storm.streams;
 
 import org.apache.storm.Config;
-import org.apache.storm.streams.operations.Aggregator;
+import org.apache.storm.streams.operations.BiFunction;
+import org.apache.storm.streams.operations.CombinerAggregator;
 import org.apache.storm.streams.operations.Consumer;
 import org.apache.storm.streams.operations.FlatMapFunction;
 import org.apache.storm.streams.operations.Function;
 import org.apache.storm.streams.operations.PairValueJoiner;
 import org.apache.storm.streams.operations.Predicate;
 import org.apache.storm.streams.operations.Reducer;
+import org.apache.storm.streams.operations.StateUpdater;
 import org.apache.storm.streams.operations.ValueJoiner;
+import org.apache.storm.streams.operations.aggregators.Count;
 import org.apache.storm.streams.processors.AggregateByKeyProcessor;
 import org.apache.storm.streams.processors.FlatMapValuesProcessor;
 import org.apache.storm.streams.processors.JoinProcessor;
 import org.apache.storm.streams.processors.MapValuesProcessor;
+import org.apache.storm.streams.processors.MergeAggregateByKeyProcessor;
 import org.apache.storm.streams.processors.ReduceByKeyProcessor;
 import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
 import org.apache.storm.streams.windowing.Window;
 import org.apache.storm.tuple.Fields;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 
 /**
  * Represents a stream of key-value pairs.
@@ -49,6 +54,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
 
     PairStream(StreamBuilder topology, Node node) {
         super(topology, node);
+        node.setEmitsPair(true);
     }
 
     /**
@@ -60,7 +66,8 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public <R> PairStream<K, R> mapValues(Function<? super V, ? extends R> function) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new MapValuesProcessor<>(function), KEY_VALUE));
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new MapValuesProcessor<>(function), KEY_VALUE, true));
     }
 
     /**
@@ -71,19 +78,45 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @param <R>      the result type
      * @return the new stream
      */
-    public <R> PairStream<K, R> flatMapValues(FlatMapFunction<V, R> function) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new FlatMapValuesProcessor<>(function), KEY_VALUE));
+    public <R> PairStream<K, R> flatMapValues(FlatMapFunction<? super V, ? extends R> function) {
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new FlatMapValuesProcessor<>(function), KEY_VALUE, true));
     }
 
     /**
-     * Aggregates the values for each key of this stream using the given {@link Aggregator}.
+     * Aggregates the values for each key of this stream using the given initial value, accumulator and combiner.
      *
-     * @param aggregator the aggregator
+     * @param initialValue the initial value of the result
+     * @param accumulator  the accumulator
+     * @param combiner     the combiner
+     * @param <R>          the result type
+     * @return the new stream
+     */
+    public <R> PairStream<K, R> aggregateByKey(R initialValue,
+                                               BiFunction<? super R, ? super V, ? extends R> accumulator,
+                                               BiFunction<? super R, ? super R, ? extends R> combiner) {
+        return combineByKey(CombinerAggregator.of(initialValue, accumulator, combiner));
+    }
+
+    /**
+     * Aggregates the values for each key of this stream using the given {@link CombinerAggregator}.
+     *
+     * @param aggregator the combiner aggregator
+     * @param <A>        the accumulator type
      * @param <R>        the result type
      * @return the new stream
      */
-    public <R> PairStream<K, R> aggregateByKey(Aggregator<? super V, ? extends R> aggregator) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new AggregateByKeyProcessor<>(aggregator), KEY_VALUE));
+    public <A, R> PairStream<K, R> aggregateByKey(CombinerAggregator<? super V, A, ? extends R> aggregator) {
+        return combineByKey(aggregator);
+    }
+
+    /**
+     * Counts the values for each key of this stream.
+     *
+     * @return the new stream
+     */
+    public PairStream<K, Long> countByKey() {
+        return aggregateByKey(new Count<>());
     }
 
     /**
@@ -93,7 +126,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public PairStream<K, V> reduceByKey(Reducer<V> reducer) {
-        return new PairStream<>(streamBuilder, addProcessorNode(new ReduceByKeyProcessor<>(reducer), KEY_VALUE));
+        return combineByKey(reducer);
     }
 
     /**
@@ -101,8 +134,8 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      *
      * @return the new stream
      */
-    public PairStream<K, V> groupByKey() {
-        return partitionBy(KEY);
+    public PairStream<K, Iterable<V>> groupByKey() {
+        return partitionByKey().aggregatePartition(new MergeValues<>());
     }
 
     /**
@@ -114,7 +147,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public PairStream<K, Iterable<V>> groupByKeyAndWindow(Window<?, ?> window) {
-        return groupByKey().window(window).aggregateByKey(new MergeValues<>());
+        return partitionByKey().window(window).aggregatePartition(new MergeValues<>());
     }
 
     /**
@@ -126,7 +159,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the new stream
      */
     public PairStream<K, V> reduceByKeyAndWindow(Reducer<V> reducer, Window<?, ?> window) {
-        return groupByKey().window(window).reduceByKey(reducer);
+        return partitionByKey().window(window).reduceByKey(reducer);
     }
 
     /**
@@ -138,9 +171,16 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
+     * {@inheritDoc}
+     */
+    public PairStream<K, V> filter(Predicate<? super Pair<K, V>> predicate) {
+        return toPairStream(super.filter(predicate));
+    }
+
+    /**
      * Join the values of this stream with the values having the same key from the other stream.
      * <p>
-     * Note: The parallelism and windowing parameters (if windowed) of this stream is carried forward to the joined stream.
+     * Note: The parallelism of this stream is carried forward to the joined stream.
      * </p>
      *
      * @param otherStream the other stream
@@ -152,9 +192,51 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
+     * Does a left outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <V1> PairStream<K, Pair<V, V1>> leftOuterJoin(PairStream<K, V1> otherStream) {
+        return leftOuterJoin(otherStream, new PairValueJoiner<>());
+    }
+
+    /**
+     * Does a right outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <V1> PairStream<K, Pair<V, V1>> rightOuterJoin(PairStream<K, V1> otherStream) {
+        return rightOuterJoin(otherStream, new PairValueJoiner<>());
+    }
+
+    /**
+     * Does a full outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <V1> PairStream<K, Pair<V, V1>> fullOuterJoin(PairStream<K, V1> otherStream) {
+        return fullOuterJoin(otherStream, new PairValueJoiner<>());
+    }
+
+    /**
      * Join the values of this stream with the values having the same key from the other stream.
      * <p>
-     * Note: The parallelism and windowing parameters (if windowed) of this stream is carried forward to the joined stream.
+     * Note: The parallelism of this stream is carried forward to the joined stream.
      * </p>
      *
      * @param otherStream the other stream
@@ -165,11 +247,78 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      */
     public <R, V1> PairStream<K, R> join(PairStream<K, V1> otherStream,
                                          ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
-        String leftStream = stream;
-        String rightStream = otherStream.stream;
-        Node joinNode = addProcessorNode(new JoinProcessor<>(leftStream, rightStream, valueJoiner), KEY_VALUE);
-        addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
-        return new PairStream<>(streamBuilder, joinNode);
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.INNER,
+                        JoinProcessor.JoinType.INNER);
+    }
+
+    /**
+     * Does a left outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> leftOuterJoin(PairStream<K, V1> otherStream,
+                                         ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.OUTER,
+                        JoinProcessor.JoinType.INNER);
+    }
+
+    /**
+     * Does a right outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> rightOuterJoin(PairStream<K, V1> otherStream,
+                                                  ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.INNER,
+                        JoinProcessor.JoinType.OUTER);
+    }
+
+    /**
+     * Does a full outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> fullOuterJoin(PairStream<K, V1> otherStream,
+                                                  ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner) {
+        return partitionByKey()
+                .joinPartition(
+                        otherStream.partitionByKey(),
+                        valueJoiner,
+                        JoinProcessor.JoinType.OUTER,
+                        JoinProcessor.JoinType.OUTER);
     }
 
     /**
@@ -193,7 +342,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public PairStream<K, V>[] branch(Predicate<Pair<K, V>>... predicates) {
+    public PairStream<K, V>[] branch(Predicate<? super Pair<K, V>>... predicates) {
         List<PairStream<K, V>> pairStreams = new ArrayList<>();
         for (Stream<Pair<K, V>> stream : super.branch(predicates)) {
             pairStreams.add(toPairStream(stream));
@@ -202,40 +351,178 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
-     * Update the state by applying the given aggregator to the previous state of the
+     * Update the state by applying the given state update function to the previous state of the
      * key and the new value for the key. This internally uses {@link org.apache.storm.topology.IStatefulBolt}
      * to save the state. Use {@link Config#TOPOLOGY_STATE_PROVIDER} to choose the state implementation.
      *
-     * @param aggregator the aggregator
+     * @param stateUpdateFn the state update function
      * @param <R>        the result type
      * @return the {@link StreamState} which can be used to query the state
      */
-    public <R> StreamState<K, R> updateStateByKey(Aggregator<? super V, ? extends R> aggregator) {
+    public <R> StreamState<K, R> updateStateByKey(R initialValue,
+                                                  BiFunction<? super R, ? super V, ? extends R> stateUpdateFn) {
+        return updateStateByKey(StateUpdater.of(initialValue, stateUpdateFn));
+    }
+
+    /**
+     * Update the state by applying the given state update function to the previous state of the
+     * key and the new value for the key. This internally uses {@link org.apache.storm.topology.IStatefulBolt}
+     * to save the state. Use {@link Config#TOPOLOGY_STATE_PROVIDER} to choose the state implementation.
+     *
+     * @param stateUpdater the state updater
+     * @param <R>          the result type
+     * @return the {@link StreamState} which can be used to query the state
+     */
+    public <R> StreamState<K, R> updateStateByKey(StateUpdater<? super V, ? extends R> stateUpdater) {
+        return partitionByKey().updateStateByKeyPartition(stateUpdater);
+    }
+
+    private <R> StreamState<K, R> updateStateByKeyPartition(StateUpdater<? super V, ? extends R> stateUpdater) {
         return new StreamState<>(
-                new PairStream<>(streamBuilder, addProcessorNode(new UpdateStateByKeyProcessor<>(aggregator), KEY_VALUE)));
+                new PairStream<>(streamBuilder,
+                        addProcessorNode(new UpdateStateByKeyProcessor<>(stateUpdater), KEY_VALUE, true)));
+    }
+
+    private <R, V1> PairStream<K, R> joinPartition(PairStream<K, V1> otherStream,
+                                                   ValueJoiner<? super V, ? super V1, ? extends R> valueJoiner,
+                                                   JoinProcessor.JoinType leftType,
+                                                   JoinProcessor.JoinType rightType) {
+        String leftStream = stream;
+        String rightStream = otherStream.stream;
+        Node joinNode = addProcessorNode(
+                new JoinProcessor<>(leftStream, rightStream, valueJoiner, leftType, rightType),
+                KEY_VALUE,
+                true);
+        addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
+        return new PairStream<>(streamBuilder, joinNode);
+    }
+
+    private PairStream<K, V> partitionByKey() {
+        return shouldPartitionByKey() ? partitionBy(KEY) : this;
+    }
+
+    private boolean shouldPartitionByKey() {
+        if (node.getParallelism() == 1) {
+            return false;
+        }
+        /*
+         * if the current processor preserves the key and is
+         * already partitioned on key, skip the re-partition.
+         */
+        if (node instanceof ProcessorNode) {
+            ProcessorNode pn = (ProcessorNode) node;
+            Fields fields = pn.getGroupingInfo() == null ? null : pn.getGroupingInfo().getFields();
+            if (pn.isPreservesKey() && fields != null && fields.equals(KEY)) {
+                return false;
+            }
+        }
+        return true;
     }
 
     private PairStream<K, V> partitionBy(Fields fields) {
+        return partitionBy(fields, node.parallelism);
+    }
+
+    private PairStream<K, V> partitionBy(Fields fields, int parallelism) {
         return new PairStream<>(
                 streamBuilder,
-                addNode(new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields))));
+                addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
     }
 
     private PairStream<K, V> toPairStream(Stream<Pair<K, V>> stream) {
         return new PairStream<>(stream.streamBuilder, stream.node);
     }
 
+    private <A, R> PairStream<K, R> aggregatePartition(CombinerAggregator<? super V, A, ? extends R> aggregator) {
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new AggregateByKeyProcessor<>(aggregator), KEY_VALUE, true));
+    }
+
+    private <A> PairStream<K, A> combinePartition(CombinerAggregator<? super V, A, ?> aggregator) {
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new AggregateByKeyProcessor<>(aggregator, true), KEY_VALUE, true));
+    }
+
+    private <R> PairStream<K, R> merge(CombinerAggregator<?, V, ? extends R> aggregator) {
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new MergeAggregateByKeyProcessor<>(aggregator), KEY_VALUE, true));
+    }
+
+    private PairStream<K, V> reducePartition(Reducer<V> reducer) {
+        return new PairStream<>(streamBuilder,
+                addProcessorNode(new ReduceByKeyProcessor<>(reducer), KEY_VALUE, true));
+    }
+
+    // if re-partitioning is involved, does a per-partition aggregate by key before emitting the results downstream
+    private <A, R> PairStream<K, R> combineByKey(CombinerAggregator<? super V, A, ? extends R> aggregator) {
+        if (shouldPartitionByKey()) {
+            if (node instanceof ProcessorNode) {
+                if (node.isWindowed()) {
+                    return combinePartition(aggregator).partitionBy(KEY).merge(aggregator);
+                }
+            } else if (node instanceof WindowNode) {
+                Set<Node> parents = node.getParents();
+                Optional<Node> nonWindowed = parents.stream().filter(p -> !p.isWindowed()).findAny();
+                if (!nonWindowed.isPresent()) {
+                    parents.forEach(p -> {
+                        Node localAggregateNode = makeProcessorNode(
+                                new AggregateByKeyProcessor<>(aggregator, true), KEY_VALUE, true);
+                        streamBuilder.insert(p, localAggregateNode);
+                    });
+                    return ((PairStream<K, A>)partitionBy(KEY)).merge(aggregator);
+                }
+            }
+            return partitionBy(KEY).aggregatePartition(aggregator);
+        } else {
+            return aggregatePartition(aggregator);
+        }
+    }
+
+    // if re-partitioning is involved, does a per-partition reduce by key before emitting the results downstream
+    private PairStream<K, V> combineByKey(Reducer<V> reducer) {
+        if (shouldPartitionByKey()) {
+            if (node instanceof ProcessorNode) {
+                if (node.isWindowed()) {
+                    return reducePartition(reducer).partitionBy(KEY).reducePartition(reducer);
+                }
+            } else if (node instanceof WindowNode) {
+                for (Node p : node.getParents()) {
+                    if (p.isWindowed()) {
+                        Node localReduceNode = makeProcessorNode(new ReduceByKeyProcessor<>(reducer), KEY_VALUE, true);
+                        streamBuilder.insert(p, localReduceNode);
+                    }
+                }
+            }
+            return partitionBy(KEY).reducePartition(reducer);
+        } else {
+            return reducePartition(reducer);
+        }
+    }
+
     // used internally to merge values in groupByKeyAndWindow
-    private static class MergeValues<V> implements Aggregator<V, ArrayList<V>> {
+    private static class MergeValues<V> implements CombinerAggregator<V, ArrayList<V>, ArrayList<V>> {
         @Override
         public ArrayList<V> init() {
             return new ArrayList<>();
         }
 
         @Override
-        public ArrayList<V> apply(V value, ArrayList<V> aggregate) {
+        public ArrayList<V> apply(ArrayList<V> aggregate, V value) {
             aggregate.add(value);
             return aggregate;
+        }
+
+        @Override
+        public ArrayList<V> merge(ArrayList<V> accum1, ArrayList<V> accum2) {
+            ArrayList<V> res = new ArrayList<V>();
+            res.addAll(accum1);
+            res.addAll(accum2);
+            return res;
+        }
+
+        @Override
+        public ArrayList<V> result(ArrayList<V> accum) {
+            return accum;
         }
     }
 }

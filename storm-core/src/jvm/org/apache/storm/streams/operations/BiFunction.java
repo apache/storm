@@ -18,25 +18,20 @@
 package org.apache.storm.streams.operations;
 
 /**
- * Interface for aggregating values.
+ * a function that accepts two arguments and produces a result.
  *
- * @param <T> the original value type
- * @param <R> the aggregated value type
+ * @param <T> the type of the first argument to the function
+ * @param <U> the type of the second argument to the function
+ * @param <R> the type of the result of the function
  */
-public interface Aggregator<T, R> extends Operation {
+public interface BiFunction<T, U, R> extends Operation {
     /**
-     * The initial value of the aggregate to start with.
+     * Applies this function to the given arguments.
      *
-     * @return the initial value
+     * @param input1 the first function argument
+     * @param input2 the second function argument
+     * @return the function result
      */
-    R init();
 
-    /**
-     * Returns a new aggregate by applying the value with the current aggregate.
-     *
-     * @param value     the value to aggregate
-     * @param aggregate the current aggregate
-     * @return the new aggregate
-     */
-    R apply(T value, R aggregate);
+    R apply(T input1, U input2);
 }

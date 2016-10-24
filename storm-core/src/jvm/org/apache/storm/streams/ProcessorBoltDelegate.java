@@ -18,7 +18,10 @@
 package org.apache.storm.streams;
 
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
+import com.google.common.collect.Table;
+import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.streams.processors.ChainedProcessorContext;
 import org.apache.storm.streams.processors.EmittingProcessorContext;
 import org.apache.storm.streams.processors.ForwardingProcessorContext;
@@ -55,8 +58,9 @@ class ProcessorBoltDelegate implements Serializable {
     private OutputCollector outputCollector;
     private final List<ProcessorNode> outgoingProcessors = new ArrayList<>();
     private final Set<EmittingProcessorContext> emittingProcessorContexts = new HashSet<>();
-    private final Map<ProcessorNode, Set<String>> punctuationState = new HashMap<>();
+    private final Table<ProcessorNode, String, Integer> punctuationState = HashBasedTable.create();
     private Multimap<String, ProcessorNode> streamToInitialProcessors;
+    private final Map<String, Integer> streamToInputTaskCount = new HashMap<>();
     private String timestampField;
 
     ProcessorBoltDelegate(String id, DirectedGraph<Node, Edge> graph, List<ProcessorNode> nodes) {
@@ -114,6 +118,9 @@ class ProcessorBoltDelegate implements Serializable {
                 ctx.setTimestampField(timestampField);
             }
         }
+        for (String stream : streamToInitialProcessors.keySet()) {
+            streamToInputTaskCount.put(stream, getStreamInputTaskCount(context, stream));
+        }
     }
 
     void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -127,6 +134,12 @@ class ProcessorBoltDelegate implements Serializable {
                     fields.add(timestampField);
                     declarer.declareStream(stream, new Fields(fields));
                 }
+                /*
+                 * Declare a separate 'punctuation' stream per output stream so that the receiving bolt
+                 * can subscribe to this stream with 'ALL' grouping and process the punctuation once it
+                 * receives from all upstream tasks.
+                 */
+                declarer.declareStream(StreamUtil.getPunctuationStream(stream), StreamUtil.getPunctuationFields());
             }
         }
     }
@@ -168,17 +181,29 @@ class ProcessorBoltDelegate implements Serializable {
 
     void process(Object value, String sourceStreamId) {
         LOG.debug("Process value {}, sourceStreamId {}", value, sourceStreamId);
+        if (StreamUtil.isPunctuation(value)) {
+            punctuateInitialProcessors(sourceStreamId);
+        } else {
+            executeInitialProcessors(value, sourceStreamId);
+        }
+    }
+
+    private void punctuateInitialProcessors(String punctuationStreamId) {
+        String sourceStreamId = StreamUtil.getSourceStream(punctuationStreamId);
+        Collection<ProcessorNode> initialProcessors = streamToInitialProcessors.get(sourceStreamId);
+        for (ProcessorNode processorNode : initialProcessors) {
+            if (shouldPunctuate(processorNode, sourceStreamId)) {
+                processorNode.getProcessor().punctuate(null);
+                clearPunctuationState(processorNode);
+            }
+        }
+    }
+
+    private void executeInitialProcessors(Object value, String sourceStreamId) {
         Collection<ProcessorNode> initialProcessors = streamToInitialProcessors.get(sourceStreamId);
         for (ProcessorNode processorNode : initialProcessors) {
             Processor processor = processorNode.getProcessor();
-            if (StreamUtil.isPunctuation(value)) {
-                if (shouldPunctuate(processorNode, sourceStreamId)) {
-                    processor.punctuate(null);
-                    clearPunctuationState(processorNode);
-                }
-            } else {
-                processor.execute(value, sourceStreamId);
-            }
+            processor.execute(value, sourceStreamId);
         }
     }
 
@@ -225,9 +250,6 @@ class ProcessorBoltDelegate implements Serializable {
         List<EmittingProcessorContext> emittingContexts = new ArrayList<>();
         for (String stream : processorNode.getOutputStreams()) {
             EmittingProcessorContext emittingContext = new EmittingProcessorContext(processorNode, outputCollector, stream);
-            if (StreamUtil.isSinkStream(stream)) {
-                emittingContext.setEmitPunctuation(false);
-            }
             emittingContexts.add(emittingContext);
         }
         emittingProcessorContexts.addAll(emittingContexts);
@@ -257,29 +279,70 @@ class ProcessorBoltDelegate implements Serializable {
         return children;
     }
 
-    // if we received punctuation from all parent windowed streams
+    // for the given processor node, if we received punctuation from all tasks of its parent windowed streams
     private boolean shouldPunctuate(ProcessorNode processorNode, String sourceStreamId) {
-        if (processorNode.getWindowedParentStreams().size() <= 1) {
-            return true;
+        if (!processorNode.getWindowedParentStreams().isEmpty()) {
+            updateCount(processorNode, sourceStreamId);
+            if (punctuationState.row(processorNode).size() != processorNode.getWindowedParentStreams().size()) {
+                return false;
+            }
+            // size matches, check if the streams are expected
+            Set<String> receivedStreams = punctuationState.row(processorNode).keySet();
+            if (!receivedStreams.equals(processorNode.getWindowedParentStreams())) {
+                throw new IllegalStateException("Received punctuation from streams " + receivedStreams + " expected "
+                        + processorNode.getWindowedParentStreams());
+            }
+            for (String receivedStream : receivedStreams) {
+                Integer expected = streamToInputTaskCount.get(receivedStream);
+                if (expected == null) {
+                    throw new IllegalStateException("Punctuation received on unexpected stream '" + receivedStream +
+                            "' for which input task count is not set.");
+                }
+                if (punctuationState.get(processorNode, receivedStream) < streamToInputTaskCount.get(receivedStream)) {
+                    return false;
+                }
+            }
         }
-        Set<String> receivedStreams = punctuationState.get(processorNode);
-        if (receivedStreams == null) {
-            receivedStreams = new HashSet<>();
-            punctuationState.put(processorNode, receivedStreams);
+        return true;
+    }
+
+    private void updateCount(ProcessorNode processorNode, String sourceStreamId) {
+        Integer count = punctuationState.get(processorNode, sourceStreamId);
+        if (count == null) {
+            punctuationState.put(processorNode, sourceStreamId, 1);
+        } else {
+            punctuationState.put(processorNode, sourceStreamId, count + 1);
         }
-        receivedStreams.add(sourceStreamId);
-        return receivedStreams.equals(processorNode.getWindowedParentStreams());
     }
 
     private void clearPunctuationState(ProcessorNode processorNode) {
-        Set<String> state = punctuationState.get(processorNode);
-        if (state != null) {
-            state.clear();
+        if (!punctuationState.isEmpty()) {
+            Map<String, Integer> state = punctuationState.row(processorNode);
+            if (!state.isEmpty()) {
+                state.clear();
+            }
         }
     }
 
     private boolean isPair(Tuple input) {
         return input.size() == (timestampField == null ? 2 : 3);
+    }
+
+    private int getStreamInputTaskCount(TopologyContext context, String stream) {
+        int count = 0;
+        for (GlobalStreamId inputStream : context.getThisSources().keySet()) {
+            if (stream.equals(getStreamId(inputStream))) {
+                count += context.getComponentTasks(inputStream.get_componentId()).size();
+            }
+        }
+        return count;
+    }
+
+    private String getStreamId(GlobalStreamId globalStreamId) {
+        if (globalStreamId.get_componentId().startsWith("spout")) {
+            return globalStreamId.get_componentId() + globalStreamId.get_streamId();
+        }
+        return globalStreamId.get_streamId();
     }
 
 }

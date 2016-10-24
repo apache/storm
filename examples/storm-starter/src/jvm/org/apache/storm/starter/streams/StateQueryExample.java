@@ -25,7 +25,6 @@ import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.Stream;
 import org.apache.storm.streams.StreamBuilder;
 import org.apache.storm.streams.StreamState;
-import org.apache.storm.streams.operations.aggregators.Count;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.TestWordSpout;
@@ -56,8 +55,7 @@ public class StateQueryExample {
         StreamBuilder builder = new StreamBuilder();
         StreamState<String, Long> ss = builder.newStream(new TestWordSpout(), new ValueMapper<String>(0))
                 .mapToPair(w -> Pair.of(w, 1))
-                .groupByKey()
-                .updateStateByKey(new Count<>());
+                .updateStateByKey(0L, (count, val) -> count + 1);
 
         /*
          * A stream of words emitted by the QuerySpout is used as

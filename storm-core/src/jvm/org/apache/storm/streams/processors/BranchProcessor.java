@@ -23,15 +23,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class BranchProcessor<T> extends BaseProcessor<T> {
-    private final Map<Predicate<T>, String> predicateToStream = new HashMap<>();
+    private final Map<Predicate<? super T>, String> predicateToStream = new HashMap<>();
 
-    public void addPredicate(Predicate<T> predicate, String stream) {
+    public void addPredicate(Predicate<? super T> predicate, String stream) {
         predicateToStream.put(predicate, stream);
     }
 
     @Override
     public void execute(T input) {
-        for (Map.Entry<Predicate<T>, String> entry : predicateToStream.entrySet()) {
+        for (Map.Entry<Predicate<? super T>, String> entry : predicateToStream.entrySet()) {
             if (entry.getKey().test(input)) {
                 context.forward(input, entry.getValue());
                 break;

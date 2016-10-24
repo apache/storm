@@ -29,6 +29,7 @@ public class WindowNode extends Node {
 
     WindowNode(Window<?, ?> windowParams, String outputStream, Fields outputFields) {
         super(outputStream, outputFields);
+        setWindowed(true);
         this.windowParams = windowParams;
     }
 

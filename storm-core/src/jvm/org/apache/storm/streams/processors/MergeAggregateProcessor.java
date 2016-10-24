@@ -17,27 +17,31 @@
  */
 package org.apache.storm.streams.processors;
 
-import org.apache.storm.streams.operations.Reducer;
+import org.apache.storm.streams.operations.CombinerAggregator;
 
-public class ReduceProcessor<T> extends BaseProcessor<T> implements BatchProcessor {
-    private final Reducer<T> reducer;
-    private T agg;
+public class MergeAggregateProcessor<T, A, R> extends BaseProcessor<A> implements BatchProcessor {
+    private final CombinerAggregator<T, A, R> aggregator;
+    private A state;
 
-    public ReduceProcessor(Reducer<T> reducer) {
-        this.reducer = reducer;
+    public MergeAggregateProcessor(CombinerAggregator<T, A, R> aggregator) {
+        this.aggregator = aggregator;
     }
 
     @Override
-    public void execute(T input) {
-        agg = (agg == null) ? input : reducer.apply(agg, input);
-        mayBeForwardAggUpdate(agg);
+    protected void execute(A input) {
+        if (state == null) {
+            state = aggregator.init();
+        }
+        state = aggregator.merge(state, input);
+        mayBeForwardAggUpdate(aggregator.result(state));
     }
 
     @Override
     public void finish() {
-        if (agg != null) {
-            context.forward(agg);
-            agg = null;
+        if (state != null) {
+            context.forward(aggregator.result(state));
+            state = null;
         }
     }
+
 }

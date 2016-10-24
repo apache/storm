@@ -20,50 +20,34 @@ package org.apache.storm.starter.streams;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.starter.spout.RandomSentenceSpout;
+import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.streams.Pair;
+import org.apache.storm.streams.PairStream;
+import org.apache.storm.streams.Stream;
 import org.apache.storm.streams.StreamBuilder;
-import org.apache.storm.streams.operations.mappers.ValueMapper;
+import org.apache.storm.streams.operations.mappers.TupleValueMappers;
+import org.apache.storm.streams.tuple.Tuple3;
 import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.utils.Utils;
 
-import java.util.Arrays;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 
 /**
- * A windowed word count example
+ * An example that illustrates the usage of typed tuples (TupleN<..>) and {@link TupleValueMappers}.
  */
-public class WindowedWordCount {
+public class TypedTupleExample {
+    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
-        // A stream of random sentences
-        builder.newStream(new RandomSentenceSpout(), new ValueMapper<String>(0), 2)
-                /*
-                 * a two seconds tumbling window
-                 */
-                .window(TumblingWindows.of(Duration.seconds(2)))
-                /*
-                 * split the sentences to words
-                 */
-                .flatMap(s -> Arrays.asList(s.split(" ")))
-                /*
-                 * create a stream of (word, 1) pairs
-                 */
-                .mapToPair(w -> Pair.of(w, 1))
-                /*
-                 * compute the word counts in the last two second window
-                 */
-                .countByKey()
-                /*
-                 * emit the count for the words that occurred
-                 * at-least five times in the last two seconds
-                 */
-                .filter(x -> x.getSecond() >= 5)
-                /*
-                 * print the results to stdout
-                 */
-                .print();
+        /**
+         * The spout emits sequences of (Integer, Long, Long). TupleValueMapper can be used to extract fields
+         * from the values and produce a stream of typed tuple (Tuple3<Integer, Long, Long> in this case.
+         */
+        Stream<Tuple3<Integer, Long, Long>> stream = builder.newStream(new RandomIntegerSpout(), TupleValueMappers.of(0, 1, 2));
+
+        PairStream<Long, Integer> pairs = stream.mapToPair(t -> Pair.of(t._2 / 10000, t._1));
+
+        pairs.window(TumblingWindows.of(Count.of(10))).groupByKey().print();
 
         Config config = new Config();
         if (args.length > 0) {
