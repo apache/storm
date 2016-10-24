@@ -27,9 +27,10 @@ import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.sql.TestUtils;
+import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.planner.trident.QueryPlanner;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
+import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
@@ -210,7 +211,11 @@ public class TestPlanCompiler {
     ILocalCluster cluster = new LocalCluster();
     StormTopology stormTopo = topo.build();
     try {
-      Utils.setClassLoaderForJavaDeSerialize(proc.getClass().getClassLoader());
+      if (proc.getClassLoaders() != null && proc.getClassLoaders().size() > 0) {
+        CompilingClassLoader lastClassloader = proc.getClassLoaders().get(proc.getClassLoaders().size() - 1);
+        Utils.setClassLoaderForJavaDeSerialize(lastClassloader);
+      }
+
       cluster.submitTopology("storm-sql", conf, stormTopo);
       waitForCompletion(1000 * 1000, new Callable<Boolean>() {
         @Override
