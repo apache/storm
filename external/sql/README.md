@@ -12,6 +12,9 @@ $ bin/storm sql <sql-file> <topo-name>
 
 In which `sql-file` contains a list of SQL statements to be executed, and `topo-name` is the name of the topology.
 
+StormSQL activates `explain mode` and shows query plan instead of submitting topology when user specifies `topo-name` as `--explain`.
+Detailed explanation is available from `Showing Query Plan (explain mode)` section.
+
 ## Supported Features
 
 The following features are supported in the current repository:
@@ -122,6 +125,49 @@ $ bin/storm sql order_filtering.sql order_filtering --artifacts "org.apache.stor
 Above command submits the SQL statements to StormSQL. Users need to modify each artifacts' version if users are using different version of Storm or Kafka. 
 
 By now you should be able to see the `order_filtering` topology in the Storm UI.
+
+## Showing Query Plan (explain mode)
+
+Like `explain` on SQL statement, StormSQL provides `explain mode` when running Storm SQL Runner. In explain mode, StormSQL analyzes each query statement (only DML) and show plan instead of submitting topology.
+
+In order to run `explain mode`, you need to provide topology name as `--explain` and run `storm sql` as same as submitting.
+
+For example, when you run the example seen above with explain mode:
+ 
+```
+$ bin/storm sql order_filtering.sql --explain --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2\!org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
+```
+
+StormSQL prints out like below:
+ 
+```
+
+===========================================================
+query>
+CREATE EXTERNAL TABLE ORDERS (ID INT PRIMARY KEY, UNIT_PRICE INT, QUANTITY INT) LOCATION 'kafka://localhost:2181/brokers?topic=orders' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
+-----------------------------------------------------------
+16:53:43.951 [main] INFO  o.a.s.s.r.DataSourcesRegistry - Registering scheme kafka with org.apache.storm.sql.kafka.KafkaDataSourcesProvider@4d1bf319
+No plan presented on DDL
+===========================================================
+===========================================================
+query>
+CREATE EXTERNAL TABLE LARGE_ORDERS (ID INT PRIMARY KEY, TOTAL INT) LOCATION 'kafka://localhost:2181/brokers?topic=large_orders' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
+-----------------------------------------------------------
+No plan presented on DDL
+===========================================================
+===========================================================
+query>
+INSERT INTO LARGE_ORDERS SELECT ID, UNIT_PRICE * QUANTITY AS TOTAL FROM ORDERS WHERE UNIT_PRICE * QUANTITY > 50
+-----------------------------------------------------------
+plan>
+LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], updateColumnList=[[]], flattened=[true]), id = 8
+  LogicalProject(ID=[$0], TOTAL=[*($1, $2)]), id = 7
+    LogicalFilter(condition=[>(*($1, $2), 50)]), id = 6
+      EnumerableTableScan(table=[[ORDERS]]), id = 5
+
+===========================================================
+
+```
 
 ## Current Limitations
 

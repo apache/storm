@@ -19,6 +19,8 @@ package org.apache.storm.trident.operation.builtin;
 
 import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Date;
 
@@ -26,10 +28,18 @@ import java.util.Date;
  * Filter for debugging purposes. The `isKeep()` method simply prints the tuple to `System.out` and returns `true`.
  */
 public class Debug extends BaseFilter {
+    private final Logger LOG = LoggerFactory.getLogger(Debug.class);
+
     private final String name;
+    private boolean useLogger;
 
     public Debug() {
-        name = "DEBUG: ";
+        this(false);
+    }
+
+    public Debug(boolean useLogger) {
+        this.useLogger = useLogger;
+        this.name = "DEBUG: ";
     }
 
     /**
@@ -42,7 +52,11 @@ public class Debug extends BaseFilter {
 
     @Override
     public boolean isKeep(TridentTuple tuple) {
-        System.out.println("<"+new Date()+"> "+name + tuple.toString());
+        if(useLogger) {
+            LOG.debug(tuple.toString());
+        } else {
+            System.out.println("<"+new Date()+"> "+name + tuple.toString());
+        }
         return true;
     }
 }

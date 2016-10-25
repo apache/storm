@@ -273,6 +273,7 @@ struct CommonAggregateStats {
 4: optional i64 transferred;
 5: optional i64 acked;
 6: optional i64 failed;
+7: optional map<string, double> resources_map;
 }
 
 struct SpoutAggregateStats {
@@ -380,6 +381,7 @@ struct ComponentPageInfo {
 13: optional i32 eventlog_port;
 14: optional DebugOptions debug_options;
 15: optional string topology_status;
+16: optional map<string, double> resources_map;
 }
 
 struct KillOptions {

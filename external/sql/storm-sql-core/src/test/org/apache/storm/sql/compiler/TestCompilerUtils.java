@@ -18,23 +18,28 @@
 package org.apache.storm.sql.compiler;
 
 import org.apache.calcite.adapter.java.JavaTypeFactory;
+import org.apache.calcite.avatica.SqlType;
 import org.apache.calcite.jdbc.CalciteSchema;
 import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.type.RelDataTypeFactory;
+import org.apache.calcite.rel.type.RelDataTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.StreamableTable;
 import org.apache.calcite.schema.Table;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlDataTypeSpec;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlOperatorTable;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;
 import org.apache.calcite.sql.parser.SqlParseException;
 import org.apache.calcite.sql.type.SqlTypeName;
+import org.apache.calcite.sql.type.SqlTypeUtil;
 import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
@@ -150,9 +155,32 @@ public class TestCompilerUtils {
 
         StreamableTable streamableTable = new CompilerUtil.TableBuilderInfo(typeFactory)
                 .field("ID", SqlTypeName.INTEGER)
-                .field("MAPFIELD", SqlTypeName.ANY)
-                .field("NESTEDMAPFIELD", SqlTypeName.ANY)
-                .field("ARRAYFIELD", SqlTypeName.ANY)
+                .field("MAPFIELD",
+                        typeFactory.createTypeWithNullability(
+                                typeFactory.createMapType(
+                                        typeFactory.createTypeWithNullability(
+                                                typeFactory.createSqlType(SqlTypeName.VARCHAR), true),
+                                        typeFactory.createTypeWithNullability(
+                                                typeFactory.createSqlType(SqlTypeName.INTEGER), true))
+                                , true))
+                .field("NESTEDMAPFIELD",
+                        typeFactory.createTypeWithNullability(
+                            typeFactory.createMapType(
+                                    typeFactory.createTypeWithNullability(
+                                            typeFactory.createSqlType(SqlTypeName.VARCHAR), true),
+                                    typeFactory.createTypeWithNullability(
+                                            typeFactory.createMapType(
+                                                    typeFactory.createTypeWithNullability(
+                                                            typeFactory.createSqlType(SqlTypeName.VARCHAR), true),
+                                                    typeFactory.createTypeWithNullability(
+                                                            typeFactory.createSqlType(SqlTypeName.INTEGER), true))
+                                            , true))
+                                        , true))
+                .field("ARRAYFIELD", typeFactory.createTypeWithNullability(
+                        typeFactory.createArrayType(
+                            typeFactory.createTypeWithNullability(
+                                typeFactory.createSqlType(SqlTypeName.INTEGER), true), -1L)
+                        , true))
                 .build();
         Table table = streamableTable.stream();
         schema.add("FOO", table);

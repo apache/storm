@@ -52,6 +52,9 @@
   dataTypeParserMethods: [
   ]
 
+  nonReservedKeywords: [
+  ]
+
   # List of files in @includes directory that have parser method
   # implementations for custom SQL statements, literals or types
   # given as part of "statementParserMethods", "literalParserMethods" or
@@ -62,5 +65,6 @@
 
   includeCompoundIdentifier: true,
   includeBraces: true,
-  includeAdditionalDeclarations: false
+  includeAdditionalDeclarations: false,
+  allowBangEqual: false
 }

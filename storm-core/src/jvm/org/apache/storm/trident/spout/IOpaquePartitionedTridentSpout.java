@@ -18,12 +18,12 @@
 package org.apache.storm.trident.spout;
 
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
+import org.apache.storm.tuple.Fields;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * This defines a transactional spout which does *not* necessarily
@@ -32,13 +32,14 @@ import org.apache.storm.trident.topology.TransactionAttempt;
  */
 public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends ISpoutPartition, M>
     extends ITridentDataSource {
-    public interface Coordinator<Partitions> {
+
+    interface Coordinator<Partitions> {
         boolean isReady(long txid);
         Partitions getPartitionsForBatch();
         void close();
     }
     
-    public interface Emitter<Partitions, Partition extends ISpoutPartition, M> {
+    interface Emitter<Partitions, Partition extends ISpoutPartition, M> {
         /**
          * Emit a batch of tuples for a partition/transaction. 
          * 

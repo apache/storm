@@ -79,10 +79,12 @@
   [cluster-type mkClusterParam code]
   `(let [supervisors# (or (.getSupervisors ~mkClusterParam) 2)
          ports-per-supervisor# (or (.getPortsPerSupervisor ~mkClusterParam) 3)
-         daemon-conf# (or (.getDaemonConf ~mkClusterParam) {})]
+         daemon-conf# (or (.getDaemonConf ~mkClusterParam) {})
+         nimbus-daemon# (.isNimbusDaemon ~mkClusterParam)]
      (~cluster-type [cluster# :supervisors supervisors#
                      :ports-per-supervisor ports-per-supervisor#
-                     :daemon-conf daemon-conf#]
+                     :daemon-conf daemon-conf#
+                     :nimbus-daemon nimbus-daemon#]
                     (let [cluster# (LocalCluster. cluster#)]
                       (.run ~code cluster#)))))
 
