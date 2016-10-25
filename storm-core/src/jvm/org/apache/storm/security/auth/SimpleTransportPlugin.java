@@ -76,6 +76,8 @@ public class SimpleTransportPlugin implements ITransportPlugin {
                 maxWorkerThreads(numWorkerThreads).
                 protocolFactory(new TBinaryProtocol.Factory(false, true, maxBufferSize, -1));
 
+        server_args.maxReadBufferBytes = maxBufferSize;
+
         if (queueSize != null) {
             server_args.executorService(new ThreadPoolExecutor(numWorkerThreads, numWorkerThreads, 
                                    60, TimeUnit.SECONDS, new ArrayBlockingQueue(queueSize)));
