@@ -595,6 +595,9 @@
  * STORM-1144: Display requested and assigned cpu/mem resources for schedulers in UI
  * STORM-1217: making small fixes in RAS
 
+## 0.10.3
+ * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
+
 ## 0.10.2
  * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup
  * STORM-1754: Correct java version in 0.10.x storm-starter
