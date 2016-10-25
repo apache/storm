@@ -31,7 +31,7 @@
 
     <name>Apache Storm Beam Runner</name>
     <properties>
-        <beam.version>0.2.0-incubating-SNAPSHOT</beam.version>
+        <beam.version>0.2.0-incubating</beam.version>
     </properties>
 
     <dependencies>
