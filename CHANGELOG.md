@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
  * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions
  * STORM-2040: Fix bug on assert-can-serialize
  * STORM-2017: ShellBolt stops reporting task ids
