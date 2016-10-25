@@ -90,10 +90,12 @@ public class NimbusClient extends ThriftClient {
             if (nimbuses != null) {
                 for (NimbusSummary nimbusSummary : nimbuses) {
                     if (nimbusSummary.is_isLeader()) {
+                        String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
+                        LOG.info("Found leader nimbus : {}", leaderNimbus);
+
                         try {
                             return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
                         } catch (TTransportException e) {
-                            String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
                             throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
                         }
                     }
