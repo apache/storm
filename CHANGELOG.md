@@ -1,3 +1,6 @@
+## 0.10.3
+ * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
+
 ## 0.10.2
  * STORM-2042: Nimbus client connections not closed properly causing connection leaks
  * STORM-1609: Netty Client is not best effort delivery on failed Connection
