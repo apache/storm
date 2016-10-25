@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2072: Add map, flatMap with different outputs (T->V) in Trident
  * STORM-2134: improving the current scheduling strategy for RAS
  * STORM-2125: Use Calcite's implementation of Rex Compiler
  * STORM-1546: Adding Read and Write Aggregations for Pacemaker to make it HA compatible
