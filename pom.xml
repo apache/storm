@@ -305,6 +305,7 @@
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-jms</module>
+        <module>external/storm-beam</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
