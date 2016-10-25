@@ -332,6 +332,7 @@
         <module>examples/storm-opentsdb-examples</module>
         <module>examples/storm-solr-examples</module>
         <module>examples/storm-kafka-examples</module>
+        <module>examples/storm-kafka-client-examples</module>
         <module>examples/storm-jdbc-examples</module>
         <module>examples/storm-hdfs-examples</module>
         <module>examples/storm-hbase-examples</module>
