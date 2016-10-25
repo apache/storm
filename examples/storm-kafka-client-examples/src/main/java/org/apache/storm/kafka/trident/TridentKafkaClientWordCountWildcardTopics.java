@@ -16,7 +16,7 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.starter.trident;
+package org.apache.storm.kafka.trident;
 
 import org.apache.storm.kafka.spout.KafkaSpoutStream;
 import org.apache.storm.kafka.spout.KafkaSpoutStreams;
@@ -30,22 +30,17 @@ import java.util.regex.Pattern;
 public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClientWordCountNamedTopics {
     private static final String TOPIC_WILDCARD_PATTERN = "test-trident(-1)?";
 
-    public TridentKafkaClientWordCountWildcardTopics(String zkUrl, String brokerUrl) {
-        super(zkUrl, brokerUrl);
+    protected KafkaSpoutTuplesBuilder<String, String> newTuplesBuilder() {
+        return new KafkaSpoutTuplesBuilderWildcardTopics<>(new TopicsTupleBuilder<String, String>(TOPIC_WILDCARD_PATTERN));
     }
 
-    public static void main(String[] args) throws Exception {
-        final String[] zkBrokerUrl = parseUrl(args);
-        runMain(args, new TridentKafkaClientWordCountWildcardTopics(zkBrokerUrl[0], zkBrokerUrl[1]));
-    }
-
-    protected KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilderWildcardTopics<>(new TopicsTupleBuilder<>(TOPIC_WILDCARD_PATTERN));
-    }
-
-    protected KafkaSpoutStreams getKafkaSpoutStreams() {
+    protected KafkaSpoutStreams newKafkaSpoutStreams() {
         final Fields outputFields = new Fields("str");
         final KafkaSpoutStream kafkaSpoutStream = new KafkaSpoutStream(outputFields, Pattern.compile(TOPIC_WILDCARD_PATTERN));
         return new KafkaSpoutStreamsWildcardTopics(kafkaSpoutStream);
+    }
+
+    public static void main(String[] args) throws Exception {
+        new TridentKafkaClientWordCountWildcardTopics().run(args);
     }
 }

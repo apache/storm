@@ -24,7 +24,6 @@
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.storm</groupId>
   <artifactId>storm-starter</artifactId>
   <packaging>jar</packaging>
 
@@ -132,18 +131,6 @@
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-kafka</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.storm</groupId>
-      <artifactId>storm-kafka-client</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.storm</groupId>
       <artifactId>storm-hdfs</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -152,15 +139,6 @@
           <artifactId>storm-hbase</artifactId>
           <version>${project.version}</version>
       </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>${storm.kafka.artifact.id}</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>${storm.kafka.client.version}</version>
-    </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-redis</artifactId>
