@@ -68,6 +68,12 @@
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
+      <artifactId>storm-core</artifactId>
+      <version>${project.version}</version>
+      <scope>${provided.scope}</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.storm</groupId>
       <artifactId>flux-core</artifactId>
       <version>${project.version}</version>
     </dependency>

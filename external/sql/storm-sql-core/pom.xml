@@ -200,6 +200,7 @@
                             <goal>create-repository</goal>
                         </goals>
                         <configuration>
+                            <assembleDirectory>${project.build.directory}/app-assembler</assembleDirectory>
                             <repositoryLayout>flat</repositoryLayout>
                         </configuration>
                     </execution>
