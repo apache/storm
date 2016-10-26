@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.1.0.2.6.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -90,6 +90,37 @@
                         <goals>
                             <goal>test-jar</goal>
                         </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>sql-maven-plugin</artifactId>
+                <version>1.5</version>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.hsqldb</groupId>
+                        <artifactId>hsqldb</artifactId>
+                        <version>2.3.2</version>
+                    </dependency>
+                </dependencies>
+                <executions>
+                    <execution>
+                        <id>create-db</id>
+                        <phase>process-test-resources</phase>
+                        <goals>
+                            <goal>execute</goal>
+                        </goals>
+                        <configuration>
+                            <driver>org.hsqldb.jdbcDriver</driver>
+                            <url>jdbc:hsqldb:mem:test;shutdown=false</url>
+                            <username>SA</username>
+                            <password />
+                            <autocommit>true</autocommit>
+                            <srcFiles>
+                                <srcFile>src/test/sql/test.sql</srcFile>
+                            </srcFiles>
+                        </configuration>
                     </execution>
                 </executions>
             </plugin>
