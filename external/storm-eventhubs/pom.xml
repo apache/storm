@@ -21,12 +21,12 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0-SNAPSHOT</version>
+        <version>1.0.1.2.6.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     
     <artifactId>storm-eventhubs</artifactId>
-    <version>1.1.0-SNAPSHOT</version>
+    <version>1.0.1.2.6.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
@@ -98,21 +98,6 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-client</artifactId>
-            <version>${qpid.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-client-jms</artifactId>
-            <version>${qpid.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.qpid</groupId>
-            <artifactId>qpid-amqp-1-0-common</artifactId>
-            <version>${qpid.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>
