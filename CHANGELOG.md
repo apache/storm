@@ -162,6 +162,11 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
+ * STORM-2110: in supervisor v2 filter out empty command line args
+ * STORM-2117: Supervisor V2 with local mode extracts resources directory to topology root directory instead of temporary directory
+ * STORM-2131: Add blob command to worker-launcher, make stormdist directory not writeable by topo owner
+ * STORM-2018: Supervisor V2
  * STORM-2139: Let ShellBolts and ShellSpouts run with scripts from blobs
  * STORM-2072: Add map, flatMap with different outputs (T->V) in Trident
  * STORM-2125: Use Calcite's implementation of Rex Compiler
