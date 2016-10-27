@@ -162,6 +162,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2139: Let ShellBolts and ShellSpouts run with scripts from blobs
  * STORM-2072: Add map, flatMap with different outputs (T->V) in Trident
  * STORM-2125: Use Calcite's implementation of Rex Compiler
  * STORM-1444: Support EXPLAIN statement in StormSQL
