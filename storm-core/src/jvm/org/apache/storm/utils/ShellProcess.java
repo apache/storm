@@ -64,14 +64,19 @@ public class ShellProcess implements Serializable {
         }
     }
 
-
     public Number launch(Map conf, TopologyContext context) {
+        return launch(conf, context, true);
+    }
+
+    public Number launch(Map conf, TopologyContext context, boolean changeDirectory) {
         ProcessBuilder builder = new ProcessBuilder(command);
         if (!env.isEmpty()) {
             Map<String, String> buildEnv = builder.environment();
             modifyEnvironment(buildEnv);
         }
-        builder.directory(new File(context.getCodeDir()));
+        if (changeDirectory) {
+            builder.directory(new File(context.getCodeDir()));
+        }
 
         ShellLogger = LoggerFactory.getLogger(context.getThisComponentId());
 
