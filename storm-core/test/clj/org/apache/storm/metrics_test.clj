@@ -260,18 +260,18 @@
                     {"mybolt" (thrift/mk-bolt-spec {"myspout" :shuffle} ack-every-other)})]      
       (submit-local-topology (:nimbus cluster)
                              "metrics-tester"
-                             {}
+                             {TOPOLOGY-DEBUG true}
                              topology)
       
       (.feed feeder ["a"] 1)
       (advance-cluster-time cluster 6)
-      (assert-acked tracker 1)
       (assert-buckets! "myspout" "__fail-count/default" [] cluster)
       (assert-buckets! "myspout" "__ack-count/default" [1] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [1] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [1] cluster)            
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [1] cluster)     
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [1] cluster)
+      (assert-acked tracker 1)
 
       (.feed feeder ["b"] 2)      
       (advance-cluster-time cluster 5)
@@ -312,18 +312,19 @@
                     {"mybolt" (thrift/mk-bolt-spec {"myspout" :global} ack-every-other)})]      
       (submit-local-topology (:nimbus cluster)
                              "timeout-tester"
-                             {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
+                             {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10
+                              TOPOLOGY-DEBUG true}
                              topology)
       (.feed feeder ["a"] 1)
       (.feed feeder ["b"] 2)
       (.feed feeder ["c"] 3)
       (advance-cluster-time cluster 9)
-      (assert-acked tracker 1 3)
       (assert-buckets! "myspout" "__ack-count/default" [2] cluster)
       (assert-buckets! "myspout" "__emit-count/default" [3] cluster)
       (assert-buckets! "myspout" "__transfer-count/default" [3] cluster)
       (assert-buckets! "mybolt" "__ack-count/myspout:default" [2] cluster)
       (assert-buckets! "mybolt" "__execute-count/myspout:default" [3] cluster)
+      (assert-acked tracker 1 3)
       
       (is (not (.isFailed tracker 2)))
       (advance-cluster-time cluster 30)

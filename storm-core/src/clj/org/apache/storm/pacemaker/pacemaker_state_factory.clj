@@ -27,7 +27,7 @@
             HBExecutionException HBServerMessageType HBMessage
             HBMessageData HBPulse ClusterWorkerHeartbeat]
            [org.apache.storm.cluster_state zookeeper_state_factory]
-           [org.apache.storm.cluster ClusterState]
+           [org.apache.storm.cluster ClusterState ZKStateStorage]
            [org.apache.storm.utils Utils]
            [org.apache.storm.pacemaker PacemakerClient])
   (:gen-class
@@ -52,6 +52,10 @@
 
 (defn makeZKState [conf auth-conf acls context]
   (.mkState (zookeeper_state_factory.) conf auth-conf acls context))
+
+(defn -mkStore [this conf auth-conf, acls, context]
+  ;; This is only used by the supervisor (this does not support pacemaker)!!!
+  (ZKStateStorage. conf, auth-conf, acls, context))
 
 (def max-retries 10)
 
