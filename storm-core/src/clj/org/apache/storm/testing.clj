@@ -17,12 +17,13 @@
 (ns org.apache.storm.testing
   (:require [org.apache.storm.daemon
              [nimbus :as nimbus]
-             [supervisor :as supervisor]
+             [local-supervisor :as local-supervisor]
              [common :as common]
              [worker :as worker]
              [executor :as executor]])
-  (:require [org.apache.storm [process-simulator :as psim]])
-  (:import [org.apache.commons.io FileUtils])
+  (:import [org.apache.commons.io FileUtils]
+           [org.apache.storm ProcessSimulator]
+           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -31,6 +32,7 @@
   (:import [org.apache.storm.tuple Fields Tuple TupleImpl])
   (:import [org.apache.storm.task TopologyContext])
   (:import [org.apache.storm.generated GlobalStreamId Bolt KillOptions])
+  (:import [org.apache.storm.messaging IContext])
   (:import [org.apache.storm.testing FeederSpout FixedTupleSpout FixedTuple
             TupleCaptureBolt SpoutTracker BoltTracker NonRichBoltTracker
             TestWordSpout MemoryTransactionalSpout])
@@ -108,8 +110,10 @@
                                conf
                                {STORM-LOCAL-DIR tmp-dir
                                 SUPERVISOR-SLOTS-PORTS port-ids})
-        id-fn (if id (fn [] id) supervisor/generate-supervisor-id)
-        daemon (with-var-roots [supervisor/generate-supervisor-id id-fn] (supervisor/mk-supervisor supervisor-conf (:shared-context cluster-map) (supervisor/standalone-supervisor)))]
+        id (or id (Utils/uuid))
+        isupervisor (proxy [StandaloneSupervisor] []
+                        (generateSupervisorId [] id))
+        daemon (local-supervisor/mk-local-supervisor supervisor-conf (:shared-context cluster-map) isupervisor)]
     (swap! (:supervisors cluster-map) conj daemon)
     (swap! (:tmp-dirs cluster-map) conj tmp-dir)
     daemon))
@@ -135,18 +139,19 @@
   (let [zk-tmp (local-temp-path)
         [zk-port zk-handle] (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                               (zk/mk-inprocess-zookeeper zk-tmp))
+        nimbus-tmp (local-temp-path)
         daemon-conf (merge (read-storm-config)
                            {TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS true
                             ZMQ-LINGER-MILLIS 0
                             TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS false
                             TOPOLOGY-TRIDENT-BATCH-EMIT-INTERVAL-MILLIS 50
                             STORM-CLUSTER-MODE "local"
-                            BLOBSTORE-SUPERUSER (System/getProperty "user.name")}
+                            BLOBSTORE-SUPERUSER (System/getProperty "user.name")
+                            BLOBSTORE-DIR nimbus-tmp}
                            (if-not (contains? daemon-conf STORM-ZOOKEEPER-SERVERS)
                              {STORM-ZOOKEEPER-PORT zk-port
                               STORM-ZOOKEEPER-SERVERS ["localhost"]})
                            daemon-conf)
-        nimbus-tmp (local-temp-path)
         port-counter (mk-counter supervisor-slot-port-min)
         nimbus (nimbus/service-handler
                 (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
@@ -172,17 +177,17 @@
     cluster-map))
 
 (defn get-supervisor [cluster-map supervisor-id]
-  (let [finder-fn #(= (.get-id %) supervisor-id)]
+  (let [finder-fn #(= (.getId %) supervisor-id)]
     (find-first finder-fn @(:supervisors cluster-map))))
 
 (defn kill-supervisor [cluster-map supervisor-id]
-  (let [finder-fn #(= (.get-id %) supervisor-id)
+  (let [finder-fn #(= (.getId %) supervisor-id)
         supervisors @(:supervisors cluster-map)
         sup (find-first finder-fn
                         supervisors)]
     ;; tmp-dir will be taken care of by shutdown
     (reset! (:supervisors cluster-map) (remove-first finder-fn supervisors))
-    (.shutdown sup)))
+    (.close sup)))
 
 (defn kill-local-storm-cluster [cluster-map]
   (.shutdown (:nimbus cluster-map))
@@ -196,10 +201,10 @@
   (.close (:state cluster-map))
   (.disconnect (:storm-cluster-state cluster-map))
   (doseq [s @(:supervisors cluster-map)]
-    (.shutdown-all-workers s)
+    (.shutdownAllWorkers s)
     ;; race condition here? will it launch the workers again?
-    (supervisor/kill-supervisor s))
-  (psim/kill-all-processes)
+    (.close s))
+  (ProcessSimulator/killAllProcesses)
   (if (not-nil? (:zookeeper cluster-map))
     (do
       (log-message "Shutting down in process zookeeper")
@@ -235,19 +240,23 @@
     (while-timeout timeout-ms (not (apredicate))
       (Time/sleep 100))))
 
+(defn is-supervisor-waiting [^Supervisor supervisor]
+   (.isWaiting supervisor))
+
+
 (defn wait-until-cluster-waiting
   "Wait until the cluster is idle. Should be used with time simulation."
   ([cluster-map] (wait-until-cluster-waiting cluster-map TEST-TIMEOUT-MS))
   ([cluster-map timeout-ms]
   ;; wait until all workers, supervisors, and nimbus is waiting
   (let [supervisors @(:supervisors cluster-map)
-        workers (filter (partial satisfies? common/DaemonCommon) (psim/all-processes))
+        workers (filter (partial satisfies? common/DaemonCommon) (clojurify-structure (ProcessSimulator/getAllProcessHandles)))
         daemons (concat
                   [(:nimbus cluster-map)]
-                  supervisors
                   ; because a worker may already be dead
                   workers)]
-    (while-timeout timeout-ms (not (every? (memfn waiting?) daemons))
+    (while-timeout timeout-ms (or (not (every? (memfn waiting?) daemons))
+                                (not (every? is-supervisor-waiting supervisors)))
                    (Thread/sleep (rand-int 20))
                    ;;      (doseq [d daemons]
                    ;;        (if-not ((memfn waiting?) d)
@@ -278,7 +287,8 @@
                f# (future (while @keep-waiting?# (simulate-wait ~cluster-sym)))]
            (kill-local-storm-cluster ~cluster-sym)
            (reset! keep-waiting?# false)
-            @f#)))))
+            @f#
+           (.setSubject (ReqContext/context) nil))))))
 
 (defmacro with-simulated-time-local-cluster
   [& args]
@@ -359,35 +369,6 @@
   (let [supervisor-state (supervisor-state supervisor-conf)
         worker->port (ls-approved-workers supervisor-state)]
     (worker->port worker-id)))
-
-(defn mk-capture-shutdown-fn
-  [capture-atom]
-  (let [existing-fn supervisor/shutdown-worker]
-    (fn [supervisor worker-id]
-      (let [conf (:conf supervisor)
-            supervisor-id (:supervisor-id supervisor)
-            port (find-worker-port conf worker-id)
-            existing (get @capture-atom [supervisor-id port] 0)]
-        (swap! capture-atom assoc [supervisor-id port] (inc existing))
-        (existing-fn supervisor worker-id)))))
-
-(defmacro capture-changed-workers
-  [& body]
-  `(let [launch-captured# (atom {})
-         shutdown-captured# (atom {})]
-     (with-var-roots [supervisor/launch-worker (mk-capture-launch-fn launch-captured#)
-                      supervisor/shutdown-worker (mk-capture-shutdown-fn shutdown-captured#)]
-                     ~@body
-                     {:launched @launch-captured#
-                      :shutdown @shutdown-captured#})))
-
-(defmacro capture-launched-workers
-  [& body]
-  `(:launched (capture-changed-workers ~@body)))
-
-(defmacro capture-shutdown-workers
-  [& body]
-  `(:shutdown (capture-changed-workers ~@body)))
 
 (defnk aggregated-stat
   [cluster-map storm-name stat-key :component-ids nil]
@@ -659,6 +640,7 @@
                      ;; (println "Spout emitted: " (global-amt track-id "spout-emitted"))
                      ;; (println "Processed: " (global-amt track-id "processed"))
                      ;; (println "Transferred: " (global-amt track-id "transferred"))
+                    (advance-time-secs! 1)
                     (Thread/sleep (rand-int 200)))
       (reset! (:last-spout-emit tracked-topology) target))))
 

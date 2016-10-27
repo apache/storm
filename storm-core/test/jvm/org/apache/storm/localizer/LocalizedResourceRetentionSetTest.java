@@ -34,8 +34,8 @@ public class LocalizedResourceRetentionSetTest {
     // check adding reference to local resource with topology of same name
     localresource2.addReference(("topo2"));
 
-    lrset.addResource("key1", localresource1, false);
-    lrset.addResource("key2", localresource2, false);
+    lrset.add("key1", localresource1, false);
+    lrset.add("key2", localresource2, false);
     lrretset.addResources(lrset);
     assertEquals("number to clean is not 0", 0, lrretset.getSizeWithNoReferences());
     localresource1.removeReference(("topo1"));
@@ -64,9 +64,9 @@ public class LocalizedResourceRetentionSetTest {
     // check adding reference to local resource with topology of same name
     localresource2.addReference(("topo1"));
     localresource2.setSize(10);
-    lrset.addResource("key1", localresource1, false);
-    lrset.addResource("key2", localresource2, false);
-    lrset.addResource("archive1", archiveresource1, true);
+    lrset.add("key1", localresource1, false);
+    lrset.add("key2", localresource2, false);
+    lrset.add("archive1", archiveresource1, true);
 
     lrretset.addResources(lrset);
     assertEquals("number to clean is not 2", 2, lrretset.getSizeWithNoReferences());

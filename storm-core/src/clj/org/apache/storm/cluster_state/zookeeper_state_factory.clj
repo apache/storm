@@ -17,12 +17,15 @@
 (ns org.apache.storm.cluster-state.zookeeper-state-factory
   (:import [org.apache.curator.framework.state ConnectionStateListener])
   (:import [org.apache.zookeeper KeeperException$NoNodeException KeeperException$NodeExistsException]
-           [org.apache.storm.cluster ClusterState DaemonType])
+           [org.apache.storm.cluster ClusterState DaemonType ZKStateStorage])
   (:import [org.apache.storm.utils StormConnectionStateConverter])
   (:use [org.apache.storm cluster config log util])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:gen-class
    :implements [org.apache.storm.cluster.ClusterStateFactory]))
+
+(defn -mkStore [this conf auth-conf, acls, context]
+  (ZKStateStorage. conf, auth-conf, acls, context))
 
 (defn -mkState [this conf auth-conf acls context]
   (let [zk (zk/mk-client conf (conf STORM-ZOOKEEPER-SERVERS) (conf STORM-ZOOKEEPER-PORT) :auth-conf auth-conf)]
