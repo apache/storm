@@ -96,6 +96,13 @@ Response fields:
 |slotsFree| Integer |Number of worker slots available|
 |executorsTotal| Integer |Total number of executors|
 |tasksTotal| Integer |Total tasks|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|totalMem| Double | The total amount of memory in the cluster in MB|
+|totalCpu| Double | The total amount of CPU in the cluster|
+|availMem| Double | The amount of available memory in the cluster in MB|
+|availCpu| Double | The amount of available cpu in the cluster|
+|memAssignedPercentUtil| Double | The percent utilization of assigned memory resources in cluster|
+|cpuAssignedPercentUtil| Double | The percent utilization of assigned CPU resources in cluster|
 
 Sample response:
 
@@ -107,7 +114,14 @@ Sample response:
     "slotsUsed": 3,
     "slotsFree": 1,
     "executorsTotal": 28,
-    "tasksTotal": 28
+    "tasksTotal": 28,
+    "schedulerDisplayResource": true,
+    "totalMem": 4096.0,
+    "totalCpu": 400.0,
+    "availMem": 1024.0,
+    "availCPU": 250.0,
+    "memAssignedPercentUtil": 75.0,
+    "cpuAssignedPercentUtil": 37.5
     }
 ```
 
@@ -125,6 +139,7 @@ Response fields:
 |uptimeSeconds| Integer| Shows how long the supervisor is running in seconds|
 |slotsTotal| Integer| Total number of available worker slots for this supervisor|
 |slotsUsed| Integer| Number of worker slots used on this supervisor|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 |totalMem| Double| Total memory capacity on this supervisor|
 |totalCpu| Double| Total CPU capacity on this supervisor|
 |usedMem| Double| Used memory capacity on this supervisor|
@@ -207,6 +222,124 @@ Sample response:
 }
 ```
 
+### /api/v1/supervisor (GET)
+
+Returns summary for a supervisor by id, or all supervisors running on a host.
+
+Examples:
+
+```no-highlight
+ 1. By host: http://ui-daemon-host-name:8080/api/v1/supervisor?host=supervisor-daemon-host-name
+ 2. By id: http://ui-daemon-host-name:8080/api/v1/supervisor?id=f5449110-1daa-43e2-89e3-69917b16dec9-192.168.1.1
+```
+
+Request parameters:
+
+|Parameter |Value   |Description  |
+|----------|--------|-------------|
+|id   	   |String. Supervisor id | If specified, respond with the supervisor and worker stats with id. Note that when id is specified, the host argument is ignored. |
+|host      |String. Host name| If specified, respond with all supervisors and worker stats in the host (normally just one)|
+|sys       |String. Values 1 or 0. Default value 0| Controls including sys stats part of the response|
+
+Response fields:
+
+|Field  |Value|Description|
+|---	|---	|---
+|supervisors| Array| Array of supervisor summaries|
+|workers| Array| Array of worker summaries |
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+
+Each supervisor is defined by:
+
+|Field  |Value|Description|
+|---	|---	|---
+|id| String | Supervisor's id|
+|host| String| Supervisor's host name|
+|uptime| String| Shows how long the supervisor is running|
+|uptimeSeconds| Integer| Shows how long the supervisor is running in seconds|
+|slotsTotal| Integer| Total number of worker slots for this supervisor|
+|slotsUsed| Integer| Number of worker slots used on this supervisor|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|totalMem| Double| Total memory capacity on this supervisor|
+|totalCpu| Double| Total CPU capacity on this supervisor|
+|usedMem| Double| Used memory capacity on this supervisor|
+|usedCpu| Double| Used CPU capacity on this supervisor|
+
+Each worker is defined by:
+
+|Field  |Value  |Description|
+|-------|-------|-----------|
+|supervisorId | String| Supervisor's id|
+|host | String | Worker's host name|
+|port | Integer | Worker's port|
+|topologyId | String | Topology Id|
+|topologyName | String | Topology Name|
+|executorsTotal | Integer | Number of executors used by the topology in this worker|
+|assignedMemOnHeap | Double | Assigned On-Heap Memory by Scheduler (MB)|
+|assignedMemOffHeap | Double | Assigned Off-Heap Memory by Scheduler (MB)|
+|assignedCpu | Number | Assigned CPU by Scheduler (%)| 
+|componentNumTasks | Dictionary | Components -> # of executing tasks|
+|uptime| String| Shows how long the worker is running|
+|uptimeSeconds| Integer| Shows how long the worker is running in seconds|
+|workerLogLink | String | Link to worker log viewer page|
+
+Sample response:
+
+```json
+{
+    "supervisors": [{ 
+        "totalMem": 4096.0, 
+        "host":"192.168.10.237",
+        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "uptime":"7m 8s",
+        "totalCpu":400.0,
+        "usedCpu":495.0,
+        "usedMem":3432.0,
+        "slotsUsed":2,
+        "version":"0.10.1",
+        "slotsTotal":4,
+        "uptimeSeconds":428
+    }],
+    "schedulerDisplayResource":true,
+    "workers":[{
+        "topologyName":"ras",
+        "topologyId":"ras-4-1460229987",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "assignedMemOnHeap":704.0,
+        "uptime":"2m 47s",
+        "uptimeSeconds":167,
+        "port":6707,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
+        "componentNumTasks": {
+            "word":5
+        },
+        "executorsTotal":8,
+        "assignedCpu":130.0,
+        "assignedMemOffHeap":80.0
+    },
+    {
+        "topologyName":"ras",
+        "topologyId":"ras-4-1460229987",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "assignedMemOnHeap":904.0,
+        "uptime":"2m 53s",
+        "port":6706,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
+        "componentNumTasks":{
+            "exclaim2":2,
+            "exclaim1":3,
+            "word":5
+        },
+        "executorsTotal":10,
+        "uptimeSeconds":173,
+        "assignedCpu":165.0,
+        "assignedMemOffHeap":80.0
+    }]
+}
+```
+
 ### /api/v1/topology/summary (GET)
 
 Returns summary information for all topologies.
@@ -232,6 +365,7 @@ Response fields:
 |assignedMemOffHeap| Double|Assigned Off-Heap Memory by Scheduler (MB)|
 |assignedTotalMem| Double|Assigned Total Memory by Scheduler (MB)|
 |assignedCpu| Double|Assigned CPU by Scheduler (%)|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
 
 Sample response:
 
@@ -257,7 +391,7 @@ Sample response:
             "assignedTotalMem": 768,
             "assignedCpu": 80
         }
-    ]
+    ],
     "schedulerDisplayResource": true
 }
 ```
@@ -323,6 +457,16 @@ Response fields:
 |msgTimeout| Integer | Number of seconds a tuple has before the spout considers it failed |
 |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"|
 |schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
+|debug| Boolean | If debug is enabled for the topology|
+|samplingPct| Double| Controls downsampling of events before they are sent to event log (percentage)|
+|assignedMemOnHeap| Double|Assigned On-Heap Memory by Scheduler (MB)
+|assignedMemOffHeap| Double|Assigned Off-Heap Memory by Scheduler (MB)|
+|assignedTotalMem| Double|Assigned Off-Heap + On-Heap Memory by Scheduler(MB)|
+|assignedCpu| Double|Assigned CPU by Scheduler(%)|
+|requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|requestedCpu| Double|Requested CPU by User (%)|
 |topologyStats| Array | Array of all the topology related stats per time window|
 |topologyStats.windowPretty| String |Duration passed in HH:MM:SS format|
 |topologyStats.window| String |User requested time window for metrics|
@@ -331,6 +475,20 @@ Response fields:
 |topologyStats.completeLatency| String (double value returned in String format) |Total latency for processing the message|
 |topologyStats.acked| Long |Number of messages acked in given window|
 |topologyStats.failed| Long |Number of messages failed in given window|
+|workers| Array | Array of workers in topology|
+|workers.supervisorId | String| Supervisor's id|
+|workers.host | String | Worker's host name|
+|workers.port | Integer | Worker's port|
+|workers.topologyId | String | Topology Id|
+|workers.topologyName | String | Topology Name|
+|workers.executorsTotal | Integer | Number of executors used by the topology in this worker|
+|workers.assignedMemOnHeap | Double | Assigned On-Heap Memory by Scheduler (MB)|
+|workers.assignedMemOffHeap | Double | Assigned Off-Heap Memory by Scheduler (MB)|
+|workers.assignedCpu | Number | Assigned CPU by Scheduler (%)| 
+|workers.componentNumTasks | Dictionary | Components -> # of executing tasks|
+|workers.uptime| String| Shows how long the worker is running|
+|workers.uptimeSeconds| Integer| Shows how long the worker is running in seconds|
+|workers.workerLogLink | String | Link to worker log viewer page|
 |spouts| Array | Array of all the spout components in the topology|
 |spouts.spoutId| String |Spout id|
 |spouts.executors| Integer |Number of executors for the spout|
@@ -343,6 +501,9 @@ Response fields:
 |spouts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |spouts.acked| Long |Number of messages acked|
 |spouts.failed| Long |Number of messages failed|
+|spouts.requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|spouts.requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|spouts.requestedCpu| Double|Requested CPU by User (%)|
 |bolts| Array | Array of bolt components in the topology|
 |bolts.boltId| String |Bolt id|
 |bolts.capacity| String (double value returned in String format) |This value indicates number of messages executed * average execute latency / time window|
@@ -356,7 +517,9 @@ Response fields:
 |bolts.errorLapsedSecs| Integer |Number of seconds elapsed since that last error happened in a bolt|
 |bolts.errorWorkerLogLink| String | Link to the worker log that reported the exception |
 |bolts.emitted| Long |Number of tuples emitted|
-|replicationCount| Integer |Number of nimbus hosts on which this topology code is replicated|
+|bolts.requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|bolts.requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|bolts.requestedCpu| Double|Requested CPU by User (%)|
 
 Examples:
 
@@ -420,6 +583,23 @@ Sample response:
             "failed": 0
         }
     ],
+    "workers":[{
+        "topologyName":"WordCount3",
+        "topologyId":"WordCount3-1-1402960825",
+        "host":"192.168.10.237",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "uptime":"2m 47s",
+        "uptimeSeconds":167,
+        "port":6707,
+        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=WordCount3-1-1402960825%2F6707%2Fworker.log",
+        "componentNumTasks": {
+            "spout":5
+        },
+        "executorsTotal":8,
+        "assignedMemOnHeap":704.0,
+        "assignedCpu":130.0,
+        "assignedMemOffHeap":80.0
+    }],
     "spouts": [
         {
             "executors": 5,
@@ -510,6 +690,282 @@ Sample response:
 }
 ```
 
+### /api/v1/topology/:id/metrics
+
+Returns detailed metrics for topology. It shows metrics per component, which are aggregated by stream.
+
+|Parameter |Value   |Description  |
+|----------|--------|-------------|
+|id   	   |String (required)| Topology Id  |
+|window    |String. Default value :all-time| window duration for metrics in seconds|
+|sys       |String. Values 1 or 0. Default value 0| Controls including sys stats part of the response|
+
+Response fields:
+
+|Field  |Value |Description| 
+|---	|---	|--- 
+|window    |String. Default value ":all-time" | window duration for metrics in seconds|
+ |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"| 
+|spouts| Array | Array of all the spout components in the topology|
+|spouts.id| String |Spout id|
+|spouts.emitted| Array | Array of all the output streams this spout emits messages |
+|spouts.emitted.stream_id| String | Stream id for this stream |
+|spouts.emitted.value| Long | Number of messages emitted in given window|
+|spouts.transferred | Array | Array of all the output streams this spout transfers messages |
+|spouts.transferred.stream_id| String | Stream id for this stream |
+|spouts.transferred.value| Long |Number messages transferred in given window|
+|spouts.acked| Array | Array of all the output streams this spout receives ack of messages |
+|spouts.acked.stream_id| String | Stream id for this stream |
+|spouts.acked.value| Long |Number of messages acked in given window|
+|spouts.failed| Array | Array of all the output streams this spout receives fail of messages |
+|spouts.failed.stream_id| String | Stream id for this stream |
+|spouts.failed.value| Long |Number of messages failed in given window|
+|spouts.complete_ms_avg| Array | Array of all the output streams this spout receives ack of messages |
+|spouts.complete_ms_avg.stream_id| String | Stream id for this stream |
+|spouts.complete_ms_avg.value| String (double value returned in String format) | Total latency for processing the message|
+|bolts| Array | Array of all the bolt components in the topology|
+|bolts.id| String |Bolt id|
+|bolts.emitted| Array | Array of all the output streams this bolt emits messages |
+|bolts.emitted.stream_id| String | Stream id for this stream |
+|bolts.emitted.value| Long | Number of messages emitted in given window|
+|bolts.transferred | Array | Array of all the output streams this bolt transfers messages |
+|bolts.transferred.stream_id| String | Stream id for this stream |
+|bolts.transferred.value| Long |Number messages transferred in given window|
+|bolts.acked| Array | Array of all the input streams this bolt acknowledges of messages |
+|bolts.acked.component_id| String | Component id for this stream |
+|bolts.acked.stream_id| String | Stream id for this stream |
+|bolts.acked.value| Long |Number of messages acked in given window|
+|bolts.failed| Array | Array of all the input streams this bolt receives fail of messages |
+|bolts.failed.component_id| String | Component id for this stream |
+|bolts.failed.stream_id| String | Stream id for this stream |
+|bolts.failed.value| Long |Number of messages failed in given window|
+|bolts.process_ms_avg| Array | Array of all the input streams this spout acks messages |
+|bolts.process_ms_avg.component_id| String | Component id for this stream |
+|bolts.process_ms_avg.stream_id| String | Stream id for this stream |
+|bolts.process_ms_avg.value| String (double value returned in String format) |Average time of the bolt to ack a message after it was received|
+|bolts.executed| Array | Array of all the input streams this bolt executes messages |
+|bolts.executed.component_id| String | Component id for this stream |
+|bolts.executed.stream_id| String | Stream id for this stream |
+|bolts.executed.value| Long |Number of messages executed in given window|
+|bolts.executed_ms_avg| Array | Array of all the output streams this spout receives ack of messages |
+|bolts.executed_ms_avg.component_id| String | Component id for this stream |
+|bolts.executed_ms_avg.stream_id| String | Stream id for this stream |
+|bolts.executed_ms_avg.value| String (double value returned in String format) | Average time to run the execute method of the bolt|
+
+Examples:
+
+```no-highlight
+1. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics
+1. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics?sys=1
+2. http://ui-daemon-host-name:8080/api/v1/topology/WordCount3-1-1402960825/metrics?window=600
+```
+
+Sample response:
+
+```json
+{
+    "window":":all-time",
+    "window-hint":"All time",
+    "spouts":[
+        {
+            "id":"spout",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":20
+                },
+                {
+                    "stream_id":"default",
+                    "value":17350280
+                },
+                {
+                    "stream_id":"__ack_init",
+                    "value":17328160
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":20
+                },
+                {
+                    "stream_id":"default",
+                    "value":17350280
+                },
+                {
+                    "stream_id":"__ack_init",
+                    "value":17328160
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "stream_id":"default",
+                    "value":17339180
+                }
+            ],
+            "failed":[
+
+            ],
+            "complete_ms_avg":[
+                {
+                    "stream_id":"default",
+                    "value":"920.497"
+                }
+            ]
+        }
+    ],
+    "bolts":[
+        {
+            "id":"count",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":120
+                },
+                {
+                    "stream_id":"default",
+                    "value":190748180
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":190718100
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":120
+                },
+                {
+                    "stream_id":"default",
+                    "value":0
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":190718100
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":190733160
+                }
+            ],
+            "failed":[
+
+            ],
+            "process_ms_avg":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":"0.004"
+                }
+            ],
+            "executed":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":190733140
+                }
+            ],
+            "executed_ms_avg":[
+                {
+                    "component_id":"split",
+                    "stream_id":"default",
+                    "value":"0.005"
+                }
+            ]
+        },
+        {
+            "id":"split",
+            "emitted":[
+                {
+                    "stream_id":"__metrics",
+                    "value":60
+                },
+                {
+                    "stream_id":"default",
+                    "value":190754740
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":17317580
+                },
+                {
+                    "stream_id":"__system",
+                    "value":20
+                }
+            ],
+            "transferred":[
+                {
+                    "stream_id":"__metrics",
+                    "value":60
+                },
+                {
+                    "stream_id":"default",
+                    "value":190754740
+                },
+                {
+                    "stream_id":"__ack_ack",
+                    "value":17317580
+                },
+                {
+                    "stream_id":"__system",
+                    "value":0
+                }
+            ],
+            "acked":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":17339180
+                }
+            ],
+            "failed":[
+
+            ],
+            "process_ms_avg":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":"0.051"
+                }
+            ],
+            "executed":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":17339240
+                }
+            ],
+            "executed_ms_avg":[
+                {
+                    "component_id":"spout",
+                    "stream_id":"default",
+                    "value":"0.052"
+                }
+            ]
+        }
+    ]
+}
+```
 
 ### /api/v1/topology/:id/component/:component (GET)
 
@@ -526,11 +982,28 @@ Response fields:
 
 |Field  |Value |Description|
 |---	|---	|---
+|user   | String | Topology owner|
 |id   | String | Component id|
+|encodedId   | String | URL encoded component id|
 |name | String | Topology name|
+|executors| Integer |Number of executor tasks in the component|
+|tasks| Integer |Number of instances of component|
+|requestedMemOnHeap| Double|Requested On-Heap Memory by User (MB)
+|requestedMemOffHeap| Double|Requested Off-Heap Memory by User (MB)|
+|requestedCpu| Double|Requested CPU by User (%)|
+|schedulerDisplayResource| Boolean | Whether to display scheduler resource information|
+|topologyId| String | Topology id|
+|topologyStatus| String | Topology status|
+|encodedTopologyId| String | URL encoded topology id|
+|window    |String. Default value "All Time" | window duration for metrics in seconds|
 |componentType | String | component type: SPOUT or BOLT|
 |windowHint| String | window param value in "hh mm ss" format. Default value is "All Time"|
-|executors| Integer |Number of executor tasks in the component|
+|debug| Boolean | If debug is enabled for the component|
+|samplingPct| Double| Controls downsampling of events before they are sent to event log (percentage)|
+|eventLogLink| String| URL viewer link to event log (debug mode)|
+|profilingAndDebuggingCapable| Boolean |true if there is support for Profiling and Debugging Actions|
+|profileActionEnabled| Boolean |true if worker profiling (Java Flight Recorder) is enabled|
+|profilerActive| Array |Array of currently active Profiler Actions|
 |componentErrors| Array of Errors | List of component errors|
 |componentErrors.errorTime| Long | Timestamp when the exception occurred (Prior to 0.11.0, this field was named 'time'.)|
 |componentErrors.errorHost| String | host name for the error|
@@ -538,27 +1011,34 @@ Response fields:
 |componentErrors.error| String |Shows the error happened in a component|
 |componentErrors.errorLapsedSecs| Integer | Number of seconds elapsed since the error happened in a component |
 |componentErrors.errorWorkerLogLink| String | Link to the worker log that reported the exception |
-|topologyId| String | Topology id|
-|tasks| Integer |Number of instances of component|
-|window    |String. Default value "All Time" | window duration for metrics in seconds|
-|spoutSummary or boltStats| Array |Array of component stats. **Please note this element tag can be spoutSummary or boltStats depending on the componentType**|
+|spoutSummary| Array | (only for spouts) Array of component stats, one element per window.| 
 |spoutSummary.windowPretty| String |Duration passed in HH:MM:SS format|
 |spoutSummary.window| String | window duration for metrics in seconds|
 |spoutSummary.emitted| Long |Number of messages emitted in given window |
 |spoutSummary.completeLatency| String (double value returned in String format) |Total latency for processing the message|
-|spoutSummary.transferred| Long |Total number of messages  transferred in given window|
+|spoutSummary.transferred| Long |Total number of messages transferred in given window|
 |spoutSummary.acked| Long |Number of messages acked|
 |spoutSummary.failed| Long |Number of messages failed|
+|boltStats| Array | (only for bolts) Array of component stats, one element per window.| 
 |boltStats.windowPretty| String |Duration passed in HH:MM:SS format|
-|boltStats..window| String | window duration for metrics in seconds|
+|boltStats.window| String| window duration for metrics in seconds|
 |boltStats.transferred| Long |Total number of messages  transferred in given window|
 |boltStats.processLatency| String (double value returned in String format)  |Average time of the bolt to ack a message after it was received|
 |boltStats.acked| Long |Number of messages acked|
 |boltStats.failed| Long |Number of messages failed|
-|profilingAndDebuggingCapable| Boolean |true if there is support for Profiling and Debugging Actions|
-|profileActionEnabled| Boolean |true if worker profiling (Java Flight Recorder) is enabled|
-|profilerActive| Array |Array of currently active Profiler Actions|
-
+|inputStats| Array | (only for bolts) Array of input stats|
+|inputStats.component| String |Component id|
+|inputStats.encodedComponentId| String |URL encoded component id|
+|inputStats.executeLatency| Long | The average time a tuple spends in the execute method|
+|inputStats.processLatency| Long | The average time it takes to ack a tuple after it is first received|
+|inputStats.executed| Long |The number of incoming tuples processed|
+|inputStats.acked| Long |Number of messages acked|
+|inputStats.failed| Long |Number of messages failed|
+|inputStats.stream| String |The name of the tuple stream given in the topology, or "default" if none specified|
+|outputStats| Array | Array of output stats|
+|outputStats.transferred| Long |Number of tuples emitted that sent to one ore more bolts|
+|outputStats.emitted| Long |Number of tuples emitted|
+|outputStats.stream| String |The name of the tuple stream given in the topology, or "default" if none specified|
 
 Examples:
 

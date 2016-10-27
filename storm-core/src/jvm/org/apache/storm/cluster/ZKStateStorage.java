@@ -189,7 +189,15 @@ public class ZKStateStorage implements IStateStorage {
             Zookeeper.setData(zkWriter, path, data);
         } else {
             Zookeeper.mkdirs(zkWriter, Zookeeper.parentPath(path), acls);
-            Zookeeper.createNode(zkWriter, path, data, CreateMode.PERSISTENT, acls);
+            try {
+                Zookeeper.createNode(zkWriter, path, data, CreateMode.PERSISTENT, acls);
+            } catch (RuntimeException e) {
+                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NodeExistsException.class, e)) {
+                    Zookeeper.setData(zkWriter, path, data);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
@@ -203,7 +211,7 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @Override
-    public Map get_data_with_version(String path, boolean watch) {
+    public VersionedData<byte[]> get_data_with_version(String path, boolean watch) {
         return Zookeeper.getDataWithVersion(zkReader, path, watch);
     }
 

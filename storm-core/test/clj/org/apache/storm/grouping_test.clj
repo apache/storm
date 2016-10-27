@@ -20,7 +20,7 @@
   (:import [org.apache.storm.grouping LoadMapping])
   (:use [org.apache.storm testing log config])
   (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon common executor])
+  (:use [org.apache.storm.daemon common])
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.utils Utils]
            (org.apache.storm.daemon GrouperFactory)))

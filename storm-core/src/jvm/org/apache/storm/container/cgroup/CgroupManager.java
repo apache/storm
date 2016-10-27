@@ -18,25 +18,24 @@
 
 package org.apache.storm.container.cgroup;
 
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.storm.Config;
-import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.container.cgroup.core.CpuCore;
-import org.apache.storm.container.cgroup.core.MemoryCore;
-import org.apache.storm.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.storm.Config;
+import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.container.cgroup.core.CpuCore;
+import org.apache.storm.container.cgroup.core.MemoryCore;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Class that implements ResourceIsolationInterface that manages cgroups
@@ -51,15 +50,15 @@ public class CgroupManager implements ResourceIsolationInterface {
 
     private CgroupCommon rootCgroup;
 
-    private static String rootDir;
+    private String rootDir;
 
-    private Map conf;
+    private Map<String, Object> conf;
 
     /**
      * initialize intial data structures
      * @param conf storm confs
      */
-    public void prepare(Map conf) throws IOException {
+    public void prepare(Map<String, Object> conf) throws IOException {
         this.conf = conf;
         this.rootDir = Config.getCgroupRootDir(this.conf);
         if (this.rootDir == null) {
@@ -81,7 +80,7 @@ public class CgroupManager implements ResourceIsolationInterface {
     /**
      * initalize subsystems
      */
-    private void prepareSubSystem(Map conf) throws IOException {
+    private void prepareSubSystem(Map<String, Object> conf) throws IOException {
         List<SubSystemType> subSystemTypes = new LinkedList<>();
         for (String resource : Config.getCgroupStormResources(conf)) {
             subSystemTypes.add(SubSystemType.getSubSystem(resource));
@@ -118,7 +117,7 @@ public class CgroupManager implements ResourceIsolationInterface {
         }
     }
 
-    public void reserveResourcesForWorker(String workerId, Map resourcesMap) throws SecurityException {
+    public void reserveResourcesForWorker(String workerId, Map<String, Number> resourcesMap) throws SecurityException {
         Number cpuNum = null;
         // The manually set STORM_WORKER_CGROUP_CPU_LIMIT config on supervisor will overwrite resources assigned by RAS (Resource Aware Scheduler)
         if (this.conf.get(Config.STORM_WORKER_CGROUP_CPU_LIMIT) != null) {
@@ -210,5 +209,15 @@ public class CgroupManager implements ResourceIsolationInterface {
 
     public void close() throws IOException {
         this.center.deleteCgroup(this.rootCgroup);
+    }
+
+    @Override
+    public Set<Long> getRunningPIDs(String workerId) throws IOException {
+        CgroupCommon workerGroup = new CgroupCommon(workerId, this.hierarchy, this.rootCgroup);
+        if (!this.rootCgroup.getChildren().contains(workerGroup)) {
+            LOG.warn("cgroup {} doesn't exist!", workerGroup);
+            return Collections.emptySet();
+        }
+        return workerGroup.getPids();
     }
 }

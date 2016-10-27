@@ -26,15 +26,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
  */
 public class KafkaSpoutConfig<K, V> implements Serializable {
-    public static final long DEFAULT_POLL_TIMEOUT_MS = 2_000;            // 2s
-    public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 15_000;   // 15s
+    public static final long DEFAULT_POLL_TIMEOUT_MS = 200;            // 200ms
+    public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;   // 30s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
-    public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000;    // 10,000 records
+    public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
 
     // Kafka property names
     public interface Consumer {
@@ -263,10 +264,23 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     /**
-     * @return list of topics subscribed and emitting tuples to a stream as configured by {@link KafkaSpoutStream}
+     * @return list of topics subscribed and emitting tuples to a stream as configured by {@link KafkaSpoutStream},
+     * or null if this stream is associated with a wildcard pattern topic
      */
     public List<String> getSubscribedTopics() {
-        return new ArrayList<>(kafkaSpoutStreams.getTopics());
+        return kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics ?
+            new ArrayList<>(((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics()) :
+            null;
+    }
+
+    /**
+     * @return the wildcard pattern topic associated with this {@link KafkaSpoutStream}, or null
+     * if this stream is associated with a specific named topic
+     */
+    public Pattern getTopicWildcardPattern() {
+        return kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics ?
+                ((KafkaSpoutStreamsWildcardTopics)kafkaSpoutStreams).getTopicWildcardPattern() :
+                null;
     }
 
     public int getMaxTupleRetries() {
@@ -299,11 +313,16 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 "kafkaProps=" + kafkaProps +
                 ", keyDeserializer=" + keyDeserializer +
                 ", valueDeserializer=" + valueDeserializer +
-                ", topics=" + getSubscribedTopics() +
-                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
                 ", maxRetries=" + maxRetries +
+                ", maxUncommittedOffsets=" + maxUncommittedOffsets +
+                ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
+                ", kafkaSpoutStreams=" + kafkaSpoutStreams +
+                ", tuplesBuilder=" + tuplesBuilder +
+                ", retryService=" + retryService +
+                ", topics=" + getSubscribedTopics() +
+                ", topicWildcardPattern=" + getTopicWildcardPattern() +
                 '}';
     }
 }

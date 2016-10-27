@@ -17,7 +17,6 @@
  */
 package org.apache.storm.cluster;
 
-import clojure.lang.*;
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.*;
@@ -164,21 +163,18 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public Map assignmentInfoWithVersion(String stormId, Runnable callback) {
-        Map map = new HashMap();
+    public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback) {
         if (callback != null) {
             assignmentInfoWithVersionCallback.put(stormId, callback);
         }
         Assignment assignment = null;
         Integer version = 0;
-        Map dataWithVersionMap = stateStorage.get_data_with_version(ClusterUtils.assignmentPath(stormId), callback != null);
-        if (dataWithVersionMap != null) {
-            assignment = ClusterUtils.maybeDeserialize((byte[]) dataWithVersionMap.get(IStateStorage.DATA), Assignment.class);
-            version = (Integer) dataWithVersionMap.get(IStateStorage.VERSION);
+        VersionedData<byte[]> dataWithVersion = stateStorage.get_data_with_version(ClusterUtils.assignmentPath(stormId), callback != null);
+        if (dataWithVersion != null) {
+            assignment = ClusterUtils.maybeDeserialize(dataWithVersion.getData(), Assignment.class);
+            version = dataWithVersion.getVersion();
         }
-        map.put(IStateStorage.DATA, assignment);
-        map.put(IStateStorage.VERSION, version);
-        return map;
+        return new VersionedData<Assignment>(version, assignment);
     }
 
     @Override
@@ -219,6 +215,8 @@ public class StormClusterStateImpl implements IStormClusterState {
                 LOG.info("Connection state listener invoked, zookeeper connection state has changed to {}", connectionState);
                 if (connectionState.equals(ConnectionState.RECONNECTED)) {
                     LOG.info("Connection state has changed to reconnected so setting nimbuses entry one more time");
+                    // explicit delete for ephmeral node to ensure this session creates the entry.
+                    stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
                     stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), acls);
                 }
 

@@ -215,7 +215,15 @@ public class IsolatedPool extends NodePool {
     int slotsFree = Node.countFreeSlotsAlive(allNodes);
     int slotsToUse = Math.min(slotsRequested - slotsUsed, slotsFree);
     if (slotsToUse <= 0) {
-      _cluster.setStatus(topId, "Node has partially crashed, if this situation persists rebalance the topology.");
+        // if # of workers requested is more than we currently have
+        if (origRequest > slotsUsed) {
+            _cluster.setStatus(topId, "Running with fewer slots than requested " + slotsUsed + "/" +
+                               origRequest + " on " + allNodes.size() + " node(s) with " + (slotsUsed + slotsFree) + " total slots");
+        } else {
+            // if # of workers requested is less than we took
+            // then we know some workers we track died, since we have more workers than we are supposed to have 
+            _cluster.setStatus(topId, "Node has partially crashed, if this situation persists rebalance the topology.");
+        }
     }
     return slotsToUse;
   }

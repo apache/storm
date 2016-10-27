@@ -19,12 +19,13 @@ package org.apache.storm.stats;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.internal.MultiCountStatAndMetric;
 import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
 
 @SuppressWarnings("unchecked")
-public class CommonStats {
+public abstract class CommonStats {
     public static final int NUM_STAT_BUCKETS = 20;
 
     public static final String RATE = "rate";
@@ -108,5 +109,7 @@ public class CommonStats {
         }
         return null;
     }
+
+    public abstract ExecutorStats renderStats();
 
 }

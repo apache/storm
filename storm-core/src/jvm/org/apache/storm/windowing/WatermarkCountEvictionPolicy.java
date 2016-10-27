@@ -24,25 +24,29 @@ package org.apache.storm.windowing;
  * @param <T> the type of event tracked by this policy.
  */
 public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
-    private final WindowManager<T> windowManager;
     /*
      * The reference time in millis for window calculations and
      * expiring events. If not set it will default to System.currentTimeMillis()
      */
     private long referenceTime;
+    private long processed = 0L;
 
-    public WatermarkCountEvictionPolicy(int count, WindowManager<T> windowManager) {
+    public WatermarkCountEvictionPolicy(int count) {
         super(count);
-        this.windowManager = windowManager;
     }
 
     @Override
     public Action evict(Event<T> event) {
-        if (event.getTimestamp() <= referenceTime) {
-            return super.evict(event);
+        Action action;
+        if (event.getTimestamp() <= referenceTime && processed < currentCount.get()) {
+            action = super.evict(event);
+            if (action == Action.PROCESS) {
+                ++processed;
+            }
         } else {
-            return Action.KEEP;
+            action = Action.KEEP;
         }
+        return action;
     }
 
     @Override
@@ -51,9 +55,14 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
     }
 
     @Override
-    public void setContext(Object context) {
-        referenceTime = (Long) context;
-        currentCount.set(windowManager.getEventCount(referenceTime));
+    public void setContext(EvictionContext context) {
+        referenceTime = context.getReferenceTime();
+        if (context.getCurrentCount() != null) {
+            currentCount.set(context.getCurrentCount());
+        } else {
+            currentCount.set(processed + context.getSlidingCount());
+        }
+        processed = 0;
     }
 
     @Override

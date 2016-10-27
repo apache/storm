@@ -17,6 +17,9 @@
  */
 package org.apache.storm.zookeeper;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Sets;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.CuratorEvent;
@@ -27,11 +30,16 @@ import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.leader.Participant;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.Config;
+import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.blobstore.KeyFilter;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
+import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.IStateStorage;
+import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.zookeeper.KeeperException;
@@ -44,6 +52,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.BindException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
@@ -323,26 +332,51 @@ public class Zookeeper {
     }
 
     // Leader latch listener that will be invoked when we either gain or lose leadership
-    public static LeaderLatchListener leaderLatchListenerImpl(Map conf, CuratorFramework zk, LeaderLatch leaderLatch) throws UnknownHostException {
+    public static LeaderLatchListener leaderLatchListenerImpl(final Map conf, final CuratorFramework zk, final BlobStore blobStore, final LeaderLatch leaderLatch) throws UnknownHostException {
         final String hostName = InetAddress.getLocalHost().getCanonicalHostName();
         return new LeaderLatchListener() {
             @Override
             public void isLeader() {
-                LOG.info("{} gained leadership", hostName);
+                Set<String> activeTopologyIds = new HashSet<>(Zookeeper.getChildren(zk, conf.get(Config.STORM_ZOOKEEPER_ROOT) + ClusterUtils.STORMS_SUBTREE, false));
+                Set<String> localTopologyIds = blobStore.filterAndListKeys(new KeyFilter<String>() {
+                    @Override
+                    public String filter(String key) {
+                        return ConfigUtils.getIdFromBlobKey(key);
+                    }
+                });
+                Sets.SetView<String> diffTopology = Sets.difference(activeTopologyIds, localTopologyIds);
+                LOG.info("active-topology-ids [{}] local-topology-ids [{}] diff-topology [{}]",
+                        generateJoinedString(activeTopologyIds), generateJoinedString(localTopologyIds),
+                        generateJoinedString(diffTopology));
+
+                if (diffTopology.isEmpty()) {
+                    LOG.info("Accepting leadership, all active topology found locally.");
+                } else {
+                    LOG.info("code for all active topologies not available locally, giving up leadership.");
+                    try {
+                        leaderLatch.close();
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
             }
 
             @Override
             public void notLeader() {
                 LOG.info("{} lost leadership.", hostName);
             }
+
+            private String generateJoinedString(Set<String> activeTopologyIds) {
+                return Joiner.on(",").join(activeTopologyIds);
+            }
         };
     }
 
-    public static ILeaderElector zkLeaderElector(Map conf) throws UnknownHostException {
-        return _instance.zkLeaderElectorImpl(conf);
+    public static ILeaderElector zkLeaderElector(Map conf, BlobStore blobStore) throws UnknownHostException {
+        return _instance.zkLeaderElectorImpl(conf, blobStore);
     }
 
-    protected ILeaderElector zkLeaderElectorImpl(Map conf) throws UnknownHostException {
+    protected ILeaderElector zkLeaderElectorImpl(Map conf, BlobStore blobStore) throws UnknownHostException {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         CuratorFramework zk = mkClientImpl(conf, servers, port, "", conf);
@@ -350,12 +384,20 @@ public class Zookeeper {
         String id = NimbusInfo.fromConf(conf).toHostPortString();
         AtomicReference<LeaderLatch> leaderLatchAtomicReference = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));
         AtomicReference<LeaderLatchListener> leaderLatchListenerAtomicReference =
-                new AtomicReference<>(leaderLatchListenerImpl(conf, zk, leaderLatchAtomicReference.get()));
-        return new LeaderElectorImp(conf, servers, zk, leaderLockPath, id, leaderLatchAtomicReference, leaderLatchListenerAtomicReference);
+                new AtomicReference<>(leaderLatchListenerImpl(conf, zk, blobStore, leaderLatchAtomicReference.get()));
+        return new LeaderElectorImp(conf, servers, zk, leaderLockPath, id, leaderLatchAtomicReference,
+            leaderLatchListenerAtomicReference, blobStore);
     }
 
-    public static Map getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
-        Map map = new HashMap();
+    /**
+     * Get the data along with a version
+     * @param zk the zk instance to use
+     * @param path the path to get it from
+     * @param watch should a watch be enabled
+     * @return null if no data is found, else the data with the version.
+     */
+    public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
+        VersionedData<byte[]> data = null;
         try {
             byte[] bytes = null;
             Stat stats = new Stat();
@@ -368,8 +410,7 @@ public class Zookeeper {
                 }
                 if (bytes != null) {
                     int version = stats.getVersion();
-                    map.put(IStateStorage.DATA, bytes);
-                    map.put(IStateStorage.VERSION, version);
+                    data = new VersionedData<>(version, bytes);
                 }
             }
         } catch (Exception e) {
@@ -379,7 +420,7 @@ public class Zookeeper {
                 Utils.wrapInRuntime(e);
             }
         }
-        return map;
+        return data;
     }
 
     public static List<String> tokenizePath(String path) {

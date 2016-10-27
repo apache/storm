@@ -103,24 +103,24 @@ public class TwitterSampleSpout extends BaseRichSpout {
 
 		};
 
-		TwitterStream twitterStream = new TwitterStreamFactory(
+		_twitterStream = new TwitterStreamFactory(
 				new ConfigurationBuilder().setJSONStoreEnabled(true).build())
 				.getInstance();
 
-		twitterStream.addListener(listener);
-		twitterStream.setOAuthConsumer(consumerKey, consumerSecret);
+		_twitterStream.addListener(listener);
+		_twitterStream.setOAuthConsumer(consumerKey, consumerSecret);
 		AccessToken token = new AccessToken(accessToken, accessTokenSecret);
-		twitterStream.setOAuthAccessToken(token);
+		_twitterStream.setOAuthAccessToken(token);
 		
 		if (keyWords.length == 0) {
 
-			twitterStream.sample();
+			_twitterStream.sample();
 		}
 
 		else {
 
 			FilterQuery query = new FilterQuery().track(keyWords);
-			twitterStream.filter(query);
+			_twitterStream.filter(query);
 		}
 
 	}

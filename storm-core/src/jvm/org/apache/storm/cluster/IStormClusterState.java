@@ -29,7 +29,7 @@ public interface IStormClusterState {
 
     public Assignment assignmentInfo(String stormId, Runnable callback);
 
-    public Map assignmentInfoWithVersion(String stormId, Runnable callback);
+    public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
 
     public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
 

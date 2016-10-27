@@ -30,19 +30,21 @@ import org.apache.storm.topology.ResourceDeclarer;
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
 
     private Map<String, Number> resources = new HashMap<>();
-    private Map conf = Utils.readStormConfig();
+    private static Map conf = Utils.readStormConfig();
 
     @Override
     public T setMemoryLoad(Number onHeap) {
-        return setMemoryLoad(onHeap, Utils.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)));
-    }
-
-    @Override
-    public T setMemoryLoad(Number onHeap, Number offHeap) {
         if (onHeap != null) {
             onHeap = onHeap.doubleValue();
             resources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
         }
+        return (T)this;
+    }
+
+    @Override
+    public T setMemoryLoad(Number onHeap, Number offHeap) {
+        setMemoryLoad(onHeap);
+
         if (offHeap!=null) {
             offHeap = offHeap.doubleValue();
             resources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);

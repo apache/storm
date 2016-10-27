@@ -29,9 +29,9 @@
            [java.util Collections List HashMap]
            [org.apache.storm.generated NimbusSummary])
   (:import [java.nio ByteBuffer]
-           [java.util Collections List HashMap ArrayList Iterator])
+           [java.util Collections List HashMap ArrayList Iterator Map])
   (:import [org.apache.storm.blobstore AtomicOutputStream BlobStoreAclHandler
-            InputStreamWithMeta KeyFilter KeySequenceNumber BlobSynchronizer])
+            InputStreamWithMeta KeyFilter KeySequenceNumber BlobSynchronizer BlobStoreUtils])
   (:import [java.io File FileOutputStream FileInputStream])
   (:import [java.net InetAddress ServerSocket BindException])
   (:import [java.nio.channels Channels WritableByteChannel])
@@ -41,6 +41,7 @@
   (:import [org.apache.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
   (:import [org.apache.storm.nimbus NimbusInfo])
+  (:import [org.apache.storm.scheduler.resource ResourceUtils])
   (:import [org.apache.storm.utils TimeCacheMap Time TimeCacheMap$ExpiredCallback Utils ConfigUtils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo ClusterWorkerHeartbeat
@@ -48,18 +49,22 @@
             KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
             ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
             BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
-            ProfileRequest ProfileAction NodeInfo LSTopoHistory])
+            ProfileRequest ProfileAction NodeInfo LSTopoHistory SupervisorPageInfo WorkerSummary WorkerResources ComponentType])
   (:import [org.apache.storm.daemon Shutdownable StormCommon DaemonCommon])
   (:import [org.apache.storm.validation ConfigValidation])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType StormClusterStateImpl ClusterUtils])
   (:use [org.apache.storm util config log converter])
   (:require [org.apache.storm [converter :as converter]])
+  (:require [org.apache.storm.ui.core :as ui])
   (:require [clojure.set :as set])
   (:import [org.apache.storm.daemon.common StormBase Assignment])
   (:import [org.apache.storm.zookeeper Zookeeper])
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
+  (:import [org.apache.storm.metric ClusterMetricsConsumerExecutor]
+           [org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo]
+           [org.apache.storm Config])
   (:import [org.apache.storm.utils VersionInfo LocalState]
            [org.json.simple JSONValue])
   (:require [clj-time.core :as time])
@@ -94,6 +99,7 @@
 (def nimbus:num-getTopologyInfoWithOpts-calls (StormMetricsRegistry/registerMeter "nimbus:num-getTopologyInfoWithOpts-calls"))
 (def nimbus:num-getTopologyInfo-calls (StormMetricsRegistry/registerMeter "nimbus:num-getTopologyInfo-calls"))
 (def nimbus:num-getTopologyPageInfo-calls (StormMetricsRegistry/registerMeter "nimbus:num-getTopologyPageInfo-calls"))
+(def nimbus:num-getSupervisorPageInfo-calls (StormMetricsRegistry/registerMeter "nimbus:num-getSupervisorPageInfo-calls"))
 (def nimbus:num-getComponentPageInfo-calls (StormMetricsRegistry/registerMeter "nimbus:num-getComponentPageInfo-calls"))
 (def nimbus:num-shutdown-calls (StormMetricsRegistry/registerMeter "nimbus:num-shutdown-calls"))
 
@@ -167,8 +173,16 @@
         (catch Exception e
           (log-warn-error e "Ingoring exception, Could not initialize " (conf NIMBUS-TOPOLOGY-ACTION-NOTIFIER-PLUGIN)))))))
 
+(defn mk-cluster-metrics-consumer-executors [storm-conf]
+  (map
+    (fn [consumer]
+      (ClusterMetricsConsumerExecutor. (get consumer "class")
+                                       (get consumer "argument")))
+    (get storm-conf STORM-CLUSTER-METRICS-CONSUMER-REGISTER)))
+
 (defn nimbus-data [conf inimbus]
-  (let [forced-scheduler (.getForcedScheduler inimbus)]
+  (let [forced-scheduler (.getForcedScheduler inimbus)
+        blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))]
     {:conf conf
      :nimbus-host-port-info (NimbusInfo/fromConf conf)
      :inimbus inimbus
@@ -186,7 +200,7 @@
      :heartbeats-cache (atom {})
      :downloaders (file-cache-map conf)
      :uploaders (file-cache-map conf)
-     :blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))
+     :blob-store blob-store
      :blob-downloaders (mk-blob-cache-map conf)
      :blob-uploaders (mk-blob-cache-map conf)
      :blob-listers (mk-bloblist-cache-map conf)
@@ -200,15 +214,17 @@
                   (Utils/exitProcess 20 "Error when processing an event"))))
 
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (Zookeeper/zkLeaderElector conf)
+     :leader-elector (Zookeeper/zkLeaderElector conf blob-store)
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
+     :id->worker-resources (atom {}) ; resources of workers per topology
      :cred-renewers (AuthUtils/GetCredentialRenewers conf)
      :topology-history-lock (Object.)
      :topo-history-state (ConfigUtils/nimbusTopoHistoryState conf)
      :nimbus-autocred-plugins (AuthUtils/getNimbusAutoCredPlugins conf)
      :nimbus-topology-action-notifier (create-tology-action-notifier conf)
+     :cluster-consumer-executors (mk-cluster-metrics-consumer-executors conf)
      }))
 
 (defn inbox [nimbus]
@@ -420,7 +436,8 @@
       {})
     ))
 
-(defn- all-supervisor-info
+;; public for testing
+(defn all-supervisor-info
   ([storm-cluster-state] (all-supervisor-info storm-cluster-state nil))
   ([storm-cluster-state callback]
      (let [supervisor-ids (.supervisors storm-cluster-state callback)]
@@ -428,30 +445,8 @@
              (mapcat
               (fn [id]
                 (if-let [info (clojurify-supervisor-info (.supervisorInfo storm-cluster-state id))]
-                  [[id info]]
-                  ))
-              supervisor-ids))
-       )))
-
-(defn- all-scheduling-slots
-  [nimbus topologies missing-assignment-topologies]
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        ^INimbus inimbus (:inimbus nimbus)
-
-        supervisor-infos (all-supervisor-info storm-cluster-state nil)
-
-        supervisor-details (dofor [[id info] supervisor-infos]
-                             (SupervisorDetails. id (:meta info) (:resources-map info)))
-
-        ret (.allSlotsAvailableForScheduling inimbus
-                     supervisor-details
-                     topologies
-                     (set missing-assignment-topologies)
-                     )
-        ]
-    (dofor [^WorkerSlot slot ret]
-      [(.getNodeId slot) (.getPort slot)]
-      )))
+                  [[id info]]))
+              supervisor-ids)))))
 
 (defn- get-version-for-key [key nimbus-host-port-info conf]
   (let [version (KeySequenceNumber. key nimbus-host-port-info)]
@@ -518,9 +513,9 @@
           (reset! current-replication-count-jar  (get-blob-replication-count (ConfigUtils/masterStormJarKey storm-id) nimbus)))
         (reset! current-replication-count-code  (get-blob-replication-count (ConfigUtils/masterStormCodeKey storm-id) nimbus))
         (reset! current-replication-count-conf  (get-blob-replication-count (ConfigUtils/masterStormConfKey storm-id) nimbus))))
-    (if (and (< min-replication-count @current-replication-count-conf)
-             (< min-replication-count @current-replication-count-code)
-             (< min-replication-count @current-replication-count-jar))
+    (if (and (<= min-replication-count @current-replication-count-conf)
+             (<= min-replication-count @current-replication-count-code)
+             (<= min-replication-count @current-replication-count-jar))
       (log-message "desired replication count "  min-replication-count " achieved, "
         "current-replication-count for conf key = " @current-replication-count-conf ", "
         "current-replication-count for code key = " @current-replication-count-code ", "
@@ -610,6 +605,10 @@
 (defn- to-executor-id [task-ids]
   [(first task-ids) (last task-ids)])
 
+;; convenience method for unit test
+(defn get-clojurified-task-info [topology storm-conf]
+  (clojurify-structure (StormCommon/stormTaskInfo topology storm-conf)))
+
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-executors [nimbus storm-id]
   (let [conf (:conf nimbus)
@@ -618,17 +617,18 @@
         component->executors (:component->executors storm-base)
         storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
-        task->component (clojurify-structure(StormCommon/stormTaskInfo topology storm-conf))]
-    (->> (StormCommon/stormTaskInfo topology storm-conf)
-         (Utils/reverseMap)
-         clojurify-structure
-         (map-val sort)
-         ((fn [ & maps ] (Utils/joinMaps (into-array (into [component->executors] maps)))))
-         (clojurify-structure)
-         (map-val (partial apply (fn part-fixed [a b] (Utils/partitionFixed a b))))
-         (mapcat second)
-         (map to-executor-id)
-         )))
+        task->component (get-clojurified-task-info topology storm-conf)]
+    (if (nil? component->executors)
+      []
+      (->> (StormCommon/stormTaskInfo topology storm-conf)
+           (Utils/reverseMap)
+           clojurify-structure
+           (map-val sort)
+           ((fn [ & maps ] (Utils/joinMaps (into-array Map (into [component->executors] maps)))))
+           (clojurify-structure)
+           (map-val (partial apply (fn part-fixed [a b] (Utils/partitionFixed a b))))
+           (mapcat second)
+           (map to-executor-id)))))
 
 (defn- compute-executor->component [nimbus storm-id]
   (let [conf (:conf nimbus)
@@ -636,7 +636,7 @@
         executors (compute-executors nimbus storm-id)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
-        task->component (clojurify-structure (StormCommon/stormTaskInfo topology storm-conf))
+        task->component (get-clojurified-task-info topology storm-conf)
         executor->component (into {} (for [executor executors
                                            :let [start-task (first executor)
                                                  component (task->component start-task)]]
@@ -692,28 +692,35 @@
                                                    {})))]]
              {tid (SchedulerAssignmentImpl. tid executor->slot)})))
 
-(defn- read-all-supervisor-details [nimbus all-scheduling-slots supervisor->dead-ports]
+(defn- read-all-supervisor-details
+  [nimbus supervisor->dead-ports topologies missing-assignment-topologies]
   "return a map: {supervisor-id SupervisorDetails}"
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         supervisor-infos (all-supervisor-info storm-cluster-state)
-        nonexistent-supervisor-slots (apply dissoc all-scheduling-slots (keys supervisor-infos))
-        all-supervisor-details (into {} (for [[sid supervisor-info] supervisor-infos
-                                              :let [hostname (:hostname supervisor-info)
-                                                    scheduler-meta (:scheduler-meta supervisor-info)
-                                                    dead-ports (supervisor->dead-ports sid)
-                                                    ;; hide the dead-ports from the all-ports
-                                                    ;; these dead-ports can be reused in next round of assignments
-                                                    all-ports (-> (get all-scheduling-slots sid)
-                                                                  (set/difference dead-ports)
-                                                                  ((fn [ports] (map int ports))))
-                                                    supervisor-details (SupervisorDetails. sid hostname scheduler-meta all-ports (:resources-map supervisor-info))
-                                                    ]]
-                                          {sid supervisor-details}))]
-    (merge all-supervisor-details
-           (into {}
-              (for [[sid ports] nonexistent-supervisor-slots]
-                [sid (SupervisorDetails. sid nil ports)]))
-           )))
+        supervisor-details (for [[id info] supervisor-infos]
+                             (SupervisorDetails. id (:meta info) (:resources-map info)))
+        ;; Note that allSlotsAvailableForScheduling
+        ;; only uses the supervisor-details. The rest of the arguments
+        ;; are there to satisfy the INimbus interface.
+        all-scheduling-slots (->> (.allSlotsAvailableForScheduling
+                                    (:inimbus nimbus)
+                                    supervisor-details
+                                    topologies
+                                    (set missing-assignment-topologies))
+                                  (map (fn [s] {(.getNodeId s) #{(.getPort s)}}))
+                                  (apply merge-with set/union))]
+    (into {} (for [[sid supervisor-info] supervisor-infos
+                   :let [hostname (:hostname supervisor-info)
+                         scheduler-meta (:scheduler-meta supervisor-info)
+                         dead-ports (supervisor->dead-ports sid)
+                         ;; hide the dead-ports from the all-ports
+                         ;; these dead-ports can be reused in next round of assignments
+                         all-ports (-> (get all-scheduling-slots sid)
+                                       (set/difference dead-ports)
+                                       (as-> ports (map int ports)))
+                         supervisor-details (SupervisorDetails. sid hostname scheduler-meta all-ports (:resources-map supervisor-info))]]
+               {sid supervisor-details}))))
+
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn- compute-topology->executor->node+port [scheduler-assignments]
@@ -788,6 +795,9 @@
 
     new-topology->executor->node+port))
 
+(defrecord TopologyResources [requested-mem-on-heap requested-mem-off-heap requested-cpu
+                              assigned-mem-on-heap assigned-mem-off-heap assigned-cpu])
+ 
 ;; public so it can be mocked out
 (defn compute-new-scheduler-assignments [nimbus existing-assignments topologies scratch-topology-id]
   (let [conf (:conf nimbus)
@@ -820,22 +830,38 @@
                                                                   (get t)
                                                                   num-used-workers )
                                                               (-> topologies (.getById t) .getNumWorkers)))))))
-        all-scheduling-slots (->> (all-scheduling-slots nimbus topologies missing-assignment-topologies)
-                                  (map (fn [[node-id port]] {node-id #{port}}))
-                                  (apply merge-with set/union))
 
-        supervisors (read-all-supervisor-details nimbus all-scheduling-slots supervisor->dead-ports)
-        cluster (Cluster. (:inimbus nimbus) supervisors topology->scheduler-assignment conf)
-        _ (.setStatusMap cluster (deref (:id->sched-status nimbus)))
-        ;; call scheduler.schedule to schedule all the topologies
-        ;; the new assignments for all the topologies are in the cluster object.
-        _ (.schedule (:scheduler nimbus) topologies cluster)
-        _ (.setTopologyResourcesMap cluster @(:id->resources nimbus))
-        _ (if-not (conf SCHEDULER-DISPLAY-RESOURCE) (.updateAssignedMemoryForTopologyAndSupervisor cluster topologies))
-        ;;merge with existing statuses
-        _ (reset! (:id->sched-status nimbus) (merge (deref (:id->sched-status nimbus)) (.getStatusMap cluster)))
-        _ (reset! (:node-id->resources nimbus) (.getSupervisorsResourcesMap cluster))
-        _ (reset! (:id->resources nimbus) (.getTopologyResourcesMap cluster))]
+        supervisors (read-all-supervisor-details nimbus 
+                                                 supervisor->dead-ports
+                                                 topologies
+                                                 missing-assignment-topologies)
+        cluster (Cluster. (:inimbus nimbus) supervisors topology->scheduler-assignment conf)]
+
+    ;; set the status map with existing topology statuses
+    (.setStatusMap cluster (deref (:id->sched-status nimbus)))
+    ;; call scheduler.schedule to schedule all the topologies
+    ;; the new assignments for all the topologies are in the cluster object.
+    (.schedule (:scheduler nimbus) topologies cluster)
+
+    ;;merge with existing statuses
+    (reset! (:id->sched-status nimbus) (merge (deref (:id->sched-status nimbus)) (.getStatusMap cluster)))
+    (reset! (:node-id->resources nimbus) (.getSupervisorsResourcesMap cluster))
+
+    (if-not (conf SCHEDULER-DISPLAY-RESOURCE) 
+      (.updateAssignedMemoryForTopologyAndSupervisor cluster topologies))
+
+    ; Remove both of swaps below at first opportunity. This is a hack for non-ras scheduler topology and worker resources.
+    (swap! (:id->resources nimbus) merge (into {} (map (fn [[k v]] [k (->TopologyResources (nth v 0) (nth v 1) (nth v 2)
+                                                                                           (nth v 3) (nth v 4) (nth v 5))])
+                                                       (.getTopologyResourcesMap cluster))))
+    ; Remove this also at first chance
+    (swap! (:id->worker-resources nimbus) merge 
+           (into {} (map (fn [[k v]] [k (map-val #(doto (WorkerResources.)
+                                                        (.set_mem_on_heap (nth % 0))
+                                                        (.set_mem_off_heap (nth % 1))
+                                                        (.set_cpu (nth % 2))) v)])
+                         (.getWorkerResourcesMap cluster))))
+
     (.getAssignments cluster)))
 
 (defn- map-diff
@@ -843,6 +869,48 @@
   [m1 m2]
   (into {} (filter (fn [[k v]] (not= v (m1 k))) m2)))
 
+(defn get-resources-for-topology [nimbus topo-id]
+  (or (get @(:id->resources nimbus) topo-id)
+      (try
+        (let [storm-cluster-state (:storm-cluster-state nimbus)
+              topology-details (read-topology-details nimbus topo-id)
+              assigned-resources (->> (clojurify-assignment (.assignmentInfo storm-cluster-state topo-id nil))
+                                      :worker->resources
+                                      (vals)
+                                        ; Default to [[0 0 0]] if there are no values
+                                      (#(or % [[0 0 0]]))
+                                        ; [[on-heap, off-heap, cpu]] -> [[on-heap], [off-heap], [cpu]]
+                                      (apply map vector)
+                                        ; [[on-heap], [off-heap], [cpu]] -> [on-heap-sum, off-heap-sum, cpu-sum]
+                                      (map (partial reduce +)))
+              worker-resources (->TopologyResources (.getTotalRequestedMemOnHeap topology-details)
+                                                    (.getTotalRequestedMemOffHeap topology-details)
+                                                    (.getTotalRequestedCpu topology-details)
+                                                    (nth assigned-resources 0)
+                                                    (nth assigned-resources 1)
+                                                    (nth assigned-resources 2))]
+          (swap! (:id->resources nimbus) assoc topo-id worker-resources)
+          worker-resources)
+        (catch KeyNotFoundException e
+          ; This can happen when a topology is first coming up.
+          ; It's thrown by the blobstore code.
+          (log-error e "Failed to get topology details")
+          (->TopologyResources 0 0 0 0 0 0)))))
+
+(defn- get-worker-resources-for-topology [nimbus topo-id]
+  (or (get @(:id->worker-resources nimbus) topo-id)
+      (try
+        (let [storm-cluster-state (:storm-cluster-state nimbus)
+              assigned-resources (->> (clojurify-assignment (.assignmentInfo storm-cluster-state topo-id nil))
+                                      :worker->resources)
+              worker-resources (into {} (map #(identity {(WorkerSlot. (first (key %)) (second (key %)))  
+                                                         (doto (WorkerResources.)
+                                                             (.set_mem_on_heap (nth (val %) 0))
+                                                             (.set_mem_off_heap (nth (val %) 1))
+                                                             (.set_cpu (nth (val %) 2)))}) assigned-resources))]
+          (swap! (:id->worker-resources nimbus) assoc topo-id worker-resources)
+          worker-resources))))
+          
 (defn changed-executors [executor->node+port new-executor->node+port]
   (let [executor->node+port (if executor->node+port (sort executor->node+port) nil)
         new-executor->node+port (if new-executor->node+port (sort new-executor->node+port) nil)
@@ -934,6 +1002,10 @@
                                                  start-times
                                                  worker->resources)}))]
 
+    (when (not= new-assignments existing-assignments)
+      (log-debug "RESETTING id->resources and id->worker-resources cache!")
+      (reset! (:id->resources nimbus) {})
+      (reset! (:id->worker-resources nimbus) {}))
     ;; tasks figure out what tasks to talk to by looking at topology at runtime
     ;; only log/set when there's been a change to the assignment
     (doseq [[topology-id assignment] new-assignments
@@ -1002,18 +1074,30 @@
       (throw (AlreadyAliveException. (str storm-name " is already active"))))
     ))
 
+(defn try-read-storm-conf [conf storm-id blob-store]
+  (try-cause
+    (read-storm-conf-as-nimbus conf storm-id blob-store)
+    (catch KeyNotFoundException e
+       (throw (NotAliveException. (str storm-id))))))
+
+(defn try-read-storm-conf-from-name [conf storm-name nimbus]
+  (let [storm-cluster-state (:storm-cluster-state nimbus)
+        blob-store (:blob-store nimbus)
+        id (StormCommon/getStormId storm-cluster-state storm-name)]
+   (try-read-storm-conf conf id blob-store)))
+
 (defn check-authorization!
   ([nimbus storm-name storm-conf operation context]
      (let [aclHandler (:authorization-handler nimbus)
            impersonation-authorizer (:impersonation-authorization-handler nimbus)
            ctx (or context (ReqContext/context))
            check-conf (if storm-conf storm-conf (if storm-name {TOPOLOGY-NAME storm-name}))]
-       (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation)
        (if (.isImpersonating ctx)
          (do
           (log-warn "principal: " (.realPrincipal ctx) " is trying to impersonate principal: " (.principal ctx))
           (if impersonation-authorizer
-           (if-not (.permit impersonation-authorizer ctx operation check-conf)
+           (when-not (.permit impersonation-authorizer ctx operation check-conf)
+             (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-denied")
              (throw (AuthorizationException. (str "principal " (.realPrincipal ctx) " is not authorized to impersonate
                         principal " (.principal ctx) " from host " (.remoteAddress ctx) " Please see SECURITY.MD to learn
                         how to configure impersonation acls."))))
@@ -1022,10 +1106,21 @@
 
        (if aclHandler
          (if-not (.permit aclHandler ctx operation check-conf)
-           (throw (AuthorizationException. (str operation (if storm-name (str " on topology " storm-name)) " is not authorized")))
-           ))))
+           (do
+             (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-denied")
+             (throw (AuthorizationException. (str operation (if storm-name (str " on topology " storm-name)) " is not authorized"))))
+           (ThriftAccessLogger/logAccess (.requestID ctx) (.remoteAddress ctx) (.principal ctx) operation storm-name "access-granted")))))
   ([nimbus storm-name storm-conf operation]
      (check-authorization! nimbus storm-name storm-conf operation (ReqContext/context))))
+
+;; no-throw version of check-authorization!
+(defn is-authorized?
+  [nimbus conf blob-store operation topology-id]
+  (let [topology-conf (try-read-storm-conf conf topology-id blob-store)
+        storm-name (topology-conf TOPOLOGY-NAME)]
+    (try (check-authorization! nimbus storm-name topology-conf operation)
+         true
+      (catch AuthorizationException e false))))
 
 (defn code-ids [blob-store]
   (let [to-id (reify KeyFilter
@@ -1105,6 +1200,17 @@
     (catch Exception e
       (log-message "Exception" e))))
 
+(defn blob-rm-dependency-jars-in-topology [id blob-store storm-cluster-state]
+  (try
+    (let [storm-topology (read-storm-topology-as-nimbus id blob-store)
+          dependency-jars (.get_dependency_jars ^StormTopology storm-topology)]
+      (log-message "Removing dependency jars from blobs - " dependency-jars)
+      (when-not (empty? dependency-jars)
+        (doseq [key dependency-jars]
+          (blob-rm-key blob-store key storm-cluster-state))))
+    (catch Exception e
+      (log-message "Exception" e))))
+
 (defn blob-rm-topology-keys [id blob-store storm-cluster-state]
   (blob-rm-key blob-store (ConfigUtils/masterStormJarKey id) storm-cluster-state)
   (blob-rm-key blob-store (ConfigUtils/masterStormConfKey id) storm-cluster-state)
@@ -1127,6 +1233,7 @@
             (.teardownHeartbeats storm-cluster-state id)
             (.teardownTopologyErrors storm-cluster-state id)
             (.removeBackpressure storm-cluster-state id)
+            (blob-rm-dependency-jars-in-topology id blob-store storm-cluster-state)
             (force-delete-topo-dist-dir conf id)
             (blob-rm-topology-keys id blob-store storm-cluster-state)
             (swap! (:heartbeats-cache nimbus) dissoc id)))))
@@ -1153,19 +1260,6 @@
     (let [cutoff-age (- (Time/currentTimeSecs) (* mins 60))
           topo-history-state (:topo-history-state nimbus)]
           (.filterOldTopologies ^LocalState topo-history-state cutoff-age))))
-
-(defn cleanup-corrupt-topologies! [nimbus]
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        blob-store (:blob-store nimbus)
-        code-ids (set (code-ids blob-store))
-        active-topologies (set (.activeStorms storm-cluster-state))
-        corrupt-topologies (set/difference active-topologies code-ids)]
-    (doseq [corrupt corrupt-topologies]
-      (log-message "Corrupt topology " corrupt " has state on zookeeper but doesn't have a local dir on Nimbus. Cleaning up...")
-      (.removeStorm storm-cluster-state corrupt)
-      (if (instance? LocalFsBlobStore blob-store)
-        (doseq [blob-key (get-key-list-from-id (:conf nimbus) corrupt)]
-          (.removeBlobstoreKey storm-cluster-state blob-key))))))
 
 (defn setup-blobstore [nimbus]
   "Sets up blobstore state for all current keys."
@@ -1302,7 +1396,7 @@
                   (when-not (= orig-creds new-creds)
                     (.setCredentials storm-cluster-state id (thriftify-credentials new-creds) topology-conf)
                     ))))))))
-    (log-message "not a leader skipping , credential renweal.")))
+    (log-message "not a leader, skipping credential renewal.")))
 
 ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
 (defn validate-topology-size [topo-conf nimbus-conf topology]
@@ -1352,19 +1446,144 @@
 (defmethod blob-sync :local [conf nimbus]
   nil)
 
+(defn make-supervisor-summary 
+  [nimbus id info]
+    (let [ports (set (:meta info)) ;;TODO: this is only true for standalone
+          sup-sum (SupervisorSummary. (:hostname info)
+                                      (:uptime-secs info)
+                                      (count ports)
+                                      (count (:used-ports info))
+                                      id)]
+      (.set_total_resources sup-sum (map-val double (:resources-map info)))
+      (when-let [[total-mem total-cpu used-mem used-cpu] (.get @(:node-id->resources nimbus) id)]
+        (.set_used_mem sup-sum (Utils/nullToZero used-mem))
+        (.set_used_cpu sup-sum (Utils/nullToZero used-cpu)))
+      (when-let [version (:version info)] (.set_version sup-sum version))
+      sup-sum))
+
+(defn user-and-supervisor-topos
+  [nimbus conf blob-store assignments supervisor-id]
+  (let [topo-id->supervisors 
+          (into {} (for [[topo-id java-assignment] assignments] 
+                     (let [assignment (clojurify-assignment java-assignment)]
+                       {topo-id (into #{} 
+                                      (map #(first (second %)) 
+                                           (:executor->node+port assignment)))})))
+        supervisor-topologies (keys (filter #(get (val %) supervisor-id) topo-id->supervisors))]
+    {:supervisor-topologies supervisor-topologies
+     :user-topologies (into #{} (filter (partial is-authorized? nimbus 
+                                                 conf 
+                                                 blob-store 
+                                                 "getTopology") 
+                  supervisor-topologies))}))
+
+(defn topology-assignments 
+  [storm-cluster-state]
+  (let [assigned-topology-ids (.assignments storm-cluster-state nil)]
+    (into {} (for [tid assigned-topology-ids]
+               {tid (.assignmentInfo storm-cluster-state tid nil)}))))
+
+(defn get-launch-time-secs 
+  [base storm-id]
+  (if base (:launch-time-secs base)
+    (throw
+      (NotAliveException. (str storm-id)))))
+
+(defn get-cluster-info [nimbus]
+  (let [storm-cluster-state (:storm-cluster-state nimbus)
+        supervisor-infos (all-supervisor-info storm-cluster-state)
+        ;; TODO: need to get the port info about supervisors...
+        ;; in standalone just look at metadata, otherwise just say N/A?
+        supervisor-summaries (dofor [[id info] supervisor-infos]
+                                    (make-supervisor-summary nimbus id info))
+        nimbus-uptime (. (:uptime nimbus) upTime)
+        bases (nimbus-topology-bases storm-cluster-state)
+        nimbuses (.nimbuses storm-cluster-state)
+
+        ;;update the isLeader field for each nimbus summary
+        _ (let [leader (.getLeader (:leader-elector nimbus))
+                leader-host (.getHost leader)
+                leader-port (.getPort leader)]
+            (doseq [nimbus-summary nimbuses]
+              (.set_uptime_secs nimbus-summary (Time/deltaSecs (.get_uptime_secs nimbus-summary)))
+              (.set_isLeader nimbus-summary (and (= leader-host (.get_host nimbus-summary)) (= leader-port (.get_port nimbus-summary))))))
+
+        topology-summaries (dofor [[id base] bases :when base]
+                                  (let [assignment (clojurify-assignment (.assignmentInfo storm-cluster-state id nil))
+                                        topo-summ (TopologySummary. id
+                                                                    (:storm-name base)
+                                                                    (->> (:executor->node+port assignment)
+                                                                         keys
+                                                                         (mapcat #(clojurify-structure (StormCommon/executorIdToTasks %)))
+                                                                         count)
+                                                                    (->> (:executor->node+port assignment)
+                                                                         keys
+                                                                         count)
+                                                                    (->> (:executor->node+port assignment)
+                                                                         vals
+                                                                         set
+                                                                         count)
+                                                                    (Time/deltaSecs (:launch-time-secs base))
+                                                                    (extract-status-str base))]
+                                    (when-let [owner (:owner base)] (.set_owner topo-summ owner))
+                                    (when-let [sched-status (.get @(:id->sched-status nimbus) id)] (.set_sched_status topo-summ sched-status))
+                                    (when-let [resources (get-resources-for-topology nimbus id)]
+                                      (.set_requested_memonheap topo-summ (:requested-mem-on-heap resources))
+                                      (.set_requested_memoffheap topo-summ (:requested-mem-off-heap resources))
+                                      (.set_requested_cpu topo-summ (:requested-cpu resources))
+                                      (.set_assigned_memonheap topo-summ (:assigned-mem-on-heap resources))
+                                      (.set_assigned_memoffheap topo-summ (:assigned-mem-off-heap resources))
+                                      (.set_assigned_cpu topo-summ (:assigned-cpu resources)))
+                                    (.set_replication_count topo-summ (get-blob-replication-count (ConfigUtils/masterStormCodeKey id) nimbus))
+                                    topo-summ))
+        ret (ClusterSummary. supervisor-summaries
+                             topology-summaries
+                             nimbuses)
+        _ (.set_nimbus_uptime_secs ret nimbus-uptime)]
+    ret))
+
 (defn- between?
   "val >= lower and val <= upper"
   [val lower upper]
   (and (>= val lower)
     (<= val upper)))
 
-;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
-(defserverfn service-handler [conf inimbus]
-  (.prepare inimbus conf (ConfigUtils/masterInimbusDir conf))
-  (log-message "Starting Nimbus with conf " conf)
-  (let [nimbus (nimbus-data conf inimbus)
-        blob-store (:blob-store nimbus)
-        principal-to-local (AuthUtils/GetPrincipalToLocalPlugin conf)
+(defn extract-cluster-metrics [^ClusterSummary summ]
+  (let [cluster-summ (ui/cluster-summary summ "nimbus")]
+    {:cluster-info (IClusterMetricsConsumer$ClusterInfo. (long (Time/currentTimeSecs)))
+     :data-points  (map
+                     (fn [[k v]] (DataPoint. k v))
+                     (select-keys cluster-summ ["supervisors" "topologies" "slotsTotal" "slotsUsed" "slotsFree"
+                                                "executorsTotal" "tasksTotal"]))}))
+(defn extract-supervisors-metrics [^ClusterSummary summ]
+  (let [sups (.get_supervisors summ)
+        supervisors-summ ((ui/supervisor-summary sups) "supervisors")]
+    (map (fn [supervisor-summ]
+           {:supervisor-info (IClusterMetricsConsumer$SupervisorInfo.
+                               (supervisor-summ "host")
+                               (supervisor-summ "id")
+                               (long (Time/currentTimeSecs)))
+            :data-points     (map
+                               (fn [[k v]] (DataPoint. k v))
+                               (select-keys supervisor-summ ["slotsTotal" "slotsUsed" "totalMem" "totalCpu"
+                                                             "usedMem" "usedCpu"]))})
+         supervisors-summ)))
+
+(defn send-cluster-metrics-to-executors [nimbus]
+  (let [cluster-summary (get-cluster-info nimbus)
+        cluster-metrics (extract-cluster-metrics cluster-summary)
+        supervisors-metrics (extract-supervisors-metrics cluster-summary)]
+    (dofor
+      [consumer-executor (:cluster-consumer-executors nimbus)]
+      (do
+        (.handleDataPoints consumer-executor (:cluster-info cluster-metrics) (:data-points cluster-metrics))
+        (dofor
+          [supervisor-metrics supervisors-metrics]
+          (do
+            (.handleDataPoints consumer-executor (:supervisor-info supervisor-metrics) (:data-points supervisor-metrics))))))))
+
+(defn mk-reified-nimbus [nimbus conf blob-store]
+  (let [principal-to-local (AuthUtils/GetPrincipalToLocalPlugin conf)
         admin-users (or (.get conf NIMBUS-ADMINS) [])
         get-common-topo-info
           (fn [^String storm-id operation]
@@ -1376,11 +1595,9 @@
                                           topology-conf
                                           operation)
                   topology (try-read-storm-topology storm-id blob-store)
-                  task->component (clojurify-structure (StormCommon/stormTaskInfo topology topology-conf))
+                  task->component (get-clojurified-task-info topology topology-conf)
                   base (clojurify-storm-base (.stormBase storm-cluster-state storm-id nil))
-                  launch-time-secs (if base (:launch-time-secs base)
-                                     (throw
-                                       (NotAliveException. (str storm-id))))
+                  launch-time-secs (get-launch-time-secs base storm-id)
                   assignment (clojurify-assignment (.assignmentInfo storm-cluster-state storm-id nil))
                   beats (get @(:heartbeats-cache nimbus) storm-id)
                   all-components (set (vals task->component))]
@@ -1389,10 +1606,16 @@
                :all-components all-components
                :launch-time-secs launch-time-secs
                :assignment assignment
-               :beats beats
+               :beats (or beats {})
                :topology topology
+               :topology-conf topology-conf
                :task->component task->component
                :base base}))
+        set-resources-default-if-not-set
+          (fn [^HashMap component-resources-map component-id topology-conf]
+              (let [resource-map (or (.get component-resources-map component-id) (HashMap.))]
+                (ResourceUtils/checkIntialization resource-map component-id topology-conf)
+                resource-map))
         get-last-error (fn [storm-cluster-state storm-id component-id]
                          (if-let [e (clojurify-error  (.lastError storm-cluster-state
                                                  storm-id
@@ -1400,64 +1623,6 @@
                            (doto (ErrorInfo. (:error e) (:time-secs e))
                              (.set_host (:host e))
                              (.set_port (:port e)))))]
-    (.prepare ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
-
-    ;add to nimbuses
-    (.addNimbusHost (:storm-cluster-state nimbus) (.toHostPortString (:nimbus-host-port-info nimbus))
-      (NimbusSummary.
-        (.getHost (:nimbus-host-port-info nimbus))
-        (.getPort (:nimbus-host-port-info nimbus))
-        (Time/currentTimeSecs)
-        false ;is-leader
-        STORM-VERSION))
-
-    (.addToLeaderLockQueue (:leader-elector nimbus))
-    (cleanup-corrupt-topologies! nimbus)
-    (when (instance? LocalFsBlobStore blob-store)
-      ;register call back for blob-store
-      (.blobstore (:storm-cluster-state nimbus) (fn [] (blob-sync conf nimbus)))
-      (setup-blobstore nimbus))
-
-    (when (is-leader nimbus :throw-exception false)
-      (doseq [storm-id (.activeStorms (:storm-cluster-state nimbus))]
-        (transition! nimbus storm-id :startup)))
-
-    (.scheduleRecurring (:timer nimbus)
-      0
-      (conf NIMBUS-MONITOR-FREQ-SECS)
-      (fn []
-        (when-not (conf ConfigUtils/NIMBUS_DO_NOT_REASSIGN)
-          (locking (:submit-lock nimbus)
-            (mk-assignments nimbus)))
-        (do-cleanup nimbus)))
-    ;; Schedule Nimbus inbox cleaner
-    (.scheduleRecurring (:timer nimbus)
-      0
-      (conf NIMBUS-CLEANUP-INBOX-FREQ-SECS)
-      (fn [] (clean-inbox (inbox nimbus) (conf NIMBUS-INBOX-JAR-EXPIRATION-SECS))))
-    ;; Schedule nimbus code sync thread to sync code from other nimbuses.
-    (if (instance? LocalFsBlobStore blob-store)
-      (.scheduleRecurring (:timer nimbus)
-        0
-        (conf NIMBUS-CODE-SYNC-FREQ-SECS)
-        (fn [] (blob-sync conf nimbus))))
-    ;; Schedule topology history cleaner
-    (when-let [interval (conf LOGVIEWER-CLEANUP-INTERVAL-SECS)]
-      (.scheduleRecurring (:timer nimbus)
-        0
-        (conf LOGVIEWER-CLEANUP-INTERVAL-SECS)
-        (fn [] (clean-topology-history (conf LOGVIEWER-CLEANUP-AGE-MINS) nimbus))))
-    (.scheduleRecurring (:timer nimbus)
-      0
-      (conf NIMBUS-CREDENTIAL-RENEW-FREQ-SECS)
-      (fn []
-        (renew-credentials nimbus)))
-
-    (def nimbus:num-supervisors (StormMetricsRegistry/registerGauge "nimbus:num-supervisors"
-      (fn [] (.size (.supervisors (:storm-cluster-state nimbus) nil)))))
-
-    (StormMetricsRegistry/startMetricsReporters conf)
-    
     (reify Nimbus$Iface
       (^void submitTopologyWithOpts
         [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology
@@ -1505,6 +1670,9 @@
                 storm-conf (if (Utils/isZkAuthenticationConfiguredStormServer conf)
                                 storm-conf
                                 (dissoc storm-conf STORM-ZOOKEEPER-TOPOLOGY-AUTH-SCHEME STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD))
+                storm-conf (if (conf STORM-TOPOLOGY-CLASSPATH-BEGINNING-ENABLED)
+                             storm-conf
+                             (dissoc storm-conf TOPOLOGY-CLASSPATH-BEGINNING))
                 total-storm-conf (merge conf storm-conf)
                 topology (normalize-topology total-storm-conf topology)
                 storm-cluster-state (:storm-cluster-state nimbus)]
@@ -1742,16 +1910,16 @@
         (.mark nimbus:num-downloadChunk-calls)
         (check-authorization! nimbus nil nil "fileDownload")
         (let [downloaders (:downloaders nimbus)
-              ^BufferFileInputStream is (.get downloaders id)]
+              ^BufferInputStream is (.get downloaders id)]
           (when-not is
             (throw (RuntimeException.
-                    "Could not find input stream for that id")))
+                    "Could not find input stream for id " id)))
           (let [ret (.read is)]
             (.put downloaders id is)
             (when (empty? ret)
+              (.close is)
               (.remove downloaders id))
-            (ByteBuffer/wrap ret)
-            )))
+            (ByteBuffer/wrap ret))))
 
       (^String getNimbusConf [this]
         (.mark nimbus:num-getNimbusConf-calls)
@@ -1791,69 +1959,7 @@
       (^ClusterSummary getClusterInfo [this]
         (.mark nimbus:num-getClusterInfo-calls)
         (check-authorization! nimbus nil nil "getClusterInfo")
-        (let [storm-cluster-state (:storm-cluster-state nimbus)
-              supervisor-infos (all-supervisor-info storm-cluster-state)
-              ;; TODO: need to get the port info about supervisors...
-              ;; in standalone just look at metadata, otherwise just say N/A?
-              supervisor-summaries (dofor [[id info] supervisor-infos]
-                                     (let [ports (set (:meta info)) ;;TODO: this is only true for standalone
-                                           sup-sum (SupervisorSummary. (:hostname info)
-                                                     (:uptime-secs info)
-                                                     (count ports)
-                                                     (count (:used-ports info))
-                                                     id) ]
-                                       ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
-                                       (.set_total_resources sup-sum (map-val double (:resources-map info)))
-                                       (when-let [[total-mem total-cpu used-mem used-cpu] (.get @(:node-id->resources nimbus) id)]
-                                         (.set_used_mem sup-sum used-mem)
-                                         (.set_used_cpu sup-sum used-cpu))
-                                       (when-let [version (:version info)] (.set_version sup-sum version))
-                                       sup-sum))
-              nimbus-uptime (. (:uptime nimbus) upTime)
-              bases (nimbus-topology-bases storm-cluster-state)
-              nimbuses (.nimbuses storm-cluster-state)
-
-              ;;update the isLeader field for each nimbus summary
-              _ (let [leader (.getLeader (:leader-elector nimbus))
-                      leader-host (.getHost leader)
-                      leader-port (.getPort leader)]
-                  (doseq [nimbus-summary nimbuses]
-                    (.set_uptime_secs nimbus-summary (Time/deltaSecs (.get_uptime_secs nimbus-summary)))
-                    (.set_isLeader nimbus-summary (and (= leader-host (.get_host nimbus-summary)) (= leader-port (.get_port nimbus-summary))))))
-
-              topology-summaries (dofor [[id base] bases :when base]
-                                   (let [assignment (clojurify-assignment (.assignmentInfo storm-cluster-state id nil))
-                                         topo-summ (TopologySummary. id
-                                                     (:storm-name base)
-                                                     (->> (:executor->node+port assignment)
-                                                       keys
-                                                       (mapcat #(clojurify-structure (StormCommon/executorIdToTasks %)))
-                                                       count)
-                                                     (->> (:executor->node+port assignment)
-                                                       keys
-                                                       count)
-                                                     (->> (:executor->node+port assignment)
-                                                       vals
-                                                       set
-                                                       count)
-                                                     (Time/deltaSecs (:launch-time-secs base))
-                                                     (extract-status-str base))]
-                                     (when-let [owner (:owner base)] (.set_owner topo-summ owner))
-                                     (when-let [sched-status (.get @(:id->sched-status nimbus) id)] (.set_sched_status topo-summ sched-status))
-                                     (when-let [resources (.get @(:id->resources nimbus) id)]
-                                       (.set_requested_memonheap topo-summ (get resources 0))
-                                       (.set_requested_memoffheap topo-summ (get resources 1))
-                                       (.set_requested_cpu topo-summ (get resources 2))
-                                       (.set_assigned_memonheap topo-summ (get resources 3))
-                                       (.set_assigned_memoffheap topo-summ (get resources 4))
-                                       (.set_assigned_cpu topo-summ (get resources 5)))
-                                     (.set_replication_count topo-summ (get-blob-replication-count (ConfigUtils/masterStormCodeKey id) nimbus))
-                                     topo-summ))
-              ret (ClusterSummary. supervisor-summaries
-                                   topology-summaries
-                                   nimbuses)
-              _ (.set_nimbus_uptime_secs ret nimbus-uptime)]
-              ret))
+        (get-cluster-info nimbus))
 
       (^TopologyInfo getTopologyInfoWithOpts [this ^String storm-id ^GetInfoOptions options]
         (.mark nimbus:num-getTopologyInfoWithOpts-calls)
@@ -1885,7 +1991,8 @@
               executor-summaries (dofor [[executor [node port]] (:executor->node+port assignment)]
                                    (let [host (-> assignment :node->host (get node))
                                             heartbeat (.get beats (StatsUtil/convertExecutor executor))
-                                            hb (if heartbeat (.get heartbeat "heartbeat"))
+                                            heartbeat (or heartbeat {})
+                                            hb (.get heartbeat "heartbeat")
                                             excutorstats (if hb (.get hb "stats"))
                                             excutorstats (if excutorstats
                                                     (StatsUtil/thriftifyExecutorStats excutorstats))]
@@ -1906,13 +2013,13 @@
                            )]
             (when-let [owner (:owner base)] (.set_owner topo-info owner))
             (when-let [sched-status (.get @(:id->sched-status nimbus) storm-id)] (.set_sched_status topo-info sched-status))
-            (when-let [resources (.get @(:id->resources nimbus) storm-id)]
-              (.set_requested_memonheap topo-info (get resources 0))
-              (.set_requested_memoffheap topo-info (get resources 1))
-              (.set_requested_cpu topo-info (get resources 2))
-              (.set_assigned_memonheap topo-info (get resources 3))
-              (.set_assigned_memoffheap topo-info (get resources 4))
-              (.set_assigned_cpu topo-info (get resources 5)))
+            (when-let [resources (get-resources-for-topology nimbus storm-id)]
+              (.set_requested_memonheap topo-info (:requested-mem-on-heap resources))
+              (.set_requested_memoffheap topo-info (:requested-mem-off-heap resources))
+              (.set_requested_cpu topo-info (:requested-cpu resources))
+              (.set_assigned_memonheap topo-info (:assigned-mem-on-heap resources))
+              (.set_assigned_memoffheap topo-info (:assigned-mem-off-heap resources))
+              (.set_assigned_cpu topo-info (:assigned-cpu resources)))
             (when-let [component->debug (:component->debug base)]
               ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               (.set_component_debug topo-info (map-val converter/thriftify-debugoptions component->debug)))
@@ -1924,6 +2031,7 @@
         (.getTopologyInfoWithOpts this
                                   topology-id
                                   (doto (GetInfoOptions.) (.set_num_err_choice NumErrorsChoice/ALL))))
+
 
       (^String beginCreateBlob [this
                                 ^String blob-key
@@ -2076,43 +2184,120 @@
       (^TopologyPageInfo getTopologyPageInfo
         [this ^String topo-id ^String window ^boolean include-sys?]
         (.mark nimbus:num-getTopologyPageInfo-calls)
-        (let [info (get-common-topo-info topo-id "getTopologyPageInfo")
-
-              exec->node+port (:executor->node+port (:assignment info))
+        (let [topo-info (get-common-topo-info topo-id "getTopologyPageInfo")
+              {:keys [storm-name
+                      storm-cluster-state
+                      launch-time-secs
+                      assignment
+                      beats
+                      task->component
+                      topology
+                      topology-conf
+                      base]} topo-info
+              exec->node+port (:executor->node+port assignment)
+              node->host (:node->host assignment)
+              worker->resources (get-worker-resources-for-topology nimbus topo-id)
+              worker-summaries (StatsUtil/aggWorkerStats topo-id 
+                                                         storm-name
+                                                         task->component
+                                                         beats
+                                                         exec->node+port
+                                                         node->host
+                                                         worker->resources
+                                                         include-sys?
+                                                         true)  ;; this is the topology page, so we know the user is authorized 
               topo-page-info (StatsUtil/aggTopoExecsStats topo-id
                                                           exec->node+port
-                                                          (:task->component info)
-                                                          (:beats info)
-                                                          (:topology info)
+                                                          task->component
+                                                          beats
+                                                          topology
                                                           window
                                                           include-sys?
-                                                          (:storm-cluster-state info))]
-          (when-let [owner (:owner (:base info))]
+                                                          storm-cluster-state)]
+
+          (doseq [[spout-id component-aggregate-stats] (.get_id_to_spout_agg_stats topo-page-info)]
+            (let [common-stats (.get_common_stats component-aggregate-stats)
+                  resources (ResourceUtils/getSpoutsResources topology topology-conf)]
+              (.set_resources_map common-stats (set-resources-default-if-not-set resources spout-id topology-conf))))
+
+          (doseq [[bolt-id component-aggregate-stats] (.get_id_to_bolt_agg_stats topo-page-info)]
+            (let [common-stats (.get_common_stats component-aggregate-stats)
+                  resources (ResourceUtils/getBoltsResources topology topology-conf)]
+              (.set_resources_map common-stats (set-resources-default-if-not-set resources bolt-id topology-conf))))
+
+          (.set_workers topo-page-info worker-summaries)
+          (when-let [owner (:owner base)]
             (.set_owner topo-page-info owner))
           (when-let [sched-status (.get @(:id->sched-status nimbus) topo-id)]
             (.set_sched_status topo-page-info sched-status))
-          (when-let [resources (.get @(:id->resources nimbus) topo-id)]
-            (.set_requested_memonheap topo-page-info (get resources 0))
-            (.set_requested_memoffheap topo-page-info (get resources 1))
-            (.set_requested_cpu topo-page-info (get resources 2))
-            (.set_assigned_memonheap topo-page-info (get resources 3))
-            (.set_assigned_memoffheap topo-page-info (get resources 4))
-            (.set_assigned_cpu topo-page-info (get resources 5)))
+          (when-let [resources (get-resources-for-topology nimbus topo-id)]
+            (.set_requested_memonheap topo-page-info (:requested-mem-on-heap resources))
+            (.set_requested_memoffheap topo-page-info (:requested-mem-off-heap resources))
+            (.set_requested_cpu topo-page-info (:requested-cpu resources))
+            (.set_assigned_memonheap topo-page-info (:assigned-mem-on-heap resources))
+            (.set_assigned_memoffheap topo-page-info (:assigned-mem-off-heap resources))
+            (.set_assigned_cpu topo-page-info (:assigned-cpu resources)))
           (doto topo-page-info
-            (.set_name (:storm-name info))
-            (.set_status (extract-status-str (:base info)))
-            (.set_uptime_secs (Time/deltaSecs (:launch-time-secs info)))
+            (.set_name storm-name)
+            (.set_status (extract-status-str base))
+            (.set_uptime_secs (Time/deltaSecs launch-time-secs))
             (.set_topology_conf (JSONValue/toJSONString
                                   (try-read-storm-conf conf
                                                        topo-id
                                                        (:blob-store nimbus))))
             (.set_replication_count (get-blob-replication-count (ConfigUtils/masterStormCodeKey topo-id) nimbus)))
           (when-let [debug-options
-                     (get-in info [:base :component->debug topo-id])]
+                     (get-in topo-info [:base :component->debug topo-id])]
             (.set_debug_options
               topo-page-info
               (converter/thriftify-debugoptions debug-options)))
           topo-page-info))
+
+      (^SupervisorPageInfo getSupervisorPageInfo
+        [this
+         ^String supervisor-id
+         ^String host 
+         ^boolean include-sys?]
+        (.mark nimbus:num-getSupervisorPageInfo-calls)
+        (let [storm-cluster-state (:storm-cluster-state nimbus)
+              supervisor-infos (all-supervisor-info storm-cluster-state)
+              host->supervisor-id (Utils/reverseMap (map-val :hostname supervisor-infos))
+              supervisor-ids (if (nil? supervisor-id)
+                                (get host->supervisor-id host)
+                                  [supervisor-id])
+              page-info (SupervisorPageInfo.)]
+              (doseq [sid supervisor-ids]
+                (let [supervisor-info (get supervisor-infos sid)
+                      sup-sum (make-supervisor-summary nimbus sid supervisor-info)
+                      _ (.add_to_supervisor_summaries page-info sup-sum)
+                      topo-id->assignments (topology-assignments storm-cluster-state)
+                      {:keys [user-topologies 
+                              supervisor-topologies]} (user-and-supervisor-topos nimbus
+                                                                                 conf
+                                                                                 blob-store
+                                                                                 topo-id->assignments 
+                                                                                 sid)]
+                  (doseq [storm-id supervisor-topologies]
+                      (let [topo-info (get-common-topo-info storm-id "getSupervisorPageInfo")
+                            {:keys [storm-name
+                                    assignment
+                                    beats
+                                    task->component]} topo-info
+                            exec->node+port (:executor->node+port assignment)
+                            node->host (:node->host assignment)
+                            worker->resources (get-worker-resources-for-topology nimbus storm-id)]
+                        (doseq [worker-summary (StatsUtil/aggWorkerStats storm-id 
+                                                                         storm-name
+                                                                         task->component
+                                                                         beats
+                                                                         exec->node+port
+                                                                         node->host
+                                                                         worker->resources
+                                                                         include-sys?
+                                                                         (boolean (get user-topologies storm-id))
+                                                                         sid)]
+                          (.add_to_worker_summaries page-info worker-summary)))))) 
+              page-info))
 
       (^ComponentPageInfo getComponentPageInfo
         [this
@@ -2122,6 +2307,7 @@
          ^boolean include-sys?]
         (.mark nimbus:num-getComponentPageInfo-calls)
         (let [info (get-common-topo-info topo-id "getComponentPageInfo")
+              {:keys [topology topology-conf]} info
               {:keys [executor->node+port node->host]} (:assignment info)
               ;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
               executor->host+port (map-val (fn [[node port]]
@@ -2135,6 +2321,12 @@
                                                          topo-id
                                                          (:topology info)
                                                          component-id)]
+          (if (.equals (.get_component_type comp-page-info) ComponentType/SPOUT)
+            (.set_resources_map comp-page-info 
+              (set-resources-default-if-not-set (ResourceUtils/getSpoutsResources topology topology-conf) component-id topology-conf))
+            (.set_resources_map comp-page-info
+              (set-resources-default-if-not-set (ResourceUtils/getBoltsResources topology topology-conf) component-id topology-conf)))
+
           (doto comp-page-info
             (.set_topology_name (:storm-name info))
             (.set_errors (get-errors (:storm-cluster-state info)
@@ -2194,6 +2386,82 @@
       DaemonCommon
       (isWaiting [this]
         (.isTimerWaiting (:timer nimbus))))))
+
+;TODO: when translating this function, you should replace the map-val with a proper for loop HERE
+(defserverfn service-handler [conf inimbus]
+  (.prepare inimbus conf (ConfigUtils/masterInimbusDir conf))
+  (log-message "Starting Nimbus with conf " conf)
+  (let [nimbus (nimbus-data conf inimbus)
+        blob-store (:blob-store nimbus)]
+    (.prepare ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
+
+    ;add to nimbuses
+    (.addNimbusHost (:storm-cluster-state nimbus) (.toHostPortString (:nimbus-host-port-info nimbus))
+      (NimbusSummary.
+        (.getHost (:nimbus-host-port-info nimbus))
+        (.getPort (:nimbus-host-port-info nimbus))
+        (Time/currentTimeSecs)
+        false ;is-leader
+        STORM-VERSION))
+
+    (.addToLeaderLockQueue (:leader-elector nimbus))
+    (when (instance? LocalFsBlobStore blob-store)
+      ;register call back for blob-store
+      (.blobstore (:storm-cluster-state nimbus) (fn [] (blob-sync conf nimbus)))
+      (setup-blobstore nimbus))
+
+    (doseq [consumer (:cluster-consumer-executors nimbus)]
+      (.prepare consumer))
+
+    (when (is-leader nimbus :throw-exception false)
+      (doseq [storm-id (.activeStorms (:storm-cluster-state nimbus))]
+        (transition! nimbus storm-id :startup)))
+
+    (.scheduleRecurring (:timer nimbus)
+      0
+      (conf NIMBUS-MONITOR-FREQ-SECS)
+      (fn []
+        (when-not (conf ConfigUtils/NIMBUS_DO_NOT_REASSIGN)
+          (locking (:submit-lock nimbus)
+            (mk-assignments nimbus)))
+        (do-cleanup nimbus)))
+    ;; Schedule Nimbus inbox cleaner
+    (.scheduleRecurring (:timer nimbus)
+      0
+      (conf NIMBUS-CLEANUP-INBOX-FREQ-SECS)
+      (fn [] (clean-inbox (inbox nimbus) (conf NIMBUS-INBOX-JAR-EXPIRATION-SECS))))
+    ;; Schedule nimbus code sync thread to sync code from other nimbuses.
+    (if (instance? LocalFsBlobStore blob-store)
+      (.scheduleRecurring (:timer nimbus)
+        0
+        (conf NIMBUS-CODE-SYNC-FREQ-SECS)
+        (fn [] (blob-sync conf nimbus))))
+    ;; Schedule topology history cleaner
+    (when-let [interval (conf LOGVIEWER-CLEANUP-INTERVAL-SECS)]
+      (.scheduleRecurring (:timer nimbus)
+        0
+        (conf LOGVIEWER-CLEANUP-INTERVAL-SECS)
+        (fn [] (clean-topology-history (conf LOGVIEWER-CLEANUP-AGE-MINS) nimbus))))
+    (.scheduleRecurring (:timer nimbus)
+      0
+      (conf NIMBUS-CREDENTIAL-RENEW-FREQ-SECS)
+      (fn []
+        (renew-credentials nimbus)))
+
+    (def nimbus:num-supervisors (StormMetricsRegistry/registerGauge "nimbus:num-supervisors"
+      (fn [] (.size (.supervisors (:storm-cluster-state nimbus) nil)))))
+
+    (StormMetricsRegistry/startMetricsReporters conf)
+
+    (if (:cluster-consumer-executors nimbus)
+      (.scheduleRecurring (:timer nimbus)
+        0
+        (conf STORM-CLUSTER-METRICS-CONSUMER-PUBLISH-INTERVAL-SECS)
+        (fn []
+          (when (is-leader nimbus :throw-exception false)
+            (send-cluster-metrics-to-executors nimbus)))))
+
+    (mk-reified-nimbus nimbus conf blob-store)))
 
 (defn validate-port-available[conf]
   (try

@@ -26,6 +26,8 @@ public class ConfigUtilsInstaller implements AutoCloseable {
     public ConfigUtilsInstaller(ConfigUtils instance) {
         _oldInstance = ConfigUtils.setInstance(instance);
         _curInstance = instance;
+
+        System.out.println("DEBUG: instance changed: " + _curInstance);
     }
 
     @Override

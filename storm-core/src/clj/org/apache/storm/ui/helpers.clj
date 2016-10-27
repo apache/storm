@@ -36,18 +36,31 @@
            [org.eclipse.jetty.server DispatcherType]
            [org.eclipse.jetty.servlets CrossOriginFilter]
            (org.json.simple JSONValue))
-  (:require [ring.util servlet])
+  (:require [ring.util servlet]
+            [ring.util.response :as response])
   (:require [compojure.route :as route]
             [compojure.handler :as handler]))
 
 ;; TODO this function and its callings will be replace when ui.core and logviewer and drpc move to Java
 (def num-web-requests (StormMetricsRegistry/registerMeter "num-web-requests"))
+
 (defn requests-middleware
-  "Coda Hale metric for counting the number of web requests."
+  "Wrap request with Coda Hale metric for counting the number of web requests, 
+  and add Cache-Control: no-cache for html files in root directory (index.html, topology.html, etc)"
   [handler]
   (fn [req]
     (.mark num-web-requests)
-    (handler req)))
+    (let [uri (:uri req)
+          res (handler req) 
+          content-type (response/get-header res "Content-Type")]
+      ;; check that the response is html and that the path is for a root page: a single / in the path 
+      ;; then we know we don't want it cached (e.g. /index.html)
+      (if (and (= content-type "text/html") 
+               (= 1 (count (re-seq #"/" uri))))
+        ;; response for html page in root directory, no-cache 
+        (response/header res "Cache-Control" "no-cache")
+        ;; else, carry on
+        res))))
 
 ;; TODO this function and its callings will be replace when ui.core and logviewer move to Java
 (defnk json-response

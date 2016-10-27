@@ -51,7 +51,7 @@
 
   call :make_command_arguments %*
 
-  set shellcommands=classpath help version
+  set shellcommands=classpath help
   for %%i in ( %shellcommands% ) do (
     if %storm-command% == %%i set shellcommand=true
   )
@@ -60,7 +60,7 @@
     goto :eof
   )
 
-  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui
+  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui version
   for %%i in ( %corecommands% ) do (
     if %storm-command% == %%i set corecommand=true  
   )
