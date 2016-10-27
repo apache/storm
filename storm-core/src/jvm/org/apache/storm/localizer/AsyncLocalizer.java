@@ -231,18 +231,6 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     }
                 }
 
-                StormTopology stormCode = ConfigUtils.readSupervisorTopology(_conf, _topologyId, _fsOps);
-                List<String> dependencies = new ArrayList<>();
-                if (stormCode.is_set_dependency_jars()) {
-                    dependencies.addAll(stormCode.get_dependency_jars());
-                }
-                if (stormCode.is_set_dependency_artifacts()) {
-                    dependencies.addAll(stormCode.get_dependency_artifacts());
-                }
-                for (String dependency : dependencies) {
-                    localResourceList.add(new LocalResource(dependency, false));
-                }
-
                 if (!localResourceList.isEmpty()) {
                     File userDir = _localizer.getLocalUserFileCacheDir(user);
                     if (!_fsOps.fileExists(userDir)) {

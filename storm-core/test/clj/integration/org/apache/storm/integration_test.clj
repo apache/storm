@@ -154,7 +154,7 @@
                      {"2" (thrift/mk-bolt-spec {"1" :global} extend-timeout-twice)})]
     (submit-local-topology (:nimbus cluster)
                            "timeout-tester"
-                           {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
+                           {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10 TOPOLOGY-DEBUG true}
                            topology)
     (advance-cluster-time cluster 11)
     (.feed feeder ["a"] 1)

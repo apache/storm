@@ -376,14 +376,12 @@ public class BasicContainer extends Container {
     /**
      * Compute the classpath for the worker process
      * @param stormJar the topology jar
-     * @param dependencyLocations any dependencies from the topology
      * @return the full classpath
      */
-    protected String getWorkerClassPath(String stormJar, List<String> dependencyLocations) {
+    protected String getWorkerClassPath(String stormJar) {
         List<String> workercp = new ArrayList<>();
         workercp.addAll(frameworkClasspath());
         workercp.add(stormJar);
-        workercp.addAll(dependencyLocations);
         workercp.addAll(asStringList(_topoConf.get(Config.TOPOLOGY_CLASSPATH)));
         return CPJ.join(workercp);
     }
@@ -470,82 +468,6 @@ public class BasicContainer extends Container {
         return log4jConfigurationDir + Utils.FILE_PATH_SEPARATOR + "worker.xml";
     }
     
-    private static class DependencyLocations {
-        private List<String> _data = null;
-        private final Map<String, Object> _conf;
-        private final String _topologyId;
-        private final AdvancedFSOps _ops;
-        private final String _stormRoot;
-        
-        public DependencyLocations(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
-            _conf = conf;
-            _topologyId = topologyId;
-            _ops = ops;
-            _stormRoot = stormRoot;
-        }
-        
-        public String toString() {
-            List<String> data;
-            synchronized(this) {
-                data = _data;
-            }
-            return "DEP_LOCS for " + _topologyId +" => " + data;
-        }
-        
-        public synchronized List<String> get() throws IOException {
-            if (_data != null) {
-                return _data;
-            }
-            final StormTopology stormTopology = ConfigUtils.readSupervisorTopology(_conf, _topologyId, _ops);
-            final List<String> dependencyLocations = new ArrayList<>();
-            if (stormTopology.get_dependency_jars() != null) {
-                for (String dependency : stormTopology.get_dependency_jars()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
-                }
-            }
-
-            if (stormTopology.get_dependency_artifacts() != null) {
-                for (String dependency : stormTopology.get_dependency_artifacts()) {
-                    dependencyLocations.add(new File(_stormRoot, dependency).getAbsolutePath());
-                }
-            }
-            _data = dependencyLocations;
-            return _data;
-        }
-    }
-
-    static class DepLRUCache {
-        public final int _maxSize = 100; //We could make this configurable in the future...
-        
-        @SuppressWarnings("serial")
-        private LinkedHashMap<String, DependencyLocations> _cache = new LinkedHashMap<String, DependencyLocations>() {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<String,DependencyLocations> eldest) {
-                return (size() > _maxSize);
-            }
-        };
-        
-        public synchronized DependencyLocations get(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) {
-            //Only go off of the topology id for now.
-            DependencyLocations dl = _cache.get(topologyId);
-            if (dl == null) {
-                _cache.put(topologyId, new DependencyLocations(conf, topologyId, ops, stormRoot));
-                dl = _cache.get(topologyId);
-            }
-            return dl;
-        }
-        
-        public synchronized void clear() {
-            _cache.clear();
-        }
-    }
-    
-    static final DepLRUCache DEP_LOC_CACHE = new DepLRUCache();
-    
-    public static List<String> getDependencyLocationsFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) throws IOException {
-        return DEP_LOC_CACHE.get(conf, topologyId, ops, stormRoot).get();
-    }
-    
     /**
      * Get parameters for the class path of the worker process.  Also used by the
      * log Writer
@@ -555,8 +477,7 @@ public class BasicContainer extends Container {
      */
     private List<String> getClassPathParams(final String stormRoot) throws IOException {
         final String stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
-        final List<String> dependencyLocations = getDependencyLocationsFor(_conf, _topologyId, _ops, stormRoot);
-        final String workerClassPath = getWorkerClassPath(stormJar, dependencyLocations);
+        final String workerClassPath = getWorkerClassPath(stormJar);
         
         List<String> classPathParams = new ArrayList<>();
         classPathParams.add("-cp");
