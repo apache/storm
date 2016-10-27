@@ -97,6 +97,11 @@ public class MongoDataSourcesProvider implements DataSourcesProvider {
       document.append(serField, array);
       return document;
     }
+
+    @Override
+    public Document toDocumentByKeys(List<Object> keys) {
+      return null;
+    }
   }
 
   @Override

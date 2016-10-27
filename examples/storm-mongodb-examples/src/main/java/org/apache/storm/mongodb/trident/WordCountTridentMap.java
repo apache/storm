@@ -19,24 +19,24 @@ package org.apache.storm.mongodb.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.mongodb.common.QueryFilterCreator;
+import org.apache.storm.mongodb.common.SimpleQueryFilterCreator;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.mongodb.common.mapper.SimpleMongoMapper;
-import org.apache.storm.mongodb.trident.state.MongoState;
-import org.apache.storm.mongodb.trident.state.MongoStateFactory;
-import org.apache.storm.mongodb.trident.state.MongoStateQuery;
-import org.apache.storm.mongodb.trident.state.MongoStateUpdater;
+import org.apache.storm.mongodb.trident.state.*;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.trident.operation.builtin.MapGet;
+import org.apache.storm.trident.operation.builtin.Sum;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
-public class WordCountTrident {
+public class WordCountTridentMap {
 
     public static StormTopology buildTopology(String url, String collectionName){
         Fields fields = new Fields("word", "count");
@@ -51,23 +51,25 @@ public class WordCountTrident {
         MongoMapper mapper = new SimpleMongoMapper()
                 .withFields("word", "count");
 
-        MongoState.Options options = new MongoState.Options()
-                .withUrl(url)
-                .withCollectionName(collectionName)
-                .withMapper(mapper);
+        QueryFilterCreator filterCreator = new SimpleQueryFilterCreator()
+                .withField("word");
 
-        StateFactory factory = new MongoStateFactory(options);
+        MongoMapState.Options options = new MongoMapState.Options();
+        options.url = url;
+        options.collectionName = collectionName;
+        options.mapper = mapper;
+        options.queryCreator = filterCreator;
+
+        StateFactory factory = MongoMapState.transactional(options);
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout1", spout);
 
-        stream.partitionPersist(factory, fields,
-                new MongoStateUpdater(), new Fields());
+        TridentState state = stream.groupBy(new Fields("word"))
+                .persistentAggregate(factory, new Fields("count"), new Sum(), new Fields("sum"));
 
-        TridentState state = topology.newStaticState(factory);
-        stream = stream.stateQuery(state, new Fields("word"),
-                new MongoStateQuery(), new Fields("columnName", "columnValue"));
-        stream.each(new Fields("word", "columnValue"), new PrintFunction(), new Fields());
+        stream.stateQuery(state, new Fields("word"), new MapGet(), new Fields("sum"))
+                .each(new Fields("word", "sum"), new PrintFunction(), new Fields());
         return topology.build();
     }
 
@@ -75,10 +77,11 @@ public class WordCountTrident {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));) {
-                Thread.sleep(60 * 1000);
-            }
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));
+            Thread.sleep(60 * 1000);
+            cluster.killTopology("wordCounter");
+            cluster.shutdown();
             System.exit(0);
         }
         else if(args.length == 3) {

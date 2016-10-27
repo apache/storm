@@ -19,24 +19,22 @@ package org.apache.storm.mongodb.topology;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.mongodb.common.mapper.MongoUpdateMapper;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.mongodb.bolt.MongoUpdateBolt;
+import org.apache.storm.mongodb.bolt.MongoLookupBolt;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.SimpleQueryFilterCreator;
-import org.apache.storm.mongodb.common.mapper.SimpleMongoUpdateMapper;
+import org.apache.storm.mongodb.common.mapper.MongoLookupMapper;
+import org.apache.storm.mongodb.common.mapper.SimpleMongoLookupMapper;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 
-public class UpdateWordCount {
+public class LookupWordCount {
     private static final String WORD_SPOUT = "WORD_SPOUT";
-    private static final String COUNT_BOLT = "COUNT_BOLT";
-    private static final String UPDATE_BOLT = "UPDATE_BOLT";
+    private static final String LOOKUP_BOLT = "LOOKUP_BOLT";
+    private static final String TOTAL_COUNT_BOLT = "TOTAL_COUNT_BOLT";
 
     private static final String TEST_MONGODB_URL = "mongodb://127.0.0.1:27017/test";
     private static final String TEST_MONGODB_COLLECTION_NAME = "wordcount";
-    
 
     public static void main(String[] args) throws Exception {
         Config config = new Config();
@@ -50,40 +48,33 @@ public class UpdateWordCount {
         }
 
         WordSpout spout = new WordSpout();
-        WordCounter bolt = new WordCounter();
+        TotalWordCounter totalBolt = new TotalWordCounter();
 
-        MongoUpdateMapper mapper = new SimpleMongoUpdateMapper()
+        MongoLookupMapper mapper = new SimpleMongoLookupMapper()
                 .withFields("word", "count");
 
         QueryFilterCreator filterCreator = new SimpleQueryFilterCreator()
                 .withField("word");
-        
-        MongoUpdateBolt updateBolt = new MongoUpdateBolt(url, collectionName, filterCreator, mapper);
 
-        //if a new document should be inserted if there are no matches to the query filter
-        //updateBolt.withUpsert(true);
+        MongoLookupBolt lookupBolt = new MongoLookupBolt(url, collectionName, filterCreator, mapper);
 
-        //whether find all documents according to the query filter
-        //updateBolt.withMany(true);
-
-        // wordSpout ==> countBolt ==> MongoUpdateBolt
+        //wordspout -> lookupbolt -> totalCountBolt
         TopologyBuilder builder = new TopologyBuilder();
-
         builder.setSpout(WORD_SPOUT, spout, 1);
-        builder.setBolt(COUNT_BOLT, bolt, 1).shuffleGrouping(WORD_SPOUT);
-        builder.setBolt(UPDATE_BOLT, updateBolt, 1).fieldsGrouping(COUNT_BOLT, new Fields("word"));
-
+        builder.setBolt(LOOKUP_BOLT, lookupBolt, 1).shuffleGrouping(WORD_SPOUT);
+        builder.setBolt(TOTAL_COUNT_BOLT, totalBolt, 1).fieldsGrouping(LOOKUP_BOLT, new Fields("word"));
 
         if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("test", config, builder.createTopology());) {
-                Thread.sleep(30000);
-            }
+            LocalCluster cluster = new LocalCluster();
+            cluster.submitTopology("test", config, builder.createTopology());
+            Thread.sleep(30000);
+            cluster.killTopology("test");
+            cluster.shutdown();
             System.exit(0);
         } else if (args.length == 3) {
             StormSubmitter.submitTopology(args[2], config, builder.createTopology());
         } else{
-            System.out.println("Usage: UpdateWordCount <mongodb url> <mongodb collection> [topology name]");
+            System.out.println("Usage: LookupWordCount <mongodb url> <mongodb collection> [topology name]");
         }
     }
 }
