@@ -25,7 +25,15 @@
         <relativePath>../../../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>storm-sql-redis</artifactId>
+    <artifactId>storm-sql-mongodb</artifactId>
+
+    <developers>
+        <developer>
+            <id>vesense</id>
+            <name>Xin Wang</name>
+            <email>data.xinwang@gmail.com</email>
+        </developer>
+    </developers>
 
     <dependencies>
         <dependency>
@@ -49,7 +57,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-redis</artifactId>
+            <artifactId>storm-mongodb</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
