@@ -17,10 +17,7 @@
  */
 package org.apache.storm.sql.redis;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
-import com.google.common.collect.Lists;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
@@ -36,18 +33,17 @@ import org.apache.storm.sql.runtime.IOutputSerializer;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.sql.runtime.utils.FieldInfoUtils;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.tuple.ITuple;
 import redis.clients.util.JedisURIHelper;
 
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.InetSocketAddress;
 import java.net.URI;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
@@ -61,13 +57,6 @@ import java.util.Properties;
 public class RedisDataSourcesProvider implements DataSourcesProvider {
   private static final int DEFAULT_REDIS_PORT = 6379;
   private static final int DEFAULT_TIMEOUT = 2000;
-
-  private static class FieldNameExtractor implements Function<FieldInfo, String>, Serializable {
-    @Override
-    public String apply(FieldInfo fieldInfo) {
-      return fieldInfo.name();
-    }
-  }
 
   private abstract static class AbstractRedisTridentDataSource implements ISqlTridentDataSource, Serializable {
     protected abstract StateFactory newStateFactory();
@@ -89,7 +78,7 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
     @Override
     public SqlTridentConsumer getConsumer() {
       RedisDataTypeDescription dataTypeDescription = getDataTypeDesc(props);
-      List<String> fieldNames = Lists.transform(fields, new FieldNameExtractor());
+      List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
 
       RedisStoreMapper storeMapper = new TridentRedisStoreMapper(dataTypeDescription, fields, new JsonSerializer(fieldNames));
 
@@ -159,23 +148,13 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
   }
 
   @Override
-  public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass, String properties, List<FieldInfo> fields) {
+  public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass, Properties props, List<FieldInfo> fields) {
     Preconditions.checkArgument(JedisURIHelper.isValid(uri), "URI is not valid for Redis: " + uri);
 
     String host = uri.getHost();
     int port = uri.getPort() != -1 ? uri.getPort() : DEFAULT_REDIS_PORT;
     int dbIdx = JedisURIHelper.getDBIndex(uri);
     String password = JedisURIHelper.getPassword(uri);
-
-    Properties props = new Properties();
-    try {
-      ObjectMapper mapper = new ObjectMapper();
-      @SuppressWarnings("unchecked")
-      HashMap<String, Object> map = mapper.readValue(properties, HashMap.class);
-      props.putAll(map);
-    } catch (IOException e) {
-      throw new RuntimeException(e);
-    }
 
     int timeout = Integer.parseInt(props.getProperty("redis.timeout", String.valueOf(DEFAULT_TIMEOUT)));
 
