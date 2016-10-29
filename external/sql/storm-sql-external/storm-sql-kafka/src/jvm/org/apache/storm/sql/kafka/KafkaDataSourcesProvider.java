@@ -17,26 +17,35 @@
  */
 package org.apache.storm.sql.kafka;
 
-import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
-import org.apache.storm.kafka.trident.TridentKafkaUpdater;
-import org.apache.storm.spout.SchemeAsMultiScheme;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Preconditions;
-import org.apache.storm.sql.runtime.*;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.kafka.trident.OpaqueTridentKafkaSpout;
 import org.apache.storm.kafka.trident.TridentKafkaConfig;
+import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
+import org.apache.storm.kafka.trident.TridentKafkaUpdater;
 import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
 import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
-import org.apache.storm.sql.runtime.serde.json.JsonScheme;
-import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.spout.SchemeAsMultiScheme;
+import org.apache.storm.sql.runtime.DataSource;
+import org.apache.storm.sql.runtime.DataSourcesProvider;
+import org.apache.storm.sql.runtime.FieldInfo;
+import org.apache.storm.sql.runtime.IOutputSerializer;
+import org.apache.storm.sql.runtime.ISqlTridentDataSource;
+import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
+import org.apache.storm.sql.runtime.utils.SerdeUtils;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.tuple.TridentTuple;
 
 import java.io.IOException;
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Create a Kafka spout/sink based on the URI and properties. The URI has the format of
@@ -72,13 +81,15 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     private final int primaryKeyIndex;
     private final List<String> fields;
     private final String producerProperties;
+    private final IOutputSerializer serializer;
     private KafkaTridentDataSource(TridentKafkaConfig conf, String topic, int primaryKeyIndex,
-                                   String producerProperties, List<String> fields) {
+                                   String producerProperties, List<String> fields, IOutputSerializer serializer) {
       this.conf = conf;
       this.topic = topic;
       this.primaryKeyIndex = primaryKeyIndex;
       this.producerProperties = producerProperties;
       this.fields = fields;
+      this.serializer = serializer;
     }
 
     @Override
@@ -104,7 +115,6 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
       Preconditions.checkState(props.containsKey("bootstrap.servers"),
           "Writable Kafka Table " + topic + " must contain \"bootstrap.servers\" config");
 
-      JsonSerializer serializer = new JsonSerializer(fields);
       SqlKafkaMapper mapper = new SqlKafkaMapper(primaryKeyIndex, serializer);
 
       TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
@@ -148,9 +158,12 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
       }
     }
     Preconditions.checkState(primaryIndex != -1, "Kafka stream table must have a primary key");
-    conf.scheme = new SchemeAsMultiScheme(new JsonScheme(fieldNames));
+    // TODO this will be updated after STORM-2103 getting merged
+    Scheme scheme = SerdeUtils.getScheme(inputFormatClass, null, fieldNames);
+    conf.scheme = new SchemeAsMultiScheme(scheme);
+    IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, null, fieldNames);
 
-    return new KafkaTridentDataSource(conf, topic, primaryIndex, properties, fieldNames);
+    return new KafkaTridentDataSource(conf, topic, primaryIndex, properties, fieldNames, serializer);
   }
 
   private static Map<String, String> parseURIParams(String query) {

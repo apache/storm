@@ -35,7 +35,7 @@ import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
-import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.sql.runtime.utils.SerdeUtils;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateUpdater;
@@ -75,10 +75,12 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
 
     private final Properties props;
     private final List<FieldInfo> fields;
+    private final IOutputSerializer serializer;
 
-    AbstractRedisTridentDataSource(Properties props, List<FieldInfo> fields) {
+    AbstractRedisTridentDataSource(Properties props, List<FieldInfo> fields, IOutputSerializer serializer) {
       this.props = props;
       this.fields = fields;
+      this.serializer = serializer;
     }
 
     @Override
@@ -89,9 +91,8 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
     @Override
     public SqlTridentConsumer getConsumer() {
       RedisDataTypeDescription dataTypeDescription = getDataTypeDesc(props);
-      List<String> fieldNames = Lists.transform(fields, new FieldNameExtractor());
 
-      RedisStoreMapper storeMapper = new TridentRedisStoreMapper(dataTypeDescription, fields, new JsonSerializer(fieldNames));
+      RedisStoreMapper storeMapper = new TridentRedisStoreMapper(dataTypeDescription, fields, serializer);
 
       StateFactory stateFactory = newStateFactory();
       StateUpdater stateUpdater = newStateUpdater(storeMapper);
@@ -113,8 +114,8 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
   private static class RedisClusterTridentDataSource extends AbstractRedisTridentDataSource {
     private final JedisClusterConfig config;
 
-    RedisClusterTridentDataSource(JedisClusterConfig config, Properties props, List<FieldInfo> fields) {
-      super(props, fields);
+    RedisClusterTridentDataSource(JedisClusterConfig config, Properties props, List<FieldInfo> fields, IOutputSerializer serializer) {
+      super(props, fields, serializer);
       this.config = config;
     }
 
@@ -132,8 +133,8 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
   private static class RedisTridentDataSource extends AbstractRedisTridentDataSource {
     private final JedisPoolConfig config;
 
-    RedisTridentDataSource(JedisPoolConfig config, Properties props, List<FieldInfo> fields) {
-      super(props, fields);
+    RedisTridentDataSource(JedisPoolConfig config, Properties props, List<FieldInfo> fields, IOutputSerializer serializer) {
+      super(props, fields, serializer);
       this.config = config;
     }
 
@@ -181,15 +182,18 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
 
     boolean clusterMode = Boolean.valueOf(props.getProperty("use.redis.cluster", "false"));
 
+    List<String> fieldNames = Lists.transform(fields, new FieldNameExtractor());
+    // TODO this will be updated after STORM-2103 getting merged
+    IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, null, fieldNames);
     if (clusterMode) {
       JedisClusterConfig config = new JedisClusterConfig.Builder()
               .setNodes(Collections.singleton(new InetSocketAddress(host, port)))
               .setTimeout(timeout)
               .build();
-      return new RedisClusterTridentDataSource(config, props, fields);
+      return new RedisClusterTridentDataSource(config, props, fields, serializer);
     } else {
       JedisPoolConfig config = new JedisPoolConfig(host, port, timeout, password, dbIdx);
-      return new RedisTridentDataSource(config, props, fields);
+      return new RedisTridentDataSource(config, props, fields, serializer);
     }
   }
 
