@@ -286,30 +286,42 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return portTasks;
     }
 
+    private static final long WARN_MILLIS = 1_000; //Warn about a shutdown that takes longer than 1 second (default timeout)
+    private static final long ERROR_MILLIS = 10_000; //Throw an exception if after 10 seconds.
+    
     public synchronized void shutdownAllWorkers() {
         for (Slot slot: slots.values()) {
             slot.setNewAssignment(null);
         }
-
+        
+        long startTime = Time.currentTimeMillis();
+        Exception exp = null;
         for (Slot slot: slots.values()) {
             try {
-                int count = 0;
                 while (slot.getMachineState() != MachineState.EMPTY) {
-                    if (count > 10) {
-                        LOG.warn("DONE waiting for {} to finish {}", slot, slot.getMachineState());
-                        break;
+                    long timeSpentMillis = Time.currentTimeMillis() - startTime;
+                    if (timeSpentMillis > ERROR_MILLIS) {
+                        throw new IllegalStateException("It took over " + timeSpentMillis + "ms to shut down slot " + slot);
+                    }
+                    
+                    if (timeSpentMillis > WARN_MILLIS) {
+                        LOG.warn("It has taken {}ms so far and {} is still not shut down.", timeSpentMillis, slot);
                     }
                     if (Time.isSimulating()) {
-                        Time.advanceTime(1000);
-                        Thread.sleep(100);
-                    } else {
-                        Time.sleep(100);
+                        Time.advanceTime(100);
                     }
-                    count++;
+                    Thread.sleep(100);
                 }
             } catch (Exception e) {
                 LOG.error("Error trying to shutdown workers in {}", slot, e);
+                exp = e;
             }
+        }
+        if (exp != null) {
+            if (exp instanceof RuntimeException) {
+                throw (RuntimeException)exp;
+            }
+            throw new RuntimeException(exp);
         }
     }
     
