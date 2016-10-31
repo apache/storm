@@ -332,7 +332,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             final MessageId msgId = (MessageId) messageId;
             TopicPartition partition = msgId.getTopicPartition();
             OffsetEntry entry = acked.get(partition);
-            if(entry == null) {
+            if (entry == null) {
                 LOG.warn("Tried to add message with id {} to non-existing partition {}.", msgId, partition);
                 return;
             }
