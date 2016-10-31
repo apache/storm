@@ -201,7 +201,7 @@
   (.close (:state cluster-map))
   (.disconnect (:storm-cluster-state cluster-map))
   (doseq [s @(:supervisors cluster-map)]
-    (.shutdownAllWorkers s)
+    (.shutdownAllWorkers s false)
     ;; race condition here? will it launch the workers again?
     (.close s))
   (ProcessSimulator/killAllProcesses)

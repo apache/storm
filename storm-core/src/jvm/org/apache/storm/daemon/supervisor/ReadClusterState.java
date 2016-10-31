@@ -289,7 +289,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private static final long WARN_MILLIS = 1_000; //Warn about a shutdown that takes longer than 1 second (default timeout)
     private static final long ERROR_MILLIS = 10_000; //Throw an exception if after 10 seconds.
     
-    public synchronized void shutdownAllWorkers() {
+    public synchronized void shutdownAllWorkers(boolean enableErrorOnTimeout) {
         for (Slot slot: slots.values()) {
             slot.setNewAssignment(null);
         }
@@ -300,7 +300,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
             try {
                 while (slot.getMachineState() != MachineState.EMPTY) {
                     long timeSpentMillis = Time.currentTimeMillis() - startTime;
-                    if (timeSpentMillis > ERROR_MILLIS) {
+                    if (enableErrorOnTimeout && timeSpentMillis > ERROR_MILLIS) {
                         throw new IllegalStateException("It took over " + timeSpentMillis + "ms to shut down slot " + slot);
                     }
                     
