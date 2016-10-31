@@ -26,6 +26,8 @@ import org.apache.storm.sql.runtime.serde.avro.AvroScheme;
 import org.apache.storm.sql.runtime.serde.avro.AvroSerializer;
 import org.apache.storm.sql.runtime.serde.json.JsonScheme;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
+import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
 import org.apache.storm.utils.Utils;
 
 import java.util.List;
@@ -39,12 +41,17 @@ public final class SerdeUtils {
                 case "org.apache.storm.sql.runtime.serde.json.JsonScheme" :
                     scheme = new JsonScheme(fieldNames);
                     break;
+                case "org.apache.storm.sql.runtime.serde.json.TsvScheme" :
+                    scheme = new TsvScheme(fieldNames);
+                    break;
                 case "org.apache.storm.sql.runtime.serde.avro.AvroScheme" :
                     String schemaString = properties.getProperty("avro.schema");
                     Preconditions.checkArgument(isNotEmpty(schemaString), "avro.schema can not be empty");
                     scheme = new AvroScheme(schemaString, fieldNames);
                     break;
                 default:
+                    //TODO this can use type.getDeclaredConstructor(List.class).newInstance(fieldNames)
+                    //I will update this after previous PRs getting merged
                     scheme = Utils.newInstance(inputFormatClass);
             }
         } else {
@@ -60,6 +67,9 @@ public final class SerdeUtils {
             switch (outputFormatClass) {
                 case "org.apache.storm.sql.runtime.serde.json.JsonSerializer" :
                     serializer = new JsonSerializer(fieldNames);
+                    break;
+                case "org.apache.storm.sql.runtime.serde.json.TsvSerializer" :
+                    serializer = new TsvSerializer(fieldNames);
                     break;
                 case "org.apache.storm.sql.runtime.serde.avro.AvroSerializer" :
                     String schemaString = properties.getProperty("avro.schema");

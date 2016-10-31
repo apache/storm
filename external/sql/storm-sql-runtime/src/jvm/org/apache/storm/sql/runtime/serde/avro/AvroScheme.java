@@ -18,7 +18,6 @@
 package org.apache.storm.sql.runtime.serde.avro;
 
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.generic.GenericDatumReader;
 import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
@@ -52,9 +51,9 @@ public class AvroScheme implements Scheme {
     try {
       Schema schema = schemas.getSchema(schemaString);
 
-      DatumReader<GenericContainer> reader = new GenericDatumReader<>(schema);
+      DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
       BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(Utils.toByteArray(ser), null);
-      GenericRecord record = (GenericRecord) reader.read(null, decoder);
+      GenericRecord record = reader.read(null, decoder);
 
       ArrayList<Object> list = new ArrayList<>(fieldNames.size());
       for (String field : fieldNames) {
