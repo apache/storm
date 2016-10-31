@@ -435,7 +435,7 @@ public class BasicContainerTest {
                     "-Djava.io.tmpdir="+workerTmpDir,
                     "-cp",
                     "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
-                    "org.apache.storm.daemon.worker", 
+                    "org.apache.storm.daemon.Worker",
                     topoId, 
                     "SUPERVISOR",
                     String.valueOf(port),

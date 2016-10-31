@@ -15,7 +15,6 @@
 ;; limitations under the License.
 (ns org.apache.storm.worker-test
   (:use [clojure test])
-  (:require [org.apache.storm.daemon [worker :as worker]])
   (:require [conjure.core])
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as coerce])
@@ -27,7 +26,8 @@
   (:use [org.apache.storm.daemon common])
   (:use [clojure.string :only [join]])
   (:import [org.apache.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
-  (:import [org.mockito Mockito])
+  (:import [org.mockito Mockito]
+           (org.apache.storm.daemon.worker LogConfigManager WorkerState))
   )
 
 
@@ -37,9 +37,10 @@
           present (time/now)
           the-future (coerce/to-long (time/plus present (time/secs 1)))
           mock-config {"foo" {:timeout the-future}}
-          mock-config-atom (atom mock-config)]
+          mock-config-atom (atom mock-config)
+          log-config-manager (LogConfigManager. mock-config-atom)]
       (stubbing [time/now present]
-        (worker/reset-log-levels mock-config-atom)
+        (.resetLogLevels log-config-manager)
         ;; if the worker doesn't reset log levels, the atom should not be nil
         (is (not(= @mock-config-atom nil)))))))
 
@@ -51,22 +52,25 @@
           mock-config {"foo" { :timeout (coerce/to-long past)
                                :target-log-level Level/INFO
                                :reset-log-level Level/WARN}}
-          mock-config-atom (atom mock-config)]
+          mock-config-atom (atom mock-config)
+          log-config-manager (LogConfigManager. mock-config-atom)]
       (stubbing [time/now present]
-        (worker/reset-log-levels mock-config-atom)
+        (.resetLogLevels log-config-manager)
         ;; the logger config is removed from atom
         (is (= @mock-config-atom {}))))))
 
+(comment
 (deftest test-log-reset-resets-does-nothing-for-empty-log-config
   (with-local-cluster [cluster]
     (let [worker (:worker cluster)
           present (time/now)
           past (coerce/to-long (time/plus present (time/secs -1)))
           mock-config {}
-          mock-config-atom (atom mock-config)]
+          mock-config-atom (atom mock-config)
+          log-config-manager (LogConfigManager. mock-config-atom)]
       (stubbing [worker/set-logger-level nil
                  time/now present]
-        (worker/reset-log-levels mock-config-atom)
+        (.resetLogLevels log-config-manager)
         ;; if the worker resets log level, the atom is nil'ed out
         (is (= @mock-config-atom {}))
         ;; test that the set-logger-level function was not called
@@ -80,15 +84,17 @@
           mock-config {LogManager/ROOT_LOGGER_NAME  {:timeout past
                                                      :target-log-level Level/DEBUG
                                                      :reset-log-level Level/WARN}}
-          mock-config-atom (atom mock-config)]
+          mock-config-atom (atom mock-config)
+          log-config-manager (LogConfigManager. mock-config-atom)]
       (stubbing [worker/set-logger-level nil
                  time/now present]
-        (worker/reset-log-levels mock-config-atom)
+        (.resetLogLevels log-config-manager)
         ;; if the worker resets log level, the atom is reset to {}
         (is (= @mock-config-atom {}))
         ;; ensure we reset back to WARN level
         (verify-call-times-for worker/set-logger-level 1)
         (verify-first-call-args-for-indices worker/set-logger-level [1 2] LogManager/ROOT_LOGGER_NAME Level/WARN)))))
+
 
 ;;This should be removed when it goes into conjure
 (defmacro verify-nth-call-args-for-indices
@@ -127,7 +133,7 @@
           mock-config-atom (atom mock-config)]
       (stubbing [worker/set-logger-level nil
                  time/now present]
-          (worker/reset-log-levels mock-config-atom)
+          (.resetLogLevels log-config-manager)
           ;; if the worker resets log level, the atom is reset to {}
           (is (= @mock-config-atom {}))
           (verify-call-times-for worker/set-logger-level 3)
@@ -192,14 +198,16 @@
           (verify-nth-call-args-for-indices 2 worker/set-logger-level [1 2] "my_error_logger" Level/ERROR)
           (verify-nth-call-args-for-indices 3 worker/set-logger-level [1 2] "my_info_logger" Level/INFO)))))
 
+)
+
 (deftest test-worker-is-connection-ready
   (let [connection (Mockito/mock ConnectionWithStatus)]
     (. (Mockito/when (.status connection)) thenReturn ConnectionWithStatus$Status/Ready)
-    (is (= true (worker/is-connection-ready connection)))
+    (is (= true (WorkerState/isConnectionReady connection)))
 
     (. (Mockito/when (.status connection)) thenReturn ConnectionWithStatus$Status/Connecting)
-    (is (= false (worker/is-connection-ready connection)))
+    (is (= false (WorkerState/isConnectionReady connection)))
 
     (. (Mockito/when (.status connection)) thenReturn ConnectionWithStatus$Status/Closed)
-    (is (= false (worker/is-connection-ready connection)))
+    (is (= false (WorkerState/isConnectionReady connection)))
   ))

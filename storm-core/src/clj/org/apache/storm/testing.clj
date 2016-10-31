@@ -19,8 +19,7 @@
              [nimbus :as nimbus]
              [local-executor :as local-executor]
              [local-supervisor :as local-supervisor]
-             [common :as common]
-             [worker :as worker]])
+             [common :as common]])
   (:import [org.apache.commons.io FileUtils]
            [org.apache.storm.utils]
            [org.apache.storm.zookeeper Zookeeper]

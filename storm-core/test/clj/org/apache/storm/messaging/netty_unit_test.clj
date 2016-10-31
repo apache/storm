@@ -18,8 +18,8 @@
   (:import [org.apache.storm.messaging TransportFactory IConnection TaskMessage IConnectionCallback])
   (:import [org.apache.storm.utils Utils])
   (:use [org.apache.storm testing util config log])
-  (:use [org.apache.storm.daemon.worker :only [is-connection-ready]])
-  (:import [java.util ArrayList]))
+  (:import [java.util ArrayList]
+           (org.apache.storm.daemon.worker WorkerState)))
 
 (def port (Utils/getAvailablePort))
 (def task 1)
@@ -37,7 +37,7 @@
    (loop [connections connections waited-ms waited-ms]
      (let [interval-ms 10
            max-wait-ms 5000]
-       (if-not (every? is-connection-ready connections)
+       (if-not (every? (fn [connection] (WorkerState/isConnectionReady connection))  connections)
          (if (<= waited-ms max-wait-ms)
            (do
              (Thread/sleep interval-ms)

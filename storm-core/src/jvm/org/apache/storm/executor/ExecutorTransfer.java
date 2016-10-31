@@ -17,12 +17,11 @@
  */
 package org.apache.storm.executor;
 
-import clojure.lang.IFn;
 import com.google.common.annotations.VisibleForTesting;
 import com.lmax.disruptor.EventHandler;
 import org.apache.storm.Config;
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
-import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.DisruptorQueue;
@@ -38,17 +37,19 @@ import java.util.concurrent.Callable;
 public class ExecutorTransfer implements EventHandler, Callable {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorTransfer.class);
 
+    private final WorkerState workerData;
     private final DisruptorQueue batchTransferQueue;
+    private final Map stormConf;
     private final KryoTupleSerializer serializer;
     private final MutableObject cachedEmit;
-    private final IFn transferFn;
     private final boolean isDebug;
 
-    public ExecutorTransfer(WorkerTopologyContext workerTopologyContext, DisruptorQueue batchTransferQueue, Map stormConf, IFn transferFn) {
+    public ExecutorTransfer(WorkerState workerData, DisruptorQueue batchTransferQueue, Map stormConf) {
+        this.workerData = workerData;
         this.batchTransferQueue = batchTransferQueue;
-        this.serializer = new KryoTupleSerializer(stormConf, workerTopologyContext);
+        this.stormConf = stormConf;
+        this.serializer = new KryoTupleSerializer(stormConf, workerData.getWorkerTopologyContext());
         this.cachedEmit = new MutableObject(new ArrayList<>());
-        this.transferFn = transferFn;
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
@@ -80,7 +81,7 @@ public class ExecutorTransfer implements EventHandler, Callable {
         ArrayList cachedEvents = (ArrayList) cachedEmit.getObject();
         cachedEvents.add(event);
         if (endOfBatch) {
-            transferFn.invoke(serializer, cachedEvents);
+            workerData.transfer(serializer, cachedEvents);
             cachedEmit.setObject(new ArrayList<>());
         }
     }
