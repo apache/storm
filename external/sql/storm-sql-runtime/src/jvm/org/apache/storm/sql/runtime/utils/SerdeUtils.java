@@ -24,6 +24,8 @@ import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.IOutputSerializer;
 import org.apache.storm.sql.runtime.serde.avro.AvroScheme;
 import org.apache.storm.sql.runtime.serde.avro.AvroSerializer;
+import org.apache.storm.sql.runtime.serde.csv.CsvScheme;
+import org.apache.storm.sql.runtime.serde.csv.CsvSerializer;
 import org.apache.storm.sql.runtime.serde.json.JsonScheme;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
@@ -44,13 +46,17 @@ public final class SerdeUtils {
                 case "org.apache.storm.sql.runtime.serde.json.TsvScheme" :
                     scheme = new TsvScheme(fieldNames);
                     break;
+                case "org.apache.storm.sql.runtime.serde.json.CsvScheme" :
+                    scheme = new CsvScheme(fieldNames);
+                    break;
                 case "org.apache.storm.sql.runtime.serde.avro.AvroScheme" :
                     String schemaString = properties.getProperty("avro.schema");
                     Preconditions.checkArgument(isNotEmpty(schemaString), "avro.schema can not be empty");
                     scheme = new AvroScheme(schemaString, fieldNames);
                     break;
                 default:
-                    //TODO this can use type.getDeclaredConstructor(List.class).newInstance(fieldNames)
+                    //TODO we can use type.getDeclaredConstructor(List.class).newInstance(fieldNames)
+                    //and replace above known XXXScheme(fieldNames)
                     //I will update this after previous PRs getting merged
                     scheme = Utils.newInstance(inputFormatClass);
             }
@@ -70,6 +76,9 @@ public final class SerdeUtils {
                     break;
                 case "org.apache.storm.sql.runtime.serde.json.TsvSerializer" :
                     serializer = new TsvSerializer(fieldNames);
+                    break;
+                case "org.apache.storm.sql.runtime.serde.json.CsvSerializer" :
+                    serializer = new CsvSerializer(fieldNames);
                     break;
                 case "org.apache.storm.sql.runtime.serde.avro.AvroSerializer" :
                     String schemaString = properties.getProperty("avro.schema");
