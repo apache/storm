@@ -23,7 +23,7 @@
              [executor :as executor]])
   (:import [org.apache.commons.io FileUtils]
            [org.apache.storm ProcessSimulator]
-           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils])
+           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils ReadClusterState])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
   (:import [java.util.concurrent.atomic AtomicInteger])
@@ -201,8 +201,7 @@
   (.close (:state cluster-map))
   (.disconnect (:storm-cluster-state cluster-map))
   (doseq [s @(:supervisors cluster-map)]
-    (.shutdownAllWorkers s false)
-    ;; race condition here? will it launch the workers again?
+    (.shutdownAllWorkers s nil ReadClusterState/THREAD_DUMP_ON_ERROR)
     (.close s))
   (ProcessSimulator/killAllProcesses)
   (if (not-nil? (:zookeeper cluster-map))
