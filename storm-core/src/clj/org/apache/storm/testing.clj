@@ -25,7 +25,7 @@
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
            [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils]
-           [org.apache.storm.executor Executor]
+           [org.apache.storm.executor Executor LocalExecutor]
            [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
@@ -667,6 +667,7 @@
           (.put "spout-emitted" (AtomicInteger. 0))
           (.put "transferred" (AtomicInteger. 0))
           (.put "processed" (AtomicInteger. 0))))
+      (LocalExecutor/setTrackId id#)
       (with-var-roots
         [;; critical that this particular function is overridden here,
          ;; since the transferred stat needs to be incremented at the moment
@@ -684,6 +685,7 @@
           (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
                               (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
                                 ~@body)))
+      (LocalExecutor/clearTrackId)
       (RegisteredGlobalState/clearState id#))))
 
 (defn tracked-wait

@@ -193,16 +193,17 @@
                  (fn []
                    (Thread/sleep 100)
                    (let [server (.bind context nil port)]
-                     (register-callback (fn [message] (reset! resp message)) server))))]
+                     (register-callback (fn [message] (reset! resp message)) server)
+                     (wait-until-ready [server client]))))]
     (.start server)
-    (wait-until-ready [server client])
+    (.join server)
     (.send client task (.getBytes req_msg))
 
     (wait-for-not-nil resp)
     (is (= task (.task @resp)))
     (is (= req_msg (String. (.message @resp))))
 
-    (.join server)
+
     (.close client)
     (.term context)))
 

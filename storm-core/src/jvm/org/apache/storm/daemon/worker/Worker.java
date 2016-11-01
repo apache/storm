@@ -18,18 +18,15 @@
 
 package org.apache.storm.daemon.worker;
 
+import com.google.common.base.Preconditions;
 import com.lmax.disruptor.EventHandler;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.config.Configuration;
-import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.*;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.Shutdownable;
+import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.ExecutorShutdown;
 import org.apache.storm.executor.IRunningExecutor;
@@ -70,11 +67,11 @@ public class Worker implements Shutdownable, DaemonCommon {
 
 
     private WorkerState workerState;
-    private AtomicReference<List<IRunningExecutor>> executors;
+    private AtomicReference<List<IRunningExecutor>> executorsAtom;
     private Thread transferThread;
     private WorkerBackpressureThread backpressureThread;
 
-    private AtomicReference<Credentials> credentials;
+    private AtomicReference<Credentials> credentialsAtom;
     private Subject subject;
     private Collection<IAutoCredentials> autoCreds;
 
@@ -136,16 +133,16 @@ public class Worker implements Shutdownable, DaemonCommon {
                 // Heartbeat here so that worker process dies if this fails
                 // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
                 // that worker is running and moves on
-                doHeartBeat(workerState);
+                doHeartBeat();
 
-                executors = new AtomicReference<>(null);
+                executorsAtom = new AtomicReference<>(null);
 
                 // launch heartbeat threads immediately so that slow-loading tasks don't cause the worker to timeout
                 // to the supervisor
                 workerState.heartbeatTimer
                     .scheduleRecurring(0, (Integer) conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS), () -> {
                         try {
-                            doHeartBeat(workerState);
+                            doHeartBeat();
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
@@ -153,7 +150,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
                 workerState.executorHeartbeatTimer
                     .scheduleRecurring(0, (Integer) conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS),
-                        () -> doExecutorHeartbeats(workerState, executors.get()));
+                        Worker.this::doExecutorHeartbeats);
 
                 workerState.registerCallbacks();
 
@@ -166,24 +163,18 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.runWorkerStartHooks();
 
                 List<IRunningExecutor> newExecutors = new ArrayList<IRunningExecutor>();
-                for (IRunningExecutor e : executors.get()) {
+                for (List<Long> e : workerState.getExecutors()) {
                     if (ConfigUtils.isLocalMode(topologyConf)) {
                         newExecutors.add(
-                            LocalExecutor.mkExecutor(workerState, e.getExecutorId(), initialCredentials.get_creds())
+                            LocalExecutor.mkExecutor(workerState, e, initialCredentials.get_creds())
                                 .execute());
                     } else {
                         newExecutors.add(
-                            Executor.mkExecutor(workerState, e.getExecutorId(), initialCredentials.get_creds())
+                            Executor.mkExecutor(workerState, e, initialCredentials.get_creds())
                                 .execute());
                     }
                 }
-                executors.set(newExecutors);
-
-                EventHandler<Object> handler = new EventHandler<Object>() {
-                    @Override public void onEvent(Object o, long l, boolean b) throws Exception {
-
-                    }
-                };
+                executorsAtom.set(newExecutors);
 
                 EventHandler<Object> tupleHandler = (packets, seqId, batchEnd) -> workerState
                     .sendTuplesToRemoteWorker((HashMap<Integer, ArrayList<TaskMessage>>) packets, seqId, batchEnd);
@@ -191,7 +182,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 // This thread will publish the messages destined for remote tasks to remote connections
                 transferThread = Utils.asyncLoop(() -> {
                     workerState.transferQueue.consumeBatchWhenAvailable(tupleHandler);
-                    return 0;
+                    return 0L;
                 });
 
                 DisruptorBackpressureCallback disruptorBackpressureHandler =
@@ -204,14 +195,14 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.transferQueue
                     .setLowWaterMark((Double) topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK));
 
-                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler(workerState, executors.get());
+                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler();
                 backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, workerState, backpressureCallback);
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
                     stormClusterState.topologyBackpressure(topologyId, workerState::refreshThrottle);
                 }
 
-                credentials = new AtomicReference<Credentials>(initialCredentials);
+                credentialsAtom = new AtomicReference<Credentials>(initialCredentials);
 
                 establishLogSettingCallback();
 
@@ -249,7 +240,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     }
 
-    public void doHeartBeat(WorkerState workerState) throws IOException {
+    public void doHeartBeat() throws IOException {
         LocalState state = ConfigUtils.workerState(workerState.conf, workerState.workerId);
         state.setWorkerHeartBeat(new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
             workerState.executors.stream()
@@ -259,14 +250,15 @@ public class Worker implements Shutdownable, DaemonCommon {
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
     }
 
-    public void doExecutorHeartbeats(WorkerState workerState, List<IRunningExecutor> executors) {
+    public void doExecutorHeartbeats() {
         Map<List<Integer>, ExecutorStats> stats;
+        List<IRunningExecutor> executors = this.executorsAtom.get();
         if (null == executors) {
             stats = StatsUtil.mkEmptyExecutorZkHbs(workerState.executors);
         } else {
             stats = StatsUtil.convertExecutorZkHbs(executors.stream().collect(Collectors
-                .toMap((Function<IRunningExecutor, List<Long>>) executor -> executor.getExecutorId(),
-                    (Function<IRunningExecutor, ExecutorStats>) executor -> executor.renderStats())));
+                .toMap((Function<IRunningExecutor, List<Long>>) IRunningExecutor::getExecutorId,
+                    (Function<IRunningExecutor, ExecutorStats>) IRunningExecutor::renderStats)));
         }
         Map<String, Object> zkHB = StatsUtil.mkZkWorkerHb(workerState.topologyId, stats, workerState.uptime.upTime());
         try {
@@ -280,13 +272,13 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void checkCredentialsChanged() {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
-        if (! ObjectUtils.equals(newCreds, credentials)) {
+        if (! ObjectUtils.equals(newCreds, credentialsAtom.get())) {
             // This does not have to be atomic, worst case we update when one is not needed
-            AuthUtils.updateSubject(subject, autoCreds, newCreds.get_creds());
-            for (IRunningExecutor executor : executors.get()) {
+            AuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
+            for (IRunningExecutor executor : executorsAtom.get()) {
                 executor.credenetialsChanged(newCreds);
             }
-            credentials.set(newCreds);
+            credentialsAtom.set(newCreds);
         }
     }
 
@@ -300,8 +292,6 @@ public class Worker implements Shutdownable, DaemonCommon {
         logConfigManager.processLogConfigChange(logConfig);
         establishLogSettingCallback();
     }
-
-
 
     public void establishLogSettingCallback() {
         workerState.stormClusterState.topologyLogConfig(topologyId, this::checkLogConfigChanged);
@@ -329,8 +319,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     /**
      * make a handler that checks and updates worker's backpressure flag
      */
-    private WorkerBackpressureCallback mkBackpressureHandler(WorkerState workerState,
-        final List<IRunningExecutor> executors) {
+    private WorkerBackpressureCallback mkBackpressureHandler() {
+        final List<IRunningExecutor> executors = executorsAtom.get();
         return new WorkerBackpressureCallback() {
             @Override public void onEvent(Object obj) {
                 String topologyId = workerState.topologyId;
@@ -356,10 +346,6 @@ public class Worker implements Shutdownable, DaemonCommon {
         };
     }
 
-    private void setupTimers() {
-
-    }
-
     @Override public void shutdown() {
         try {
             LOG.info("Shutting down worker {} {} {}", topologyId, assignmentId, port);
@@ -371,7 +357,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             }
             LOG.info("Terminating messaging context");
             LOG.info("Shutting down executors");
-            for (IRunningExecutor executor : executors.get()) {
+            for (IRunningExecutor executor : executorsAtom.get()) {
                 ((ExecutorShutdown) executor).shutdown();
             }
             LOG.info("Shut down executors");
@@ -422,5 +408,19 @@ public class Worker implements Shutdownable, DaemonCommon {
             && workerState.refreshActiveTimer.isTimerWaiting()
             && workerState.executorHeartbeatTimer.isTimerWaiting()
             && workerState.userTimer.isTimerWaiting();
+    }
+
+    public static void main(String[] args) throws Exception {
+        Preconditions.checkArgument(args.length == 4, "Illegal number of arguemtns. Expected: 4, Actual: " + args.length);
+        String stormId = args[0];
+        String assignmentId = args[1];
+        String portStr = args[2];
+        String workerId = args[3];
+        Map conf = Utils.readStormConfig();
+        Utils.setupDefaultUncaughtExceptionHandler();
+        StormCommon.validateDistributedMode(conf);
+        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(portStr), workerId);
+        worker.start();
+        Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
     }
 }

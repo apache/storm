@@ -19,16 +19,38 @@
 package org.apache.storm.executor;
 
 import org.apache.storm.daemon.worker.WorkerState;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.RegisteredGlobalState;
 
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class LocalExecutor {
+
+    private static volatile String trackId = null;
+
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> initialCredentials)
         throws Exception {
         Executor executor = Executor.mkExecutor(workerState, executorId, initialCredentials);
         executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getTransferWorkerQueue(),
-            executor.getStormConf()));
+            executor.getStormConf()) {
+            @Override
+            public void transfer(int task, Tuple tuple) {
+                if (null != trackId) {
+                    ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId)).get("transferred")).incrementAndGet();
+                }
+                super.transfer(task, tuple);
+            }
+        });
         return executor;
+    }
+
+    public static void setTrackId(String trackId) {
+        LocalExecutor.trackId = trackId;
+    }
+
+    public static void clearTrackId() {
+        LocalExecutor.trackId = null;
     }
 }

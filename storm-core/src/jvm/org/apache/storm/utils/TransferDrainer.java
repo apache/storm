@@ -26,10 +26,13 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.TaskMessage;
 import com.google.common.collect.Maps;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransferDrainer {
 
   private Map<Integer, ArrayList<ArrayList<TaskMessage>>> bundles = new HashMap();
+  private static final Logger LOG = LoggerFactory.getLogger(TransferDrainer.class);
   
   public void add(HashMap<Integer, ArrayList<TaskMessage>> taskTupleSetMap) {
     for (Map.Entry<Integer, ArrayList<TaskMessage>> entry : taskTupleSetMap.entrySet()) {
@@ -49,6 +52,8 @@ public class TransferDrainer {
         if (null != iter && iter.hasNext()) {
           connection.send(iter);
         }
+      } else {
+        LOG.warn("Connection is not available for hostPort {}", hostPort);
       }
     }
   }
@@ -61,6 +66,8 @@ public class TransferDrainer {
         for (ArrayList<TaskMessage> chunk : this.bundles.get(task)) {
           addListRefToMap(bundleMap, hostPort, chunk);
         }
+      } else {
+        LOG.warn("No remote destination available for task {}", task);
       }
     }
     return bundleMap;

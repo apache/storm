@@ -23,6 +23,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.storm.utils.Time;
 import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
@@ -78,11 +79,14 @@ public class LogConfigManager {
             }
 
             // Look for deleted log timeouts
-            for (String loggerName : latestLogConfig.get().descendingKeySet()) {
-                if (! newLogConfigs.containsKey(loggerName)) {
-                    // if we had a timeout, but the timeout is no longer active
-                    setLoggerLevel(logContext, loggerName, latestLogConfig.get().get(loggerName).get_reset_log_level());
+            TreeMap<String,LogLevel> latestConf = latestLogConfig.get();
+            if (latestConf != null) {
+                for (String loggerName : latestConf.descendingKeySet()) {
+                    if (! newLogConfigs.containsKey(loggerName)) {
+                        // if we had a timeout, but the timeout is no longer active
+                        setLoggerLevel(logContext, loggerName, latestConf.get(loggerName).get_reset_log_level());
 
+                    }
                 }
             }
 
@@ -113,9 +117,8 @@ public class LogConfigManager {
         for (String loggerName : latestLogLevelMap.descendingKeySet()) {
             LogLevel loggerSetting = latestLogLevelMap.get(loggerName);
             long timeout = loggerSetting.get_reset_log_level_timeout_epoch();
-            String targetLogLevel = loggerSetting.get_target_log_level();
             String resetLogLevel = loggerSetting.get_reset_log_level();
-            if (timeout < System.currentTimeMillis()) {
+            if (timeout < Time.currentTimeMillis()) {
                 LOG.info("{}: Resetting level to {}", loggerName, resetLogLevel);
                 setLoggerLevel(loggerContext, loggerName, resetLogLevel);
             }

@@ -83,20 +83,12 @@ public class WorkerState {
         return conf;
     }
 
-    public IContext getMqContext() {
-        return mqContext;
-    }
-
     public IConnection getReceiver() {
         return receiver;
     }
 
     public String getTopologyId() {
         return topologyId;
-    }
-
-    public String getAssignmentId() {
-        return assignmentId;
     }
 
     public int getPort() {
@@ -109,14 +101,6 @@ public class WorkerState {
 
     public IStateStorage getStateStorage() {
         return stateStorage;
-    }
-
-    public IStormClusterState getStormClusterState() {
-        return stormClusterState;
-    }
-
-    public AtomicBoolean getIsWorkerActive() {
-        return isWorkerActive;
     }
 
     public AtomicBoolean getIsTopologyActive() {
@@ -159,28 +143,12 @@ public class WorkerState {
         return componentToSortedTasks;
     }
 
-    public ReentrantReadWriteLock getEndpointSocketLock() {
-        return endpointSocketLock;
-    }
-
-    public AtomicReference<Map<Integer, NodeInfo>> getCachedTaskToNodePort() {
-        return cachedTaskToNodePort;
-    }
-
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
     }
 
     public Map<List<Long>, DisruptorQueue> getExecutorReceiveQueueMap() {
         return executorReceiveQueueMap;
-    }
-
-    public Map<Integer, DisruptorQueue> getShortExecutorReceiveQueueMap() {
-        return shortExecutorReceiveQueueMap;
-    }
-
-    public Map<Integer, Integer> getTaskToShortExecutor() {
-        return taskToShortExecutor;
     }
 
     public Runnable getSuicideCallback() {
@@ -214,6 +182,8 @@ public class WorkerState {
     final AtomicBoolean isWorkerActive;
     final AtomicBoolean isTopologyActive;
     final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
+
+    // executors and taskIds running in this worker
     final Set<List<Long>> executors;
     final List<Integer> taskIds;
     final Map topologyConf;
@@ -253,14 +223,6 @@ public class WorkerState {
         return assignmentVersions;
     }
 
-    public AtomicBoolean getBackpressure() {
-        return backpressure;
-    }
-
-    public AtomicBoolean getTransferBackpressure() {
-        return transferBackpressure;
-    }
-
     public AtomicBoolean getBackpressureTrigger() {
         return backpressureTrigger;
     }
@@ -273,44 +235,8 @@ public class WorkerState {
         return transferQueue;
     }
 
-    public StormTimer getHeartbeatTimer() {
-        return heartbeatTimer;
-    }
-
-    public StormTimer getRefreshLoadTimer() {
-        return refreshLoadTimer;
-    }
-
-    public StormTimer getRefreshConnectionsTimer() {
-        return refreshConnectionsTimer;
-    }
-
-    public StormTimer getRefreshCredentialsTimer() {
-        return refreshCredentialsTimer;
-    }
-
-    public StormTimer getResetLogTevelsTimer() {
-        return resetLogTevelsTimer;
-    }
-
-    public StormTimer getRefreshActiveTimer() {
-        return refreshActiveTimer;
-    }
-
-    public StormTimer getExecutorHeartbeatTimer() {
-        return executorHeartbeatTimer;
-    }
-
     public StormTimer getUserTimer() {
         return userTimer;
-    }
-
-    public List<Integer> getOutboundTasks() {
-        return outboundTasks;
-    }
-
-    public AtomicLong getNextUpdate() {
-        return nextUpdate;
     }
 
     final DisruptorQueue transferQueue;
@@ -338,9 +264,9 @@ public class WorkerState {
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.transferQueue = new DisruptorQueue("worker-transfer-queue",
-            (int) topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE),
+            Utils.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE)),
             (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS),
-            (int) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE),
+            Utils.getInt(topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE)),
             (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
 
         this.conf = conf;
@@ -354,7 +280,7 @@ public class WorkerState {
         this.stormClusterState = stormClusterState;
         this.isWorkerActive = new AtomicBoolean(false);
         this.isTopologyActive = new AtomicBoolean(false);
-        this.stormComponentToDebug = new AtomicReference();
+        this.stormComponentToDebug = new AtomicReference<>();
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, executors);
         this.shortExecutorReceiveQueueMap = new HashMap<>();
         this.taskIds = new ArrayList<>();
@@ -411,6 +337,7 @@ public class WorkerState {
 
     public void refreshConnections(Runnable callback) throws Exception {
         Integer version = stormClusterState.assignmentVersion(topologyId, callback);
+        version = (null == version) ? 0 : version;
         VersionedData<Assignment> assignmentVersion = assignmentVersions.get().get(topologyId);
         Assignment assignment;
         if (null != assignmentVersion && (assignmentVersion.getVersion() == version)) {
@@ -424,18 +351,20 @@ public class WorkerState {
                 next.put(topologyId, newAssignmentVersion);
                 return next;
             });
-            assignment = (Assignment) newAssignmentVersion.getData();
+            assignment = newAssignmentVersion.getData();
         }
 
-        Map<Integer, NodeInfo> taskToNodePort = StormCommon.taskToNodeport(assignment.get_executor_node_port());
-        Map<Integer, NodeInfo> myAssignment = new HashMap<>();
         Set<NodeInfo> neededConnections = new HashSet<>();
-        for (Map.Entry<Integer, NodeInfo> taskToNodePortEntry : taskToNodePort.entrySet()) {
-            Integer task = taskToNodePortEntry.getKey();
-            if (outboundTasks.contains(task)) {
-                myAssignment.put(task, taskToNodePortEntry.getValue());
-                if (!taskIds.contains(task)) {
-                    neededConnections.add(taskToNodePortEntry.getValue());
+        Map<Integer, NodeInfo> newTaskToNodePort = new HashMap<>();
+        if (null != assignment) {
+            Map<Integer, NodeInfo> taskToNodePort = StormCommon.taskToNodeport(assignment.get_executor_node_port());
+            for (Map.Entry<Integer, NodeInfo> taskToNodePortEntry : taskToNodePort.entrySet()) {
+                Integer task = taskToNodePortEntry.getKey();
+                if (outboundTasks.contains(task)) {
+                    newTaskToNodePort.put(task, taskToNodePortEntry.getValue());
+                    if (!taskIds.contains(task)) {
+                        neededConnections.add(taskToNodePortEntry.getValue());
+                    }
                 }
             }
         }
@@ -444,6 +373,7 @@ public class WorkerState {
         Set<NodeInfo> newConnections = Sets.difference(neededConnections, currentConnections);
         Set<NodeInfo> removeConnections = Sets.difference(currentConnections, neededConnections);
 
+        // Add new connections atomically
         cachedNodeToPortSocket.getAndUpdate(prev -> {
             Map<NodeInfo, IConnection> next = new HashMap<>(prev);
             for (NodeInfo nodeInfo : newConnections) {
@@ -459,7 +389,7 @@ public class WorkerState {
 
         try {
             endpointSocketLock.writeLock().lock();
-            cachedTaskToNodePort.set(myAssignment);
+            cachedTaskToNodePort.set(newTaskToNodePort);
         } finally {
             endpointSocketLock.writeLock().unlock();
         }
@@ -468,6 +398,7 @@ public class WorkerState {
             cachedNodeToPortSocket.get().get(nodeInfo).close();
         }
 
+        // Remove old connections atomically
         cachedNodeToPortSocket.getAndUpdate(prev -> {
             Map<NodeInfo, IConnection> next = new HashMap<>(prev);
             removeConnections.forEach(next::remove);
@@ -482,9 +413,23 @@ public class WorkerState {
 
     public void refreshStormActive(Runnable callback) {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
-        isTopologyActive.set((base.get_status() == TopologyStatus.ACTIVE) && (isWorkerActive.get()));
-        stormComponentToDebug.set(base.get_component_debug());
-        LOG.debug("Events debug options {}", stormComponentToDebug.get());
+        isTopologyActive.set(
+            (null != base) &&
+            (base.get_status() == TopologyStatus.ACTIVE) &&
+            (isWorkerActive.get()));
+        if (null != base) {
+            Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
+            for (DebugOptions debugOptions : debugOptionsMap.values()) {
+                if (!debugOptions.is_set_samplingpct()) {
+                    debugOptions.set_samplingpct(10);
+                }
+                if (!debugOptions.is_set_enable()) {
+                    debugOptions.set_enable(false);
+                }
+            }
+            stormComponentToDebug.set(debugOptionsMap);
+            LOG.debug("Events debug options {}", stormComponentToDebug.get());
+        }
     }
 
     public void refreshThrottle() {
@@ -577,7 +522,6 @@ public class WorkerState {
                 // Local task
                 local.add(addressedTuple);
             } else {
-
                 // Using java objects directly to avoid performance issues in java code
                 if (! remoteMap.containsKey(destTask)) {
                     remoteMap.put(destTask, new ArrayList<>());
@@ -660,7 +604,7 @@ public class WorkerState {
             .stream()
             .map(WorkerState::isConnectionReady)
             .reduce((left, right) -> left && right)
-            .get();
+            .orElse(true);
     }
 
     public static boolean isConnectionReady(IConnection connection) {
@@ -677,7 +621,7 @@ public class WorkerState {
             stormClusterState.assignmentInfo(topologyId, null).get_executor_node_port();
         for (Map.Entry<List<Long>, NodeInfo> entry : executorToNodePort.entrySet()) {
             NodeInfo nodeInfo = entry.getValue();
-            if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().equals(port)) {
+            if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().iterator().next() == port) {
                 executorsAssignedToThisWorker.add(entry.getKey());
             }
         }
@@ -687,17 +631,17 @@ public class WorkerState {
     private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map topologyConf, Set<List<Long>> executors) {
         Map<List<Long>, DisruptorQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
-            receiveQueueMap.put(executor, new DisruptorQueue("worker-transfer-queue",
-                (int) topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE),
+            receiveQueueMap.put(executor, new DisruptorQueue("receive-queue",
+                Utils.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE)),
                 (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS),
-                (int) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE),
+                Utils.getInt(topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE)),
                 (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS)));
         }
         return receiveQueueMap;
     }
     
     private Map<String, Object> makeDefaultResources() {
-        int threadPoolSize = (int) conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE);
+        int threadPoolSize = Utils.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
         return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, Executors.newFixedThreadPool(threadPoolSize));
     }
     
@@ -738,10 +682,6 @@ public class WorkerState {
             }
         }
         return outboundTasks;
-    }
-
-    public interface ITransferCallback {
-        void transfer(KryoTupleSerializer serializer, List<AddressedTuple> tupleBatch);
     }
 
     public interface ILocalTransferCallback {

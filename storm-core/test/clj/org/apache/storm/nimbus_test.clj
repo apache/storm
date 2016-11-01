@@ -197,7 +197,7 @@
     (when assigned?
       (is (= (sort task-ids) (sort assigned-task-ids)))
       (doseq [t task-ids]
-        (is (not-nil? (task->node+port t)))))
+        (is (not-nil? (.get task->node+port t)))))
     (doseq [[e s] executor->node+port]
       (is (not-nil? s)))
     
