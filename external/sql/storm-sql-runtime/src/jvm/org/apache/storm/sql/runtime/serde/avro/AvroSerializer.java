@@ -19,7 +19,6 @@ package org.apache.storm.sql.runtime.serde.avro;
 
 import com.google.common.base.Preconditions;
 import org.apache.avro.Schema;
-import org.apache.avro.generic.GenericContainer;
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.generic.GenericDatumWriter;
 import org.apache.avro.generic.GenericRecord;
@@ -56,7 +55,7 @@ public class AvroSerializer implements IOutputSerializer, Serializable {
       }
 
       ByteArrayOutputStream out = new ByteArrayOutputStream();
-      DatumWriter<GenericContainer> writer = new GenericDatumWriter<>(record.getSchema());
+      DatumWriter<GenericRecord> writer = new GenericDatumWriter<>(record.getSchema());
       Encoder encoder = EncoderFactory.get().directBinaryEncoder(out, null);
       writer.write(record, encoder);
       encoder.flush();
