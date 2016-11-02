@@ -108,6 +108,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
  * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions
  * STORM-2040: Fix bug on assert-can-serialize
