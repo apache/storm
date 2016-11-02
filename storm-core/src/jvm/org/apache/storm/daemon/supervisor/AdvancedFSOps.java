@@ -86,8 +86,15 @@ public class AdvancedFSOps {
             commands.add("rmr");
             commands.add(absolutePath);
             SupervisorUtils.processLauncherAndWait(_conf, user, commands, null, logPrefix);
+
             if (Utils.checkFileExists(absolutePath)) {
-                throw new RuntimeException(path + " was not deleted.");
+                // It's possible that permissions were not set properly on the directory, and
+                // the user who is *supposed* to own the dir does not. In this case, try the
+                // delete as the supervisor user.
+                Utils.forceDelete(absolutePath);
+                if (Utils.checkFileExists(absolutePath)) {
+                    throw new RuntimeException(path + " was not deleted.");
+                }
             }
         }
         
