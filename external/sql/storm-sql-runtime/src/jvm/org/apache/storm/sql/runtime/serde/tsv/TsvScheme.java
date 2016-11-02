@@ -29,10 +29,11 @@ import java.util.List;
 
 public class TsvScheme implements Scheme {
   private final List<String> fieldNames;
-  protected char delimiter = '\t';
+  private final char delimiter;
 
-  public TsvScheme(List<String> fieldNames) {
+  public TsvScheme(List<String> fieldNames, char delimiter) {
     this.fieldNames = fieldNames;
+    this.delimiter = delimiter;
   }
 
   @Override

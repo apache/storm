@@ -18,8 +18,8 @@
 package org.apache.storm.sql;
 
 import com.google.common.collect.Lists;
-import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
-import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
+import org.apache.storm.sql.runtime.serde.csv.CsvScheme;
+import org.apache.storm.sql.runtime.serde.csv.CsvSerializer;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -34,20 +34,20 @@ public class TestCsvSerializer {
     List<String> fields = Lists.newArrayList("ID", "val");
     List<Object> o = Lists.newArrayList("1", "2");
 
-    TsvSerializer serializer = new TsvSerializer(fields);
+    CsvSerializer serializer = new CsvSerializer(fields);
     ByteBuffer byteBuffer = serializer.write(o, null);
 
-    TsvScheme scheme = new TsvScheme(fields);
+    CsvScheme scheme = new CsvScheme(fields);
     assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
 
     // Fields with embedded commas or double-quote characters
     fields = Lists.newArrayList("ID", "val", "v");
     o = Lists.newArrayList("1,9", "2,\"3\",5", "\"8\"");
 
-    serializer = new TsvSerializer(fields);
+    serializer = new CsvSerializer(fields);
     byteBuffer = serializer.write(o, null);
 
-    scheme = new TsvScheme(fields);
+    scheme = new CsvScheme(fields);
     assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
   }
 

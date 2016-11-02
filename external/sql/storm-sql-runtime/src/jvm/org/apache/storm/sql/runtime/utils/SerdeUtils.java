@@ -44,7 +44,8 @@ public final class SerdeUtils {
                     scheme = new JsonScheme(fieldNames);
                     break;
                 case "org.apache.storm.sql.runtime.serde.json.TsvScheme" :
-                    scheme = new TsvScheme(fieldNames);
+                    String delimiter = properties.getProperty("tsv.delimiter", "\t");
+                    scheme = new TsvScheme(fieldNames, delimiter.charAt(0));
                     break;
                 case "org.apache.storm.sql.runtime.serde.json.CsvScheme" :
                     scheme = new CsvScheme(fieldNames);
@@ -75,7 +76,8 @@ public final class SerdeUtils {
                     serializer = new JsonSerializer(fieldNames);
                     break;
                 case "org.apache.storm.sql.runtime.serde.json.TsvSerializer" :
-                    serializer = new TsvSerializer(fieldNames);
+                    String delimiter = properties.getProperty("tsv.delimiter", "\t");
+                    serializer = new TsvSerializer(fieldNames, delimiter.charAt(0));
                     break;
                 case "org.apache.storm.sql.runtime.serde.json.CsvSerializer" :
                     serializer = new CsvSerializer(fieldNames);

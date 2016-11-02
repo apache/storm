@@ -47,7 +47,9 @@ public class CsvSerializer implements IOutputSerializer, Serializable {
     try {
       StringWriter writer = new StringWriter();
       CSVPrinter printer = new CSVPrinter(writer, CSVFormat.RFC4180);
-      printer.printRecords(data);
+      for (Object o : data) {
+        printer.print(o);
+      }
       //since using StringWriter, we do not need to close it.
       return ByteBuffer.wrap(writer.getBuffer().toString().getBytes(StandardCharsets.UTF_8));
     } catch (IOException e) {

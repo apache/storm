@@ -55,7 +55,7 @@ public class CsvScheme implements Scheme {
 
       ArrayList<Object> list = new ArrayList<>(fieldNames.size());
       for (int i = 0; i < record.size(); i++) {
-        list.add(record.get(i++));
+        list.add(record.get(i));
       }
       return list;
     } catch (IOException e) {

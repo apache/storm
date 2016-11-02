@@ -31,13 +31,15 @@ public class TestTsvSerializer {
 
   @Test
   public void testTsvSchemeAndSerializer() {
+    final char delimiter = '\t';
+
     List<String> fields = Lists.newArrayList("ID", "val");
     List<Object> o = Lists.newArrayList("1", "2");
 
-    TsvSerializer serializer = new TsvSerializer(fields);
+    TsvSerializer serializer = new TsvSerializer(fields, delimiter);
     ByteBuffer byteBuffer = serializer.write(o, null);
 
-    TsvScheme scheme = new TsvScheme(fields);
+    TsvScheme scheme = new TsvScheme(fields, delimiter);
     assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
   }
 

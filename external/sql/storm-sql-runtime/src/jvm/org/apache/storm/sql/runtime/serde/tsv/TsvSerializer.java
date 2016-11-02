@@ -26,10 +26,11 @@ import java.util.List;
 
 public class TsvSerializer implements IOutputSerializer, Serializable {
   private final List<String> fields; //reserved for future
-  protected char delimiter = '\t';
+  private final char delimiter;
 
-  public TsvSerializer(List<String> fields) {
-        this.fields = fields;
+  public TsvSerializer(List<String> fields, char delimiter) {
+    this.fields = fields;
+    this.delimiter = delimiter;
     }
 
   @Override
