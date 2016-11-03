@@ -150,7 +150,7 @@ public class BlobStoreUtils {
         }
 
         if (!isSuccess) {
-            LOG.error("Could not download blob with key" + key);
+            LOG.error("Could not download the blob with key: {}", key);
         }
         return isSuccess;
     }
