@@ -17,16 +17,19 @@
  */
 package org.apache.storm.redis.bolt;
 
+import java.util.List;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.mapper.BasicStreamMapper;
+import org.apache.storm.redis.common.mapper.DefaultStreamMapper;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisFilterMapper;
+import org.apache.storm.redis.common.mapper.StreamMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
 import redis.clients.jedis.GeoCoordinate;
 import redis.clients.jedis.JedisCommands;
-
-import java.util.List;
 
 /**
  * Basic bolt for querying from Redis and filters out if key/field doesn't exist.
@@ -45,18 +48,41 @@ import java.util.List;
  */
 public class RedisFilterBolt extends AbstractRedisBolt {
     private final RedisFilterMapper filterMapper;
+    private final StreamMapper streamMapper;
     private final RedisDataTypeDescription.RedisDataType dataType;
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
+     * Constructor for single Redis environment (JedisPool).
+     * Tuples will be emitted to Storm's default streamId.
      * @param config configuration for initializing JedisPool
      * @param filterMapper mapper containing which datatype, query key that Bolt uses
      */
     public RedisFilterBolt(JedisPoolConfig config, RedisFilterMapper filterMapper) {
+        this(config, filterMapper, new DefaultStreamMapper());
+    }
+
+    /**
+     * Constructor for single Redis environment (JedisPool).
+     * @param config configuration for initializing JedisCluster
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
+     * @param streamId the stream to which tuples that make it through the filter should be emitted.
+     */
+    public RedisFilterBolt(JedisPoolConfig config, RedisFilterMapper filterMapper, String streamId) {
+        this(config, filterMapper, new BasicStreamMapper(streamId));
+    }
+
+    /**
+     * Constructor for single Redis environment (JedisPool).
+     * @param config configuration for initializing JedisPool
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
+     * @param streamMapper mapper to which stream a given Tuple/Values pair should be emitted.
+     */
+    public RedisFilterBolt(JedisPoolConfig config, RedisFilterMapper filterMapper, StreamMapper streamMapper) {
         super(config);
 
         this.filterMapper = filterMapper;
+        this.streamMapper = streamMapper;
 
         RedisDataTypeDescription dataTypeDescription = filterMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
@@ -69,14 +95,36 @@ public class RedisFilterBolt extends AbstractRedisBolt {
     }
 
     /**
-     * Constructor for Redis Cluster environment (JedisCluster)
+     * Constructor for Redis Cluster environment (JedisCluster).
+     * Tuples will be emitted to Storm's default streamId.
      * @param config configuration for initializing JedisCluster
      * @param filterMapper mapper containing which datatype, query key that Bolt uses
      */
     public RedisFilterBolt(JedisClusterConfig config, RedisFilterMapper filterMapper) {
+        this(config, filterMapper, new DefaultStreamMapper());
+    }
+
+    /**
+     * Constructor for Redis Cluster environment (JedisCluster).
+     * @param config configuration for initializing JedisCluster
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
+     * @param streamId the stream to which tuples that make it through the filter should be emitted.
+     */
+    public RedisFilterBolt(JedisClusterConfig config, RedisFilterMapper filterMapper, String streamId) {
+        this(config, filterMapper, new BasicStreamMapper(streamId));
+    }
+
+    /**
+     * Constructor for Redis Cluster environment (JedisCluster).
+     * @param config configuration for initializing JedisCluster
+     * @param filterMapper mapper containing which datatype, query key that Bolt uses
+     * @param streamMapper mapper to which stream a given Tuple/Values pair should be emitted.
+     */
+    public RedisFilterBolt(JedisClusterConfig config, RedisFilterMapper filterMapper, StreamMapper streamMapper) {
         super(config);
 
         this.filterMapper = filterMapper;
+        this.streamMapper = streamMapper;
 
         RedisDataTypeDescription dataTypeDescription = filterMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
@@ -126,7 +174,9 @@ public class RedisFilterBolt extends AbstractRedisBolt {
             }
 
             if (found) {
-                collector.emit(input, input.getValues());
+                Values values = new Values(input.getValues().toArray());
+                String streamId = streamMapper.getStreamId(input, values);
+                collector.emit(streamId, input, values);
             }
 
             collector.ack(input);

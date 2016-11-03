@@ -17,16 +17,18 @@
  */
 package org.apache.storm.redis.bolt;
 
+import java.util.List;
+import org.apache.storm.redis.common.config.JedisClusterConfig;
+import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.mapper.BasicStreamMapper;
+import org.apache.storm.redis.common.mapper.DefaultStreamMapper;
+import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
+import org.apache.storm.redis.common.mapper.RedisLookupMapper;
+import org.apache.storm.redis.common.mapper.StreamMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
-import org.apache.storm.redis.common.mapper.RedisLookupMapper;
-import org.apache.storm.redis.common.config.JedisClusterConfig;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
 import redis.clients.jedis.JedisCommands;
-
-import java.util.List;
 
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
@@ -35,18 +37,41 @@ import java.util.List;
  */
 public class RedisLookupBolt extends AbstractRedisBolt {
     private final RedisLookupMapper lookupMapper;
+    private final StreamMapper streamMapper;
     private final RedisDataTypeDescription.RedisDataType dataType;
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
+     * Constructor for single Redis environment (JedisPool).
+     * Emits tuples to Storm's default stream.
      * @param config configuration for initializing JedisPool
      * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
      */
     public RedisLookupBolt(JedisPoolConfig config, RedisLookupMapper lookupMapper) {
+        this(config, lookupMapper, new DefaultStreamMapper());
+    }
+
+    /**
+     * Constructor for single Redis environment (JedisPool).
+     * @param config configuration for initializing JedisPool
+     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
+     * @param streamId the streamId to which this bolt should emit tuples
+     */
+    public RedisLookupBolt(JedisPoolConfig config, RedisLookupMapper lookupMapper, String streamId) {
+        this(config, lookupMapper, new BasicStreamMapper(streamId));
+    }
+
+    /**
+     * Constructor for single Redis environment (JedisPool).
+     * @param config configuration for initializing JedisPool
+     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
+     * @param streamMapper mapper to which stream a given Tuple/Values pair should be emitted.
+     */
+    public RedisLookupBolt(JedisPoolConfig config, RedisLookupMapper lookupMapper, StreamMapper streamMapper) {
         super(config);
 
         this.lookupMapper = lookupMapper;
+        this.streamMapper = streamMapper;
 
         RedisDataTypeDescription dataTypeDescription = lookupMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
@@ -54,14 +79,36 @@ public class RedisLookupBolt extends AbstractRedisBolt {
     }
 
     /**
-     * Constructor for Redis Cluster environment (JedisCluster)
+     * Constructor for Redis Cluster environment (JedisCluster).
+     * Emits tuples to Storm's default stream.
      * @param config configuration for initializing JedisCluster
      * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
      */
     public RedisLookupBolt(JedisClusterConfig config, RedisLookupMapper lookupMapper) {
+        this(config, lookupMapper, new DefaultStreamMapper());
+    }
+
+    /**
+     * Constructor for single Redis environment (JedisPool).
+     * @param config configuration for initializing JedisPool
+     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
+     * @param streamId the streamId to which this bolt should emit tuples
+     */
+    public RedisLookupBolt(JedisClusterConfig config, RedisLookupMapper lookupMapper, String streamId) {
+        this(config, lookupMapper, new BasicStreamMapper(streamId));
+    }
+
+    /**
+     * Constructor for Redis Cluster environment (JedisCluster).
+     * @param config configuration for initializing JedisCluster
+     * @param lookupMapper mapper containing which datatype, query key, output key that Bolt uses
+     * @param streamMapper mapper to which stream a given Tuple/Values pair should be emitted.
+     */
+    public RedisLookupBolt(JedisClusterConfig config, RedisLookupMapper lookupMapper, StreamMapper streamMapper) {
         super(config);
 
         this.lookupMapper = lookupMapper;
+        this.streamMapper = streamMapper;
 
         RedisDataTypeDescription dataTypeDescription = lookupMapper.getDataTypeDescription();
         this.dataType = dataTypeDescription.getDataType();
@@ -115,7 +162,8 @@ public class RedisLookupBolt extends AbstractRedisBolt {
 
             List<Values> values = lookupMapper.toTuple(input, lookupValue);
             for (Values value : values) {
-                collector.emit(input, value);
+                String streamId = streamMapper.getStreamId(input, value);
+                collector.emit(streamId, input, value);
             }
 
             collector.ack(input);
