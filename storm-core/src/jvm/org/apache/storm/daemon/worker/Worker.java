@@ -111,7 +111,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             String pid = Utils.processPid();
             FileUtils.touch(new File(ConfigUtils.workerPidPath(conf, workerId, pid)));
             FileUtils.writeStringToFile(new File(ConfigUtils.workerArtifactsPidPath(conf, topologyId, port)), pid,
-                Charset.defaultCharset());
+                Charset.forName("UTF-8"));
         }
         final Map topologyConf =
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
@@ -191,9 +191,9 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.transferQueue
                     .setEnableBackpressure((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE));
                 workerState.transferQueue
-                    .setHighWaterMark((Double) topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK));
+                    .setHighWaterMark(Utils.getDouble(topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
                 workerState.transferQueue
-                    .setLowWaterMark((Double) topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK));
+                    .setLowWaterMark(Utils.getDouble(topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
 
                 WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler();
                 backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, workerState, backpressureCallback);

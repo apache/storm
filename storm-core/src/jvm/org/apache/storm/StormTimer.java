@@ -227,10 +227,11 @@ public class StormTimer implements AutoCloseable {
 
     @Override
     public void close() throws Exception {
-        checkActive();
-        this.task.setActive(false);
-        this.task.interrupt();
-        this.task.join();
+        if (this.task.isActive()) {
+            this.task.setActive(false);
+            this.task.interrupt();
+            this.task.join();
+        }
     }
 
     /**

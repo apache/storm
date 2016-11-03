@@ -186,16 +186,16 @@ public class Task {
             workerData.getComponentToSortedTasks(),
             workerData.getComponentToStreamToFields(),
             workerData.getTopologyId(),
-                ConfigUtils.supervisorStormResourcesPath(
-                        ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),
-                ConfigUtils.workerPidsRoot(conf, workerData.getWorkerId()),
-                taskId,
-                workerData.getPort(), workerData.getTaskIds(),
-                workerData.getDefaultSharedResources(),
-               workerData.getUserSharedResources(),
-                executor.getSharedExecutorData(),
-                executor.getIntervalToTaskToMetricToRegistry(),
-                executor.getOpenOrPrepareWasCalled());
+            ConfigUtils.supervisorStormResourcesPath(
+                    ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),
+            ConfigUtils.workerPidsRoot(conf, workerData.getWorkerId()),
+            taskId,
+            workerData.getPort(), workerData.getTaskIds(),
+            workerData.getDefaultSharedResources(),
+            workerData.getUserSharedResources(),
+            executor.getSharedExecutorData(),
+            executor.getIntervalToTaskToMetricToRegistry(),
+            executor.getOpenOrPrepareWasCalled());
     }
 
     private Object mkTaskObject() {

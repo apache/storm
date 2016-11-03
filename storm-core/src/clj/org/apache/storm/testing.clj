@@ -17,14 +17,13 @@
 (ns org.apache.storm.testing
   (:require [org.apache.storm.daemon
              [nimbus :as nimbus]
-             [local-executor :as local-executor]
              [local-supervisor :as local-supervisor]
              [common :as common]])
   (:import [org.apache.commons.io FileUtils]
            [org.apache.storm.utils]
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
-           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils]
+           [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils ReadClusterState]
            [org.apache.storm.executor Executor LocalExecutor]
            [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
@@ -246,8 +245,7 @@
   (.close (:state cluster-map))
   (.disconnect (:storm-cluster-state cluster-map))
   (doseq [s @(:supervisors cluster-map)]
-    (.shutdownAllWorkers s)
-    ;; race condition here? will it launch the workers again?
+    (.shutdownAllWorkers s nil ReadClusterState/THREAD_DUMP_ON_ERROR)
     (.close s))
   (ProcessSimulator/killAllProcesses)
   (if (not-nil? (:zookeeper cluster-map))
@@ -674,14 +672,7 @@
          ;; of tuple emission (and not on a separate thread later) for
          ;; topologies to be tracked correctly. This is because "transferred" *must*
          ;; be incremented before "processing".
-         local-executor/local-transfer-executor-tuple
-         (let [old# local-executor/local-transfer-executor-tuple]
-           (fn [& args#]
-             (let [transferrer# (apply old# args#)]
-               (fn [& args2#]
-                 ;; (log-message "Transferring: " args2#)
-                 (increment-global! id# "transferred" 1)
-                 (apply transferrer# args2#)))))]
+         ]
           (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
                               (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
                                 ~@body)))

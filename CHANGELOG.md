@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2175: fix double close of workers
  * STORM-1985: Provide a tool for showing and killing corrupted topology
  * STORM-2012: Upgrade Kafka to 0.8.2.2
  * STORM-2142: ReportErrorAndDie runs suicide function only when InterruptedException or InterruptedIOException is thrown
@@ -227,6 +228,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
  * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions 
  * STORM-2040: Fix bug on assert-can-serialize

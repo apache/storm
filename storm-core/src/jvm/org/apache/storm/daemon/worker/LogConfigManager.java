@@ -57,7 +57,7 @@ public class LogConfigManager {
         if (null != logConfig) {
             LOG.debug("Processing received log config: {}", logConfig);
             TreeMap<String, LogLevel> loggers = new TreeMap<>(logConfig.get_named_logger_level());
-            LoggerContext logContext = (LoggerContext) LogManager.getContext();
+            LoggerContext logContext = (LoggerContext) LogManager.getContext(false);
             Map<String, LogLevel> newLogConfigs = new HashMap<>();
             for (Map.Entry<String, LogLevel> entry : loggers.entrySet()) {
                 String msgLoggerName = entry.getKey();
