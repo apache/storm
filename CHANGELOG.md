@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2175: fix double close of workers
  * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
  * STORM-2110: in supervisor v2 filter out empty command line args
  * STORM-2117: Supervisor V2 with local mode extracts resources directory to topology root directory instead of temporary directory
