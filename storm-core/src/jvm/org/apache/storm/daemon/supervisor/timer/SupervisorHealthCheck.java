@@ -35,7 +35,7 @@ public class SupervisorHealthCheck implements Runnable {
         Map<String, Object> conf = supervisor.getConf();
         int healthCode = HealthCheck.healthCheck(conf);
         if (healthCode != 0) {
-            supervisor.shutdownAllWorkers();
+            supervisor.shutdownAllWorkers(null, null);
         }
     }
 }
