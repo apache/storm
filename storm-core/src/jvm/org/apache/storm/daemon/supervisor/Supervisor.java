@@ -323,9 +323,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
     }
 
-    public void shutdownAllWorkers() {
+    public void shutdownAllWorkers(UniFunc<Slot> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
         if (readState != null) {
-            readState.shutdownAllWorkers();
+            readState.shutdownAllWorkers(onWarnTimeout, onErrorTimeout);
         } else {
             try {
                 ContainerLauncher launcher = ContainerLauncher.make(getConf(), getId(), getSharedContext());

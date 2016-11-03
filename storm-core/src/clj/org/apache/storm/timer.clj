@@ -117,11 +117,11 @@
 
 (defn cancel-timer
   [timer]
-  (check-active! timer)
-  (locking (:lock timer)
-    (reset! (:active timer) false)
-    (.interrupt (:timer-thread timer)))
-  (.acquire (:cancel-notifier timer)))
+  (when @(:active timer)
+    (locking (:lock timer)
+      (reset! (:active timer) false)
+      (.interrupt (:timer-thread timer)))
+    (.acquire (:cancel-notifier timer))))
 
 (defn timer-waiting?
   [timer]
