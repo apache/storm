@@ -24,6 +24,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.ServiceLoader;
 
 public class DataSourcesRegistry {
@@ -56,8 +57,8 @@ public class DataSourcesRegistry {
   }
 
   public static ISqlTridentDataSource constructTridentDataSource(
-      URI uri, String inputFormatClass, String outputFormatClass,
-      String properties, List<FieldInfo> fields) {
+          URI uri, String inputFormatClass, String outputFormatClass,
+          Properties properties, List<FieldInfo> fields) {
     DataSourcesProvider provider = providers.get(uri.getScheme());
     if (provider == null) {
       return null;

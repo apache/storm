@@ -37,6 +37,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class TestStormSql {
   private static class MockDataSourceProvider implements DataSourcesProvider {
@@ -54,7 +55,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentDataSource();
     }
   }
@@ -74,7 +75,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentDataSource();
     }
   }
@@ -94,7 +95,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentGroupedDataSource();
     }
   }
@@ -114,7 +115,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentJoinDataSourceEmp();
     }
   }
@@ -134,7 +135,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentJoinDataSourceDept();
     }
   }
