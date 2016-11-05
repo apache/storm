@@ -18,7 +18,7 @@
 ########### These all have default values as shown
 ########### Additional configuration goes into storm.yaml
 
-java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib"
+java.library.path: "/usr/local/lib:/opt/local/lib:/usr/lib:/usr/lib64"
 
 ### storm.* configs are general configurations
 # the local dir is where jars are kept
