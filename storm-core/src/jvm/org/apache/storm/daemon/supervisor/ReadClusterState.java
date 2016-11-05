@@ -294,7 +294,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     };
     public static final UniFunc<Slot> DEFAULT_ON_WARN_TIMEOUT = (slot) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", WARN_MILLIS, slot);
     public static final UniFunc<Slot> THREAD_DUMP_ON_ERROR = (slot) -> {
-        LOG.warn("Shutdown of slot {} appreas to be stuck\n{}", slot, Utils.threadDump());
+        LOG.warn("Shutdown of slot {} appears to be stuck\n{}", slot, Utils.threadDump());
         DEFAULT_ON_ERROR_TIMEOUT.call(slot);
     };
     
