@@ -15,20 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.kafka;
+package org.apache.storm.sql.mongodb;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.storm.kafka.trident.TridentKafkaState;
-import org.apache.storm.kafka.trident.TridentKafkaStateFactory;
-import org.apache.storm.kafka.trident.TridentKafkaUpdater;
+import org.apache.storm.mongodb.common.MongoDBClient;
+import org.apache.storm.mongodb.trident.state.MongoState;
+import org.apache.storm.mongodb.trident.state.MongoStateFactory;
+import org.apache.storm.mongodb.trident.state.MongoStateUpdater;
 import org.apache.storm.sql.runtime.DataSourcesRegistry;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.bson.Document;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
@@ -36,56 +37,57 @@ import org.mockito.internal.util.reflection.Whitebox;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.Future;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
 
-import static org.mockito.Mockito.any;
-import static org.mockito.Mockito.argThat;
+import static org.mockito.Matchers.argThat;
+import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class TestKafkaDataSourcesProvider {
+public class TestMongoDataSourcesProvider {
   private static final List<FieldInfo> FIELDS = ImmutableList.of(
-          new FieldInfo("ID", int.class, true),
-          new FieldInfo("val", String.class, false));
+      new FieldInfo("ID", int.class, true),
+      new FieldInfo("val", String.class, false));
   private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
   private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
   private static final Properties TBL_PROPERTIES = new Properties();
 
   static {
-    Map<String,Object> map = new HashMap<>();
-    map.put("bootstrap.servers", "localhost:9092");
-    map.put("acks", "1");
-    map.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-    map.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-    TBL_PROPERTIES.put("producer", map);
+    TBL_PROPERTIES.put("collection.name", "collection1");
+    TBL_PROPERTIES.put("trident.ser.field", "tridentSerField");
   }
 
   @SuppressWarnings("unchecked")
   @Test
-  public void testKafkaSink() {
+  public void testMongoSink() {
     ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
-            URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
+            URI.create("mongodb://127.0.0.1:27017/test"), null, null, TBL_PROPERTIES, FIELDS);
     Assert.assertNotNull(ds);
 
     ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
 
-    Assert.assertEquals(TridentKafkaStateFactory.class, consumer.getStateFactory().getClass());
-    Assert.assertEquals(TridentKafkaUpdater.class, consumer.getStateUpdater().getClass());
+    Assert.assertEquals(MongoStateFactory.class, consumer.getStateFactory().getClass());
+    Assert.assertEquals(MongoStateUpdater.class, consumer.getStateUpdater().getClass());
 
-    TridentKafkaState state = (TridentKafkaState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
-    KafkaProducer producer = mock(KafkaProducer.class);
-    doReturn(mock(Future.class)).when(producer).send(any(ProducerRecord.class));
-    Whitebox.setInternalState(state, "producer", producer);
+    MongoState state = (MongoState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
+    StateUpdater stateUpdater = consumer.getStateUpdater();
+
+    MongoDBClient mongoClient = mock(MongoDBClient.class);
+    Whitebox.setInternalState(state, "mongoClient", mongoClient);
 
     List<TridentTuple> tupleList = mockTupleList();
+
     for (TridentTuple t : tupleList) {
       state.updateState(Collections.singletonList(t), null);
-      verify(producer).send(argThat(new KafkaMessageMatcher(t)));
+      verify(mongoClient).insert(argThat(new MongoArgMatcher(t)) , eq(true));
     }
-    verifyNoMoreInteractions(producer);
+
+    verifyNoMoreInteractions(mongoClient);
   }
 
   private static List<TridentTuple> mockTupleList() {
@@ -101,25 +103,20 @@ public class TestKafkaDataSourcesProvider {
     return tupleList;
   }
 
-  private static class KafkaMessageMatcher extends ArgumentMatcher<ProducerRecord> {
-    private static final int PRIMARY_INDEX = 0;
+  private static class MongoArgMatcher extends ArgumentMatcher<List<Document>> {
     private final TridentTuple tuple;
 
-    private KafkaMessageMatcher(TridentTuple tuple) {
+    private MongoArgMatcher(TridentTuple tuple) {
       this.tuple = tuple;
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean matches(Object o) {
-      ProducerRecord<Object, ByteBuffer> m = (ProducerRecord<Object,ByteBuffer>)o;
-      if (m.key() != tuple.get(PRIMARY_INDEX)) {
-        return false;
-      }
-      ByteBuffer buf = m.value();
+      Document doc = ((List<Document>)o).get(0);
+      ByteBuffer buf = ByteBuffer.wrap((byte[])doc.get(TBL_PROPERTIES.getProperty("trident.ser.field")));
       ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
       return b.equals(buf);
     }
   }
-
 }
