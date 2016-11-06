@@ -23,7 +23,6 @@ import org.apache.avro.generic.GenericRecord;
 import org.apache.avro.io.BinaryDecoder;
 import org.apache.avro.io.DatumReader;
 import org.apache.avro.io.DecoderFactory;
-import org.apache.avro.util.Utf8;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.utils.SerdeUtils;
 import org.apache.storm.tuple.Fields;
@@ -33,8 +32,10 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+/**
+ * AvroScheme uses generic(without code generation) instead of specific(with code generation) readers.
+ */
 public class AvroScheme implements Scheme {
   private final String schemaString;
   private final List<String> fieldNames;
@@ -58,15 +59,8 @@ public class AvroScheme implements Scheme {
       ArrayList<Object> list = new ArrayList<>(fieldNames.size());
       for (String field : fieldNames) {
         Object value = record.get(field);
-        // Avro strings are stored using a special Avro type instead of using Java primitives
-        if (value instanceof Utf8) {
-          list.add(value.toString());
-        } else if (value instanceof Map<?, ?>) {
-          Map<Object, Object> map = SerdeUtils.convertAvroUtf8Map((Map<Object, Object>)value);
-          list.add(map);
-        } else {
-          list.add(value);
-        }
+        // Avro strings are stored using a special Avro Utf8 type instead of using Java primitives
+        list.add(SerdeUtils.convertAvroUtf8(value));
       }
       return list;
     } catch (IOException e) {

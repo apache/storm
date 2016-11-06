@@ -20,6 +20,7 @@ package org.apache.storm.sql.runtime.utils;
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 import com.google.common.base.Preconditions;
+import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.IOutputSerializer;
@@ -29,6 +30,7 @@ import org.apache.storm.sql.runtime.serde.json.JsonScheme;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.utils.Utils;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -79,22 +81,35 @@ public final class SerdeUtils {
         return serializer;
     }
 
-    public static Map convertAvroUtf8Map(Map<Object, Object> value) {
-        Map<Object, Object> map = new HashMap<>();
-        for (Map.Entry<Object, Object> entry : value.entrySet()) {
-            // Avro only allows maps with Strings for keys, so we only have to worry
-            // about deserializing the values
-            Object key = entry.getKey().toString();
-            Object val = entry.getValue();
+    public static Object convertAvroUtf8(Object value){
+        Object ret;
+        if (value instanceof Utf8) {
+            ret = value.toString();
+        } else if (value instanceof Map<?, ?>) {
+            ret = convertAvroUtf8Map((Map<Object,Object>)value);
+        } else if (value instanceof GenericData.Array) {
+            ret = convertAvroUtf8Array((GenericData.Array)value);
+        } else {
+            ret = value;
+        }
+        return ret;
+    }
 
-            if (val instanceof Utf8) {
-                map.put(key, val.toString());
-            } else if (val instanceof Map<?, ?>) {
-                map.put(key, convertAvroUtf8Map((Map<Object, Object>)val));
-            } else {
-                map.put(key, val);
-            }
+    public static Object convertAvroUtf8Map(Map<Object,Object> value) {
+        Map<Object, Object> map = new HashMap<>(value.size());
+        for (Map.Entry<Object, Object> entry : value.entrySet()) {
+            Object k = convertAvroUtf8(entry.getKey());
+            Object v = convertAvroUtf8(entry.getValue());
+            map.put(k, v);
         }
         return map;
+    }
+
+    public static Object convertAvroUtf8Array(GenericData.Array value){
+        List<Object> ls = new ArrayList<>(value.size());
+        for(Object o : value){
+            ls.add(convertAvroUtf8(o));
+        }
+        return ls;
     }
 }

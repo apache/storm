@@ -33,6 +33,9 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+/**
+ * AvroSerializer uses generic(without code generation) instead of specific(with code generation) writers.
+ */
 public class AvroSerializer implements IOutputSerializer, Serializable {
   private final String schemaString;
   private final List<String> fieldNames;
