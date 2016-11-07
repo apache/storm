@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2188: Interrupt all executor threads before joining in executor shutdown
  * STORM-203: Adding paths to default java library path
  * STORM-2175: fix double close of workers
  * STORM-1985: Provide a tool for showing and killing corrupted topology
