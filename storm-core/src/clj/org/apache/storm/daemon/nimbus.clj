@@ -193,6 +193,7 @@
                                                                        NIMBUS-ZK-ACLS)
                                                           :context (ClusterStateContext. DaemonType/NIMBUS))
      :submit-lock (Object.)
+     :sched-lock (Object.)
      :cred-update-lock (Object.)
      :log-update-lock (Object.)
      :heartbeats-cache (atom {})
@@ -963,9 +964,8 @@
         storm-cluster-state (:storm-cluster-state nimbus)
         ^INimbus inimbus (:inimbus nimbus)
         ;; read all the topologies
-        topology-ids (.active-storms storm-cluster-state)
-        topologies (into {} (for [tid topology-ids]
-                              {tid (read-topology-details nimbus tid)}))
+        topologies (locking (:submit-lock nimbus) (into {} (for [tid (.active-storms storm-cluster-state)]
+                              {tid (read-topology-details nimbus tid)})))
         topologies (Topologies. topologies)
         ;; read all the assignments
         assigned-topology-ids (.assignments storm-cluster-state nil)
@@ -976,11 +976,11 @@
                                         (when (or (nil? scratch-topology-id) (not= tid scratch-topology-id))
                                           {tid (.assignment-info storm-cluster-state tid nil)})))
         ;; make the new assignments for topologies
-        new-scheduler-assignments (compute-new-scheduler-assignments
+        new-scheduler-assignments (locking (:sched-lock nimbus) (compute-new-scheduler-assignments
                                        nimbus
                                        existing-assignments
                                        topologies
-                                       scratch-topology-id)
+                                       scratch-topology-id))
         topology->executor->node+port (compute-new-topology->executor->node+port new-scheduler-assignments existing-assignments)
 
         topology->executor->node+port (merge (into {} (for [id assigned-topology-ids] {id nil})) topology->executor->node+port)
@@ -1020,22 +1020,23 @@
       (reset! (:id->worker-resources nimbus) {}))
     ;; tasks figure out what tasks to talk to by looking at topology at runtime
     ;; only log/set when there's been a change to the assignment
-    (doseq [[topology-id assignment] new-assignments
-            :let [existing-assignment (get existing-assignments topology-id)
-                  topology-details (.getById topologies topology-id)]]
-      (if (= existing-assignment assignment)
-        (log-debug "Assignment for " topology-id " hasn't changed")
-        (do
-          (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
-          (.set-assignment! storm-cluster-state topology-id assignment)
-          )))
-    (->> new-assignments
-          (map (fn [[topology-id assignment]]
-            (let [existing-assignment (get existing-assignments topology-id)]
-              [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))]
-              )))
-          (into {})
-          (.assignSlots inimbus topologies)))
+    (locking (:sched-lock nimbus)
+      (doseq [[topology-id assignment] new-assignments
+              :let [existing-assignment (get existing-assignments topology-id)
+                    topology-details (.getById topologies topology-id)]]
+        (if (= existing-assignment assignment)
+          (log-debug "Assignment for " topology-id " hasn't changed")
+          (do
+            (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
+            (.set-assignment! storm-cluster-state topology-id assignment)
+            )))
+      (->> new-assignments
+            (map (fn [[topology-id assignment]]
+              (let [existing-assignment (get existing-assignments topology-id)]
+                [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))]
+                )))
+            (into {})
+            (.assignSlots inimbus topologies))))
     (log-message "not a leader, skipping assignments")))
 
 (defn notify-topology-action-listener [nimbus storm-id action]
@@ -1726,8 +1727,7 @@
                          )]
           (transition-name! nimbus storm-name [:kill wait-amt] true)
           (notify-topology-action-listener nimbus storm-name operation))
-        (add-topology-to-history-log (get-storm-id (:storm-cluster-state nimbus) storm-name)
-                                     nimbus topology-conf)))
+        (add-topology-to-history-log storm-id nimbus topology-conf)))
 
     (^void rebalance [this ^String storm-name ^RebalanceOptions options]
       (mark! nimbus:num-rebalance-calls)
@@ -2402,8 +2402,7 @@
                         (conf NIMBUS-MONITOR-FREQ-SECS)
                         (fn []
                           (when-not (conf NIMBUS-DO-NOT-REASSIGN)
-                            (locking (:submit-lock nimbus)
-                              (mk-assignments nimbus)))
+                            (mk-assignments nimbus))
                           (do-cleanup nimbus)))
     ;; Schedule Nimbus inbox cleaner
     (schedule-recurring (:timer nimbus)
