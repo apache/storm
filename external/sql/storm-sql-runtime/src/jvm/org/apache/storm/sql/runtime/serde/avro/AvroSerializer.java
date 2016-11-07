@@ -37,23 +37,20 @@ import java.util.List;
  * AvroSerializer uses generic(without code generation) instead of specific(with code generation) writers.
  */
 public class AvroSerializer implements IOutputSerializer, Serializable {
-  private final String schemaString;
   private final List<String> fieldNames;
-  private final CachedSchemas schemas;
+  private final Schema schema;
 
   public AvroSerializer(String schemaString, List<String> fieldNames) {
-    this.schemaString = schemaString;
     this.fieldNames = fieldNames;
-    this.schemas = new CachedSchemas();
+    this.schema = new Schema.Parser().parse(schemaString);
   }
 
   @Override
   public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
     Preconditions.checkArgument(data != null && data.size() == fieldNames.size(), "Invalid schemas");
     try {
-      Schema schema = schemas.getSchema(schemaString);
       GenericRecord record = new GenericData.Record(schema);
-      for (int i = 0; i < fieldNames.size(); ++i) {
+      for (int i = 0; i < fieldNames.size(); i++) {
         record.put(fieldNames.get(i), data.get(i));
       }
 

@@ -37,21 +37,17 @@ import java.util.List;
  * AvroScheme uses generic(without code generation) instead of specific(with code generation) readers.
  */
 public class AvroScheme implements Scheme {
-  private final String schemaString;
   private final List<String> fieldNames;
-  private final CachedSchemas schemas;
+  private final Schema schema;
 
   public AvroScheme(String schemaString, List<String> fieldNames) {
-    this.schemaString = schemaString;
     this.fieldNames = fieldNames;
-    this.schemas = new CachedSchemas();
+    this.schema = new Schema.Parser().parse(schemaString);
   }
 
   @Override
   public List<Object> deserialize(ByteBuffer ser) {
     try {
-      Schema schema = schemas.getSchema(schemaString);
-
       DatumReader<GenericRecord> reader = new GenericDatumReader<>(schema);
       BinaryDecoder decoder = DecoderFactory.get().binaryDecoder(Utils.toByteArray(ser), null);
       GenericRecord record = reader.read(null, decoder);
