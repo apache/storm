@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
  * STORM-2175: fix double close of workers
  * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
