@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
  * STORM-2103: [SQL] Introduce new sql external module: storm-sql-mongodb
  * STORM-2175: fix double close of workers
  * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
