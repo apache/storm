@@ -1024,8 +1024,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final IAuthorizer impersonationAuthorizationHandler;
     private final AtomicLong submittedCount;
     private final IStormClusterState stormClusterState;
-    private final Object submitLock;
-    private final Object credUpdateLock;
+    private final Object submitLock = new Object();
+    private final Object schedLock = new Object();
+    private final Object credUpdateLock = new Object();
     private final AtomicReference<Map<String, Map<List<Integer>, Map<String, Object>>>> heartbeatsCache;
     @SuppressWarnings("deprecation")
     private final TimeCacheMap<String, BufferInputStream> downloaders;
@@ -1087,8 +1088,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             stormClusterState =  makeStormClusterState(conf);
         }
         this.stormClusterState = stormClusterState;
-        this.submitLock = new Object();
-        this.credUpdateLock = new Object();
         this.heartbeatsCache = new AtomicReference<>(new HashMap<>());
         this.downloaders = fileCacheMap(conf);
         this.uploaders = fileCacheMap(conf);
@@ -1722,16 +1721,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         IStormClusterState state = stormClusterState;
         //read all the topologies
-        Map<String, StormBase> bases = state.topologyBases();
+        Map<String, StormBase> bases;
         Map<String, TopologyDetails> tds = new HashMap<>();
-        for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
-            Entry<String, StormBase> entry = it.next();
-            String id = entry.getKey();
-            try {
-                tds.put(id, readTopologyDetails(id, entry.getValue()));
-            } catch (KeyNotFoundException e) {
-                //A race happened and it is probably not running
-                it.remove();
+        synchronized (submitLock) {
+            bases = state.topologyBases();
+            for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
+                Entry<String, StormBase> entry = it.next();
+                String id = entry.getKey();
+                try {
+                    tds.put(id, readTopologyDetails(id, entry.getValue()));
+                } catch (KeyNotFoundException e) {
+                    //A race happened and it is probably not running
+                    it.remove();
+                }
             }
         }
         Topologies topologies = new Topologies(tds);
@@ -1746,7 +1748,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         }
         // make the new assignments for topologies
-        Map<String, SchedulerAssignment> newSchedulerAssignments = computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
+        Map<String, SchedulerAssignment> newSchedulerAssignments = null;
+        synchronized (schedLock) {
+            newSchedulerAssignments = computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
+        }
         Map<String, Map<List<Long>, List<Object>>> topologyToExecutorToNodePort = computeNewTopoToExecToNodePort(newSchedulerAssignments, existingAssignments);
         for (String id: assignedTopologyIds) {
             if (!topologyToExecutorToNodePort.containsKey(id)) {
@@ -1824,7 +1829,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             newAssignment.set_worker_resources(workerResources);
             newAssignments.put(topoId, newAssignment);
         }
-        
+
         if (!newAssignments.equals(existingAssignments)) {
             LOG.debug("RESETTING id->resources and id->worker-resources cache!");
             idToResources.set(new HashMap<>());
@@ -1832,33 +1837,35 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         //tasks figure out what tasks to talk to by looking at topology at runtime
         // only log/set when there's been a change to the assignment
-        for (Entry<String, Assignment> entry: newAssignments.entrySet()) {
-            String topoId = entry.getKey();
-            Assignment assignment = entry.getValue();
-            Assignment existingAssignment = existingAssignments.get(topoId);
-            //NOT Used TopologyDetails topologyDetails = topologies.getById(topoId);
-            if (assignment.equals(existingAssignment)) {
-                LOG.debug("Assignment for {} hasn't changed", topoId);
-            } else {
-                LOG.info("Setting new assignment for topology id {}: {}", topoId, assignment);
-                state.setAssignment(topoId, assignment);
+        synchronized (schedLock) {
+            for (Entry<String, Assignment> entry: newAssignments.entrySet()) {
+                String topoId = entry.getKey();
+                Assignment assignment = entry.getValue();
+                Assignment existingAssignment = existingAssignments.get(topoId);
+                //NOT Used TopologyDetails topologyDetails = topologies.getById(topoId);
+                if (assignment.equals(existingAssignment)) {
+                    LOG.debug("Assignment for {} hasn't changed", topoId);
+                } else {
+                    LOG.info("Setting new assignment for topology id {}: {}", topoId, assignment);
+                    state.setAssignment(topoId, assignment);
+                }
             }
-        }
 
-        Map<String, Collection<WorkerSlot>> addedSlots = new HashMap<>();
-        for (Entry<String, Assignment> entry: newAssignments.entrySet()) {
-            String topoId = entry.getKey();
-            Assignment assignment = entry.getValue();
-            Assignment existingAssignment = existingAssignments.get(topoId);
-            if (existingAssignment == null) {
-                existingAssignment = new Assignment();
-                existingAssignment.set_executor_node_port(new HashMap<>());
-                existingAssignment.set_executor_start_time_secs(new HashMap<>());
+            Map<String, Collection<WorkerSlot>> addedSlots = new HashMap<>();
+            for (Entry<String, Assignment> entry: newAssignments.entrySet()) {
+                String topoId = entry.getKey();
+                Assignment assignment = entry.getValue();
+                Assignment existingAssignment = existingAssignments.get(topoId);
+                if (existingAssignment == null) {
+                    existingAssignment = new Assignment();
+                    existingAssignment.set_executor_node_port(new HashMap<>());
+                    existingAssignment.set_executor_start_time_secs(new HashMap<>());
+                }
+                Set<WorkerSlot> newSlots = newlyAddedSlots(existingAssignment, assignment);
+                addedSlots.put(topoId, newSlots);
             }
-            Set<WorkerSlot> newSlots = newlyAddedSlots(existingAssignment, assignment);
-            addedSlots.put(topoId, newSlots);
+            inimbus.assignSlots(topologies, addedSlots);
         }
-        inimbus.assignSlots(topologies, addedSlots);
     }
     
     private void notifyTopologyActionListener(String topoId, String action) {
@@ -2351,9 +2358,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     () -> {
                         try {
                             if (!doNotReassign) {
-                                synchronized(submitLock) {
-                                    mkAssignments();
-                                }
+                                mkAssignments();
                             }
                             doCleanup();
                         } catch (Exception e) {
@@ -2578,7 +2583,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             transitionName(topoName, TopologyActions.KILL, waitAmount, true);
             notifyTopologyActionListener(topoName, operation);
-            addTopoToHistoryLog(toTopoId(topoName), topoConf);
+            addTopoToHistoryLog((String)topoConf.get(Config.STORM_ID), topoConf);
         } catch (Exception e) {
             LOG.warn("Kill topology exception. (topology name='{}')", topoName, e);
             if (e instanceof TException) {
