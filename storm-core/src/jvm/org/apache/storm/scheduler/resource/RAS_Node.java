@@ -250,7 +250,7 @@ public class RAS_Node {
     private void freeCPU(double amount) {
         LOG.debug("freeing {} CPU on node...avail CPU: {}", amount, getHostname(), _availCPU);
         if ((_availCPU + amount) > getTotalCpuResources()) {
-            LOG.warn("Freeing more CPU than there exists! CPU trying to free: {} Total CPU on Node: {}", (_availMemory + amount), getTotalCpuResources());
+            LOG.warn("Freeing more CPU than there exists! CPU trying to free: {} Total CPU on Node: {}", (_availCPU + amount), getTotalCpuResources());
             return;
         }
         _availCPU += amount;
