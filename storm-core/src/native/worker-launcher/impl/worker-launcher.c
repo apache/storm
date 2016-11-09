@@ -585,16 +585,6 @@ int recursive_delete(const char *path, int supervisor_owns_dir) {
     return UNABLE_TO_BUILD_PATH;
   }
 
-//  // Skip current and previous dirs.
-//  size_t pathlen = strlen(path);
-//  char *pathcopy = malloc(pathlen + 1);
-//  strncpy(pathcopy, path, pathlen);
-//  char *fname = basename(pathcopy);
-//  if(strcmp(fname, ".") == 0
-//     || strcmp(fname, "..") == 0) {
-//      return 0;
-//  }
-
   if(access(path, F_OK) != 0) {
     if(errno == ENOENT) {
       return 0;
