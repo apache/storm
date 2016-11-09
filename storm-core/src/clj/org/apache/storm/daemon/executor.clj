@@ -270,8 +270,8 @@
                              (if (or
                                     (exception-cause? InterruptedException error)
                                     (exception-cause? java.io.InterruptedIOException error))
-                               (log-message "Got interrupted excpetion shutting thread down...")
-                               ((:suicide-fn <>))))
+                               (log-message "Got interrupted excpetion shutting thread down..."))
+                             ((:suicide-fn <>)))
      :sampler (mk-stats-sampler storm-conf)
      :spout-throttling-metrics (if (= executor-type :spout) 
                                 (builtin-metrics/make-spout-throttling-data)
