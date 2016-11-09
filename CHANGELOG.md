@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2189: RAS_Node::freeCPU outputs incorrect info
  * STORM-2184: Don't wakeup KafkaConsumer on shutdown
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
  * STORM-2175: fix double close of workers
