@@ -232,6 +232,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2189: RAS_Node::freeCPU outputs incorrect info
  * STORM-2184: Don't wakeup KafkaConsumer on shutdown
  * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
