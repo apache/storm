@@ -252,6 +252,22 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
     }
 
+    @Override
+    public void cleanup() {
+        doRotationAndRemoveAllWriters();
+    }
+
+    private void doRotationAndRemoveAllWriters() {
+        for (final AbstractHDFSWriter writer : writers.values()) {
+            try {
+                rotateOutputFile(writer);
+            } catch (IOException e) {
+                LOG.warn("IOException during scheduled file rotation.", e);
+            }
+        }
+        writers.clear();
+    }
+
     private void syncAllWriters() throws IOException {
         for (AbstractHDFSWriter writer : writers.values()) {
             writer.sync();
@@ -264,14 +280,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                for (final AbstractHDFSWriter writer : writers.values()) {
-                    try {
-                        rotateOutputFile(writer);
-                    } catch (IOException e) {
-                        LOG.warn("IOException during scheduled file rotation.", e);
-                    }
-                }
-                writers.clear();
+                doRotationAndRemoveAllWriters();
             }
         };
         this.rotationTimer.scheduleAtFixedRate(task, interval, interval);
