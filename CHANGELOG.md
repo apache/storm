@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2172: [SQL] Support Avro as input / output format
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
  * STORM-2188: Interrupt all executor threads before joining in executor shutdown
