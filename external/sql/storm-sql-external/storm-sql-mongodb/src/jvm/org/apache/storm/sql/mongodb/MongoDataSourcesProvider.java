@@ -22,9 +22,14 @@ import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.mongodb.trident.state.MongoState;
 import org.apache.storm.mongodb.trident.state.MongoStateFactory;
 import org.apache.storm.mongodb.trident.state.MongoStateUpdater;
-import org.apache.storm.sql.runtime.*;
-import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
+import org.apache.storm.sql.runtime.DataSource;
+import org.apache.storm.sql.runtime.DataSourcesProvider;
+import org.apache.storm.sql.runtime.FieldInfo;
+import org.apache.storm.sql.runtime.IOutputSerializer;
+import org.apache.storm.sql.runtime.ISqlTridentDataSource;
+import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
 import org.apache.storm.sql.runtime.utils.FieldInfoUtils;
+import org.apache.storm.sql.runtime.utils.SerdeUtils;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateUpdater;
@@ -45,12 +50,12 @@ public class MongoDataSourcesProvider implements DataSourcesProvider {
   private static class MongoTridentDataSource implements ISqlTridentDataSource {
     private final String url;
     private final Properties props;
-    private final List<FieldInfo> fields;
+    private final IOutputSerializer serializer;
 
-    private MongoTridentDataSource(String url, Properties props, List<FieldInfo> fields) {
+    private MongoTridentDataSource(String url, Properties props, IOutputSerializer serializer) {
       this.url = url;
       this.props = props;
-      this.fields = fields;
+      this.serializer = serializer;
     }
 
     @Override
@@ -61,9 +66,8 @@ public class MongoDataSourcesProvider implements DataSourcesProvider {
     @Override
     public SqlTridentConsumer getConsumer() {
       Preconditions.checkArgument(!props.isEmpty(), "Writable MongoDB must contain collection config");
-      List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
       String serField = props.getProperty("trident.ser.field", "tridentSerField");
-      MongoMapper mapper = new TridentMongoMapper(serField, new JsonSerializer(fieldNames));
+      MongoMapper mapper = new TridentMongoMapper(serField, serializer);
 
       MongoState.Options options = new MongoState.Options()
           .withUrl(url)
@@ -109,8 +113,9 @@ public class MongoDataSourcesProvider implements DataSourcesProvider {
   @Override
   public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
                                                 Properties properties, List<FieldInfo> fields) {
-
-    return new MongoTridentDataSource(uri.toString(), properties, fields);
+    List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
+    IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
+    return new MongoTridentDataSource(uri.toString(), properties, serializer);
   }
 
 }

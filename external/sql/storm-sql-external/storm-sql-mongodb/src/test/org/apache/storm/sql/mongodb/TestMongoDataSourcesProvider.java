@@ -83,7 +83,7 @@ public class TestMongoDataSourcesProvider {
     List<TridentTuple> tupleList = mockTupleList();
 
     for (TridentTuple t : tupleList) {
-      state.updateState(Collections.singletonList(t), null);
+      stateUpdater.updateState(state, Collections.singletonList(t), null);
       verify(mongoClient).insert(argThat(new MongoArgMatcher(t)) , eq(true));
     }
 
