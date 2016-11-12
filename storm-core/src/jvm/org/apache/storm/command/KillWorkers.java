@@ -30,7 +30,7 @@ public class KillWorkers {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
         conf.put(Config.STORM_LOCAL_DIR, new File((String)conf.get(Config.STORM_LOCAL_DIR)).getCanonicalPath());
         try (Supervisor supervisor = new Supervisor(conf, null, new StandaloneSupervisor())) {
-            supervisor.shutdownAllWorkers();
+            supervisor.shutdownAllWorkers(null, null);
         }
     }
 }

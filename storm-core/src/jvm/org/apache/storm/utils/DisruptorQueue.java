@@ -107,10 +107,12 @@ public class DisruptorQueue implements IStatefulObject {
 
         public synchronized void stop(Flusher flusher, long flushInterval) {
             ArrayList<Flusher> pending = _pendingFlush.get(flushInterval);
-            pending.remove(flusher);
-            if (pending.size() == 0) {
-                _pendingFlush.remove(flushInterval);
-                _tt.remove(flushInterval).cancel();
+            if (pending != null) {
+                pending.remove(flusher);
+                if (pending.size() == 0) {
+                    _pendingFlush.remove(flushInterval);
+                    _tt.remove(flushInterval).cancel();
+                }
             }
         }
     }

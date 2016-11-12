@@ -15,27 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.serde.avro;
+package org.apache.storm.sql.runtime.utils;
 
-import org.apache.avro.Schema;
+import com.google.common.base.Function;
+import com.google.common.collect.Lists;
+import org.apache.storm.sql.runtime.FieldInfo;
 
 import java.io.Serializable;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
-// TODO this class is reserved for supporting messages with different schemas.
-// current only one schema in the cache
-public class CachedSchemas implements Serializable{
+public final class FieldInfoUtils {
 
-    private final Map<String, Schema> cache = new HashMap<>();
-
-    public Schema getSchema(String schemaString) {
-        Schema schema = cache.get(schemaString);
-        if (schema == null) {
-            schema = new Schema.Parser().parse(schemaString);
-            cache.put(schemaString, schema);
-        }
-        return schema;
+    public static List<String> getFieldNames(List<FieldInfo> fields) {
+        return Lists.transform(fields, new FieldNameExtractor());
     }
 
+    private static class FieldNameExtractor implements Function<FieldInfo, String>, Serializable {
+        @Override
+        public String apply(FieldInfo fieldInfo) {
+            return fieldInfo.name();
+        }
+    }
 }

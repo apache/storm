@@ -23,8 +23,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -44,6 +44,7 @@ import org.apache.storm.localizer.ILocalizer;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -286,30 +287,60 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return portTasks;
     }
 
-    public synchronized void shutdownAllWorkers() {
+    private static final long WARN_MILLIS = 1_000; //Initial timeout 1 second.  Workers commit suicide after this
+    private static final long ERROR_MILLIS = 60_000; //1 min.  This really means something is wrong.  Even on a very slow node
+    public static final UniFunc<Slot> DEFAULT_ON_ERROR_TIMEOUT = (slot) -> {
+        throw new IllegalStateException("It took over " + ERROR_MILLIS + "ms to shut down slot " + slot);
+    };
+    public static final UniFunc<Slot> DEFAULT_ON_WARN_TIMEOUT = (slot) -> LOG.warn("It has taken {}ms so far and {} is still not shut down.", WARN_MILLIS, slot);
+    public static final UniFunc<Slot> THREAD_DUMP_ON_ERROR = (slot) -> {
+        LOG.warn("Shutdown of slot {} appears to be stuck\n{}", slot, Utils.threadDump());
+        DEFAULT_ON_ERROR_TIMEOUT.call(slot);
+    };
+    
+    public synchronized void shutdownAllWorkers(UniFunc<Slot> onWarnTimeout, UniFunc<Slot> onErrorTimeout) {
         for (Slot slot: slots.values()) {
+            LOG.info("Setting {} assignment to null", slot);
             slot.setNewAssignment(null);
         }
-
+        
+        if (onWarnTimeout == null) {
+            onWarnTimeout = DEFAULT_ON_WARN_TIMEOUT;
+        }
+        
+        if (onErrorTimeout == null) {
+            onErrorTimeout = DEFAULT_ON_ERROR_TIMEOUT;
+        }
+        
+        long startTime = Time.currentTimeMillis();
+        Exception exp = null;
         for (Slot slot: slots.values()) {
+            LOG.info("Waiting for {} to be EMPTY, currently {}", slot, slot.getMachineState());
             try {
-                int count = 0;
                 while (slot.getMachineState() != MachineState.EMPTY) {
-                    if (count > 10) {
-                        LOG.warn("DONE waiting for {} to finish {}", slot, slot.getMachineState());
-                        break;
+                    long timeSpentMillis = Time.currentTimeMillis() - startTime;
+                    if (timeSpentMillis > ERROR_MILLIS) {
+                        onErrorTimeout.call(slot);
+                    }
+                    
+                    if (timeSpentMillis > WARN_MILLIS) {
+                        onWarnTimeout.call(slot);
                     }
                     if (Time.isSimulating()) {
-                        Time.advanceTime(1000);
-                        Thread.sleep(100);
-                    } else {
-                        Time.sleep(100);
+                        Time.advanceTime(100);
                     }
-                    count++;
+                    Thread.sleep(100);
                 }
             } catch (Exception e) {
                 LOG.error("Error trying to shutdown workers in {}", slot, e);
+                exp = e;
             }
+        }
+        if (exp != null) {
+            if (exp instanceof RuntimeException) {
+                throw (RuntimeException)exp;
+            }
+            throw new RuntimeException(exp);
         }
     }
     

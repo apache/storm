@@ -27,6 +27,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * TsvScheme uses a simple delimited format implemention by splitting string,
+ * and it supports user defined delimiter.
+ */
 public class TsvScheme implements Scheme {
   private final List<String> fieldNames;
   private final char delimiter;
@@ -43,9 +47,7 @@ public class TsvScheme implements Scheme {
     Preconditions.checkArgument(parts.size() == fieldNames.size(), "Invalid schema");
 
     ArrayList<Object> list = new ArrayList<>(fieldNames.size());
-    for (String part : parts) {
-      list.add(part);
-    }
+    list.addAll(parts);
     return list;
   }
 

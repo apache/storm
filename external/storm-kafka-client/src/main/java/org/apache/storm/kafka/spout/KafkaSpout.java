@@ -386,7 +386,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private void shutdown() {
         try {
-            kafkaConsumer.wakeup();
             if (!consumerAutoCommitMode) {
                 commitOffsetsForAckedTuples();
             }

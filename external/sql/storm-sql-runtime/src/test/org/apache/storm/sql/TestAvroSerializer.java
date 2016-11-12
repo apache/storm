@@ -18,12 +18,14 @@
 package org.apache.storm.sql;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.storm.sql.runtime.serde.avro.AvroScheme;
 import org.apache.storm.sql.runtime.serde.avro.AvroSerializer;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertArrayEquals;
 
@@ -32,6 +34,12 @@ public class TestAvroSerializer {
           "\"name\":\"avrotest\"," +
           "\"fields\":[{\"name\":\"ID\",\"type\":\"int\"}," +
           "{ \"name\":\"val\", \"type\":\"string\" }]}";
+
+  private static final String schemaString1 = "{\"type\":\"record\"," +
+          "\"name\":\"avrotest\"," +
+          "\"fields\":[{\"name\":\"ID\",\"type\":\"int\"}," +
+          "{ \"type\":{\"type\":\"map\",\"values\": \"long\"}, \"name\":\"val1\" }," +
+          "{ \"type\":{\"type\":\"array\",\"items\": \"string\"}, \"name\":\"val2\" }]}";
 
   @Test
   public void testAvroSchemeAndSerializer() {
@@ -45,4 +53,20 @@ public class TestAvroSerializer {
     assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
   }
 
+  @Test
+  public void testAvroComplexSchemeAndSerializer() {
+    List<String> fields = Lists.newArrayList("ID", "val1", "val2");
+
+    Map<String,Long> mp = Maps.newHashMap();;
+    mp.put("l1",1234L);
+    mp.put("l2",56789L);
+    List<String> ls = Lists.newArrayList("s1", "s2");
+    List<Object> o = Lists.newArrayList(1, mp, ls);
+
+    AvroSerializer serializer = new AvroSerializer(schemaString1, fields);
+    ByteBuffer byteBuffer = serializer.write(o, null);
+
+    AvroScheme scheme = new AvroScheme(schemaString1, fields);
+    assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
+  }
 }

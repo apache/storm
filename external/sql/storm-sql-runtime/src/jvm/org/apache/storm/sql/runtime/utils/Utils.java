@@ -32,7 +32,7 @@ public final class Utils {
      */
     public static List<String> split(String data, char delimiter){
         List<String> list = new LinkedList<>();
-        //not use .toCharArray avoid system copy
+        //do not use .toCharArray avoid system copy
         StringBuilder sb = new StringBuilder(512);
         int len = data.length();
         for (int i=0; i < len; i++) {

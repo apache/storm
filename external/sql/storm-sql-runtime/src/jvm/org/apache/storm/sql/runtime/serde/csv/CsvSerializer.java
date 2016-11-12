@@ -29,8 +29,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 /**
- * CsvSerializer uses standard RFC4180 CSV Parser
- * The difference from Tsv format is that fields with embedded commas will be quoted.
+ * CsvSerializer uses the standard RFC4180 CSV Parser
+ * One of the difference from Tsv format is that fields with embedded commas will be quoted.
  * eg: a,"b,c",d is allowed.
  *
  * @see <a href="https://tools.ietf.org/html/rfc4180">RFC4180</a>

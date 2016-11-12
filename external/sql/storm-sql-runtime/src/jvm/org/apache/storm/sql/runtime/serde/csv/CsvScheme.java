@@ -32,8 +32,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * CsvScheme uses standard RFC4180 CSV Parser
- * The difference from Tsv format is that fields with embedded commas will be quoted.
+ * CsvScheme uses the standard RFC4180 CSV Parser
+ * One of the difference from Tsv format is that fields with embedded commas will be quoted.
  * eg: a,"b,c",d is allowed.
  *
  * @see <a href="https://tools.ietf.org/html/rfc4180">RFC4180</a>

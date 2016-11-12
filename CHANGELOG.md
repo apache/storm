@@ -1,4 +1,10 @@
 ## 2.0.0
+ * STORM-2172: [SQL] Support Avro as input / output format
+ * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
+ * STORM-2188: Interrupt all executor threads before joining in executor shutdown
+ * STORM-203: Adding paths to default java library path
+ * STORM-2175: fix double close of workers
  * STORM-1985: Provide a tool for showing and killing corrupted topology
  * STORM-2012: Upgrade Kafka to 0.8.2.2
  * STORM-2142: ReportErrorAndDie runs suicide function only when InterruptedException or InterruptedIOException is thrown
@@ -162,6 +168,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2103: [SQL] Introduce new sql external module: storm-sql-mongodb
  * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
  * STORM-2110: in supervisor v2 filter out empty command line args
  * STORM-2117: Supervisor V2 with local mode extracts resources directory to topology root directory instead of temporary directory
@@ -227,6 +234,9 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2189: RAS_Node::freeCPU outputs incorrect info
+ * STORM-2184: Don't wakeup KafkaConsumer on shutdown
+ * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
  * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions 
  * STORM-2040: Fix bug on assert-can-serialize

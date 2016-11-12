@@ -17,6 +17,7 @@
  */
 package org.apache.storm;
 import org.apache.storm.daemon.Shutdownable;
+import org.apache.storm.utils.Utils;
 
 import java.util.Collection;
 import java.util.Set;
@@ -76,7 +77,18 @@ public class ProcessSimulator {
     public static void killAllProcesses() {
         Set<String> pids = processMap.keySet();
         for (String pid : pids) {
-            killProcess(pid);
+            try {
+                killProcess(pid);
+            } catch (Exception e) {
+                if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)) {
+                    LOG.warn("process {} not killed (Ignoring InterruptedException)", pid, e);
+                } else if (e instanceof RuntimeException){
+                    throw e;
+                } else {
+                    //TODO once everything is in java this should not be possible any more
+                    throw new RuntimeException(e);
+                }
+            }
         }
     }
 }

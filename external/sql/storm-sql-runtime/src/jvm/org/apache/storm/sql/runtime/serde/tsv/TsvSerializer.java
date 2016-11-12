@@ -24,6 +24,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+/**
+ * TsvSerializer uses a simple delimited format implemention by splitting string,
+ * and it supports user defined delimiter.
+ */
 public class TsvSerializer implements IOutputSerializer, Serializable {
   private final List<String> fields; //reserved for future
   private final char delimiter;
@@ -35,7 +39,7 @@ public class TsvSerializer implements IOutputSerializer, Serializable {
 
   @Override
   public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
-    StringBuilder sb = new StringBuilder();
+    StringBuilder sb = new StringBuilder(512); // 512: for most scenes to avoid inner array resizing
     for (int i = 0; i < data.size(); i++) {
       Object o = data.get(i);
       if (i == 0) {
