@@ -82,7 +82,8 @@ import java.util.Properties;
  * </p>
  */
 public class TridentKafkaWordCount {
-
+    private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaWordCount.class);
+    
     private String zkUrl;
     private String brokerUrl;
 

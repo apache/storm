@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0.2.6.0.0-SNAPSHOT</version>
+        <version>1.0.1.2.6.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     <groupId>org.apache.storm</groupId>
@@ -38,6 +38,7 @@
     <properties>
         <packageTimestamp>${maven.build.timestamp}</packageTimestamp>
         <maven.build.timestamp.format>YYYYMMddHHmm</maven.build.timestamp.format>
+        <final.Name>apache-storm</final.Name>
     </properties>
 
     <dependencies>
@@ -52,10 +53,6 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-    
-    <properties>
-        <final.Name>apache-storm</final.Name>
-    </properties>
 
     <build>
         <finalName>${final.Name}-${project.version}</finalName>
