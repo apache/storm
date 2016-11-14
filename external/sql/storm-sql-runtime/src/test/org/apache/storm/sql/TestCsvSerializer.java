@@ -23,6 +23,7 @@ import org.apache.storm.sql.runtime.serde.csv.CsvSerializer;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -31,8 +32,13 @@ public class TestCsvSerializer {
 
   @Test
   public void testCsvSchemeAndSerializer() {
-    List<String> fields = Lists.newArrayList("ID", "val");
-    List<Object> o = Lists.newArrayList("1", "2");
+    List<String> fields = new ArrayList<>();
+    fields.add("ID");
+    fields.add("val");
+
+    List<Object> o = new ArrayList<>();
+    o.add("1");
+    o.add("2");
 
     CsvSerializer serializer = new CsvSerializer(fields);
     ByteBuffer byteBuffer = serializer.write(o, null);
@@ -41,8 +47,15 @@ public class TestCsvSerializer {
     assertArrayEquals(o.toArray(), scheme.deserialize(byteBuffer).toArray());
 
     // Fields with embedded commas or double-quote characters
-    fields = Lists.newArrayList("ID", "val", "v");
-    o = Lists.newArrayList("1,9", "2,\"3\",5", "\"8\"");
+    fields = new ArrayList<>();
+    fields.add("ID");
+    fields.add("val");
+    fields.add("v");
+
+    o = new ArrayList<>();
+    o.add("1,9");
+    o.add("2,\"3\",5");
+    o.add("\"8\"");
 
     serializer = new CsvSerializer(fields);
     byteBuffer = serializer.write(o, null);

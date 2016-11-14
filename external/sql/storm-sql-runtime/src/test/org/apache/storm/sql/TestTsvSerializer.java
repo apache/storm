@@ -23,6 +23,7 @@ import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
+import java.util.ArrayList;
 import java.util.List;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -33,8 +34,13 @@ public class TestTsvSerializer {
   public void testTsvSchemeAndSerializer() {
     final char delimiter = '\t';
 
-    List<String> fields = Lists.newArrayList("ID", "val");
-    List<Object> o = Lists.newArrayList("1", "2");
+    List<String> fields = new ArrayList<>();
+    fields.add("ID");
+    fields.add("val");
+
+    List<Object> o = new ArrayList<>();
+    o.add("1");
+    o.add("2");
 
     TsvSerializer serializer = new TsvSerializer(fields, delimiter);
     ByteBuffer byteBuffer = serializer.write(o, null);
