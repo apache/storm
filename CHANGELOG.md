@@ -168,6 +168,8 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2173: [SQL] Support CSV as input / output format
+ * STORM-2177: [SQL] Support TSV as input / output format
  * STORM-2103: [SQL] Introduce new sql external module: storm-sql-mongodb
  * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
  * STORM-2110: in supervisor v2 filter out empty command line args
