@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2196: A typo in RAS_Node::consumeCPU
  * STORM-2189: RAS_Node::freeCPU outputs incorrect info
  * STORM-2184: Don't wakeup KafkaConsumer on shutdown
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
