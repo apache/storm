@@ -47,7 +47,7 @@ public final class SerdeUtils {
             if (JsonScheme.class.getName().equals(inputFormatClass)) {
                 scheme = new JsonScheme(fieldNames);
             } else if (TsvScheme.class.getName().equals(inputFormatClass)) {
-                String delimiter = properties.getProperty("tsv.delimiter", "\t");
+                String delimiter = properties.getProperty("input.tsv.delimiter", "\t");
                 scheme = new TsvScheme(fieldNames, delimiter.charAt(0));
             } else if (CsvScheme.class.getName().equals(inputFormatClass)) {
                 scheme = new CsvScheme(fieldNames);
@@ -71,7 +71,7 @@ public final class SerdeUtils {
             if (JsonSerializer.class.getName().equals(outputFormatClass)) {
                 serializer = new JsonSerializer(fieldNames);
             } else if (TsvSerializer.class.getName().equals(outputFormatClass)) {
-                String delimiter = properties.getProperty("tsv.delimiter", "\t");
+                String delimiter = properties.getProperty("output.tsv.delimiter", "\t");
                 serializer = new TsvSerializer(fieldNames, delimiter.charAt(0));
             } else if (CsvSerializer.class.getName().equals(outputFormatClass)) {
                 serializer = new CsvSerializer(fieldNames);
