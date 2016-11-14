@@ -1,4 +1,6 @@
 ## 1.1.0
+ * STORM-2173: [SQL] Support CSV as input / output format
+ * STORM-2177: [SQL] Support TSV as input / output format
  * STORM-2172: [SQL] Support Avro as input / output format
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
