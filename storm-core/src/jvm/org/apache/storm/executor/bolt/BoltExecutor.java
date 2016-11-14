@@ -17,13 +17,13 @@
  */
 package org.apache.storm.executor.bolt;
 
-import clojure.lang.Atom;
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.stats.BoltExecutorStats;
@@ -48,7 +48,7 @@ public class BoltExecutor extends Executor {
 
     private final Callable<Boolean> executeSampler;
 
-    public BoltExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
+    public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(stormConf);
     }
@@ -69,12 +69,12 @@ public class BoltExecutor extends Executor {
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue,
-                        "transfer", (DisruptorQueue) workerData.get("transfer-queue"));
+                        "transfer", workerData.getTransferQueue());
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
 
-                Map cachedNodePortToSocket = (Map) ((Atom) workerData.get("cached-node+port->socket")).deref();
+                Map cachedNodePortToSocket = (Map) workerData.getCachedNodeToPortSocket().get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, stormConf, userContext);
-                BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.get("receiver"), stormConf, userContext);
+                BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), stormConf, userContext);
             } else {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue);
                 BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
