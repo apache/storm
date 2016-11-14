@@ -18,12 +18,29 @@
 
 package org.apache.storm.daemon.worker;
 
-import com.google.common.base.Preconditions;
-import com.lmax.disruptor.EventHandler;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.security.PrivilegedExceptionAction;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import javax.security.auth.Subject;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.Config;
-import org.apache.storm.cluster.*;
+import org.apache.storm.cluster.ClusterStateContext;
+import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.cluster.DaemonType;
+import org.apache.storm.cluster.IStateStorage;
+import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.StormCommon;
@@ -31,28 +48,32 @@ import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.ExecutorShutdown;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.executor.LocalExecutor;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.ExecutorStats;
+import org.apache.storm.generated.LSWorkerHeartbeat;
+import org.apache.storm.generated.LogConfig;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
-import org.apache.storm.utils.*;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.DisruptorBackpressureCallback;
+import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.WorkerBackpressureCallback;
+import org.apache.storm.utils.WorkerBackpressureThread;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
-import javax.security.auth.Subject;
-import java.io.File;
-import java.io.IOException;
-import java.nio.charset.Charset;
-import java.security.PrivilegedExceptionAction;
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.google.common.base.Preconditions;
+import com.lmax.disruptor.EventHandler;
+
+import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
 public class Worker implements Shutdownable, DaemonCommon {
 
@@ -200,6 +221,9 @@ public class Worker implements Shutdownable, DaemonCommon {
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
                     stormClusterState.topologyBackpressure(topologyId, workerState::refreshThrottle);
+                    
+                    int pollingSecs = Utils.getInt(topologyConf.get(Config.TASK_BACKPRESSURE_POLL_SECS));
+                    workerState.refreshBackpressureTimer.scheduleRecurring(0, pollingSecs, workerState::refreshThrottle);
                 }
 
                 credentialsAtom = new AtomicReference<Credentials>(initialCredentials);
@@ -217,7 +241,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                             }
                         }
                     });
-
+              
                 // The jitter allows the clients to get the data at different times, and avoids thundering herd
                 if (!(Boolean) topologyConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING)) {
                     workerState.refreshLoadTimer.scheduleRecurringWithJitter(0, 1, 500, workerState::refreshLoad);
@@ -226,7 +250,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.refreshConnectionsTimer.scheduleRecurring(0,
                     (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS), workerState::refreshConnections);
 
-                workerState.resetLogTevelsTimer.scheduleRecurring(0,
+                workerState.resetLogLevelsTimer.scheduleRecurring(0,
                     (Integer) conf.get(Config.WORKER_LOG_LEVEL_RESET_POLL_SECS), logConfigManager::resetLogLevels);
 
                 workerState.refreshActiveTimer.scheduleRecurring(0, (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS),
@@ -276,7 +300,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             // This does not have to be atomic, worst case we update when one is not needed
             AuthUtils.updateSubject(subject, autoCreds, (null == newCreds) ? null : newCreds.get_creds());
             for (IRunningExecutor executor : executorsAtom.get()) {
-                executor.credenetialsChanged(newCreds);
+                executor.credentialsChanged(newCreds);
             }
             credentialsAtom.set(newCreds);
         }
@@ -305,12 +329,12 @@ public class Worker implements Shutdownable, DaemonCommon {
     private DisruptorBackpressureCallback mkDisruptorBackpressureHandler(WorkerState workerState) {
         return new DisruptorBackpressureCallback() {
             @Override public void highWaterMark() throws Exception {
-                workerState.transferBackpressure.set(true);
+                LOG.debug("worker {} transfer-queue is congested, checking backpressure state", workerState.workerId);
                 WorkerBackpressureThread.notifyBackpressureChecker(workerState.backpressureTrigger);
             }
 
             @Override public void lowWaterMark() throws Exception {
-                workerState.transferBackpressure.set(false);
+                LOG.debug("worker {} transfer-queue is not congested, checking backpressure state", workerState.workerId);
                 WorkerBackpressureThread.notifyBackpressureChecker(workerState.backpressureTrigger);
             }
         };
@@ -338,6 +362,8 @@ public class Worker implements Shutdownable, DaemonCommon {
                     try {
                         LOG.debug("worker backpressure flag changing from {} to {}", prevBackpressureFlag, currBackpressureFlag);
                         stormClusterState.workerBackpressure(topologyId, assignmentId, (long) port, currBackpressureFlag);
+                        // doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
+                        workerState.backpressure.set(currBackpressureFlag);
                     } catch (Exception ex) {
                         LOG.error("workerBackpressure update failed when connecting to ZK ... will retry", ex);
                     }
@@ -378,11 +404,12 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.heartbeatTimer.close();
             workerState.refreshConnectionsTimer.close();
             workerState.refreshCredentialsTimer.close();
+            workerState.refreshBackpressureTimer.close();
             workerState.refreshActiveTimer.close();
             workerState.executorHeartbeatTimer.close();
             workerState.userTimer.close();
             workerState.refreshLoadTimer.close();
-            workerState.resetLogTevelsTimer.close();
+            workerState.resetLogLevelsTimer.close();
             workerState.closeResources();
 
             LOG.info("Trigger any worker shutdown hooks");
@@ -405,6 +432,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             && workerState.refreshConnectionsTimer.isTimerWaiting()
             && workerState.refreshLoadTimer.isTimerWaiting()
             && workerState.refreshCredentialsTimer.isTimerWaiting()
+            && workerState.refreshBackpressureTimer.isTimerWaiting()
             && workerState.refreshActiveTimer.isTimerWaiting()
             && workerState.executorHeartbeatTimer.isTimerWaiting()
             && workerState.userTimer.isTimerWaiting();

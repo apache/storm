@@ -18,7 +18,6 @@
 package org.apache.storm;
 
 import org.apache.storm.coordination.CoordinatedBolt;
-import clojure.lang.RT;
 
 import java.util.Arrays;
 import java.util.List;

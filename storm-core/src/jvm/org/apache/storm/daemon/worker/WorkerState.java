@@ -246,13 +246,14 @@ public class WorkerState {
     final StormTimer refreshLoadTimer = mkHaltingTimer("refresh-load-timer");
     final StormTimer refreshConnectionsTimer = mkHaltingTimer("refresh-connections-timer");
     final StormTimer refreshCredentialsTimer = mkHaltingTimer("refresh-credentials-timer");
-    final StormTimer resetLogTevelsTimer = mkHaltingTimer("reset-log-levels-timer");
+    final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
     final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
+    final StormTimer refreshBackpressureTimer = mkHaltingTimer("refresh-backpressure-timer");
     final StormTimer userTimer = mkHaltingTimer("user-timer");
 
     // global variables only used internally in class
-    private final List<Integer> outboundTasks;
+    private final Set<Integer> outboundTasks;
     private final AtomicLong nextUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final TransferDrainer drainer;
@@ -665,16 +666,16 @@ public class WorkerState {
      *
      * @return seq of task ids that receive messages from this worker
      */
-    private List<Integer> workerOutboundTasks() {
+    private Set<Integer> workerOutboundTasks() {
         WorkerTopologyContext context = getWorkerTopologyContext();
-        List<String> components = new ArrayList<>();
+        Set<String> components = new HashSet<>();
         for (Integer taskId : taskIds) {
             for (Map<String, Grouping> value : context.getTargets(context.getComponentId(taskId)).values()) {
                 components.addAll(value.keySet());
             }
         }
 
-        List<Integer> outboundTasks = new ArrayList<>();
+        Set<Integer> outboundTasks = new HashSet<>();
 
         for (Map.Entry<String, List<Integer>> entry : Utils.reverseMap(taskToComponent).entrySet()) {
             if (components.contains(entry.getKey())) {

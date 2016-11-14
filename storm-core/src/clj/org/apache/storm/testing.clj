@@ -666,16 +666,9 @@
           (.put "transferred" (AtomicInteger. 0))
           (.put "processed" (AtomicInteger. 0))))
       (LocalExecutor/setTrackId id#)
-      (with-var-roots
-        [;; critical that this particular function is overridden here,
-         ;; since the transferred stat needs to be incremented at the moment
-         ;; of tuple emission (and not on a separate thread later) for
-         ;; topologies to be tracked correctly. This is because "transferred" *must*
-         ;; be incremented before "processing".
-         ]
-          (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
-                              (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
-                                ~@body)))
+      (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
+        (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
+          ~@body))
       (LocalExecutor/clearTrackId)
       (RegisteredGlobalState/clearState id#))))
 

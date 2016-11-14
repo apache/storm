@@ -72,7 +72,6 @@ public class LogConfigManager {
                         copy.set_reset_log_level(Level.INFO.name());
                     }
 
-                    //copy.unset_reset_log_level();
                     newLogConfigs.put(msgLoggerName, copy);
                 }
 
