@@ -17,14 +17,13 @@
  */
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.kafka.Partition;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
+import org.apache.storm.tuple.Fields;
 
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 
 public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<List<GlobalPartitionInformation>, Partition, Map> {
