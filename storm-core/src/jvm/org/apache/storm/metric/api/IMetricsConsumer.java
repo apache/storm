@@ -40,7 +40,47 @@ public interface IMetricsConsumer {
         public String srcComponentId; 
         public int srcTaskId; 
         public long timestamp;
-        public int updateIntervalSecs; 
+        public int updateIntervalSecs;
+
+        @Override
+        public String toString() {
+            return "TaskInfo{" +
+                    "srcWorkerHost='" + srcWorkerHost + '\'' +
+                    ", srcWorkerPort=" + srcWorkerPort +
+                    ", srcComponentId='" + srcComponentId + '\'' +
+                    ", srcTaskId=" + srcTaskId +
+                    ", timestamp=" + timestamp +
+                    ", updateIntervalSecs=" + updateIntervalSecs +
+                    '}';
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof TaskInfo)) return false;
+
+            TaskInfo taskInfo = (TaskInfo) o;
+
+            if (srcWorkerPort != taskInfo.srcWorkerPort) return false;
+            if (srcTaskId != taskInfo.srcTaskId) return false;
+            if (timestamp != taskInfo.timestamp) return false;
+            if (updateIntervalSecs != taskInfo.updateIntervalSecs) return false;
+            if (srcWorkerHost != null ? !srcWorkerHost.equals(taskInfo.srcWorkerHost) : taskInfo.srcWorkerHost != null)
+                return false;
+            return srcComponentId != null ? srcComponentId.equals(taskInfo.srcComponentId) : taskInfo.srcComponentId == null;
+
+        }
+
+        @Override
+        public int hashCode() {
+            int result = srcWorkerHost != null ? srcWorkerHost.hashCode() : 0;
+            result = 31 * result + srcWorkerPort;
+            result = 31 * result + (srcComponentId != null ? srcComponentId.hashCode() : 0);
+            result = 31 * result + srcTaskId;
+            result = 31 * result + (int) (timestamp ^ (timestamp >>> 32));
+            result = 31 * result + updateIntervalSecs;
+            return result;
+        }
     }
 
     // We can't move this to outside without breaking backward compatibility.

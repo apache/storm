@@ -36,7 +36,6 @@ import org.apache.storm.metric.EventLoggerBolt;
 import org.apache.storm.metric.MetricsConsumerBolt;
 import org.apache.storm.metric.SystemBolt;
 import org.apache.storm.metric.filter.FilterByMetricName;
-import org.apache.storm.metric.util.DataPointExpander;
 import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
@@ -91,8 +90,6 @@ public class StormCommon {
     public static final String TOPOLOGY_METRICS_CONSUMER_PARALLELISM_HINT = "parallelism.hint";
     public static final String TOPOLOGY_METRICS_CONSUMER_WHITELIST = "whitelist";
     public static final String TOPOLOGY_METRICS_CONSUMER_BLACKLIST = "blacklist";
-    public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
-    public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
 
     @SuppressWarnings("unchecked")
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
@@ -347,14 +344,6 @@ public class StormCommon {
         return common;
     }
 
-    public static void addMetricStreams(StormTopology topology) {
-        for (Object component : allComponents(topology).values()) {
-            ComponentCommon common = getComponentCommon(component);
-            StreamInfo streamInfo = Thrift.outputFields(Arrays.asList("task-info", "data-points"));
-            common.put_to_streams(Constants.METRICS_STREAM_ID, streamInfo);
-        }
-    }
-
     public static void addSystemStreams(StormTopology topology) {
         for (Object component : allComponents(topology).values()) {
             ComponentCommon common = getComponentCommon(component);
@@ -397,18 +386,11 @@ public class StormCommon {
         topology.put_to_bolts(EVENTLOGGER_COMPONENT_ID, eventLoggerBolt);
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map<String, Bolt> metricsConsumerBoltSpecs(Map conf, StormTopology topology) {
-        Map<String, Bolt> metricsConsumerBolts = new HashMap<>();
+    public static Map<String, Bolt> metricsConsumerBoltSpecs(Map conf) {
+        Map<String, Bolt> metricsConsumerBolts = new HashMap<String, Bolt>();
 
-        Set<String> componentIdsEmitMetrics = new HashSet<>();
-        componentIdsEmitMetrics.addAll(allComponents(topology).keySet());
-        componentIdsEmitMetrics.add(Constants.SYSTEM_COMPONENT_ID);
-
-        Map<GlobalStreamId, Grouping> inputs = new HashMap<>();
-        for (String componentId : componentIdsEmitMetrics) {
-            inputs.put(Utils.getGlobalStreamId(componentId, Constants.METRICS_STREAM_ID), Thrift.prepareShuffleGrouping());
-        }
+        Map<GlobalStreamId, Grouping> inputs = new HashMap<GlobalStreamId, Grouping>();
+        inputs.put(Utils.getGlobalStreamId(Constants.SYSTEM_COMPONENT_ID, Constants.METRICS_AGGREGATE_STREAM_ID), Thrift.prepareShuffleGrouping());
 
         List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) conf.get(Config.TOPOLOGY_METRICS_CONSUMER_REGISTER);
         if (registerInfo != null) {
@@ -426,13 +408,8 @@ public class StormCommon {
                 List<String> blacklist = (List<String>) info.get(
                     TOPOLOGY_METRICS_CONSUMER_BLACKLIST);
                 FilterByMetricName filterPredicate = new FilterByMetricName(whitelist, blacklist);
-                Boolean expandMapType = Utils.getBoolean(info.get(
-                    TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE), false);
-                String metricNameSeparator = Utils.getString(info.get(
-                    TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR), ".");
-                DataPointExpander expander = new DataPointExpander(expandMapType, metricNameSeparator);
                 MetricsConsumerBolt boltInstance = new MetricsConsumerBolt(className, argument,
-                    maxRetainMetricTuples, filterPredicate, expander);
+                    maxRetainMetricTuples, filterPredicate);
                 Bolt metricsConsumerBolt = Thrift.prepareSerializedBoltDetails(inputs,
                     boltInstance, null, phintNum, metricsConsumerConf);
 
@@ -453,7 +430,7 @@ public class StormCommon {
     }
 
     public static void addMetricComponents(Map conf, StormTopology topology) {
-        Map<String, Bolt> metricsConsumerBolts = metricsConsumerBoltSpecs(conf, topology);
+        Map<String, Bolt> metricsConsumerBolts = metricsConsumerBoltSpecs(conf);
         for (Map.Entry<String, Bolt> entry : metricsConsumerBolts.entrySet()) {
             topology.put_to_bolts(entry.getKey(), entry.getValue());
         }
@@ -463,7 +440,9 @@ public class StormCommon {
     public static void addSystemComponents(Map conf, StormTopology topology) {
         Map<String, StreamInfo> outputStreams = new HashMap<>();
         outputStreams.put(Constants.SYSTEM_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("rate_secs")));
+        outputStreams.put(Constants.METRICS_STREAM_ID, Thrift.directOutputFields(Arrays.asList("task-info", "data-points")));
         outputStreams.put(Constants.METRICS_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
+        outputStreams.put(Constants.METRICS_AGGREGATE_STREAM_ID, Thrift.outputFields(Arrays.asList("task-info", "data-points")));
         outputStreams.put(Constants.CREDENTIALS_CHANGED_STREAM_ID, Thrift.outputFields(Arrays.asList("creds")));
 
         Map<String, Object> boltConf = new HashMap<>();
@@ -485,7 +464,6 @@ public class StormCommon {
         addEventLogger(stormConf, ret);
         addMetricComponents(stormConf, ret);
         addSystemComponents(stormConf, ret);
-        addMetricStreams(ret);
         addSystemStreams(ret);
 
         validateStructure(ret);
