@@ -139,6 +139,23 @@ Of course these operations can be chained, so a stream of uppercase words can be
 ```java
 mystream.flatMap(new Split()).map(new UpperCase())
 ```
+
+If you don't pass output fields as parameter, map and flatMap preserves the input fields to output fields.
+
+If you want to apply MapFunction or FlatMapFunction with replacing old fields with new output fields, 
+you can call map / flatMap with additional Fields parameter as follows,
+
+```java
+mystream.map(new UpperCase(), new Fields("uppercased"))
+```
+
+Output stream wil have only one output field "uppercased" regardless of what output fields previous stream had.
+Same thing applies to flatMap, so following is valid as well,
+ 
+```java
+mystream.flatMap(new Split(), new Fields("word"))
+```
+
 ### peek
 `peek` can be used to perform an additional action on each trident tuple as they flow through the stream.
  This could be useful for debugging to see the tuples as they flow past a certain point in a pipeline.

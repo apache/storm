@@ -80,7 +80,7 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
         LOG.debug("Handling failed message " + messageId);
         // if maxRetries is 0, dont retry and return false as per interface contract
         if (maxRetries == 0) {
-            LOG.debug("maxRetries set to 0. Hence not queueing " + messageId);
+            LOG.warn("maxRetries set to 0. Hence not queueing " + messageId);
             return false;
         }
         // if first failure add it to the count map
@@ -92,7 +92,7 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
         failCounts.put(messageId, ++failCount);
         // if fail count is greater than maxRetries, discard or ack. for e.g. for maxRetries 3, 4 failures are allowed at maximum
         if (failCount > maxRetries) {
-            LOG.debug("maxRetries reached so dropping " + messageId);
+            LOG.warn("maxRetries reached so dropping " + messageId);
             failCounts.remove(messageId);
             return false;
         }

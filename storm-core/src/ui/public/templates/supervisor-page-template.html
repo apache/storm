@@ -1,0 +1,161 @@
+<!--
+ Licensed to the Apache Software Foundation (ASF) under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The ASF licenses this file to You under the Apache License, Version 2.0
+ (the "License"); you may not use this file except in compliance with
+ the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+-->
+<script id="supervisor-summary-template" type="text/html">
+    <table class="table table-striped compact" id="supervisor-summary-table">
+      <thead>
+        <tr>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)">
+              Host
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="A unique identifier given to a Supervisor when it joins the cluster.">
+              Supervisor Id
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="The length of time a Supervisor has been registered to the cluster.">
+              Uptime
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Slots are Workers (processes).">
+              Slots
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Slots are Workers (processes).">
+              Used slots
+            </span>
+          </th>
+          {{#schedulerDisplayResource}}
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Memory capacity of a supervisor.">
+              Total Mem (MB)
+            </span>
+          </th>
+          {{/schedulerDisplayResource}}
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Memory that has been allocated.">
+              Used Mem (MB)
+            </span>
+          </th>
+          {{#schedulerDisplayResource}}
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The amount of Memory available in megabytes.">
+              Avail Mem (MB)
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="CPU capacity of a supervisor. Every 100 means one core.">
+              Total CPU (%)
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="CPU that has been allocated. Every 100 means one core">
+              Used CPU (%)
+            </span>
+          </th>
+          <th>
+            <span data-toggle="tooltip" data-placement="left" title="The amount of CPU that is available. Every 100 means one core.">
+              Avail CPU (%)
+            </span>
+          </th>
+          {{/schedulerDisplayResource}}
+          <th>
+            <span data-toggle="tooltip" data-placement="top" title="Version">
+              Version
+            </span>
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+      {{#supervisors}}
+          <tr>
+            <td><a href="/supervisor.html?host={{host}}">{{host}} (<a href="{{logLink}}" title="View log">log</a>)</a></td>
+            <td><a href="/supervisor.html?id={{id}}">{{id}}</td>
+            <td>{{uptime}}</td>
+            <td>{{slotsTotal}}</td>
+            <td>{{slotsUsed}}</td>
+            {{#schedulerDisplayResource}}
+            <td>{{totalMem}}</td>
+            {{/schedulerDisplayResource}}
+            <td>{{usedMem}}</td>
+            {{#schedulerDisplayResource}}
+            <td>{{availMem}}</td>
+            <td>{{totalCpu}}</td>
+            <td>{{usedCpu}}</td>
+            <td>{{availCpu}}</td>
+            {{/schedulerDisplayResource}}
+            <td>{{version}}</td>
+          </tr>
+      {{/supervisors}}
+      </tbody>
+    </table>
+</script>
+<script id="worker-stats-template" type="text/html">
+  <table class="table table-striped compact" id="worker-stats-table">
+    <thead>
+      <tr>
+        <th class="header headerSortDown">
+          <span data-toggle="tooltip" data-placement="top" title="The name given to the topology by when it was submitted. Click the name to view the Topology's information.">
+            Topology Name
+          </span>
+        </th>
+        <th class="header">
+          <span data-original-title="The hostname reported by the remote host. (Note that this hostname is not the result of a reverse lookup at the Nimbus node.)" data-toggle="tooltip" data-placement="top">
+            Host
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The port number used by the Worker. Click on the port number to open the logviewer page for this Worker.">
+            Port 
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The length of time a Worker has been alive.">
+            Uptime
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The number of executors.">
+            Num executors
+          </span>
+        </th>
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total Memory by Scheduler.">
+            Assigned Mem (MB)
+          </span>
+        </th>
+        {{#schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="Assigned Total CPU by Scheduler. Every 100 means 1 core.">
+            Assigned CPU (%)
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
+        <th class="header">
+          <span data-toggle="tooltip" data-placement="top" title="The components running in this worker and the number of tasks per component.">
+            Components
+          </span>
+        </th>
+    </tr></thead>
+    <tbody>
+    </tbody>
+  </table>
+</script>

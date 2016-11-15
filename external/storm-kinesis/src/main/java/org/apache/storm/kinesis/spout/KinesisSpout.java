@@ -22,24 +22,22 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 public class KinesisSpout extends BaseRichSpout {
 
-    private final Config config;
+    private final KinesisConfig kinesisConfig;
     private transient KinesisRecordsManager kinesisRecordsManager;
     private transient SpoutOutputCollector collector;
 
-    public KinesisSpout (Config config) {
-        this.config = config;
+    public KinesisSpout (KinesisConfig kinesisConfig) {
+        this.kinesisConfig = kinesisConfig;
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(config.getRecordToTupleMapper().getOutputFields());
+        declarer.declare(kinesisConfig.getRecordToTupleMapper().getOutputFields());
     }
 
     @Override
@@ -50,7 +48,7 @@ public class KinesisSpout extends BaseRichSpout {
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
-        kinesisRecordsManager = new KinesisRecordsManager(config);
+        kinesisRecordsManager = new KinesisRecordsManager(kinesisConfig);
         kinesisRecordsManager.initialize(context.getThisTaskIndex(), context.getComponentTasks(context.getThisComponentId()).size());
     }
 

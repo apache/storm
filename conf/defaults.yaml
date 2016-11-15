@@ -89,6 +89,7 @@ ui.filter.params: null
 ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
+ui.http.x-frame-options: DENY
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -185,6 +186,7 @@ topology.worker.receiver.thread.count: 1
 task.heartbeat.frequency.secs: 3
 task.refresh.poll.secs: 10
 task.credentials.poll.secs: 30
+task.backpressure.poll.secs: 30
 
 # now should be null by default
 topology.backpressure.enable: false
@@ -257,7 +259,7 @@ topology.bolts.outgoing.overflow.buffer.enable: false
 topology.disruptor.wait.timeout.millis: 1000
 topology.disruptor.batch.size: 100
 topology.disruptor.batch.timeout.millis: 1
-topology.disable.loadaware: false
+topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
 topology.metrics.aggregate.per.worker: false
 topology.metrics.aggregate.metric.evict.secs: 5

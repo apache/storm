@@ -17,6 +17,7 @@
  */
 package org.apache.storm.sql.parser;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.SqlKind;
@@ -29,8 +30,11 @@ import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.util.ImmutableNullableList;
 
+import java.io.IOException;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Properties;
 
 public class SqlCreateTable extends SqlCall {
   public static final SqlSpecialOperator OPERATOR = new SqlSpecialOperator(
@@ -109,7 +113,7 @@ public class SqlCreateTable extends SqlCall {
   }
 
   public URI location() {
-    return URI.create(SqlLiteral.stringValue(location));
+    return URI.create(getString(location));
   }
 
   public String inputFormatClass() {
@@ -120,8 +124,18 @@ public class SqlCreateTable extends SqlCall {
     return getString(outputFormatClass);
   }
 
-  public String properties() {
-    return getString(properties);
+  public Properties properties() {
+    Properties props = new Properties();
+    if (properties != null) {
+      try {
+        ObjectMapper mapper = new ObjectMapper();
+        HashMap<String, Object> map = mapper.readValue(getString(properties), HashMap.class);
+        props.putAll(map);
+      } catch (IOException e) {
+        throw new RuntimeException(e);
+      }
+    }
+    return props;
   }
 
   private String getString(SqlNode n) {

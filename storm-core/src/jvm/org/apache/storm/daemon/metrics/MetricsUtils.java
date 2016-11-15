@@ -20,6 +20,7 @@ package org.apache.storm.daemon.metrics;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter;
 import org.apache.storm.daemon.metrics.reporters.PreparableReporter;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -85,8 +86,8 @@ public class MetricsUtils {
     public static File getCsvLogDir(Map stormConf) {
         String csvMetricsLogDirectory = Utils.getString(stormConf.get(Config.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
         if (csvMetricsLogDirectory == null) {
-            csvMetricsLogDirectory = absoluteStormLocalDir(stormConf);
-            csvMetricsLogDirectory = csvMetricsLogDirectory + File.separator + "csvmetrics";
+            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(stormConf);
+            csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
         }
         File csvMetricsDir = new File(csvMetricsLogDirectory);
         validateCreateOutputDir(csvMetricsDir);
@@ -102,20 +103,6 @@ public class MetricsUtils {
         }
         if (!dir.isDirectory()) {
             throw new IllegalStateException(dir.getName() + " is not a directory.");
-        }
-    }
-
-    public static String absoluteStormLocalDir(Map conf) {
-        String stormHome = System.getProperty("storm.home");
-        String localDir = (String) conf.get(Config.STORM_LOCAL_DIR);
-        if (localDir == null) {
-            return (stormHome + File.separator + "storm-local");
-        } else {
-            if (new File(localDir).isAbsolute()) {
-                return localDir;
-            } else {
-                return (stormHome + File.separator + localDir);
-            }
         }
     }
 }

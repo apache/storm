@@ -926,11 +926,25 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_HTTPS_NEED_CLIENT_AUTH = "ui.https.need.client.auth";
 
     /**
-     * The host that Pacemaker is running on.
+     * Value of X-FRAME-OPTIONS HTTP Header option used by Storm UI.
      */
     @isString
-    public static final String PACEMAKER_HOST = "pacemaker.host";
+    public static final String UI_HTTP_X_FRAME_OPTIONS = "ui.http.x-frame-options";
 
+    /**
+     * The hosts that Pacemaker is running on.
+     */
+    @isStringList
+    public static final String PACEMAKER_SERVERS = "pacemaker.servers";
+
+    /**
+     * The host that Pacemaker is running on.
+     * @deprecated in favor of PACEMAKER_SERVERS for Pacemaker-HA.
+     */
+    @Deprecated
+    @isString
+    public static final String PACEMAKER_HOST = "pacemaker.host";
+    
     /**
      * The port Pacemaker should run on. Clients should
      * connect to this port to submit or read heartbeats.
@@ -1497,6 +1511,13 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     public static final String TASK_CREDENTIALS_POLL_SECS = "task.credentials.poll.secs";
+
+    /**
+     * How often to poll for changed topology backpressure flag from ZK
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String TASK_BACKPRESSURE_POLL_SECS = "task.backpressure.poll.secs";
 
     /**
      * Whether to enable backpressure in for a certain topology

@@ -111,7 +111,7 @@ public class TridentUtils {
         return Utils.thriftSerialize(t);
     }
 
-    public static <T> T thriftDeserialize(Class c, byte[] b) {
+    public static <T> T thriftDeserialize(Class<T> c, byte[] b) {
         return Utils.thriftDeserialize(c,b);
     }
 }

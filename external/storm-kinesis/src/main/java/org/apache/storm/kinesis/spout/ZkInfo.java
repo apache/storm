@@ -36,13 +36,6 @@ public class ZkInfo implements Serializable {
     // time to sleep between retries in milliseconds
     private final Integer retryIntervalMs;
 
-    /**
-     * Default constructor that uses defaults for a local setup
-     */
-    public ZkInfo () {
-        this("localhost:2181", "/kinesisOffsets", 20000, 15000, 10000L, 3, 2000);
-    }
-
     public ZkInfo (String zkUrl, String zkNode, Integer sessionTimeoutMs, Integer connectionTimeoutMs, Long commitIntervalMs, Integer retryAttempts, Integer
             retryIntervalMs) {
         this.zkUrl = zkUrl;
@@ -122,32 +115,4 @@ public class ZkInfo implements Serializable {
                 '}';
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-
-        ZkInfo zkInfo = (ZkInfo) o;
-
-        if (zkUrl != null ? !zkUrl.equals(zkInfo.zkUrl) : zkInfo.zkUrl != null) return false;
-        if (zkNode != null ? !zkNode.equals(zkInfo.zkNode) : zkInfo.zkNode != null) return false;
-        if (sessionTimeoutMs != null ? !sessionTimeoutMs.equals(zkInfo.sessionTimeoutMs) : zkInfo.sessionTimeoutMs != null) return false;
-        if (connectionTimeoutMs != null ? !connectionTimeoutMs.equals(zkInfo.connectionTimeoutMs) : zkInfo.connectionTimeoutMs != null) return false;
-        if (commitIntervalMs != null ? !commitIntervalMs.equals(zkInfo.commitIntervalMs) : zkInfo.commitIntervalMs != null) return false;
-        if (retryAttempts != null ? !retryAttempts.equals(zkInfo.retryAttempts) : zkInfo.retryAttempts != null) return false;
-        return !(retryIntervalMs != null ? !retryIntervalMs.equals(zkInfo.retryIntervalMs) : zkInfo.retryIntervalMs != null);
-
-    }
-
-    @Override
-    public int hashCode() {
-        int result = zkUrl != null ? zkUrl.hashCode() : 0;
-        result = 31 * result + (zkNode != null ? zkNode.hashCode() : 0);
-        result = 31 * result + (sessionTimeoutMs != null ? sessionTimeoutMs.hashCode() : 0);
-        result = 31 * result + (connectionTimeoutMs != null ? connectionTimeoutMs.hashCode() : 0);
-        result = 31 * result + (commitIntervalMs != null ? commitIntervalMs.hashCode() : 0);
-        result = 31 * result + (retryAttempts != null ? retryAttempts.hashCode() : 0);
-        result = 31 * result + (retryIntervalMs != null ? retryIntervalMs.hashCode() : 0);
-        return result;
-    }
 }

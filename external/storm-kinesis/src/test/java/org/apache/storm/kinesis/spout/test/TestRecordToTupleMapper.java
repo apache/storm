@@ -1,3 +1,20 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.storm.kinesis.spout.test;
 
 import com.amazonaws.services.kinesis.model.Record;
@@ -27,16 +44,15 @@ public class TestRecordToTupleMapper implements RecordToTupleMapper, Serializabl
         tuple.add(record.getPartitionKey());
         tuple.add(record.getSequenceNumber());
         try {
-            System.out.println("bytebuffer is " + record.getData());
             String data = decoder.decode(record.getData()).toString();
-            System.out.println("data is " + data);
+            LOG.info("data is " + data);
             tuple.add(data);
         } catch (CharacterCodingException e) {
             e.printStackTrace();
-            System.out.println("Exception occured. Emitting tuple with empty string data");
+            LOG.warn("Exception occured. Emitting tuple with empty string data", e);
             tuple.add("");
         }
-        System.out.println("Tuple from record is " + tuple);
+        LOG.info("Tuple from record is " + tuple);
         return tuple;
     }
 }

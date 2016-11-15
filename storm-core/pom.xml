@@ -70,6 +70,10 @@
         </dependency>
         <dependency>
             <groupId>ring</groupId>
+            <artifactId>ring-core</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ring</groupId>
             <artifactId>ring-devel</artifactId>
         </dependency>
         <dependency>
@@ -155,6 +159,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -498,6 +506,7 @@
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.apache.commons:commons-exec</include>
                             <include>org.apache.commons:commons-compress</include>
+                            <include>commons-collections:commons-collections</include>
                             <include>org.apache.hadoop:hadoop-auth</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-codec:commons-codec</include>
@@ -660,6 +669,10 @@
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
                           <pattern>org.json.simple</pattern>
                           <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
                         </relocation>
@@ -770,6 +783,13 @@
                         </filter>
                         <filter>
                             <artifact>org.apache.commons:commons-exec</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>commons-collections:commons-collections</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>

@@ -208,9 +208,9 @@
       (swap! interval-errors inc)
 
       (when (<= @interval-errors max-per-interval)
-        (cluster/report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
+        (.report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
                               (hostname storm-conf)
-                              (.getThisWorkerPort (:worker-context executor)) error)
+                              (.getThisWorkerPort ^WorkerTopologyContext (:worker-context executor)) error)
         ))))
 
 ;; in its own function so that it can be mocked out by tracked topologies
@@ -274,7 +274,6 @@
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)
-     :backpressure (atom false)
      :spout-throttling-metrics (if (= executor-type :spout) 
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
@@ -287,16 +286,12 @@
   (disruptor/disruptor-backpressure-handler
     (fn []
       "When receive queue is above highWaterMark"
-      (if (not @(:backpressure executor-data))
-        (do (reset! (:backpressure executor-data) true)
-            (log-debug "executor " (:executor-id executor-data) " is congested, set backpressure flag true")
-            (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data))))))
+      (do (log-debug "executor " (:executor-id executor-data) " is congested, set backpressure flag true")
+          (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data)))))
     (fn []
       "When receive queue is below lowWaterMark"
-      (if @(:backpressure executor-data)
-        (do (reset! (:backpressure executor-data) false)
-            (log-debug "executor " (:executor-id executor-data) " is not-congested, set backpressure flag false")
-            (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data))))))))
+      (do (log-debug "executor " (:executor-id executor-data) " is not-congested, set backpressure flag false")
+          (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data)))))))
 
 (defn start-batch-transfer->worker-handler! [worker executor-data]
   (let [worker-transfer-fn (:transfer-fn worker)
@@ -410,7 +405,7 @@
               val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. context [creds] Constants/SYSTEM_TASK_ID Constants/CREDENTIALS_CHANGED_STREAM_ID))]]
           (disruptor/publish receive-queue val)))
       (get-backpressure-flag [this]
-        @(:backpressure executor-data))
+        (.getThrottleOn (:receive-queue executor-data)))
       Shutdownable
       (shutdown
         [this]

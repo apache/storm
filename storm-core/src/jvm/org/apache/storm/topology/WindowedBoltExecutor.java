@@ -253,7 +253,7 @@ public class WindowedBoltExecutor implements IRichBolt {
                                                     WindowManager<Tuple> manager) {
         if (windowLengthCount != null) {
             if (isTupleTs()) {
-                return new WatermarkCountEvictionPolicy<>(windowLengthCount.value, manager);
+                return new WatermarkCountEvictionPolicy<>(windowLengthCount.value);
             } else {
                 return new CountEvictionPolicy<>(windowLengthCount.value);
             }

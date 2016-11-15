@@ -61,6 +61,7 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
   private static final org.apache.thrift.protocol.TField TRANSFERRED_FIELD_DESC = new org.apache.thrift.protocol.TField("transferred", org.apache.thrift.protocol.TType.I64, (short)4);
   private static final org.apache.thrift.protocol.TField ACKED_FIELD_DESC = new org.apache.thrift.protocol.TField("acked", org.apache.thrift.protocol.TType.I64, (short)5);
   private static final org.apache.thrift.protocol.TField FAILED_FIELD_DESC = new org.apache.thrift.protocol.TField("failed", org.apache.thrift.protocol.TType.I64, (short)6);
+  private static final org.apache.thrift.protocol.TField RESOURCES_MAP_FIELD_DESC = new org.apache.thrift.protocol.TField("resources_map", org.apache.thrift.protocol.TType.MAP, (short)7);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -74,6 +75,7 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
   private long transferred; // optional
   private long acked; // optional
   private long failed; // optional
+  private Map<String,Double> resources_map; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -82,7 +84,8 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
     EMITTED((short)3, "emitted"),
     TRANSFERRED((short)4, "transferred"),
     ACKED((short)5, "acked"),
-    FAILED((short)6, "failed");
+    FAILED((short)6, "failed"),
+    RESOURCES_MAP((short)7, "resources_map");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -109,6 +112,8 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
           return ACKED;
         case 6: // FAILED
           return FAILED;
+        case 7: // RESOURCES_MAP
+          return RESOURCES_MAP;
         default:
           return null;
       }
@@ -156,7 +161,7 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
   private static final int __ACKED_ISSET_ID = 4;
   private static final int __FAILED_ISSET_ID = 5;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.NUM_EXECUTORS,_Fields.NUM_TASKS,_Fields.EMITTED,_Fields.TRANSFERRED,_Fields.ACKED,_Fields.FAILED};
+  private static final _Fields optionals[] = {_Fields.NUM_EXECUTORS,_Fields.NUM_TASKS,_Fields.EMITTED,_Fields.TRANSFERRED,_Fields.ACKED,_Fields.FAILED,_Fields.RESOURCES_MAP};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -172,6 +177,10 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
     tmpMap.put(_Fields.FAILED, new org.apache.thrift.meta_data.FieldMetaData("failed", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I64)));
+    tmpMap.put(_Fields.RESOURCES_MAP, new org.apache.thrift.meta_data.FieldMetaData("resources_map", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE))));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(CommonAggregateStats.class, metaDataMap);
   }
@@ -190,6 +199,10 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
     this.transferred = other.transferred;
     this.acked = other.acked;
     this.failed = other.failed;
+    if (other.is_set_resources_map()) {
+      Map<String,Double> __this__resources_map = new HashMap<String,Double>(other.resources_map);
+      this.resources_map = __this__resources_map;
+    }
   }
 
   public CommonAggregateStats deepCopy() {
@@ -210,6 +223,7 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
     this.acked = 0;
     set_failed_isSet(false);
     this.failed = 0;
+    this.resources_map = null;
   }
 
   public int get_num_executors() {
@@ -344,6 +358,40 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __FAILED_ISSET_ID, value);
   }
 
+  public int get_resources_map_size() {
+    return (this.resources_map == null) ? 0 : this.resources_map.size();
+  }
+
+  public void put_to_resources_map(String key, double val) {
+    if (this.resources_map == null) {
+      this.resources_map = new HashMap<String,Double>();
+    }
+    this.resources_map.put(key, val);
+  }
+
+  public Map<String,Double> get_resources_map() {
+    return this.resources_map;
+  }
+
+  public void set_resources_map(Map<String,Double> resources_map) {
+    this.resources_map = resources_map;
+  }
+
+  public void unset_resources_map() {
+    this.resources_map = null;
+  }
+
+  /** Returns true if field resources_map is set (has been assigned a value) and false otherwise */
+  public boolean is_set_resources_map() {
+    return this.resources_map != null;
+  }
+
+  public void set_resources_map_isSet(boolean value) {
+    if (!value) {
+      this.resources_map = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case NUM_EXECUTORS:
@@ -394,6 +442,14 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       }
       break;
 
+    case RESOURCES_MAP:
+      if (value == null) {
+        unset_resources_map();
+      } else {
+        set_resources_map((Map<String,Double>)value);
+      }
+      break;
+
     }
   }
 
@@ -416,6 +472,9 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
 
     case FAILED:
       return get_failed();
+
+    case RESOURCES_MAP:
+      return get_resources_map();
 
     }
     throw new IllegalStateException();
@@ -440,6 +499,8 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       return is_set_acked();
     case FAILED:
       return is_set_failed();
+    case RESOURCES_MAP:
+      return is_set_resources_map();
     }
     throw new IllegalStateException();
   }
@@ -511,6 +572,15 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
         return false;
     }
 
+    boolean this_present_resources_map = true && this.is_set_resources_map();
+    boolean that_present_resources_map = true && that.is_set_resources_map();
+    if (this_present_resources_map || that_present_resources_map) {
+      if (!(this_present_resources_map && that_present_resources_map))
+        return false;
+      if (!this.resources_map.equals(that.resources_map))
+        return false;
+    }
+
     return true;
   }
 
@@ -547,6 +617,11 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
     list.add(present_failed);
     if (present_failed)
       list.add(failed);
+
+    boolean present_resources_map = true && (is_set_resources_map());
+    list.add(present_resources_map);
+    if (present_resources_map)
+      list.add(resources_map);
 
     return list.hashCode();
   }
@@ -619,6 +694,16 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_resources_map()).compareTo(other.is_set_resources_map());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_resources_map()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.resources_map, other.resources_map);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -672,6 +757,16 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       if (!first) sb.append(", ");
       sb.append("failed:");
       sb.append(this.failed);
+      first = false;
+    }
+    if (is_set_resources_map()) {
+      if (!first) sb.append(", ");
+      sb.append("resources_map:");
+      if (this.resources_map == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.resources_map);
+      }
       first = false;
     }
     sb.append(")");
@@ -767,6 +862,26 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 7: // RESOURCES_MAP
+            if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
+              {
+                org.apache.thrift.protocol.TMap _map368 = iprot.readMapBegin();
+                struct.resources_map = new HashMap<String,Double>(2*_map368.size);
+                String _key369;
+                double _val370;
+                for (int _i371 = 0; _i371 < _map368.size; ++_i371)
+                {
+                  _key369 = iprot.readString();
+                  _val370 = iprot.readDouble();
+                  struct.resources_map.put(_key369, _val370);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_resources_map_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -810,6 +925,21 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
         oprot.writeI64(struct.failed);
         oprot.writeFieldEnd();
       }
+      if (struct.resources_map != null) {
+        if (struct.is_set_resources_map()) {
+          oprot.writeFieldBegin(RESOURCES_MAP_FIELD_DESC);
+          {
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, struct.resources_map.size()));
+            for (Map.Entry<String, Double> _iter372 : struct.resources_map.entrySet())
+            {
+              oprot.writeString(_iter372.getKey());
+              oprot.writeDouble(_iter372.getValue());
+            }
+            oprot.writeMapEnd();
+          }
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -846,7 +976,10 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       if (struct.is_set_failed()) {
         optionals.set(5);
       }
-      oprot.writeBitSet(optionals, 6);
+      if (struct.is_set_resources_map()) {
+        optionals.set(6);
+      }
+      oprot.writeBitSet(optionals, 7);
       if (struct.is_set_num_executors()) {
         oprot.writeI32(struct.num_executors);
       }
@@ -865,12 +998,22 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       if (struct.is_set_failed()) {
         oprot.writeI64(struct.failed);
       }
+      if (struct.is_set_resources_map()) {
+        {
+          oprot.writeI32(struct.resources_map.size());
+          for (Map.Entry<String, Double> _iter373 : struct.resources_map.entrySet())
+          {
+            oprot.writeString(_iter373.getKey());
+            oprot.writeDouble(_iter373.getValue());
+          }
+        }
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, CommonAggregateStats struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(6);
+      BitSet incoming = iprot.readBitSet(7);
       if (incoming.get(0)) {
         struct.num_executors = iprot.readI32();
         struct.set_num_executors_isSet(true);
@@ -894,6 +1037,21 @@ public class CommonAggregateStats implements org.apache.thrift.TBase<CommonAggre
       if (incoming.get(5)) {
         struct.failed = iprot.readI64();
         struct.set_failed_isSet(true);
+      }
+      if (incoming.get(6)) {
+        {
+          org.apache.thrift.protocol.TMap _map374 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.resources_map = new HashMap<String,Double>(2*_map374.size);
+          String _key375;
+          double _val376;
+          for (int _i377 = 0; _i377 < _map374.size; ++_i377)
+          {
+            _key375 = iprot.readString();
+            _val376 = iprot.readDouble();
+            struct.resources_map.put(_key375, _val376);
+          }
+        }
+        struct.set_resources_map_isSet(true);
       }
     }
   }

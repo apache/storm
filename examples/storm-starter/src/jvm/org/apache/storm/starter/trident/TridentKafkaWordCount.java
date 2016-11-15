@@ -29,6 +29,10 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.spout.SchemeAsMultiScheme;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.kafka.bolt.KafkaBolt;
@@ -77,9 +81,9 @@ import java.util.Properties;
  *     <a href="https://github.com/apache/storm/tree/master/external/storm-kafka"> Storm Kafka </a>.
  * </p>
  */
-public class TridentKafkaWordCount implements Serializable {
+public class TridentKafkaWordCount {
     private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaWordCount.class);
-
+    
     private String zkUrl;
     private String brokerUrl;
 
@@ -128,8 +132,8 @@ public class TridentKafkaWordCount implements Serializable {
     }
 
     protected TridentState addTridentState(TridentTopology tridentTopology) {
-        final Stream spoutStream = tridentTopology.newStream("spout1", createTransactionalKafkaSpout()).parallelismHint(1);
-//        final Stream spoutStream = tridentTopology.newStream("spout1", createOpaqueKafkaSpout()).parallelismHint(1);
+//        final Stream spoutStream = tridentTopology.newStream("spout1", createTransactionalKafkaSpout()).parallelismHint(1);
+        final Stream spoutStream = tridentTopology.newStream("spout1", createOpaqueKafkaSpout()).parallelismHint(1);
 
         return spoutStream.each(spoutStream.getOutputFields(), new Debug(true))
                 .each(new Fields("str"), new Split(), new Fields("word"))
@@ -158,6 +162,7 @@ public class TridentKafkaWordCount implements Serializable {
     public Config getConsumerConfig() {
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
+        conf.setMaxTaskParallelism(1);
         //  conf.setDebug(true);
         return conf;
     }
@@ -221,6 +226,7 @@ public class TridentKafkaWordCount implements Serializable {
      * (word counts) by running an external drpc query against the drpc server.
      */
     public static void main(String[] args) throws Exception {
+
         String zkUrl = "localhost:2181";        // the defaults.
         String brokerUrl = "localhost:9092";
 
@@ -230,7 +236,7 @@ public class TridentKafkaWordCount implements Serializable {
             System.exit(1);
         } else if (args.length == 1) {
             zkUrl = args[0];
-        } else {
+        } else if (args.length == 2) {
             zkUrl = args[0];
             brokerUrl = args[1];
         }
@@ -245,7 +251,7 @@ public class TridentKafkaWordCount implements Serializable {
             Config conf = new Config();
             conf.setMaxSpoutPending(20);
             conf.setNumWorkers(1);
-            // submit the consumer topology.
+            // submit the CONSUMER topology.
             StormSubmitter.submitTopology(args[2] + "-consumer", conf, wordCount.buildConsumerTopology(null));
             // submit the producer topology.
             StormSubmitter.submitTopology(args[2] + "-producer", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
@@ -253,12 +259,13 @@ public class TridentKafkaWordCount implements Serializable {
             LocalDRPC drpc = new LocalDRPC();
             LocalCluster cluster = new LocalCluster();
 
-            // submit the consumer topology.
+            // submit the CONSUMER topology.
             cluster.submitTopology("wordCounter", wordCount.getConsumerConfig(), wordCount.buildConsumerTopology(drpc));
 
+            // submit the PRODUCER topology.
             Config conf = new Config();
             conf.setMaxSpoutPending(20);
-            // submit the producer topology.
+//            conf.setDebug(true);
             cluster.submitTopology("kafkaBolt", conf, wordCount.buildProducerTopology(wordCount.getProducerConfig()));
 
             // keep querying the word counts for a minute.

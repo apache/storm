@@ -89,10 +89,6 @@ public class RAS_Node {
             _sup = sup;
             _availMemory = getTotalMemoryResources();
             _availCPU = getTotalCpuResources();
-
-            LOG.debug("Found a {} Node {} {}",
-                    _isAlive ? "living" : "dead", _nodeId, sup.getAllPorts());
-            LOG.debug("resources_mem: {}, resources_CPU: {}", sup.getTotalMemory(), sup.getTotalCPU());
             //intialize resource usages on node
             intializeResources();
         }
@@ -254,7 +250,7 @@ public class RAS_Node {
     private void freeCPU(double amount) {
         LOG.debug("freeing {} CPU on node...avail CPU: {}", amount, getHostname(), _availCPU);
         if ((_availCPU + amount) > getTotalCpuResources()) {
-            LOG.warn("Freeing more CPU than there exists! CPU trying to free: {} Total CPU on Node: {}", (_availMemory + amount), getTotalCpuResources());
+            LOG.warn("Freeing more CPU than there exists! CPU trying to free: {} Total CPU on Node: {}", (_availCPU + amount), getTotalCpuResources());
             return;
         }
         _availCPU += amount;
@@ -363,8 +359,11 @@ public class RAS_Node {
     @Override
     public String toString() {
         return "{Node: " + ((_sup == null) ? "null (possibly down)" : _sup.getHost())
-                + ", AvailMem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
-                + ", AvailCPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + "}";
+                + ", Avail [ Mem: " + ((_availMemory == null) ? "N/A" : _availMemory.toString())
+                + ", CPU: " + ((_availCPU == null) ? "N/A" : _availCPU.toString()) + ", Slots: " + this.getFreeSlots()
+                + "] Total [ Mem: " + ((_sup == null) ? "N/A" : this.getTotalMemoryResources())
+                + ", CPU: " + ((_sup == null) ? "N/A" : this.getTotalCpuResources()) + ", Slots: "
+                + this._slots.values() + " ]}";
     }
 
     public static int countSlotsUsed(String topId, Collection<RAS_Node> nodes) {
@@ -498,7 +497,7 @@ public class RAS_Node {
     public Double consumeCPU(Double amount) {
         if (amount > _availCPU) {
             LOG.error("Attempting to consume more CPU than available! Needed: {}, we only have: {}", amount, _availCPU);
-            throw new IllegalStateException("Attempting to consume more memory than available");
+            throw new IllegalStateException("Attempting to consume more CPU than available");
         }
         _availCPU = _availCPU - amount;
         return _availCPU;
@@ -514,5 +513,17 @@ public class RAS_Node {
         Double taskCpuReq = topo.getTotalCpuReqTask(exec);
         consumeCPU(taskCpuReq);
         consumeMemory(taskMemReq);
+    }
+
+    /**
+     * frees the amount of resources for a executor in a topology.
+     * @param exec is the executor for which the resources are freed for
+     * @param topo the topology the executor is a part
+     */
+    public void freeResourcesForTask(ExecutorDetails exec, TopologyDetails topo) {
+        Double taskMemReq = topo.getTotalMemReqTask(exec);
+        Double taskCpuReq = topo.getTotalCpuReqTask(exec);
+        freeCPU(taskCpuReq);
+        freeMemory(taskMemReq);
     }
 }

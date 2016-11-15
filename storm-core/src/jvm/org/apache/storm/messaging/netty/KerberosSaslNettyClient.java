@@ -17,7 +17,6 @@
  */
 package org.apache.storm.messaging.netty;
 
-import org.apache.storm.Config;
 import org.apache.storm.security.auth.AuthUtils;
 import java.io.IOException;
 import java.security.Principal;
@@ -58,7 +57,7 @@ public class KerberosSaslNettyClient {
     /**
      * Create a KerberosSaslNettyClient for authentication with servers.
      */
-    public KerberosSaslNettyClient(Map storm_conf, String jaas_section) {
+    public KerberosSaslNettyClient(Map storm_conf, String jaas_section, String host) {
         LOG.debug("KerberosSaslNettyClient: Creating SASL {} client to authenticate to server ",
                   SaslUtils.KERBEROS);
 
@@ -112,7 +111,7 @@ public class KerberosSaslNettyClient {
         try {
             Principal principal = (Principal)subject.getPrincipals().toArray()[0];
             final String fPrincipalName = principal.getName();
-            final String fHost = (String)storm_conf.get(Config.PACEMAKER_HOST);
+            final String fHost = host;
             final String fServiceName = serviceName;
             final CallbackHandler fch = ch;
             LOG.debug("Kerberos Client with principal: {}, host: {}", fPrincipalName, fHost);

@@ -141,6 +141,10 @@
   [conf stormconf-path]
   (merge conf (clojurify-structure (Utils/fromCompressedJsonConf (FileUtils/readFileToByteArray (File. stormconf-path))))))
 
+(defn read-supervisor-storm-code-given-path
+  [stormcode-path]
+  (Utils/deserialize (FileUtils/readFileToByteArray (File. stormcode-path)) StormTopology))
+
 (defn master-storm-metafile-path [stormroot ]
   (str stormroot file-path-separator "storm-code-distributor.meta"))
 
@@ -224,8 +228,7 @@
   [conf storm-id]
   (let [stormroot (supervisor-stormdist-root conf storm-id)
         topology-path (supervisor-stormcode-path stormroot)]
-    (Utils/deserialize (FileUtils/readFileToByteArray (File. topology-path)) StormTopology)
-    ))
+    (read-supervisor-storm-code-given-path topology-path)))
 
 (defn worker-user-root [conf]
   (str (absolute-storm-local-dir conf) "/workers-users"))
