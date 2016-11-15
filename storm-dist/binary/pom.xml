@@ -53,10 +53,6 @@
             <version>${project.version}</version>
         </dependency>
     </dependencies>
-    
-    <properties>
-        <final.Name>apache-storm</final.Name>
-    </properties>
 
     <build>
         <finalName>${final.Name}-${project.version}</finalName>
