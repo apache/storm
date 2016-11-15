@@ -23,6 +23,7 @@ import com.google.common.base.Preconditions;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -187,6 +188,15 @@ public class DynamicBrokersReader {
     private Broker getBrokerHost(byte[] contents) {
         try {
             Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(contents, "UTF-8"));
+            //if zookeeper has endpoints, then we are using new kafka server so we should try to get host and port from endpoints.
+            if(value.containsKey("endpoints")) {
+                String endPoint =  (String) ((JSONArray) value.get("endpoints")).get(0);
+                //Endpoint is generally SECURITYPROTOCOL://host:port
+                String[] split = endPoint.split(".+://")[1].split(":");
+                if(split.length == 2) {
+                    return new Broker(split[0], Integer.parseInt(split[1]));
+                }
+            }
             String host = (String) value.get("host");
             Integer port = ((Long) value.get("port")).intValue();
             return new Broker(host, port);
