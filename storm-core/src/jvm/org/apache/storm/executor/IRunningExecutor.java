@@ -26,6 +26,6 @@ public interface IRunningExecutor {
 
     ExecutorStats renderStats();
     List<Long> getExecutorId();
-    void credenetialsChanged(Credentials credentials);
+    void credentialsChanged(Credentials credentials);
     boolean getBackPressureFlag();
 }

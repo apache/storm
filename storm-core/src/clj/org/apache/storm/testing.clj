@@ -17,16 +17,14 @@
 (ns org.apache.storm.testing
   (:require [org.apache.storm.daemon
              [nimbus :as nimbus]
-             [local-executor :as local-executor]
              [local-supervisor :as local-supervisor]
-             [common :as common]
-             [worker :as worker]])
+             [common :as common]])
   (:import [org.apache.commons.io FileUtils]
            [org.apache.storm.utils]
            [org.apache.storm.zookeeper Zookeeper]
            [org.apache.storm ProcessSimulator]
            [org.apache.storm.daemon.supervisor Supervisor StandaloneSupervisor SupervisorUtils ReadClusterState]
-           [org.apache.storm.executor Executor]
+           [org.apache.storm.executor Executor LocalExecutor]
            [java.util.concurrent.atomic AtomicBoolean])
   (:import [java.io File])
   (:import [java.util HashMap ArrayList])
@@ -667,23 +665,11 @@
           (.put "spout-emitted" (AtomicInteger. 0))
           (.put "transferred" (AtomicInteger. 0))
           (.put "processed" (AtomicInteger. 0))))
-      (with-var-roots
-        [;; critical that this particular function is overridden here,
-         ;; since the transferred stat needs to be incremented at the moment
-         ;; of tuple emission (and not on a separate thread later) for
-         ;; topologies to be tracked correctly. This is because "transferred" *must*
-         ;; be incremented before "processing".
-         local-executor/local-transfer-executor-tuple
-         (let [old# local-executor/local-transfer-executor-tuple]
-           (fn [& args#]
-             (let [transferrer# (apply old# args#)]
-               (fn [& args2#]
-                 ;; (log-message "Transferring: " args2#)
-                 (increment-global! id# "transferred" 1)
-                 (apply transferrer# args2#)))))]
-          (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
-                              (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
-                                ~@body)))
+      (LocalExecutor/setTrackId id#)
+      (with-simulated-time-local-cluster [~cluster-sym ~@cluster-args]
+        (let [~cluster-sym (assoc-track-id ~cluster-sym id#)]
+          ~@body))
+      (LocalExecutor/clearTrackId)
       (RegisteredGlobalState/clearState id#))))
 
 (defn tracked-wait
