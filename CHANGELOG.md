@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1278: Port org.apache.storm.daemon.worker to java
  * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
