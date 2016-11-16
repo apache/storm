@@ -17,14 +17,12 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import org.apache.storm.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -73,18 +71,25 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     protected transient Configuration hdfsConfig;
 
     protected void rotateOutputFile() throws IOException {
+        rotateOutputFile(true);
+    }
+
+    private void rotateOutputFile(boolean createNewFile) throws IOException {
         LOG.info("Rotating output file...");
         long start = System.currentTimeMillis();
         synchronized (this.writeLock) {
             closeOutputFile();
             this.rotation++;
 
-            Path newFile = createOutputFile();
             LOG.info("Performing {} file rotation actions.", this.rotationActions.size());
             for (RotationAction action : this.rotationActions) {
                 action.execute(this.fs, this.currentFile);
             }
-            this.currentFile = newFile;
+
+            if (createNewFile) {
+                Path newFile = createOutputFile();
+                this.currentFile = newFile;
+            }
         }
         long time = System.currentTimeMillis() - start;
         LOG.info("File rotation took {} ms.", time);
@@ -221,6 +226,15 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+    }
+
+    @Override
+    public void cleanup() {
+        try {
+            rotateOutputFile(false);
+        } catch (IOException e) {
+            LOG.warn("IOException during scheduled file rotation.");
+        }
     }
 
     /**
