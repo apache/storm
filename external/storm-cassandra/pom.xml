@@ -38,6 +38,7 @@
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
         <cassandra.driver.core.version>2.1.7.1</cassandra.driver.core.version>
+        <cassandra.unit.version>2.1.9.2</cassandra.unit.version>
     </properties>
 
     <developers>
@@ -67,6 +68,13 @@
             <artifactId>cassandra-driver-core</artifactId>
             <version>${cassandra.driver.core.version}</version>
             <scope>provided</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.cassandraunit</groupId>
+            <artifactId>cassandra-unit</artifactId>
+            <version>${cassandra.unit.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -107,5 +115,6 @@
             <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 </project>

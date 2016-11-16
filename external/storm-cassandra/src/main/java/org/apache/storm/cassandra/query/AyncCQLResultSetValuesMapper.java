@@ -16,25 +16,21 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.storm.cassandra.executor;
+package org.apache.storm.cassandra.query;
 
 import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
+import org.apache.storm.tuple.ITuple;
+import org.apache.storm.tuple.Values;
+
+import java.io.Serializable;
+import java.util.List;
 
 /**
- * This class must be used to obtain a single instance of {@link AsyncExecutor} per storm executor.
+ * A resultset mapper that
  */
-public class AsyncExecutorProvider {
+public interface AyncCQLResultSetValuesMapper extends Serializable {
 
-    private static final ThreadLocal<AsyncExecutor> localAsyncExecutor = new ThreadLocal<>();
+    List<List<Values>> map(Session session, List<Statement> statements, List<ITuple> tuples);
 
-    /**
-     * Returns a new {@link AsyncExecutor} per storm executor.
-     */
-    public static <T> AsyncExecutor getLocal(Session session, AsyncResultHandler<T> handler) {
-        AsyncExecutor<T> executor = localAsyncExecutor.<T>get();
-        if( executor == null ) {
-            localAsyncExecutor.set(executor = new AsyncExecutor<>(session, handler));
-        }
-        return executor;
-    }
 }

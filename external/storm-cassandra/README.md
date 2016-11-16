@@ -203,31 +203,106 @@ builder.setBolt("BOLT_WRITER", bolt, 4)
 ```
 
 ### Trident API support
-storm-cassandra support Trident `state` API for `inserting` data into Cassandra. 
+
+For a state factory which writes output to Cassandra, use ```CassandraStateFactory``` with an ```INSERT INTO``` statement:
+
 ```java
-        CassandraState.Options options = new CassandraState.Options(new CassandraContext());
+
+        // Build state
         CQLStatementTupleMapper insertTemperatureValues = boundQuery(
                 "INSERT INTO weather.temperature(weather_station_id, weather_station_name, event_time, temperature) VALUES(?, ?, ?, ?)")
-                .bind(with(field("weather_station_id"), field("name").as("weather_station_name"), field("event_time").now(), field("temperature")));
-        options.withCQLStatementTupleMapper(insertTemperatureValues);
+                .bind(field("weather_station_id"), field("name").as("weather_station_name"), field("event_time").now(), field("temperature"))
+                .build();
+
+        CassandraState.Options options = new CassandraState.Options(new CassandraContext())
+                .withCQLStatementTupleMapper(insertTemperatureValues);
+
         CassandraStateFactory insertValuesStateFactory =  new CassandraStateFactory(options);
-        TridentState selectState = topology.newStaticState(selectWeatherStationStateFactory);
-        stream = stream.stateQuery(selectState, new Fields("weather_station_id"), new CassandraQuery(), new Fields("name"));
-        stream = stream.each(new Fields("name"), new PrintFunction(), new Fields("name_x"));
-        stream.partitionPersist(insertValuesStateFactory, new Fields("weather_station_id", "name", "event_time", "temperature"), new CassandraStateUpdater(), new Fields());
+        
+        // Use state in existing stream
+        stream.partitionPersist(insertValuesStateFactory, new Fields("weather_station_id", "name", "event_time", "temperature"), new CassandraStateUpdater());
+
 ```
 
-Below `state` API for `querying` data from Cassandra.
+For a state factory which can query Cassandra, use ```CassandraStateFactory``` with a ```SELECT``` statment:
+
 ```java
-        CassandraState.Options options = new CassandraState.Options(new CassandraContext());
-        CQLStatementTupleMapper insertTemperatureValues = boundQuery("SELECT name FROM weather.station WHERE id = ?")
-                 .bind(with(field("weather_station_id").as("id")));
-        options.withCQLStatementTupleMapper(insertTemperatureValues);
-        options.withCQLResultSetValuesMapper(new TridentResultSetValuesMapper(new Fields("name")));
-        CassandraStateFactory selectWeatherStationStateFactory =  new CassandraStateFactory(options);
-        CassandraStateFactory selectWeatherStationStateFactory = getSelectWeatherStationStateFactory();
-        TridentState selectState = topology.newStaticState(selectWeatherStationStateFactory);
-        stream = stream.stateQuery(selectState, new Fields("weather_station_id"), new CassandraQuery(), new Fields("name"));         
+
+        // Build state
+        CQLStatementTupleMapper selectStationName = boundQuery("SELECT name FROM weather.station WHERE id = ?")
+                .bind(field("weather_station_id").as("id"))
+                .build();
+        CassandraState.Options options = new CassandraState.Options(new CassandraContext())
+                .withCQLStatementTupleMapper(selectStationName)
+                .withCQLResultSetValuesMapper(new TridentResultSetValuesMapper(new Fields("name")));
+        CassandraStateFactory selectWeatherStationStateFactory = new CassandraStateFactory(options);
+        
+        // Append query to existing stream
+        stream.stateQuery(selectWeatherStationStateFactory, new Fields("weather_station_id"), new CassandraQuery(), new Fields("name"));
+
+```
+
+For a MapState with Cassandra IBackingMap, the simplest option is to use a ```MapStateBuilder``` which generates CQL statements automatically. 
+The builder supports opaque, transactional and non-transactional map states.
+
+To store values in Cassandra you need to provide a ```StateMapper``` that maps the value to fields.  
+
+For simple values, the ```SimpleStateMapper``` can be used:
+
+```java
+        StateFactory mapState = MapStateFactoryBuilder.opaque()
+                .withTable("mykeyspace", "year_month_state")
+                .withKeys("year", "month")
+                .withStateMapper(SimpleStateMapper.opqaue("txid", "sum", "prevSum"))
+                .build();
+```
+
+For complex values you can either custom build a state mapper, or use binary serialization:
+
+```java
+        StateFactory mapState = MapStateFactoryBuilder.opaque()
+                .withTable("mykeyspace", "year_month_state")
+                .withKeys("year", "month")
+                .withJSONBinaryState("state")
+                .build();
+```
+
+The JSONBinary methods use the storm JSON serializers, but you can also provide custom serializers if you want.
+
+For instance, the ```NonTransactionalTupleStateMapper```, ```TransactionalTupleStateMapper``` or ```OpaqueTupleStateMapper```
+classes can be used if the map state uses tuples as values.
+
+```java
+        StateFactory mapState = MapStateFactoryBuilder.<ITuple>nontransactional()
+                .withTable("mykeyspace", "year_month_state")
+                .withKeys("year", "month")
+                .withStateMapper(new NonTransactionalTupleStateMapper("latest_value"))
+                .build();
+```
+
+Alternatively, you can construct a ```CassandraMapStateFactory``` yourself:
+
+```java
+
+        CQLStatementTupleMapper get = simpleQuery("SELECT state FROM words_ks.words_table WHERE word = ?")
+                .with(fields("word"))
+                .build();
+
+        CQLStatementTupleMapper put = simpleQuery("INSERT INTO words_ks.words_table (word, state) VALUES (?, ?)")
+                .with(fields("word", "state"))
+                .build();
+
+        CassandraBackingMap.Options<Integer> mapStateOptions = new CassandraBackingMap.Options<Integer>(new CassandraContext())
+                .withBatching(BatchStatement.Type.UNLOGGED)
+                .withKeys(new Fields("word"))
+                .withNonTransactionalJSONBinaryState("state")
+                .withMaxParallelism(1)
+                .withMultiGetCQLStatementMapper(get)
+                .withMultiPutCQLStatementMapper(put);
+
+        CassandraMapStateFactory factory = CassandraMapStateFactory.nonTransactional(mapStateOptions)
+                .withCache(0);
+
 ```
 
 ## License

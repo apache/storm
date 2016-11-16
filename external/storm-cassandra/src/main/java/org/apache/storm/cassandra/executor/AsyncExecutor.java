@@ -23,16 +23,16 @@ import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.util.concurrent.*;
+import org.apache.storm.cassandra.query.AyncCQLResultSetValuesMapper;
+import org.apache.storm.topology.FailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -106,6 +106,7 @@ public class AsyncExecutor<T> implements Serializable {
     public SettableFuture<T> execAsync(final Statement statement, final T inputs) {
         return execAsync(statement, inputs, handler);
     }
+
     /**
      * Asynchronously executes the specified batch statement. Inputs will be passed to
      * the {@link #handler} once query succeed or failed.
@@ -138,6 +139,109 @@ public class AsyncExecutor<T> implements Serializable {
     }
 
     /**
+     * Asynchronously executes the specified select statements. Results will be passed to the {@link AsyncResultSetHandler}
+     * once each query has succeed or failed.
+     */
+    public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Integer maxParallelRequests, final AsyncResultSetHandler<T> handler) {
+
+        final SettableFuture<List<T>> settableFuture = SettableFuture.create();
+        final AsyncContext<T> asyncContext = new AsyncContext<>(inputs, maxParallelRequests, settableFuture);
+
+        for (int i = 0; i < statements.size(); i++) {
+
+            // Acquire a slot
+            if (asyncContext.acquire()) {
+
+
+                try {
+                    pending.incrementAndGet();
+                    final int statementIndex = i;
+                    final T input = inputs.get(i);
+                    final Statement statement = statements.get(i);
+                    ResultSetFuture future = session.executeAsync(statement);
+                    Futures.addCallback(future, new FutureCallback<ResultSet>() {
+                        @Override
+                        public void onSuccess(ResultSet result) {
+                            try {
+                                handler.success(input, result);
+                            } catch (Throwable throwable) {
+                                asyncContext.exception(throwable);
+                            } finally {
+                                pending.decrementAndGet();
+                                asyncContext.release();
+                            }
+                        }
+
+                        @Override
+                        public void onFailure(Throwable throwable) {
+                            handler.failure(throwable, input);
+                            asyncContext
+                                    .exception(throwable)
+                                    .release();
+                            LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
+                        }
+                    }, executorService);
+                } catch (Throwable throwable) {
+                    asyncContext.exception(throwable)
+                            .release();
+                    pending.decrementAndGet();
+                    break;
+                }
+            }
+
+        }
+
+        return settableFuture;
+    }
+
+    private static class AsyncContext<T> {
+        private final List<T> inputs;
+        private final SettableFuture<List<T>> future;
+        private final  AtomicInteger latch;
+        private final  List<Throwable> exceptions;
+        private final  Semaphore throttle;
+
+        public AsyncContext(List<T> inputs, int maxParallelRequests, SettableFuture<List<T>> settableFuture) {
+            this.inputs = inputs;
+            this.latch = new AtomicInteger(inputs.size());
+            this.throttle = new Semaphore(maxParallelRequests, false);
+            this.exceptions = Collections.synchronizedList(new ArrayList<Throwable>());
+            this.future = settableFuture;
+        }
+
+        public boolean acquire() {
+            throttle.acquireUninterruptibly();
+            // Don't start new requests if there is an exception
+            if (exceptions.size() > 0) {
+                latch.decrementAndGet();
+                throttle.release();
+                return false;
+            }
+            return true;
+        }
+
+        public AsyncContext release() {
+            int remaining = latch.decrementAndGet();
+            if (remaining == 0) {
+                if (exceptions.size() == 0) {
+                    future.set(inputs);
+                }
+                else {
+                    future.setException(new MultiFailedException(exceptions));
+                }
+
+            }
+            throttle.release();
+            return this;
+        }
+
+        public AsyncContext exception(Throwable throwable) {
+            this.exceptions.add(throwable);
+            return this;
+        }
+    }
+
+    /**
      * Returns the number of currently executed tasks which are not yet completed.
      */
     public int getPendingTasksSize() {
@@ -148,6 +252,50 @@ public class AsyncExecutor<T> implements Serializable {
         if( ! executorService.isShutdown() ) {
             LOG.info("shutting down async handler executor");
             this.executorService.shutdownNow();
+        }
+    }
+
+    public static class MultiFailedException extends FailedException {
+        private final List<Throwable> exceptions;
+
+        public MultiFailedException(List<Throwable> exceptions) {
+            super(getMessage(exceptions), exceptions.get(0));
+            this.exceptions = exceptions;
+        }
+
+        private static String getMessage(List<Throwable> exceptions) {
+            int top5 = Math.min(exceptions.size(), 5);
+            StringBuilder sb = new StringBuilder();
+            sb.append("First ")
+                    .append(top5)
+                    .append(" exceptions: ")
+                    .append(System.lineSeparator());
+            for (int i = 0; i < top5; i++) {
+                sb.append(exceptions.get(i).getMessage())
+                        .append(System.lineSeparator());
+            }
+            return sb.toString();
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+
+            sb.append(getMessage())
+                    .append(System.lineSeparator())
+                    .append("Multiple exceptions encountered: ")
+                    .append(System.lineSeparator());
+
+            for (Throwable exception : exceptions) {
+                sb.append(exception.toString())
+                        .append(System.lineSeparator());
+            }
+
+            return super.toString();
+        }
+
+        public List<Throwable> getExceptions() {
+            return exceptions;
         }
     }
 }
