@@ -20,6 +20,7 @@
 package org.apache.storm.sql;
 
 import org.apache.storm.ILocalCluster;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
