@@ -1,4 +1,6 @@
 ## 1.1.0
+ * STORM-2182: Refactor Storm Kafka Examples Into Own Modules.
+ * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API
  * STORM-2173: [SQL] Support CSV as input / output format
  * STORM-2177: [SQL] Support TSV as input / output format
  * STORM-2172: [SQL] Support Avro as input / output format
