@@ -320,8 +320,11 @@
 
       (nimbuses
         [this]
-        (map #(maybe-deserialize (.get_data cluster-state (nimbus-path %1) false) NimbusSummary)
-          (.get_children cluster-state NIMBUSES-SUBTREE false)))
+        ;; remove any null instances which can exist because of a race condition in which
+        ;;  - nimbus nodes in zk may have been removed when connections are reconnected after getting children in
+        ;; /nimbuses node in zk.
+        (remove nil?  (map #(maybe-deserialize (.get_data cluster-state (nimbus-path %1) false) NimbusSummary)
+                           (.get_children cluster-state NIMBUSES-SUBTREE false))))
 
       (add-nimbus-host!
         [this nimbus-id nimbus-summary]
