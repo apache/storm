@@ -28,8 +28,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents the {@link KafkaSpoutStream} associated with each topic, and provides a public API to
@@ -56,6 +58,15 @@ public class KafkaSpoutStreamsNamedTopics implements KafkaSpoutStreams {
             return outputFields;
         }
         throw new IllegalStateException(this.getClass().getName() + " not configured for topic: " + topic);
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        final Set<String> allFields = new HashSet<>();
+        for (KafkaSpoutStream kafkaSpoutStream : topicToStream.values()) {
+            allFields.addAll(kafkaSpoutStream.getOutputFields().toList());
+        }
+        return new Fields(new ArrayList<>(allFields));
     }
 
     /**

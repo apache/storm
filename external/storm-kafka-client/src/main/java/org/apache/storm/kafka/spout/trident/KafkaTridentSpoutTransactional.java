@@ -16,23 +16,33 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout;
+package org.apache.storm.kafka.spout.trident;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.Map;
 
-/**
- * Represents the {@link KafkaSpoutStream} associated with each topic or topic pattern (wildcard), and provides
- * a public API to declare output streams and emmit tuples, on the appropriate stream, for all the topics specified.
- */
-public interface KafkaSpoutStreams extends Serializable {
-    void declareOutputFields(OutputFieldsDeclarer declarer);
+// TODO
+public class KafkaTridentSpoutTransactional implements IPartitionedTridentSpout {
+    @Override
+    public Coordinator getCoordinator(Map conf, TopologyContext context) {
+        return null;
+    }
 
-    void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
+    @Override
+    public Emitter getEmitter(Map conf, TopologyContext context) {
+        return null;
+    }
 
-    Fields getOutputFields();
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return null;
+    }
 }
