@@ -672,7 +672,7 @@ public class BasicContainer extends Container {
         commandList.add("-Dstorm.options=" + stormOptions);
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
         commandList.addAll(classPathParams);
-        commandList.add("org.apache.storm.daemon.worker");
+        commandList.add("org.apache.storm.daemon.worker.Worker");
         commandList.add(_topologyId);
         commandList.add(_supervisorId);
         commandList.add(String.valueOf(_port));

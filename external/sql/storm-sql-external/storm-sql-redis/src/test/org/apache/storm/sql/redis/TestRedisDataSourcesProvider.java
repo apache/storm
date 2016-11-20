@@ -17,7 +17,6 @@
  */
 package org.apache.storm.sql.redis;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.storm.redis.trident.state.RedisClusterState;
@@ -43,6 +42,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Properties;
 
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.doReturn;
@@ -58,20 +58,16 @@ public class TestRedisDataSourcesProvider {
   private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
   private static final String ADDITIONAL_KEY = "hello";
   private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
-  private static final String TBL_PROPERTIES = Joiner.on('\n').join(
-      "{",
-      "\"data.type\": \"HASH\",",
-      "\"data.additional.key\": \"" + ADDITIONAL_KEY + "\"",
-      "}"
-  );
+  private static final Properties TBL_PROPERTIES = new Properties();
+  private static final Properties CLUSTER_TBL_PROPERTIES = new Properties();
 
-  private static final String CLUSTER_TBL_PROPERTIES = Joiner.on('\n').join(
-          "{",
-          "\"data.type\": \"HASH\",",
-          "\"data.additional.key\": \"" + ADDITIONAL_KEY + "\",",
-          "\"use.redis.cluster\": \"true\"",
-          "}"
-  );
+  static {
+    TBL_PROPERTIES.put("data.type", "HASH");
+    TBL_PROPERTIES.put("data.additional.key", ADDITIONAL_KEY);
+    CLUSTER_TBL_PROPERTIES.put("data.type", "HASH");
+    CLUSTER_TBL_PROPERTIES.put("data.additional.key", ADDITIONAL_KEY);
+    CLUSTER_TBL_PROPERTIES.put("use.redis.cluster", "true");
+  }
 
   @SuppressWarnings("unchecked")
   @Test

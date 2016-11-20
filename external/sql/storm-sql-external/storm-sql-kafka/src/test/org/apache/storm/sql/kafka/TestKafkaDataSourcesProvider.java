@@ -17,7 +17,6 @@
  */
 package org.apache.storm.sql.kafka;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -37,9 +36,7 @@ import org.mockito.internal.util.reflection.Whitebox;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.Future;
 
 import static org.mockito.Mockito.any;
@@ -51,24 +48,26 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 public class TestKafkaDataSourcesProvider {
   private static final List<FieldInfo> FIELDS = ImmutableList.of(
-      new FieldInfo("ID", int.class, true),
-      new FieldInfo("val", String.class, false));
+          new FieldInfo("ID", int.class, true),
+          new FieldInfo("val", String.class, false));
   private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
   private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
-  private static final String TBL_PROPERTIES = Joiner.on('\n').join(
-      "{\"producer\": {",
-      "\"bootstrap.servers\": \"localhost:9092\",",
-      "\"acks\": \"1\",",
-      "\"key.serializer\": \"org.apache.kafka.common.serialization.StringSerializer\",",
-      "\"value.serializer\": \"org.apache.kafka.common.serialization.StringSerializer\"",
-      "}",
-      "}"
-  );
+  private static final Properties TBL_PROPERTIES = new Properties();
+
+  static {
+    Map<String,Object> map = new HashMap<>();
+    map.put("bootstrap.servers", "localhost:9092");
+    map.put("acks", "1");
+    map.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    map.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+    TBL_PROPERTIES.put("producer", map);
+  }
+
   @SuppressWarnings("unchecked")
   @Test
   public void testKafkaSink() {
     ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
-        URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
+            URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
     Assert.assertNotNull(ds);
 
     ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();

@@ -44,7 +44,7 @@
   (:import [org.apache.storm.daemon StormCommon])
   (:import [org.apache.storm.cluster IStormClusterState StormClusterStateImpl ClusterStateContext ClusterUtils])
   (:use [org.apache.storm testing util config log converter])
-    (:require [conjure.core] [org.apache.storm.daemon.worker :as worker] [org.apache.storm.daemon.nimbus :as nimbus])
+    (:require [conjure.core] [org.apache.storm.daemon.nimbus :as nimbus])
 
   (:use [conjure core]))
 
@@ -191,13 +191,13 @@
         task-ids (task-ids cluster storm-id)
         assignment (clojurify-assignment (.assignmentInfo state storm-id nil))
         executor->node+port (:executor->node+port assignment)
-        task->node+port (worker/task->node_port executor->node+port)
+        task->node+port (StormCommon/taskToNodeport executor->node+port)
         assigned-task-ids (mapcat executor->tasks (keys executor->node+port))
         all-nodes (set (map first (vals executor->node+port)))]
     (when assigned?
       (is (= (sort task-ids) (sort assigned-task-ids)))
       (doseq [t task-ids]
-        (is (not-nil? (task->node+port t)))))
+        (is (not-nil? (.get task->node+port t)))))
     (doseq [[e s] executor->node+port]
       (is (not-nil? s)))
     

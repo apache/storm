@@ -41,7 +41,7 @@ public class JsonScheme implements Scheme {
     try {
       @SuppressWarnings("unchecked")
       HashMap<String, Object> map = mapper.readValue(Utils.toByteArray(ser), HashMap.class);
-      ArrayList<Object> list = new ArrayList<>();
+      ArrayList<Object> list = new ArrayList<>(fields.size());
       for (String f : fields) {
         list.add(map.get(f));
       }

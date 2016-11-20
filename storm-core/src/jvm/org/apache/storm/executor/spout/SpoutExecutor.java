@@ -27,6 +27,7 @@ import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.metrics.SpoutThrottlingMetrics;
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.hooks.info.SpoutAckInfo;
@@ -65,7 +66,7 @@ public class SpoutExecutor extends Executor {
     private RotatingMap<Long, TupleInfo> pending;
     private final boolean backPressureEnabled;
 
-    public SpoutExecutor(final Map workerData, final List<Long> executorId, Map<String, String> credentials) {
+    public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.spoutWaitStrategy = Utils.newInstance((String) stormConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
         this.spoutWaitStrategy.prepare(stormConf);

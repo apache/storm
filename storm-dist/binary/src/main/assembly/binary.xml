@@ -312,6 +312,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-mongodb/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-mongodb</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
             <includes>

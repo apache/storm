@@ -30,27 +30,27 @@ import java.util.Map;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 public class SingleTopicKafkaSpoutConfiguration {
-    public static final String stream = "test_stream";
-    public static final String topic = "test";
+    public static final String STREAM = "test_stream";
+    public static final String TOPIC = "test";
 
-    static public Config getConfig() {
+    public static Config getConfig() {
         Config config = new Config();
         config.setDebug(true);
         return config;
     }
 
-    static public StormTopology getTopologyKafkaSpout(int port) {
+    public static StormTopology getTopologyKafkaSpout(int port) {
         final TopologyBuilder tp = new TopologyBuilder();
         tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams(), port)), 1);
-        tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", stream);
+        tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
         return tp.createTopology();
     }
 
-    static public KafkaSpoutConfig<String,String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams, int port) {
+    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams, int port) {
         return getKafkaSpoutConfig(kafkaSpoutStreams, port, 10_000);
     }
-    
-    static public KafkaSpoutConfig<String,String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams, int port, long offsetCommitPeriodMs) {
+
+    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams, int port, long offsetCommitPeriodMs) {
         return getKafkaSpoutConfig(kafkaSpoutStreams, port, offsetCommitPeriodMs, getRetryService());
     }
     
@@ -63,13 +63,13 @@ public class SingleTopicKafkaSpoutConfiguration {
                 .build();
     }
 
-    static protected KafkaSpoutRetryService getRetryService() {
+    protected static KafkaSpoutRetryService getRetryService() {
         return new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.microSeconds(0),
                 KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0), Integer.MAX_VALUE, KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0));
 
     }
 
-    static protected Map<String,Object> getKafkaConsumerProps(int port) {
+    protected static Map<String,Object> getKafkaConsumerProps(int port) {
         Map<String, Object> props = new HashMap<>();
         props.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS, "127.0.0.1:" + port);
         props.put(KafkaSpoutConfig.Consumer.GROUP_ID, "kafkaSpoutTestGroup");
@@ -79,15 +79,15 @@ public class SingleTopicKafkaSpoutConfiguration {
         return props;
     }
 
-    static protected KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
+    protected static KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
         return new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
-                new TopicKeyValueTupleBuilder<String, String>(topic))
+                new TopicKeyValueTupleBuilder<String, String>(TOPIC))
                 .build();
     }
 
-    static public KafkaSpoutStreams getKafkaSpoutStreams() {
+    public static KafkaSpoutStreams getKafkaSpoutStreams() {
         final Fields outputFields = new Fields("topic", "key", "value");
-        return new KafkaSpoutStreamsNamedTopics.Builder(outputFields, stream, new String[]{topic})  // contents of topics test sent to test_stream
+        return new KafkaSpoutStreamsNamedTopics.Builder(outputFields, STREAM, new String[]{TOPIC})  // contents of topics test sent to test_stream
                 .build();
     }
 }

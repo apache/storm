@@ -17,11 +17,10 @@
  */
 package org.apache.storm.messaging;
 
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.serialization.KryoTupleDeserializer;
-
-import clojure.lang.IFn;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -31,7 +30,7 @@ import java.util.Map;
  * A class that is called when a TaskMessage arrives.
  */
 public class DeserializingConnectionCallback implements IConnectionCallback {
-    private final IFn _cb;
+    private final WorkerState.ILocalTransferCallback _cb;
     private final Map _conf;
     private final GeneralTopologyContext _context;
     private final ThreadLocal<KryoTupleDeserializer> _des =
@@ -42,7 +41,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback {
              }
          };
 
-    public DeserializingConnectionCallback(final Map conf, final GeneralTopologyContext context, IFn callback) {
+    public DeserializingConnectionCallback(final Map conf, final GeneralTopologyContext context, WorkerState.ILocalTransferCallback callback) {
         _conf = conf;
         _context = context;
         _cb = callback;
@@ -55,6 +54,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback {
         for (TaskMessage message: batch) {
             ret.add(new AddressedTuple(message.task(), des.deserialize(message.message())));
         }
-        _cb.invoke(ret);
+        _cb.transfer(ret);
     }
+
 }

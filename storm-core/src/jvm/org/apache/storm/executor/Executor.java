@@ -17,7 +17,6 @@
  */
 package org.apache.storm.executor;
 
-import clojure.lang.IFn;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import com.lmax.disruptor.EventHandler;
@@ -41,6 +40,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.bolt.BoltExecutor;
 import org.apache.storm.executor.error.IReportError;
 import org.apache.storm.executor.error.ReportError;
@@ -80,7 +80,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
     private static final Logger LOG = LoggerFactory.getLogger(Executor.class);
 
-    protected final Map workerData;
+    protected final WorkerState workerData;
     protected final WorkerTopologyContext workerTopologyContext;
     protected final List<Long> executorId;
     protected final List<Integer> taskIds;
@@ -103,7 +103,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected ExecutorTransfer executorTransfer;
     protected final String type;
     protected final AtomicBoolean throttleOn;
-    protected IFn transferFn;
 
     protected final IReportError reportError;
     protected final Random rand;
@@ -115,28 +114,27 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final Boolean hasEventLoggers;
     protected String hostname;
 
-    protected Executor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
+    protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         this.workerData = workerData;
         this.executorId = executorId;
-        this.workerTopologyContext = StormCommon.makeWorkerContext(workerData);
+        this.workerTopologyContext = workerData.getWorkerTopologyContext();
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
-        this.stormConf = normalizedComponentConf((Map) workerData.get(Constants.STORM_CONF), workerTopologyContext, componentId);
-        this.receiveQueue = (DisruptorQueue) (((Map) workerData.get(Constants.EXECUTOR_RECEIVE_QUEUE_MAP)).get(executorId));
-        this.stormId = (String) workerData.get(Constants.STORM_ID);
-        this.conf = (Map) workerData.get(Constants.CONF);
+        this.stormConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
+        this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
+        this.stormId = workerData.getTopologyId();
+        this.conf = workerData.getConf();
         this.sharedExecutorData = new HashMap();
-        this.stormActive = (AtomicBoolean) workerData.get(Constants.STORM_ACTIVE_ATOM);
-        this.stormComponentDebug = (AtomicReference<Map<String, DebugOptions>>) workerData.get(Constants.COMPONENT_TO_DEBUG_ATOM);
+        this.stormActive = workerData.getIsTopologyActive();
+        this.stormComponentDebug = workerData.getStormComponentToDebug();
 
         this.transferQueue = mkExecutorBatchQueue(stormConf, executorId);
-        this.transferFn = (IFn) workerData.get(Constants.TRANSFER_FN);
-        this.executorTransfer = new ExecutorTransfer(workerTopologyContext, transferQueue, stormConf, transferFn);
+        this.executorTransfer = new ExecutorTransfer(workerData, transferQueue, stormConf);
 
-        this.suicideFn = (Runnable) workerData.get(Constants.SUICIDE_FN);
+        this.suicideFn = workerData.getSuicideCallback();
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.get("state-store"), Utils.getWorkerACL(stormConf),
+            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(), Utils.getWorkerACL(stormConf),
                     new ClusterStateContext(DaemonType.WORKER));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
@@ -156,12 +154,12 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         }
 
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
-        this.taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
+        this.taskToComponent = workerData.getTaskToComponent();
         this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
         this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
         this.sampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.throttleOn = (AtomicBoolean) workerData.get(Constants.THROTTLE_ON);
+        this.throttleOn = workerData.getThrottleOn();
         this.isDebug = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
         this.credentials = credentials;
@@ -174,20 +172,19 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         }
     }
 
-    public static Executor mkExecutor(Map workerData, List<Long> executorId, Map<String, String> credentials) {
+    public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
         Executor executor;
 
-        Map<String, Object> convertedWorkerData = Utils.convertClojureMapToJavaMap(workerData);
-        WorkerTopologyContext workerTopologyContext = StormCommon.makeWorkerContext(convertedWorkerData);
+        WorkerTopologyContext workerTopologyContext = workerState.getWorkerTopologyContext();
         List<Integer> taskIds = StormCommon.executorIdToTasks(executorId);
         String componentId = workerTopologyContext.getComponentId(taskIds.get(0));
 
         String type = getExecutorType(workerTopologyContext, componentId);
         if (StatsUtil.SPOUT.equals(type)) {
-            executor = new SpoutExecutor(convertedWorkerData, executorId, credentials);
+            executor = new SpoutExecutor(workerState, executorId, credentials);
             executor.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()));
         } else {
-            executor = new BoltExecutor(convertedWorkerData, executorId, credentials);
+            executor = new BoltExecutor(workerState, executorId, credentials);
             executor.stats = new BoltExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()));
         }
 
@@ -295,7 +292,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
     protected void setupMetrics() {
         for (final Integer interval : intervalToTaskToMetricToRegistry.keySet()) {
-            StormTimer timerTask = (StormTimer) workerData.get(Constants.USER_TIMER);
+            StormTimer timerTask = workerData.getUserTimer();
             timerTask.scheduleRecurring(interval, interval, new Runnable() {
                 @Override
                 public void run() {
@@ -340,13 +337,13 @@ public abstract class Executor implements Callable, EventHandler<Object> {
             @Override
             public void highWaterMark() throws Exception {
                 LOG.debug("executor " + executorId + " is congested, set backpressure flag true");
-                WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
+                WorkerBackpressureThread.notifyBackpressureChecker(workerData.getBackpressureTrigger());
             }
 
             @Override
             public void lowWaterMark() throws Exception {
                 LOG.debug("executor " + executorId + " is not-congested, set backpressure flag false");
-                WorkerBackpressureThread.notifyBackpressureChecker(workerData.get("backpressure-trigger"));
+                WorkerBackpressureThread.notifyBackpressureChecker(workerData.getBackpressureTrigger());
             }
         });
         receiveQueue.setHighWaterMark(Utils.getDouble(stormConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
@@ -361,7 +358,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
             if (Utils.isSystemId(componentId) || (!enableMessageTimeout && isSpout)) {
                 LOG.info("Timeouts disabled for executor " + componentId + ":" + executorId);
             } else {
-                StormTimer timerTask = (StormTimer) workerData.get(Constants.USER_TIMER);
+                StormTimer timerTask = workerData.getUserTimer();
                 timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, new Runnable() {
                     @Override
                     public void run() {
@@ -539,7 +536,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return stormClusterState;
     }
 
-    public Map getWorkerData() {
+    public WorkerState getWorkerData() {
         return workerData;
     }
 
@@ -553,10 +550,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
     public Map<Integer, Map<Integer, Map<String, IMetric>>> getIntervalToTaskToMetricToRegistry() {
         return intervalToTaskToMetricToRegistry;
-    }
-
-    public IFn getTransferFn() {
-        return transferFn;
     }
 
     @VisibleForTesting

@@ -58,7 +58,7 @@ public class KafkaSpoutStream implements Serializable {
     }
 
     /** Represents the specified outputFields and topic wild card with the default stream */
-    KafkaSpoutStream(Fields outputFields, Pattern topicWildcardPattern) {
+    public KafkaSpoutStream(Fields outputFields, Pattern topicWildcardPattern) {
         this(outputFields, Utils.DEFAULT_STREAM_ID, topicWildcardPattern);
     }
 

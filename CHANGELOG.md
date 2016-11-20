@@ -1,4 +1,9 @@
 ## 2.0.0
+ * STORM-1278: Port org.apache.storm.daemon.worker to java
+ * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
+ * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
+ * STORM-2188: Interrupt all executor threads before joining in executor shutdown
  * STORM-203: Adding paths to default java library path
  * STORM-2175: fix double close of workers
  * STORM-1985: Provide a tool for showing and killing corrupted topology
@@ -164,6 +169,13 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2087: storm-kafka-client - tuples not always being replayed.
+ * STORM-2182: Refactor Storm Kafka Examples Into Own Modules.
+ * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API.
+ * STORM-2173: [SQL] Support CSV as input / output format
+ * STORM-2177: [SQL] Support TSV as input / output format
+ * STORM-2172: [SQL] Support Avro as input / output format
+ * STORM-2103: [SQL] Introduce new sql external module: storm-sql-mongodb
  * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
  * STORM-2110: in supervisor v2 filter out empty command line args
  * STORM-2117: Supervisor V2 with local mode extracts resources directory to topology root directory instead of temporary directory
@@ -229,6 +241,10 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2198: perform RotationAction when stopping HdfsBolt
+ * STORM-2196: A typo in RAS_Node::consumeCPU
+ * STORM-2189: RAS_Node::freeCPU outputs incorrect info
+ * STORM-2184: Don't wakeup KafkaConsumer on shutdown
  * STORM-2018: Supervisor V2
  * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
  * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions 

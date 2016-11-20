@@ -18,10 +18,10 @@
 package org.apache.storm.daemon;
 
 import org.apache.storm.Config;
-import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
 import org.apache.storm.daemon.metrics.BuiltinMetrics;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
+import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentObject;
@@ -39,7 +39,6 @@ import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
@@ -59,7 +58,7 @@ public class Task {
     private static final Logger LOG = LoggerFactory.getLogger(Task.class);
 
     private Executor executor;
-    private Map workerData;
+    private WorkerState workerData;
     private TopologyContext systemTopologyContext;
     private TopologyContext userTopologyContext;
     private WorkerTopologyContext workerTopologyContext;
@@ -85,9 +84,9 @@ public class Task {
         this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
         this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
-        this.loadMapping = (LoadMapping) workerData.get(Constants.LOAD_MAPPING);
-        this.systemTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY));
-        this.userTopologyContext = mkTopologyContext((StormTopology) workerData.get(Constants.TOPOLOGY));
+        this.loadMapping = workerData.getLoadMapping();
+        this.systemTopologyContext = mkTopologyContext(workerData.getSystemTopology());
+        this.userTopologyContext = mkTopologyContext(workerData.getTopology());
         this.taskObject = mkTaskObject();
         this.debug = stormConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) stormConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
@@ -179,25 +178,24 @@ public class Task {
     }
 
     private TopologyContext mkTopologyContext(StormTopology topology) throws IOException {
-        Map conf = (Map) workerData.get(Constants.CONF);
+        Map conf = workerData.getConf();
         return new TopologyContext(
-                topology,
-                (Map) workerData.get(Constants.STORM_CONF),
-                (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT),
-                (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS),
-                (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS),
-                (String) workerData.get(Constants.STORM_ID),
-                ConfigUtils.supervisorStormResourcesPath(
-                        ConfigUtils.supervisorStormDistRoot(conf, (String) workerData.get(Constants.STORM_ID))),
-                ConfigUtils.workerPidsRoot(conf, (String) workerData.get(Constants.WORKER_ID)),
-                taskId,
-                (Integer) workerData.get(Constants.PORT),
-                (List<Integer>) workerData.get(Constants.TASK_IDS),
-                (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES),
-                (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES),
-                executor.getSharedExecutorData(),
-                executor.getIntervalToTaskToMetricToRegistry(),
-                executor.getOpenOrPrepareWasCalled());
+            topology,
+            workerData.getTopologyConf(),
+            workerData.getTaskToComponent(),
+            workerData.getComponentToSortedTasks(),
+            workerData.getComponentToStreamToFields(),
+            workerData.getTopologyId(),
+            ConfigUtils.supervisorStormResourcesPath(
+                    ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),
+            ConfigUtils.workerPidsRoot(conf, workerData.getWorkerId()),
+            taskId,
+            workerData.getPort(), workerData.getTaskIds(),
+            workerData.getDefaultSharedResources(),
+            workerData.getUserSharedResources(),
+            executor.getSharedExecutorData(),
+            executor.getIntervalToTaskToMetricToRegistry(),
+            executor.getOpenOrPrepareWasCalled());
     }
 
     private Object mkTaskObject() {

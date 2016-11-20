@@ -22,6 +22,7 @@ import java.util.Map;
 
 import org.apache.storm.ProcessSimulator;
 import org.apache.storm.daemon.Shutdownable;
+import org.apache.storm.daemon.worker.Worker;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.messaging.IContext;
@@ -45,10 +46,12 @@ public class LocalContainer extends Container {
     
     @Override
     public void launch() throws IOException {
-        //TODO when worker goes to java, just call it directly (not through clojure)
-        IFn mkWorker = Clojure.var("org.apache.storm.daemon.worker", "mk-worker");
-
-        Shutdownable worker = (Shutdownable) mkWorker.invoke(_conf, _sharedContext, _topologyId, _supervisorId, _port, _workerId);
+        Worker worker = new Worker(_conf, _sharedContext, _topologyId, _supervisorId, _port, _workerId);
+        try {
+            worker.start();
+        } catch (Exception e) {
+            throw new IOException(e);
+        }
         saveWorkerUser(System.getProperty("user.name"));
         ProcessSimulator.registerProcess(_workerId, worker);
         _isAlive = true;

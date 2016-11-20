@@ -61,7 +61,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
     }
 
     @Override
-    public void credenetialsChanged(Credentials credentials) {
+    public void credentialsChanged(Credentials credentials) {
         TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), new Values(credentials), (int) Constants.SYSTEM_TASK_ID,
                 Constants.CREDENTIALS_CHANGED_STREAM_ID);
         List<AddressedTuple> addressedTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
@@ -81,6 +81,9 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             executor.getTransferWorkerQueue().haltWithInterrupt();
             for (Utils.SmartThread t : threads) {
                 t.interrupt();
+            }
+            for (Utils.SmartThread t : threads) {
+                LOG.debug("Executor " + executor.getComponentId() + ":" + executor.getExecutorId() + " joining thread " + t.getName());
                 t.join();
             }
             executor.getStats().cleanupStats();
