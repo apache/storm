@@ -1,4 +1,5 @@
 ## 1.0.3
+ * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
  * STORM-2198: perform RotationAction when stopping HdfsBolt
  * STORM-2196: A typo in RAS_Node::consumeCPU
  * STORM-2189: RAS_Node::freeCPU outputs incorrect info
