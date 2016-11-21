@@ -21,7 +21,11 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.List;
+import java.util.Random;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
