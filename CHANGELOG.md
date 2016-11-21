@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2195: Clean up some of worker-launcher code
  * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
  * STORM-1278: Port org.apache.storm.daemon.worker to java
  * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
