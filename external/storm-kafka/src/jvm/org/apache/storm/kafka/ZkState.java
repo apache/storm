@@ -91,7 +91,7 @@ public class ZkState {
             if (b == null) {
                 return null;
             }
-            return (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
+            return (Map<Object, Object>) JSONValue.parseWithException(new String(b, "UTF-8"));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

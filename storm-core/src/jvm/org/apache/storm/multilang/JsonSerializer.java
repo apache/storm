@@ -31,6 +31,7 @@ import java.util.Map;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Utils;
@@ -165,12 +166,10 @@ public class JsonSerializer implements ISerializer {
     }
 
     private Object readMessage() throws IOException, NoOutputException {
-        String string = readString();
-        Object msg = JSONValue.parse(string);
-        if (msg != null) {
-            return msg;
-        } else {
-            throw new IOException("unable to parse: " + string);
+        try {
+            return JSONValue.parseWithException(readString());
+        } catch (ParseException e) {
+            throw new IOException(e);
         }
     }
 
