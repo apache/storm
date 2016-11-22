@@ -18,22 +18,24 @@ public class CassandraMapStateFactory implements StateFactory {
     private final StateType stateType;
     private final CassandraBackingMap.Options options;
     private int cacheSize;
+    private Map cassandraConfig;
 
-    private CassandraMapStateFactory(StateType stateType, CassandraBackingMap.Options options) {
+    private CassandraMapStateFactory(StateType stateType, CassandraBackingMap.Options options, Map cassandraConfig) {
         this.stateType = stateType;
         this.options = options;
+        this.cassandraConfig = cassandraConfig;
     }
 
-    public static <T> CassandraMapStateFactory opaque(CassandraBackingMap.Options options) {
-        return new CassandraMapStateFactory(StateType.OPAQUE, options);
+    public static CassandraMapStateFactory opaque(CassandraBackingMap.Options options, Map cassandraConfig) {
+        return new CassandraMapStateFactory(StateType.OPAQUE, options, cassandraConfig);
     }
 
-    public static <T> CassandraMapStateFactory transactional(CassandraBackingMap.Options options) {
-        return new CassandraMapStateFactory(StateType.TRANSACTIONAL, options);
+    public static CassandraMapStateFactory transactional(CassandraBackingMap.Options options, Map cassandraConfig) {
+        return new CassandraMapStateFactory(StateType.TRANSACTIONAL, options, cassandraConfig);
     }
 
-    public static <T> CassandraMapStateFactory nonTransactional(CassandraBackingMap.Options options) {
-        return new CassandraMapStateFactory(StateType.NON_TRANSACTIONAL, options);
+    public static CassandraMapStateFactory nonTransactional(CassandraBackingMap.Options options, Map cassandraConfig) {
+        return new CassandraMapStateFactory(StateType.NON_TRANSACTIONAL, options, cassandraConfig);
     }
 
     public CassandraMapStateFactory withCache(int cacheSize) {
@@ -45,7 +47,7 @@ public class CassandraMapStateFactory implements StateFactory {
     @SuppressWarnings("unchecked")
     public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
 
-        CassandraBackingMap cassandraBackingMap = new CassandraBackingMap(conf, options);
+        CassandraBackingMap cassandraBackingMap = new CassandraBackingMap(cassandraConfig, options);
         cassandraBackingMap.prepare();
 
         IBackingMap backingMap = cacheSize > 0

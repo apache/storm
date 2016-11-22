@@ -24,16 +24,12 @@ import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.trident.testing.Split;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.junit.After;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import org.junit.*;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,14 +39,12 @@ import static org.junit.Assert.assertEquals;
 public class MapStateTest {
 
     private static Logger logger = LoggerFactory.getLogger(MapStateTest.class);
-    private static Config stormConf;
     private static Cluster cluster;
     private Session session;
 
     @Test
     public void nonTransactionalStateTest() throws Exception {
-
-        StateFactory factory = MapStateFactoryBuilder.nontransactional()
+        StateFactory factory = MapStateFactoryBuilder.nontransactional(getCassandraConfig())
                 .withTable("words_ks", "words_table")
                 .withKeys("word")
                 .withJSONBinaryState("state")
@@ -62,7 +56,8 @@ public class MapStateTest {
     @Test
     public void transactionalStateTest() throws Exception {
 
-        StateFactory factory = MapStateFactoryBuilder.transactional()
+        Map config = new HashMap();
+        StateFactory factory = MapStateFactoryBuilder.transactional(getCassandraConfig())
                 .withTable("words_ks", "words_table")
                 .withKeys("word")
                 .withJSONBinaryState("state")
@@ -74,7 +69,8 @@ public class MapStateTest {
     @Test
     public void opaqueStateTest() throws Exception {
 
-        StateFactory factory = MapStateFactoryBuilder.opaque()
+        Map config = new HashMap();
+        StateFactory factory = MapStateFactoryBuilder.opaque(getCassandraConfig())
                 .withTable("words_ks", "words_table")
                 .withKeys("word")
                 .withJSONBinaryState("state")
@@ -109,7 +105,7 @@ public class MapStateTest {
 
         LocalCluster cluster = new LocalCluster();
         logger.info("Submitting topology.");
-        cluster.submitTopology("test", stormConf, topology.build());
+        cluster.submitTopology("test", null, topology.build());
 
         logger.info("Waiting for something to happen.");
         int count;
@@ -134,11 +130,6 @@ public class MapStateTest {
     @BeforeClass
     public static void setUpClass() throws InterruptedException, TTransportException, ConfigurationException, IOException {
         EmbeddedCassandraServerHelper.startEmbeddedCassandra();
-        stormConf = new Config();
-        stormConf.put(CassandraConf.CASSANDRA_NODES, EmbeddedCassandraServerHelper.getHost());
-        stormConf.put(CassandraConf.CASSANDRA_PORT, EmbeddedCassandraServerHelper.getNativeTransportPort());
-        stormConf.put(CassandraConf.CASSANDRA_KEYSPACE, "words_ks");
-
         Cluster.Builder clusterBuilder = Cluster.builder();
 
         // Add cassandra cluster contact points
@@ -177,6 +168,14 @@ public class MapStateTest {
             .wasApplied()) {
             throw new Exception("Did not create keyspace " + keyspace);
         }
+    }
+
+    protected Config getCassandraConfig() {
+        Config cassandraConf = new Config();
+        cassandraConf.put(CassandraConf.CASSANDRA_NODES, EmbeddedCassandraServerHelper.getHost());
+        cassandraConf.put(CassandraConf.CASSANDRA_PORT, EmbeddedCassandraServerHelper.getNativeTransportPort());
+        cassandraConf.put(CassandraConf.CASSANDRA_KEYSPACE, "words_ks");
+        return cassandraConf;
     }
 
     protected void createTable(String keyspace, String table, Column key, Column... fields) {

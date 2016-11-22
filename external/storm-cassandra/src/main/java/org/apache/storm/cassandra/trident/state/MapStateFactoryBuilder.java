@@ -54,28 +54,27 @@ public class MapStateFactoryBuilder<T> {
     private Integer maxParallelism = 500;
     private StateType stateType;
     private StateMapper<T> stateMapper;
+    private Map cassandraConfig;
 
-    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque() {
+    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map cassandraConf) {
         return new MapStateFactoryBuilder<OpaqueValue<U>>()
                 .withStateType(StateType.OPAQUE)
-                .withBatchingType(BatchStatement.Type.UNLOGGED);
+                .withBatchingType(BatchStatement.Type.UNLOGGED)
+                .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional() {
-        StateFactory mapState = MapStateFactoryBuilder.<ITuple>nontransactional()
-                .withTable("mykeyspace", "year_month_state")
-                .withKeys("year", "month")
-                .withStateMapper(new NonTransactionalTupleStateMapper("latest_value"))
-                .build();
+    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map cassandraConf) {
         return new MapStateFactoryBuilder<TransactionalValue<U>>()
                 .withStateType(StateType.TRANSACTIONAL)
-                .withBatchingType(BatchStatement.Type.LOGGED);
+                .withBatchingType(BatchStatement.Type.LOGGED)
+                .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<U> nontransactional() {
+    public static <U> MapStateFactoryBuilder<U> nontransactional(Map cassandraConf) {
         return new MapStateFactoryBuilder<U>()
                 .withStateType(StateType.NON_TRANSACTIONAL)
-                .withBatchingType(BatchStatement.Type.LOGGED);
+                .withBatchingType(BatchStatement.Type.LOGGED)
+                .withCassandraConfig(cassandraConf);
     }
 
     public MapStateFactoryBuilder<T> withTable(String keyspace, String table) {
@@ -127,6 +126,10 @@ public class MapStateFactoryBuilder<T> {
         return this;
     }
 
+    protected MapStateFactoryBuilder<T> withCassandraConfig(Map cassandraConf) {
+        this.cassandraConfig = cassandraConf;
+        return this;
+    }
 
     public StateFactory build() {
 
@@ -184,11 +187,11 @@ public class MapStateFactoryBuilder<T> {
 
         switch (stateType) {
             case NON_TRANSACTIONAL:
-                return CassandraMapStateFactory.nonTransactional(options);
+                return CassandraMapStateFactory.nonTransactional(options, cassandraConfig);
             case TRANSACTIONAL:
-                return CassandraMapStateFactory.transactional(options);
+                return CassandraMapStateFactory.transactional(options, cassandraConfig);
             case OPAQUE:
-                return CassandraMapStateFactory.opaque(options);
+                return CassandraMapStateFactory.opaque(options, cassandraConfig);
         }
 
         return null;
