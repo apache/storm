@@ -162,7 +162,7 @@ public class TransactionalState {
         try {
             Object data;
             if(_curator.checkExists().forPath(path)!=null) {
-                data = JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+                data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 data = null;
             }

@@ -71,6 +71,7 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WorkerBackpressureThread;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -441,7 +442,11 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         Map<Object, Object> componentConf;
         String specJsonConf = topologyContext.getComponentCommon(componentId).get_json_conf();
         if (specJsonConf != null) {
-            componentConf = (Map<Object, Object>) JSONValue.parse(specJsonConf);
+            try {
+                componentConf = (Map<Object, Object>) JSONValue.parseWithException(specJsonConf);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
             for (Object p : keysToRemove) {
                 componentConf.remove(p);
             }
