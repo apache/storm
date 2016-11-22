@@ -22,14 +22,19 @@ import com.datastax.driver.core.ResultSet;
 import com.datastax.driver.core.ResultSetFuture;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
-import com.google.common.util.concurrent.*;
-import org.apache.storm.cassandra.query.AyncCQLResultSetValuesMapper;
+import com.google.common.util.concurrent.FutureCallback;
+import com.google.common.util.concurrent.Futures;
+import com.google.common.util.concurrent.ListenableFuture;
+import com.google.common.util.concurrent.SettableFuture;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.topology.FailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
@@ -151,11 +156,8 @@ public class AsyncExecutor<T> implements Serializable {
 
             // Acquire a slot
             if (asyncContext.acquire()) {
-
-
                 try {
                     pending.incrementAndGet();
-                    final int statementIndex = i;
                     final T input = inputs.get(i);
                     final Statement statement = statements.get(i);
                     ResultSetFuture future = session.executeAsync(statement);
@@ -174,11 +176,18 @@ public class AsyncExecutor<T> implements Serializable {
 
                         @Override
                         public void onFailure(Throwable throwable) {
-                            handler.failure(throwable, input);
-                            asyncContext
-                                    .exception(throwable)
-                                    .release();
-                            LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
+                            try {
+                                handler.failure(throwable, input);
+                            } catch (Throwable throwable2) {
+                                asyncContext.exception(throwable2);
+                            }
+                            finally {
+                                asyncContext
+                                        .exception(throwable)
+                                        .release();
+                                pending.decrementAndGet();
+                                LOG.error(String.format("Failed to execute statement '%s' ", statement), throwable);
+                            }
                         }
                     }, executorService);
                 } catch (Throwable throwable) {
