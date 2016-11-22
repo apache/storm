@@ -45,7 +45,7 @@ import java.util.NoSuchElementException;
  * For local blob store it is also the client facing API for
  * supervisor in order to download blobs from nimbus.
  */
-public class NimbusBlobStore extends ClientBlobStore {
+public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(NimbusBlobStore.class);
 
     public class NimbusKeyIterator implements Iterator<String> {
@@ -419,5 +419,10 @@ public class NimbusBlobStore extends ClientBlobStore {
             client.close();
             client = null;
         }
+    }
+
+    @Override
+    public void close() {
+        shutdown();
     }
 }
