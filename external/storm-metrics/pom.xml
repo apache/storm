@@ -24,7 +24,6 @@
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.storm</groupId>
   <artifactId>storm-metrics</artifactId>
   <packaging>jar</packaging>
 
