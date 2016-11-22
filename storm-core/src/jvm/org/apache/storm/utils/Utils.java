@@ -305,9 +305,7 @@ public class Utils {
             Object ret = JSONValue.parseWithException(in);
             in.close();
             return (Map<String,Object>)ret;
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        } catch (ParseException e) {
+        } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
         }
     }
