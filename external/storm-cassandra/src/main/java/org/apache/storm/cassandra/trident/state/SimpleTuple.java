@@ -4,7 +4,9 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Utility class for passing around ordered key/value data with an immutable key set.

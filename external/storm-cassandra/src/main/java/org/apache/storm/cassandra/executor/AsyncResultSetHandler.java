@@ -19,7 +19,6 @@
 package org.apache.storm.cassandra.executor;
 
 import com.datastax.driver.core.ResultSet;
-import org.apache.storm.task.OutputCollector;
 
 import java.io.Serializable;
 

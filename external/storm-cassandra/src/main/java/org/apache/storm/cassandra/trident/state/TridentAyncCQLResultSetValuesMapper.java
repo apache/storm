@@ -18,14 +18,16 @@
  */
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.ResultSet;
+import com.datastax.driver.core.Row;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.google.common.util.concurrent.SettableFuture;
 import org.apache.storm.cassandra.executor.AsyncExecutor;
 import org.apache.storm.cassandra.executor.AsyncExecutorProvider;
 import org.apache.storm.cassandra.executor.AsyncResultHandler;
 import org.apache.storm.cassandra.executor.AsyncResultSetHandler;
 import org.apache.storm.cassandra.query.AyncCQLResultSetValuesMapper;
-import org.apache.storm.task.OutputCollector;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;

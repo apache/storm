@@ -7,7 +7,6 @@ import org.apache.storm.tuple.Values;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 /**
  * State mapper that maps an opaque tuple to separate state fields.

@@ -18,16 +18,21 @@
  */
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.*;
+import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.Session;
+import com.datastax.driver.core.Statement;
 import com.google.common.base.Preconditions;
 import org.apache.storm.cassandra.client.SimpleClient;
 import org.apache.storm.cassandra.client.SimpleClientProvider;
-import org.apache.storm.cassandra.executor.AsyncExecutor;
-import org.apache.storm.cassandra.executor.AsyncExecutorProvider;
 import org.apache.storm.cassandra.query.AyncCQLResultSetValuesMapper;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.topology.FailedException;
-import org.apache.storm.trident.state.*;
+import org.apache.storm.trident.state.JSONNonTransactionalSerializer;
+import org.apache.storm.trident.state.JSONOpaqueSerializer;
+import org.apache.storm.trident.state.JSONTransactionalSerializer;
+import org.apache.storm.trident.state.OpaqueValue;
+import org.apache.storm.trident.state.Serializer;
+import org.apache.storm.trident.state.TransactionalValue;
 import org.apache.storm.trident.state.map.IBackingMap;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
@@ -36,7 +41,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * An IBackingState implementation for Cassandra.
@@ -65,7 +72,6 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
     private SimpleClient client;
     private Session session;
     private AyncCQLResultSetValuesMapper cqlResultSetValuesMapper;
-    private AsyncExecutor executor;
 
 
     protected CassandraBackingMap(Map conf, Options<T> options) {
@@ -78,7 +84,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
-        LOG.info("multiGet fetching {} values.", keys.size());
+        LOG.debug("multiGet fetching {} values.", keys.size());
         List<Statement> selects = new ArrayList<>();
         List<ITuple> keyTuples = new ArrayList<>();
 
@@ -107,7 +113,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
     @Override
     public void multiPut(List<List<Object>> keys, List<T> values) {
-        LOG.info("multiPut writing {} values.", keys.size());
+        LOG.debug("multiPut writing {} values.", keys.size());
 
         List<Statement> statements = new ArrayList<>();
         for (int i = 0; i < keys.size(); i++) {
@@ -138,7 +144,6 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
         Preconditions.checkNotNull(options.multiPutCqlStatementMapper, "CassandraBackingMap.Options should have multiPutCqlStatementMapper");
         client = options.clientProvider.getClient(conf);
         session = client.connect();
-        this.executor = AsyncExecutorProvider.getLocal(session, null);
         this.cqlResultSetValuesMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), options.maxParallelism);
     }
 
