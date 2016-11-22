@@ -173,6 +173,7 @@ import org.slf4j.LoggerFactory;
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 
 public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final static Logger LOG = LoggerFactory.getLogger(Nimbus.class);
@@ -2452,6 +2453,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new InvalidTopologyException(ex.getMessage());
             }
             validator.validate(topoName, topoConf, topology);
+            Utils.validateTopologyBlobStoreMap(topoConf, Sets.newHashSet(blobStore.listKeys()));
             long uniqueNum = submittedCount.incrementAndGet();
             String topoId = topoName + "-" + uniqueNum + "-" + Time.currentTimeSecs();
             Map<String, String> creds = null;
