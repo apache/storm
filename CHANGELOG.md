@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2052: Kafka Spout - New Client API - Performance Improvements
  * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
  * STORM-2198: perform RotationAction when stopping HdfsBolt
  * STORM-2196: A typo in RAS_Node::consumeCPU
