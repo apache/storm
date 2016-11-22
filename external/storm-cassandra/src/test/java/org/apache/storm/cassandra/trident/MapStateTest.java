@@ -105,7 +105,7 @@ public class MapStateTest {
 
         LocalCluster cluster = new LocalCluster();
         logger.info("Submitting topology.");
-        cluster.submitTopology("test", null, topology.build());
+        cluster.submitTopology("test", new HashMap(), topology.build());
 
         logger.info("Waiting for something to happen.");
         int count;
