@@ -1,17 +1,39 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.storm.scheduler.blacklist.strategies;
 
-import org.apache.storm.scheduler.*;
-import org.apache.storm.scheduler.blacklist.CircularBuffer;
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.SupervisorDetails;
+import org.apache.storm.scheduler.Topologies;
+import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
-/**
- * Created by howard.li on 2016/7/13.
- */
-public class DefaultBlacklistStrategy implements IBlacklistStrategy{
+public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
     private static Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
 
@@ -22,105 +44,104 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy{
     private int _resumeTime;
     private int _nimbusMonitorFreqSecs;
 
-    private TreeMap<String,Integer> blacklist;
+    private TreeMap<String, Integer> blacklist;
 
     @Override
-    public void prepare(IReporter reporter,int toleranceTime, int toleranceCount, int resumeTime,int nimbusMonitorFreqSecs) {
-        _reporter=reporter;
+    public void prepare(IReporter reporter, int toleranceTime, int toleranceCount, int resumeTime, int nimbusMonitorFreqSecs) {
+        _reporter = reporter;
 
-        _toleranceTime=toleranceTime;
-        _toleranceCount=toleranceCount;
-        _resumeTime=resumeTime;
-        _nimbusMonitorFreqSecs=nimbusMonitorFreqSecs;
-        blacklist=new TreeMap<>();
+        _toleranceTime = toleranceTime;
+        _toleranceCount = toleranceCount;
+        _resumeTime = resumeTime;
+        _nimbusMonitorFreqSecs = nimbusMonitorFreqSecs;
+        blacklist = new TreeMap<>();
     }
 
     @Override
-    public Set<String> getBlacklist(CircularBuffer<HashMap<String,Set<Integer>>> toleranceBuffer,Cluster cluster, Topologies topologies){
-        //Set<String> blacklist=new HashSet<String>();
-        Map<String,Integer> countMap=new HashMap<String,Integer>();
+    public Set<String> getBlacklist(List<HashMap<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster, Topologies topologies) {
+        Map<String, Integer> countMap = new HashMap<String, Integer>();
 
-        for(Map<String,Set<Integer>> item : toleranceBuffer){
-            Set<String> supervisors=item.keySet();
-            for(String supervisor :supervisors){
-                int supervisorCount=0;
-                if(countMap.containsKey(supervisor)){
-                    supervisorCount=countMap.get(supervisor);
+        for (Map<String, Set<Integer>> item : supervisorsWithFailures) {
+            Set<String> supervisors = item.keySet();
+            for (String supervisor : supervisors) {
+                int supervisorCount = 0;
+                if (countMap.containsKey(supervisor)) {
+                    supervisorCount = countMap.get(supervisor);
                 }
                 countMap.put(supervisor, supervisorCount + 1);
             }
         }
-        for(Map.Entry<String,Integer> entry:countMap.entrySet()){
-            String supervisor=entry.getKey();
-            int count=entry.getValue();
-            if(count>=_toleranceCount){
-                if(!blacklist.containsKey(supervisor)){// if not in blacklist then add it and set the resume time according to config
-                    LOG.info("add supervisor {} to blacklist",supervisor);
-                    LOG.info("toleranceBuffer : {}",toleranceBuffer);
-                    _reporter.reportBlacklist(supervisor, toleranceBuffer);
-                    blacklist.put(supervisor,_resumeTime/_nimbusMonitorFreqSecs);
+        for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
+            String supervisor = entry.getKey();
+            int count = entry.getValue();
+            if (count >= _toleranceCount) {
+                if (!blacklist.containsKey(supervisor)) {// if not in blacklist then add it and set the resume time according to config
+                    LOG.info("add supervisor {} to blacklist", supervisor);
+                    LOG.info("supervisorsWithFailures : {}", supervisorsWithFailures);
+                    _reporter.reportBlacklist(supervisor, supervisorsWithFailures);
+                    blacklist.put(supervisor, _resumeTime / _nimbusMonitorFreqSecs);
                 }
             }
         }
-        releaseBlacklistWhenNeeded(cluster,topologies);
+        releaseBlacklistWhenNeeded(cluster, topologies);
         return blacklist.keySet();
     }
 
-    public void resumeFromBlacklist(){
-        Set<String> readyToRemove=new HashSet<String>();
-        for(Map.Entry<String,Integer> entry:blacklist.entrySet()){
-            String key=entry.getKey();
-            int value=entry.getValue()-1;
+    public void resumeFromBlacklist() {
+        Set<String> readyToRemove = new HashSet<String>();
+        for (Map.Entry<String, Integer> entry : blacklist.entrySet()) {
+            String key = entry.getKey();
+            int value = entry.getValue() - 1;
             if (value == 0) {
                 readyToRemove.add(key);
-            }else{
-                blacklist.put(key,value);
+            } else {
+                blacklist.put(key, value);
             }
         }
-        for(String key : readyToRemove){
+        for (String key : readyToRemove) {
             blacklist.remove(key);
-            LOG.info("supervisor {} reach the resume time ,removed from blacklist",key);
+            LOG.info("supervisor {} reach the resume time ,removed from blacklist", key);
         }
     }
 
     public void releaseBlacklistWhenNeeded(Cluster cluster, Topologies topologies) {
-        if(blacklist.size()>0){
-            int totalNeedNumWorkers=0;
-            List<TopologyDetails> needSchedulingTopologies=cluster.needsSchedulingTopologies(topologies);
-            for(TopologyDetails topologyDetails:needSchedulingTopologies){
-                int numWorkers=topologyDetails.getNumWorkers();
-                int assignedNumWorkers=cluster.getAssignedNumWorkers(topologyDetails);
-                int unAssignedNumWorkers=numWorkers-assignedNumWorkers;
-                totalNeedNumWorkers+=unAssignedNumWorkers;
+        if (blacklist.size() > 0) {
+            int totalNeedNumWorkers = 0;
+            List<TopologyDetails> needSchedulingTopologies = cluster.needsSchedulingTopologies(topologies);
+            for (TopologyDetails topologyDetails : needSchedulingTopologies) {
+                int numWorkers = topologyDetails.getNumWorkers();
+                int assignedNumWorkers = cluster.getAssignedNumWorkers(topologyDetails);
+                int unAssignedNumWorkers = numWorkers - assignedNumWorkers;
+                totalNeedNumWorkers += unAssignedNumWorkers;
             }
-            Map<String, SupervisorDetails> availableSupervisors=cluster.getSupervisors();
+            Map<String, SupervisorDetails> availableSupervisors = cluster.getSupervisors();
             List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
-            int availableSlotsNotInBlacklistCount=0;
-            for(WorkerSlot slot:availableSlots){
-                if(!blacklist.containsKey(slot.getNodeId())){
-                    availableSlotsNotInBlacklistCount+=1;
+            int availableSlotsNotInBlacklistCount = 0;
+            for (WorkerSlot slot : availableSlots) {
+                if (!blacklist.containsKey(slot.getNodeId())) {
+                    availableSlotsNotInBlacklistCount += 1;
                 }
             }
-            int shortage=totalNeedNumWorkers-availableSlotsNotInBlacklistCount;
+            int shortage = totalNeedNumWorkers - availableSlotsNotInBlacklistCount;
 
-            if(shortage>0){
+            if (shortage > 0) {
                 LOG.info("total needed num of workers :{}, available num of slots not in blacklist :{},num blacklist :{}, will release some blacklist."
-                        ,totalNeedNumWorkers,availableSlotsNotInBlacklistCount,blacklist.size());
+                        , totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
                 //release earliest blacklist
-                Set<String> readyToRemove=new HashSet<String>();
-                for(String supervisor:blacklist.keySet()){//blacklist is treeMap sorted by value, value minimum meas earliest
-                    if(availableSupervisors.containsKey(supervisor)){
-                        Set<Integer> ports=cluster.getAvailablePorts(availableSupervisors.get(supervisor));
+                Set<String> readyToRemove = new HashSet<String>();
+                for (String supervisor : blacklist.keySet()) {//blacklist is treeMap sorted by value, value minimum meas earliest
+                    if (availableSupervisors.containsKey(supervisor)) {
+                        Set<Integer> ports = cluster.getAvailablePorts(availableSupervisors.get(supervisor));
                         readyToRemove.add(supervisor);
-                        shortage-=ports.size();
-                        if(shortage<=0){//released enough supervisor
+                        shortage -= ports.size();
+                        if (shortage <= 0) {//released enough supervisor
                             break;
                         }
                     }
                 }
-                for(String key : readyToRemove){
+                for (String key : readyToRemove) {
                     blacklist.remove(key);
-                    LOG.info("release supervisor {} for shortage of worker slots.",key);
+                    LOG.info("release supervisor {} for shortage of worker slots.", key);
                 }
             }
         }

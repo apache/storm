@@ -1,10 +1,35 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.storm.scheduler.blacklist;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.scheduler.*;
+import org.apache.storm.scheduler.ExecutorDetails;
+import org.apache.storm.scheduler.INimbus;
+import org.apache.storm.scheduler.IScheduler;
+import org.apache.storm.scheduler.SchedulerAssignment;
+import org.apache.storm.scheduler.SchedulerAssignmentImpl;
+import org.apache.storm.scheduler.SupervisorDetails;
+import org.apache.storm.scheduler.Topologies;
+import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -21,34 +46,39 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 
-/**
- * Created by howard.li on 2016/7/11.
- */
+
 public class TestUtilsForBlacklistScheduler {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilsForBlacklistScheduler.class);
 
-    public static Map<String, SupervisorDetails> removeSupervisorFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap,String supervisor) {
+    public static Map<String, SupervisorDetails> removeSupervisorFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor) {
         Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
         retList.putAll(supervisorDetailsMap);
         retList.remove(supervisor);
         return retList;
     }
 
-    public static Map<String, SupervisorDetails> removePortFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap,String supervisor, int port) {
+    public static Map<String, SupervisorDetails> removePortFromSupervisors(Map<String, SupervisorDetails> supervisorDetailsMap, String supervisor, int port) {
         Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
-        for(Map.Entry<String,SupervisorDetails> supervisorDetailsEntry:supervisorDetailsMap.entrySet()){
-            String supervisorKey=supervisorDetailsEntry.getKey();
-            SupervisorDetails supervisorDetails=supervisorDetailsEntry.getValue();
-            Set<Integer> ports=new HashSet<>();
+        for (Map.Entry<String, SupervisorDetails> supervisorDetailsEntry : supervisorDetailsMap.entrySet()) {
+            String supervisorKey = supervisorDetailsEntry.getKey();
+            SupervisorDetails supervisorDetails = supervisorDetailsEntry.getValue();
+            Set<Integer> ports = new HashSet<>();
             ports.addAll(supervisorDetails.getAllPorts());
-            if(supervisorKey.equals(supervisor)){
+            if (supervisorKey.equals(supervisor)) {
                 ports.remove(port);
             }
-            SupervisorDetails sup=new SupervisorDetails(supervisorDetails.getId(),supervisorDetails.getHost(),null,(HashSet)ports,null);
-            retList.put(sup.getId(),sup);
+            SupervisorDetails sup = new SupervisorDetails(supervisorDetails.getId(), supervisorDetails.getHost(), null, (HashSet) ports, null);
+            retList.put(sup.getId(), sup);
         }
         return retList;
     }
@@ -67,9 +97,8 @@ public class TestUtilsForBlacklistScheduler {
     }
 
 
-
     public static TopologyDetails getTopology(String name, Map config, int numSpout, int numBolt,
-                                              int spoutParallelism, int boltParallelism, int launchTime,boolean blacklistEnable) {
+                                              int spoutParallelism, int boltParallelism, int launchTime, boolean blacklistEnable) {
 
         Config conf = new Config();
         conf.putAll(config);
@@ -225,10 +254,10 @@ public class TestUtilsForBlacklistScheduler {
         }
     }
 
-    public static Map<String,SchedulerAssignmentImpl> assignmentMapToImpl(Map<String,SchedulerAssignment> assignmentMap){
-        Map<String,SchedulerAssignmentImpl> impl=new HashMap<>();
-        for(Map.Entry<String,SchedulerAssignment> entry:assignmentMap.entrySet()){
-            impl.put(entry.getKey(),(SchedulerAssignmentImpl)entry.getValue());
+    public static Map<String, SchedulerAssignmentImpl> assignmentMapToImpl(Map<String, SchedulerAssignment> assignmentMap) {
+        Map<String, SchedulerAssignmentImpl> impl = new HashMap<>();
+        for (Map.Entry<String, SchedulerAssignment> entry : assignmentMap.entrySet()) {
+            impl.put(entry.getKey(), (SchedulerAssignmentImpl) entry.getValue());
         }
         return impl;
     }
