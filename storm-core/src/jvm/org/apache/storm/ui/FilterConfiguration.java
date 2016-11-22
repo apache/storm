@@ -25,7 +25,7 @@ public class FilterConfiguration {
     private Map filterParams;
 
 
-    public FilterConfiguration(Map filterParams, String filterClass) {
+    public FilterConfiguration(String filterClass, Map filterParams) {
         this.filterParams = filterParams;
         this.filterClass = filterClass;
         this.filterName = null;
