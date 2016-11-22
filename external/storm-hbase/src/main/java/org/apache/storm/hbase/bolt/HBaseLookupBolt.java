@@ -22,9 +22,9 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
+import com.github.benmanes.caffeine.cache.CacheLoader;
+import com.github.benmanes.caffeine.cache.Caffeine;
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import com.google.common.collect.Lists;
 
 import java.util.Map;
@@ -79,7 +79,8 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
       int cacheTTL = Integer.parseInt(config.getOrDefault("hbase.cache.ttl.seconds", "300").toString());
       int maxCacheSize = Integer.parseInt(config.getOrDefault("hbase.cache.size", "1000").toString());
       if (cacheEnabled) {
-         cache = CacheBuilder.newBuilder().maximumSize(maxCacheSize).expireAfterWrite(cacheTTL, TimeUnit.SECONDS)
+         cache = Caffeine.newBuilder()
+        		    .maximumSize(maxCacheSize).expireAfterWrite(cacheTTL, TimeUnit.SECONDS)
                .build(new CacheLoader<byte[], Result>() {
 
                   @Override
