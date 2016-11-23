@@ -102,6 +102,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [YARN Integration](https://github.com/yahoo/storm-yarn), [YARN Integration via Slider](http://docs.hortonworks.com/HDPDocuments/HDP2/HDP-2.3.2/bk_yarn_resource_mgt/content/ref-7d103a48-7c2e-4b7b-aab5-62c739a32ee0.1.html)
 * [Mesos Integration](https://github.com/mesos/storm)
 * [Docker Integration](https://hub.docker.com/_/storm/)
+* [Kubernetes Integration](https://github.com/kubernetes/kubernetes/tree/master/examples/storm)
 
 ### Advanced
 
