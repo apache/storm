@@ -48,6 +48,8 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class HBaseLookupBolt extends AbstractHBaseBolt {
+	
+   private static final long serialVersionUID = 1L;
    private static final Logger LOG = LoggerFactory.getLogger(HBaseLookupBolt.class);
 
    private HBaseValueMapper rowToTupleMapper;
@@ -86,6 +88,7 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
                   @Override
                   public Result load(byte[] rowKey) throws Exception {
                      Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
+                     LOG.debug("Cache miss for key:"+new String(rowKey));
                      return hBaseClient.batchGet(Lists.newArrayList(get))[0];
                   }
 
