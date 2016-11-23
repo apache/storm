@@ -150,8 +150,12 @@ public class AsyncExecutor<T> implements Serializable {
     public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Semaphore throttle, final AsyncResultSetHandler<T> handler) {
 
         final SettableFuture<List<T>> settableFuture = SettableFuture.create();
-        final AsyncContext<T> asyncContext = new AsyncContext<>(inputs, throttle, settableFuture);
+        if (inputs.size() == 0) {
+            settableFuture.set(new ArrayList<T>());
+            return settableFuture;
+        }
 
+        final AsyncContext<T> asyncContext = new AsyncContext<>(inputs, throttle, settableFuture);
         for (int i = 0; i < statements.size(); i++) {
 
             // Acquire a slot

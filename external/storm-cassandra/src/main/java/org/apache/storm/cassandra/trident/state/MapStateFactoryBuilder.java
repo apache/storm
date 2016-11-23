@@ -63,6 +63,7 @@ public class MapStateFactoryBuilder<T> {
     private StateType stateType;
     private StateMapper<T> stateMapper;
     private Map cassandraConfig;
+    private int cacheSize;
 
     public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map cassandraConf) {
         return new MapStateFactoryBuilder<OpaqueValue<U>>()
@@ -131,6 +132,11 @@ public class MapStateFactoryBuilder<T> {
         return this;
     }
 
+    public MapStateFactoryBuilder<T> withCache(int cacheSize) {
+        this.cacheSize = cacheSize;
+        return this;
+    }
+
     public StateFactory build() {
 
         Objects.requireNonNull(keyspace, "A keyspace is required.");
@@ -186,11 +192,14 @@ public class MapStateFactoryBuilder<T> {
 
         switch (stateType) {
             case NON_TRANSACTIONAL:
-                return CassandraMapStateFactory.nonTransactional(options, cassandraConfig);
+                return CassandraMapStateFactory.nonTransactional(options, cassandraConfig)
+                        .withCache(cacheSize);
             case TRANSACTIONAL:
-                return CassandraMapStateFactory.transactional(options, cassandraConfig);
+                return CassandraMapStateFactory.transactional(options, cassandraConfig)
+                        .withCache(cacheSize);
             case OPAQUE:
-                return CassandraMapStateFactory.opaque(options, cassandraConfig);
+                return CassandraMapStateFactory.opaque(options, cassandraConfig)
+                        .withCache(cacheSize);
         }
 
         return null;
