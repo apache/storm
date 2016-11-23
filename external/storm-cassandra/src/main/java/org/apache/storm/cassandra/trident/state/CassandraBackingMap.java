@@ -45,6 +45,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 /**
  * An IBackingState implementation for Cassandra.
@@ -64,9 +65,6 @@ import java.util.Map;
  * lower. The driver defaults to 256 for remote hosts and 1024 for local hosts, so the default value is 128
  * unless the driver is configured otherwise.
  *
- * The default parallelism should be conservative enough to allow a few executors in parallel,
- * especially considering all connections should be local in a standard setup.
- *
  * @param <T>
  */
 public class CassandraBackingMap<T> implements IBackingMap<T> {
@@ -81,6 +79,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
     private Session session;
     private AyncCQLResultSetValuesMapper getResultMapper;
     private AyncCQLResultSetValuesMapper putResultMapper;
+    private Semaphore throttle;
 
 
     protected CassandraBackingMap(Map conf, Options<T> options) {
@@ -106,9 +105,9 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
             options.maxParallelism = maxRequestsPerHost / 2;
             LOG.info("Parallelism default set to {}", options.maxParallelism);
         }
-
-        this.getResultMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), options.maxParallelism);
-        this.putResultMapper = new TridentAyncCQLResultSetValuesMapper(null, options.maxParallelism);
+        throttle = new Semaphore(options.maxParallelism, false);
+        this.getResultMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), throttle);
+        this.putResultMapper = new TridentAyncCQLResultSetValuesMapper(null, throttle);
     }
 
     @Override

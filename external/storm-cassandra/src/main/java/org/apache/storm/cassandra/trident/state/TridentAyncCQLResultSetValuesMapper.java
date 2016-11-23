@@ -35,17 +35,18 @@ import org.apache.storm.tuple.Values;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 /**
  * A result set mapper implementation which runs requests in parallel and waits for them all to finish.
  */
 public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValuesMapper {
     private final Fields outputDeclaredFields;
-    private final Integer maxParallelRequests;
+    private final Semaphore throttle;
 
-    public TridentAyncCQLResultSetValuesMapper(Fields outputDeclaredFields, Integer maxParallelRequests) {
+    public TridentAyncCQLResultSetValuesMapper(Fields outputDeclaredFields, Semaphore throttle) {
         this.outputDeclaredFields = outputDeclaredFields;
-        this.maxParallelRequests = maxParallelRequests;
+        this.throttle = throttle;
     }
 
     @Override
@@ -57,7 +58,7 @@ public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValu
             indexes.add(i);
             results.add(null);
         }
-        SettableFuture<List<Integer>> result = executor.execAsync(statements, indexes, 1, new AsyncResultSetHandler<Integer>() {
+        SettableFuture<List<Integer>> result = executor.execAsync(statements, indexes, throttle, new AsyncResultSetHandler<Integer>() {
             @Override
             public void success(Integer index, ResultSet resultSet) {
                 if (outputDeclaredFields != null) {

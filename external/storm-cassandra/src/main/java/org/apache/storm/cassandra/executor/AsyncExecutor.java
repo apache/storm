@@ -147,10 +147,10 @@ public class AsyncExecutor<T> implements Serializable {
      * Asynchronously executes the specified select statements. Results will be passed to the {@link AsyncResultSetHandler}
      * once each query has succeed or failed.
      */
-    public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Integer maxParallelRequests, final AsyncResultSetHandler<T> handler) {
+    public SettableFuture<List<T>> execAsync(final List<Statement> statements, final List<T> inputs, Semaphore throttle, final AsyncResultSetHandler<T> handler) {
 
         final SettableFuture<List<T>> settableFuture = SettableFuture.create();
-        final AsyncContext<T> asyncContext = new AsyncContext<>(inputs, maxParallelRequests, settableFuture);
+        final AsyncContext<T> asyncContext = new AsyncContext<>(inputs, throttle, settableFuture);
 
         for (int i = 0; i < statements.size(); i++) {
 
@@ -210,10 +210,10 @@ public class AsyncExecutor<T> implements Serializable {
         private final  List<Throwable> exceptions;
         private final  Semaphore throttle;
 
-        public AsyncContext(List<T> inputs, int maxParallelRequests, SettableFuture<List<T>> settableFuture) {
+        public AsyncContext(List<T> inputs, Semaphore throttle, SettableFuture<List<T>> settableFuture) {
             this.inputs = inputs;
             this.latch = new AtomicInteger(inputs.size());
-            this.throttle = new Semaphore(maxParallelRequests, false);
+            this.throttle = throttle;
             this.exceptions = Collections.synchronizedList(new ArrayList<Throwable>());
             this.future = settableFuture;
         }

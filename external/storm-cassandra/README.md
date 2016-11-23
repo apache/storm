@@ -3,13 +3,13 @@ Storm Cassandra Integration (CQL).
 
 [Apache Storm](https://storm.apache.org/) is a free and open source distributed realtime computation system.
 
-### Bolt API implementation for Apache Cassandra
+## Bolt API implementation for Apache Cassandra
 
 This library provides core storm bolt on top of Apache Cassandra.
 Provides simple DSL to map storm *Tuple* to Cassandra Query Language *Statement*.
 
 
-### Configuration
+## Configuration
 The following properties may be passed to storm configuration.
 
 | **Property name**                            | **Description** | **Default**         |
@@ -25,17 +25,17 @@ The following properties may be passed to storm configuration.
 | **cassandra.reconnectionPolicy.baseDelayMs** | -               | 100 (ms)            |
 | **cassandra.reconnectionPolicy.maxDelayMs**  | -               | 60000 (ms)          |
 
-### CassandraWriterBolt
+## CassandraWriterBolt
 
-####Static import
+###Static import
 ```java
 
 import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 
 ```
 
-#### Insert Query Builder
-##### Insert query including only the specified tuple fields.
+### Insert Query Builder
+#### Insert query including only the specified tuple fields.
 ```java
 
     new CassandraWriterBolt(
@@ -48,7 +48,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
-##### Insert query including all tuple fields.
+#### Insert query including all tuple fields.
 ```java
 
     new CassandraWriterBolt(
@@ -59,7 +59,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
-##### Insert multiple queries from one input tuple.
+#### Insert multiple queries from one input tuple.
 ```java
 
     new CassandraWriterBolt(
@@ -70,7 +70,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
-##### Insert query using QueryBuilder
+#### Insert query using QueryBuilder
 ```java
 
     new CassandraWriterBolt(
@@ -81,7 +81,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     )
 ```
 
-##### Insert query with static bound query
+#### Insert query with static bound query
 ```java
 
     new CassandraWriterBolt(
@@ -92,7 +92,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
-##### Insert query with static bound query using named setters and aliases
+#### Insert query with static bound query using named setters and aliases
 ```java
 
     new CassandraWriterBolt(
@@ -109,7 +109,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
-##### Insert query with bound statement load from storm configuration
+#### Insert query with bound statement load from storm configuration
 ```java
 
     new CassandraWriterBolt(
@@ -117,7 +117,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
             .bind(all());
 ```
 
-##### Insert query with bound statement load from tuple field
+#### Insert query with bound statement load from tuple field
 ```java
 
     new CassandraWriterBolt(
@@ -125,7 +125,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
             .bind(all());
 ```
 
-##### Insert query with batch statement
+#### Insert query with batch statement
 ```java
 
     // Logged
@@ -202,7 +202,7 @@ builder.setBolt("BOLT_WRITER", bolt, 4)
         .customGrouping("spout", new Murmur3StreamGrouping("title"))
 ```
 
-### Trident API support
+## Trident State Support
 
 For a state factory which writes output to Cassandra, use ```CassandraStateFactory``` with an ```INSERT INTO``` statement:
 
@@ -241,6 +241,8 @@ For a state factory which can query Cassandra, use ```CassandraStateFactory``` w
         stream.stateQuery(selectWeatherStationStateFactory, new Fields("weather_station_id"), new CassandraQuery(), new Fields("name"));
 
 ```
+
+## Trident MapState Support
 
 For a MapState with Cassandra IBackingMap, the simplest option is to use a ```MapStateBuilder``` which generates CQL statements automatically. 
 The builder supports opaque, transactional and non-transactional map states.
@@ -296,7 +298,6 @@ Alternatively, you can construct a ```CassandraMapStateFactory``` yourself:
                 .withBatching(BatchStatement.Type.UNLOGGED)
                 .withKeys(new Fields("word"))
                 .withNonTransactionalJSONBinaryState("state")
-                .withMaxParallelism(1)
                 .withMultiGetCQLStatementMapper(get)
                 .withMultiPutCQLStatementMapper(put);
 
@@ -304,6 +305,23 @@ Alternatively, you can construct a ```CassandraMapStateFactory``` yourself:
                 .withCache(0);
 
 ```
+
+### MapState Parallelism
+
+The backing map implementation submits queries (gets and puts) in parallel to the Cassandra cluster.
+The default number of parallel requests based on the driver configuration, which ends up being 128 with
+default driver configuration. The maximum parallelism applies to the cluster as a whole, and to each 
+state instance (per worker, not executor).
+
+The default calculation is:
+  default = min(max local, max remote) / 2
+  
+which normally means:
+  min(1024, 256) / 2 = 128
+
+This is deliberately conservative to avoid issues in most setups. If this does not provide sufficient 
+throughput you can either explicitly override the max parallelism on the state builder/factory/backingmap, 
+or you can update the driver configuration.
 
 ## License
 
