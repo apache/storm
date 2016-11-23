@@ -78,4 +78,9 @@ public class SimpleStateMapper<T> implements StateMapper<T> {
         }
         throw new IllegalStateException("State query returned multiple results.");
     }
+
+    @Override
+    public String toString() {
+        return String.format("{type: %s, fields: %s, stateType: %s}", this.getClass().getSimpleName(), fields, stateType);
+    }
 }

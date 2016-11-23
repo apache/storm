@@ -38,4 +38,9 @@ public class NonTransactionalTupleStateMapper implements StateMapper<ITuple> {
         }
         return new SimpleTuple(fields, values.get(0));
     }
+
+    @Override
+    public String toString() {
+        return String.format("{type: %s, fields: %s}", this.getClass().getSimpleName(), fields);
+    }
 }

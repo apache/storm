@@ -34,6 +34,7 @@ import org.junit.*;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+
 import static org.junit.Assert.assertEquals;
 
 public class MapStateTest {
@@ -92,8 +93,10 @@ public class MapStateTest {
         TridentTopology topology = new TridentTopology();
 
         TridentState wordCounts = topology.newStream("spout1", spout)
-                .each(new Fields("sentence"), new Split(), new Fields("word")).groupBy(new Fields("word"))
-                .persistentAggregate(factory, new Count(), new Fields("state")).parallelismHint(1);
+                .each(new Fields("sentence"), new Split(), new Fields("word"))
+                .groupBy(new Fields("word"))
+                .persistentAggregate(factory, new Count(), new Fields("state"))
+                .parallelismHint(1);
 
         LocalDRPC client = new LocalDRPC();
         topology.newDRPCStream("words", client)

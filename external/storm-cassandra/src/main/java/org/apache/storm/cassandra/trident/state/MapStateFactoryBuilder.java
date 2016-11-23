@@ -1,6 +1,5 @@
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.querybuilder.Insert;
 import com.datastax.driver.core.querybuilder.Select;
 import org.apache.storm.cassandra.CassandraContext;
@@ -60,8 +59,7 @@ public class MapStateFactoryBuilder<T> {
     private String keyspace;
     private String table;
     private String[] keys;
-    private BatchStatement.Type batchingType;
-    private Integer maxParallelism = 500;
+    private Integer maxParallelism;
     private StateType stateType;
     private StateMapper<T> stateMapper;
     private Map cassandraConfig;
@@ -69,21 +67,18 @@ public class MapStateFactoryBuilder<T> {
     public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map cassandraConf) {
         return new MapStateFactoryBuilder<OpaqueValue<U>>()
                 .withStateType(StateType.OPAQUE)
-                .withBatchingType(BatchStatement.Type.UNLOGGED)
                 .withCassandraConfig(cassandraConf);
     }
 
     public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map cassandraConf) {
         return new MapStateFactoryBuilder<TransactionalValue<U>>()
                 .withStateType(StateType.TRANSACTIONAL)
-                .withBatchingType(BatchStatement.Type.LOGGED)
                 .withCassandraConfig(cassandraConf);
     }
 
     public static <U> MapStateFactoryBuilder<U> nontransactional(Map cassandraConf) {
         return new MapStateFactoryBuilder<U>()
                 .withStateType(StateType.NON_TRANSACTIONAL)
-                .withBatchingType(BatchStatement.Type.LOGGED)
                 .withCassandraConfig(cassandraConf);
     }
 
@@ -100,11 +95,6 @@ public class MapStateFactoryBuilder<T> {
 
     public MapStateFactoryBuilder<T> withMaxParallelism(Integer maxParallelism) {
         this.maxParallelism = maxParallelism;
-        return this;
-    }
-
-    public MapStateFactoryBuilder<T> withBatchingType(BatchStatement.Type batchingType) {
-        this.batchingType = batchingType;
         return this;
     }
 
@@ -128,7 +118,7 @@ public class MapStateFactoryBuilder<T> {
     }
 
     public MapStateFactoryBuilder<T> withBinaryState(String stateField, Serializer<T> serializer) {
-        return withStateMapper(new SerializerStateMapper<>(stateField, serializer));
+        return withStateMapper(new SerializedStateMapper<>(stateField, serializer));
     }
 
     protected MapStateFactoryBuilder<T> withStateType(StateType stateType) {
@@ -183,11 +173,10 @@ public class MapStateFactoryBuilder<T> {
                 .build();
 
         CassandraBackingMap.Options options = new CassandraBackingMap.Options<T>(new CassandraContext())
-                .withMultiGetCQLStatementMapper(get)
-                .withMultiPutCQLStatementMapper(put)
+                .withGetMapper(get)
+                .withPutMapper(put)
                 .withStateMapper(stateMapper)
                 .withKeys(new Fields(keys))
-                .withBatching(batchingType)
                 .withMaxParallelism(maxParallelism);
 
         logger.debug("Building factory with: \n  get: {}\n  put: {}\n  mapper: {}",

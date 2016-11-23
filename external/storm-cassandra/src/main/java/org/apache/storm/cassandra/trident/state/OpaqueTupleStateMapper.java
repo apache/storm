@@ -101,4 +101,9 @@ public class OpaqueTupleStateMapper implements StateMapper<OpaqueValue<ITuple>> 
         }
         return true;
     }
+
+    @Override
+    public String toString() {
+        return String.format("{type: %s, fields: %s}", this.getClass().getSimpleName(), tableFields);
+    }
 }

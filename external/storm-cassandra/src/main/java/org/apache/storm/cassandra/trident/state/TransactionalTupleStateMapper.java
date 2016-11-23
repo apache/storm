@@ -79,4 +79,9 @@ public class TransactionalTupleStateMapper implements StateMapper<TransactionalV
 
         return new TransactionalValue<ITuple>(txId, curr);
     }
+
+    @Override
+    public String toString() {
+        return String.format("{type: %s, fields: %s}", this.getClass().getSimpleName(), tableFields);
+    }
 }

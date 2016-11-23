@@ -37,7 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * A result set mapper implementation which runs requests in the background.
+ * A result set mapper implementation which runs requests in parallel and waits for them all to finish.
  */
 public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValuesMapper {
     private final Fields outputDeclaredFields;
@@ -60,24 +60,27 @@ public class TridentAyncCQLResultSetValuesMapper implements AyncCQLResultSetValu
         SettableFuture<List<Integer>> result = executor.execAsync(statements, indexes, 1, new AsyncResultSetHandler<Integer>() {
             @Override
             public void success(Integer index, ResultSet resultSet) {
-                List<Values> thisResult = new ArrayList<>();
-                for (Row row : resultSet) {
-                    final Values values = new Values();
-                    for (String field : outputDeclaredFields) {
-                        ITuple tuple = tuples.get(index);
-                        if (tuple.contains(field)) {
-                            values.add(tuple.getValueByField(field));
-                        } else {
-                            values.add(row.getObject(field));
+                if (outputDeclaredFields != null) {
+                    List<Values> thisResult = new ArrayList<>();
+                    for (Row row : resultSet) {
+                        final Values values = new Values();
+                        for (String field : outputDeclaredFields) {
+                            ITuple tuple = tuples.get(index);
+                            if (tuple.contains(field)) {
+                                values.add(tuple.getValueByField(field));
+                            } else {
+                                values.add(row.getObject(field));
+                            }
                         }
+                        thisResult.add(values);
                     }
-                    thisResult.add(values);
+                    results.set(index, thisResult);
                 }
-                results.set(index, thisResult);
             }
 
             @Override
             public void failure(Throwable t, Integer index) {
+                // Exceptions are captured and thrown at the end of the batch by the executor
             }
 
         });

@@ -7,12 +7,12 @@ import org.apache.storm.tuple.Values;
 import java.nio.ByteBuffer;
 import java.util.List;
 
-public class SerializerStateMapper<T> implements StateMapper<T> {
+public class SerializedStateMapper<T> implements StateMapper<T> {
 
     private final Fields stateFields;
     private final Serializer<T> serializer;
 
-    public SerializerStateMapper(String fieldName, Serializer<T> serializer) {
+    public SerializedStateMapper(String fieldName, Serializer<T> serializer) {
         this.stateFields = new Fields(fieldName);
         this.serializer = serializer;
     }
@@ -40,5 +40,10 @@ public class SerializerStateMapper<T> implements StateMapper<T> {
         else {
             throw new IllegalArgumentException("Can only convert single values, " + values.size() + " encountered");
         }
+    }
+
+    @Override
+    public String toString() {
+        return String.format("{type: %s, fields: %s, serializer: %s}", this.getClass().getSimpleName(), stateFields, serializer);
     }
 }

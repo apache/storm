@@ -18,7 +18,8 @@
  */
 package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.BatchStatement;
+import com.datastax.driver.core.HostDistance;
+import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
 import com.google.common.base.Preconditions;
@@ -56,8 +57,15 @@ import java.util.Map;
  *  - One state mapper, which maps the state to/from a {@link Values} representation, which is used for binding.
  *  - One tuple mapper for multiPut, which should map {@link Values} to an INSERT or UPDATE statement.
  *
- * {@link #multiPut(List, List)} uses Cassandra batch statements (if so configured).
- * {@link #multiGet(List)} queries Cassandra asynchronously, with a default parallelism of 500.
+ * {@link #multiPut(List, List)} updates Cassandra with parallel statements.
+ * {@link #multiGet(List)} queries Cassandra with parallel statements.
+ *
+ * Parallelism defaults to half the maximum requests per host, either local or remote whichever is
+ * lower. The driver defaults to 256 for remote hosts and 1024 for local hosts, so the default value is 128
+ * unless the driver is configured otherwise.
+ *
+ * The default parallelism should be conservative enough to allow a few executors in parallel,
+ * especially considering all connections should be local in a standard setup.
  *
  * @param <T>
  */
@@ -71,7 +79,8 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
     private SimpleClient client;
     private Session session;
-    private AyncCQLResultSetValuesMapper cqlResultSetValuesMapper;
+    private AyncCQLResultSetValuesMapper getResultMapper;
+    private AyncCQLResultSetValuesMapper putResultMapper;
 
 
     protected CassandraBackingMap(Map conf, Options<T> options) {
@@ -82,6 +91,26 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
         this.allFields = new Fields(allFields);
     }
 
+    public void prepare() {
+        LOG.info("Preparing state for {}", options.toString());
+        Preconditions.checkNotNull(options.getMapper, "CassandraBackingMap.Options should have getMapper");
+        Preconditions.checkNotNull(options.putMapper, "CassandraBackingMap.Options should have putMapper");
+        client = options.clientProvider.getClient(conf);
+        session = client.connect();
+        if (options.maxParallelism == null || options.maxParallelism <= 0) {
+            PoolingOptions po = session.getCluster().getConfiguration().getPoolingOptions();
+            Integer maxRequestsPerHost = Math.min(
+                    po.getMaxConnectionsPerHost(HostDistance.LOCAL) * po.getMaxRequestsPerConnection(HostDistance.LOCAL),
+                    po.getMaxConnectionsPerHost(HostDistance.REMOTE) * po.getMaxRequestsPerConnection(HostDistance.REMOTE)
+            );
+            options.maxParallelism = maxRequestsPerHost / 2;
+            LOG.info("Parallelism default set to {}", options.maxParallelism);
+        }
+
+        this.getResultMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), options.maxParallelism);
+        this.putResultMapper = new TridentAyncCQLResultSetValuesMapper(null, options.maxParallelism);
+    }
+
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
         LOG.debug("multiGet fetching {} values.", keys.size());
@@ -90,7 +119,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
         for (int i = 0; i < keys.size(); i++) {
             SimpleTuple keyTuple = new SimpleTuple(options.keyFields, keys.get(i));
-            List<Statement> mappedStatements = options.multiGetCqlStatementMapper.map(conf, session, keyTuple);
+            List<Statement> mappedStatements = options.getMapper.map(conf, session, keyTuple);
             if (mappedStatements.size() > 1) {
                 throw new IllegalArgumentException("Only one statement per map state item is supported.");
             }
@@ -98,11 +127,11 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
             keyTuples.add(keyTuple);
         }
 
-        List<List<Values>> batchRetrieveResult = cqlResultSetValuesMapper
+        List<List<Values>> results = getResultMapper
                 .map(session, selects, keyTuples);
 
         List<T> states = new ArrayList<>();
-        for (List<Values> values : batchRetrieveResult) {
+        for (List<Values> values : results) {
             T state = (T) options.stateMapper.fromValues(values);
             states.add(state);
         }
@@ -119,42 +148,24 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
         for (int i = 0; i < keys.size(); i++) {
             Values stateValues = options.stateMapper.toValues(values.get(i));
             SimpleTuple tuple = new SimpleTuple(allFields, keys.get(i), stateValues);
-            statements.addAll(options.multiPutCqlStatementMapper.map(conf, session, tuple));
+            statements.addAll(options.putMapper.map(conf, session, tuple));
         }
 
         try {
-            if (options.batchingType != null) {
-                BatchStatement batchStatement = new BatchStatement(options.batchingType);
-                batchStatement.addAll(statements);
-                session.execute(batchStatement);
-            } else {
-                for (Statement statement : statements) {
-                    session.execute(statement);
-                }
-            }
+            putResultMapper.map(session, statements, null);
         } catch (Exception e) {
-            LOG.warn("Batch write operation failed: {}", e.getMessage());
+            LOG.warn("Write operation failed: {}", e.getMessage());
             throw new FailedException(e);
         }
-    }
-
-    public void prepare() {
-        LOG.info("Preparing state for " + options.toString());
-        Preconditions.checkNotNull(options.multiGetCqlStatementMapper, "CassandraBackingMap.Options should have multiGetCqlStatementMapper");
-        Preconditions.checkNotNull(options.multiPutCqlStatementMapper, "CassandraBackingMap.Options should have multiPutCqlStatementMapper");
-        client = options.clientProvider.getClient(conf);
-        session = client.connect();
-        this.cqlResultSetValuesMapper = new TridentAyncCQLResultSetValuesMapper(options.stateMapper.getStateFields(), options.maxParallelism);
     }
 
     public static final class Options<T> implements Serializable {
         private final SimpleClientProvider clientProvider;
         private Fields keyFields;
         private StateMapper stateMapper;
-        private BatchStatement.Type batchingType;
-        private CQLStatementTupleMapper multiGetCqlStatementMapper;
-        private CQLStatementTupleMapper multiPutCqlStatementMapper;
-        private Integer maxParallelism = 500;
+        private CQLStatementTupleMapper getMapper;
+        private CQLStatementTupleMapper putMapper;
+        private Integer maxParallelism = 128;
 
         public Options(SimpleClientProvider clientProvider) {
             this.clientProvider = clientProvider;
@@ -171,47 +182,42 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
         }
 
         public Options<T> withNonTransactionalJSONBinaryState(String fieldName) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, new JSONNonTransactionalSerializer());
+            this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONNonTransactionalSerializer());
             return this;
         }
 
         public Options<T> withNonTransactionalBinaryState(String fieldName, Serializer<T> serializer) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, serializer);
+            this.stateMapper = new SerializedStateMapper<>(fieldName, serializer);
             return this;
         }
 
         public Options<T> withTransactionalJSONBinaryState(String fieldName) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, new JSONTransactionalSerializer());
+            this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONTransactionalSerializer());
             return this;
         }
 
         public Options<T> withTransactionalBinaryState(String fieldName, Serializer<TransactionalValue<T>> serializer) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, serializer);
+            this.stateMapper = new SerializedStateMapper<>(fieldName, serializer);
             return this;
         }
 
         public Options<T> withOpaqueJSONBinaryState(String fieldName) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, new JSONOpaqueSerializer());
+            this.stateMapper = new SerializedStateMapper<>(fieldName, new JSONOpaqueSerializer());
             return this;
         }
 
         public Options<T> withOpaqueBinaryState(String fieldName, Serializer<OpaqueValue<T>> serializer) {
-            this.stateMapper = new SerializerStateMapper<>(fieldName, serializer);
+            this.stateMapper = new SerializedStateMapper<>(fieldName, serializer);
             return this;
         }
 
-        public Options<T> withMultiGetCQLStatementMapper(CQLStatementTupleMapper multiGetCqlStatementMapper) {
-            this.multiGetCqlStatementMapper = multiGetCqlStatementMapper;
+        public Options<T> withGetMapper(CQLStatementTupleMapper getMapper) {
+            this.getMapper = getMapper;
             return this;
         }
 
-        public Options<T> withMultiPutCQLStatementMapper(CQLStatementTupleMapper multiPutCqlStatementMapper) {
-            this.multiPutCqlStatementMapper = multiPutCqlStatementMapper;
-            return this;
-        }
-
-        public Options<T> withBatching(BatchStatement.Type batchingType) {
-            this.batchingType = batchingType;
+        public Options<T> withPutMapper(CQLStatementTupleMapper putMapper) {
+            this.putMapper = putMapper;
             return this;
         }
 
@@ -222,13 +228,12 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
         @Override
         public String toString() {
-            return String.format("%s: [keys: %s, StateMapper: %s, getMapper: %s, putMapper: %s, batchingType: %s, maxParallelism: %d",
+            return String.format("%s: [keys: %s, StateMapper: %s, getMapper: %s, putMapper: %s, maxParallelism: %d",
                     this.getClass().getSimpleName(),
                     keyFields,
                     stateMapper,
-                    multiGetCqlStatementMapper,
-                    multiPutCqlStatementMapper,
-                    batchingType,
+                    getMapper,
+                    putMapper,
                     maxParallelism
             );
         }
