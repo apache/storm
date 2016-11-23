@@ -43,18 +43,6 @@
         <module>examples</module>
     </modules>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
-            <version>${project.version}</version>
-            <!-- keep storm out of the jar-with-dependencies -->
-            <scope>provided</scope>
-        </dependency>
-
-    </dependencies>
-
-
     <build>
         <plugins>
             <plugin>
