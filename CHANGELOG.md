@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2213: ShellSpout has race condition when ShellSpout is being inactive longer than heartbeat timeout
  * STORM-2210: remove array shuffle from ShuffleGrouping
  * STORM-2052: Kafka Spout - New Client API - Performance Improvements
  * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
