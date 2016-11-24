@@ -118,6 +118,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
  * STORM-2213: ShellSpout has race condition when ShellSpout is being inactive longer than heartbeat timeout
  * STORM-2210: remove array shuffle from ShuffleGrouping
  * STORM-2198: perform RotationAction when stopping HdfsBolt
