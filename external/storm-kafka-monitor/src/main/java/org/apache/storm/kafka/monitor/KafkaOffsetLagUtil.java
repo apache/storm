@@ -312,10 +312,10 @@ public class KafkaOffsetLagUtil {
                     List<String> children = curatorFramework.getChildren().forPath(partitionsPath);
                     for (int i = 0; i < children.size(); ++i) {
                         byte[] leaderData = curatorFramework.getData().forPath(partitionsPath + "/" + i + "/state");
-                        Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(leaderData, "UTF-8"));
+                        Map<Object, Object> value = (Map<Object, Object>) JSONValue.parseWithException(new String(leaderData, "UTF-8"));
                         Integer leader = ((Number) value.get("leader")).intValue();
                         byte[] brokerData = curatorFramework.getData().forPath(brokersZkNode + "ids/" + leader);
-                        Map<Object, Object> broker = (Map<Object, Object>) JSONValue.parse(new String(brokerData, "UTF-8"));
+                        Map<Object, Object> broker = (Map<Object, Object>) JSONValue.parseWithException(new String(brokerData, "UTF-8"));
                         String host = (String) broker.get("host");
                         Integer port = ((Long) broker.get("port")).intValue();
                         String leaderBroker = host + ":" + port;
@@ -388,7 +388,7 @@ public class KafkaOffsetLagUtil {
                         String path = zkPath + "/" + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
                         if (curatorFramework.checkExists().forPath(path) != null) {
                             zkData = curatorFramework.getData().forPath(path);
-                            Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parse(new String(zkData, "UTF-8"));
+                            Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parseWithException(new String(zkData, "UTF-8"));
                             partitionOffsets.put(partition, (Long) offsetData.get("offset"));
                         }
                     }

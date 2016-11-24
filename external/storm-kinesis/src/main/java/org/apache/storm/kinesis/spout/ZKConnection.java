@@ -68,7 +68,7 @@ class ZKConnection {
                 b = curatorFramework.getData().forPath(path);
             }
             if (b != null) {
-                state = (Map<Object, Object>) JSONValue.parse(new String(b, "UTF-8"));
+                state = (Map<Object, Object>) JSONValue.parseWithException(new String(b, "UTF-8"));
             }
             return state;
         } catch (Exception e) {

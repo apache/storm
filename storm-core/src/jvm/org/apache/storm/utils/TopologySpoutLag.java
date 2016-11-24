@@ -143,7 +143,12 @@ public class TopologySpoutLag {
                 stormHomeDir += File.separator;
             }
             commands.add(stormHomeDir != null ? stormHomeDir + "bin" + File.separator + "storm-kafka-monitor" : "storm-kafka-monitor");
-            Map<String, Object> jsonMap = (Map<String, Object>) JSONValue.parse(json);
+            Map<String, Object> jsonMap = null;
+            try {
+                jsonMap = (Map<String, Object>) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new IOException(e);
+            }
             commands.addAll(old ? getCommandLineOptionsForOldKafkaSpout(jsonMap, topologyConf) : getCommandLineOptionsForNewKafkaSpout(jsonMap));
 
             logger.debug("Command to run: {}", commands);
