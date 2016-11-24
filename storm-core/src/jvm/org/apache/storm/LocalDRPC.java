@@ -19,7 +19,8 @@ package org.apache.storm;
 
 import java.util.Map;
 
-import org.apache.storm.daemon.DrpcServer;
+import org.apache.storm.daemon.drpc.DRPC;
+import org.apache.storm.daemon.drpc.DRPCThrift;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
@@ -36,13 +37,13 @@ import org.apache.thrift.TException;
  */
 public class LocalDRPC implements ILocalDRPC {
 
-    private final DrpcServer handler;
+    private final DRPC drpc;
     private final String serviceId;
 
     public LocalDRPC() {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
-        handler = new DrpcServer(conf);
-        serviceId = ServiceRegistry.registerService(handler);
+        drpc = new DRPC(conf);
+        serviceId = ServiceRegistry.registerService(new DRPCThrift(drpc));
     }
 
     @Override
@@ -52,32 +53,38 @@ public class LocalDRPC implements ILocalDRPC {
 
     @Override
     public void result(String id, String result) throws AuthorizationException, TException {
-        handler.result(id, result);
+        drpc.returnResult(id, result);
     }
 
     @Override
     public String execute(String functionName, String funcArgs) throws DRPCExecutionException, AuthorizationException, TException {
-        return handler.execute(functionName, funcArgs);
+        return drpc.executeBlocking(functionName, funcArgs);
     }
 
     @Override
     public void failRequest(String id) throws AuthorizationException, TException {
-        handler.failRequest(id);
+        drpc.failRequest(id, null);
     }
+    
 
     @Override
-    public void shutdown() {
-        close();
+    public void failRequestV2(String id, DRPCExecutionException e) throws AuthorizationException, TException {
+        drpc.failRequest(id, e);
     }
 
     @Override
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException, TException {
-        return handler.fetchRequest(functionName);
+        return drpc.fetchRequest(functionName);
     }
 
     @Override
     public void close() {
         ServiceRegistry.unregisterService(this.serviceId);
-        this.handler.close();
+        drpc.close();
+    }
+    
+    @Override
+    public void shutdown() {
+        close();
     }
 }

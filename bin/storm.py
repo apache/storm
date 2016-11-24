@@ -759,7 +759,7 @@ def drpc():
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
     exec_storm_class(
-        "org.apache.storm.daemon.drpc",
+        "org.apache.storm.daemon.drpc.DRPCServer",
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,

@@ -1950,6 +1950,7 @@ public class Utils {
             public void run() {
                 try {
                     Time.sleepSecs(1);
+                    LOG.warn("Forceing Halt...");
                     Runtime.getRuntime().halt(20);
                 } catch (Exception e) {
                     LOG.warn("Exception in the ShutDownHook", e);

@@ -690,8 +690,16 @@ struct DRPCRequest {
   2: required string request_id;
 }
 
+enum DRPCExceptionType {
+  INTERNAL_ERROR,
+  SERVER_SHUTDOWN,
+  SERVER_TIMEOUT,
+  FAILED_REQUEST
+}
+
 exception DRPCExecutionException {
   1: required string msg;
+  2: optional DRPCExceptionType type;
 }
 
 service DistributedRPC {
@@ -702,6 +710,7 @@ service DistributedRPCInvocations {
   void result(1: string id, 2: string result) throws (1: AuthorizationException aze);
   DRPCRequest fetchRequest(1: string functionName) throws (1: AuthorizationException aze);
   void failRequest(1: string id) throws (1: AuthorizationException aze);  
+  void failRequestV2(1: string id, 2: DRPCExecutionException e) throws (1: AuthorizationException aze);  
 }
 
 enum HBServerMessageType {
