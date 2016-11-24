@@ -17,9 +17,6 @@
  */
 package org.apache.storm.hdfs.trident;
 
-import org.apache.storm.Config;
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.topology.FailedException;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
@@ -29,6 +26,7 @@ import org.apache.hadoop.hdfs.client.HdfsDataOutputStream;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.storm.Config;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.apache.storm.hdfs.trident.format.FileNameFormat;
@@ -37,11 +35,13 @@ import org.apache.storm.hdfs.trident.format.SequenceFormat;
 import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.trident.rotation.TimedRotationPolicy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -490,16 +490,18 @@ public class HdfsState implements State {
     }
 
     private void updateIndex(long txId) {
-        FSDataOutputStream out = null;
         LOG.debug("Starting index update.");
-        try {
-            Path tmpPath = tmpFilePath(indexFilePath.toString());
-            out = this.options.fs.create(tmpPath, true);
-            BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out));
+        final Path tmpPath = tmpFilePath(indexFilePath.toString());
+
+        try (FSDataOutputStream out = this.options.fs.create(tmpPath, true);
+                BufferedWriter bw = new BufferedWriter(new OutputStreamWriter(out))) {
             TxnRecord txnRecord = new TxnRecord(txId, options.currentFile.toString(), this.options.getCurrentOffset());
             bw.write(txnRecord.toString());
             bw.newLine();
             bw.flush();
+            out.close();       /* In non error scenarios, for the Azure Data Lake Store File System (adl://),
+                               the output stream must be closed before the file associated with it is deleted.
+                               For ADLFS deleting the file also removes any handles to the file, hence out.close() will fail. */
             /*
              * Delete the current index file and rename the tmp file to atomically
              * replace the index file. Orphan .tmp files are handled in getTxnRecord.
@@ -511,15 +513,6 @@ public class HdfsState implements State {
         } catch (IOException e) {
             LOG.warn("Begin commit failed due to IOException. Failing batch", e);
             throw new FailedException(e);
-        } finally {
-            if (out != null) {
-                try {
-                    out.close();
-                } catch (IOException e) {
-                    LOG.warn("Begin commit failed due to IOException. Failing batch", e);
-                    throw new FailedException(e);
-                }
-            }
         }
     }
 
