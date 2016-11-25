@@ -20,6 +20,7 @@ package org.apache.storm.state;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -70,6 +71,11 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     @Override
     public V delete(K key) {
         return state.remove(key);
+    }
+
+    @Override
+    public Map<K,V> getAll() {
+        return Collections.unmodifiableMap(state);
     }
 
     @Override
