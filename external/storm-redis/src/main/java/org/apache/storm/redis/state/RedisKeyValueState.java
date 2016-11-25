@@ -168,6 +168,27 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
+    public Map<K, V> getAll() {
+        Map<K, V> keyValues = new HashMap<K, V>();
+        Map<String, String> redisKeyValues = null;
+        JedisCommands commands = null;
+        try {
+            commands = jedisContainer.getInstance();
+            redisKeyValues = commands.hgetAll(namespace);
+        } finally {
+            jedisContainer.returnInstance(commands);
+        }
+        if (redisKeyValues != null) {
+            for (Map.Entry<String, String> entry: redisKeyValues.entrySet()) {
+                K key = keySerializer.deserialize(decode(entry.getKey()));
+                V value = valueSerializer.deserialize(decode(entry.getValue()));
+                keyValues.put(key, value);
+            }
+        }
+        return Collections.unmodifiableMap(keyValues);
+    }
+
+    @Override
     public void prepareCommit(long txid) {
         LOG.debug("prepareCommit txid {}", txid);
         validatePrepareTxid(txid);
