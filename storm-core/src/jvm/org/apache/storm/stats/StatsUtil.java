@@ -1516,7 +1516,7 @@ public class StatsUtil {
 
             Integer start = ((Number) key.get(0)).intValue();
             String host = (String) value.get(0);
-            Integer port = (Integer) value.get(1);
+            Integer port = (Long) value.get(1);
             String comp = (String) task2component.get(start);
             if ((compId == null || compId.equals(comp)) && (includeSys || !Utils.isSystemId(comp))) {
                 hostPorts.add(Lists.newArrayList(host, port));
