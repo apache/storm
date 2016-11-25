@@ -150,7 +150,7 @@ public class TransactionalState {
         path = "/" + path;
         try {
             if(_curator.checkExists().forPath(path)!=null) {
-                return JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+                return JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 return null;
             }

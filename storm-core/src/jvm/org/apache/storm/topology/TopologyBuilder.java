@@ -30,6 +30,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
@@ -568,8 +569,15 @@ public class TopologyBuilder {
     }
     
     private static Map parseJson(String json) {
-        if(json==null) return new HashMap();
-        else return (Map) JSONValue.parse(json);
+        if (json==null) {
+            return new HashMap();
+        } else {
+            try {
+                return (Map) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     
     private static String mergeIntoJson(Map into, Map newMap) {
