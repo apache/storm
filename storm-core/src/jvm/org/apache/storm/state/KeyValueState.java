@@ -17,6 +17,8 @@
  */
 package org.apache.storm.state;
 
+import java.util.Map;
+
 /**
  * A state that supports key-value mappings.
  */
@@ -52,4 +54,9 @@ public interface KeyValueState<K, V> extends State {
      * @param key   the key
      */
     V delete(K key);
+
+    /**
+     * @return all key value mappings as an unmodifiable map.
+     */
+    Map<K, V> getAll();
 }
