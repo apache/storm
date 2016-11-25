@@ -31,6 +31,7 @@ import org.apache.commons.lang.builder.ToStringBuilder;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 import org.apache.storm.trident.drpc.ReturnResultsReducer.ReturnResultsState;
 import org.apache.storm.trident.operation.MultiReducer;
 import org.apache.storm.trident.operation.TridentCollector;
@@ -76,9 +77,15 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
     @Override
     public void complete(ReturnResultsState state, TridentCollector collector) {
         // only one of the multireducers will receive the tuples
-        if(state.returnInfo!=null) {
+        if (state.returnInfo!=null) {
             String result = JSONValue.toJSONString(state.results);
-            Map retMap = (Map) JSONValue.parse(state.returnInfo);
+            Map retMap = null;
+            try {
+                retMap = (Map) JSONValue.parseWithException(state.returnInfo);
+            } catch (ParseException e) {
+                collector.reportError(e);
+                return;
+            }
             final String host = (String) retMap.get("host");
             final int port = Utils.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");
