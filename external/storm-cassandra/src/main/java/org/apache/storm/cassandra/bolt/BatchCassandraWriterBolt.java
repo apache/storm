@@ -123,11 +123,11 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
                 checkTimeElapsedSinceLastExec(sinceLastModified);
 
-                GroupingBatchBuilder batchBuilder = new GroupingBatchBuilder(cassandraConfConfig.getBatchSizeRows(), psl);
+                GroupingBatchBuilder batchBuilder = new GroupingBatchBuilder(cassandraConf.getBatchSizeRows(), psl);
 
                 int batchSize = 0;
                 for (PairBatchStatementTuples batch : batchBuilder) {
-                    LOG.debug(logPrefix() + "Writing data to {} in batches of {} rows.", cassandraConfConfig.getKeyspace(), batch.getInputs().size());
+                    LOG.debug(logPrefix() + "Writing data to {} in batches of {} rows.", cassandraConf.getKeyspace(), batch.getInputs().size());
                     getAsyncExecutor().execAsync(batch.getStatement(), batch.getInputs());
                     batchSize++;
                 }
