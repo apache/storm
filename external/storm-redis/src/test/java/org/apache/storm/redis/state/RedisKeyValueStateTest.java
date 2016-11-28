@@ -105,7 +105,7 @@ public class RedisKeyValueStateTest {
                 });
 
         keyValueState = new RedisKeyValueState<String, String>("test", mockContainer, new DefaultStateSerializer<String>(),
-                                                               new DefaultStateSerializer<Optional<String>>());
+                                                               new DefaultStateSerializer<String>());
     }
 
 
