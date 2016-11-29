@@ -237,6 +237,7 @@
           <includeProjectDependencies>true</includeProjectDependencies>
           <includePluginDependencies>false</includePluginDependencies>
           <classpathScope>compile</classpathScope>
+          <!-- allows you to specify which topology class to run by specifying -Dstorm.topology= on the command line -->
           <mainClass>${storm.topology}</mainClass>
         </configuration>
       </plugin>

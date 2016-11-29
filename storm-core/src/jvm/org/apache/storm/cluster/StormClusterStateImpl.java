@@ -199,8 +199,12 @@ public class StormClusterStateImpl implements IStormClusterState {
         List<String> nimbusIds = stateStorage.get_children(ClusterUtils.NIMBUSES_SUBTREE, false);
         for (String nimbusId : nimbusIds) {
             byte[] serialized = stateStorage.get_data(ClusterUtils.nimbusPath(nimbusId), false);
-            NimbusSummary nimbusSummary = ClusterUtils.maybeDeserialize(serialized, NimbusSummary.class);
-            nimbusSummaries.add(nimbusSummary);
+            // check for null which can exist because of a race condition in which nimbus nodes in zk may have been
+            // removed when connections are reconnected after getting children in the above line
+            if (serialized != null) {
+                NimbusSummary nimbusSummary = ClusterUtils.maybeDeserialize(serialized, NimbusSummary.class);
+                nimbusSummaries.add(nimbusSummary);
+            }
         }
         return nimbusSummaries;
     }

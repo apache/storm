@@ -179,8 +179,7 @@ int main(int argc, char **argv) {
       fflush(ERRORFILE);
       return INVALID_ARGUMENT_NUMBER;
     }
-    exit_code= delete_as_user(user_detail->pw_name, argv[optind],
-                              NULL);
+    exit_code = recursive_delete(argv[optind], 1);
   } else if (strcasecmp("worker", command) == 0) {
     if (argc != 5) {
       fprintf(ERRORFILE, "Incorrect number of arguments (%d vs 5) for worker\n",

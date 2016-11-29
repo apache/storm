@@ -182,13 +182,17 @@ public class StormCommon {
 
     @SuppressWarnings("unchecked")
     public static Map componentConf(Object component) {
-        Map<Object, Object> conf = new HashMap<>();
-        ComponentCommon common = getComponentCommon(component);
-        String jconf = common.get_json_conf();
-        if (jconf != null) {
-            conf.putAll((Map<Object, Object>) JSONValue.parse(jconf));
+        try {
+            Map<Object, Object> conf = new HashMap<>();
+            ComponentCommon common = getComponentCommon(component);
+            String jconf = common.get_json_conf();
+            if (jconf != null) {
+                conf.putAll((Map<Object, Object>) JSONValue.parseWithException(jconf));
+            }
+            return conf;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-        return conf;
     }
 
     @SuppressWarnings("unchecked")

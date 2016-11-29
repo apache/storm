@@ -1,4 +1,9 @@
 ## 2.0.0
+ * STORM-2193: Fix FilterConfiguration parameter order
+ * STORM-2209: Update documents adding new integration for some external systems
+ * STORM-2212: Remove Redundant Declarations in Maven POM Files
+ * STORM-2195: Clean up some of worker-launcher code
+ * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
  * STORM-1278: Port org.apache.storm.daemon.worker to java
  * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
@@ -241,6 +246,10 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2216: Favor JSONValue.parseWithException
+ * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
+ * STORM-2213: ShellSpout has race condition when ShellSpout is being inactive longer than heartbeat timeout
+ * STORM-2210: remove array shuffle from ShuffleGrouping
  * STORM-2198: perform RotationAction when stopping HdfsBolt
  * STORM-2196: A typo in RAS_Node::consumeCPU
  * STORM-2189: RAS_Node::freeCPU outputs incorrect info

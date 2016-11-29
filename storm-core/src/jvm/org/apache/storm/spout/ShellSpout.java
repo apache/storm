@@ -288,6 +288,7 @@ public class ShellSpout implements ISpout {
     }
 
     private void markWaitingSubprocess() {
+        setHeartbeat();
         waitingOnSubprocess.compareAndSet(false, true);
     }
 

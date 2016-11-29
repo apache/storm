@@ -98,7 +98,6 @@
                     </descriptorRefs>
                     <archive>
                         <manifest>
-                            <mainClass></mainClass>
                         </manifest>
                     </archive>
                 </configuration>
