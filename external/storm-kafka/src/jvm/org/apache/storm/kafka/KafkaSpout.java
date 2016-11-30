@@ -197,6 +197,7 @@ public class KafkaSpout extends BaseRichSpout {
         }
         String configKeyPrefix = "config.";
         configuration.put(configKeyPrefix + "topics", this._spoutConfig.topic);
+        configuration.put(configKeyPrefix + "securityProtocol", this._spoutConfig.securityProtocol);
         StringBuilder zkServers = new StringBuilder();
         if (_spoutConfig.zkServers != null && _spoutConfig.zkServers.size() > 0) {
             for (String zkServer : this._spoutConfig.zkServers) {
