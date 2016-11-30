@@ -69,6 +69,8 @@ public class KafkaOffsetLagUtil {
     private static final String OPTION_ZK_COMMITTED_NODE_LONG = "zk-node";
     private static final String OPTION_ZK_BROKERS_ROOT_SHORT = "r";
     private static final String OPTION_ZK_BROKERS_ROOT_LONG = "zk-brokers-root-node";
+    private static final String OPTION_SECURITY_PROTOCOL_SHORT = "s";
+    private static final String OPTION_SECURITY_PROTOCOL_LONG = "security-protocol";
 
     public static void main (String args[]) {
         try {
@@ -81,9 +83,9 @@ public class KafkaOffsetLagUtil {
             }
             if (commandLine.hasOption(OPTION_OLD_CONSUMER_LONG)) {
                 OldKafkaSpoutOffsetQuery oldKafkaSpoutOffsetQuery;
-                if (commandLine.hasOption(OPTION_GROUP_ID_LONG) || commandLine.hasOption(OPTION_BOOTSTRAP_BROKERS_LONG)) {
-                    printUsageAndExit(options, OPTION_GROUP_ID_LONG + " or " + OPTION_BOOTSTRAP_BROKERS_LONG + " is not accepted with option " +
-                            OPTION_OLD_CONSUMER_LONG);
+                if (commandLine.hasOption(OPTION_GROUP_ID_LONG) || commandLine.hasOption(OPTION_BOOTSTRAP_BROKERS_LONG) || commandLine.hasOption(OPTION_SECURITY_PROTOCOL_LONG)) {
+                    printUsageAndExit(options, OPTION_GROUP_ID_LONG + " or " + OPTION_BOOTSTRAP_BROKERS_LONG + " or " + OPTION_SECURITY_PROTOCOL_LONG + " is " +
+                            "not accepted with option " + OPTION_OLD_CONSUMER_LONG);
                 }
                 if (!commandLine.hasOption(OPTION_ZK_SERVERS_LONG) || !commandLine.hasOption(OPTION_ZK_COMMITTED_NODE_LONG)) {
                     printUsageAndExit(options, OPTION_ZK_SERVERS_LONG + " and " + OPTION_ZK_COMMITTED_NODE_LONG + " are required  with " +
@@ -121,6 +123,7 @@ public class KafkaOffsetLagUtil {
                 }
                 results = getOffsetLags(oldKafkaSpoutOffsetQuery);
             } else {
+                String securityProtocol = commandLine.getOptionValue(OPTION_SECURITY_PROTOCOL_LONG);
                 String[] oldSpoutOptions = {OPTION_TOPIC_WILDCARD_LONG, OPTION_PARTITIONS_LONG, OPTION_LEADERS_LONG, OPTION_ZK_SERVERS_LONG,
                         OPTION_ZK_COMMITTED_NODE_LONG, OPTION_ZK_BROKERS_ROOT_LONG};
                 for (String oldOption: oldSpoutOptions) {
@@ -133,7 +136,7 @@ public class KafkaOffsetLagUtil {
                             " is not specified");
                 }
                 NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery = new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
-                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG));
+                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol);
                 results = getOffsetLags(newKafkaSpoutOffsetQuery);
             }
 
@@ -191,6 +194,7 @@ public class KafkaOffsetLagUtil {
                 " offsets without the topic and partition nodes");
         options.addOption(OPTION_ZK_BROKERS_ROOT_SHORT, OPTION_ZK_BROKERS_ROOT_LONG, true, "Zk node prefix where kafka stores broker information e.g. " +
                 "/brokers (applicable only for old kafka spout) ");
+        options.addOption(OPTION_SECURITY_PROTOCOL_SHORT, OPTION_SECURITY_PROTOCOL_LONG, true, "Security protocol to connect to kafka");
         return options;
     }
 
@@ -210,6 +214,9 @@ public class KafkaOffsetLagUtil {
             props.put("session.timeout.ms", "30000");
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
+                props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
+            }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);
             for (String topic: newKafkaSpoutOffsetQuery.getTopics().split(",")) {

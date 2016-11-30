@@ -24,11 +24,13 @@ public class NewKafkaSpoutOffsetQuery {
     private final String topics; // comma separated list of topics
     private final String consumerGroupId; // consumer group id for which the offset needs to be calculated
     private final String bootStrapBrokers; // bootstrap brokers
+    private final String securityProtocol; // security protocol to connect to kafka
 
-    public NewKafkaSpoutOffsetQuery(String topics, String bootstrapBrokers, String consumerGroupId) {
+    public NewKafkaSpoutOffsetQuery(String topics, String bootstrapBrokers, String consumerGroupId, String securityProtocol) {
         this.topics = topics;
         this.bootStrapBrokers = bootstrapBrokers;
         this.consumerGroupId = consumerGroupId;
+        this.securityProtocol = securityProtocol;
     }
 
     public String getTopics() {
@@ -43,6 +45,9 @@ public class NewKafkaSpoutOffsetQuery {
         return this.consumerGroupId;
     }
 
+    public String getSecurityProtocol() {
+        return this.securityProtocol;
+    }
 
     @Override
     public String toString() {
