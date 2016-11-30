@@ -19,6 +19,7 @@
 package org.apache.storm.kafka.spout.trident;
 
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.tuple.Fields;
@@ -29,12 +30,19 @@ import java.util.List;
 import java.util.Map;
 
 public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> {
+    private static final long serialVersionUID = -8003272486566259640L;
+
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
     private KafkaTridentSpoutManager<K, V> kafkaManager;
     private KafkaTridentSpoutEmitter<K, V> kafkaTridentSpoutEmitter;
     private KafkaTridentSpoutOpaqueCoordinator<K, V> coordinator;
 
+    
+    public KafkaTridentSpoutOpaque(KafkaSpoutConfig<K, V> conf) {
+        this(new KafkaTridentSpoutManager<>(conf));
+    }
+    
     public KafkaTridentSpoutOpaque(KafkaTridentSpoutManager<K, V> kafkaManager) {
         this.kafkaManager = kafkaManager;
         LOG.debug("Created {}", this);
@@ -44,7 +52,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(Map conf, TopologyContext context) {
         // Instance is created on first call rather than in constructor to avoid NotSerializableException caused by KafkaConsumer
         if (kafkaTridentSpoutEmitter == null) {
-            kafkaTridentSpoutEmitter = new KafkaTridentSpoutEmitter<>(kafkaManager);
+            kafkaTridentSpoutEmitter = new KafkaTridentSpoutEmitter<>(kafkaManager, context);
         }
         return kafkaTridentSpoutEmitter;
     }
@@ -64,7 +72,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public Fields getOutputFields() {
-        final Fields outputFields = kafkaManager.getKafkaSpoutStreams().getOutputFields();
+        final Fields outputFields = kafkaManager.getFields();
         LOG.debug("OutputFields = {}", outputFields);
         return outputFields;
     }

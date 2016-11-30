@@ -70,7 +70,7 @@ public class SingleTopicKafkaSpoutTest {
         SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
         Map conf = mock(Map.class);
 
-        KafkaSpout<String, String> spout = new KafkaSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams(), kafkaPort));
+        KafkaSpout<String, String> spout = new KafkaSpout<>(getKafkaSpoutConfig(kafkaPort));
         spout.open(conf, topology, collector);
         spout.activate();
         return new SpoutContext(spout, collector);

@@ -15,24 +15,33 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
-
-import java.io.Serializable;
-import java.util.List;
+import org.apache.storm.tuple.Values;
 
 /**
- * Represents the {@link KafkaSpoutStream} associated with each topic or topic pattern (wildcard), and provides
- * a public API to declare output streams and emmit tuples, on the appropriate stream, for all the topics specified.
+ * A list of Values in a tuple that can be routed 
+ * to a given stream. {@see org.apache.storm.kafka.spout.RecordTranslator#apply}
  */
-public interface KafkaSpoutStreams extends Serializable {
-    void declareOutputFields(OutputFieldsDeclarer declarer);
+public class KafkaTuple extends Values {
+    private static final long serialVersionUID = 4803794470450587992L;
+    private String stream = null;
+    
+    public KafkaTuple() {
+        super();
+    }
+    
+    public KafkaTuple(Object... vals) {
+        super(vals);
+    }
+    
+    public KafkaTuple routedTo(String stream) {
+        assert(this.stream == null);
+        this.stream = stream;
+        return this;
+    }
 
-    void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
-
-    Fields getOutputFields();
+    public String getStream() {
+        return stream;
+    }
 }
