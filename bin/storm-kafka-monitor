@@ -32,12 +32,21 @@ done
 
 STORM_BIN_DIR=`dirname ${PRG}`
 export STORM_BASE_DIR=`cd ${STORM_BIN_DIR}/..;pwd`
+export STORM_CONF_DIR="${STORM_CONF_DIR:-$STORM_BASE_DIR/conf}"
 
+if [ -f "${STORM_CONF_DIR}/storm-env.sh" ]; then
+  . "${STORM_CONF_DIR}/storm-env.sh"
+fi
+
+STORM_JAAS_CONF_PARAM=""
+JAAS_FILE="${STORM_CONF_DIR}/storm_jaas.conf"
+if [ -f $JAAS_FILE ]; then
+  STORM_JAAS_CONF_PARAM="-Djava.security.auth.login.config=${JAAS_FILE}"
+fi
 # Which java to use
 if [ -z "$JAVA_HOME" ]; then
   JAVA="java"
 else
   JAVA="$JAVA_HOME/bin/java"
 fi
-
-exec "$JAVA" -cp "$STORM_BASE_DIR/toollib/*" org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"
+exec $JAVA $STORM_JAAS_CONF_PARAM -cp $STORM_BASE_DIR/toollib/storm-kafka-monitor-*.jar org.apache.storm.kafka.monitor.KafkaOffsetLagUtil "$@"

@@ -91,6 +91,11 @@ public class TopologySpoutLag {
         commands.add((String)jsonConf.get(configKeyPrefix + "groupid"));
         commands.add("-b");
         commands.add((String)jsonConf.get(configKeyPrefix + "bootstrap.servers"));
+        String securityProtocol = (String)jsonConf.get(configKeyPrefix + "security.protocol");
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            commands.add("-s");
+            commands.add(securityProtocol);
+        }
         return commands;
     }
 
