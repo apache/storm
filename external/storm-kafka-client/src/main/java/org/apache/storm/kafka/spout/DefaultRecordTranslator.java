@@ -15,22 +15,28 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout;
-
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 import java.util.List;
 
-public class KafkaSpoutTuplesBuilderWildcardTopics<K,V> implements KafkaSpoutTuplesBuilder<K,V> {
-    private KafkaSpoutTupleBuilder<K, V> tupleBuilder;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
-    public KafkaSpoutTuplesBuilderWildcardTopics(KafkaSpoutTupleBuilder<K, V> tupleBuilder) {
-        this.tupleBuilder = tupleBuilder;
+public class DefaultRecordTranslator<K, V> implements RecordTranslator<K, V> {
+    private static final long serialVersionUID = -5782462870112305750L;
+    public static final Fields FIELDS = new Fields("topic", "partition", "offset", "key", "value");
+    @Override
+    public List<Object> apply(ConsumerRecord<K, V> record) {
+        return new Values(record.topic(),
+                record.partition(),
+                record.offset(),
+                record.key(),
+                record.value());
     }
 
     @Override
-    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-        return tupleBuilder.buildTuple(consumerRecord);
+    public Fields getFieldsFor(String stream) {
+        return FIELDS;
     }
 }

@@ -15,26 +15,35 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package org.apache.storm.kafka.spout.builders;
+package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.tuple.Values;
+import java.util.Comparator;
 
-import java.util.List;
+import org.apache.kafka.common.TopicPartition;
 
-public class TopicKeyValueTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
+/**
+ * Singleton comparator of TopicPartitions.  Topics have precedence over partitions.
+ * Topics are compared through String.compare and partitions are compared
+ * numerically.
+ * 
+ * Use INSTANCE for all sorting.
+ */
+public class TopicPartitionComparator implements Comparator<TopicPartition> {
+    public static final TopicPartitionComparator INSTANCE = new TopicPartitionComparator();
+    
     /**
-     * @param topics list of topics that use this implementation to build tuples
+     * Private to make it a singleton
      */
-    public TopicKeyValueTupleBuilder(String... topics) {
-        super(topics);
+    private TopicPartitionComparator() {
+        //Empty
     }
-
+    
     @Override
-    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-        return new Values(consumerRecord.topic(),
-                consumerRecord.key(),
-                consumerRecord.value());
+    public int compare(TopicPartition o1, TopicPartition o2) {
+        if (!o1.topic().equals(o2.topic())) {
+            return o1.topic().compareTo(o2.topic());
+        } else {
+            return o1.partition() - o2.partition();
+        }
     }
 }

@@ -1,90 +1,254 @@
-#Storm Kafka Spout with New Kafka Consumer API
+#Storm Apache Kafka integration using the kafka-client jar
+This includes the new Apache Kafka copnsumer API.
 
-Apache Storm Spout implementation to consume data from Apache Kafka versions 0.10 onwards (please see [Apache Kafka Version Compatibility] (#compatibility)). 
+##Compatibility
 
-The Apache Storm Spout allows clients to consume data from Kafka starting at offsets as defined by the offset strategy specified in `FirstPollOffsetStrategy`. 
-In case of failure, the Kafka Spout will re-start consuming messages from the offset that matches the chosen `FirstPollOffsetStrategy`.
+Apache Kafka versions 0.10 onwards
 
-The Kafka Spout implementation allows you to specify the stream (`KafkaSpoutStream`) associated with each topic or topic wildcard. `KafkaSpoutStream` represents the stream and output fields. For named topics use `KafkaSpoutStreamsNamedTopics`, and for topic wildcards use `KafkaSpoutStreamsWildcardTopics`. 
+##Writing to Kafka as part of your topology
+You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
+are using trident you can use org.apache.storm.kafka.trident.TridentState, org.apache.storm.kafka.trident.TridentStateFactory and
+org.apache.storm.kafka.trident.TridentKafkaUpdater.
 
-The `KafkaSpoutTuplesBuilder` wraps all the logic that builds `Tuple`s from `ConsumerRecord`s. The logic is provided by the user through implementing the appropriate number of `KafkaSpoutTupleBuilder` instances. For named topics use `KafkaSpoutTuplesBuilderNamedTopics`, and for topic wildcard use `KafkaSpoutTuplesBuilderWildcardTopics`.
+You need to provide implementations for the following 2 interfaces
 
-Multiple topics and topic wildcards can use the same `KafkaSpoutTupleBuilder` implementation, as long as the logic to build `Tuple`s from `ConsumerRecord`s is identical.
-
-
-# Usage Examples
-
-### Create a Kafka Spout
-
-The code snippet bellow is extracted from the example in the module [test] (https://github.com/apache/storm/tree/master/external/storm-kafka-client/src/test/java/org/apache/storm/kafka/spout/test). The code that is common for named topics and topic wildcards is in the first box. The specific implementations are in the appropriate section. 
-
-These snippets serve as a reference and do not compile. If you would like to reuse this code in your implementation, please obtain it from the test module, where it is complete.
+###TupleToKafkaMapper and TridentTupleToKafkaMapper
+These interfaces have 2 methods defined:
 
 ```java
-KafkaSpout<String, String> kafkaSpout = new KafkaSpout<>(kafkaSpoutConfig);
-
-KafkaSpoutConfig kafkaSpoutConfig = new KafkaSpoutConfig.Builder<String, String>(kafkaConsumerProps, kafkaSpoutStreams, tuplesBuilder, retryService)
-        .setOffsetCommitPeriodMs(10_000)
-        .setFirstPollOffsetStrategy(EARLIEST)
-        .setMaxUncommittedOffsets(250)
-        .build();
-
-Map<String, Object> kafkaConsumerProps= new HashMap<>();
-kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS,"127.0.0.1:9092");
-kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.GROUP_ID,"kafkaSpoutTestGroup");
-kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.KEY_DESERIALIZER,"org.apache.kafka.common.serialization.StringDeserializer");
-kafkaConsumerProps.put(KafkaSpoutConfig.Consumer.VALUE_DESERIALIZER,"org.apache.kafka.common.serialization.StringDeserializer");
-
-KafkaSpoutRetryService retryService = new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.microSeconds(500),
-        KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(2), Integer.MAX_VALUE, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(10));
+    K getKeyFromTuple(Tuple/TridentTuple tuple);
+    V getMessageFromTuple(Tuple/TridentTuple tuple);
 ```
 
-### Named Topics
+As the name suggests, these methods are called to map a tuple to a Kafka key and a Kafka message. If you just want one field
+as key and one field as value, then you can use the provided FieldNameBasedTupleToKafkaMapper.java
+implementation. In the KafkaBolt, the implementation always looks for a field with field name "key" and "message" if you
+use the default constructor to construct FieldNameBasedTupleToKafkaMapper for backward compatibility
+reasons. Alternatively you could also specify a different key and message field by using the non default constructor.
+In the TridentKafkaState you must specify what is the field name for key and message as there is no default constructor.
+These should be specified while constructing an instance of FieldNameBasedTupleToKafkaMapper.
+
+###KafkaTopicSelector and trident KafkaTopicSelector
+This interface has only one method
 ```java
-KafkaSpoutStreams kafkaSpoutStreams = new KafkaSpoutStreamsNamedTopics.Builder(outputFields, STREAMS[0], new String[]{TOPICS[0], TOPICS[1]})
-            .addStream(outputFields, STREAMS[0], new String[]{TOPICS[2]})  // contents of topic test2 sent to test_stream
-            .addStream(outputFields1, STREAMS[2], new String[]{TOPICS[2]})  // contents of topic test2 sent to test2_stream
-            .build();
-            
-KafkaSpoutTuplesBuilder<String, String> tuplesBuilder = new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
-            new TopicsTest0Test1TupleBuilder<String, String>(TOPICS[0], TOPICS[1]),
-            new TopicTest2TupleBuilder<String, String>(TOPICS[2]))
-            .build();
-            
-String[] STREAMS = new String[]{"test_stream", "test1_stream", "test2_stream"};
-String[] TOPICS = new String[]{"test", "test1", "test2"};
+public interface KafkaTopicSelector {
+    String getTopics(Tuple/TridentTuple tuple);
+}
+```
+The implementation of this interface should return the topic to which the tuple's key/message mapping needs to be published
+You can return a null and the message will be ignored. If you have one static topic name then you can use
+DefaultTopicSelector.java and set the name of the topic in the constructor.
+`FieldNameTopicSelector` and `FieldIndexTopicSelector` can be used to select the topic should to publish a tuple to.
+A user just needs to specify the field name or field index for the topic name in the tuple itself.
+When the topic is name not found , the `Field*TopicSelector` will write messages into default topic .
+Please make sure the default topic has been created .
 
-Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
-Fields outputFields1 = new Fields("topic", "partition", "offset");
+### Specifying Kafka producer properties
+You can provide all the producer properties in your Storm topology by calling `KafkaBolt.withProducerProperties()` and `TridentKafkaStateFactory.withProducerProperties()`. Please see  http://kafka.apache.org/documentation.html#newproducerconfigs
+Section "Important configuration properties for the producer" for more details.
+These are also defined in `org.apache.kafka.clients.producer.ProducerConfig`
+
+###Using wildcard kafka topic match
+You can do a wildcard topic match by adding the following config
+```
+     Config config = new Config();
+     config.put("kafka.topic.wildcard.match",true);
+
 ```
 
-### Topic Wildcards
+After this you can specify a wildcard topic for matching e.g. clickstream.*.log.  This will match all streams matching clickstream.my.log, clickstream.cart.log etc
+
+
+###Putting it all together
+
+For the bolt :
 ```java
-KafkaSpoutStreams kafkaSpoutStreams = new KafkaSpoutStreamsWildcardTopics(
-            new KafkaSpoutStream(outputFields, STREAM, Pattern.compile(TOPIC_WILDCARD_PATTERN)));
+        TopologyBuilder builder = new TopologyBuilder();
 
-KafkaSpoutTuplesBuilder<String, String> tuplesBuilder = new TopicsTest0Test1TupleBuilder<>(TOPIC_WILDCARD_PATTERN);
+        Fields fields = new Fields("key", "message");
+        FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
+                    new Values("storm", "1"),
+                    new Values("trident", "1"),
+                    new Values("needs", "1"),
+                    new Values("javadoc", "1")
+        );
+        spout.setCycle(true);
+        builder.setSpout("spout", spout, 5);
+        //set producer properties.
+        Properties props = new Properties();
+        props.put("bootstrap.servers", "localhost:9092");
+        props.put("acks", "1");
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-String STREAM = "test_wildcard_stream";
-String TOPIC_WILDCARD_PATTERN = "test[1|2]";
+        KafkaBolt bolt = new KafkaBolt()
+                .withProducerProperties(props)
+                .withTopicSelector(new DefaultTopicSelector("test"))
+                .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
+        builder.setBolt("forwardToKafka", bolt, 8).shuffleGrouping("spout");
 
-Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
+        Config conf = new Config();
+
+        StormSubmitter.submitTopology("kafkaboltTest", conf, builder.createTopology());
 ```
 
-### Create a simple Toplogy using the Kafka Spout:
-
+For Trident:
 
 ```java
-TopologyBuilder tp = new TopologyBuilder();
-tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams())), 1);
-tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAMS[0]);
-tp.setBolt("kafka_bolt_1", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAMS[2]);
-tp.createTopology();
+        Fields fields = new Fields("word", "count");
+        FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
+                new Values("storm", "1"),
+                new Values("trident", "1"),
+                new Values("needs", "1"),
+                new Values("javadoc", "1")
+        );
+        spout.setCycle(true);
+
+        TridentTopology topology = new TridentTopology();
+        Stream stream = topology.newStream("spout1", spout);
+
+        //set producer properties.
+        Properties props = new Properties();
+        props.put("bootstrap.servers", "localhost:9092");
+        props.put("acks", "1");
+        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+
+        TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
+                .withProducerProperties(props)
+                .withKafkaTopicSelector(new DefaultTopicSelector("test"))
+                .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper("word", "count"));
+        stream.partitionPersist(stateFactory, fields, new TridentKafkaUpdater(), new Fields());
+
+        Config conf = new Config();
+        StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
 ```
 
-# Build And Run Bundled Examples  
-To be able to run the examples you must first build the java code in the package `storm-kafka-client`, 
-and then generate an uber jar with all the dependencies.
+## Reading From kafka (Spouts)
+
+### Configuration
+
+The spout implementations are configured by use of the `KafkaSpoutConfig` class.  This class uses a Builder pattern and can be started either by calling one of
+the Builders constructors or by calling the static method builder in the KafkaSpoutConfig class.
+
+The Constructor or static method to create the builder require a few key values (that can be changed later on) but are the minimum config needed to start
+a spout.
+
+`bootstrapServers` is the same as the Kafka Consumer Property "bootstrap.servers".
+`topics` The topics the spout will consume can either be a `Collection` of specific topic names (1 or more) or a regular expression `Pattern`, which specifies
+that any topics that match that regular expression will be consumed.
+
+In the case of the Constructors you may also need to specify a key deserializer and a value deserializer.  This is to help guarantee type safety through the use
+of Java generics.  The defaults are `StringDeserializer`s and can be overwritten by calling `setKeyDeserializer` and/or `setValueDeserializer`.
+If these are set to null the code will fall back to what is set in the kafka properties, but it is preferable to be explicit here, again to maintain 
+type safety with the generics.
+
+There are a few key configs to pay attention to.
+
+`setFirstPollOffsetStrategy` allows you to set where to start consuming data from.  This is used both in case of failure recovery and starting the spout
+for the first time. Allowed values include
+
+ * `EARLIEST` means that the kafka spout polls records starting in the first offset of the partition, regardless of previous commits
+ * `LATEST` means that the kafka spout polls records with offsets greater than the last offset in the partition, regardless of previous commits
+ * `UNCOMMITTED_EARLIEST` (DEFAULT) means that the kafka spout polls records from the last committed offset, if any. If no offset has been committed, it behaves as `EARLIEST`.
+ * `UNCOMMITTED_LATEST` means that the kafka spout polls records from the last committed offset, if any. If no offset has been committed, it behaves as `LATEST`.
+
+`setRecordTranslator` allows you to modify how the spout converts a Kafka Consumer Record into a Tuple, and which stream that tuple will be published into.
+By default the "topic", "partition", "offset", "key", and "value" will be emitted to the "default" stream.  If you want to output entries to different
+streams based on the topic, storm provides `ByTopicRecordTranslator`.  See below for more examples on how to use these.
+
+`setProp` can be used to set kafka properties that do not have a convenience method.
+
+`setGroupId` lets you set the id of the kafka consumer group property "group.id'
+
+`setSSLKeystore` and `setSSLTruststore` allow you to configure SSL authentication.
+
+### Usage Examples
+
+#### Create a Simple Insecure Spout
+The following will consume all events published to "topic" and send them to MyBolt with the fields "topic", "partition", "offset", "key", "value".
+```java
+
+final TopologyBuilder tp = new TopologyBuilder();
+tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, "topic").build()), 1);
+tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
+...
+
+```
+
+#### Wildcard Topics
+Wildcard topics will consume from all topics that exist in the specified brokers list and match the pattern.  So in the following example
+"topic", "topic_foo" and "topic_bar" will all match the pattern "topic.*", but "not_my_topic" would not match. 
+```java
+
+final TopologyBuilder tp = new TopologyBuilder();
+tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()), 1);
+tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
+...
+
+```
+
+#### Multiple Streams
+```java
+
+final TopologyBuilder tp = new TopologyBuilder();
+
+//By default all topics not covered by another rule, but consumed by the spout will be emitted to "STREAM_1" as "topic", "key", and "value"
+ByTopicRecordTranslator<String, String> byTopic = new ByTopicRecordTranslator<>(
+    (r) -> new Values(r.topic(), r.key(), r.value()),
+    new Fields("topic", "key", "value"), "STREAM_1");
+//For topic_2 all events will be emitted to "STREAM_2" as just "key" and "value"
+byTopic.forTopic("topic_2", (r) -> new Values(r.key(), r.value()), new Fields("key", "value"), "STREAM_2");
+
+tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, "topic_1", "topic_2", "topic_3").build()), 1);
+tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout", "STREAM_1");
+tp.setBolt("another", new myOtherBolt()).shuffleGrouping("kafka_spout", "STREAM_2");
+...
+
+```
+
+#### Trident
+
+```java
+final TridentTopology tridentTopology = new TridentTopology();
+final Stream spoutStream = tridentTopology.newStream("kafkaSpout",
+    new KafkaTridentSpoutOpaque<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()))
+      .parallelismHint(1)
+...
+
+```
+
+Trident does not support multiple streams and will ignore any streams set for output.  If however the Fields are not identical for each
+output topic it will throw an exception and not continue.
+
+### Custom RecordTranslators (ADVANCED)
+
+In most cases the built in SimpleRecordTranslator and ByTopicRecordTranslator should cover your use case.  If you do run into a situation where you need a custom one
+then this documentation will describe how to do this properly, and some of the less than obvious classes involved.
+
+The point of apply is to take a ConsumerRecord and turn it into a `List<Object>` that can be emitted.  What is not obvious is how to tell the spout to emit it to a
+specific stream.  To do this you will need to return an instance of `org.apache.storm.kafka.spout.KafkaTuple`.  This provides a method `routedTo` that will say which
+specific stream the tuple should go to.
+
+For Example:
+```java
+return new KafkaTuple(1, 2, 3, 4).routedTo("bar");
+```
+
+Will cause the tuple to be emitted on the "bar" stream.
+
+Be careful when writing custom record translators because just like in a storm spout it needs to be self consistent.  The `streams` method should return
+a full set of streams that this translator will ever try to emit on.  Additionally `getFieldsFor` should return a valid Fields object for each of those
+streams.  If you are doing this for Trident a value must be in the List returned by apply for every field in the Fields object for that stream,
+otherwise trident can throw exceptions.
+
+
+### Manual Partition Control (ADVANCED)
+
+By default Kafka will automatically assign partitions to the current set of spouts.  It handles lots of things, but in some cases you may want to manually assign the partitions.
+This can cause less churn in the assignments when spouts go down and come back up, but it can result in a lot of issues if not done right.  This can all be handled by subclassing
+Subscription and we have a few implementations that you can look at for examples on how to do this.  ManualPartitionNamedSubscription and ManualPartitionPatternSubscription.  Again
+please be careful when using these or implementing your own.
 
 ## Use the Maven Shade Plugin to Build the Uber Jar
 
@@ -112,7 +276,7 @@ Add the following to `REPO_HOME/storm/external/storm-kafka-client/pom.xml`
 </plugin>
 ```
 
-create the uber jar by running the commmand:
+create the uber jar by running the command:
 
 `mvn package -f REPO_HOME/storm/external/storm-kafka-client/pom.xml`
 
@@ -122,11 +286,11 @@ This will create the uber jar file with the name and location matching the follo
 
 ### Run Storm Topology
 
-Copy the file `REPO_HOME/storm/external/storm-kafka-client/target/storm-kafka-client-1.0.x.jar` to `STORM_HOME/extlib`
+Copy the file `REPO_HOME/storm/external/storm-kafka-client/target/storm-kafka-client-*.jar` to `STORM_HOME/extlib`
 
 Using the Kafka command line tools create three topics [test, test1, test2] and use the Kafka console producer to populate the topics with some data 
 
-Execute the command `STORM_HOME/bin/storm jar REPO_HOME/storm/external/storm/target/storm-kafka-client-1.0.x.jar org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMain`
+Execute the command `STORM_HOME/bin/storm jar REPO_HOME/storm/external/storm/target/storm-kafka-client-*.jar org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMain`
 
 With the debug level logs enabled it is possible to see the messages of each topic being redirected to the appropriate Bolt as defined 
 by the streams defined and choice of shuffle grouping.   
@@ -181,8 +345,3 @@ Currently the Kafka spout has has the following default values, which have shown
 * offset.commit.period.ms = 30000   (30s)
 * max.uncommitted.offsets = 10000000
 <br/>
-
-There will be a blog post coming soon analyzing the trade-offs of this tuning parameters, and comparing the performance of the Kafka Spouts using the Kafka client API introduced in 0.9 (new implementation) and in prior versions (prior implementation)
-
-#Future Work
- Implement comprehensive metrics. Trident spout is coming soon.
