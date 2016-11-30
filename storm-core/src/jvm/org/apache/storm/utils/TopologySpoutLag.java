@@ -109,6 +109,11 @@ public class TopologySpoutLag {
         commands.add((String)jsonConf.get(configKeyPrefix + "topics"));
         commands.add("-n");
         commands.add((String)jsonConf.get(configKeyPrefix + "zkRoot"));
+        String securityProtocol = (String)jsonConf.get(configKeyPrefix + "securityProtocol");
+        if (securityProtocol != null && !securityProtocol.isEmpty()) {
+            commands.add("-s");
+            commands.add(securityProtocol);
+        }
         String zkServers = (String)jsonConf.get(configKeyPrefix + "zkServers");
         if (zkServers == null || zkServers.isEmpty()) {
             StringBuilder zkServersBuilder = new StringBuilder();

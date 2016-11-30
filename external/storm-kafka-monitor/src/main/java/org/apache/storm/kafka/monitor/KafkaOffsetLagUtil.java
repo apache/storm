@@ -44,11 +44,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import kafka.api.OffsetRequest;
-import kafka.api.PartitionOffsetRequestInfo;
-import kafka.common.TopicAndPartition;
-import kafka.javaapi.OffsetResponse;
-import kafka.javaapi.consumer.SimpleConsumer;
 
 /**
  * Utility class for querying offset lag for kafka spout
@@ -86,11 +81,12 @@ public class KafkaOffsetLagUtil {
             if (!commandLine.hasOption(OPTION_TOPIC_LONG)) {
                 printUsageAndExit(options, OPTION_TOPIC_LONG + " is required");
             }
+            String securityProtocol = commandLine.getOptionValue(OPTION_SECURITY_PROTOCOL_LONG);
             if (commandLine.hasOption(OPTION_OLD_CONSUMER_LONG)) {
                 OldKafkaSpoutOffsetQuery oldKafkaSpoutOffsetQuery;
-                if (commandLine.hasOption(OPTION_GROUP_ID_LONG) || commandLine.hasOption(OPTION_BOOTSTRAP_BROKERS_LONG) || commandLine.hasOption(OPTION_SECURITY_PROTOCOL_LONG)) {
-                    printUsageAndExit(options, OPTION_GROUP_ID_LONG + " or " + OPTION_BOOTSTRAP_BROKERS_LONG + " or " + OPTION_SECURITY_PROTOCOL_LONG + " is " +
-                            "not accepted with option " + OPTION_OLD_CONSUMER_LONG);
+                if (commandLine.hasOption(OPTION_GROUP_ID_LONG) || commandLine.hasOption(OPTION_BOOTSTRAP_BROKERS_LONG)) {
+                    printUsageAndExit(options, OPTION_GROUP_ID_LONG + " or " + OPTION_BOOTSTRAP_BROKERS_LONG + " is not accepted with option " +
+                            OPTION_OLD_CONSUMER_LONG);
                 }
                 if (!commandLine.hasOption(OPTION_ZK_SERVERS_LONG) || !commandLine.hasOption(OPTION_ZK_COMMITTED_NODE_LONG)) {
                     printUsageAndExit(options, OPTION_ZK_SERVERS_LONG + " and " + OPTION_ZK_COMMITTED_NODE_LONG + " are required  with " +
@@ -108,7 +104,7 @@ public class KafkaOffsetLagUtil {
                     }
                     oldKafkaSpoutOffsetQuery = new OldKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG), commandLine.getOptionValue
                             (OPTION_ZK_SERVERS_LONG), commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG), commandLine.hasOption
-                            (OPTION_TOPIC_WILDCARD_LONG), commandLine.getOptionValue(OPTION_ZK_BROKERS_ROOT_LONG));
+                            (OPTION_TOPIC_WILDCARD_LONG), commandLine.getOptionValue(OPTION_ZK_BROKERS_ROOT_LONG), securityProtocol);
                 } else {
                     if (commandLine.hasOption(OPTION_TOPIC_WILDCARD_LONG)) {
                         printUsageAndExit(options, OPTION_TOPIC_WILDCARD_LONG + " is not supported without " + OPTION_ZK_BROKERS_ROOT_LONG);
@@ -124,11 +120,10 @@ public class KafkaOffsetLagUtil {
                     }
                     oldKafkaSpoutOffsetQuery = new OldKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG), commandLine.getOptionValue
                             (OPTION_ZK_SERVERS_LONG), commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG), commandLine.getOptionValue
-                            (OPTION_PARTITIONS_LONG), commandLine.getOptionValue(OPTION_LEADERS_LONG));
+                            (OPTION_PARTITIONS_LONG), commandLine.getOptionValue(OPTION_LEADERS_LONG), securityProtocol);
                 }
                 results = getOffsetLags(oldKafkaSpoutOffsetQuery);
             } else {
-                String securityProtocol = commandLine.getOptionValue(OPTION_SECURITY_PROTOCOL_LONG);
                 String[] oldSpoutOptions = {OPTION_TOPIC_WILDCARD_LONG, OPTION_PARTITIONS_LONG, OPTION_LEADERS_LONG, OPTION_ZK_SERVERS_LONG,
                         OPTION_ZK_COMMITTED_NODE_LONG, OPTION_ZK_BROKERS_ROOT_LONG};
                 for (String oldOption: oldSpoutOptions) {
@@ -260,7 +255,8 @@ public class KafkaOffsetLagUtil {
         List<KafkaOffsetLagResult> result = new ArrayList<>();
         Map<String, List<TopicPartition>> leaders = getLeadersAndTopicPartitions(oldKafkaSpoutOffsetQuery);
         if (leaders != null) {
-            Map<String, Map<Integer, Long>> logHeadOffsets = getLogHeadOffsets(leaders);
+            String securityProtocol = oldKafkaSpoutOffsetQuery.getSecurityProtocol() != null ? oldKafkaSpoutOffsetQuery.getSecurityProtocol() : "PLAINTEXT";
+            Map<String, Map<Integer, Long>> logHeadOffsets = getLogHeadOffsets(leaders, securityProtocol);
             Map<String, List<Integer>> topicPartitions = new HashMap<>();
             for (Map.Entry<String, List<TopicPartition>> entry: leaders.entrySet()) {
                 for (TopicPartition topicPartition: entry.getValue()) {
@@ -324,12 +320,25 @@ public class KafkaOffsetLagUtil {
                     List<String> children = curatorFramework.getChildren().forPath(partitionsPath);
                     for (int i = 0; i < children.size(); ++i) {
                         byte[] leaderData = curatorFramework.getData().forPath(partitionsPath + "/" + i + "/state");
-                        Map<Object, Object> value = (Map<Object, Object>) JSONValue.parseWithException(new String(leaderData, "UTF-8"));
+                        Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(leaderData, "UTF-8"));
                         Integer leader = ((Number) value.get("leader")).intValue();
                         byte[] brokerData = curatorFramework.getData().forPath(brokersZkNode + "ids/" + leader);
-                        Map<Object, Object> broker = (Map<Object, Object>) JSONValue.parseWithException(new String(brokerData, "UTF-8"));
-                        String host = (String) broker.get("host");
-                        Integer port = ((Long) broker.get("port")).intValue();
+                        Map<Object, Object> broker = (Map<Object, Object>) JSONValue.parse(new String(brokerData, "UTF-8"));
+                        String host = null;
+                        Integer port = null;
+                        //if zookeeper has endpoints, then we are using new kafka server so we should try to get host and port from endpoints.
+                        if(broker.containsKey("endpoints")) {
+                            String endPoint =  (String) ((JSONArray) broker.get("endpoints")).get(0);
+                            //Endpoint is generally SECURITYPROTOCOL://host:port
+                            String[] split = endPoint.split(".+://")[1].split(":");
+                            if(split.length == 2) {
+                                host = split[0];
+                                port = Integer.parseInt(split[1]);
+                            }
+                        } else {
+                            host = (String) broker.get("host");
+                            port = ((Long) broker.get("port")).intValue();
+                        }
                         String leaderBroker = host + ":" + port;
                         if (!result.containsKey(leaderBroker)) {
                             result.put(leaderBroker, new ArrayList<TopicPartition>());
@@ -346,7 +355,7 @@ public class KafkaOffsetLagUtil {
         return result;
     }
 
-    private static Map<String, Map<Integer, Long>> getLogHeadOffsets (Map<String, List<TopicPartition>> leadersAndTopicPartitions) {
+    private static Map<String, Map<Integer, Long>> getLogHeadOffsets (Map<String, List<TopicPartition>> leadersAndTopicPartitions, String securityProtocol) {
         Map<String, Map<Integer, Long>> result = new HashMap<>();
         if (leadersAndTopicPartitions != null) {
             PartitionOffsetRequestInfo partitionOffsetRequestInfo = new PartitionOffsetRequestInfo(OffsetRequest.LatestTime(), 1);
@@ -400,7 +409,7 @@ public class KafkaOffsetLagUtil {
                         String path = zkPath + "/" + (oldKafkaSpoutOffsetQuery.isWildCardTopic() ? topicEntry.getKey() + "/" : "") + partitionPrefix + partition;
                         if (curatorFramework.checkExists().forPath(path) != null) {
                             zkData = curatorFramework.getData().forPath(path);
-                            Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parseWithException(new String(zkData, "UTF-8"));
+                            Map<Object, Object> offsetData = (Map<Object, Object>) JSONValue.parse(new String(zkData, "UTF-8"));
                             partitionOffsets.put(partition, (Long) offsetData.get("offset"));
                         }
                     }

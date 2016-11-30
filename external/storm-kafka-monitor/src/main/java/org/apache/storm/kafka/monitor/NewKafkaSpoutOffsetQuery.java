@@ -49,6 +49,7 @@ public class NewKafkaSpoutOffsetQuery {
         return this.securityProtocol;
     }
 
+
     @Override
     public String toString() {
         return "NewKafkaSpoutOffsetQuery{" +

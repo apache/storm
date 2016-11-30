@@ -61,7 +61,7 @@ public class KafkaUtilsTest {
         globalPartitionInformation.addPartition(0, Broker.fromString(broker.getBrokerConnectionString()));
         brokerHosts = new StaticHosts(globalPartitionInformation);
         config = new KafkaConfig(brokerHosts, TEST_TOPIC);
-        simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
+        simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient", config.securityProtocol);
     }
 
     @After
@@ -80,7 +80,7 @@ public class KafkaUtilsTest {
     public void brokerIsDown() throws Exception {
         int port = broker.getPort();
         broker.shutdown();
-        SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", port, 100, 1024, "testClient");
+        SimpleConsumer simpleConsumer = new SimpleConsumer("localhost", port, 100, 1024, "testClient", config.securityProtocol);
         try {
             KafkaUtils.fetchMessages(config, simpleConsumer, new Partition(Broker.fromString(broker.getBrokerConnectionString()), TEST_TOPIC, 0), OffsetRequest.LatestTime());
         } finally {
