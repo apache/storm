@@ -98,6 +98,7 @@ under the License.
 * John Fang ([@hustfxj](https://github.com/hustfxj))
 * Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
 * Satish Duggana ([@satishd](https://github.com/satishd))
+* Xin Wang ([@vesense](https://github.com/vesense))
 
 ## Contributors
 
@@ -217,7 +218,6 @@ under the License.
 * Shyam Rajendran ([@bourneagain](https://github.com/bourneagain))
 * Reza Farivar ([@rfarivar](https://github.com/rfarivar))
 * Hugo Louro ([@hmcl](https://github.com/hmcl))
-* Xin Wang ([@vesense](https://github.com/vesense))
 * Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 * Chuanlei Ni ([@chuanlei](https://github.com/chuanlei))
 * Xingyu Su ([@errordaiwa](https://github.com/errordaiwa))

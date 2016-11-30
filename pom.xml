@@ -192,6 +192,15 @@
             </roles>
             <timezone>+5.5</timezone>
         </developer>
+        <developer>
+            <id>vesense</id>
+            <name>Xin Wang</name>
+            <email>xinwang@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
     </developers>
 
 
