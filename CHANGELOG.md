@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1886: Extend KeyValueState iface with delete
  * STORM-2193: Fix FilterConfiguration parameter order
  * STORM-2209: Update documents adding new integration for some external systems
  * STORM-2212: Remove Redundant Declarations in Maven POM Files
