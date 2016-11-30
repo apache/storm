@@ -29,18 +29,19 @@ public class OldKafkaSpoutOffsetQuery {
     private final String partitions; //comma separated list of partitions corresponding to leaders below (for StaticHosts)
     private final String leaders; //comma separated list of leader brokers and port corresponding to the partitions above (for StaticHosts) e.g.
     // hostname1:9092,hostname2:9092
+    private final String securityProtocol; // security protocol to connect to kafka
 
-    public OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath) {
-        this(topic, zkServers, zkPath, isWildCardTopic, brokersZkPath, null, null);
+    public OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath, String securityProtocol) {
+        this(topic, zkServers, zkPath, isWildCardTopic, brokersZkPath, null, null, securityProtocol);
     }
 
-    public OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, String partitions, String leaders) {
-        this(topic, zkServers, zkPath, false, null, partitions, leaders);
+    public OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, String partitions, String leaders, String securityProtocol) {
+        this(topic, zkServers, zkPath, false, null, partitions, leaders, securityProtocol);
 
     }
 
     private OldKafkaSpoutOffsetQuery(String topic, String zkServers, String zkPath, boolean isWildCardTopic, String brokersZkPath, String partitions, String
-            leaders) {
+            leaders, String securityProtocol) {
         this.topic = topic;
         this.zkServers = zkServers;
         this.zkPath = zkPath;
@@ -48,6 +49,7 @@ public class OldKafkaSpoutOffsetQuery {
         this.brokersZkPath = brokersZkPath;
         this.partitions = partitions;
         this.leaders = leaders;
+        this.securityProtocol = securityProtocol;
     }
 
     @Override
@@ -121,4 +123,7 @@ public class OldKafkaSpoutOffsetQuery {
         return leaders;
     }
 
+    public String getSecurityProtocol() {
+        return securityProtocol;
+    }
 }

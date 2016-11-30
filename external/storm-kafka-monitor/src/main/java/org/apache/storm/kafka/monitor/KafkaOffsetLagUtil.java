@@ -35,6 +35,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
 import java.util.ArrayList;
@@ -44,11 +45,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import kafka.api.OffsetRequest;
-import kafka.api.PartitionOffsetRequestInfo;
-import kafka.common.TopicAndPartition;
-import kafka.javaapi.OffsetResponse;
-import kafka.javaapi.consumer.SimpleConsumer;
 
 /**
  * Utility class for querying offset lag for kafka spout
@@ -74,6 +70,8 @@ public class KafkaOffsetLagUtil {
     private static final String OPTION_ZK_COMMITTED_NODE_LONG = "zk-node";
     private static final String OPTION_ZK_BROKERS_ROOT_SHORT = "r";
     private static final String OPTION_ZK_BROKERS_ROOT_LONG = "zk-brokers-root-node";
+    private static final String OPTION_SECURITY_PROTOCOL_SHORT = "s";
+    private static final String OPTION_SECURITY_PROTOCOL_LONG = "security-protocol";
 
     public static void main (String args[]) {
         try {
@@ -84,6 +82,7 @@ public class KafkaOffsetLagUtil {
             if (!commandLine.hasOption(OPTION_TOPIC_LONG)) {
                 printUsageAndExit(options, OPTION_TOPIC_LONG + " is required");
             }
+            String securityProtocol = commandLine.getOptionValue(OPTION_SECURITY_PROTOCOL_LONG);
             if (commandLine.hasOption(OPTION_OLD_CONSUMER_LONG)) {
                 OldKafkaSpoutOffsetQuery oldKafkaSpoutOffsetQuery;
                 if (commandLine.hasOption(OPTION_GROUP_ID_LONG) || commandLine.hasOption(OPTION_BOOTSTRAP_BROKERS_LONG)) {
@@ -106,7 +105,7 @@ public class KafkaOffsetLagUtil {
                     }
                     oldKafkaSpoutOffsetQuery = new OldKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG), commandLine.getOptionValue
                             (OPTION_ZK_SERVERS_LONG), commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG), commandLine.hasOption
-                            (OPTION_TOPIC_WILDCARD_LONG), commandLine.getOptionValue(OPTION_ZK_BROKERS_ROOT_LONG));
+                            (OPTION_TOPIC_WILDCARD_LONG), commandLine.getOptionValue(OPTION_ZK_BROKERS_ROOT_LONG), securityProtocol);
                 } else {
                     if (commandLine.hasOption(OPTION_TOPIC_WILDCARD_LONG)) {
                         printUsageAndExit(options, OPTION_TOPIC_WILDCARD_LONG + " is not supported without " + OPTION_ZK_BROKERS_ROOT_LONG);
@@ -122,7 +121,7 @@ public class KafkaOffsetLagUtil {
                     }
                     oldKafkaSpoutOffsetQuery = new OldKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG), commandLine.getOptionValue
                             (OPTION_ZK_SERVERS_LONG), commandLine.getOptionValue(OPTION_ZK_COMMITTED_NODE_LONG), commandLine.getOptionValue
-                            (OPTION_PARTITIONS_LONG), commandLine.getOptionValue(OPTION_LEADERS_LONG));
+                            (OPTION_PARTITIONS_LONG), commandLine.getOptionValue(OPTION_LEADERS_LONG), securityProtocol);
                 }
                 results = getOffsetLags(oldKafkaSpoutOffsetQuery);
             } else {
@@ -138,7 +137,7 @@ public class KafkaOffsetLagUtil {
                             " is not specified");
                 }
                 NewKafkaSpoutOffsetQuery newKafkaSpoutOffsetQuery = new NewKafkaSpoutOffsetQuery(commandLine.getOptionValue(OPTION_TOPIC_LONG),
-                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG));
+                        commandLine.getOptionValue(OPTION_BOOTSTRAP_BROKERS_LONG), commandLine.getOptionValue(OPTION_GROUP_ID_LONG), securityProtocol);
                 results = getOffsetLags(newKafkaSpoutOffsetQuery);
             }
 
@@ -196,6 +195,7 @@ public class KafkaOffsetLagUtil {
                 " offsets without the topic and partition nodes");
         options.addOption(OPTION_ZK_BROKERS_ROOT_SHORT, OPTION_ZK_BROKERS_ROOT_LONG, true, "Zk node prefix where kafka stores broker information e.g. " +
                 "/brokers (applicable only for old kafka spout) ");
+        options.addOption(OPTION_SECURITY_PROTOCOL_SHORT, OPTION_SECURITY_PROTOCOL_LONG, true, "Security protocol to connect to kafka");
         return options;
     }
 
@@ -215,6 +215,9 @@ public class KafkaOffsetLagUtil {
             props.put("session.timeout.ms", "30000");
             props.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
             props.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+            if (newKafkaSpoutOffsetQuery.getSecurityProtocol() != null) {
+                props.put("security.protocol", newKafkaSpoutOffsetQuery.getSecurityProtocol());
+            }
             List<TopicPartition> topicPartitionList = new ArrayList<>();
             consumer = new KafkaConsumer<>(props);
             for (String topic: newKafkaSpoutOffsetQuery.getTopics().split(",")) {
@@ -253,7 +256,8 @@ public class KafkaOffsetLagUtil {
         List<KafkaOffsetLagResult> result = new ArrayList<>();
         Map<String, List<TopicPartition>> leaders = getLeadersAndTopicPartitions(oldKafkaSpoutOffsetQuery);
         if (leaders != null) {
-            Map<String, Map<Integer, Long>> logHeadOffsets = getLogHeadOffsets(leaders);
+            String securityProtocol = oldKafkaSpoutOffsetQuery.getSecurityProtocol() != null ? oldKafkaSpoutOffsetQuery.getSecurityProtocol() : "PLAINTEXT";
+            Map<String, Map<Integer, Long>> logHeadOffsets = getLogHeadOffsets(leaders, securityProtocol);
             Map<String, List<Integer>> topicPartitions = new HashMap<>();
             for (Map.Entry<String, List<TopicPartition>> entry: leaders.entrySet()) {
                 for (TopicPartition topicPartition: entry.getValue()) {
@@ -321,8 +325,21 @@ public class KafkaOffsetLagUtil {
                         Integer leader = ((Number) value.get("leader")).intValue();
                         byte[] brokerData = curatorFramework.getData().forPath(brokersZkNode + "ids/" + leader);
                         Map<Object, Object> broker = (Map<Object, Object>) JSONValue.parse(new String(brokerData, "UTF-8"));
-                        String host = (String) broker.get("host");
-                        Integer port = ((Long) broker.get("port")).intValue();
+                        String host = null;
+                        Integer port = null;
+                        //if zookeeper has endpoints, then we are using new kafka server so we should try to get host and port from endpoints.
+                        if(broker.containsKey("endpoints")) {
+                            String endPoint =  (String) ((JSONArray) broker.get("endpoints")).get(0);
+                            //Endpoint is generally SECURITYPROTOCOL://host:port
+                            String[] split = endPoint.split(".+://")[1].split(":");
+                            if(split.length == 2) {
+                                host = split[0];
+                                port = Integer.parseInt(split[1]);
+                            }
+                        } else {
+                            host = (String) broker.get("host");
+                            port = ((Long) broker.get("port")).intValue();
+                        }
                         String leaderBroker = host + ":" + port;
                         if (!result.containsKey(leaderBroker)) {
                             result.put(leaderBroker, new ArrayList<TopicPartition>());
@@ -339,7 +356,7 @@ public class KafkaOffsetLagUtil {
         return result;
     }
 
-    private static Map<String, Map<Integer, Long>> getLogHeadOffsets (Map<String, List<TopicPartition>> leadersAndTopicPartitions) {
+    private static Map<String, Map<Integer, Long>> getLogHeadOffsets (Map<String, List<TopicPartition>> leadersAndTopicPartitions, String securityProtocol) {
         Map<String, Map<Integer, Long>> result = new HashMap<>();
         if (leadersAndTopicPartitions != null) {
             PartitionOffsetRequestInfo partitionOffsetRequestInfo = new PartitionOffsetRequestInfo(OffsetRequest.LatestTime(), 1);
@@ -347,7 +364,7 @@ public class KafkaOffsetLagUtil {
             for (Map.Entry<String, List<TopicPartition>> leader: leadersAndTopicPartitions.entrySet()) {
                 try {
                     simpleConsumer = new SimpleConsumer(leader.getKey().split(":")[0], Integer.parseInt(leader.getKey().split(":")[1]), 10000, 64 *
-                            1024, "LogHeadOffsetRequest");
+                            1024, "LogHeadOffsetRequest", securityProtocol);
                     Map<TopicAndPartition, PartitionOffsetRequestInfo> requestInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
                     for (TopicPartition topicPartition : leader.getValue()) {
                         requestInfo.put(new TopicAndPartition(topicPartition.topic(), topicPartition.partition()), partitionOffsetRequestInfo);
