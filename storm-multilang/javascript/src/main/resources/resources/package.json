@@ -16,5 +16,8 @@
   "main": "storm.js",
   "bin": {
     "stormjs": "bin/stormjs.js"
+  },
+  "dependencies": {
+    "intercept-stdout": "^0.1.2"
   }
 }

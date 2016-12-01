@@ -11,7 +11,7 @@ $ npm install -g storm-multilang-js
 Extend the BasicBolt class
 
 ```javascript
-const BasicBolt = require('storm-multilang-js').BasicBolt;
+const { BasicBolt } = require('storm-multilang-js');
 
 class MyBasicBolt extends BasicBolt {
     

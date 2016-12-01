@@ -18,15 +18,40 @@
  * limitations under the License.
  */
 
-const PassThrough = require('stream').PassThrough;
-const Console = require('console').Console;
+/*
+ * Storm using stdout to receive data from multilang components,
+ * so any console commands that write to stdout will cause
+ * trouble for storm, so we need to re-route any output
+ * from the console object to storm log commands for safety.
+ */
+const intercept = require('intercept-stdout');
 
-// Storm using stdout to receive data from multilang components,
-// so any console commands that write to stdout will cause
-// trouble for storm, so we need to re-route any output
-// from the console object to storm log commands for safety
-const consoleStream = new PassThrough();
-console = new Console(consoleStream);
+let preInitMessages = '';
+let initComplete = false;
+
+intercept((inputMsg) => {
+    let msg = inputMsg;
+    if (/^{\s*"pid"\s*:\s*\d+\s*}\nend\n$/.test(msg)) {
+        initComplete = true;
+        if (preInitMessages) {
+            msg += preInitMessages;
+            preInitMessages = undefined;
+        }
+    } else if (!/^\{.*\}\nend\n$/.test(msg)) {
+        let m = {command: 'log', msg: msg};
+        msg = `${JSON.stringify(m)}\nend\n`;
+    }
+    if (!initComplete) {
+        /*
+         * Storm multilang protocol expects first message to be a pid message, so anything written
+         * to stdout or stderr before the pid message is cached and sent with the first message
+         * after the PID has been processed.
+         */
+        preInitMessages += msg;
+        msg = '';
+    }
+    return msg;
+});
 
 if (process.argv.length < 3 || !process.argv[2])
     throw new Error('You must specify a js file that exports a valid storm component.');
@@ -36,8 +61,6 @@ if (componentPath.startsWith('.'))
     componentPath = process.cwd() + '/' + componentPath;
 
 const Component = require(componentPath);
-
 const componentInstance = new Component();
-consoleStream.on('data', function(msg) { componentInstance.log(msg); });
 
 componentInstance.run();
