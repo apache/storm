@@ -396,7 +396,7 @@
                                 <exclude>**/build/**</exclude>
                                 <!-- logs generated during test -->
                                 <exclude>**/logs/**</exclude>
-
+                                <exclude>**/*.json</exclude>
                                 <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                                 <exclude>**/CHANGELOG.md</exclude>
                                 <exclude>**/README.md</exclude>
