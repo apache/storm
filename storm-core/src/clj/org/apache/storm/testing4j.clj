@@ -18,7 +18,6 @@
   (:require [org.apache.storm [LocalCluster :as LocalCluster]])
   (:import [org.apache.storm Config ILocalCluster LocalCluster])
   (:import [org.apache.storm.generated StormTopology])
-  (:import [org.apache.storm.daemon nimbus])
   (:import [org.apache.storm.testing TestJob MockedSources TrackedTopology
             MkClusterParam CompleteTopologyParam MkTupleParam])
   (:import [org.apache.storm.utils Utils])

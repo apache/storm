@@ -18,6 +18,7 @@
 package org.apache.storm.nimbus;
 
 import org.apache.storm.Config;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,6 +28,7 @@ import java.net.UnknownHostException;
 import java.util.Map;
 
 public class NimbusInfo implements Serializable {
+    private static final long serialVersionUID = 2161446155116099333L;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusInfo.class);
     private static final String DELIM = ":";
 
@@ -49,17 +51,17 @@ public class NimbusInfo implements Serializable {
         }
     }
 
-    public static NimbusInfo fromConf(Map conf) {
+    public static NimbusInfo fromConf(Map<String, Object> conf) {
         try {
             String host = InetAddress.getLocalHost().getCanonicalHostName();
             if (conf.containsKey(Config.STORM_LOCAL_HOSTNAME)) {
-                host = conf.get(Config.STORM_LOCAL_HOSTNAME).toString();
+                host = (String) conf.get(Config.STORM_LOCAL_HOSTNAME);
                 LOG.info("Overriding nimbus host to storm.local.hostname -> {}", host);
             } else {
                 LOG.info("Nimbus figures out its name to {}", host);
             }
 
-            int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
+            int port = Utils.getInt(conf.get(Config.NIMBUS_THRIFT_PORT), 6627);
             return new NimbusInfo(host, port, false);
 
         } catch (UnknownHostException e) {

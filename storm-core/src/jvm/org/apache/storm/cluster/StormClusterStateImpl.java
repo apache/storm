@@ -194,7 +194,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public List nimbuses() {
+    public List<NimbusSummary> nimbuses() {
         List<NimbusSummary> nimbusSummaries = new ArrayList<>();
         List<String> nimbusIds = stateStorage.get_children(ClusterUtils.NIMBUSES_SUBTREE, false);
         for (String nimbusId : nimbusIds) {
@@ -698,7 +698,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setCredentials(String stormId, Credentials creds, Map topoConf) throws NoSuchAlgorithmException {
+    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException {
         List<ACL> aclList = ClusterUtils.mkTopoOnlyAcls(topoConf);
         String path = ClusterUtils.credentialsPath(stormId);
         stateStorage.set_data(path, Utils.serialize(creds), aclList);

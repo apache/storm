@@ -25,7 +25,7 @@
             MutableObject])
   (:import [org.apache.storm.security.auth NimbusPrincipal])
   (:import [javax.security.auth Subject])
-  (:import [java.util UUID Random ArrayList List Collections])
+  (:import [java.util UUID Random ArrayList List Collections Set])
   (:import [java.util.zip ZipFile])
   (:import [java.util.concurrent.locks ReentrantReadWriteLock])
   (:import [java.util.concurrent Semaphore])
@@ -117,7 +117,9 @@
      ~@body
      false
      (catch Throwable t#
-       (Utils/exceptionCauseIsInstanceOf ~klass t#))))
+       (let [tc# (Utils/exceptionCauseIsInstanceOf ~klass t#)]
+         (if (not tc#) (log-error t# "Exception did not match " ~klass))
+         tc#))))
 
 (defmacro forcat
   [[args aseq] & body]
@@ -145,14 +147,16 @@
 
 (defn clojurify-structure
   [s]
-  (prewalk (fn [x]
+  (if s
+    (prewalk (fn [x]
              (cond (instance? Map x) (into {} x)
                    (instance? List x) (vec x)
+                   (instance? Set x) (into #{} x)
                    ;; (Boolean. false) does not evaluate to false in an if.
                    ;; This fixes that.
                    (instance? Boolean x) (boolean x)
                    true x))
-           s))
+           s)))
 ; move this func form convert.clj due to cyclic load dependency
 (defn clojurify-error [^ErrorInfo error]
   (if error
