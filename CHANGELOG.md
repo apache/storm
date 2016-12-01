@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2224: Exposed a method to override in computing the field from given tuple in FieldSelector
  * STORM-2220: Added config support for each bolt in Cassandra bolts, fixed the bolts to be used also as sinks.
  * STORM-1886: Extend KeyValueState iface with delete
  * STORM-2193: Fix FilterConfiguration parameter order
