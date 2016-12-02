@@ -44,7 +44,7 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
     private static final String COMMIT_TXID_KEY = "commit";
     private static final String PREPARE_TXID_KEY = "prepare";
     private static final Serializer<Optional<byte[]>> internalValueSerializer = new DefaultStateSerializer<>();
-    private static final String TOMBSTONE = encode(internalValueSerializer.serialize(Optional.absent()));
+    private static final String TOMBSTONE = encode(internalValueSerializer.serialize(Optional.<byte[]>absent()));
     
     private final String namespace;
     private final String prepareNamespace;
