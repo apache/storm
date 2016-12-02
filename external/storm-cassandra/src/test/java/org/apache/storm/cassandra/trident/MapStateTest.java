@@ -22,14 +22,15 @@ import com.datastax.driver.core.Cluster;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.querybuilder.QueryBuilder;
+import com.datastax.driver.core.querybuilder.Truncate;
 import com.datastax.driver.core.schemabuilder.Create;
 import com.datastax.driver.core.schemabuilder.SchemaBuilder;
-import org.apache.cassandra.exceptions.ConfigurationException;
 import org.apache.cassandra.locator.SimpleStrategy;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.cassandra.client.CassandraConf;
+import org.apache.storm.cassandra.testtools.EmbeddedCassandraResource;
 import org.apache.storm.cassandra.trident.state.MapStateFactoryBuilder;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
@@ -42,20 +43,20 @@ import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.trident.testing.Split;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.thrift.transport.TTransportException;
-import org.cassandraunit.utils.EmbeddedCassandraServerHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import org.junit.*;
 
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
 public class MapStateTest {
+
+    @ClassRule
+    public static final EmbeddedCassandraResource cassandra = new EmbeddedCassandraResource();
 
     private static Logger logger = LoggerFactory.getLogger(MapStateTest.class);
     private static Cluster cluster;
@@ -148,23 +149,17 @@ public class MapStateTest {
 
     }
 
-    @BeforeClass
-    public static void setUpClass() throws InterruptedException, TTransportException, ConfigurationException, IOException {
-        EmbeddedCassandraServerHelper.startEmbeddedCassandra();
-        Cluster.Builder clusterBuilder = Cluster.builder();
-
-        // Add cassandra cluster contact points
-        clusterBuilder.addContactPoint(EmbeddedCassandraServerHelper.getHost());
-        clusterBuilder.withPort(EmbeddedCassandraServerHelper.getNativeTransportPort());
-
-        // Build cluster and connect
-        cluster = clusterBuilder.build();
-    }
-
     @Before
     public void setUp() throws Exception {
 
-        EmbeddedCassandraServerHelper.cleanEmbeddedCassandra();
+        Cluster.Builder clusterBuilder = Cluster.builder();
+
+        // Add cassandra cluster contact points
+        clusterBuilder.addContactPoint(cassandra.getHost());
+        clusterBuilder.withPort(cassandra.getNativeTransportPort());
+
+        // Build cluster and connect
+        cluster = clusterBuilder.build();
         session = cluster.connect();
 
         createKeyspace("words_ks");
@@ -176,6 +171,7 @@ public class MapStateTest {
 
     @After
     public void tearDown() {
+        truncateTable("words_ks", "words_table");
         session.close();
     }
 
@@ -193,10 +189,15 @@ public class MapStateTest {
 
     protected Config getCassandraConfig() {
         Config cassandraConf = new Config();
-        cassandraConf.put(CassandraConf.CASSANDRA_NODES, EmbeddedCassandraServerHelper.getHost());
-        cassandraConf.put(CassandraConf.CASSANDRA_PORT, EmbeddedCassandraServerHelper.getNativeTransportPort());
+        cassandraConf.put(CassandraConf.CASSANDRA_NODES, cassandra.getHost());
+        cassandraConf.put(CassandraConf.CASSANDRA_PORT, cassandra.getNativeTransportPort());
         cassandraConf.put(CassandraConf.CASSANDRA_KEYSPACE, "words_ks");
         return cassandraConf;
+    }
+
+    protected void truncateTable(String keyspace, String table) {
+        Truncate truncate = QueryBuilder.truncate(keyspace, table);
+        session.execute(truncate);
     }
 
     protected void createTable(String keyspace, String table, Column key, Column... fields) {
@@ -205,6 +206,7 @@ public class MapStateTest {
         replication.put("replication_factor", 1);
 
         Create createTable = SchemaBuilder.createTable(keyspace, table)
+                .ifNotExists()
                 .addPartitionKey(key.name, key.type);
         for (Column field : fields) {
             createTable.addColumn(field.name, field.type);
