@@ -94,6 +94,8 @@
 (defmeter nimbus:num-getTopology-calls)
 (defmeter nimbus:num-getUserTopology-calls)
 (defmeter nimbus:num-getClusterInfo-calls)
+(defmeter nimbus:num-getLeader-calls)
+(defmeter nimbus:num-isTopologyNameAllowed-calls)
 (defmeter nimbus:num-getTopologyInfoWithOpts-calls)
 (defmeter nimbus:num-getTopologyInfo-calls)
 (defmeter nimbus:num-getTopologyPageInfo-calls)
@@ -2353,6 +2355,32 @@
             topo-history-list (read-topology-history nimbus user admin-users)]
         (TopologyHistoryInfo. (distinct (concat active-ids-for-user topo-history-list)))))
 
+    (^NimbusSummary getLeader [this]
+      (mark! nimbus:num-getLeader-calls)
+      (check-authorization! nimbus nil nil "getClusterInfo")
+      (let [storm-cluster-state (:storm-cluster-state nimbus)
+            nimbuses (.nimbuses storm-cluster-state)
+            leader-elector (:leader-elector nimbus)
+            leader (.getLeader leader-elector)
+            leader-host (.getHost leader)
+            leader-port (.getPort leader)
+            leader-summary (first (filter
+               (fn [nimbus-summary] (and (= leader-host (.get_host nimbus-summary)) (= leader-port (.get_port nimbus-summary))))
+               nimbuses))]
+        (.set_uptime_secs leader-summary (time-delta (.get_uptime_secs leader-summary)))
+        (.set_isLeader leader-summary true)
+        leader-summary))
+        
+    (^boolean isTopologyNameAllowed [this ^String name]
+      (mark! nimbus:num-isTopologyNameAllowed-calls)
+      (check-authorization! nimbus nil nil "getClusterInfo")
+      (try
+        (validate-topology-name! name)
+        (check-storm-active! nimbus name false)
+        true
+        (catch InvalidTopologyException e false)
+        (catch AlreadyAliveException e false)))
+ 
     Shutdownable
     (shutdown [this]
       (mark! nimbus:num-shutdown-calls)
