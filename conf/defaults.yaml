@@ -264,7 +264,6 @@ topology.disruptor.batch.timeout.millis: 1
 topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
 topology.metrics.aggregate.per.worker: false
-topology.metrics.aggregate.metric.evict.secs: 5
 topology.metrics.expand.map.type: false
 topology.metrics.metric.name.separator: "."
 

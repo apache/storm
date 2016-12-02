@@ -56,7 +56,6 @@
 ## - only effective when expandMapType is set to true
 ##
 # topology.metrics.aggregate.per.worker: true
-# topology.metrics.aggregate.metric.evict.secs: 5
 # topology.metrics.expand.map.type: true
 # topology.metrics.metric.name.separator: "."
 

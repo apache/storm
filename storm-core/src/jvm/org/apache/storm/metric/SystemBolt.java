@@ -53,12 +53,10 @@ import java.util.Map;
 // This bolt was conceived to export worker stats via metrics api.
 public class SystemBolt implements IBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SystemBolt.class);
-    public static final int MAX_ALLOW_DELAY_SECS_OF_TASK_METRICS = 5;
 
     private static boolean _prepareWasCalled = false;
     private OutputCollector collector;
     private TopologyContext context;
-    private int metricEvictSecs;
     private DataPointExpander expander;
     private boolean aggregateMode;
     private Map<Integer, Map<Integer, TaskInfoToDataPointsPair>> intervalToTaskToMetricTupleMap;
@@ -140,7 +138,6 @@ public class SystemBolt implements IBolt {
 
         setupMetricsExpander(stormConf);
         aggregateMode = Utils.getBoolean(stormConf.get(Config.TOPOLOGY_METRICS_AGGREGATE_PER_WORKER), false);
-        metricEvictSecs = Utils.getInt(stormConf.get(Config.TOPOLOGY_METRICS_AGGREGATE_METRIC_EVICT_SECS), MAX_ALLOW_DELAY_SECS_OF_TASK_METRICS);
 
         if(_prepareWasCalled && !"local".equals(stormConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
@@ -226,6 +223,9 @@ public class SystemBolt implements IBolt {
         if (aggregateMode) {
             handleMetricTupleInAggregateMode(taskInfo, expandedDataPoints);
         } else {
+            LOG.debug("Emitting metric tuple (no aggregation) - taskInfoEntry: {} / aggregated data points: {}",
+                taskInfo, expandedDataPoints);
+
             collector.emit(Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfo, expandedDataPoints));
         }
     }
@@ -237,6 +237,8 @@ public class SystemBolt implements IBolt {
             intervalToTaskToMetricTupleMap.put(taskInfo.updateIntervalSecs, taskToMetricTupleMap);
         }
 
+        LOG.debug("Putting data points for task id: {} / timestamp: {}", taskInfo.srcTaskId, taskInfo.timestamp);
+
         taskToMetricTupleMap.put(taskInfo.srcTaskId, new TaskInfoToDataPointsPair(taskInfo, expandedDataPoints));
 
         int currentTimeSec = Time.currentTimeSecs();
@@ -244,6 +246,8 @@ public class SystemBolt implements IBolt {
 
         // since we're removing old metric tuples, this means we're OK to aggregate here
         if (isOKtoAggregateMetricsTuples(taskToMetricTupleMap)) {
+            LOG.debug("Data points received from all tasks, aggregating and sending");
+
             Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> taskInfoToMetricTupleMap = convertMetricsTupleMapKeyedByTaskInfo(taskToMetricTupleMap, currentTimeSec);
 
             // let's aggregate by metric name again
@@ -251,11 +255,19 @@ public class SystemBolt implements IBolt {
                 IMetricsConsumer.TaskInfo taskInfoEntry = taskInfoToDataPointsEntry.getKey();
                 Collection<IMetricsConsumer.DataPoint> dataPointsEntry = taskInfoToDataPointsEntry.getValue();
                 Collection<IMetricsConsumer.DataPoint> aggregatedDataPoints = aggregateDataPointsByMetricName(dataPointsEntry);
+
+                LOG.debug("Emitting aggregated metric tuple - taskInfoEntry: {} / aggregated data points: {}", taskInfoEntry, aggregatedDataPoints);
+
                 collector.emit(Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfoEntry, aggregatedDataPoints));
             }
 
+            LOG.debug("Clearing sent metrics");
+
             // clear out already aggregated metrics
             taskToMetricTupleMap.clear();
+        } else {
+            LOG.debug("Waiting more tasks metric to aggregate - all tasks: {} / current: {}",
+                context.getThisWorkerTasks(), taskToMetricTupleMap.keySet());
         }
     }
 
@@ -266,7 +278,11 @@ public class SystemBolt implements IBolt {
             TaskInfoToDataPointsPair taskInfoToDataPointsPair = taskToMetricTupleEntry.getValue();
             IMetricsConsumer.TaskInfo taskInfoInEntry = taskInfoToDataPointsPair.getLeft();
 
-            if (currentTimeSec - taskInfoInEntry.timestamp > metricEvictSecs) {
+            int evictionSecs = taskInfoInEntry.updateIntervalSecs / 2;
+            long metricElapsedSecs = currentTimeSec - taskInfoInEntry.timestamp;
+            if (metricElapsedSecs > evictionSecs) {
+                LOG.debug("Found old pending metric - eviction secs {} but {} secs passed, evicting - taskInfo: {}",
+                    evictionSecs, metricElapsedSecs, taskInfoInEntry);
                 it.remove();
             }
         }
