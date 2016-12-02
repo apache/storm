@@ -179,6 +179,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
  * STORM-2087: storm-kafka-client - tuples not always being replayed.
  * STORM-2182: Refactor Storm Kafka Examples Into Own Modules.
  * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API.
