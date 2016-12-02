@@ -122,6 +122,7 @@ public class Zookeeper {
                 }
             }
         });
+        LOG.info("Staring ZK Curator");
         fk.start();
         return fk;
     }

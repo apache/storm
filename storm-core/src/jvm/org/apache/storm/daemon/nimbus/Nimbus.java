@@ -202,6 +202,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter getTopologyCalls = registerMeter("nimbus:num-getTopology-calls");
     private static final Meter getUserTopologyCalls = registerMeter("nimbus:num-getUserTopology-calls");
     private static final Meter getClusterInfoCalls = registerMeter("nimbus:num-getClusterInfo-calls");
+    private static final Meter getLeaderCalls = registerMeter("nimbus:num-getLeader-calls");
+    private static final Meter isTopologyNameAllowedCalls = registerMeter("nimbus:num-isTopologyNameAllowed-calls");
     private static final Meter getTopologyInfoWithOptsCalls = registerMeter("nimbus:num-getTopologyInfoWithOpts-calls");
     private static final Meter getTopologyInfoCalls = registerMeter("nimbus:num-getTopologyInfo-calls");
     private static final Meter getTopologyPageInfoCalls = registerMeter("nimbus:num-getTopologyPageInfo-calls");
@@ -2522,7 +2524,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new IllegalArgumentException("The cluster is configured for zookeeper authentication, but no payload was provided.");
             }
             LOG.info("Received topology submission for {} with conf {}", topoName, Utils.redactValue(topoConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
-            
             // lock protects against multiple topologies being submitted at once and
             // cleanup thread killing topology in b/w assignment and starting the topology
             synchronized(submitLock) {
@@ -3725,7 +3726,37 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             throw new RuntimeException(e);
         }
     }
+    
+    @Override
+    public NimbusSummary getLeader() throws AuthorizationException, TException {
+        getLeaderCalls.mark();
+        checkAuthorization(null, null, "getClusterInfo");
+        List<NimbusSummary> nimbuses = stormClusterState.nimbuses();
+        NimbusInfo leader = leaderElector.getLeader();
+        for (NimbusSummary nimbusSummary: nimbuses) {
+            if (leader.getHost().equals(nimbusSummary.get_host()) &&
+                    leader.getPort() == nimbusSummary.get_port()) {
+                nimbusSummary.set_uptime_secs(Time.deltaSecs(nimbusSummary.get_uptime_secs()));
+                nimbusSummary.set_isLeader(true);
+                return nimbusSummary;
+            }
+        }
+        return null;
+    }
 
+    @Override
+    public boolean isTopologyNameAllowed(String name) throws AuthorizationException, TException {
+        isTopologyNameAllowedCalls.mark();
+        try {
+            checkAuthorization(name, null, "getClusterInfo");
+            validateTopologyName(name);
+            assertTopoActive(name, false);
+            return true;
+        } catch (InvalidTopologyException | AlreadyAliveException e) {
+            return false;
+        }
+    }
+    
     // Shutdownable methods
     
     @SuppressWarnings("deprecation")
