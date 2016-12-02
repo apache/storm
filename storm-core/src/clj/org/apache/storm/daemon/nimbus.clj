@@ -974,69 +974,69 @@
                                         ;; we exclude its assignment, meaning that all the slots occupied by its assignment
                                         ;; will be treated as free slot in the scheduler code.
                                         (when (or (nil? scratch-topology-id) (not= tid scratch-topology-id))
-                                          {tid (.assignment-info storm-cluster-state tid nil)})))
-        ;; make the new assignments for topologies
-        new-scheduler-assignments (locking (:sched-lock nimbus) (compute-new-scheduler-assignments
-                                       nimbus
-                                       existing-assignments
-                                       topologies
-                                       scratch-topology-id))
-        topology->executor->node+port (compute-new-topology->executor->node+port new-scheduler-assignments existing-assignments)
+                                          {tid (.assignment-info storm-cluster-state tid nil)})))]
+      ;; make the new assignments for topologies
+      (locking (:sched-lock nimbus) (let [
+          new-scheduler-assignments (compute-new-scheduler-assignments
+                                         nimbus
+                                         existing-assignments
+                                         topologies
+                                         scratch-topology-id)
+          topology->executor->node+port (compute-new-topology->executor->node+port new-scheduler-assignments existing-assignments)
 
-        topology->executor->node+port (merge (into {} (for [id assigned-topology-ids] {id nil})) topology->executor->node+port)
-        new-assigned-worker->resources (convert-assignments-to-worker->resources new-scheduler-assignments)
-        now-secs (current-time-secs)
+          topology->executor->node+port (merge (into {} (for [id assigned-topology-ids] {id nil})) topology->executor->node+port)
+          new-assigned-worker->resources (convert-assignments-to-worker->resources new-scheduler-assignments)
+          now-secs (current-time-secs)
 
-        basic-supervisor-details-map (basic-supervisor-details-map storm-cluster-state)
+          basic-supervisor-details-map (basic-supervisor-details-map storm-cluster-state)
 
-        ;; construct the final Assignments by adding start-times etc into it
-        new-assignments (into {} (for [[topology-id executor->node+port] topology->executor->node+port
-                                        :let [existing-assignment (get existing-assignments topology-id)
-                                              all-nodes (->> executor->node+port vals (map first) set)
-                                              node->host (->> all-nodes
-                                                              (mapcat (fn [node]
-                                                                        (if-let [host (.getHostName inimbus basic-supervisor-details-map node)]
-                                                                          [[node host]]
+          ;; construct the final Assignments by adding start-times etc into it
+          new-assignments (into {} (for [[topology-id executor->node+port] topology->executor->node+port
+                                          :let [existing-assignment (get existing-assignments topology-id)
+                                                all-nodes (->> executor->node+port vals (map first) set)
+                                                node->host (->> all-nodes
+                                                                (mapcat (fn [node]
+                                                                          (if-let [host (.getHostName inimbus basic-supervisor-details-map node)]
+                                                                            [[node host]]
+                                                                            )))
+                                                                (into {}))
+                                                all-node->host (merge (:node->host existing-assignment) node->host)
+                                                reassign-executors (changed-executors (:executor->node+port existing-assignment) executor->node+port)
+                                                start-times (merge (:executor->start-time-secs existing-assignment)
+                                                                  (into {}
+                                                                        (for [id reassign-executors]
+                                                                          [id now-secs]
                                                                           )))
-                                                              (into {}))
-                                              all-node->host (merge (:node->host existing-assignment) node->host)
-                                              reassign-executors (changed-executors (:executor->node+port existing-assignment) executor->node+port)
-                                              start-times (merge (:executor->start-time-secs existing-assignment)
-                                                                (into {}
-                                                                      (for [id reassign-executors]
-                                                                        [id now-secs]
-                                                                        )))
-                                              worker->resources (get new-assigned-worker->resources topology-id)]]
-                                   {topology-id (Assignment.
-                                                 (conf STORM-LOCAL-DIR)
-                                                 (select-keys all-node->host all-nodes)
-                                                 executor->node+port
-                                                 start-times
-                                                 worker->resources)}))]
+                                                worker->resources (get new-assigned-worker->resources topology-id)]]
+                                     {topology-id (Assignment.
+                                                   (conf STORM-LOCAL-DIR)
+                                                   (select-keys all-node->host all-nodes)
+                                                   executor->node+port
+                                                   start-times
+                                                   worker->resources)}))]
 
-    (when (not= new-assignments existing-assignments)
-      (log-debug "RESETTING id->resources and id->worker-resources cache!")
-      (reset! (:id->resources nimbus) {})
-      (reset! (:id->worker-resources nimbus) {}))
-    ;; tasks figure out what tasks to talk to by looking at topology at runtime
-    ;; only log/set when there's been a change to the assignment
-    (locking (:sched-lock nimbus)
-      (doseq [[topology-id assignment] new-assignments
-              :let [existing-assignment (get existing-assignments topology-id)
-                    topology-details (.getById topologies topology-id)]]
-        (if (= existing-assignment assignment)
-          (log-debug "Assignment for " topology-id " hasn't changed")
-          (do
-            (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
-            (.set-assignment! storm-cluster-state topology-id assignment)
-            )))
-      (->> new-assignments
+        (when (not= new-assignments existing-assignments)
+          (log-debug "RESETTING id->resources and id->worker-resources cache!")
+          (reset! (:id->resources nimbus) {})
+          (reset! (:id->worker-resources nimbus) {}))
+        ;; tasks figure out what tasks to talk to by looking at topology at runtime
+        ;; only log/set when there's been a change to the assignment
+        (doseq [[topology-id assignment] new-assignments
+                :let [existing-assignment (get existing-assignments topology-id)
+                      topology-details (.getById topologies topology-id)]]
+          (if (= existing-assignment assignment)
+            (log-debug "Assignment for " topology-id " hasn't changed")
+            (do
+              (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
+              (.set-assignment! storm-cluster-state topology-id assignment)
+              )))
+        (->> new-assignments
             (map (fn [[topology-id assignment]]
               (let [existing-assignment (get existing-assignments topology-id)]
                 [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))]
                 )))
             (into {})
-            (.assignSlots inimbus topologies))))
+            (.assignSlots inimbus topologies)))))
     (log-message "not a leader, skipping assignments")))
 
 (defn notify-topology-action-listener [nimbus storm-id action]
