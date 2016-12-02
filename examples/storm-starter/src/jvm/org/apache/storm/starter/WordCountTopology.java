@@ -90,9 +90,7 @@ public class WordCountTopology {
     if (args != null && args.length > 0) {
       conf.setNumWorkers(3);
 
-      for (String name: args) {
-        StormSubmitter.submitTopologyWithProgressBar(name, conf, builder.createTopology());
-      }
+      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
     }
     else {
       conf.setMaxTaskParallelism(3);
