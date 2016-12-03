@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1281: LocalCluster, testing4j and testing.clj to java
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
  * STORM-1276: line for line translation of nimbus to java
  * STORM-2224: Exposed a method to override in computing the field from given tuple in FieldSelector
