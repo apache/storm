@@ -15,14 +15,7 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.config
-  (:import [java.io FileReader File IOException]
-           [org.apache.storm.generated StormTopology])
-  (:import [org.apache.storm Config])
-  (:import [org.apache.storm.utils Utils LocalState ConfigUtils MutableInt])
-  (:import [org.apache.storm.validation ConfigValidation])
-  (:import [org.apache.commons.io FileUtils])
-  (:require [clojure [string :as str]])
-  (:use [org.apache.storm log util]))
+  (:import [org.apache.storm Config]))
 
 (defn- clojure-config-name [name]
   (.replace (.toUpperCase name) "_" "-"))
@@ -33,12 +26,3 @@
         new-name (clojure-config-name name)]
     (eval
       `(def ~(symbol new-name) (. Config ~(symbol name))))))
-
-(def ALL-CONFIGS
-  (dofor [f (seq (.getFields Config))]
-         (.get f nil)))
-
-;; TODO this function and its callings will be replace when nimbus and supervisor move to Java
-(defn cluster-mode
-  [conf & args]
-  (keyword (conf STORM-CLUSTER-MODE)))

@@ -34,7 +34,7 @@ public class MkClusterParam {
 	/**
 	 * cluster config
 	 */
-	private Map daemonConf;
+	private Map<String, Object> daemonConf;
 
 	private Boolean nimbusDaemon;
 	
@@ -53,10 +53,10 @@ public class MkClusterParam {
 	public void setPortsPerSupervisor(Integer portsPerSupervisor) {
 		this.portsPerSupervisor = portsPerSupervisor;
 	}
-	public Map getDaemonConf() {
+	public Map<String, Object> getDaemonConf() {
 		return daemonConf;
 	}
-	public void setDaemonConf(Map daemonConf) {
+	public void setDaemonConf(Map<String, Object> daemonConf) {
 		this.daemonConf = daemonConf;
 	}
 	/**

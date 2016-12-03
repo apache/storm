@@ -20,6 +20,7 @@ package org.apache.storm.hive.bolt;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -77,13 +78,10 @@ public class HiveTopologyPartitioned {
         builder.setBolt(BOLT_ID, hiveBolt, 1)
                 .shuffleGrouping(USER_SPOUT_ID);
         if (args.length == 3) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
-            waitForSeconds(20);
-            cluster.killTopology(TOPOLOGY_NAME);
-            System.out.println("cluster begin to shutdown");
-            cluster.shutdown();
-            System.out.println("cluster shutdown");
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());) {
+                waitForSeconds(20);
+            }
             System.exit(0);
         } else if(args.length >= 4) {
             StormSubmitter.submitTopology(args[3], config, builder.createTopology());

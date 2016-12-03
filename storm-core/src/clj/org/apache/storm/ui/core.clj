@@ -22,7 +22,7 @@
         ring.middleware.multipart-params.temp-file)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [org.apache.storm config util log converter])
+  (:use [org.apache.storm config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]
@@ -309,7 +309,7 @@
           bolt-summs (filter (partial bolt-summary? topology) execs)
           spout-comp-summs (group-by-comp spout-summs)
           bolt-comp-summs (group-by-comp bolt-summs)
-          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
+          ;TODO: when translating this function, you should replace the filter-key with a proper for loop + if condition HERE
           bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)]
       (visualization-data
@@ -582,7 +582,7 @@
           bolt-executor-summaries (filter (partial bolt-summary? storm-topology) (.get_executors topology-info))
           spout-comp-id->executor-summaries (group-by-comp spout-executor-summaries)
           bolt-comp-id->executor-summaries (group-by-comp bolt-executor-summaries)
-          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
+          ;TODO: when translating this function, you should replace the filter-key with a proper for loop + if condition HERE
           bolt-comp-id->executor-summaries (filter-key (mk-include-sys-fn include-sys?) bolt-comp-id->executor-summaries)
           id->spout-spec (.get_spouts storm-topology)
           id->bolt (.get_bolts storm-topology)
@@ -993,6 +993,14 @@
      "executorStats" (map (partial unpack-comp-exec-stat topology-id secure?)
                           (.get_exec_stats info))}
     (-> info .get_errors (component-errors topology-id secure?))))
+
+(defn clojurify-profile-request
+  [^ProfileRequest request]
+  (when request
+    {:host (.get_node (.get_nodeInfo request))
+     :port (first (.get_port (.get_nodeInfo request)))
+     :action     (.get_action request)
+     :timestamp  (.get_time_stamp request)}))
 
 (defn get-active-profile-actions
   [nimbus topology-id component]

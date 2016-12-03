@@ -75,11 +75,9 @@
                    :p 6)}))
 
 (defn run-local! []
-  (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "word-count" {TOPOLOGY-DEBUG true} (mk-topology))
-    (Thread/sleep 10000)
-    (.shutdown cluster)
-    ))
+  (with-open [cluster (LocalCluster.)
+              topo (.submitTopology cluster "word-count" {TOPOLOGY-DEBUG true} (mk-topology))]
+    (Thread/sleep 10000)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopology

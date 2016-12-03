@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.MemoryTransactionalSpout;
@@ -160,15 +161,13 @@ public class TransactionalGlobalCount {
     builder.setBolt("partial-count", new BatchCount(), 5).noneGrouping("spout");
     builder.setBolt("sum", new UpdateGlobalCount()).globalGrouping("partial-count");
 
-    LocalCluster cluster = new LocalCluster();
-
     Config config = new Config();
     config.setDebug(true);
     config.setMaxSpoutPending(3);
-
-    cluster.submitTopology("global-count-topology", config, builder.buildTopology());
-
-    Thread.sleep(3000);
-    cluster.shutdown();
+ 
+    try (LocalCluster cluster = new LocalCluster();
+         LocalTopology topo = cluster.submitTopology("global-count-topology", config, builder.buildTopology());) {
+        Thread.sleep(3000);
+    }
   }
 }

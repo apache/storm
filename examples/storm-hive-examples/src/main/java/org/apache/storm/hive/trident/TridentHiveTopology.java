@@ -24,6 +24,7 @@ import org.apache.storm.hive.common.HiveOptions;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hooks.SubmitterHookException;
@@ -89,22 +90,18 @@ public class TridentHiveTopology {
         }
     }
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String metaStoreURI = args[0];
         String dbName = args[1];
         String tblName = args[2];
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         if(args.length == 3) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("tridentHiveTopology", conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
-            LOG.info("waiting for 60 seconds");
-            waitForSeconds(60);
-            LOG.info("killing topology");
-            cluster.killTopology("tridenHiveTopology");
-            LOG.info("cluster shutdown");
-            cluster.shutdown();
-            LOG.info("cluster shutdown");
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("tridentHiveTopology", conf, buildTopology(metaStoreURI, dbName, tblName,null,null));) {
+                LOG.info("waiting for 60 seconds");
+                waitForSeconds(60);
+            }
             System.exit(0);
         } else if(args.length == 4) {
             try {

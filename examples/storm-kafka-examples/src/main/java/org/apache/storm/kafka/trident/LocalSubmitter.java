@@ -38,8 +38,12 @@ public class LocalSubmitter {
         this.cluster = cluster;
     }
 
-     public static LocalSubmitter newInstance() {
-        return new LocalSubmitter(new LocalDRPC(), new LocalCluster());
+    public static LocalSubmitter newInstance() {
+        try {
+            return new LocalSubmitter(new LocalDRPC(), new LocalCluster());
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Config defaultConfig() {
@@ -55,7 +59,11 @@ public class LocalSubmitter {
     }
 
     public void submit(String name, Config config, StormTopology topology) {
-        cluster.submitTopology(name, config, topology);
+        try {
+            cluster.submitTopology(name, config, topology);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /**
@@ -74,7 +82,11 @@ public class LocalSubmitter {
     }
 
     public void kill (String name) {
-        cluster.killTopology(name);
+        try {
+            cluster.killTopology(name);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void shutdown() {

@@ -24,6 +24,7 @@ import org.apache.storm.opentsdb.trident.OpenTsdbStateFactory;
 import org.apache.storm.opentsdb.trident.OpenTsdbStateUpdater;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
@@ -74,12 +75,10 @@ public class SampleOpenTsdbTridentTopology {
         } else {
             conf.setMaxTaskParallelism(3);
 
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("word-count", conf, tridentTopology.build());
-
-            Thread.sleep(30000);
-
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("word-count", conf, tridentTopology.build())) {
+                Thread.sleep(30000);
+            }
             System.exit(0);
         }
 

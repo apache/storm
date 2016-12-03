@@ -88,10 +88,10 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * conf.put(Config.TOPOLOGY_DEBUG, true);
  *
- * LocalCluster cluster = new LocalCluster();
- * cluster.submitTopology("mytopology", conf, builder.createTopology());
- * Utils.sleep(10000);
- * cluster.shutdown();
+ * try (LocalCluster cluster = new LocalCluster();
+ *      LocalTopology topo = cluster.submitTopology("mytopology", conf, builder.createTopology());){
+ *     Utils.sleep(10000);
+ * }
  * ```
  *
  * The pattern for `TopologyBuilder` is to map component ids to components using the setSpout

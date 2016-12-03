@@ -22,6 +22,7 @@ import java.util.Arrays;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
@@ -29,7 +30,7 @@ import org.apache.storm.starter.bolt.PrinterBolt;
 import org.apache.storm.starter.spout.TwitterSampleSpout;
 
 public class PrintSampleStream {        
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         String consumerKey = args[0]; 
         String consumerSecret = args[1]; 
         String accessToken = args[2]; 
@@ -44,15 +45,11 @@ public class PrintSampleStream {
         builder.setBolt("print", new PrinterBolt())
                 .shuffleGrouping("twitter");
                 
-                
         Config conf = new Config();
         
-        
-        LocalCluster cluster = new LocalCluster();
-        
-        cluster.submitTopology("test", conf, builder.createTopology());
-        
-        Utils.sleep(10000);
-        cluster.shutdown();
+        try (LocalCluster cluster = new LocalCluster();
+             LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
+          Utils.sleep(10000);
+        }
     }
 }

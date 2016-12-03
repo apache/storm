@@ -750,9 +750,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     
     private static String extractStatusStr(StormBase base) {
         String ret = null;
-        TopologyStatus status = base.get_status();
-        if (status != null) {
-            ret = status.name().toUpperCase();
+        if (base != null) {
+            TopologyStatus status = base.get_status();
+            if (status != null) {
+                ret = status.name().toUpperCase();
+            }
         }
         return ret;
     }
@@ -1309,18 +1311,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 minReplicationCount, confCount, codeCount, jarCount);
     }
     
-    private TopologyDetails readTopologyDetails(String topoId) throws NotAliveException, KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
-        StormBase base = stormClusterState.stormBase(topoId, null);
-        if (base == null) {
-            if (topoId == null) {
-                throw new NullPointerException();
-            }
-            throw new NotAliveException(topoId);
-        }
+    private TopologyDetails readTopologyDetails(String topoId, StormBase base) throws KeyNotFoundException,
+      AuthorizationException, IOException, InvalidTopologyException {
+        assert (base != null);
+        assert (topoId != null);
+        
         BlobStore store = blobStore;
         Map<String, Object> topoConf = readTopoConfAsNimbus(topoId, store);
         StormTopology topo = readStormTopologyAsNimbus(topoId, store);
-        Map<List<Integer>, String> rawExecToComponent = computeExecutorToComponent(topoId);
+        Map<List<Integer>, String> rawExecToComponent = computeExecutorToComponent(topoId, base);
         Map<ExecutorDetails, String> executorsToComponent = new HashMap<>();
         for (Entry<List<Integer>, String> entry: rawExecToComponent.entrySet()) {
             List<Integer> execs = entry.getKey();
@@ -1381,9 +1380,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
     
-    private List<List<Integer>> computeExecutors(String topoId) throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
+    private List<List<Integer>> computeExecutors(String topoId, StormBase base) throws KeyNotFoundException, AuthorizationException, IOException, InvalidTopologyException {
         BlobStore store = blobStore;
-        StormBase base = stormClusterState.stormBase(topoId, null);
+        assert (base != null);
+
         Map<String, Integer> compToExecutors = base.get_component_executors();
         Map<String, Object> topoConf = readTopoConfAsNimbus(topoId, store);
         StormTopology topology = readStormTopologyAsNimbus(topoId, store);
@@ -1406,9 +1406,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
     
-    private Map<List<Integer>, String> computeExecutorToComponent(String topoId) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
+    private Map<List<Integer>, String> computeExecutorToComponent(String topoId, StormBase base) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
         BlobStore store = blobStore;
-        List<List<Integer>> executors = computeExecutors(topoId);
+        List<List<Integer>> executors = computeExecutors(topoId, base);
         StormTopology topology = readStormTopologyAsNimbus(topoId, store);
         Map<String, Object> topoConf = readTopoConfAsNimbus(topoId, store);
         Map<Integer, String> taskToComponent = StormCommon.stormTaskInfo(topology, topoConf);
@@ -1419,11 +1419,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
     
-    private Map<String, Set<List<Integer>>> computeTopologyToExecutors(Collection<String> topoIds) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
+    private Map<String, Set<List<Integer>>> computeTopologyToExecutors(Map<String, StormBase> bases) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
         Map<String, Set<List<Integer>>> ret = new HashMap<>();
-        if (topoIds != null) {
-            for (String topoId: topoIds) {
-                ret.put(topoId, new HashSet<>(computeExecutors(topoId)));
+        if (bases != null) {
+            for (Entry<String, StormBase> entry: bases.entrySet()) {
+                String topoId = entry.getKey();
+                ret.put(topoId, new HashSet<>(computeExecutors(topoId, entry.getValue())));
             }
         }
         return ret;
@@ -1580,8 +1581,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
     
     private Map<String, SchedulerAssignment> computeNewSchedulerAssignments(Map<String, Assignment> existingAssignments,
-            Topologies topologies, String scratchTopologyId) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
-        Map<String, Set<List<Integer>>> topoToExec = computeTopologyToExecutors(existingAssignments.keySet());
+            Topologies topologies, Map<String, StormBase> bases, String scratchTopologyId) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
+        Map<String, Set<List<Integer>>> topoToExec = computeTopologyToExecutors(bases);
         
         updateAllHeartbeats(existingAssignments, topoToExec);
 
@@ -1642,12 +1643,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return cluster.getAssignments();
     }
     
-    private TopologyResources getResourcesForTopology(String topoId) throws NotAliveException, AuthorizationException, InvalidTopologyException, IOException {
+    private TopologyResources getResourcesForTopology(String topoId, StormBase base) throws NotAliveException, AuthorizationException, InvalidTopologyException, IOException {
         TopologyResources ret = idToResources.get().get(topoId);
         if (ret == null) {
             try {
                 IStormClusterState state = stormClusterState;
-                TopologyDetails details = readTopologyDetails(topoId);
+                TopologyDetails details = readTopologyDetails(topoId, base);
                 double sumOnHeap = 0.0;
                 double sumOffHeap = 0.0;
                 double sumCPU = 0.0;
@@ -1721,10 +1722,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         IStormClusterState state = stormClusterState;
         //read all the topologies
-        List<String> topologyIds = state.activeStorms();
+        Map<String, StormBase> bases = state.topologyBases();
         Map<String, TopologyDetails> tds = new HashMap<>();
-        for (String id: topologyIds) {
-            tds.put(id, readTopologyDetails(id));
+        for (Iterator<Entry<String, StormBase>> it = bases.entrySet().iterator(); it.hasNext(); ) {
+            Entry<String, StormBase> entry = it.next();
+            String id = entry.getKey();
+            try {
+                tds.put(id, readTopologyDetails(id, entry.getValue()));
+            } catch (KeyNotFoundException e) {
+                //A race happened and it is probably not running
+                it.remove();
+            }
         }
         Topologies topologies = new Topologies(tds);
         List<String> assignedTopologyIds = state.assignments(null);
@@ -1738,7 +1746,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         }
         // make the new assignments for topologies
-        Map<String, SchedulerAssignment> newSchedulerAssignments = computeNewSchedulerAssignments(existingAssignments, topologies, scratchTopoId);
+        Map<String, SchedulerAssignment> newSchedulerAssignments = computeNewSchedulerAssignments(existingAssignments, topologies, bases, scratchTopoId);
         Map<String, Map<List<Long>, List<Object>>> topologyToExecutorToNodePort = computeNewTopoToExecToNodePort(newSchedulerAssignments, existingAssignments);
         for (String id: assignedTopologyIds) {
             if (!topologyToExecutorToNodePort.containsKey(id)) {
@@ -1755,8 +1763,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             Map<List<Long>, List<Object>> execToNodePort = entry.getValue();
             Assignment existingAssignment = existingAssignments.get(topoId);
             Set<String> allNodes = new HashSet<>();
-            for (List<Object> nodePort: execToNodePort.values()) {
-                allNodes.add((String) nodePort.get(0));
+            if (execToNodePort != null) {
+                for (List<Object> nodePort: execToNodePort.values()) {
+                    allNodes.add((String) nodePort.get(0));
+                }
             }
             Map<String, String> allNodeHost = new HashMap<>();
             if (existingAssignment != null) {
@@ -2248,7 +2258,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (status != null) {
                 summary.set_sched_status(status);
             }
-            TopologyResources resources = getResourcesForTopology(topoId);
+            TopologyResources resources = getResourcesForTopology(topoId, base);
             if (resources != null) {
                 summary.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 summary.set_requested_memoffheap(resources.getRequestedMemOffHeap());
@@ -3273,6 +3283,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             getTopologyInfoWithOptsCalls.mark();
             CommonTopoInfo common = getCommonTopoInfo(topoId, "getTopologyInfo");
+            if (common.base == null) {
+                throw new NotAliveException(topoId);
+            }
             IStormClusterState state = stormClusterState;
             NumErrorsChoice numErrChoice = OR(options.get_num_err_choice(), NumErrorsChoice.ALL);
             Map<String, List<ErrorInfo>> errors = new HashMap<>();
@@ -3334,7 +3347,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (schedStatus != null) {
                 topoInfo.set_sched_status(schedStatus);
             }
-            TopologyResources resources = getResourcesForTopology(topoId);
+            TopologyResources resources = getResourcesForTopology(topoId, common.base);
             if (resources != null) {
                 topoInfo.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 topoInfo.set_requested_memoffheap(resources.getRequestedMemOffHeap());
@@ -3372,27 +3385,32 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             StormTopology topology = common.topology;
             Map<String, Object> topoConf = common.topoConf;
             StormBase base = common.base;
-            if (assignment == null) {
+            if (base == null) {
                 throw new NotAliveException(topoId);
             }
-            Map<List<Long>, NodeInfo> execToNodeInfo = assignment.get_executor_node_port();
-            Map<String, String> nodeToHost = assignment.get_node_host();
             Map<WorkerSlot, WorkerResources> workerToResources = getWorkerResourcesForTopology(topoId);
+            List<WorkerSummary> workerSummaries = null;
             Map<List<Long>, List<Object>> exec2NodePort = new HashMap<>();
-            for (Entry<List<Long>, NodeInfo> entry: execToNodeInfo.entrySet()) {
-                NodeInfo ni = entry.getValue();
-                List<Object> nodePort = Arrays.asList(ni.get_node(), ni.get_port_iterator().next());
-                exec2NodePort.put(entry.getKey(), nodePort);
+            if (assignment != null) {
+                Map<List<Long>, NodeInfo> execToNodeInfo = assignment.get_executor_node_port();
+                Map<String, String> nodeToHost = assignment.get_node_host();
+                for (Entry<List<Long>, NodeInfo> entry: execToNodeInfo.entrySet()) {
+                    NodeInfo ni = entry.getValue();
+                    List<Object> nodePort = Arrays.asList(ni.get_node(), ni.get_port_iterator().next());
+                    exec2NodePort.put(entry.getKey(), nodePort);
+                }
+                
+                workerSummaries = StatsUtil.aggWorkerStats(topoId,
+                        topoName,
+                        taskToComp,
+                        beats,
+                        exec2NodePort,
+                        nodeToHost,
+                        workerToResources,
+                        includeSys,
+                        true); //this is the topology page, so we know the user is authorized
             }
-            List<WorkerSummary> workerSummaries = StatsUtil.aggWorkerStats(topoId,
-                    topoName,
-                    taskToComp,
-                    beats,
-                    exec2NodePort,
-                    nodeToHost,
-                    workerToResources,
-                    includeSys,
-                    true); //this is the topology page, so we know the user is authorized
+
             TopologyPageInfo topoPageInfo = StatsUtil.aggTopoExecsStats(topoId,
                     exec2NodePort,
                     taskToComp,
@@ -3414,7 +3432,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 commonStats.set_resources_map(setResourcesDefaultIfNotSet(boltResources, entry.getKey(), topoConf));
             }
             
-            topoPageInfo.set_workers(workerSummaries);
+            if (workerSummaries != null) {
+                topoPageInfo.set_workers(workerSummaries);
+            }
             if (base.is_set_owner()) {
                 topoPageInfo.set_owner(base.get_owner());
             }
@@ -3422,7 +3442,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (schedStatus != null) {
                 topoPageInfo.set_sched_status(schedStatus);
             }
-            TopologyResources resources = getResourcesForTopology(topoId);
+            TopologyResources resources = getResourcesForTopology(topoId, base);
             if (resources != null) {
                 topoPageInfo.set_requested_memonheap(resources.getRequestedMemOnHeap());
                 topoPageInfo.set_requested_memoffheap(resources.getRequestedMemOffHeap());
@@ -3527,6 +3547,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         try {
             getComponentPageInfoCalls.mark();
             CommonTopoInfo info = getCommonTopoInfo(topoId, "getComponentPageInfo");
+            if (info.base == null) {
+                throw new NotAliveException(topoId);
+            }
             StormTopology topology = info.topology;
             Map<String, Object> topoConf = info.topoConf;
             Assignment assignment = info.assignment;
@@ -3559,7 +3582,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             compPageInfo.set_topology_name(info.topoName);
             compPageInfo.set_errors(stormClusterState.errors(topoId, componentId));
             compPageInfo.set_topology_status(extractStatusStr(info.base));
-            if (info.base != null && info.base.is_set_component_debug()) {
+            if (info.base.is_set_component_debug()) {
                 DebugOptions debug = info.base.get_component_debug().get(componentId);
                 if (debug != null) {
                     compPageInfo.set_debug_options(debug);

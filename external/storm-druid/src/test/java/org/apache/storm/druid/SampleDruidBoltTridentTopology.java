@@ -20,6 +20,7 @@ package org.apache.storm.druid;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.druid.bolt.DruidBeamFactory;
 import org.apache.storm.druid.bolt.ITupleDruidEventMapper;
@@ -78,12 +79,10 @@ public class SampleDruidBoltTridentTopology {
         } else {
             conf.setMaxTaskParallelism(3);
 
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("druid-test", conf, tridentTopology.build());
-
-            Thread.sleep(30000);
-
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("druid-test", conf, tridentTopology.build());) {
+                Thread.sleep(30000);
+            }
             System.exit(0);
         }
 

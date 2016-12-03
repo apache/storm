@@ -53,6 +53,12 @@ public interface IStormClusterState {
 
     public List<String> activeStorms();
 
+    /**
+     * Get a storm base for a topology
+     * @param stormId the id of the topology
+     * @param callback something to call if the data changes (best effort)
+     * @return the StormBase or null if it is not alive.
+     */
     public StormBase stormBase(String stormId, Runnable callback);
 
     public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
@@ -183,7 +189,9 @@ public interface IStormClusterState {
         Map<String, StormBase> stormBases = new HashMap<>();
         for (String topologyId : activeStorms()) {
             StormBase base = stormBase(topologyId, null);
-            stormBases.put(topologyId, base);
+            if (base != null) { //rece condition with delete
+                stormBases.put(topologyId, base);
+            }
         }
         return stormBases;
     }

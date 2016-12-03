@@ -48,24 +48,6 @@
   (:require [ring.util.codec :as codec])
   (:use [org.apache.storm log]))
 
-(defmacro defalias
-  "Defines an alias for a var: a new var with the same root binding (if
-  any) and similar metadata. The metadata of the alias is its initial
-  metadata (as provided by def) merged into the metadata of the original."
-  ([name orig]
-   `(do
-      (alter-meta!
-        (if (.hasRoot (var ~orig))
-          (def ~name (.getRawRoot (var ~orig)))
-          (def ~name))
-        ;; When copying metadata, disregard {:macro false}.
-        ;; Workaround for http://www.assembla.com/spaces/clojure/tickets/273
-        #(conj (dissoc % :macro)
-               (apply dissoc (meta (var ~orig)) (remove #{:macro} (keys %)))))
-      (var ~name)))
-  ([name orig doc]
-   (list `defalias (with-meta name (assoc (meta name) :doc doc)) orig)))
-
 ;; name-with-attributes by Konrad Hinsen:
 (defn name-with-attributes
   "To be used in macro definitions.
@@ -121,30 +103,6 @@
          (if (not tc#) (log-error t# "Exception did not match " ~klass))
          tc#))))
 
-(defmacro forcat
-  [[args aseq] & body]
-  `(mapcat (fn [~args]
-             ~@body)
-           ~aseq))
-
-(defmacro try-cause
-  [& body]
-  (let [checker (fn [form]
-                  (or (not (sequential? form))
-                      (not= 'catch (first form))))
-        [code guards] (split-with checker body)
-        error-local (gensym "t")
-        guards (forcat [[_ klass local & guard-body] guards]
-                       `((Utils/exceptionCauseIsInstanceOf ~klass ~error-local)
-                         (let [~local ~error-local]
-                           ~@guard-body
-                           )))]
-    `(try ~@code
-       (catch Throwable ~error-local
-         (cond ~@guards
-               true (throw ~error-local)
-               )))))
-
 (defn clojurify-structure
   [s]
   (if s
@@ -178,84 +136,15 @@
 
 ;TODO: We're keeping this function around until all the code using it is properly tranlated to java
 ;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
-(defn filter-val
-  [afn amap]
-  (into {} (filter (fn [[k v]] (afn v)) amap)))
-
-;TODO: We're keeping this function around until all the code using it is properly tranlated to java
-;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
 (defn filter-key
   [afn amap]
   (into {} (filter (fn [[k v]] (afn k)) amap)))
-
-;TODO: We're keeping this function around until all the code using it is properly tranlated to java
-;TODO: by properly having the for loop IN THE JAVA FUNCTION that originally used this function.
-(defn map-key
-  [afn amap]
-  (into {} (for [[k v] amap] [(afn k) v])))
 
 ;TODO: Once all the other clojure functions (100+ locations) are translated to java, this function becomes moot.
 (def not-nil? (complement nil?))
 
 (defmacro dofor [& body]
   `(doall (for ~@body)))
-
-;; The following two will go away when worker, task, executor go away.
-(defn assoc-apply-self [curr key afn]
-  (assoc curr key (afn curr)))
-
-; These seven following will go away later. To be replaced by idiomatic java.
-(defmacro recursive-map
-  [& forms]
-    (->> (partition 2 forms)
-         (map (fn [[key form]] `(assoc-apply-self ~key (fn [~'<>] ~form))))
-         (concat `(-> {}))))
-
-(defmacro fast-list-iter
-  [pairs & body]
-  (let [pairs (partition 2 pairs)
-        lists (map second pairs)
-        elems (map first pairs)
-        iters (map (fn [_] (gensym)) lists)
-        bindings (->> (map (fn [i l] (let [lg (gensym)] [lg l i `(if ~lg (.iterator ~lg))])) iters lists)
-                      (apply concat))
-        tests (map (fn [i] `(and ~i (.hasNext ^Iterator ~i))) iters)
-        assignments (->> (map (fn [e i] [e `(.next ^Iterator ~i)]) elems iters)
-                         (apply concat))]
-    `(let [~@bindings]
-       (while (and ~@tests)
-         (let [~@assignments]
-           ~@body)))))
-
-(defmacro fast-list-for
-  [[e alist] & body]
-  `(let [ret# (ArrayList.)]
-     (fast-list-iter [~e ~alist]
-                     (.add ret# (do ~@body)))
-     ret#))
-
-(defmacro fast-map-iter
-  [[bind amap] & body]
-  `(let [iter# (if ~amap (.. ^Map ~amap entrySet iterator))]
-     (while (and iter# (.hasNext ^Iterator iter#))
-       (let [entry# (.next ^Iterator iter#)
-             ~bind [(.getKey ^Map$Entry entry#) (.getValue ^Map$Entry entry#)]]
-         ~@body))))
-
-(defn fast-group-by
-  [afn alist]
-  (let [ret (HashMap.)]
-    (fast-list-iter
-      [e alist]
-      (let [key (afn e)
-            ^List curr (let [curr (.get ret key)]
-                         (if curr
-                           curr
-                           (let [default (ArrayList.)]
-                             (.put ret key default)
-                             default)))]
-        (.add curr e)))
-    ret))
 
 (defmacro -<>
   ([x] x)

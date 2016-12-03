@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.scheduler-test
   (:use [clojure test])
-  (:use [org.apache.storm util config testing])
+  (:use [org.apache.storm util config])
   (:import [org.apache.storm.scheduler EvenScheduler])
   (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
   (:import [org.apache.storm.generated StormTopology])

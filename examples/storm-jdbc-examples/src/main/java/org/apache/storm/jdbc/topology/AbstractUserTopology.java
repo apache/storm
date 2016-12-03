@@ -33,6 +33,7 @@ import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 
 import java.sql.Types;
 import java.util.List;
@@ -99,11 +100,10 @@ public abstract class AbstractUserTopology {
         this.jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
         this.connectionProvider = new HikariCPConnectionProvider(map);
         if (args.length == 4) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, getTopology());
-            Thread.sleep(30000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("test", config, getTopology());) {
+                Thread.sleep(30000);
+            }
             System.exit(0);
         } else {
             StormSubmitter.submitTopology(args[4], config, getTopology());

@@ -19,6 +19,7 @@ package org.apache.storm.mongodb.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
@@ -67,11 +68,10 @@ public class WordCountTrident {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         if (args.length == 2) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));
-            Thread.sleep(60 * 1000);
-            cluster.killTopology("wordCounter");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));) {
+                Thread.sleep(60 * 1000);
+            }
             System.exit(0);
         }
         else if(args.length == 3) {

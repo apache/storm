@@ -30,7 +30,7 @@ import java.util.Map;
 import java.util.UUID;
 import static org.apache.storm.utils.Utils.get;
 
-public class FixedTupleSpout implements IRichSpout {
+public class FixedTupleSpout implements IRichSpout, CompletableSpout {
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
     private static final Map<String, Integer> failed = new HashMap<String, Integer>();
 
@@ -175,5 +175,10 @@ public class FixedTupleSpout implements IRichSpout {
     @Override
     public Map<String, Object> getComponentConfiguration() {
         return null;
+    }
+
+    @Override
+    public boolean isExhausted() {
+        return getSourceTuples().size() == getCompleted();
     }
 }

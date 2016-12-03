@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.coordination.BatchOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.MemoryTransactionalSpout;
@@ -230,17 +231,13 @@ public class TransactionalWords {
     builder.setBolt("count", new KeyedCountUpdater(), 5).fieldsGrouping("spout", new Fields("word"));
     builder.setBolt("bucketize", new Bucketize()).noneGrouping("count");
     builder.setBolt("buckets", new BucketCountUpdater(), 5).fieldsGrouping("bucketize", new Fields("bucket"));
-
-
-    LocalCluster cluster = new LocalCluster();
-
     Config config = new Config();
     config.setDebug(true);
     config.setMaxSpoutPending(3);
-
-    cluster.submitTopology("top-n-topology", config, builder.buildTopology());
-
-    Thread.sleep(3000);
-    cluster.shutdown();
+ 
+    try (LocalCluster cluster = new LocalCluster();
+         LocalTopology topo = cluster.submitTopology("top-n-topology", config, builder.buildTopology());) {
+      Thread.sleep(3000);
+    }
   }
 }

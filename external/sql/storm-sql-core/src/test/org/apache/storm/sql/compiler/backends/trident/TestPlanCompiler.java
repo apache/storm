@@ -29,9 +29,8 @@ import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.storm.Config;
-import org.apache.storm.ILocalCluster;
 import org.apache.storm.LocalCluster;
-import org.apache.storm.generated.StormTopology;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.sql.TestUtils;
 import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
@@ -40,8 +39,10 @@ import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
+import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.ZoneOffset;
@@ -57,6 +58,20 @@ public class TestPlanCompiler {
   private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
           RelDataTypeSystem.DEFAULT);
   private final DataContext dataContext = new StormDataContext();
+  private static LocalCluster cluster;
+
+  @BeforeClass
+  public static void staticSetup() throws Exception {
+    cluster = new LocalCluster();
+  }
+
+  @AfterClass
+  public static void staticCleanup() {
+    if (cluster!= null) {
+      cluster.shutdown();
+      cluster = null;
+    }
+  }
 
   @Before
   public void setUp() {
@@ -347,11 +362,8 @@ public class TestPlanCompiler {
     final Config conf = new Config();
     conf.setMaxSpoutPending(20);
 
-    ILocalCluster cluster = new LocalCluster();
-    StormTopology stormTopo = topo.build();
-    try {
-      Utils.setClassLoaderForJavaDeSerialize(proc.getClass().getClassLoader());
-      cluster.submitTopology("storm-sql", conf, stormTopo);
+    Utils.setClassLoaderForJavaDeSerialize(proc.getClass().getClassLoader());
+    try (LocalTopology stormTopo = cluster.submitTopology("storm-sql", conf, topo.build())) {
       waitForCompletion(1000 * 1000, new Callable<Boolean>() {
         @Override
         public Boolean call() throws Exception {
@@ -359,8 +371,10 @@ public class TestPlanCompiler {
         }
       });
     } finally {
+      while(cluster.getClusterInfo().get_topologies_size() > 0) {
+        Thread.sleep(10);
+      }
       Utils.resetClassLoaderForJavaDeSerialize();
-      cluster.shutdown();
     }
   }
 

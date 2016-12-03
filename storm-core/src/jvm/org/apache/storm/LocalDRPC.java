@@ -17,24 +17,30 @@
  */
 package org.apache.storm;
 
+import java.util.Map;
+
 import org.apache.storm.daemon.DrpcServer;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServiceRegistry;
-import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 
-import java.util.Map;
-
+/**
+ * A Local way to test DRPC
+ * 
+ * try (LocalDRPC drpc = new LocalDRPC()) {
+ *   // Do tests
+ * }
+ */
 public class LocalDRPC implements ILocalDRPC {
 
     private final DrpcServer handler;
     private final String serviceId;
 
     public LocalDRPC() {
-        Map conf = ConfigUtils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
         handler = new DrpcServer(conf);
         serviceId = ServiceRegistry.registerService(handler);
     }
@@ -61,12 +67,17 @@ public class LocalDRPC implements ILocalDRPC {
 
     @Override
     public void shutdown() {
-        ServiceRegistry.unregisterService(this.serviceId);
-        this.handler.close();
+        close();
     }
 
     @Override
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException, TException {
         return handler.fetchRequest(functionName);
+    }
+
+    @Override
+    public void close() {
+        ServiceRegistry.unregisterService(this.serviceId);
+        this.handler.close();
     }
 }

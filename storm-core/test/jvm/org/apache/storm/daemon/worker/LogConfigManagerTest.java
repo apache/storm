@@ -29,6 +29,7 @@ import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.LogLevel;
 import org.apache.storm.generated.LogLevelAction;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,8 +81,7 @@ public class LogConfigManagerTest {
     
     @Test
     public void testLogResetShouldNotTriggerForFutureTime() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             long theFuture = Time.currentTimeMillis() + 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll(theFuture));
@@ -90,15 +90,12 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = new LogConfigManagerUnderTest(atomConf);
             underTest.resetLogLevels();
             assertNotNull(atomConf.get());
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testLogResetTriggersForPastTime() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("foo", ll("INFO", "WARN", past));
@@ -107,8 +104,6 @@ public class LogConfigManagerTest {
             LogConfigManager underTest = new LogConfigManagerUnderTest(atomConf);
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
-        } finally {
-            Time.stopSimulating();
         }
     }
     
@@ -125,8 +120,7 @@ public class LogConfigManagerTest {
     
     @Test
     public void testLogResetResetsRootLoggerIfSet() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", past));
@@ -136,15 +130,12 @@ public class LogConfigManagerTest {
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
             verify(underTest).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testLogResetsNamedLoggersWithPastTimeout() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             long past = Time.currentTimeMillis() - 1000;
             TreeMap<String, LogLevel> config = new TreeMap<>();
             config.put("my_debug_logger", ll("DEBUG", "INFO", past));
@@ -158,15 +149,12 @@ public class LogConfigManagerTest {
             verify(underTest).setLoggerLevel(anyObject(), eq("my_debug_logger"), eq("INFO"));
             verify(underTest).setLoggerLevel(anyObject(), eq("my_info_logger"), eq("WARN"));
             verify(underTest).setLoggerLevel(anyObject(), eq("my_error_logger"), eq("INFO"));
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout2() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
 
@@ -186,15 +174,12 @@ public class LogConfigManagerTest {
             // defaults to INFO level when the logger isn't found previously
             assertEquals("INFO", rootResult.get_reset_log_level());
             assertEquals(inThirtySeconds, rootResult.get_reset_log_level_timeout_epoch());
-        } finally {
-            Time.stopSimulating();
         }
     }
 
     @Test
     public void testProcessRootLogLevelToDebugSetsLoggerAndTimeout() {
-        Time.startSimulating();
-        try {
+        try (SimulatedTime t = new SimulatedTime()){
             LogConfig mockConfig = new LogConfig();
             AtomicReference<TreeMap<String, LogLevel>> mockConfigAtom = new AtomicReference<>(null);
             long inThirtySeconds = Time.currentTimeMillis() + 30_000;
@@ -212,8 +197,6 @@ public class LogConfigManagerTest {
             verify(underTest).setLoggerLevel(anyObject(), eq("my_debug_logger"), eq("DEBUG"));
             verify(underTest).setLoggerLevel(anyObject(), eq("my_info_logger"), eq("INFO"));
             verify(underTest).setLoggerLevel(anyObject(), eq("my_error_logger"), eq("ERROR"));
-        } finally {
-            Time.stopSimulating();
         }
     }
 }
