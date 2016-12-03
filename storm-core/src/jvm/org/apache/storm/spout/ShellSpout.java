@@ -271,6 +271,10 @@ public class ShellSpout implements ISpout {
         LOG.info("Start checking heartbeat...");
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
+        if (heartBeatExecutorService.isShutdown()){
+            //In case deactivate was called before
+            heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        }
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
     }
 
