@@ -103,6 +103,7 @@ import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.ReadableBlobMeta;
@@ -1336,6 +1337,25 @@ public class Utils {
         }
     }
 
+    public static void validateTopologyBlobStoreMap(Map<String, ?> stormConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> blobStoreMap = (Map<String, Object>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        if (blobStoreMap != null) {
+            Set<String> mapKeys = blobStoreMap.keySet();
+            Set<String> missingKeys = new HashSet<>();
+
+            for (String key : mapKeys) {
+                if (!blobStoreKeys.contains(key)) {
+                    missingKeys.add(key);
+                }
+            }
+            if (!missingKeys.isEmpty()) {
+                throw new InvalidTopologyException("The topology blob store map does not " +
+                        "contain the valid keys to launch the topology " + missingKeys);
+            }
+        }
+    }
+    
     /**
      * Given a File input it will unzip the file in a the unzip directory
      * passed as the second parameter
