@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
  * STORM-2224: Exposed a method to override in computing the field from given tuple in FieldSelector
  * STORM-2220: Added config support for each bolt in Cassandra bolts, fixed the bolts to be used also as sinks.
