@@ -314,6 +314,7 @@
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-jms</module>
+        <module>external/storm-pmml</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
@@ -329,6 +330,7 @@
         <module>examples/storm-hive-examples</module>
         <module>examples/storm-elasticsearch-examples</module>
         <module>examples/storm-mqtt-examples</module>
+        <module>examples/storm-pmml-examples</module>
     </modules>
 
     <dependencies>
