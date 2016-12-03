@@ -27,7 +27,7 @@
            [java.util Collections List HashMap]
            [org.apache.storm.generated NimbusSummary])
   (:import [java.nio ByteBuffer]
-           [java.util Collections List HashMap ArrayList Iterator])
+           [java.util Collections List HashMap ArrayList Iterator HashSet])
   (:import [org.apache.storm.blobstore AtomicOutputStream BlobStoreAclHandler
                                        InputStreamWithMeta KeyFilter KeySequenceNumber BlobSynchronizer BlobStoreUtils])
   (:import [java.io File FileOutputStream FileInputStream])
@@ -62,7 +62,8 @@
   (:import [org.apache.storm.utils VersionInfo Time]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
-           (org.apache.storm Config))
+           (org.apache.storm Config)
+           (com.google.common.collect Sets))
   (:require [clj-time.core :as time])
   (:require [clj-time.coerce :as coerce])
   (:require [metrics.meters :refer [defmeter mark!]])
@@ -1639,7 +1640,9 @@
           (.validate ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus)
                      storm-name
                      topo-conf
-                     topology))
+                     topology)
+          (Utils/validateTopologyBlobStoreMap topo-conf (Sets/newHashSet ^Iterator (.listKeys blob-store)))
+          )
         (swap! (:submitted-count nimbus) inc)
         (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
               credentials (.get_creds submitOptions)

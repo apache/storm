@@ -17,6 +17,8 @@
  */
 package org.apache.storm;
 
+import com.google.common.collect.Sets;
+
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -25,7 +27,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.hooks.SubmitterHookException;
@@ -550,12 +554,13 @@ public class StormSubmitter {
         public void onCompleted(String srcFile, String targetFile, long totalBytes);
     }
 
-    private static void validateConfs(Map stormConf, StormTopology topology) throws IllegalArgumentException {
+    private static void validateConfs(Map<String, Object> stormConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException {
         ConfigValidation.validateFields(stormConf);
         validateTopologyWorkerMaxHeapSizeMBConfigs(stormConf, topology);
+        Utils.validateTopologyBlobStoreMap(stormConf, getListOfKeysFromBlobStore(stormConf));
     }
 
-    private static void validateTopologyWorkerMaxHeapSizeMBConfigs(Map stormConf, StormTopology topology) {
+    private static void validateTopologyWorkerMaxHeapSizeMBConfigs(Map<String, Object> stormConf, StormTopology topology) {
         double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
         Double topologyWorkerMaxHeapSize = Utils.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
         if(topologyWorkerMaxHeapSize < largestMemReq) {
@@ -582,5 +587,12 @@ public class StormSubmitter {
             }
         }
         return largestMemoryOperator;
+    }
+
+    private static Set<String> getListOfKeysFromBlobStore(Map<String, Object> stormConf) {
+        try (NimbusBlobStore client = new NimbusBlobStore()) {
+            client.prepare(stormConf);
+            return Sets.newHashSet(client.listKeys());
+        }
     }
 }
