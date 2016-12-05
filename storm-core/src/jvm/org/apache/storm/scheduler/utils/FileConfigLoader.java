@@ -60,6 +60,6 @@ public class FileConfigLoader implements IConfigLoader {
             return null;
         }
 
-        return SchedulerUtils.loadYamlFromFile(new File(localFileName));
+        return IConfigLoader.loadYamlConfigFromFile(new File(localFileName));
     }
 }

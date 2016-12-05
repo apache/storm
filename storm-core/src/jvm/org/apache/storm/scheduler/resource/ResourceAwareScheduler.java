@@ -33,7 +33,6 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.utils.IConfigLoader;
-import org.apache.storm.scheduler.utils.SchedulerUtils;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -56,7 +55,7 @@ public class ResourceAwareScheduler implements IScheduler {
     @Override
     public void prepare(Map conf) {
         this.conf = conf;
-        this.configLoader = SchedulerUtils.getConfigLoader(conf, Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER,
+        this.configLoader = IConfigLoader.getConfigLoader(conf, Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER,
             Config.RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER_PARAMS);
     }
 

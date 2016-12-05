@@ -46,28 +46,41 @@ import org.yaml.snakeyaml.constructor.SafeConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * ArtifactoryConfigLoader.java - A dynamic loader for that can load
+ *                                scheduler configurations for user
+ *                                resource guarantees from Artifactory.
+ *
+ * <p>
+ * Configuration items for this config loader are passed in via config settings in 
+ * each scheduler that has a configurable loader.
+ *
+ * <p>
+ * For example, the resource aware scheduler has configuration items defined in Config.java
+ * that allow a user to configure which implementation of IConfigLoader to use to load
+ * specific scheduler configs as well as any parameters to pass into the prepare method of
+ * that configuration.
+ *
+ * <p>
+ * resource.aware.scheduler.user.pools.loader can be set to org.apache.storm.scheduler.utils.ArtifactoryConfigLoader
+ *
+ * <p>
+ * and then
+ *
+ * <p>
+ * resource.aware.scheduler.user.pools.loader.params can be set to any of the following
+ *
+ * <p>
+ * <code>
+ * {"artifactory.config.loader.uri": "http://artifactory.example.org:9989/artifactory/confs/my_cluster/mt_user_pool"}
+ *
+ * {"artifactory.config.loader.uri": "file:///confs/my_cluster/mt_user_pool"}
+ *
+ * {"artifactory.config.loader.uri": "file:///confs/my_cluster/mt_user_pool", "artifactory.config.loader.timeout.secs" : "60"}
+ * </code>
+ * 
+ */
 public class ArtifactoryConfigLoader implements IConfigLoader {
-    /**
-     * Configuration items for this config loader are passed in via confg settings in 
-     * each scheduler that has a configurable loader.
-     *
-     * For example, the resource aware scheduler has configuration items defined in Config.java
-     * that allow a user to configure which implementation of IConfigLoader to use to load
-     * specific scheduler configs as well as any parameters to pass into the prepare method of
-     * tht configuration.
-     *
-     * resource.aware.scheduler.user.pools.loader can be set to org.apache.storm.scheduler.utils.ArtifactoryConfigLoader
-     *
-     * and then
-     *
-     * resource.aware.scheduler.user.pools.loader.params can be set to any of the following
-     *
-     *  {"artifactory.config.loader.uri": "http://artifactory.example.org:9989/artifactory/confs/my_cluster/mt_user_pool"}
-     *
-     *  {"artifactory.config.loader.uri": "file:///confs/my_cluster/mt_user_pool"}
-     *
-     *  {"artifactory.config.loader.uri": "file:///confs/my_cluster/mt_user_pool", "artifactory.config.loader.timeout.secs" : "60"}
-     **/
     protected static final String ARTIFACTORY_URI = "artifactory.config.loader.uri";
     protected static final String ARTIFACTORY_TIMEOUT_SECS="artifactory.config.loader.timeout.secs";
     protected static final String ARTIFACTORY_POLL_TIME_SECS="artifactory.config.loader.polltime.secs";
@@ -90,17 +103,30 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private int _timeoutSeconds = 10;
     private Map _lastReturnedValue;
 
-    private static class OurResponseHandler implements ResponseHandler<String> {
-        private static OurResponseHandler singleton = null;
+    /**
+     * GETStringResponseHandler - A private class used to check the response
+     *                            coming back from httpclient.
+     *
+     */
+    private static class GETStringResponseHandler implements ResponseHandler<String> {
+        private static GETStringResponseHandler singleton = null;
 
-        public static OurResponseHandler getInstance() {
+        /**
+         * @return a singleton httpclient GET response handler
+         */
+        public static GETStringResponseHandler getInstance() {
             if (singleton == null) {
-                singleton = new OurResponseHandler();
+                singleton = new GETStringResponseHandler();
             }
             return singleton;
         }
 
         @Override
+        /**
+         * @param response The http response to verify.
+         *
+         * @return null on failure or the response string if return code is in 200 range
+         */
         public String handleResponse(final HttpResponse response) throws IOException {
             int status = response.getStatusLine().getStatusCode();
             if (status >= 200 && status < 300) {
@@ -113,15 +139,30 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
     };
 
-    // Protected so we can override this in testing
+    /**
+     * @param api null if we are trying to download artifact, otherwise a string to call REST api,
+     *        e.g. "/api/storage"
+     * @param artifact location of artifact
+     * @param host Artifactory hostname
+     * @param port Artifactory port
+     *
+     * @return null on failure or the response string if return code is in 200 range
+     * <p>
+     * Protected so we can override this in unit tests
+     */
     protected String doGet(String api, String artifact, String host, Integer port) {
         URIBuilder builder = new URIBuilder().setScheme(_artifactoryScheme).setHost(host).setPort(port);
 
+        String path = null;
         if (api != null) {
-            builder.setPath(_baseDirectory + api + artifact);
+            path = _baseDirectory + "/" + api + "/" + artifact;
         } else {
-            builder.setPath(_baseDirectory + artifact);
+            path = _baseDirectory + "/" + artifact;
         }
+
+        // Get rid of multiple '/' in url
+        path = path.replaceAll("/[/]+", "/");
+        builder.setPath(path);
         
         RequestConfig requestConfig = RequestConfig.custom().setConnectTimeout(_timeoutSeconds * 1000).build();
         HttpClient httpclient = HttpClientBuilder.create().setDefaultRequestConfig(requestConfig).build();
@@ -132,7 +173,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
             HttpGet httpget = new HttpGet(builder.build());
 
             String responseBody;
-            responseBody = httpclient.execute(httpget, OurResponseHandler.getInstance());
+            responseBody = httpclient.execute(httpget, GETStringResponseHandler.getInstance());
             returnValue = responseBody;
         } catch (Exception e) {
             LOG.error("Received exception while connecting to Artifactory", e);
@@ -213,7 +254,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     }
 
     private Map loadFromFile(File file) {
-        Map ret = SchedulerUtils.loadYamlFromFile(file);
+        Map ret = IConfigLoader.loadYamlConfigFromFile(file);
 
         if (ret != null) {
             try {

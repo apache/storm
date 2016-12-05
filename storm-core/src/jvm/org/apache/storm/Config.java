@@ -2189,7 +2189,7 @@ public class Config extends HashMap<String, Object> {
      /**
      * A plugin that should load the user pools for the multitenant scheduler
      */
-    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.scheduler.utils.IConfigLoader.class)
     public static final String MULTITENANT_SCHEDULER_USER_POOLS_LOADER = "multitenant.scheduler.user.pools.loader";
 
     /**
@@ -2208,7 +2208,7 @@ public class Config extends HashMap<String, Object> {
      /**
      * A plugin that should load the user pools for the resource aware scheduler
      */
-    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.scheduler.utils.IConfigLoader.class)
     public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS_LOADER = "resource.aware.scheduler.user.pools.loader";
 
     /**

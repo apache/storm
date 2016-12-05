@@ -30,7 +30,6 @@ import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.utils.IConfigLoader;
-import org.apache.storm.scheduler.utils.SchedulerUtils;
 import org.apache.storm.utils.Utils;
 
 public class MultitenantScheduler implements IScheduler {
@@ -42,7 +41,7 @@ public class MultitenantScheduler implements IScheduler {
   @Override
   public void prepare(@SuppressWarnings("rawtypes") Map conf) {
     _conf = conf;
-    _configLoader = SchedulerUtils.getConfigLoader(conf, Config.MULTITENANT_SCHEDULER_USER_POOLS_LOADER,
+    _configLoader = IConfigLoader.getConfigLoader(conf, Config.MULTITENANT_SCHEDULER_USER_POOLS_LOADER,
         Config.MULTITENANT_SCHEDULER_USER_POOLS_LOADER_PARAMS);
   }
  
@@ -53,7 +52,7 @@ public class MultitenantScheduler implements IScheduler {
         if (ret != null) {
             return ret;
         } else {
-            LOG.debug("Config loader returned null");
+            LOG.warn("Config loader returned null");
         }
     }
 

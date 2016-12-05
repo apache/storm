@@ -17,7 +17,15 @@
  */
 package org.apache.storm.scheduler.utils;
 
+import org.apache.storm.utils.Utils;
 import java.util.Map;
+import java.io.File;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 
 public interface IConfigLoader {
@@ -27,7 +35,49 @@ public interface IConfigLoader {
      * 
      * See implementing classes for configuration details.
      */
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
 
-    Map load();
+    Map<?,?> load();
+
+    public static IConfigLoader getConfigLoader(Map conf, String loaderClassConfig, String loaderConfConfig) {
+        if (conf.get(loaderClassConfig) != null) {
+            Map<String, Object> loaderConf = (Map<String, Object>)conf.get(loaderConfConfig);
+            String clazz = (String)conf.get(loaderClassConfig);
+            if (clazz != null) {
+                IConfigLoader loader = (IConfigLoader)Utils.newInstance(clazz);
+                if (loader != null) {
+                    loader.prepare(loaderConf);
+                    return loader;
+                }
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param file File object referring to the local file containing the configuration
+     *        in yaml format.
+     *
+     * @return null on failure or a map containing the loaded configuration
+     */
+    public static Map<?,?> loadYamlConfigFromFile(File file) {
+        Map ret = null;
+        String pathString="Invalid";
+        try {
+            pathString = file.getCanonicalPath();
+            Yaml yaml = new Yaml(new SafeConstructor());
+            try (FileInputStream fis = new FileInputStream(file)) {
+                ret = (Map) yaml.load(new InputStreamReader(fis));
+            }
+        } catch (Exception e) {
+            IConfigLoaderLogger.LOG.error("Failed to load from file {}", pathString, e);
+            return null;
+        }
+
+        return ret;
+    }
+}
+
+final class IConfigLoaderLogger {
+    static final Logger LOG = LoggerFactory.getLogger(IConfigLoader.class);
 }
