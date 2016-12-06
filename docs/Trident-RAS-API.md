@@ -16,6 +16,9 @@ First, an example:
 
 ```java
     TridentTopology topo = new TridentTopology();
+    topo.setResourceDefaults(new DefaultResourceDeclarer();
+                                                          .setMemoryLoad(128)
+                                                          .setCPULoad(20));
     TridentState wordCounts =
         topology
             .newStream("words", feeder)
@@ -29,6 +32,7 @@ First, an example:
             .parallelismHint(10)
             .setCPULoad(50)
             .setMemoryLoad(1024)
+            .each(new Fields("word!"), new QMarkAdder(), new Fields("word!?"))
             .groupBy(new Fields("word!"))
             .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
             .setCPULoad(100)
@@ -44,9 +48,9 @@ In the above case, we end up with
 
 
 - a spout and spout coordinator with a CPU load of 20% each, and a memory load of 512MiB on-heap and 256MiB off-heap.
-- a bolt with 60% cpu load (10% + 50%) and a memory load of 1536MiB (1024 + 512) on-heap from the combined `Split` and `BangAdder`
+- a bolt with 80% cpu load (10% + 50% + 20%) and a memory load of 1664MiB (1024 + 512 + 128) on-heap from the combined `Split` and `BangAdder` and the `QMarkAdder` which used the default resources contained in the DefaultResourceDeclarer
 - a bolt with 100% cpu load and a memory load of 2048MiB on-heap, with default value for off-heap.
 
-The API can be called as many times as is desired.
-It may be called after every operation, after some of the operations, or used in the same manner as `parallelismHint()` to set resources for a whole section.
+Resource declarations may be called after any operation. The operations without explicit resources will get the defaults. If you choose to set resources for only some operations, defaults must be declared, or topology submission will fail.
 Resource declarations have the same *boundaries* as parallelism hints. They don't cross any groupings, shufflings, or any other kind of repartitioning.
+Resources are declared per operation, but get combined within boundaries.
