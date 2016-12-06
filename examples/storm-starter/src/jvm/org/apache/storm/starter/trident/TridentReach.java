@@ -19,6 +19,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.task.IMetricsContext;
@@ -136,21 +137,17 @@ public class TridentReach {
   }
 
   public static void main(String[] args) throws Exception {
-    LocalDRPC drpc = new LocalDRPC();
 
     Config conf = new Config();
-    LocalCluster cluster = new LocalCluster();
+    try (LocalDRPC drpc = new LocalDRPC();
+         LocalCluster cluster = new LocalCluster();
+         LocalTopology topo = cluster.submitTopology("reach", conf, buildTopology(drpc));) {
 
-    cluster.submitTopology("reach", conf, buildTopology(drpc));
+        Thread.sleep(2000);
 
-    Thread.sleep(2000);
-
-    System.out.println("REACH: " + drpc.execute("reach", "aaa"));
-    System.out.println("REACH: " + drpc.execute("reach", "foo.com/blog/1"));
-    System.out.println("REACH: " + drpc.execute("reach", "engineering.twitter.com/blog/5"));
-
-
-    cluster.shutdown();
-    drpc.shutdown();
+        System.out.println("REACH: " + drpc.execute("reach", "aaa"));
+        System.out.println("REACH: " + drpc.execute("reach", "foo.com/blog/1"));
+        System.out.println("REACH: " + drpc.execute("reach", "engineering.twitter.com/blog/5"));
+    }
   }
 }

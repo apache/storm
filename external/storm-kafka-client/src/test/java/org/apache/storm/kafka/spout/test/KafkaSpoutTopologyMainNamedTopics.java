@@ -58,10 +58,9 @@ public class KafkaSpoutTopologyMainNamedTopics {
         } else {
             submitTopologyRemoteCluster(args[0], getTopolgyKafkaSpout(), getConfig());
         }
-
     }
 
-    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws InterruptedException {
+    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws Exception {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("test", config, topology);
         stopWaitingForInput();
@@ -104,12 +103,8 @@ public class KafkaSpoutTopologyMainNamedTopics {
     }
 
     protected KafkaSpoutRetryService getRetryService() {
-            return new KafkaSpoutRetryExponentialBackoff(getTimeInterval(500, TimeUnit.MICROSECONDS),
+            return new KafkaSpoutRetryExponentialBackoff(TimeInterval.microSeconds(500),
                     TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
-    }
-
-    protected TimeInterval getTimeInterval(long delay, TimeUnit timeUnit) {
-        return new TimeInterval(delay, timeUnit);
     }
 
     protected Map<String,Object> getKafkaConsumerProps() {

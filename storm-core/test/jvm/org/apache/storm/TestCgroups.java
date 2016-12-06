@@ -31,7 +31,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -61,7 +60,7 @@ public class TestCgroups {
         CgroupManager manager = new CgroupManager();
         manager.prepare(config);
 
-        Map<String, Object> resourcesMap = new HashMap<String, Object>();
+        Map<String, Number> resourcesMap = new HashMap<>();
         resourcesMap.put("cpu", 200);
         resourcesMap.put("memory", 1024);
         String workerId = UUID.randomUUID().toString();

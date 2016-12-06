@@ -31,9 +31,9 @@
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.daemon DrpcServer])
   (:import [org.mockito ArgumentCaptor Mockito Matchers])
-  (:use [org.apache.storm config testing])
+  (:use [org.apache.storm config])
   (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon common drpc])
+  (:use [org.apache.storm.daemon drpc])
   (:use [conjure core]))
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]

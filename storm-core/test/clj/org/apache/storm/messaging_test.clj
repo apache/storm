@@ -15,20 +15,22 @@
 ;; limitations under the License.
 (ns org.apache.storm.messaging-test
   (:use [clojure test])
-  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestEventLogSpout TestEventOrderCheckBolt])
-  (:use [org.apache.storm testing config])
-  (:use [org.apache.storm.daemon common])
-  (:import [org.apache.storm Thrift])
+  (:import [org.apache.storm.testing CompleteTopologyParam MockedSources TestWordCounter TestWordSpout TestGlobalCount TestEventLogSpout TestEventOrderCheckBolt])
+  (:use [org.apache.storm config])
+  (:import [org.apache.storm Testing Thrift LocalCluster$Builder])
   (:import [org.apache.storm.utils Utils]))
 
 (deftest test-local-transport
-  (doseq [transport-on? [false true]] 
-    (with-simulated-time-local-cluster [cluster :supervisors 1 :ports-per-supervisor 2
-                                        :daemon-conf {TOPOLOGY-WORKERS 2
-                                                      STORM-LOCAL-MODE-ZMQ 
-                                                      (if transport-on? true false) 
-                                                      STORM-MESSAGING-TRANSPORT 
-                                                      "org.apache.storm.messaging.netty.Context"}]
+  (doseq [transport-on? [false true]]
+    (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                  (.withSimulatedTime)
+                                  (.withSupervisors 1)
+                                  (.withPortsPerSupervisor 2)
+                                  (.withDaemonConf {TOPOLOGY-WORKERS 2
+                                                    STORM-LOCAL-MODE-ZMQ 
+                                                    (if transport-on? true false) 
+                                                    STORM-MESSAGING-TRANSPORT 
+                                                    "org.apache.storm.messaging.netty.Context"})))]
       (let [topology (Thrift/buildTopology
                        {"1" (Thrift/prepareSpoutDetails
                               (TestWordSpout. true) (Integer. 2))}
@@ -37,11 +39,12 @@
                                (Thrift/prepareShuffleGrouping)}
                               (TestGlobalCount.) (Integer. 6))
                         })
-            results (complete-topology cluster
+            results (Testing/completeTopology cluster
                                        topology
-                                       ;; important for test that
-                                       ;; #tuples = multiple of 4 and 6
-                                       :mock-sources {"1" [["a"] ["b"]
+                                       (doto (CompleteTopologyParam.)
+                                         ;; important for test that
+                                         ;; #tuples = multiple of 4 and 6
+                                         (.setMockedSources (MockedSources. {"1" [["a"] ["b"]
                                                            ["a"] ["b"]
                                                            ["a"] ["b"]
                                                            ["a"] ["b"]
@@ -54,14 +57,5 @@
                                                            ["a"] ["b"]
                                                            ["a"] ["b"]
                                                            ]}
-                                       )]
-        (is (= (* 6 4) (.size (read-tuples results "2"))))))))
-
-(extend-type TestEventLogSpout
-  CompletableSpout
-  (exhausted? [this]
-    (-> this .completed))
-  (cleanup [this]
-    (.cleanup this))
-  (startup [this]
-    ))
+                                       ))))]
+        (is (= (* 6 4) (.size (Testing/readTuples results "2"))))))))

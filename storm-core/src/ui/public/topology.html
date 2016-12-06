@@ -24,7 +24,7 @@
 <link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
 <link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
 <link href="/css/jsonFormatter.min.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css" rel="stylesheet" type="text/css">
+<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
 <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
 <script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
 <script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
@@ -33,7 +33,7 @@
 <script src="/js/bootstrap-3.3.1.min.js" type="text/javascript"></script>
 <script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
 <script src="/js/jsonFormatter.min.js" type="text/javascript"></script>
-<script src="/js/script.js" type="text/javascript"></script>
+<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 <script src="/js/visualization.js" type="text/javascript"></script>
 <script src="/js/arbor.js" type="text/javascript"></script>
 <script src="/js/arbor-graphics.js" type="text/javascript"></script>
@@ -77,6 +77,9 @@
   </div>
   <div class="row">
     <div id="bolt-stats" class="col-md-12"></div>
+  </div>
+  <div class="row">
+    <div id="worker-stats" class="col-md-12"></div>
   </div>
   <div class="row">
     <div id="topology-visualization" class="col-md-12"></div>
@@ -230,7 +233,7 @@ function renderLogLevelForm (template, responseData){
     };
     if (!responseData) {
         var topologyId = $.url("?id");
-        $.get ('/api/v1/topology/' + topologyId + '/logconfig', renderImpl);
+        $.get('/api/v1/topology/' + topologyId + '/logconfig', renderImpl);
     } else {
         renderImpl (responseData);
     }
@@ -264,7 +267,7 @@ $(document).ready(function() {
     $.ajaxSetup({
         "error":function(jqXHR,textStatus,response) {
             var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            $.get("/templates/json-error-template.html", function(template) {
+            getStatic("/templates/json-error-template.html", function(template) {
                 $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
             });
         }
@@ -272,7 +275,7 @@ $(document).ready(function() {
 
     $.getJSON(url,function(response,status,jqXHR) {
         var uiUser = $("#ui-user");
-        $.get("/templates/user-template.html", function(template) {
+        getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
             $('#ui-user [data-toggle="tooltip"]').tooltip();
         });
@@ -283,6 +286,7 @@ $(document).ready(function() {
         var topologySpoutsLag = $("#topology-spouts-lag");
         var spoutStats = $("#spout-stats");
         var boltStats = $("#bolt-stats");
+        var workerStats = $("#worker-stats");
         var config = $("#topology-configuration");
         var topologyActions = $("#topology-actions");
         var topologyVisualization = $("#topology-visualization")
@@ -316,21 +320,25 @@ $(document).ready(function() {
             });
 
             spoutStats.append(Mustache.render($(template).filter("#spout-stats-template").html(),response));
-            //id, executors, tasks, emitted, transferred, complete latency, acked, failed, Last error
             dtAutoPage("#spout-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 
             boltStats.append(Mustache.render($(template).filter("#bolt-stats-template").html(),response));
-            //id, executors, tasks, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed, last error
             dtAutoPage("#bolt-stats-table", {
               columnDefs: [
-                {type: "num", targets: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}
+                {type: "num", targets: 'table-num'}
               ]
             });
 
+          jsError(function() {
+            workerStats.append(Mustache.render($(template).filter("#worker-stats-template").html(),response));
+            makeTopologyWorkerStatsTable (response, '#worker-stats-table', '#worker-stats');
+          });
+
+          jsError(function() {
             topologyVisualization.append(Mustache.render($(template).filter("#topology-visualization-template").html(), response));
             $("#show-hide-visualization").click(function () { show_visualization(null) });
 
@@ -438,9 +446,9 @@ $(document).ready(function() {
                     }
                 }
             });
+          });
       }});
     });
-
  });
 </script>
 </html>

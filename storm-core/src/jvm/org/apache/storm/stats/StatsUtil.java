@@ -36,23 +36,29 @@ import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.SpecificAggregateStats;
 import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
+import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.generated.WorkerSummary;
+import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 @SuppressWarnings("unchecked")
@@ -1249,6 +1255,135 @@ public class StatsUtil {
         return thriftifyCompPageData(topologyId, topology, componentId, compStats);
     }
 
+    /**
+     * aggregate statistics per worker for a topology. Optionally filtering on specific supervisors
+     *
+     * @param topologyId       topology id
+     * @param topology         storm topology
+     * @param task2component   a Map of {task id -> component}, note it's a clojure map
+     * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
+     * @param exec2hostPort    a Map of {executor -> host+port}, note it's a clojure map
+     * @param includeSys       whether to include system streams
+     * @param userAuthorized   whether the user is authorized to view topology info
+     * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
+     *
+     * @return List<WorkerSummary> thrift structures
+     */
+    public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName, 
+        Map<Integer, String> task2Component, 
+        Map<List<Integer>, Map<String, Object>> beats, 
+        Map<List<Long>, List<Object>> exec2NodePort, 
+        Map<String, String> nodeHost, 
+        Map<WorkerSlot, WorkerResources> worker2Resources, 
+        boolean includeSys, boolean userAuthorized, String filterSupervisor) {
+
+        // host,port => WorkerSummary
+        HashMap<WorkerSlot, WorkerSummary> workerSummaryMap = new HashMap<>();
+
+        if (exec2NodePort != null) { 
+            // for each executor -> node+port pair
+            for (Map.Entry<List<Long>, List<Object>> execNodePort : exec2NodePort.entrySet()) {
+                List<Object> nodePort = execNodePort.getValue();
+                String node = (String)nodePort.get(0);
+                Long port = (Long)nodePort.get(1);
+                String host = nodeHost.get(node);
+                WorkerSlot slot = new WorkerSlot(node, port);
+                WorkerResources resources = worker2Resources.get(slot);
+
+                if (filterSupervisor == null || node.equals(filterSupervisor)) {
+                    WorkerSummary ws = workerSummaryMap.get(slot);
+
+                    if (ws == null) {
+                        ws = new WorkerSummary();
+                        ws.set_host(host);
+                        ws.set_port(port.intValue());
+                        ws.set_supervisor_id(node);
+                        ws.set_topology_id(stormId);
+                        ws.set_topology_name(stormName);
+                        ws.set_num_executors(0);
+                        if (resources != null) {
+                            ws.set_assigned_memonheap(resources.get_mem_on_heap());
+                            ws.set_assigned_memoffheap(resources.get_mem_off_heap());
+                            ws.set_assigned_cpu(resources.get_cpu());
+                        } else {
+                            ws.set_assigned_memonheap(0);
+                            ws.set_assigned_memoffheap(0);
+                            ws.set_assigned_cpu(0);
+                        }
+                        ws.set_component_to_num_tasks(new HashMap<String,Long>());
+                        workerSummaryMap.put(slot, ws);
+                    }
+                    Map<String, Long> componentToNumTasks = ws.get_component_to_num_tasks();
+
+                    // gets min/max task pairs (executors): [1 1] [2 3] ...
+                    List<Long> exec = execNodePort.getKey();
+                    // get executor heartbeat
+                    int hbeatSecs = 0;
+                    if (beats != null) {
+                        Map<String, Object> beat = beats.get(convertExecutor(exec));
+                        if (beat != null) {
+                            Map<String, Object> hbeat = (Map<String, Object>)beat.get("heartbeat");
+                            hbeatSecs = hbeat == null ? 0 : (int) hbeat.get("uptime");
+                        }
+                    }
+                    ws.set_uptime_secs(hbeatSecs);
+                    ws.set_num_executors(ws.get_num_executors() + 1);
+
+                    // get tasks if the user is authorized for this topology
+                    if (userAuthorized) {
+                        int firstTask = exec.get(0).intValue();
+                        int lastTask = exec.get(1).intValue();
+
+                        // get per task components
+                        for (int task = firstTask; task <= lastTask; task++) {
+                            String component = task2Component.get(task);
+                            // if the component is a system (__*) component and we are hiding
+                            // them in UI, keep going
+                            if (!includeSys && Utils.isSystemId(component)) {
+                                continue;
+                            }
+
+                            // good to go, increment # of tasks this component is being executed on
+                            Long counter = componentToNumTasks.get(component);
+                            if (counter == null) {
+                                counter = new Long(0);
+                            }
+                            componentToNumTasks.put(component, counter + 1);
+                        }
+                    }
+                }
+            }
+        }
+        return new ArrayList<WorkerSummary>(workerSummaryMap.values());
+    }
+    
+    /**
+     * Aggregate statistics per worker for a topology. Optionally filtering on specific supervisors
+     * 
+     * Convenience overload when called from the topology page code (in that case we want data
+     * for all workers in the topology, not filtered by supervisor)
+     *
+     * @param topologyId       topology id
+     * @param topology         storm topology
+     * @param task2component   a Map of {task id -> component}, note it's a clojure map
+     * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
+     * @param exec2hostPort    a Map of {executor -> host+port}, note it's a clojure map
+     * @param includeSys       whether to include system streams
+     * @param userAuthorized   whether the user is authorized to view topology info
+     *
+     * @return List<WorkerSummary> thrift structures
+     */
+    public static List<WorkerSummary> aggWorkerStats(String stormId, String stormName, 
+        Map<Integer, String> task2Component, 
+        Map<List<Integer>, Map<String, Object>> beats, 
+        Map<List<Long>, List<Object>> exec2NodePort, 
+        Map<String, String> nodeHost, 
+        Map<WorkerSlot, WorkerResources> worker2Resources, 
+        boolean includeSys, boolean userAuthorized) {
+        return aggWorkerStats(stormId, stormName,
+                task2Component, beats, exec2NodePort, nodeHost, worker2Resources,
+                includeSys, userAuthorized, null);
+    }
 
     // =====================================================================================
     // convert thrift stats to java maps
@@ -1373,19 +1508,18 @@ public class StatsUtil {
      * @return a list of host+port
      */
     public static List<Map<String, Object>> extractNodeInfosFromHbForComp(
-            Map exec2hostPort, Map task2component, boolean includeSys, String compId) {
+            Map<List<? extends Number>, List<Object>> exec2hostPort, Map<Integer, String> task2component, boolean includeSys, String compId) {
         List<Map<String, Object>> ret = new ArrayList<>();
 
         Set<List> hostPorts = new HashSet<>();
-        for (Object o : exec2hostPort.entrySet()) {
-            Map.Entry entry = (Map.Entry) o;
-            List key = (List) entry.getKey();
-            List value = (List) entry.getValue();
+        for (Entry<List<? extends Number>, List<Object>> entry : exec2hostPort.entrySet()) {
+            List<? extends Number> key = entry.getKey();
+            List<Object> value = entry.getValue();
 
-            Integer start = ((Number) key.get(0)).intValue();
+            Integer start = key.get(0).intValue();
             String host = (String) value.get(0);
             Integer port = (Integer) value.get(1);
-            String comp = (String) task2component.get(start);
+            String comp = task2component.get(start);
             if ((compId == null || compId.equals(comp)) && (includeSys || !Utils.isSystemId(comp))) {
                 hostPorts.add(Lists.newArrayList(host, port));
             }
@@ -1416,10 +1550,10 @@ public class StatsUtil {
      * @param timeout       timeout
      * @return a HashMap of updated executor heart beats
      */
-    public static Map<List<Integer>, Object> updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
+    public static Map<List<Integer>, Map<String, Object>> updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
                                                                   Map<List<Integer>, Map<String, Object>> executorBeats,
                                                                   Set<List<Integer>> executors, Integer timeout) {
-        Map<List<Integer>, Object> ret = new HashMap<>();
+        Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
         if (cache == null && executorBeats == null) {
             return ret;
         }

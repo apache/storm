@@ -17,49 +17,21 @@
  */
 package org.apache.storm.cluster;
 
-import org.apache.storm.pacemaker.PacemakerClient;
+import java.util.List;
+import java.util.Map;
+import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.data.ACL;
 
-import java.util.List;
-import java.util.Map;
-
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
-
-    private static final PaceMakerStateStorageFactory INSTANCE = new PaceMakerStateStorageFactory();
-    private static PaceMakerStateStorageFactory _instance = INSTANCE;
-
-    public static void setInstance(PaceMakerStateStorageFactory u) {
-        _instance = u;
-    }
-
-    public static void resetInstance() {
-        _instance = INSTANCE;
-    }
-
     @Override
     public IStateStorage mkStore(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) {
         try {
-            return new PaceMakerStateStorage(initMakeClient(config), initZKstate(config, auth_conf, acls, context));
+            ZKStateStorageFactory zkfact = new ZKStateStorageFactory();
+            IStateStorage zkState = zkfact.mkStore(config, auth_conf, acls, context);
+            return new PaceMakerStateStorage(new PacemakerClientPool(config), zkState);
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
-    }
-
-    public static IStateStorage initZKstate(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
-        return _instance.initZKstateImpl(config, auth_conf, acls, context);
-    }
-
-    public static PacemakerClient initMakeClient(Map config) {
-        return _instance.initMakeClientImpl(config);
-    }
-
-    public IStateStorage initZKstateImpl(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
-        ZKStateStorageFactory zkStateStorageFactory = new ZKStateStorageFactory();
-        return zkStateStorageFactory.mkStore(config, auth_conf, acls, context);
-    }
-
-    public PacemakerClient initMakeClientImpl(Map config) {
-        return new PacemakerClient(config);
     }
 }

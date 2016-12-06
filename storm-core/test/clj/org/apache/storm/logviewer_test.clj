@@ -19,8 +19,7 @@
   (:require [conjure.core])
   (:use [clojure test])
   (:use [conjure core])
-  (:use [org.apache.storm testing]
-        [org.apache.storm.ui helpers])
+  (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
            [org.apache.storm.utils Utils Time]
            [org.apache.storm.utils.staticmocking UtilsInstaller]

@@ -117,7 +117,7 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
         }
 
         public static TimeInterval microSeconds(long length) {
-            return new TimeInterval(length, TimeUnit.MILLISECONDS);
+            return new TimeInterval(length, TimeUnit.MICROSECONDS);
         }
 
         public long lengthNanos() {
@@ -264,8 +264,8 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     private long nextTime(KafkaSpoutMessageId msgId) {
         final long currentTimeNanos = System.nanoTime();
         final long nextTimeNanos = msgId.numFails() == 1                // numFails = 1, 2, 3, ...
-                ? currentTimeNanos + initialDelay.lengthNanos()
-                : (long) (currentTimeNanos + Math.pow(delayPeriod.lengthNanos, msgId.numFails() - 1));
+                ? currentTimeNanos + initialDelay.lengthNanos
+                : (currentTimeNanos + delayPeriod.timeUnit.toNanos((long) Math.pow(delayPeriod.length, msgId.numFails() - 1)));
         return Math.min(nextTimeNanos, currentTimeNanos + maxDelay.lengthNanos);
     }
 

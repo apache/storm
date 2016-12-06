@@ -36,66 +36,65 @@ import org.apache.storm.tuple.Tuple;
  * A bolt that writes event message to EventHub.
  */
 public class EventHubBolt extends BaseRichBolt {
-  private static final long serialVersionUID = 1L;
-  private static final Logger logger = LoggerFactory
-      .getLogger(EventHubBolt.class);
-  
-  protected OutputCollector collector;
-  protected EventHubSender sender;
-  protected EventHubBoltConfig boltConfig;
-  
-  
-  public EventHubBolt(String connectionString, String entityPath) {
-    boltConfig = new EventHubBoltConfig(connectionString, entityPath);
-  }
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LoggerFactory
+			.getLogger(EventHubBolt.class);
 
-  public EventHubBolt(String userName, String password, String namespace,
-      String entityPath, boolean partitionMode) {
-    boltConfig = new EventHubBoltConfig(userName, password, namespace,
-        entityPath, partitionMode);
-  }
-  
-  public EventHubBolt(EventHubBoltConfig config) {
-    boltConfig = config;
-  }
+	protected OutputCollector collector;
+	protected EventHubSender sender;
+	protected EventHubBoltConfig boltConfig;
 
-  @Override
-  public void prepare(Map config, TopologyContext context, OutputCollector collector) {
-    this.collector = collector;
-    String myPartitionId = null;
-    if(boltConfig.getPartitionMode()) {
-      //We can use the task index (starting from 0) as the partition ID
-      myPartitionId = "" + context.getThisTaskIndex();
-    }
-    logger.info("creating sender: " + boltConfig.getConnectionString()
-        + ", " + boltConfig.getEntityPath() + ", " + myPartitionId);
-    try {
-      EventHubClient eventHubClient = EventHubClient.create(
-          boltConfig.getConnectionString(), boltConfig.getEntityPath());
-      sender = eventHubClient.createPartitionSender(myPartitionId);
-    }
-    catch(Exception ex) {
-      logger.error(ex.getMessage());
-      throw new RuntimeException(ex);
-    }
+	public EventHubBolt(String connectionString, String entityPath) {
+		boltConfig = new EventHubBoltConfig(connectionString, entityPath);
+	}
 
-  }
+	public EventHubBolt(String userName, String password, String namespace,
+			String entityPath, boolean partitionMode) {
+		boltConfig = new EventHubBoltConfig(userName, password, namespace,
+				entityPath, partitionMode);
+	}
 
-  @Override
-  public void execute(Tuple tuple) {
-    try {
-      sender.send(boltConfig.getEventDataFormat().serialize(tuple));
-      collector.ack(tuple);
-    }
-    catch(EventHubException ex) {
-      logger.error(ex.getMessage());
-      collector.fail(tuple);
-    }
-  }
+	public EventHubBolt(EventHubBoltConfig config) {
+		boltConfig = config;
+	}
 
-  @Override
-  public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    
-  }
+	@Override
+	public void prepare(Map config, TopologyContext context,
+			OutputCollector collector) {
+		this.collector = collector;
+		String myPartitionId = null;
+		if (boltConfig.getPartitionMode()) {
+			// We can use the task index (starting from 0) as the partition ID
+			myPartitionId = "" + context.getThisTaskIndex();
+		}
+		logger.info("creating sender: " + boltConfig.getConnectionString()
+				+ ", " + boltConfig.getEntityPath() + ", " + myPartitionId);
+		try {
+			EventHubClient eventHubClient = EventHubClient.create(
+					boltConfig.getConnectionString(),
+					boltConfig.getEntityPath());
+			sender = eventHubClient.createPartitionSender(myPartitionId);
+		} catch (Exception ex) {
+			collector.reportError(ex);
+			throw new RuntimeException(ex);
+		}
+
+	}
+
+	@Override
+	public void execute(Tuple tuple) {
+		try {
+			sender.send(boltConfig.getEventDataFormat().serialize(tuple));
+			collector.ack(tuple);
+		} catch (EventHubException ex) {
+			collector.reportError(ex);
+			collector.fail(tuple);
+		}
+	}
+
+	@Override
+	public void declareOutputFields(OutputFieldsDeclarer declarer) {
+
+	}
 
 }

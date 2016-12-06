@@ -106,4 +106,9 @@ public abstract class AbstractRedisBolt extends BaseRichBolt {
     protected void returnInstance(JedisCommands instance) {
         this.container.returnInstance(instance);
     }
+
+    @Override
+    public void cleanup() {
+        container.close();
+    }
 }

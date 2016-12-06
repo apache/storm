@@ -32,11 +32,9 @@
     "exclaim2" (bolt-spec {"exclaim1" :shuffle} exclamation-bolt :p 2)}))
 
 (defn run-local! []
-  (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "exclamation" {TOPOLOGY-DEBUG true} (mk-topology))
-    (Utils/sleep 10000)
-    (.killTopology cluster "exclamation")
-    (.shutdown cluster)))
+  (with-open [cluster (LocalCluster.)
+              topo (.submitTopology cluster "exclamation" {TOPOLOGY-DEBUG true} (mk-topology))]
+    (Utils/sleep 10000)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopologyWithProgressBar

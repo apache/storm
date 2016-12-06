@@ -34,7 +34,19 @@ public class ThriftTopologyUtilsTest extends TestCase {
         Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.BOLTS));
         Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.SPOUTS));
         Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.STATE_SPOUTS));
+        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_JARS));
+        Assert.assertEquals(false, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
         Assert.assertEquals(true, ThriftTopologyUtils.isWorkerHook(StormTopology._Fields.WORKER_HOOKS));
+    }
+
+    @Test
+    public void testIsDependencies() {
+        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.BOLTS));
+        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.SPOUTS));
+        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.STATE_SPOUTS));
+        Assert.assertEquals(false, ThriftTopologyUtils.isDependencies(StormTopology._Fields.WORKER_HOOKS));
+        Assert.assertEquals(true, ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_JARS));
+        Assert.assertEquals(true, ThriftTopologyUtils.isDependencies(StormTopology._Fields.DEPENDENCY_ARTIFACTS));
     }
 
     @Test

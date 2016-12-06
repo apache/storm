@@ -33,7 +33,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.Map;
 
-public class NimbusClient extends ThriftClient implements AutoCloseable {
+public class NimbusClient extends ThriftClient {
     private Nimbus.Client _client;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
 
@@ -79,8 +79,7 @@ public class NimbusClient extends ThriftClient implements AutoCloseable {
         for (String host : seeds) {
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
             ClusterSummary clusterInfo;
-            try {
-                NimbusClient client = new NimbusClient(conf, host, port, null, asUser);
+            try (NimbusClient client = new NimbusClient(conf, host, port, null, asUser)) {
                 clusterInfo = client.getClient().getClusterInfo();
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
@@ -91,10 +90,12 @@ public class NimbusClient extends ThriftClient implements AutoCloseable {
             if (nimbuses != null) {
                 for (NimbusSummary nimbusSummary : nimbuses) {
                     if (nimbusSummary.is_isLeader()) {
+                        String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
+                        LOG.info("Found leader nimbus : {}", leaderNimbus);
+
                         try {
                             return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
                         } catch (TTransportException e) {
-                            String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
                             throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
                         }
                     }

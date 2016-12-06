@@ -1,7 +1,64 @@
 ## 2.0.0
- * STORM-1966 Expand metric having Map type as value into multiple metrics based on entries
+ * STORM-1281: LocalCluster, testing4j and testing.clj to java
+ * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
+ * STORM-1276: line for line translation of nimbus to java
+ * STORM-2224: Exposed a method to override in computing the field from given tuple in FieldSelector
+ * STORM-2220: Added config support for each bolt in Cassandra bolts, fixed the bolts to be used also as sinks.
+ * STORM-1886: Extend KeyValueState iface with delete
+ * STORM-2193: Fix FilterConfiguration parameter order
+ * STORM-2209: Update documents adding new integration for some external systems
+ * STORM-2212: Remove Redundant Declarations in Maven POM Files
+ * STORM-2195: Clean up some of worker-launcher code
+ * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
+ * STORM-1278: Port org.apache.storm.daemon.worker to java
+ * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
+ * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
+ * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
+ * STORM-2188: Interrupt all executor threads before joining in executor shutdown
+ * STORM-203: Adding paths to default java library path
+ * STORM-2175: fix double close of workers
+ * STORM-1985: Provide a tool for showing and killing corrupted topology
+ * STORM-2012: Upgrade Kafka to 0.8.2.2
+ * STORM-2142: ReportErrorAndDie runs suicide function only when InterruptedException or InterruptedIOException is thrown
+ * STORM-2134: improving the current scheduling strategy for RAS
+ * STORM-2131: Add blob command to worker-launcher, make stormdist directory not writeable by topo owner
+ * STORM-2144: Fix Storm-sql group-by behavior in standalone mode
+ * STORM-1546: Adding Read and Write Aggregations for Pacemaker to make it HA compatible
+ * STORM-2124: show requested cpu mem for each component
+ * STORM-2109: Treat Supervisor CPU/MEMORY Configs as Numbers
+ * STORM-2122: Cache dependency data, and serialize reading of the data
+ * STORM-2117: Supervisor V2 with local mode extracts resources directory to the wrong directory
+ * STORM-2110: strip out empty String in worker opts
+ * STORM-2100: Fix Trident SQL join tests to not rely on ordering
+ * STORM-2018: Supervisor V2
+ * STORM-2098: DruidBeamBolt: Pass DruidConfig.Builder as constructor argument
+ * STORM-2067: Fix "array element type mismatch" from compute-executors in nimbus.clj
+ * STORM-2054: DependencyResolver should be aware of relative path and absolute path
+ * STORM-2052: Kafka Spout New Client API - Log Improvements and Parameter Tuning for Better Performance
+ * STORM-2045: fixed SpoutExecutor NPE
+ * STORM-2041: Make Java 8 as minimum requirement for 2.0 release
+ * STORM-1256: port backtype.storm.utils.ZookeeperServerCnxnFactory-test to java
+ * STORM-1251: port backtype.storm.serialization.SerializationFactory-test to java
+ * STORM-1240: port backtype.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer-test to java
+ * STORM-1234: port backtype.storm.security.auth.DefaultHttpCredentialsPlugin-test to java
+ * STORM-2037: debug operation should be whitelisted in SimpleAclAuthorizer.
+ * STORM-2036: Fix minor bug in RAS Tests
+ * STORM-2026: Inconsistency between (SpoutExecutor, BoltExecutor) and (spout-transfer-fn, bolt-transfer-fn)
+ * STORM-1277: port backtype.storm.daemon.executor to java
+ * STORM-2020: Stop using sun internal classes.
+ * STORM-2021: Fix license.
+ * STORM-2022: fix FieldsTest
+ * STORM-1285: port backtype.storm.command.get-errors to java
+ * STORM-2010: port org.apache.storm.command.heartbeats.clj to Java
+ * STORM-2009: port org.apache.storm.blobstore.clj and org.apache.storm.command.blobstore.clj to Java
+ * STORM-1876: Option to build storm-kafka and storm-kafka-client with different kafka client version
+ * STORM-2000: Package storm-opentsdb as part of external dir in installation
+ * STORM-1962: support python 3 and 2 in multilang
+ * STORM-1964: Unexpected behavior when using count window together with timestamp extraction
+ * STORM-1890: ensure we refetch static resources after package build
+ * STORM-1966: Expand metric having Map type as value into multiple metrics based on entries
  * STORM-1737: storm-kafka-client has compilation errors with Apache Kafka 0.10
- * STORM-1910 One topology cannot use hdfs spout to read from two locations
+ * STORM-1910: One topology cannot use hdfs spout to read from two locations
  * STORM-1916: Add ability for worker-first classpath
  * STORM-1954: Large Trident topologies can cause memory issues due to DefaultResourceDeclarer object reading config
  * STORM-1913: Additions and Improvements for Trident RAS API
@@ -122,10 +179,50 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
-## 1.1.0 
+## 1.1.0
+ * STORM-2215: validate blobs are present before submitting
+ * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
+ * STORM-2087: storm-kafka-client - tuples not always being replayed.
+ * STORM-2182: Refactor Storm Kafka Examples Into Own Modules.
+ * STORM-1694: Kafka Spout Trident Implementation Using New Kafka Consumer API.
+ * STORM-2173: [SQL] Support CSV as input / output format
+ * STORM-2177: [SQL] Support TSV as input / output format
+ * STORM-2172: [SQL] Support Avro as input / output format
+ * STORM-2103: [SQL] Introduce new sql external module: storm-sql-mongodb
+ * STORM-2109: Under supervisor V2 SUPERVISOR_MEMORY_CAPACITY_MB and SUPERVISOR_CPU_CAPACITY must be Doubles
+ * STORM-2110: in supervisor v2 filter out empty command line args
+ * STORM-2117: Supervisor V2 with local mode extracts resources directory to topology root directory instead of temporary directory
+ * STORM-2131: Add blob command to worker-launcher, make stormdist directory not writeable by topo owner
+ * STORM-2018: Supervisor V2
+ * STORM-2139: Let ShellBolts and ShellSpouts run with scripts from blobs
+ * STORM-2072: Add map, flatMap with different outputs (T->V) in Trident
+ * STORM-2125: Use Calcite's implementation of Rex Compiler
+ * STORM-1444: Support EXPLAIN statement in StormSQL
+ * STORM-2099: Introduce new sql external module: storm-sql-redis
+ * STORM-2097: Improve logging in trident core and examples
+ * STORM-2066: make error message in IsolatedPool.java more descriptive
+ * STORM-1870: Allow FluxShellBolt/Spout set custom "componentConfig" via yaml
+ * STORM-2126: fix NPE due to race condition in compute-new-sched-assign…
+ * STORM-2089: Replace Consumer of ISqlTridentDataSource with SqlTridentConsumer
+ * STORM-2118: A few fixes for storm-sql standalone mode
+ * STORM-2105: Cluster/Supervisor total and available resources displayed in the UI
+ * STORM-2078: enable paging in worker datatable
+ * STORM-1664: Allow Java users to start a local cluster with a Nimbus Thrift server.
+ * STORM-1872: Release Jedis connection when topology shutdown
+ * STORM-1837: Fix complete-topology and prevent message loss
+ * STORM-2092: optimize TridentKafkaState batch sending
+ * STORM-1979: Storm Druid Connector implementation.
+ * STORM-2057: Support JOIN statement in Storm SQL
+ * STORM-1970: external project examples refator
+ * STORM-2074: fix storm-kafka-monitor NPE bug
+ * STORM-1459: Allow not specifying producer properties in read-only Kafka table in StormSQL
+ * STORM-2050: [storm-sql] Support User Defined Aggregate Function for Trident mode
+ * STORM-1434: Support the GROUP BY clause in StormSQL
+ * STORM-2016: Topology submission improvement: support adding local jars and maven artifacts on submission
+ * STORM-1994: Add table with per-topology & worker resource usage and components in (new) supervisor and topology pages
+ * STORM-2023: Add calcite-core to dependency of storm-sql-runtime
+ * STORM-1839: Storm spout implementation for Amazon Kinesis Streams.
  * STORM-1988: Kafka Offset not showing due to bad classpath.
- * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
- * STORM-1969: Modify HiveTopology to show usage of non-partition table.
  * STORM-1950: Change response json of "Topology Lag" REST API to keyed by spoutId, topic, partition.
  * STORM-1833: Simple equi-join in storm-sql standalone mode
  * STORM-1866: Update Resource Aware Scheduler Documentation
@@ -145,7 +242,6 @@
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
  * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
@@ -158,10 +254,47 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
- * STORM-1976: Remove cleanup-corrupt-topologies!
- * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
+ * STORM-2216: Favor JSONValue.parseWithException
+ * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
+ * STORM-2213: ShellSpout has race condition when ShellSpout is being inactive longer than heartbeat timeout
+ * STORM-2210: remove array shuffle from ShuffleGrouping
+ * STORM-2198: perform RotationAction when stopping HdfsBolt
+ * STORM-2196: A typo in RAS_Node::consumeCPU
+ * STORM-2189: RAS_Node::freeCPU outputs incorrect info
+ * STORM-2184: Don't wakeup KafkaConsumer on shutdown
+ * STORM-2018: Supervisor V2
+ * STORM-2145: Leave leader nimbus's hostname to log when trying to connect leader nimbus
+ * STORM-2127: Storm-eventhubs should use latest amqp and eventhubs-client versions 
+ * STORM-2040: Fix bug on assert-can-serialize
+ * STORM-2017: ShellBolt stops reporting task ids
+ * STORM-2119: bug in log message printing to stdout
+ * STORM-2120: Emit to _spoutConfig.outputStreamId
+ * STORM-2101: fixes npe in compute-executors in nimbus
+ * STORM-2090: Add integration test for storm windowing
+ * STORM-2003: Make sure config contains TOPIC before get it
+ * STORM-1567: in defaults.yaml 'topology.disable.loadaware' should be 'topology.disable.loadaware.messaging'
+ * STORM-1987: Fix TridentKafkaWordCount arg handling in distributed mode.
+ * STORM-1969: Modify HiveTopology to show usage of non-partition table.
+ * STORM-1849: HDFSFileTopology should use the 3rd argument as topologyName
+ * STORM-2086: use DefaultTopicSelector instead of creating a new one
+ * STORM-2079: Unneccessary readStormConfig operation
+ * STORM-2081: create external directory for storm-sql various data sources and move storm-sql-kafka to it
+ * STORM-1344: Remove sql command from storm-jdbc build
+ * STORM-2070: Fix sigar native binary download link
+ * STORM-2056: Bugs in logviewer
+ * STORM-1646: Fix ExponentialBackoffMsgRetryManager test
+ * STORM-2039: Backpressure refactoring in worker and executor
+ * STORM-2064: Add storm name and function, access result and function to log-thrift-access
+ * STORM-2063: Add thread name in worker logs
+ * STORM-2047: Add note to add logviewer hosts to browser whitelist
+ * STORM-2042: Nimbus client connections not closed properly causing connection leaks
+ * STORM-2032: removes warning in case more than one metrics tuple is received
+ * STORM-1594: org.apache.storm.tuple.Fields can throw NPE if given invalid field in selector
+ * STORM-1995: downloadChunk in nimbus.clj should close the input stream
 
 ## 1.0.2
+ * STORM-1976: Remove cleanup-corrupt-topologies!
+ * STORM-1977: Restore logic: give up leadership when elected as leader but doesn't have one or more of topology codes on local
  * STORM-1939: Frequent InterruptedException raised by ShellBoltMessageQueue.poll
  * STORM-1928: ShellSpout should check heartbeat while ShellSpout is waiting for subprocess to sync
  * STORM-1922: Supervisor summary default order by host
@@ -503,6 +636,9 @@
  * STORM-901: Worker Artifacts Directory
  * STORM-1144: Display requested and assigned cpu/mem resources for schedulers in UI
  * STORM-1217: making small fixes in RAS
+
+## 0.10.3
+ * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
 
 ## 0.10.2
  * STORM-1834: Documentation How to Generate Certificates For Local Testing SSL Setup

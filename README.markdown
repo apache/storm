@@ -1,4 +1,4 @@
-Master Branch: 
+Master Branch:  
 [![Travis CI](https://travis-ci.org/apache/storm.svg?branch=master)](https://travis-ci.org/apache/storm)
 [![Maven Version](https://maven-badges.herokuapp.com/maven-central/org.apache.storm/storm-core/badge.svg)](http://search.maven.org/#search|gav|1|g:"org.apache.storm"%20AND%20a:"storm-core")
 
@@ -97,6 +97,8 @@ under the License.
 * Longda Feng ([@longda](https://github.com/longdafeng))
 * John Fang ([@hustfxj](https://github.com/hustfxj))
 * Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
+* Satish Duggana ([@satishd](https://github.com/satishd))
+* Xin Wang ([@vesense](https://github.com/vesense))
 
 ## Contributors
 
@@ -216,7 +218,6 @@ under the License.
 * Shyam Rajendran ([@bourneagain](https://github.com/bourneagain))
 * Reza Farivar ([@rfarivar](https://github.com/rfarivar))
 * Hugo Louro ([@hmcl](https://github.com/hmcl))
-* Xin Wang ([@vesense](https://github.com/vesense))
 * Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 * Chuanlei Ni ([@chuanlei](https://github.com/chuanlei))
 * Xingyu Su ([@errordaiwa](https://github.com/errordaiwa))
@@ -268,7 +269,10 @@ under the License.
 * wangperry ([@wangperry](https://github.com/wangperry))
 * Slava Andreyev ([@slava92](https://github.com/slava92))
 * Pavel Grochal ([@Darkless012](https://github.com/Darkless012))
-
+* Manikumar Reddy O ([@omkreddy](https://github.com/omkreddy))
+* Dohyun Lee ([@leedohyun](https://github.com/leedohyun))
+* Arthur Maciejewicz ([@Zintinio](https://github.com/Zintinio]))
+* Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo)) 
 
 ## Acknowledgements
 

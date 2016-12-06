@@ -118,7 +118,7 @@ public class FieldsTest {
         Assert.assertTrue(pickSecondAndFirst.equals(secondAndFirst));
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void selectingUnknownFieldThrowsTest() {
         Fields fields = new Fields("foo", "bar");
         fields.select(new Fields("bar", "baz"), Arrays.asList(new Object[]{"a", "b", "c"}));

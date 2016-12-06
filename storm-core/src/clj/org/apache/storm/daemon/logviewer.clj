@@ -371,27 +371,27 @@
     (drop-down "file" log-files)
     [:input {:type "submit" :value "Switch file"}]]])
 
-(defn pager-links [fname start length file-size]
+(defn pager-links [fname start length file-size type]
   (let [prev-start (max 0 (- start length))
         next-start (if (> file-size 0)
                      (min (max 0 (- file-size length)) (+ start length))
                      (+ start length))]
     [[:div
       (concat
-          [(to-btn-link (url "/log"
+          [(to-btn-link (url (str "/" type)
                           {:file fname
                            :start (max 0 (- start length))
                            :length length})
                           "Prev" :enabled (< prev-start start))]
-          [(to-btn-link (url "/log"
+          [(to-btn-link (url (str "/" type)
                            {:file fname
                             :start 0
                             :length length}) "First")]
-          [(to-btn-link (url "/log"
+          [(to-btn-link (url (str "/" type)
                            {:file fname
                             :length length})
                         "Last")]
-          [(to-btn-link (url "/log"
+          [(to-btn-link (url (str "/" type)
                           {:file fname
                            :start (min (max 0 (- file-size length))
                                        (+ start length))
@@ -452,7 +452,7 @@
                           (filter #(.contains % grep))
                           (string/join "\n"))
                      log-string)])
-            (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length) nil)]
+            (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length "log") nil)]
               (html (concat (search-file-form fname "no")
                             (log-file-selection-form reordered-files-str "log") ; list all files for this topology
                             pager-data
@@ -496,7 +496,7 @@
                         (filter #(.contains % grep))
                         (string/join "\n"))
                    log-string)])
-          (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length) nil)]
+          (let [pager-data (if (is-txt-file fname) (pager-links fname start length file-length "daemonlog") nil)]
             (html (concat (search-file-form fname "yes")
                           (log-file-selection-form reordered-files-str "daemonlog") ; list all daemon logs
                           pager-data
@@ -506,11 +506,13 @@
       (-> (resp/response "Page not found")
           (resp/status 404)))))
 
-(defn download-log-file [fname req resp user ^String root-dir]
+(defnk download-log-file [fname req resp user ^String root-dir :is-daemon false]
   (let [file (.getCanonicalFile (File. root-dir fname))]
     (if (.exists file)
-      (if (or (blank? (*STORM-CONF* UI-FILTER))
-              (authorized-log-user? user fname *STORM-CONF*))
+
+      (if (or is-daemon
+            (or (blank? (*STORM-CONF* UI-FILTER))
+              (authorized-log-user? user fname *STORM-CONF*)))
         (-> (resp/response file)
             (resp/content-type "application/octet-stream"))
         (unauthorized-user-html user))
@@ -830,8 +832,9 @@
   [fname user ^String root-dir is-daemon search num-matches offset callback origin]
   (let [file (.getCanonicalFile (File. root-dir fname))]
     (if (.exists file)
-      (if (or (blank? (*STORM-CONF* UI-FILTER))
-            (authorized-log-user? user fname *STORM-CONF*))
+      (if (or is-daemon
+            (or (blank? (*STORM-CONF* UI-FILTER))
+              (authorized-log-user? user fname *STORM-CONF*)))
         (let [num-matches-int (if num-matches
                                 (try-parse-int-param "num-matches"
                                   num-matches))
@@ -1106,7 +1109,7 @@
     (try
       (.mark logviewer:num-download-log-daemon-file-http-requests)
       (let [user (.getUserName http-creds-handler servlet-request)]
-        (download-log-file file servlet-request servlet-response user daemonlog-root))
+        (download-log-file file servlet-request servlet-response user daemonlog-root :is-daemon true))
       (catch InvalidRequestException ex
         (log-error ex)
         (ring-response-from-exception ex))))

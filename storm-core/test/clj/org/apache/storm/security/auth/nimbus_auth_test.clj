@@ -15,45 +15,39 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.nimbus-auth-test
   (:use [clojure test])
-  (:require [org.apache.storm [testing :as testing]])
-  (:require [org.apache.storm.daemon [nimbus :as nimbus]])
   (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
-  (:import [org.apache.storm Config])
+  (:import [java.util Optional])
+  (:import [org.apache.storm Config LocalCluster$Builder])
+  (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.storm.utils NimbusClient ConfigUtils])
-  (:import [org.apache.storm.generated NotAliveException])
+  (:import [org.apache.storm.generated NotAliveException StormBase])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient 
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
   (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.cluster IStormClusterState])
+  (:import [org.mockito Mockito Matchers])
   (:use [org.apache.storm util config log])
-  (:use [org.apache.storm.daemon common nimbus])
   (:require [conjure.core])
   (:use [conjure core]))
 
-(defn launch-test-cluster [nimbus-port login-cfg aznClass transportPluginClass] 
-  (let [conf {NIMBUS-AUTHORIZER aznClass 
+(defn to-conf [nimbus-port login-cfg aznClass transportPluginClass]
+  (let [conf {NIMBUS-AUTHORIZER aznClass
               NIMBUS-THRIFT-PORT nimbus-port
               STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass }
-        conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)
-        cluster-map (testing/mk-local-storm-cluster :supervisors 0
-                                            :ports-per-supervisor 0
-                                            :daemon-conf conf)
-        nimbus-server (ThriftServer. (:daemon-conf cluster-map)
-                                     (Nimbus$Processor. (:nimbus cluster-map)) 
-                                     ThriftConnectionType/NIMBUS)]
-    (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop nimbus-server))))
-    (.start (Thread. #(.serve nimbus-server)))
-    (testing/wait-for-condition #(.isServing nimbus-server))
-    [cluster-map nimbus-server]))
+         conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)]
+    conf))
 
 (defmacro with-test-cluster [args & body]
-  `(let [[cluster-map#  nimbus-server#] (launch-test-cluster  ~@args)]
-      ~@body
-      (log-debug "Shutdown cluster from macro")
-      (testing/kill-local-storm-cluster cluster-map#)
-      (.stop nimbus-server#)))
+  `(let [conf# (to-conf ~@args)]
+     (with-open [_# (.build (doto (LocalCluster$Builder. )
+                      (.withNimbusDaemon)
+                      (.withDaemonConf conf#)
+                      (.withSupervisors 0)
+                      (.withPortsPerSupervisor 0)))]
+       ~@body)))
 
 (deftest Simple-authentication-test
   (let [port (Utils/getAvailablePort)]
@@ -69,10 +63,20 @@
         (.close client)))))
 
 (deftest test-noop-authorization-w-simple-transport
-  (let [port (Utils/getAvailablePort)]
-    (with-test-cluster [port nil
-                  "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin"]
+  (let [port (Utils/getAvailablePort)
+        cluster-state (Mockito/mock IStormClusterState)
+        blob-store (Mockito/mock BlobStore)
+        topo-name "topo-name"]
+    (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/empty))
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
                                 STORM-NIMBUS-RETRY-TIMES 0})
@@ -80,14 +84,26 @@
             nimbus_client (.getClient client)]
         (testing "(Positive authorization) Authorization plugin should accept client request"
                  (is (thrown-cause? NotAliveException
-                              (.activate nimbus_client "topo-name"))))
+                              (.activate nimbus_client topo-name))))
         (.close client)))))
 
 (deftest test-deny-authorization-w-simple-transport
-  (let [port (Utils/getAvailablePort)]
-    (with-test-cluster [port nil
-                  "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                  "org.apache.storm.security.auth.SimpleTransportPlugin"]
+  (let [port (Utils/getAvailablePort)
+        cluster-state (Mockito/mock IStormClusterState)
+        blob-store (Mockito/mock BlobStore)
+        topo-name "topo-name"
+        topo-id "topo-name-1"]
+    (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
+    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
                                Config/NIMBUS_THRIFT_PORT port
@@ -96,8 +112,8 @@
             nimbus_client (.getClient client)
             topologyInitialStatus (TopologyInitialStatus/findByValue 2)
             submitOptions (SubmitOptions. topologyInitialStatus)]
-        (is (thrown-cause? AuthorizationException (.submitTopology nimbus_client  "topo-name" nil nil nil)))
-        (is (thrown-cause? AuthorizationException (.submitTopologyWithOpts nimbus_client  "topo-name" nil nil nil submitOptions)))
+        (is (thrown-cause? AuthorizationException (.submitTopology nimbus_client topo-name nil nil nil)))
+        (is (thrown-cause? AuthorizationException (.submitTopologyWithOpts nimbus_client topo-name nil nil nil submitOptions)))
         (is (thrown-cause? AuthorizationException (.beginFileUpload nimbus_client)))
 
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
@@ -106,19 +122,15 @@
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
-        (stubbing [nimbus/check-storm-active! nil
-                   nimbus/try-read-storm-conf-from-name {}]
-          (is (thrown-cause? AuthorizationException (.killTopology nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.killTopologyWithOpts nimbus_client "topo-name" (KillOptions.))))
-          (is (thrown-cause? AuthorizationException (.activate nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.deactivate nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.rebalance nimbus_client "topo-name" nil)))
-        )
-        (stubbing [nimbus/try-read-storm-conf {}]
-          (is (thrown-cause? AuthorizationException (.getTopologyConf nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getTopology nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getUserTopology nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getTopologyInfo nimbus_client "topo-ID"))))
+        (is (thrown-cause? AuthorizationException (.killTopology nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.killTopologyWithOpts nimbus_client topo-name (KillOptions.))))
+        (is (thrown-cause? AuthorizationException (.activate nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.deactivate nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.rebalance nimbus_client topo-name nil)))
+        (is (thrown-cause? AuthorizationException (.getTopologyConf nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getTopology nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getUserTopology nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getTopologyInfo nimbus_client topo-id)))
         (.close client)))))
 
 (deftest test-noop-authorization-w-sasl-digest
@@ -140,13 +152,25 @@
         (.close client)))))
 
 (deftest test-deny-authorization-w-sasl-digest
-  (let [port (Utils/getAvailablePort)]
-    (with-test-cluster [port
-                  "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                  "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                  "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"]
+  (let [port (Utils/getAvailablePort)
+        cluster-state (Mockito/mock IStormClusterState)
+        blob-store (Mockito/mock BlobStore)
+        topo-name "topo-name"
+        topo-id "topo-name-1"]
+    (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
+    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (with-open [cluster (.build
+                          (doto (LocalCluster$Builder.)
+                            (.withClusterState cluster-state)
+                            (.withBlobStore blob-store)
+                            (.withNimbusDaemon)
+                            (.withDaemonConf
+                               {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
+                                NIMBUS-THRIFT-PORT port
+                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
+                                STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
+                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
                                Config/NIMBUS_THRIFT_PORT port
                                STORM-NIMBUS-RETRY-TIMES 0})
@@ -154,26 +178,24 @@
             nimbus_client (.getClient client)
             topologyInitialStatus (TopologyInitialStatus/findByValue 2)
             submitOptions (SubmitOptions. topologyInitialStatus)]
-        (is (thrown-cause? AuthorizationException (.submitTopology nimbus_client  "topo-name" nil nil nil)))
-        (is (thrown-cause? AuthorizationException (.submitTopologyWithOpts nimbus_client  "topo-name" nil nil nil submitOptions)))
+        (is (thrown-cause? AuthorizationException (.submitTopology nimbus_client topo-name nil nil nil)))
+        (is (thrown-cause? AuthorizationException (.submitTopologyWithOpts nimbus_client topo-name nil nil nil submitOptions)))
         (is (thrown-cause? AuthorizationException (.beginFileUpload nimbus_client)))
+
         (is (thrown-cause? AuthorizationException (.uploadChunk nimbus_client nil nil)))
         (is (thrown-cause? AuthorizationException (.finishFileUpload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.beginFileDownload nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.downloadChunk nimbus_client nil)))
         (is (thrown-cause? AuthorizationException (.getNimbusConf nimbus_client)))
         (is (thrown-cause? AuthorizationException (.getClusterInfo nimbus_client)))
-        (stubbing [nimbus/check-storm-active! nil
-                   nimbus/try-read-storm-conf-from-name {}]
-          (is (thrown-cause? AuthorizationException (.killTopology nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.killTopologyWithOpts nimbus_client "topo-name" (KillOptions.))))
-          (is (thrown-cause? AuthorizationException (.activate nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.deactivate nimbus_client "topo-name")))
-          (is (thrown-cause? AuthorizationException (.rebalance nimbus_client "topo-name" nil))))
-        (stubbing [nimbus/try-read-storm-conf {}]
-          (is (thrown-cause? AuthorizationException (.getTopologyConf nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getTopology nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getUserTopology nimbus_client "topo-ID")))
-          (is (thrown-cause? AuthorizationException (.getTopologyInfo nimbus_client "topo-ID"))))
+        (is (thrown-cause? AuthorizationException (.killTopology nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.killTopologyWithOpts nimbus_client topo-name (KillOptions.))))
+        (is (thrown-cause? AuthorizationException (.activate nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.deactivate nimbus_client topo-name)))
+        (is (thrown-cause? AuthorizationException (.rebalance nimbus_client topo-name nil)))
+        (is (thrown-cause? AuthorizationException (.getTopologyConf nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getTopology nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getUserTopology nimbus_client topo-id)))
+        (is (thrown-cause? AuthorizationException (.getTopologyInfo nimbus_client topo-id)))
         (.close client)))))
 

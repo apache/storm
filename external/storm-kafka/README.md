@@ -214,10 +214,10 @@ set the parameter `KafkaConfig.ignoreZkOffsets` to `true`.  If `true`, the spout
 offset defined by `KafkaConfig.startOffsetTime` as described above.
 
 
-## Using storm-kafka with different versions of Scala
+## Using storm-kafka with different versions of kafka
 
 Storm-kafka's Kafka dependency is defined as `provided` scope in maven, meaning it will not be pulled in
-as a transitive dependency. This allows you to use a version of Kafka built against a specific Scala version.
+as a transitive dependency. This allows you to use a version of Kafka dependency compatible with your kafka cluster.
 
 When building a project with storm-kafka, you must explicitly add the Kafka dependency. For example, to
 use Kafka 0.8.1.1 built against Scala 2.10, you would use the following dependency in your `pom.xml`:
@@ -241,6 +241,16 @@ use Kafka 0.8.1.1 built against Scala 2.10, you would use the following dependen
 ```
 
 Note that the ZooKeeper and log4j dependencies are excluded to prevent version conflicts with Storm's dependencies.
+
+You can also override the kafka dependency version while building from maven, with parameter `kafka.version` and `kafka.artifact.id`
+e.g. `mvn clean install -Dkafka.artifact.id=kafka_2.11 -Dkafka.version=0.9.0.1`
+
+When selecting a kafka dependency version, you should ensure - 
+ 1. kafka api is compatible with storm-kafka. Currently, only 0.9.x and 0.8.x client API is supported by storm-kafka 
+ module. If you want to use a higher version, storm-kafka-client module should be used instead.
+ 2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with 
+ 0.8.x broker. 
+
 
 ##Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you

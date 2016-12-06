@@ -20,13 +20,20 @@ package org.apache.storm;
 import org.apache.storm.cluster.PaceMakerStateStorage;
 import org.apache.storm.generated.*;
 import org.apache.storm.pacemaker.PacemakerClient;
+import org.apache.storm.pacemaker.PacemakerClientPool;
 import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class PaceMakerStateStorageFactoryTest {
+import java.util.HashMap;
+import java.util.List;
+import java.util.ArrayList;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-    private PacemakerClient clientProxy;
+public class PaceMakerStateStorageFactoryTest {
+    private PaceMakerClientProxy clientProxy;
+    private PacemakerClientPoolProxy clientPoolProxy;
     private PaceMakerStateStorage stateStorage;
 
     private class PaceMakerClientProxy extends PacemakerClient {
@@ -44,16 +51,33 @@ public class PaceMakerStateStorageFactoryTest {
             return response;
         }
 
-        @Override
         public HBMessage checkCaptured() {
             return captured;
+        }
+    }
+
+    private class PacemakerClientPoolProxy extends PacemakerClientPool {
+        public PacemakerClientPoolProxy() {
+            super(new HashMap<>());
+        }
+        public PacemakerClient getWriteClient() {
+            return clientProxy;
+        }
+        public HBMessage send(HBMessage m) {
+            return clientProxy.send(m);
+        }
+        public List<HBMessage> sendAll(HBMessage m) {
+            List<HBMessage> response = new ArrayList<>();
+            response.add(clientProxy.send(m));
+            return response;
         }
     }
 
     public void createPaceMakerStateStorage(HBServerMessageType messageType, HBMessageData messageData) throws Exception {
         HBMessage response = new HBMessage(messageType, messageData);
         clientProxy = new PaceMakerClientProxy(response, null);
-        stateStorage = new PaceMakerStateStorage(clientProxy, null);
+        clientPoolProxy = new PacemakerClientPoolProxy();
+        stateStorage = new PaceMakerStateStorage(clientPoolProxy, null);
     }
 
     @Test
@@ -92,7 +116,8 @@ public class PaceMakerStateStorageFactoryTest {
     public void testGetWorkerHb() throws Exception {
         HBPulse hbPulse = new HBPulse();
         hbPulse.set_id("/foo");
-        hbPulse.set_details(Utils.javaSerialize("some data"));
+        ClusterWorkerHeartbeat cwh = new ClusterWorkerHeartbeat("some-storm-id", new HashMap(), 1, 1);
+        hbPulse.set_details(Utils.serialize(cwh));
         createPaceMakerStateStorage(HBServerMessageType.GET_PULSE_RESPONSE, HBMessageData.pulse(hbPulse));
         stateStorage.get_worker_hb("/foo", false);
         HBMessage sent = clientProxy.checkCaptured();
@@ -119,12 +144,6 @@ public class PaceMakerStateStorageFactoryTest {
         HBMessage sent = clientProxy.checkCaptured();
         Assert.assertEquals(HBServerMessageType.GET_ALL_NODES_FOR_PATH, sent.get_type());
         Assert.assertEquals("/foo", sent.get_data().get_path());
-    }
-
-    @Test(expected = RuntimeException.class)
-    public void testGetWorkerHbChildrenBadResponse() throws Exception {
-        createPaceMakerStateStorage(HBServerMessageType.DELETE_PATH, null);
-        stateStorage.get_worker_hb_children("/foo", false);
     }
 
     @Test(expected = RuntimeException.class)

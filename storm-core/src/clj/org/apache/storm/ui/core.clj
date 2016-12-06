@@ -18,10 +18,11 @@
   (:use compojure.core)
   (:use [clojure.java.shell :only [sh]])
   (:use ring.middleware.reload
-        ring.middleware.multipart-params)
+        ring.middleware.multipart-params
+        ring.middleware.multipart-params.temp-file)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [org.apache.storm config util log converter])
+  (:use [org.apache.storm config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]
@@ -38,7 +39,7 @@
             TopologyStats CommonAggregateStats ComponentAggregateStats
             ComponentType BoltAggregateStats SpoutAggregateStats
             ExecutorAggregateStats SpecificAggregateStats ComponentPageInfo
-            LogConfig LogLevel LogLevelAction])
+            LogConfig LogLevel LogLevelAction SupervisorPageInfo WorkerSummary])
   (:import [org.apache.storm.security.auth AuthUtils ReqContext])
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [org.apache.storm.security.auth AuthUtils])
@@ -66,6 +67,7 @@
 (def ui:num-cluster-configuration-http-requests (StormMetricsRegistry/registerMeter "ui:num-cluster-configuration-http-requests")) 
 (def ui:num-cluster-summary-http-requests (StormMetricsRegistry/registerMeter "ui:num-cluster-summary-http-requests")) 
 (def ui:num-nimbus-summary-http-requests (StormMetricsRegistry/registerMeter "ui:num-nimbus-summary-http-requests")) 
+(def ui:num-supervisor-http-requests (StormMetricsRegistry/registerMeter "ui:num-supervisor-http-requests")) 
 (def ui:num-supervisor-summary-http-requests (StormMetricsRegistry/registerMeter "ui:num-supervisor-summary-http-requests")) 
 (def ui:num-all-topologies-summary-http-requests (StormMetricsRegistry/registerMeter "ui:num-all-topologies-summary-http-requests")) 
 (def ui:num-topology-page-http-requests (StormMetricsRegistry/registerMeter "ui:num-topology-page-http-requests"))
@@ -307,7 +309,7 @@
           bolt-summs (filter (partial bolt-summary? topology) execs)
           spout-comp-summs (group-by-comp spout-summs)
           bolt-comp-summs (group-by-comp bolt-summs)
-          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
+          ;TODO: when translating this function, you should replace the filter-key with a proper for loop + if condition HERE
           bolt-comp-summs (filter-key (mk-include-sys-fn include-sys?)
                                       bolt-comp-summs)]
       (visualization-data
@@ -382,7 +384,20 @@
                             (reduce +))
            total-executors (->> (.get_topologies summ)
                                 (map #(.get_num_executors ^TopologySummary %))
-                                (reduce +))]
+                             (reduce +))
+           resourceSummary (if (> (.size sups) 0)
+                             (reduce #(map + %1 %2)
+                               (for [^SupervisorSummary s sups
+                                     :let [sup-total-mem (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+                                           sup-total-cpu (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
+                                           sup-avail-mem (max (- sup-total-mem (.get_used_mem s)) 0.0)
+                                           sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)]]
+                                 [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu]))
+                             [0.0 0.0 0.0 0.0])
+           total-mem (nth resourceSummary 0)
+           total-cpu (nth resourceSummary 1)
+           avail-mem (nth resourceSummary 2)
+           avail-cpu (nth resourceSummary 3)]
        {"user" user
         "stormVersion" STORM-VERSION
         "supervisors" (count sups)
@@ -391,7 +406,14 @@
         "slotsUsed"  used-slots
         "slotsFree" free-slots
         "executorsTotal" total-executors
-        "tasksTotal" total-tasks })))
+        "tasksTotal" total-tasks
+        "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+        "totalMem" total-mem
+        "totalCpu" total-cpu
+        "availMem" avail-mem
+        "availCpu" avail-cpu
+        "memAssignedPercentUtil" (if (and (not (nil? total-mem)) (> total-mem 0.0)) (format "%.1f" (* (/ (- total-mem avail-mem) total-mem) 100.0)) 0.0)
+        "cpuAssignedPercentUtil" (if (and (not (nil? total-cpu)) (> total-cpu 0.0)) (format "%.1f" (* (/ (- total-cpu avail-cpu) total-cpu) 100.0)) 0.0)})))
 
 (defn convert-to-nimbus-summary[nimbus-seed]
   (let [[host port] (.split nimbus-seed ":")]
@@ -428,26 +450,77 @@
           "nimbusUpTime" (UIHelpers/prettyUptimeSec uptime)
           "nimbusUpTimeSeconds" uptime}))})))
 
+(defn worker-summary-to-json
+  [secure? ^WorkerSummary worker-summary]
+  (let [host (.get_host worker-summary)
+        port (.get_port worker-summary)
+        topology-id (.get_topology_id worker-summary)
+        uptime-secs (.get_uptime_secs worker-summary)]
+    {"supervisorId" (.get_supervisor_id worker-summary)
+     "host" host
+     "port" port
+     "topologyId" topology-id
+     "topologyName" (.get_topology_name worker-summary)
+     "executorsTotal" (.get_num_executors worker-summary)
+     "assignedMemOnHeap" (.get_assigned_memonheap worker-summary)
+     "assignedMemOffHeap" (.get_assigned_memoffheap worker-summary)
+     "assignedCpu" (.get_assigned_cpu worker-summary)
+     "componentNumTasks" (.get_component_to_num_tasks worker-summary)
+     "uptime" (UIHelpers/prettyUptimeSec uptime-secs)
+     "uptimeSeconds" uptime-secs
+     "workerLogLink" (worker-log-link host port topology-id secure?)}))
+
+(defn supervisor-summary-to-json 
+  [summary]
+  (let [slotsTotal (.get_num_workers summary)
+        slotsUsed (.get_num_used_workers summary)
+        slotsFree (max (- slotsTotal slotsUsed) 0)
+        totalMem (get (.get_total_resources summary) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+        totalCpu (get (.get_total_resources summary) Config/SUPERVISOR_CPU_CAPACITY)
+        usedMem (.get_used_mem summary)
+        usedCpu (.get_used_cpu summary)
+        availMem (max (- totalMem usedMem) 0)
+        availCpu (max (- totalCpu usedCpu) 0)]
+  {"id" (.get_supervisor_id summary)
+   "host" (.get_host summary)
+   "uptime" (UIHelpers/prettyUptimeSec (.get_uptime_secs summary))
+   "uptimeSeconds" (.get_uptime_secs summary)
+   "slotsTotal" slotsTotal
+   "slotsUsed" slotsUsed
+   "slotsFree" slotsFree
+   "totalMem" totalMem
+   "totalCpu" totalCpu
+   "usedMem" usedMem
+   "usedCpu" usedCpu
+   "logLink" (supervisor-log-link (.get_host summary))
+   "availMem" availMem
+   "availCpu" availCpu
+   "version" (.get_version summary)}))
+
+(defn supervisor-page-info
+  ([supervisor-id host include-sys? secure?]
+     (thrift/with-configured-nimbus-connection 
+        nimbus (supervisor-page-info (.getSupervisorPageInfo ^Nimbus$Client nimbus
+                                                      supervisor-id
+                                                      host
+                                                      include-sys?) secure?)))
+  ([^SupervisorPageInfo supervisor-page-info secure?]
+    ;; ask nimbus to return supervisor workers + any details user is allowed
+    ;; access on a per-topology basis (i.e. components)
+    (let [supervisors-json (map supervisor-summary-to-json (.get_supervisor_summaries supervisor-page-info))]
+      {"supervisors" supervisors-json
+       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+       "workers" (into [] (for [^WorkerSummary worker-summary (.get_worker_summaries supervisor-page-info)]
+                            (worker-summary-to-json secure? worker-summary)))})))
+
 (defn supervisor-summary
   ([]
    (thrift/with-configured-nimbus-connection nimbus
                 (supervisor-summary
                   (.get_supervisors (.getClusterInfo ^Nimbus$Client nimbus)))))
   ([summs]
-   {"supervisors"
-    (for [^SupervisorSummary s summs]
-      {"id" (.get_supervisor_id s)
-       "host" (.get_host s)
-       "uptime" (UIHelpers/prettyUptimeSec (.get_uptime_secs s))
-       "uptimeSeconds" (.get_uptime_secs s)
-       "slotsTotal" (.get_num_workers s)
-       "slotsUsed" (.get_num_used_workers s)
-       "totalMem" (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
-       "totalCpu" (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
-       "usedMem" (.get_used_mem s)
-       "usedCpu" (.get_used_cpu s)
-       "logLink" (supervisor-log-link (.get_host s))
-       "version" (.get_version s)})
+   {"supervisors" (for [^SupervisorSummary s summs]
+                    (supervisor-summary-to-json s))
     "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
 
 (defn all-topologies-summary
@@ -509,7 +582,7 @@
           bolt-executor-summaries (filter (partial bolt-summary? storm-topology) (.get_executors topology-info))
           spout-comp-id->executor-summaries (group-by-comp spout-executor-summaries)
           bolt-comp-id->executor-summaries (group-by-comp bolt-executor-summaries)
-          ;TODO: when translating this function, you should replace the filter-val with a proper for loop + if condition HERE
+          ;TODO: when translating this function, you should replace the filter-key with a proper for loop + if condition HERE
           bolt-comp-id->executor-summaries (filter-key (mk-include-sys-fn include-sys?) bolt-comp-id->executor-summaries)
           id->spout-spec (.get_spouts storm-topology)
           id->bolt (.get_bolts storm-topology)
@@ -540,7 +613,10 @@
    "emitted" (.get_emitted common-stats)
    "transferred" (.get_transferred common-stats)
    "acked" (.get_acked common-stats)
-   "failed" (.get_failed common-stats)})
+   "failed" (.get_failed common-stats)
+   "requestedMemOnHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+   "requestedMemOffHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+   "requestedCpu" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)})
 
 (defmulti comp-agg-stats-json
   "Returns a JSON representation of aggregated statistics."
@@ -607,6 +683,8 @@
      "assignedTotalMem" (+ (.get_assigned_memonheap topo-info) (.get_assigned_memoffheap topo-info))
      "assignedCpu" (.get_assigned_cpu topo-info)
      "topologyStats" topo-stats
+     "workers"  (map (partial worker-summary-to-json secure?)
+                     (.get_workers topo-info))
      "spouts" (map (partial comp-agg-stats-json id secure?)
                    (.get_id_to_spout_agg_stats topo-info))
      "bolts" (map (partial comp-agg-stats-json id secure?)
@@ -810,9 +888,9 @@
      "stream" (.get_streamId s)
      "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms bas))
      "processLatency" (StatsUtil/floatStr (.get_process_latency_ms bas))
-     "executed" (Utils/nullToZero (.get_executed bas))
-     "acked" (Utils/nullToZero (.get_acked cas))
-     "failed" (Utils/nullToZero (.get_failed cas))}))
+     "executed" (if-let [e (.get_executed bas)] e 0)
+     "acked" (if-let [a (.get_acked cas)] a 0)
+     "failed" (if-let [f (.get_failed cas)] f 0)}))
 
 (defmulti unpack-comp-output-stat
   (fn [[_ ^ComponentAggregateStats s]] (.get_type s)))
@@ -821,8 +899,8 @@
   [[stream-id ^ComponentAggregateStats stats]]
   (let [^CommonAggregateStats cas (.get_common_stats stats)]
     {"stream" stream-id
-     "emitted" (Utils/nullToZero (.get_emitted cas))
-     "transferred" (Utils/nullToZero (.get_transferred cas))}))
+     "emitted" (if-let [e (.get_emitted cas)] e 0)
+     "transferred" (if-let [t (.get_transferred cas)] t 0)}))
 
 (defmethod unpack-comp-output-stat ComponentType/SPOUT
   [[stream-id ^ComponentAggregateStats stats]]
@@ -830,11 +908,11 @@
         ^SpecificAggregateStats spec-s (.get_specific_stats stats)
         ^SpoutAggregateStats spout-s (.get_spout spec-s)]
     {"stream" stream-id
-     "emitted" (Utils/nullToZero (.get_emitted cas))
-     "transferred" (Utils/nullToZero (.get_transferred cas))
+     "emitted" (if-let [e (.get_emitted cas)] e 0)
+     "transferred" (if-let [t (.get_transferred cas)] t 0)
      "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms spout-s))
-     "acked" (Utils/nullToZero (.get_acked cas))
-     "failed" (Utils/nullToZero (.get_failed cas))}))
+     "acked" (if-let [a (.get_acked cas)] a 0)
+     "failed" (if-let [f (.get_failed cas)] f 0)}))
 
 (defmulti unpack-comp-exec-stat
   (fn [_ _ ^ComponentAggregateStats cas] (.get_type (.get_stats ^ExecutorAggregateStats cas))))
@@ -857,14 +935,14 @@
      "uptimeSeconds" uptime
      "host" host
      "port" port
-     "emitted" (Utils/nullToZero (.get_emitted cas))
-     "transferred" (Utils/nullToZero (.get_transferred cas))
+     "emitted" (if-let [e (.get_emitted cas)] e 0)
+     "transferred" (if-let [t (.get_transferred cas)] t 0)
      "capacity" (StatsUtil/floatStr (Utils/nullToZero (.get_capacity bas)))
      "executeLatency" (StatsUtil/floatStr (.get_execute_latency_ms bas))
-     "executed" (Utils/nullToZero (.get_executed bas))
+     "executed" (if-let [e (.get_executed bas)] e 0)
      "processLatency" (StatsUtil/floatStr (.get_process_latency_ms bas))
-     "acked" (Utils/nullToZero (.get_acked cas))
-     "failed" (Utils/nullToZero (.get_failed cas))
+     "acked" (if-let [a (.get_acked cas)] a 0)
+     "failed" (if-let [f (.get_failed cas)] f 0)
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
 (defmethod unpack-comp-exec-stat ComponentType/SPOUT
@@ -885,11 +963,11 @@
      "uptimeSeconds" uptime
      "host" host
      "port" port
-     "emitted" (Utils/nullToZero (.get_emitted cas))
-     "transferred" (Utils/nullToZero (.get_transferred cas))
+     "emitted" (if-let [em (.get_emitted cas)] em 0)
+     "transferred" (if-let [t (.get_transferred cas)] t 0)
      "completeLatency" (StatsUtil/floatStr (.get_complete_latency_ms sas))
-     "acked" (Utils/nullToZero (.get_acked cas))
-     "failed" (Utils/nullToZero (.get_failed cas))
+     "acked" (if-let [ack (.get_acked cas)] ack 0)
+     "failed" (if-let [f (.get_failed cas)] f 0)
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
 (defmulti unpack-component-page-info
@@ -916,6 +994,14 @@
                           (.get_exec_stats info))}
     (-> info .get_errors (component-errors topology-id secure?))))
 
+(defn clojurify-profile-request
+  [^ProfileRequest request]
+  (when request
+    {:host (.get_node (.get_nodeInfo request))
+     :port (first (.get_port (.get_nodeInfo request)))
+     :action     (.get_action request)
+     :timestamp  (.get_time_stamp request)}))
+
 (defn get-active-profile-actions
   [nimbus topology-id component]
   (let [profile-actions  (.getComponentPendingProfileActions nimbus
@@ -929,7 +1015,7 @@
                                "dumplink" (worker-dump-link (:host profile-action) (str (:port profile-action)) topology-id)
                                "timestamp" (str (- (:timestamp profile-action) (System/currentTimeMillis)))})
                             latest-profile-actions)]
-    (log-message "Latest-active actions are: " (pr active-actions))
+    (log-message "Latest-active actions are: " (pr-str active-actions))
     active-actions))
 
 (defn component-page
@@ -961,6 +1047,10 @@
        "name" (.get_topology_name comp-page-info)
        "executors" (.get_num_executors comp-page-info)
        "tasks" (.get_num_tasks comp-page-info)
+       "requestedMemOnHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+       "requestedMemOffHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+       "requestedCpu" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)
+       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
        "topologyId" topology-id
        "topologyStatus" (.get_topology_status comp-page-info)
        "encodedTopologyId" (URLEncoder/encode topology-id)
@@ -1069,6 +1159,16 @@
     (assert-authorized-user "getClusterInfo")
     (json-response (assoc (supervisor-summary)
                      "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m)))
+  (GET "/api/v1/supervisor" [:as {:keys [cookies servlet-request scheme]} & m]
+    (.mark ui:num-supervisor-http-requests)
+    (populate-context! servlet-request)
+    (assert-authorized-user "getSupervisorPageInfo")
+    ;; supervisor takes either an id or a host query parameter, and technically both
+    ;; that said, if both the id and host are provided, the id wins
+    (let [id (:id m)
+          host (:host m)]
+      (json-response (assoc (supervisor-page-info id host (check-include-sys? (:sys m)) (= scheme :https))
+                            "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m))))
   (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-all-topologies-summary-http-requests)
     (populate-context! servlet-request)

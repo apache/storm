@@ -31,7 +31,7 @@ enum errorcodes {
   INVALID_CONTAINER_PID, //9
   // ERROR_RESOLVING_FILE_PATH (NOT_USED) 10
   // RELATIVE_PATH_COMPONENTS_IN_FILE_PATH (NOT USED) 11
-  // UNABLE_TO_STAT_FILE (NOT USED) 12
+  UNABLE_TO_STAT_FILE = 12,
   // FILE_NOT_OWNED_BY_ROOT (NOT USED) 13
   // PREPARE_CONTAINER_DIRECTORIES_FAILED (NOT USED) 14
   // INITIALIZE_CONTAINER_FAILED (NOT USED) 15
@@ -66,20 +66,18 @@ extern FILE *LOGFILE;
 // the log file for error messages
 extern FILE *ERRORFILE;
 
-int setup_stormdist_dir(const char* local_dir);
+int setup_dir_permissions(const char* local_dir, int for_blob_permission);
 
 int exec_as_user(const char * working_dir, const char * args);
 
 int fork_as_user(const char * working_dir, const char * args);
 
-// delete a directory (or file) recursively as the user. The directory
-// could optionally be relative to the baseDir set of directories (if the same
-// directory appears on multiple disk volumes, the disk volumes should be passed
-// as the baseDirs). If baseDirs is not specified, then dir_to_be_deleted is 
-// assumed as the absolute path
-int delete_as_user(const char *user,
-                   const char *dir_to_be_deleted,
-                   char* const* baseDirs);
+/**
+ * delete a directory (or file) recursively. If supervisor_owns_dir,
+ * delete the file/dir at path as the supervisor user. (all subdirs/subfiles
+ * will be deleted as the current user)
+ */
+int recursive_delete(const char *path, int supervisor_owns_dir);
 
 // get the executable's filename
 char* get_executable();

@@ -19,6 +19,7 @@ package org.apache.storm.flux;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
@@ -204,11 +205,11 @@ public class Flux {
                 } else {
                     cluster = new LocalCluster();
                 }
-                cluster.submitTopology(topologyName, conf, topology);
-
-                Utils.sleep(sleepTime);
-                cluster.killTopology(topologyName);
-                cluster.shutdown();
+                try (LocalTopology topo = cluster.submitTopology(topologyName, conf, topology)) {
+                    Utils.sleep(sleepTime);
+                } finally {
+                    cluster.shutdown();
+                }
             }
         }
     }

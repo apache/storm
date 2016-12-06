@@ -24,10 +24,9 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.storm</groupId>
+
   <artifactId>storm-rename-hack</artifactId>
   <packaging>jar</packaging>
-
   <name>storm-rename-hack</name>
 
   <properties>

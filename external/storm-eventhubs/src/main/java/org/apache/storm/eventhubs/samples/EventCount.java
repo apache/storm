@@ -20,6 +20,7 @@ package org.apache.storm.eventhubs.samples;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.topology.TopologyBuilder;
 
@@ -135,14 +136,12 @@ public class EventCount {
     } else {
       config.setMaxTaskParallelism(2);
 
-      LocalCluster localCluster = new LocalCluster();
-      localCluster.submitTopology("test", config, topology);
-
-      Thread.sleep(5000000);
-
-      localCluster.shutdown();
+      try (LocalCluster localCluster = new LocalCluster();
+           LocalTopology topo = localCluster.submitTopology("test", config, topology);) {
+        Thread.sleep(5000000);
+      }
     }
-	}
+  }
   
   protected void runScenario(String[] args) throws Exception{
     readEHConfig(args);

@@ -21,108 +21,112 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.*;
 import org.apache.calcite.rel.stream.Delta;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public abstract class PostOrderRelNodeVisitor<T> {
   public final T traverse(RelNode n) throws Exception {
+    List<T> inputStreams = new ArrayList<>();
     for (RelNode input : n.getInputs()) {
-      traverse(input);
+      inputStreams.add(traverse(input));
     }
 
     if (n instanceof Aggregate) {
-      return visitAggregate((Aggregate) n);
+      return visitAggregate((Aggregate) n, inputStreams);
     } else if (n instanceof Calc) {
-      return visitCalc((Calc) n);
+      return visitCalc((Calc) n, inputStreams);
     } else if (n instanceof Collect) {
-      return visitCollect((Collect) n);
+      return visitCollect((Collect) n, inputStreams);
     } else if (n instanceof Correlate) {
-      return visitCorrelate((Correlate) n);
+      return visitCorrelate((Correlate) n, inputStreams);
     } else if (n instanceof Delta) {
-      return visitDelta((Delta) n);
+      return visitDelta((Delta) n, inputStreams);
     } else if (n instanceof Exchange) {
-      return visitExchange((Exchange) n);
+      return visitExchange((Exchange) n, inputStreams);
     } else if (n instanceof Project) {
-      return visitProject((Project) n);
+      return visitProject((Project) n, inputStreams);
     } else if (n instanceof Filter) {
-      return visitFilter((Filter) n);
+      return visitFilter((Filter) n, inputStreams);
     } else if (n instanceof Sample) {
-      return visitSample((Sample) n);
+      return visitSample((Sample) n, inputStreams);
     } else if (n instanceof Sort) {
-      return visitSort((Sort) n);
+      return visitSort((Sort) n, inputStreams);
     } else if (n instanceof TableModify) {
-      return visitTableModify((TableModify) n);
+      return visitTableModify((TableModify) n, inputStreams);
     } else if (n instanceof TableScan) {
-      return visitTableScan((TableScan) n);
+      return visitTableScan((TableScan) n, inputStreams);
     } else if (n instanceof Uncollect) {
-      return visitUncollect((Uncollect) n);
+      return visitUncollect((Uncollect) n, inputStreams);
     } else if (n instanceof Window) {
-      return visitWindow((Window) n);
+      return visitWindow((Window) n, inputStreams);
     } else if (n instanceof Join) {
-      return visitJoin((Join) n);
+      return visitJoin((Join) n, inputStreams);
     } else {
-      return defaultValue(n);
+      return defaultValue(n, inputStreams);
     }
   }
 
-  public T visitAggregate(Aggregate aggregate) throws Exception {
-    return defaultValue(aggregate);
+  public T visitAggregate(Aggregate aggregate, List<T> inputStreams) throws Exception {
+    return defaultValue(aggregate, inputStreams);
   }
 
-  public T visitCalc(Calc calc) throws Exception {
-    return defaultValue(calc);
+  public T visitCalc(Calc calc, List<T> inputStreams) throws Exception {
+    return defaultValue(calc, inputStreams);
   }
 
-  public T visitCollect(Collect collect) throws Exception {
-    return defaultValue(collect);
+  public T visitCollect(Collect collect, List<T> inputStreams) throws Exception {
+    return defaultValue(collect, inputStreams);
   }
 
-  public T visitCorrelate(Correlate correlate) throws Exception {
-    return defaultValue(correlate);
+  public T visitCorrelate(Correlate correlate, List<T> inputStreams) throws Exception {
+    return defaultValue(correlate, inputStreams);
   }
 
-  public T visitDelta(Delta delta) throws Exception {
-    return defaultValue(delta);
+  public T visitDelta(Delta delta, List<T> inputStreams) throws Exception {
+    return defaultValue(delta, inputStreams);
   }
 
-  public T visitExchange(Exchange exchange) throws Exception {
-    return defaultValue(exchange);
+  public T visitExchange(Exchange exchange, List<T> inputStreams) throws Exception {
+    return defaultValue(exchange, inputStreams);
   }
 
-  public T visitProject(Project project) throws Exception {
-    return defaultValue(project);
+  public T visitProject(Project project, List<T> inputStreams) throws Exception {
+    return defaultValue(project, inputStreams);
   }
 
-  public T visitFilter(Filter filter) throws Exception {
-    return defaultValue(filter);
+  public T visitFilter(Filter filter, List<T> inputStreams) throws Exception {
+    return defaultValue(filter, inputStreams);
   }
 
-  public T visitSample(Sample sample) throws Exception {
-    return defaultValue(sample);
+  public T visitSample(Sample sample, List<T> inputStreams) throws Exception {
+    return defaultValue(sample, inputStreams);
   }
 
-  public T visitSort(Sort sort) throws Exception {
-    return defaultValue(sort);
+  public T visitSort(Sort sort, List<T> inputStreams) throws Exception {
+    return defaultValue(sort, inputStreams);
   }
 
-  public T visitTableModify(TableModify modify) throws Exception {
-    return defaultValue(modify);
+  public T visitTableModify(TableModify modify, List<T> inputStreams) throws Exception {
+    return defaultValue(modify, inputStreams);
   }
 
-  public T visitTableScan(TableScan scan) throws Exception {
-    return defaultValue(scan);
+  public T visitTableScan(TableScan scan, List<T> inputStreams) throws Exception {
+    return defaultValue(scan, inputStreams);
   }
 
-  public T visitUncollect(Uncollect uncollect) throws Exception {
-    return defaultValue(uncollect);
+  public T visitUncollect(Uncollect uncollect, List<T> inputStreams) throws Exception {
+    return defaultValue(uncollect, inputStreams);
   }
 
-  public T visitWindow(Window window) throws Exception {
-    return defaultValue(window);
+  public T visitWindow(Window window, List<T> inputStreams) throws Exception {
+    return defaultValue(window, inputStreams);
   }
 
-  public T visitJoin(Join join) throws Exception {
-    return defaultValue(join);
+  public T visitJoin(Join join, List<T> inputStreams) throws Exception {
+    return defaultValue(join, inputStreams);
   }
 
-  public T defaultValue(RelNode n) {
+  public T defaultValue(RelNode n, List<T> inputStreams) {
     return null;
   }
 }

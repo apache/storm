@@ -36,6 +36,7 @@ import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.IStateStorage;
+import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
@@ -388,8 +389,15 @@ public class Zookeeper {
             leaderLatchListenerAtomicReference, blobStore);
     }
 
-    public static Map getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
-        Map map = new HashMap();
+    /**
+     * Get the data along with a version
+     * @param zk the zk instance to use
+     * @param path the path to get it from
+     * @param watch should a watch be enabled
+     * @return null if no data is found, else the data with the version.
+     */
+    public static VersionedData<byte[]> getDataWithVersion(CuratorFramework zk, String path, boolean watch) {
+        VersionedData<byte[]> data = null;
         try {
             byte[] bytes = null;
             Stat stats = new Stat();
@@ -402,8 +410,7 @@ public class Zookeeper {
                 }
                 if (bytes != null) {
                     int version = stats.getVersion();
-                    map.put(IStateStorage.DATA, bytes);
-                    map.put(IStateStorage.VERSION, version);
+                    data = new VersionedData<>(version, bytes);
                 }
             }
         } catch (Exception e) {
@@ -413,7 +420,7 @@ public class Zookeeper {
                 Utils.wrapInRuntime(e);
             }
         }
-        return map;
+        return data;
     }
 
     public static List<String> tokenizePath(String path) {
