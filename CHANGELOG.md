@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
  * STORM-2216: Favor JSONValue.parseWithException
  * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
  * STORM-2213: ShellSpout has race condition when ShellSpout is being inactive longer than heartbeat timeout
