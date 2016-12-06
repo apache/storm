@@ -33,19 +33,29 @@ import org.sonatype.aether.util.filter.DependencyFilterUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
 public class DependencyResolver {
-    private RepositorySystem system = Booter.newRepositorySystem();
-    private RepositorySystemSession session;
-    private RemoteRepository mavenCentral = Booter.newCentralRepository();
-    private RemoteRepository mavenLocal = Booter.newLocalRepository();
+    private final RepositorySystem system = Booter.newRepositorySystem();
+    private final RepositorySystemSession session;
+
+    private final List<RemoteRepository> remoteRepositories;
 
     public DependencyResolver(String localRepoPath) {
+        this(localRepoPath, new ArrayList<RemoteRepository>());
+    }
+
+    public DependencyResolver(String localRepoPath, List<RemoteRepository> repositories) {
         localRepoPath = handleRelativePath(localRepoPath);
 
         session = Booter.newRepositorySystemSession(system, localRepoPath);
+
+        remoteRepositories = new ArrayList<>();
+        remoteRepositories.add(Booter.newCentralRepository());
+        remoteRepositories.add(Booter.newLocalRepository());
+        remoteRepositories.addAll(repositories);
     }
 
     private String handleRelativePath(String localRepoPath) {
@@ -78,8 +88,9 @@ public class DependencyResolver {
             collectRequest.addDependency(dependencies.get(idx));
         }
 
-        collectRequest.addRepository(mavenCentral);
-        collectRequest.addRepository(mavenLocal);
+        for (RemoteRepository repository : remoteRepositories) {
+            collectRequest.addRepository(repository);
+        }
 
         DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
         return system.resolveDependencies(session, dependencyRequest).getArtifactResults();
