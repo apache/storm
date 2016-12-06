@@ -21,7 +21,6 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 
 import org.apache.storm.Config;
-import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
 import org.apache.storm.security.auth.AuthUtils;
@@ -208,12 +207,6 @@ public class UIHelpers {
         context.addFilter(mkAccessLoggingFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
     }
     
-    public static void addRequestContextFilter(ServletContextHandler context, String configName, Map<String, Object> conf) {
-        IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String)conf.get(configName));
-        ReqContextFilter filter = new ReqContextFilter(auth);
-        context.addFilter(new FilterHolder(filter), "/*", FilterMapping.ALL);
-    }
-
     private static Server removeNonSslConnector(Server server) {
         for (Connector c : server.getConnectors()) {
             if (c != null && !(c instanceof SslSocketConnector)) {

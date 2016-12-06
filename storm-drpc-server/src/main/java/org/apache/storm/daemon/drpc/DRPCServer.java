@@ -23,29 +23,41 @@ import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
+import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
 import org.apache.storm.generated.DistributedRPC;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.ui.FilterConfiguration;
 import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
-import org.eclipse.jetty.server.Server;
-import org.eclipse.jetty.servlet.ServletContextHandler;
-import org.eclipse.jetty.servlet.ServletHolder;
+import org.apache.storm.shade.org.eclipse.jetty.server.Server;
+import org.apache.storm.shade.org.eclipse.jetty.servlet.FilterHolder;
+import org.apache.storm.shade.org.eclipse.jetty.servlet.FilterMapping;
+import org.apache.storm.shade.org.eclipse.jetty.servlet.ServletContextHandler;
+import org.apache.storm.shade.org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Meter;
+import org.apache.storm.shade.com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
     private final static Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
-    
+   
+    //TODO in the future this might be better in a common webapp location
+    public static void addRequestContextFilter(ServletContextHandler context, String configName, Map<String, Object> conf) {
+        IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String)conf.get(configName));
+        ReqContextFilter filter = new ReqContextFilter(auth);
+        context.addFilter(new FilterHolder(filter), "/*", FilterMapping.ALL);
+    }
+ 
     private static ThriftServer mkHandlerServer(final DistributedRPC.Iface service, Integer port, Map<String, Object> conf) {
         ThriftServer ret = null;
         if (port != null && port > 0) {
@@ -97,7 +109,7 @@ public class DRPCServer implements AutoCloseable {
             jerseyServlet.setInitParameter("javax.ws.rs.Application", DRPCApplication.class.getName());
             
             UIHelpers.configFilters(context, filterConfigurations);
-            UIHelpers.addRequestContextFilter(context, Config.DRPC_HTTP_CREDS_PLUGIN, conf);
+            addRequestContextFilter(context, Config.DRPC_HTTP_CREDS_PLUGIN, conf);
         }
         return ret;
     }
