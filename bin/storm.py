@@ -81,6 +81,7 @@ if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
     USER_CONF_DIR = CLUSTER_CONF_DIR
 
 STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
+STORM_DRPC_LIB_DIR = os.path.join(STORM_DIR, "lib-drpc-server")
 STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
 STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
 STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
@@ -126,10 +127,10 @@ def get_jars_full(adir):
 
 def get_classpath(extrajars, daemon=True):
     ret = get_jars_full(STORM_DIR)
-    ret.extend(get_jars_full(STORM_DIR + "/lib"))
-    ret.extend(get_jars_full(STORM_DIR + "/extlib"))
+    ret.extend(get_jars_full(STORM_LIB_DIR))
+    ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib")))
     if daemon:
-        ret.extend(get_jars_full(STORM_DIR + "/extlib-daemon"))
+        ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib-daemon")))
     if STORM_EXT_CLASSPATH != None:
         for path in STORM_EXT_CLASSPATH.split(os.pathsep):
             ret.extend(get_jars_full(path))
@@ -758,12 +759,14 @@ def drpc():
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
+    allextrajars = get_jars_full(STORM_DRPC_LIB_DIR)
+    allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
         "org.apache.storm.daemon.drpc.DRPCServer",
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,
-        extrajars=[CLUSTER_CONF_DIR])
+        extrajars=allextrajars)
 
 def dev_zookeeper():
     """Syntax: [storm dev-zookeeper]
