@@ -17,6 +17,7 @@
 (ns org.apache.storm.log
   (:require [clojure.tools.logging :as log])
   (:use [clojure pprint])
+  (:import [org.apache.commons.lang.exception ExceptionUtils])
   (:import [java.io StringWriter]))
 
 (defmacro log-message
@@ -30,6 +31,10 @@
 (defmacro log-debug
   [& args]
   `(log/debug (str ~@args)))
+
+(defmacro log-debug-error
+  [e & args]
+  `(log/debug  (str (if (instance? Exception ~e) (ExceptionUtils/getStackTrace ~e)) (str ~@args))))
 
 (defmacro log-warn-error
   [e & args]

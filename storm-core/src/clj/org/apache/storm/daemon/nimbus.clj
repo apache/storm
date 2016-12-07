@@ -432,19 +432,30 @@
       {})
     ))
 
+(defn- supervisor-info
+  [storm-cluster-state id include-non-readable?]
+  (try
+    (.supervisor-info storm-cluster-state id)
+    (catch RuntimeException rte
+      (log-message (str "The supervisor [" id "] is sending older heartbeat version"))
+      (log-debug-error  rte (str "The supervisor [" id "] is sending older heartbeat version"))
+      (if include-non-readable?
+        (org.apache.storm.daemon.common.SupervisorInfo. 0 "unknown" id nil nil nil 0 nil nil (.getMessage rte))))))
+
+
 ;; public for testing
 (defn all-supervisor-info
-  ([storm-cluster-state] (all-supervisor-info storm-cluster-state nil))
-  ([storm-cluster-state callback]
+  ([storm-cluster-state] (all-supervisor-info storm-cluster-state nil false))
+  ([storm-cluster-state callback]  (all-supervisor-info storm-cluster-state callback false))
+  ([storm-cluster-state callback include-non-readable?]
      (let [supervisor-ids (.supervisors storm-cluster-state callback)]
        (into {}
              (mapcat
               (fn [id]
-                (if-let [info (.supervisor-info storm-cluster-state id)]
+                (if-let [info (supervisor-info storm-cluster-state id include-non-readable?)]
                   [[id info]]
                   ))
-              supervisor-ids))
-       )))
+              supervisor-ids)))))
 
 (defn- get-version-for-key [key nimbus-host-port-info conf]
   (let [version (KeySequenceNumber. key nimbus-host-port-info)]
@@ -1462,6 +1473,7 @@
         (.set_used_mem sup-sum (or used-mem 0))
         (.set_used_cpu sup-sum (or used-cpu 0)))
       (when-let [version (:version info)] (.set_version sup-sum version))
+      (.set_err_str sup-sum (:err-str info))
       sup-sum))
 
 (defn user-and-supervisor-topos
@@ -1493,7 +1505,7 @@
 
 (defn get-cluster-info [nimbus]
   (let [storm-cluster-state (:storm-cluster-state nimbus)
-        supervisor-infos (all-supervisor-info storm-cluster-state)
+        supervisor-infos (all-supervisor-info storm-cluster-state nil true)
         ;; TODO: need to get the port info about supervisors...
         ;; in standalone just look at metadata, otherwise just say N/A?
         supervisor-summaries (dofor [[id info] supervisor-infos]

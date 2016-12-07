@@ -64,6 +64,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private static final org.apache.thrift.protocol.TField TOTAL_RESOURCES_FIELD_DESC = new org.apache.thrift.protocol.TField("total_resources", org.apache.thrift.protocol.TType.MAP, (short)7);
   private static final org.apache.thrift.protocol.TField USED_MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("used_mem", org.apache.thrift.protocol.TType.DOUBLE, (short)8);
   private static final org.apache.thrift.protocol.TField USED_CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("used_cpu", org.apache.thrift.protocol.TType.DOUBLE, (short)9);
+  private static final org.apache.thrift.protocol.TField ERR_STR_FIELD_DESC = new org.apache.thrift.protocol.TField("err_str", org.apache.thrift.protocol.TType.STRING, (short)10);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -80,6 +81,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private Map<String,Double> total_resources; // optional
   private double used_mem; // optional
   private double used_cpu; // optional
+  private String err_str; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -91,7 +93,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     VERSION((short)6, "version"),
     TOTAL_RESOURCES((short)7, "total_resources"),
     USED_MEM((short)8, "used_mem"),
-    USED_CPU((short)9, "used_cpu");
+    USED_CPU((short)9, "used_cpu"),
+    ERR_STR((short)10, "err_str");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -124,6 +127,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
           return USED_MEM;
         case 9: // USED_CPU
           return USED_CPU;
+        case 10: // ERR_STR
+          return ERR_STR;
         default:
           return null;
       }
@@ -170,7 +175,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private static final int __USED_MEM_ISSET_ID = 3;
   private static final int __USED_CPU_ISSET_ID = 4;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU};
+  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.ERR_STR};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -194,6 +199,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.USED_CPU, new org.apache.thrift.meta_data.FieldMetaData("used_cpu", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.ERR_STR, new org.apache.thrift.meta_data.FieldMetaData("err_str", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorSummary.class, metaDataMap);
   }
@@ -244,6 +251,9 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     }
     this.used_mem = other.used_mem;
     this.used_cpu = other.used_cpu;
+    if (other.is_set_err_str()) {
+      this.err_str = other.err_str;
+    }
   }
 
   public SupervisorSummary deepCopy() {
@@ -267,6 +277,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     this.used_mem = 0.0;
     set_used_cpu_isSet(false);
     this.used_cpu = 0.0;
+    this.err_str = null;
   }
 
   public String get_host() {
@@ -482,6 +493,29 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __USED_CPU_ISSET_ID, value);
   }
 
+  public String get_err_str() {
+    return this.err_str;
+  }
+
+  public void set_err_str(String err_str) {
+    this.err_str = err_str;
+  }
+
+  public void unset_err_str() {
+    this.err_str = null;
+  }
+
+  /** Returns true if field err_str is set (has been assigned a value) and false otherwise */
+  public boolean is_set_err_str() {
+    return this.err_str != null;
+  }
+
+  public void set_err_str_isSet(boolean value) {
+    if (!value) {
+      this.err_str = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case HOST:
@@ -556,6 +590,14 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       }
       break;
 
+    case ERR_STR:
+      if (value == null) {
+        unset_err_str();
+      } else {
+        set_err_str((String)value);
+      }
+      break;
+
     }
   }
 
@@ -588,6 +630,9 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     case USED_CPU:
       return get_used_cpu();
 
+    case ERR_STR:
+      return get_err_str();
+
     }
     throw new IllegalStateException();
   }
@@ -617,6 +662,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       return is_set_used_mem();
     case USED_CPU:
       return is_set_used_cpu();
+    case ERR_STR:
+      return is_set_err_str();
     }
     throw new IllegalStateException();
   }
@@ -715,6 +762,15 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         return false;
     }
 
+    boolean this_present_err_str = true && this.is_set_err_str();
+    boolean that_present_err_str = true && that.is_set_err_str();
+    if (this_present_err_str || that_present_err_str) {
+      if (!(this_present_err_str && that_present_err_str))
+        return false;
+      if (!this.err_str.equals(that.err_str))
+        return false;
+    }
+
     return true;
   }
 
@@ -766,6 +822,11 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     list.add(present_used_cpu);
     if (present_used_cpu)
       list.add(used_cpu);
+
+    boolean present_err_str = true && (is_set_err_str());
+    list.add(present_err_str);
+    if (present_err_str)
+      list.add(err_str);
 
     return list.hashCode();
   }
@@ -868,6 +929,16 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_err_str()).compareTo(other.is_set_err_str());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_err_str()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.err_str, other.err_str);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -945,6 +1016,16 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (!first) sb.append(", ");
       sb.append("used_cpu:");
       sb.append(this.used_cpu);
+      first = false;
+    }
+    if (is_set_err_str()) {
+      if (!first) sb.append(", ");
+      sb.append("err_str:");
+      if (this.err_str == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.err_str);
+      }
       first = false;
     }
     sb.append(")");
@@ -1096,6 +1177,14 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 10: // ERR_STR
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.err_str = iprot.readString();
+              struct.set_err_str_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1160,6 +1249,13 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         oprot.writeDouble(struct.used_cpu);
         oprot.writeFieldEnd();
       }
+      if (struct.err_str != null) {
+        if (struct.is_set_err_str()) {
+          oprot.writeFieldBegin(ERR_STR_FIELD_DESC);
+          oprot.writeString(struct.err_str);
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1195,7 +1291,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (struct.is_set_used_cpu()) {
         optionals.set(3);
       }
-      oprot.writeBitSet(optionals, 4);
+      if (struct.is_set_err_str()) {
+        optionals.set(4);
+      }
+      oprot.writeBitSet(optionals, 5);
       if (struct.is_set_version()) {
         oprot.writeString(struct.version);
       }
@@ -1215,6 +1314,9 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (struct.is_set_used_cpu()) {
         oprot.writeDouble(struct.used_cpu);
       }
+      if (struct.is_set_err_str()) {
+        oprot.writeString(struct.err_str);
+      }
     }
 
     @Override
@@ -1230,7 +1332,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       struct.set_num_used_workers_isSet(true);
       struct.supervisor_id = iprot.readString();
       struct.set_supervisor_id_isSet(true);
-      BitSet incoming = iprot.readBitSet(4);
+      BitSet incoming = iprot.readBitSet(5);
       if (incoming.get(0)) {
         struct.version = iprot.readString();
         struct.set_version_isSet(true);
@@ -1257,6 +1359,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (incoming.get(3)) {
         struct.used_cpu = iprot.readDouble();
         struct.set_used_cpu_isSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.err_str = iprot.readString();
+        struct.set_err_str_isSet(true);
       }
     }
   }

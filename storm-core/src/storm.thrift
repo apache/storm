@@ -175,6 +175,7 @@ struct SupervisorSummary {
   7: optional map<string, double> total_resources;
   8: optional double used_mem;
   9: optional double used_cpu;
+  10: optional string err_str;
 }
 
 struct NimbusSummary {
@@ -453,6 +454,7 @@ struct SupervisorInfo {
     7: optional i64 uptime_secs;
     8: optional string version;
     9: optional map<string, double> resources_map;
+    10: optional string err_str;
 }
 
 struct NodeInfo {

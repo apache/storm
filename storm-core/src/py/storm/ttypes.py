@@ -2794,6 +2794,7 @@ class SupervisorSummary:
    - total_resources
    - used_mem
    - used_cpu
+   - err_str
   """
 
   thrift_spec = (
@@ -2807,9 +2808,10 @@ class SupervisorSummary:
     (7, TType.MAP, 'total_resources', (TType.STRING,None,TType.DOUBLE,None), None, ), # 7
     (8, TType.DOUBLE, 'used_mem', None, None, ), # 8
     (9, TType.DOUBLE, 'used_cpu', None, None, ), # 9
+    (10, TType.STRING, 'err_str', None, None, ), # 10
   )
 
-  def __init__(self, host=None, uptime_secs=None, num_workers=None, num_used_workers=None, supervisor_id=None, version=thrift_spec[6][4], total_resources=None, used_mem=None, used_cpu=None,):
+  def __init__(self, host=None, uptime_secs=None, num_workers=None, num_used_workers=None, supervisor_id=None, version=thrift_spec[6][4], total_resources=None, used_mem=None, used_cpu=None, err_str=None,):
     self.host = host
     self.uptime_secs = uptime_secs
     self.num_workers = num_workers
@@ -2819,6 +2821,7 @@ class SupervisorSummary:
     self.total_resources = total_resources
     self.used_mem = used_mem
     self.used_cpu = used_cpu
+    self.err_str = err_str
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -2880,6 +2883,11 @@ class SupervisorSummary:
           self.used_cpu = iprot.readDouble()
         else:
           iprot.skip(ftype)
+      elif fid == 10:
+        if ftype == TType.STRING:
+          self.err_str = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -2930,6 +2938,10 @@ class SupervisorSummary:
       oprot.writeFieldBegin('used_cpu', TType.DOUBLE, 9)
       oprot.writeDouble(self.used_cpu)
       oprot.writeFieldEnd()
+    if self.err_str is not None:
+      oprot.writeFieldBegin('err_str', TType.STRING, 10)
+      oprot.writeString(self.err_str.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -2958,6 +2970,7 @@ class SupervisorSummary:
     value = (value * 31) ^ hash(self.total_resources)
     value = (value * 31) ^ hash(self.used_mem)
     value = (value * 31) ^ hash(self.used_cpu)
+    value = (value * 31) ^ hash(self.err_str)
     return value
 
   def __repr__(self):
@@ -8701,6 +8714,7 @@ class SupervisorInfo:
    - uptime_secs
    - version
    - resources_map
+   - err_str
   """
 
   thrift_spec = (
@@ -8714,9 +8728,10 @@ class SupervisorInfo:
     (7, TType.I64, 'uptime_secs', None, None, ), # 7
     (8, TType.STRING, 'version', None, None, ), # 8
     (9, TType.MAP, 'resources_map', (TType.STRING,None,TType.DOUBLE,None), None, ), # 9
+    (10, TType.STRING, 'err_str', None, None, ), # 10
   )
 
-  def __init__(self, time_secs=None, hostname=None, assignment_id=None, used_ports=None, meta=None, scheduler_meta=None, uptime_secs=None, version=None, resources_map=None,):
+  def __init__(self, time_secs=None, hostname=None, assignment_id=None, used_ports=None, meta=None, scheduler_meta=None, uptime_secs=None, version=None, resources_map=None, err_str=None,):
     self.time_secs = time_secs
     self.hostname = hostname
     self.assignment_id = assignment_id
@@ -8726,6 +8741,7 @@ class SupervisorInfo:
     self.uptime_secs = uptime_secs
     self.version = version
     self.resources_map = resources_map
+    self.err_str = err_str
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -8803,6 +8819,11 @@ class SupervisorInfo:
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 10:
+        if ftype == TType.STRING:
+          self.err_str = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -8863,6 +8884,10 @@ class SupervisorInfo:
         oprot.writeDouble(viter544)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
+    if self.err_str is not None:
+      oprot.writeFieldBegin('err_str', TType.STRING, 10)
+      oprot.writeString(self.err_str.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -8885,6 +8910,7 @@ class SupervisorInfo:
     value = (value * 31) ^ hash(self.uptime_secs)
     value = (value * 31) ^ hash(self.version)
     value = (value * 31) ^ hash(self.resources_map)
+    value = (value * 31) ^ hash(self.err_str)
     return value
 
   def __repr__(self):

@@ -500,9 +500,17 @@
                 (supervisor-summary
                   (.get_supervisors (.getClusterInfo ^Nimbus$Client nimbus)))))
   ([summs]
-   {"supervisors" (for [^SupervisorSummary s summs]
-                    (supervisor-summary-to-json s))
-    "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
+   (let [bad-supervisors (filter #(= "unknown" (.get_host ^SupervisorSummary %)) summs)
+         good-supervisors (filter #(not= "unknown" (.get_host ^SupervisorSummary %)) summs)]
+     {"supervisors" (for [^SupervisorSummary s summs]
+                      (supervisor-summary-to-json s))
+      "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+      "has-bad-supervisors" (not (empty? bad-supervisors))
+      "bad-supervisors"
+      (for [^SupervisorSummary s bad-supervisors]
+        {"id" (.get_supervisor_id s)
+         "error" (.get_err_str s)})})))
+
 
 (defn all-topologies-summary
   ([]

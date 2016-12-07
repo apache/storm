@@ -23,6 +23,8 @@ import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Utils;
 
 import java.io.IOException;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Map;
 
@@ -78,6 +80,10 @@ public class StandaloneSupervisor implements ISupervisor {
     }
 
     public String generateSupervisorId(){
-        return Utils.uuid();
+        try {
+            return Utils.uuid() + "-" + InetAddress.getLocalHost().getHostAddress();
+        } catch (UnknownHostException e) {
+            return Utils.uuid() + "-UNKNOWN-HOST";
+        }
     }
 }

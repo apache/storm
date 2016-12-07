@@ -336,6 +336,35 @@
   </tbody>
 </table>
 </script>
+<script id="bad-supervisor-summary-template" type="text/html">
+{{#has-bad-supervisors}}
+    <h3>Unusable Supervisors</h3>
+<table class="table table-striped compact" id="bad-supervisor-summary-table">
+    <thead>
+    <tr>
+        <th>
+        <span data-toggle="tooltip" data-placement="right" title="A unique identifier given to a Supervisor when it joins the cluster.">
+          Id
+        </span>
+        </th>
+        <th>
+        <span data-toggle="tooltip" data-placement="left" title="Error">
+          Error
+        </span>
+        </th>
+    </tr>
+    </thead>
+    <tbody>
+    {{#bad-supervisors}}
+    <tr>
+        <td>{{id}}</td>
+        <td>{{error}}</td>
+    </tr>
+    {{/bad-supervisors}}
+    </tbody>
+</table>
+{{/has-bad-supervisors}}
+</script>
 
 <script id="configuration-template" type="text/html">
   <table class="table table-striped compact" id="nimbus-configuration-table">
