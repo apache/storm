@@ -120,7 +120,7 @@ public class BlacklistScheduler implements IScheduler {
 
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
-        LOG.info("running Black List scheduler");
+        LOG.debug("running Black List scheduler");
         Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             SupervisorDetails supervisorDetails = entry.getValue();
