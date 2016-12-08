@@ -21,6 +21,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -74,8 +75,8 @@ public class InMemoryKeyValueState<K, V> implements KeyValueState<K, V> {
     }
 
     @Override
-    public Map<K,V> getAll() {
-        return Collections.unmodifiableMap(state);
+    public Iterator<Map.Entry<K, V>> iterator() {
+        return state.entrySet().iterator();
     }
 
     @Override
