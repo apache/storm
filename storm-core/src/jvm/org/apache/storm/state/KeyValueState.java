@@ -17,6 +17,7 @@
  */
 package org.apache.storm.state;
 
+import java.util.Iterator;
 import java.util.Map;
 
 /**
@@ -56,7 +57,7 @@ public interface KeyValueState<K, V> extends State {
     V delete(K key);
 
     /**
-     * @return all key value mappings as an unmodifiable map.
+     * @return an iterator over all key value mappings.
      */
-    Map<K, V> getAll();
+    Iterator<Map.Entry<K, V>> iterator();
 }
