@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2104: More graceful handling of acked/failed tuples after partition reassignment
  * STORM-1281: LocalCluster, testing4j and testing.clj to java
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
  * STORM-1276: line for line translation of nimbus to java
