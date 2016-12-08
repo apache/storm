@@ -27,24 +27,33 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
+
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutStreams;
+
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
+
 import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.when;
+
 import org.junit.Before;
 import org.mockito.Captor;
+
 import static org.mockito.Mockito.reset;
+
 import org.mockito.MockitoAnnotations;
+
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfig;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -67,7 +76,12 @@ public class KafkaSpoutRebalanceTest {
         collectorMock = mock(SpoutOutputCollector.class);
         conf = new HashMap<>();
         consumerMock = mock(KafkaConsumer.class);
-        consumerFactoryMock = (kafkaSpoutConfig) -> consumerMock;
+        consumerFactoryMock = new KafkaConsumerFactory<String, String>(){
+            @Override
+            public KafkaConsumer<String, String> createConsumer(KafkaSpoutConfig<String, String> kafkaSpoutConfig) {
+                return consumerMock;
+            } 
+        };
     }
 
     //Returns messageIds in order of emission
@@ -88,9 +102,9 @@ public class KafkaSpoutRebalanceTest {
 
         //Make the consumer return a single message for each partition
         Map<TopicPartition, List<ConsumerRecord<String, String>>> firstPartitionRecords = new HashMap<>();
-        firstPartitionRecords.put(partitionThatWillBeRevoked, Collections.singletonList(new ConsumerRecord(partitionThatWillBeRevoked.topic(), partitionThatWillBeRevoked.partition(), 0L, "key", "value")));
+        firstPartitionRecords.put(partitionThatWillBeRevoked, Collections.singletonList(new ConsumerRecord<>(partitionThatWillBeRevoked.topic(), partitionThatWillBeRevoked.partition(), 0L, "key", "value")));
         Map<TopicPartition, List<ConsumerRecord<String, String>>> secondPartitionRecords = new HashMap<>();
-        secondPartitionRecords.put(assignedPartition, Collections.singletonList(new ConsumerRecord(assignedPartition.topic(), assignedPartition.partition(), 0L, "key", "value")));
+        secondPartitionRecords.put(assignedPartition, Collections.singletonList(new ConsumerRecord<>(assignedPartition.topic(), assignedPartition.partition(), 0L, "key", "value")));
         when(consumerMock.poll(anyLong()))
                 .thenReturn(new ConsumerRecords(firstPartitionRecords))
                 .thenReturn(new ConsumerRecords(secondPartitionRecords))
@@ -99,11 +113,11 @@ public class KafkaSpoutRebalanceTest {
         //Emit the messages
         spout.nextTuple();
         ArgumentCaptor<KafkaSpoutMessageId> messageIdForRevokedPartition = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-        verify(collectorMock).emit(anyObject(), anyObject(), messageIdForRevokedPartition.capture());
+        verify(collectorMock).emit(anyString(), anyList(), messageIdForRevokedPartition.capture());
         reset(collectorMock);
         spout.nextTuple();
         ArgumentCaptor<KafkaSpoutMessageId> messageIdForAssignedPartition = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-        verify(collectorMock).emit(anyObject(), anyObject(), messageIdForAssignedPartition.capture());
+        verify(collectorMock).emit(anyString(), anyList(), messageIdForAssignedPartition.capture());
 
         //Now rebalance
         consumerRebalanceListener.onPartitionsRevoked(assignedPartitions);

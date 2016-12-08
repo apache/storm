@@ -159,7 +159,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             
             //Emitted messages for partitions that are no longer assigned to this spout can't be acked, and they shouldn't be retried. Remove them from emitted.
             Set<TopicPartition> partitionsSet = new HashSet(partitions);
-            emitted.removeIf((msgId) -> !partitionsSet.contains(msgId.getTopicPartition()));
+            Iterator<KafkaSpoutMessageId> msgIdIterator = emitted.iterator();
+            while (msgIdIterator.hasNext()) {
+                KafkaSpoutMessageId msgId = msgIdIterator.next();
+                if (!partitionsSet.contains(msgId.getTopicPartition())) {
+                    msgIdIterator.remove();
+                }
+            }
 
             for (TopicPartition tp : partitions) {
                 final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
