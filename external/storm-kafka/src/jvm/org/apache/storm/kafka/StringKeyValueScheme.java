@@ -17,6 +17,7 @@
  */
 package org.apache.storm.kafka;
 
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import com.google.common.collect.ImmutableMap;
 
@@ -24,6 +25,8 @@ import java.nio.ByteBuffer;
 import java.util.List;
 
 import static org.apache.storm.kafka.StringScheme.deserializeString;
+import static org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper.BOLT_KEY;
+import static org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE;
 
 public class StringKeyValueScheme extends StringScheme implements KeyValueScheme {
 
@@ -33,6 +36,11 @@ public class StringKeyValueScheme extends StringScheme implements KeyValueScheme
             return deserialize(value);
         }
         return new Values(ImmutableMap.of(deserializeString(key), deserializeString(value)));
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return new Fields(BOLT_KEY, BOLT_MESSAGE);
     }
 
 }

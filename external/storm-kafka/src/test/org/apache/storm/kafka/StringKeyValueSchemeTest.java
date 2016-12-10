@@ -17,7 +17,6 @@
  */
 package org.apache.storm.kafka;
 
-import org.apache.storm.tuple.Fields;
 import com.google.common.collect.ImmutableMap;
 import org.junit.Test;
 
@@ -25,8 +24,10 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import static org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper.BOLT_KEY;
+import static org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper.BOLT_MESSAGE;
 
 public class StringKeyValueSchemeTest {
 
@@ -39,9 +40,7 @@ public class StringKeyValueSchemeTest {
 
     @Test
     public void testGetOutputFields() throws Exception {
-        Fields outputFields = scheme.getOutputFields();
-        assertTrue(outputFields.contains(StringScheme.STRING_SCHEME_KEY));
-        assertEquals(1, outputFields.size());
+        assertEquals(asList(BOLT_KEY, BOLT_MESSAGE), scheme.getOutputFields().toList());
     }
 
     @Test
