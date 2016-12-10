@@ -23,6 +23,8 @@ import com.google.common.collect.ImmutableMap;
 import java.nio.ByteBuffer;
 import java.util.List;
 
+import static org.apache.storm.kafka.StringScheme.deserializeString;
+
 public class StringKeyValueScheme extends StringScheme implements KeyValueScheme {
 
     @Override
@@ -30,9 +32,7 @@ public class StringKeyValueScheme extends StringScheme implements KeyValueScheme
         if ( key == null ) {
             return deserialize(value);
         }
-        String keyString = StringScheme.deserializeString(key);
-        String valueString = StringScheme.deserializeString(value);
-        return new Values(ImmutableMap.of(keyString, valueString));
+        return new Values(ImmutableMap.of(deserializeString(key), deserializeString(value)));
     }
 
 }
