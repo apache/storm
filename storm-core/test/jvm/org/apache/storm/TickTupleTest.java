@@ -39,15 +39,21 @@ public class TickTupleTest {
 
     @Test
     public void testTickTupleWorksWithSystemBolt() throws Exception {
-        ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().withNimbusDaemon(true).build();
-        StormTopology topology = createNoOpTopology();
-        Config stormConf = new Config();
-        stormConf.putAll(Utils.readDefaultConfig());
-        stormConf.put("storm.cluster.mode", "local");
-        stormConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
-        cluster.submitTopology("test", stormConf,  topology);
-        cluster.advanceClusterTime(2);
-        Assert.assertTrue("Test is passed", true);
+        ILocalCluster cluster = null;
+        try {
+            cluster =  new LocalCluster.Builder().withSimulatedTime().withNimbusDaemon(true).build();
+            StormTopology topology = createNoOpTopology();
+            Config stormConf = new Config();
+            stormConf.putAll(Utils.readDefaultConfig());
+            stormConf.put("storm.cluster.mode", "local");
+            stormConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
+            cluster.submitTopology("test", stormConf,  topology);
+            cluster.advanceClusterTime(2);
+            Assert.assertTrue("Test is passed", true);
+        } finally {
+            cluster.close();
+        }
+
     }
 
     private IRichSpout makeNoOpSpout() {
@@ -90,7 +96,7 @@ public class TickTupleTest {
     private StormTopology createNoOpTopology() {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout("1", makeNoOpSpout());
-        builder.setBolt("2", makeNoOpBolt()).shuffleGrouping("1");
+        builder.setBolt("2", makeNoOpBolt()).fieldsGrouping("1", new Fields("tuple"));
         return builder.createTopology();
     }
 }
