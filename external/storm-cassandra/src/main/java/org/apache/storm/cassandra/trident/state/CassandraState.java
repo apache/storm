@@ -23,7 +23,10 @@ import org.apache.storm.tuple.Values;
 import com.datastax.driver.core.BatchStatement;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.Statement;
+import com.google.common.base.Function;
 import com.google.common.base.Preconditions;
+import com.google.common.collect.Iterables;
+import org.apache.storm.cassandra.client.CassandraConf;
 import org.apache.storm.cassandra.client.SimpleClient;
 import org.apache.storm.cassandra.client.SimpleClientProvider;
 import org.apache.storm.cassandra.query.CQLResultSetValuesMapper;
@@ -49,6 +52,8 @@ public class CassandraState implements State {
     private final Map conf;
     private final Options options;
 
+    private CassandraConf cassandraConf;
+
     private Session session;
     private SimpleClient client;
 
@@ -62,6 +67,7 @@ public class CassandraState implements State {
         private CQLStatementTupleMapper cqlStatementTupleMapper;
         private CQLResultSetValuesMapper cqlResultSetValuesMapper;
         private BatchStatement.Type batchingType;
+        private Map<String, Object> cassandraConfig;
 
         public Options(SimpleClientProvider clientProvider) {
             this.clientProvider = clientProvider;
@@ -82,6 +88,11 @@ public class CassandraState implements State {
             return this;
         }
 
+        public Options withCassandraConfig(Map<String, Object> config) {
+            cassandraConfig = config;
+            return this;
+        }
+
     }
 
     @Override
@@ -96,6 +107,10 @@ public class CassandraState implements State {
 
     public void prepare() {
         Preconditions.checkNotNull(options.cqlStatementTupleMapper, "CassandraState.Options should have cqlStatementTupleMapper");
+
+        Map<String, Object> cassandraClientConfig = options.cassandraConfig != null ? options.cassandraConfig : conf;
+
+        cassandraConf = new CassandraConf(cassandraClientConfig);
 
         client = options.clientProvider.getClient(conf);
         session = client.connect();
@@ -113,17 +128,32 @@ public class CassandraState implements State {
 
     public void updateState(List<TridentTuple> tuples, final TridentCollector collector) {
 
-        List<Statement> statements = new ArrayList<>();
-        for (TridentTuple tuple : tuples) {
-            statements.addAll(options.cqlStatementTupleMapper.map(conf, session, tuple));
-        }
+        Iterable<List<TridentTuple>> partitionedTuples = Iterables.partition(tuples, cassandraConf.getBatchSizeRows());
+
+        Iterable<List<Statement>> partitionedStatements = Iterables.transform(partitionedTuples, new Function<List<TridentTuple>, List<Statement>>() {
+            @Override
+            public List<Statement> apply(List<TridentTuple> l) {
+                List<Statement> result = new ArrayList<>();
+
+                if (options.batchingType != null) {
+                    BatchStatement batchStatement = new BatchStatement(options.batchingType);
+                    result.add(batchStatement);
+
+                    for (TridentTuple tuple : l) {
+                        batchStatement.addAll(options.cqlStatementTupleMapper.map(conf, session, tuple));
+                    }
+                } else {
+                    for (TridentTuple tuple : l) {
+                        result.addAll(options.cqlStatementTupleMapper.map(conf, session, tuple));
+                    }
+                }
+
+                return result;
+            }
+        });
 
         try {
-            if (options.batchingType != null) {
-                BatchStatement batchStatement = new BatchStatement(options.batchingType);
-                batchStatement.addAll(statements);
-                session.execute(batchStatement);
-            } else {
+            for (List<Statement> statements : partitionedStatements) {
                 for (Statement statement : statements) {
                     session.execute(statement);
                 }
