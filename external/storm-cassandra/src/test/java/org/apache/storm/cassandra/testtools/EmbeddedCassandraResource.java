@@ -78,8 +78,10 @@ public class EmbeddedCassandraResource extends ExternalResource {
     protected void after() {
         cassandraDaemon.stop();
         try {
+            // Sleep before cleaning up files
+            Thread.sleep(3000L);
             cleanupDataDirectories();
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e.getMessage(), e);
         }
     }
