@@ -20,6 +20,7 @@ package org.apache.storm.hbase.bolt.mapper;
 
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.hbase.common.ColumnList;
+import org.json.simple.parser.ParseException;
 
 import java.io.Serializable;
 
@@ -35,7 +36,7 @@ public interface HBaseMapper extends Serializable {
      * @param tuple
      * @return
      */
-    byte[] rowKey(Tuple tuple);
+    byte[] rowKey(Tuple tuple) throws ParseException;
 
     /**
      * Given a tuple, return a list of HBase columns to insert.
@@ -43,6 +44,6 @@ public interface HBaseMapper extends Serializable {
      * @param tuple
      * @return
      */
-    ColumnList columns(Tuple tuple);
+    ColumnList columns(Tuple tuple) throws ParseException;
 
 }
