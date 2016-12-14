@@ -23,6 +23,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -59,6 +60,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     // Storm
     protected SpoutOutputCollector collector;
+    protected int thisTaskIndex;
+    protected int taskCount;
 
     // Kafka
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
@@ -66,11 +69,15 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient boolean consumerAutoCommitMode;
 
 
+
     // Bookkeeping
     private transient int maxRetries;                                   // Max number of times a tuple is retried
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;  // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient KafkaSpoutRetryService retryService;              // Class that has the logic to handle tuple failure
     private transient Timer commitTimer;                                // timer == null for auto commit mode
+    private transient Timer partitionRefreshTimer;                      // partitionRefreshTime != null if in manual partition assign model
+    private transient boolean manualPartitionAssignment;
+    private transient KafkaSpoutConsumerRebalanceListener partitionRebalanceListener;
     private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
@@ -94,12 +101,16 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         // Spout internals
         this.collector = collector;
+        thisTaskIndex = context.getThisTaskIndex();
+        taskCount = context.getComponentTasks(context.getThisComponentId()).size();
         maxRetries = kafkaSpoutConfig.getMaxTupleRetries();
         numUncommittedOffsets = 0;
 
         // Offset management
         firstPollOffsetStrategy = kafkaSpoutConfig.getFirstPollOffsetStrategy();
         consumerAutoCommitMode = kafkaSpoutConfig.isConsumerAutoCommitMode();
+        manualPartitionAssignment = kafkaSpoutConfig.isManualPartitionAssign();
+        partitionRebalanceListener = new KafkaSpoutConsumerRebalanceListener();
 
         // Retries management
         retryService = kafkaSpoutConfig.getRetryService();
@@ -109,6 +120,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         if (!consumerAutoCommitMode) {     // If it is auto commit, no need to commit offsets manually
             commitTimer = new Timer(500, kafkaSpoutConfig.getOffsetsCommitPeriodMs(), TimeUnit.MILLISECONDS);
+        }
+
+        if (manualPartitionAssignment) {
+            partitionRefreshTimer = new Timer(500, kafkaSpoutConfig.getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS);
         }
 
         acked = new HashMap<>();
@@ -200,6 +215,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void nextTuple() {
         if (initialized) {
+            refreshPartitionIfNeeded();
+
             if (commit()) {
                 commitOffsetsForAckedTuples();
             }
@@ -234,6 +251,35 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             }
         }
         return poll;
+    }
+
+    private void refreshPartitionIfNeeded() {
+        if (!manualPartitionAssignment || !partitionRefreshTimer.isExpiredResetOnTrue()) return;
+        doRefreshPartitions();
+    }
+
+    private void doRefreshPartitions() {
+        KafkaSpoutStreamsNamedTopics streams = KafkaSpoutStreamsNamedTopics.class.cast(kafkaSpoutStreams);
+        List<PartitionInfo> partitions = KafkaUtils.readPartitions(kafkaConsumer, streams.getTopics());
+        List<TopicPartition> tps = new ArrayList<>(partitions.size());
+        for (PartitionInfo info: partitions) {
+            tps.add(new TopicPartition(info.topic(), info.partition()));
+        }
+
+        Collections.sort(tps, TopicPartitionComparator.INSTANCE);
+
+        Set<TopicPartition> myPartitions = new HashSet<>(tps.size()/taskCount + 1);
+        for (int i = thisTaskIndex; i < tps.size(); i += taskCount) {
+            myPartitions.add(tps.get(i));
+        }
+
+        Set<TopicPartition> originalPartitions = kafkaConsumer.assignment();
+
+        if (!originalPartitions.equals(myPartitions)) {
+            partitionRebalanceListener.onPartitionsRevoked(originalPartitions);
+            partitionRebalanceListener.onPartitionsAssigned(myPartitions);
+            kafkaConsumer.assign(myPartitions);
+        }
     }
 
     private boolean waitingToEmit() {
@@ -360,18 +406,22 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
 
-        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
-            final List<String> topics = ((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics();
-            kafkaConsumer.subscribe(topics, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics {}", topics);
-        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
-            final Pattern pattern = ((KafkaSpoutStreamsWildcardTopics) kafkaSpoutStreams).getTopicWildcardPattern();
-            kafkaConsumer.subscribe(pattern, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
+        if (manualPartitionAssignment) {
+            doRefreshPartitions();
+        } else {
+            if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
+                final List<String> topics = ((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics();
+                kafkaConsumer.subscribe(topics, partitionRebalanceListener);
+                LOG.info("Kafka consumer subscribed topics {}", topics);
+            } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
+                final Pattern pattern = ((KafkaSpoutStreamsWildcardTopics) kafkaSpoutStreams).getTopicWildcardPattern();
+                kafkaConsumer.subscribe(pattern, partitionRebalanceListener);
+                LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
+            }
+            // Initial poll to get the consumer registration process going.
+            // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
+            kafkaConsumer.poll(0);
         }
-        // Initial poll to get the consumer registration process going.
-        // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
-        kafkaConsumer.poll(0);
     }
 
     @Override
