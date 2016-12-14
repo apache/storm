@@ -215,18 +215,22 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void nextTuple() {
         if (initialized) {
-            refreshPartitionIfNeeded();
+            try {
+                refreshPartitionIfNeeded();
 
-            if (commit()) {
-                commitOffsetsForAckedTuples();
-            }
+                if (commit()) {
+                    commitOffsetsForAckedTuples();
+                }
 
-            if (poll()) {
-                setWaitingToEmit(pollKafkaBroker());
-            }
+                if (poll()) {
+                    setWaitingToEmit(pollKafkaBroker());
+                }
 
-            if (waitingToEmit()) {
-                emit();
+                if (waitingToEmit()) {
+                    emit();
+                }
+            } catch (Exception e) {
+                LOG.error("Failed to emit tuples.", e);
             }
         } else {
             LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
@@ -308,11 +312,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         final Set<TopicPartition> retriableTopicPartitions = retryService.retriableTopicPartitions();
 
         for (TopicPartition rtp : retriableTopicPartitions) {
-            final OffsetAndMetadata offsetAndMeta = acked.get(rtp).findNextCommitOffset();
-            if (offsetAndMeta != null) {
-                kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
-            } else {
-                kafkaConsumer.seekToEnd(toArrayList(rtp));    // Seek to last committed offset
+            KafkaSpout.OffsetEntry entry = acked.get(rtp);
+            if (entry != null) {
+                final OffsetAndMetadata offsetAndMeta = entry.findNextCommitOffset();
+                if (offsetAndMeta != null) {
+                    kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
+                }
             }
         }
     }
