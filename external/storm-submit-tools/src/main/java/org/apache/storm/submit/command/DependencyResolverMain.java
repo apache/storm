@@ -25,10 +25,12 @@ import org.apache.storm.submit.dependency.DependencyResolver;
 import org.json.simple.JSONValue;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.graph.Dependency;
+import org.sonatype.aether.repository.RemoteRepository;
 import org.sonatype.aether.resolution.ArtifactResult;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +46,22 @@ public class DependencyResolverMain {
 
         // DO NOT CHANGE THIS TO SYSOUT
         System.err.println("DependencyResolver input - artifacts: " + artifactsArg);
-
         List<Dependency> dependencies = parseArtifactArgs(artifactsArg);
+
+        List<RemoteRepository> repositories;
+        if (args.length > 1) {
+            String remoteRepositoryArg = args[1];
+
+            // DO NOT CHANGE THIS TO SYSOUT
+            System.err.println("DependencyResolver input - repositories: " + remoteRepositoryArg);
+
+            repositories = parseRemoteRepositoryArgs(remoteRepositoryArg);
+        } else {
+            repositories = Collections.emptyList();
+        }
+
         try {
-            DependencyResolver resolver = new DependencyResolver("local-repo");
+            DependencyResolver resolver = new DependencyResolver("local-repo", repositories);
 
             List<ArtifactResult> artifactResults = resolver.resolve(dependencies);
 
@@ -91,6 +105,20 @@ public class DependencyResolverMain {
         }
 
         return dependencies;
+    }
+
+    private static List<RemoteRepository> parseRemoteRepositoryArgs(String remoteRepositoryArg) {
+        List<String> repositories = Arrays.asList(remoteRepositoryArg.split(","));
+        List<RemoteRepository> remoteRepositories = new ArrayList<>(repositories.size());
+        for (String repositoryOpt : repositories) {
+            if (repositoryOpt.trim().isEmpty()) {
+                continue;
+            }
+
+            remoteRepositories.add(AetherUtils.parseRemoteRepository(repositoryOpt));
+        }
+
+        return remoteRepositories;
     }
 
     private static Map<String, String> transformArtifactResultToArtifactToPaths(List<ArtifactResult> artifactResults) {
