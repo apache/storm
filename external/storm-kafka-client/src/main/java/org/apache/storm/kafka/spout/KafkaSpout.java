@@ -233,7 +233,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } catch (InterruptException e) {
             //Kafka throws their own type of exception when interrupted.
             //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException());
+            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
         }
     }
 
@@ -396,7 +396,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } catch (InterruptException e) {
             //Kafka throws their own type of exception when interrupted.
             //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException());
+            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
         }
     }
 
@@ -424,7 +424,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } catch (InterruptException e) {
             //Kafka throws their own type of exception when interrupted.
             //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException());
+            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
         }
     }
 
@@ -435,7 +435,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } catch (InterruptException e) {
             //Kafka throws their own type of exception when interrupted.
             //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException());
+            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
         }
     }
 
