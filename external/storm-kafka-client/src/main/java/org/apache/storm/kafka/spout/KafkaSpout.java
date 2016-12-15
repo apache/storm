@@ -231,10 +231,14 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
             }
         } catch (InterruptException e) {
-            //Kafka throws their own type of exception when interrupted.
-            //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
+            throwKafkaConsumerInterruptedException();
         }
+    }
+    
+    private void throwKafkaConsumerInterruptedException() {
+        //Kafka throws their own type of exception when interrupted.
+        //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
+        throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
     }
 
     private boolean commit() {
@@ -394,9 +398,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         try {
             subscribeKafkaConsumer();
         } catch (InterruptException e) {
-            //Kafka throws their own type of exception when interrupted.
-            //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
+            throwKafkaConsumerInterruptedException();
         }
     }
 
@@ -422,9 +424,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         try {
             shutdown();
         } catch (InterruptException e) {
-            //Kafka throws their own type of exception when interrupted.
-            //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
+            throwKafkaConsumerInterruptedException();
         }
     }
 
@@ -433,9 +433,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         try {
             shutdown();
         } catch (InterruptException e) {
-            //Kafka throws their own type of exception when interrupted.
-            //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
-            throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
+            throwKafkaConsumerInterruptedException();
         }
     }
 
