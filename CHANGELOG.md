@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1607: Add MongoMapState for supporting trident's exactly once semantics
  * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2104: More graceful handling of acked/failed tuples after partition reassignment
  * STORM-1281: LocalCluster, testing4j and testing.clj to java
