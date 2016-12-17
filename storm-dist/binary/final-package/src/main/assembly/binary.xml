@@ -114,6 +114,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-kafka-examples/target</directory>
+            <outputDirectory>examples/storm-kafka-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-kinesis/target</directory>
             <outputDirectory>external/storm-kinesis</outputDirectory>
             <includes>
@@ -142,6 +149,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-hdfs-examples/target</directory>
+            <outputDirectory>examples/storm-hdfs-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-hbase/target</directory>
             <outputDirectory>external/storm-hbase</outputDirectory>
             <includes>
@@ -153,6 +167,13 @@
             <outputDirectory>external/storm-hbase</outputDirectory>
             <includes>
                 <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-hbase-examples/target</directory>
+            <outputDirectory>examples/storm-hbase-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -170,6 +191,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-jdbc-examples/target</directory>
+            <outputDirectory>examples/storm-jdbc-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-hive/target</directory>
             <outputDirectory>external/storm-hive</outputDirectory>
             <includes>
@@ -181,6 +209,13 @@
             <outputDirectory>external/storm-hive</outputDirectory>
             <includes>
                 <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-hive-examples/target</directory>
+            <outputDirectory>examples/storm-hive-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -217,6 +252,13 @@
             <outputDirectory>external/storm-elasticsearch</outputDirectory>
             <includes>
                 <include>README.*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-elasticsearch-examples/target</directory>
+            <outputDirectory>examples/storm-elasticsearch-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
             </includes>
         </fileSet>
 
@@ -277,6 +319,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-redis-examples/target</directory>
+            <outputDirectory>examples/storm-redis-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-solr/target</directory>
             <outputDirectory>external/storm-solr</outputDirectory>
             <includes>
@@ -290,6 +339,14 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-solr-examples/target</directory>
+            <outputDirectory>examples/storm-solr-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-cassandra/target</directory>
             <outputDirectory>external/storm-cassandra</outputDirectory>
@@ -356,8 +413,8 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../../external/storm-mqtt/examples/target</directory>
-            <outputDirectory>external/storm-mqtt</outputDirectory>
+            <directory>${project.basedir}/../../../examples/storm-mqtt-examples/target</directory>
+            <outputDirectory>examples/storm-mqtt-examples</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>
@@ -377,6 +434,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-mongodb-examples/target</directory>
+            <outputDirectory>examples/storm-mongodb-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-kafka-client/target</directory>
             <outputDirectory>external/storm-kafka-client</outputDirectory>
             <includes>
@@ -391,6 +455,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../../examples/storm-kafka-client-examples/target</directory>
+            <outputDirectory>examples/storm-kafka-client-examples</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../../external/storm-opentsdb</directory>
             <outputDirectory>external/storm-opentsdb</outputDirectory>
             <includes>
@@ -400,6 +471,13 @@
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-opentsdb/target</directory>
             <outputDirectory>external/storm-opentsdb</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../examples/storm-opentsdb-examples/target</directory>
+            <outputDirectory>examples/storm-opentsdb-examples</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>
