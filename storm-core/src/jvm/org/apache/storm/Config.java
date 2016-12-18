@@ -1902,14 +1902,6 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS = "topology.bolts.window.sliding.interval.duration.ms";
 
-    /*
-     * Bolt-specific configuration for windowed bolts to specify the name of the field in the tuple that holds
-     * the timestamp (e.g. the ts when the tuple was actually generated). If this config is specified and the
-     * field is not present in the incoming tuple, a java.lang.IllegalArgumentException will be thrown.
-     */
-    @isString
-    public static final String TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME = "topology.bolts.tuple.timestamp.field.name";
-
     /**
      * Bolt-specific configuration for windowed bolts to specify the name of the stream on which late tuples are
      * going to be emitted. This configuration should only be used from the BaseWindowedBolt.withLateTupleStream builder
@@ -1918,10 +1910,10 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String TOPOLOGY_BOLTS_LATE_TUPLE_STREAM = "topology.bolts.late.tuple.stream";
 
-    /*
+    /**
      * Bolt-specific configuration for windowed bolts to specify the maximum time lag of the tuple timestamp
      * in milliseconds. It means that the tuple timestamps cannot be out of order by more than this amount.
-     * This config will be effective only if the TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME is also specified.
+     * This config will be effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
      */
     @isInteger
     @isPositiveNumber
@@ -1930,7 +1922,7 @@ public class Config extends HashMap<String, Object> {
     /*
      * Bolt-specific configuration for windowed bolts to specify the time interval for generating
      * watermark events. Watermark event tracks the progress of time when tuple timestamp is used.
-     * This config is effective only if TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME is also specified.
+     * This config is effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
      */
     @isInteger
     @isPositiveNumber
