@@ -19,17 +19,22 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <parent>
+        <artifactId>storm</artifactId>
+        <groupId>org.apache.storm</groupId>
+        <version>1.1.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
+
     <name>storm-integration-test</name>
     <groupId>org.apache.storm</groupId>
     <artifactId>storm-integration-test</artifactId>
-    <version>0.3</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- see comment below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
-        <storm.version>1.0.1.2.5.0.0-781</storm.version>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <regression.downloadWorkerLogs>false</regression.downloadWorkerLogs>
         <storm.conf.dir>/etc/storm/conf</storm.conf.dir>
@@ -48,33 +53,6 @@
         </profile>
     </profiles>
 
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>central</id>
-            <url>http://repo1.maven.org/maven2/</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>clojars</id>
-            <url>https://clojars.org/repo/</url>
-        </repository>
-        <repository>
-            <id>hortonworks</id>
-            <url>http://nexus-private.hortonworks.com/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
@@ -85,7 +63,6 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.3</version>
         </dependency>
         <dependency>
             <groupId>org.seleniumhq.selenium</groupId>
@@ -102,23 +79,23 @@
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
-            <version>${storm.version}</version>
+            <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-solr</artifactId>
-            <version>${storm.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-starter</artifactId>
-            <version>${storm.version}</version>
+            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-hdfs</artifactId>
-            <version>${storm.version}</version>
+            <version>${project.version}</version>
         </dependency>
     </dependencies>
 
