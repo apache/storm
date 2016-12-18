@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-1308: port backtype.storm.tick-tuple-test to java
  * STORM-2245: integration-test constant compilation failure
  * STORM-1607: Add MongoMapState for supporting trident's exactly once semantics
  * STORM-2204: Adding caching capabilities in HBaseLookupBolt
