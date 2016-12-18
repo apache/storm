@@ -36,6 +36,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;   // 30s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
+    public static final int DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000; // 2s
 
     // Kafka property names
     public interface Consumer {
@@ -73,9 +74,11 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final long pollTimeoutMs;
 
     // Kafka spout configuration
+    private final boolean manualPartitionAssign;
     private final long offsetCommitPeriodMs;
     private final int maxRetries;
     private final int maxUncommittedOffsets;
+    private final int partitionRefreshPeriodMs;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutStreams kafkaSpoutStreams;
     private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
@@ -93,6 +96,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
         this.tuplesBuilder = builder.tuplesBuilder;
         this.retryService = builder.retryService;
+        this.manualPartitionAssign = builder.manualPartitionAssign;
+        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
     }
 
     private Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
@@ -113,6 +118,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private final KafkaSpoutStreams kafkaSpoutStreams;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
+        private boolean manualPartitionAssign = false;
+        private int partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
         private final KafkaSpoutRetryService retryService;
 
@@ -230,7 +237,36 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         public KafkaSpoutConfig<K,V> build() {
+            validate();
             return new KafkaSpoutConfig<>(this);
+        }
+
+        /**
+         * Defines whether the consumer manages partition manually.
+         * If set to true, the consumer behaves like a simple consumer, otherwise it will rely on kafka to do partition assignment.
+         * @param manualPartitionAssign Whether use manual partition assignment.
+         */
+        public Builder setManualPartitionAssign(boolean manualPartitionAssign) {
+            this.manualPartitionAssign = manualPartitionAssign;
+            return this;
+        }
+
+        /**
+         * Defines partition refresh period in the manual partition assign model.
+         * @param partitionRefreshPeriodMs Partition refresh period in ms.
+         */
+        public Builder setPartitionRefreshPeriodMs(int partitionRefreshPeriodMs) {
+            this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
+            return this;
+        }
+
+        /**
+         * Validate configs before build.
+         */
+        private void validate() {
+            if (this.manualPartitionAssign && kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
+                throw new IllegalArgumentException("Manual partition assign can't be used with wildcard topics!");
+            }
         }
     }
 
@@ -283,6 +319,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 null;
     }
 
+    public boolean isManualPartitionAssign() {
+        return manualPartitionAssign;
+    }
+
     public int getMaxTupleRetries() {
         return maxRetries;
     }
@@ -305,6 +345,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public KafkaSpoutRetryService getRetryService() {
         return retryService;
+    }
+
+    public int getPartitionRefreshPeriodMs() {
+        return partitionRefreshPeriodMs;
     }
 
     @Override
