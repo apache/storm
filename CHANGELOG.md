@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2238: Add Timestamp extractor for windowed bolt
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-2235: Introduce new option: 'add remote repositories' for dependency resolver
  * STORM-2215: validate blobs are present before submitting
