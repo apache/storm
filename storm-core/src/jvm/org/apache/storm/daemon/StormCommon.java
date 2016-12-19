@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.Thrift;
@@ -552,8 +553,8 @@ public class StormCommon {
     protected IAuthorizer mkAuthorizationHandlerImpl(String klassName, Map conf)
             throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         IAuthorizer aznHandler = null;
-        if (klassName != null) {
-            Class aznClass = Class.forName(klassName);
+        if (StringUtils.isNotBlank(klassName)) {
+            Class<?> aznClass = Class.forName(klassName);
             if (aznClass != null) {
                 aznHandler = (IAuthorizer) aznClass.newInstance();
                 if (aznHandler != null) {

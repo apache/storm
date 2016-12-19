@@ -298,6 +298,7 @@
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
         <eventhubs.client.version>1.0.1</eventhubs.client.version>
+        <jersey.version>2.24.1</jersey.version>
     </properties>
 
     <modules>
@@ -307,6 +308,7 @@
         <module>storm-buildtools/maven-shade-clojure-transformer</module>
         <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-core</module>
+        <module>storm-drpc-server</module>
         <module>storm-rename-hack</module>
         <module>storm-clojure</module>
 
@@ -564,6 +566,21 @@
 
     <dependencyManagement>
         <dependencies>
+            <dependency>
+                <groupId>org.glassfish.jersey.core</groupId>
+                <artifactId>jersey-server</artifactId>
+                <version>${jersey.version}</version>
+            </dependency> 
+            <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId> 
+                <artifactId>jersey-container-servlet-core</artifactId>
+                <version>${jersey.version}</version>
+            </dependency> 
+             <dependency>
+                <groupId>org.glassfish.jersey.containers</groupId> 
+                <artifactId>jersey-container-jetty-http</artifactId>
+                <version>${jersey.version}</version>
+            </dependency> 
             <dependency>
                 <groupId>org.hdrhistogram</groupId>
                 <artifactId>HdrHistogram</artifactId>
