@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2239: Handle InterruptException in new Kafka spout
  * STORM-2087: Storm-kafka-client: Failed tuples are not always replayed
  * STORM-2238: Add Timestamp extractor for windowed bolt
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
