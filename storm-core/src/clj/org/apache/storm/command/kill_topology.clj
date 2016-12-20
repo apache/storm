@@ -20,10 +20,10 @@
   (:gen-class))
 
 (defn -main [& args]
-  (let [[{wait :wait} [name] _] (cli args ["-w" "--wait" :default nil :parse-fn #(Integer/parseInt %)])
+  (let [[{wait :wait} names] (cli args ["-w" "--wait" :default nil :parse-fn #(Integer/parseInt %)])
         opts (KillOptions.)]
     (if wait (.set_wait_secs opts wait))
     (with-configured-nimbus-connection nimbus
-      (.killTopologyWithOpts nimbus name opts)
-      (log-message "Killed topology: " name)
-      )))
+      (doseq [name names]
+        (.killTopologyWithOpts nimbus name opts)
+        (log-message "Killed topology: " name)))))
