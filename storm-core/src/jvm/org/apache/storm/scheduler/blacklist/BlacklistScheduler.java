@@ -122,12 +122,6 @@ public class BlacklistScheduler implements IScheduler {
     public void schedule(Topologies topologies, Cluster cluster) {
         LOG.debug("running Black List scheduler");
         Map<String, SupervisorDetails> supervisors = cluster.getSupervisors();
-        for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
-            SupervisorDetails supervisorDetails = entry.getValue();
-            String hosts = supervisorDetails.getHost();
-            Set<Integer> ports = supervisorDetails.getAllPorts();
-            LOG.debug("supervisor: {}, ports: {}", hosts, ports);
-        }
         LOG.debug("AssignableSlots: {}", cluster.getAssignableSlots());
         LOG.debug("AvailableSlots: {}", cluster.getAvailableSlots());
         LOG.debug("UsedSlots: {}", cluster.getUsedSlots());
@@ -154,7 +148,7 @@ public class BlacklistScheduler implements IScheduler {
             String key = entry.getKey();
             SupervisorDetails supervisorDetails = entry.getValue();
             if (cachedSupervisors.containsKey(key)) {
-                Set<Integer> badSlots = badSlots(supervisors, key);
+                Set<Integer> badSlots = badSlots(supervisorDetails, key);
                 if (badSlots.size() > 0) {//supervisor contains bad slots
                     badSupervisors.put(key, badSlots);
                 }
@@ -166,37 +160,33 @@ public class BlacklistScheduler implements IScheduler {
         badSupervisorsTolerance.add(badSupervisors);
     }
 
-    private Set<Integer> badSlots(Map<String, SupervisorDetails> supervisors, String supervisorKey) {
-        SupervisorDetails supervisor = supervisors.get(supervisorKey);
+    private Set<Integer> badSlots(SupervisorDetails supervisor, String supervisorKey) {
         Set<Integer> cachedSupervisorPorts = cachedSupervisors.get(supervisorKey);
         Set<Integer> supervisorPorts = supervisor.getAllPorts();
 
         Set<Integer> newPorts = Sets.difference(supervisorPorts, cachedSupervisorPorts);
         if (newPorts.size() > 0) {
-            cachedSupervisors.put(supervisorKey, Sets.union(newPorts, supervisor.getAllPorts()));
+            //add new ports to cached supervisor
+            cachedSupervisors.put(supervisorKey, Sets.union(newPorts, cachedSupervisorPorts));
         }
 
-        Set<Integer> difference = Sets.difference(cachedSupervisorPorts, supervisorPorts);
-        Set<Integer> badSlots = new HashSet<>();
-        for (int port : difference) {
-            badSlots.add(port);
-        }
+        Set<Integer> badSlots = Sets.difference(cachedSupervisorPorts, supervisorPorts);
         return badSlots;
     }
 
     public Set<String> getBlacklistHosts(Cluster cluster, Topologies topologies) {
-        Set<String> blacklist = blacklistStrategy.getBlacklist(badSupervisorsTolerance.toList(), cluster, topologies);
-        Set<String> blacklistHost = new HashSet<>();
-        for (String supervisor : blacklist) {
+        Set<String> blacklistSet = blacklistStrategy.getBlacklist(badSupervisorsTolerance.toList(), cluster, topologies);
+        Set<String> blacklistHostSet = new HashSet<>();
+        for (String supervisor : blacklistSet) {
             String host = cluster.getHost(supervisor);
             if (host != null) {
-                blacklistHost.add(host);
+                blacklistHostSet.add(host);
             } else {
                 LOG.info("supervisor {} is not alive know, do not need to add to blacklist.", supervisor);
             }
         }
-        this.blacklistHost = blacklistHost;
-        return blacklistHost;
+        this.blacklistHost = blacklistHostSet;
+        return blacklistHostSet;
     }
 
     //supervisor or port never exits once in tolerance time will be removed from cache
