@@ -53,6 +53,8 @@ import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrat
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
+import org.apache.kafka.common.errors.InterruptException;
+
 public class KafkaSpout<K, V> extends BaseRichSpout {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
     private static final Comparator<KafkaSpoutMessageId> OFFSET_COMPARATOR = new OffsetComparator();
@@ -199,21 +201,31 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        if (initialized) {
-            if (commit()) {
-                commitOffsetsForAckedTuples();
-            }
+        try{
+            if (initialized) {
+                if (commit()) {
+                    commitOffsetsForAckedTuples();
+                }
 
-            if (poll()) {
-                setWaitingToEmit(pollKafkaBroker());
-            }
+                if (poll()) {
+                    setWaitingToEmit(pollKafkaBroker());
+                }
 
-            if (waitingToEmit()) {
-                emit();
+                if (waitingToEmit()) {
+                    emit();
+                }
+            } else {
+                LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
             }
-        } else {
-            LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
+        } catch (InterruptException e) {
+            throwKafkaConsumerInterruptedException();
         }
+    }
+    
+    private void throwKafkaConsumerInterruptedException() {
+        //Kafka throws their own type of exception when interrupted.
+        //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
+        throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
     }
 
     private boolean commit() {
@@ -358,7 +370,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void activate() {
-        subscribeKafkaConsumer();
+        try {
+            subscribeKafkaConsumer();
+        } catch (InterruptException e) {
+            throwKafkaConsumerInterruptedException();
+        }
     }
 
     private void subscribeKafkaConsumer() {
@@ -381,12 +397,20 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void deactivate() {
-        shutdown();
+        try {
+            shutdown();
+        } catch (InterruptException e) {
+            throwKafkaConsumerInterruptedException();
+        }
     }
 
     @Override
     public void close() {
-        shutdown();
+        try {
+            shutdown();
+        } catch (InterruptException e) {
+            throwKafkaConsumerInterruptedException();
+        }
     }
 
     private void shutdown() {
