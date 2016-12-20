@@ -81,6 +81,7 @@ if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
     USER_CONF_DIR = CLUSTER_CONF_DIR
 
 STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
+STORM_DRPC_LIB_DIR = os.path.join(STORM_DIR, "lib-drpc-server")
 STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
 STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
 STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
@@ -99,6 +100,7 @@ STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
 STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
 DEP_JARS_OPTS = []
 DEP_ARTIFACTS_OPTS = []
+DEP_ARTIFACTS_REPOSITORIES_OPTS = []
 
 def get_config_opts():
     global CONFIG_OPTS
@@ -126,10 +128,10 @@ def get_jars_full(adir):
 
 def get_classpath(extrajars, daemon=True):
     ret = get_jars_full(STORM_DIR)
-    ret.extend(get_jars_full(STORM_DIR + "/lib"))
-    ret.extend(get_jars_full(STORM_DIR + "/extlib"))
+    ret.extend(get_jars_full(STORM_LIB_DIR))
+    ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib")))
     if daemon:
-        ret.extend(get_jars_full(STORM_DIR + "/extlib-daemon"))
+        ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib-daemon")))
     if STORM_EXT_CLASSPATH != None:
         for path in STORM_EXT_CLASSPATH.split(os.pathsep):
             ret.extend(get_jars_full(path))
@@ -158,11 +160,11 @@ def confvalue(name, extrapaths, daemon=True):
     return ""
 
 
-def resolve_dependencies(artifacts):
+def resolve_dependencies(artifacts, artifact_repositories):
     if len(artifacts) == 0:
         return {}
 
-    print("Resolving dependencies on demand: artifacts (%s)" % artifacts)
+    print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
     sys.stdout.flush()
 
     # TODO: should we move some external modules to outer place?
@@ -173,7 +175,7 @@ def resolve_dependencies(artifacts):
 
     command = [
         JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain",
-        ",".join(artifacts)
+        ",".join(artifacts), ",".join(artifact_repositories)
     ]
 
     p = sub.Popen(command, stdout=sub.PIPE)
@@ -280,14 +282,18 @@ def jar(jarfile, klass, *args):
     Please add exclusion artifacts with '^' separated string after the artifact.
     For example, --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" will load jedis and kafka artifact and all of transitive dependencies but exclude slf4j-log4j12 from kafka.
 
-    Complete example of both options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12"`
+    When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string.
+    Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
+    For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
+
+    Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
 
     When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
 
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "null"):
@@ -328,14 +334,14 @@ def sql(sql_file, topology_name):
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
 
-    --jars and --artifacts options available for jar are also applied to sql command.
-    Please refer "help jar" to see how to use --jars and --artifacts options.
+    --jars and --artifacts, and --artifactRepositories options available for jar are also applied to sql command.
+    Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories options.
     You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
 
     sql_core_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-core")
     sql_runtime_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime")
@@ -758,12 +764,14 @@ def drpc():
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
+    allextrajars = get_jars_full(STORM_DRPC_LIB_DIR)
+    allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.drpc",
+        "org.apache.storm.daemon.drpc.DRPCServer",
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,
-        extrajars=[CLUSTER_CONF_DIR])
+        extrajars=allextrajars)
 
 def dev_zookeeper():
     """Syntax: [storm dev-zookeeper]
@@ -859,6 +867,7 @@ def parse_config_opts(args):
     args_list = []
     jars_list = []
     artifacts_list = []
+    artifact_repositories_list = []
 
     while len(curr) > 0:
         token = curr.pop()
@@ -871,20 +880,23 @@ def parse_config_opts(args):
             jars_list.extend(curr.pop().split(','))
         elif token == "--artifacts":
             artifacts_list.extend(curr.pop().split(','))
+        elif token == "--artifactRepositories":
+            artifact_repositories_list.extend(curr.pop().split(','))
         else:
             args_list.append(token)
 
-    return config_list, jars_list, artifacts_list, args_list
+    return config_list, jars_list, artifacts_list, artifact_repositories_list, args_list
 
 def main():
     if len(sys.argv) <= 1:
         print_usage()
         sys.exit(-1)
-    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS
-    config_list, jars_list, artifacts_list, args = parse_config_opts(sys.argv[1:])
+    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+    config_list, jars_list, artifacts_list, artifact_repositories_list, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
     DEP_JARS_OPTS = jars_list
     DEP_ARTIFACTS_OPTS = artifacts_list
+    DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
     COMMAND = args[0]
     ARGS = args[1:]
     (COMMANDS.get(COMMAND, unknown_command))(*ARGS)

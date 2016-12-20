@@ -105,8 +105,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public static class Builder<K,V> {
         private final Map<String, Object> kafkaProps;
-        private Deserializer<K> keyDeserializer;
-        private Deserializer<V> valueDeserializer;
+        private SerializableDeserializer<K> keyDeserializer;
+        private SerializableDeserializer<V> valueDeserializer;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
         private int maxRetries = DEFAULT_MAX_RETRIES;
@@ -164,7 +164,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * Specifying this key deserializer overrides the property key.deserializer
          */
-        public Builder<K,V> setKeyDeserializer(Deserializer<K> keyDeserializer) {
+        public Builder<K,V> setKeyDeserializer(SerializableDeserializer<K> keyDeserializer) {
             this.keyDeserializer = keyDeserializer;
             return this;
         }
@@ -172,7 +172,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * Specifying this value deserializer overrides the property value.deserializer
          */
-        public Builder<K,V> setValueDeserializer(Deserializer<V> valueDeserializer) {
+        public Builder<K,V> setValueDeserializer(SerializableDeserializer<V> valueDeserializer) {
             this.valueDeserializer = valueDeserializer;
             return this;
         }

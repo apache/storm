@@ -18,12 +18,13 @@
 package org.apache.storm.mongodb.common;
 
 import java.io.Serializable;
+import java.util.List;
 
 import org.apache.storm.tuple.ITuple;
 import org.bson.conversions.Bson;
 
 /**
- * Create a MongoDB query Filter by given Tuple.
+ * Create a MongoDB query Filter by given Tuple/trident keys.
  */
 public interface QueryFilterCreator extends Serializable {
 
@@ -35,4 +36,11 @@ public interface QueryFilterCreator extends Serializable {
      */
     Bson createFilter(ITuple tuple);
 
+    /**
+     * Create a query Filter by given trident keys
+     *
+     * @param keys
+     * @return query Filter
+     */
+    Bson createFilterByKeys(List<Object> keys);
 }

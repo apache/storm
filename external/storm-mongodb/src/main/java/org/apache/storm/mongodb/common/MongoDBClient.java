@@ -62,19 +62,35 @@ public class MongoDBClient {
     }
 
     /**
-     * Update all documents in the collection according to the specified query filter.
+     * Update a single or all documents in the collection according to the specified arguments.
      * When upsert set to true, the new document will be inserted if there are no matches to the query filter.
      * 
      * @param filter
-     * @param update
-     * @param upsert
+     * @param document
+     * @param upsert a new document should be inserted if there are no matches to the query filter
+     * @param many whether find all documents according to the query filter
      */
-    public void update(Bson filter, Bson update, boolean upsert) {
+    public void update(Bson filter, Bson document, boolean upsert, boolean many) {
+        //TODO batch updating
         UpdateOptions options = new UpdateOptions();
         if (upsert) {
             options.upsert(true);
         }
-        collection.updateMany(filter, update, options);
+        if (many) {
+            collection.updateMany(filter, document, options);
+        }else {
+            collection.updateOne(filter, document, options);
+        }
+    }
+
+    /**
+     * Finds a single document in the collection according to the specified arguments.
+     *
+     * @param filter
+     */
+    public Document find(Bson filter) {
+        //TODO batch finding
+        return collection.find(filter).first();
     }
 
     /**

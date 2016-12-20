@@ -23,11 +23,16 @@ import java.util.Map;
 
 import org.apache.commons.lang.Validate;
 import org.apache.storm.mongodb.common.MongoDBClient;
+import org.apache.storm.mongodb.common.QueryFilterCreator;
+import org.apache.storm.mongodb.common.mapper.MongoLookupMapper;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.tuple.Values;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,6 +55,8 @@ public class MongoState implements State {
         private String url;
         private String collectionName;
         private MongoMapper mapper;
+        private MongoLookupMapper lookupMapper;
+        private QueryFilterCreator queryCreator;
 
         public Options withUrl(String url) {
             this.url = url;
@@ -65,12 +72,21 @@ public class MongoState implements State {
             this.mapper = mapper;
             return this;
         }
+
+        public Options withMongoLookupMapper(MongoLookupMapper lookupMapper) {
+            this.lookupMapper = lookupMapper;
+            return this;
+        }
+
+        public Options withQueryFilterCreator(QueryFilterCreator queryCreator) {
+            this.queryCreator = queryCreator;
+            return this;
+        }
     }
 
     protected void prepare() {
         Validate.notEmpty(options.url, "url can not be blank or null");
         Validate.notEmpty(options.collectionName, "collectionName can not be blank or null");
-        Validate.notNull(options.mapper, "MongoMapper can not be null");
 
         this.mongoClient = new MongoDBClient(options.url, options.collectionName);
     }
@@ -91,7 +107,28 @@ public class MongoState implements State {
             Document document = options.mapper.toDocument(tuple);
             documents.add(document);
         }
-        this.mongoClient.insert(documents, true);
+
+        try {
+            this.mongoClient.insert(documents, true);
+        } catch (Exception e) {
+            LOG.warn("Batch write failed but some requests might have succeeded. Triggering replay.", e);
+            throw new FailedException(e);
+        }
     }
 
+    public List<List<Values>> batchRetrieve(List<TridentTuple> tridentTuples) {
+        List<List<Values>> batchRetrieveResult = Lists.newArrayList();
+        try {
+            for (TridentTuple tuple : tridentTuples) {
+                Bson filter = options.queryCreator.createFilter(tuple);
+                Document doc = mongoClient.find(filter);
+                List<Values> values = options.lookupMapper.toTuple(tuple, doc);
+                batchRetrieveResult.add(values);
+            }
+        } catch (Exception e) {
+            LOG.warn("Batch get operation failed. Triggering replay.", e);
+            throw new FailedException(e);
+        }
+        return batchRetrieveResult;
+    }
 }

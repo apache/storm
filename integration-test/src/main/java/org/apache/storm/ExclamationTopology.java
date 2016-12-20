@@ -59,8 +59,6 @@ public class ExclamationTopology {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
       declarer.declare(new Fields("word"));
     }
-
-
   }
 
   public static void main(String[] args) throws Exception {
@@ -71,13 +69,10 @@ public class ExclamationTopology {
 
     if (args != null && args.length > 0) {
       conf.setNumWorkers(3);
-
       StormSubmitter.submitTopologyWithProgressBar(args[0], conf, topology);
-    }
-    else {
-
+    } else {
       try (LocalCluster cluster = new LocalCluster();
-           LocalTopolgoy topo = cluster.submitTopology("test", conf, topology);) {
+           LocalTopology topo = cluster.submitTopology("test", conf, topology);) {
         Utils.sleep(10000);
       }
     }

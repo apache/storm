@@ -23,6 +23,7 @@ import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
@@ -31,6 +32,7 @@ import org.apache.storm.windowing.CountTriggerPolicy;
 import org.apache.storm.windowing.EvictionPolicy;
 import org.apache.storm.windowing.TimeEvictionPolicy;
 import org.apache.storm.windowing.TimeTriggerPolicy;
+import org.apache.storm.windowing.TimestampExtractor;
 import org.apache.storm.windowing.TriggerPolicy;
 import org.apache.storm.windowing.TupleWindowImpl;
 import org.apache.storm.windowing.WaterMarkEventGenerator;
@@ -65,7 +67,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     private transient WindowLifecycleListener<Tuple> listener;
     private transient WindowManager<Tuple> windowManager;
     private transient int maxLagMs;
-    private transient String tupleTsFieldName;
+    private TimestampExtractor timestampExtractor;
     private transient String lateTupleStream;
     private transient TriggerPolicy<Tuple> triggerPolicy;
     private transient EvictionPolicy<Tuple> evictionPolicy;
@@ -74,6 +76,7 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     public WindowedBoltExecutor(IWindowedBolt bolt) {
         this.bolt = bolt;
+        timestampExtractor = bolt.getTimestampExtractor();
     }
 
     private int getTopologyTimeoutMillis(Map stormConf) {
@@ -165,8 +168,7 @@ public class WindowedBoltExecutor implements IRichBolt {
             slidingIntervalCount = new Count(1);
         }
         // tuple ts
-        if (stormConf.containsKey(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME)) {
-            tupleTsFieldName = (String) stormConf.get(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME);
+        if (timestampExtractor != null) {
             // late tuple stream
             lateTupleStream = (String) stormConf.get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
             if (lateTupleStream != null) {
@@ -229,7 +231,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     private boolean isTupleTs() {
-        return tupleTsFieldName != null;
+        return timestampExtractor != null;
     }
 
     private TriggerPolicy<Tuple> getTriggerPolicy(Count slidingIntervalCount, Duration slidingIntervalDuration,
@@ -279,7 +281,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     @Override
     public void execute(Tuple input) {
         if (isTupleTs()) {
-            long ts = input.getLongByField(tupleTsFieldName);
+            long ts = timestampExtractor.extractTimestamp(input);
             if (waterMarkEventGenerator.track(input.getSourceGlobalStreamId(), ts)) {
                 windowManager.add(input, ts);
             } else {

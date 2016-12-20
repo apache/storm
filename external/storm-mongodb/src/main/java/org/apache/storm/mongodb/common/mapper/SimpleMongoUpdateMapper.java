@@ -20,9 +20,15 @@ package org.apache.storm.mongodb.common.mapper;
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;
 
-public class SimpleMongoUpdateMapper implements MongoMapper {
+import java.util.List;
+
+public class SimpleMongoUpdateMapper extends SimpleMongoMapper implements MongoUpdateMapper {
 
     private String[] fields;
+
+    public SimpleMongoUpdateMapper(String... fields) {
+        this.fields = fields;
+    }
 
     @Override
     public Document toDocument(ITuple tuple) {

@@ -20,6 +20,7 @@ package org.apache.storm.topology.base;
 import org.apache.storm.Config;
 import org.apache.storm.state.State;
 import org.apache.storm.topology.IStatefulWindowedBolt;
+import org.apache.storm.windowing.TimestampExtractor;
 
 public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWindowedBolt implements IStatefulWindowedBolt<T> {
     /**
@@ -100,6 +101,15 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
     @Override
     public BaseStatefulWindowedBolt<T> withTimestampField(String fieldName) {
         super.withTimestampField(fieldName);
+        return this;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public BaseStatefulWindowedBolt<T> withTimestampExtractor(TimestampExtractor timestampExtractor) {
+        super.withTimestampExtractor(timestampExtractor);
         return this;
     }
 

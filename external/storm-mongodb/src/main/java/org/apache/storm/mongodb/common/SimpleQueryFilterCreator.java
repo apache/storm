@@ -22,6 +22,8 @@ import org.bson.conversions.Bson;
 
 import com.mongodb.client.model.Filters;
 
+import java.util.List;
+
 public class SimpleQueryFilterCreator implements QueryFilterCreator {
 
     private String field;
@@ -29,6 +31,11 @@ public class SimpleQueryFilterCreator implements QueryFilterCreator {
     @Override
     public Bson createFilter(ITuple tuple) {
         return Filters.eq(field, tuple.getValueByField(field));
+    }
+
+    @Override
+    public Bson createFilterByKeys(List<Object> keys) {
+        return Filters.eq("_id", MongoUtils.getID(keys));
     }
 
     public SimpleQueryFilterCreator withField(String field) {

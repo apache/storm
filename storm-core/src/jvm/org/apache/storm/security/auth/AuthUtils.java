@@ -30,6 +30,7 @@ import java.security.URIParameter;
 import java.security.MessageDigest;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -178,7 +179,7 @@ public class AuthUtils {
      * @param conf daemon configuration
      * @return the plugin
      */
-    public static IGroupMappingServiceProvider GetGroupMappingServiceProviderPlugin(Map conf) {
+    public static IGroupMappingServiceProvider GetGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
         IGroupMappingServiceProvider gmsp = null;
         try {
             String gmsp_klassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
@@ -318,11 +319,14 @@ public class AuthUtils {
         }
     }
 
-    private static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map conf,
+    public static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map<String, Object> conf,
             String klassName) {
         try {
-            IHttpCredentialsPlugin plugin = Utils.newInstance(klassName);
-            plugin.prepare(conf);
+            IHttpCredentialsPlugin plugin = null;
+            if (StringUtils.isNotBlank(klassName)) {
+                plugin = Utils.newInstance(klassName);
+                plugin.prepare(conf);
+            }
             return plugin;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -348,7 +352,7 @@ public class AuthUtils {
      */
     public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map conf) {
         String klassName = (String)conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
-        return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
+        return klassName == null ? null : AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
 
     private static final String USERNAME = "username";
