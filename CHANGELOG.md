@@ -186,6 +186,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2190: reduce contention between submission and scheduling
  * STORM-2239: Handle InterruptException in new Kafka spout
  * STORM-2238: Add Timestamp extractor for windowed bolt
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
