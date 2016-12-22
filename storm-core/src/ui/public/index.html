@@ -175,7 +175,6 @@ $(document).ready(function() {
               ]
             });
             $('#supervisor-summary [data-toggle="tooltip"]').tooltip();
-            //$('#bad-supervisor-summary [data-toggle="tooltip"]').tooltip();
             badSupervisorSummary.append(Mustache.render($(indexTemplate).filter("#bad-supervisor-summary-template").html(),response));
             //id, error
             dtAutoPage("#bad-supervisor-summary-table", {});
