@@ -291,4 +291,46 @@ public class TestBlacklistScheduler {
         }
 
     }
+
+    @Test
+    public void removeLongTimeDisappearFromCache(){
+        INimbus iNimbus=new TestUtilsForBlacklistScheduler.INimbusTest();
+
+        Map<String, SupervisorDetails> supMap=TestUtilsForBlacklistScheduler.genSupervisors(3,4);
+
+        Config config = new Config();
+        config.putAll(Utils.readDefaultConfig());
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME,200);
+        config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT,2);
+        config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME,300);
+        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
+
+        TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2,true);
+        topoMap.put(topo1.getId(), topo1);
+
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
+        Topologies topologies = new Topologies(topoMap);
+        BlacklistScheduler bs=new BlacklistScheduler(new DefaultScheduler());
+        bs.prepare(config);
+        bs.schedule(topologies,cluster);
+        cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap,"sup-0"),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), config);
+        for(int i=0;i<20;i++){
+            bs.schedule(topologies,cluster);
+        }
+        Set<String> cached=new HashSet<>();
+        cached.add("sup-1");
+        cached.add("sup-2");
+        Assert.assertEquals(cached,bs.cachedSupervisors.keySet());
+        cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
+        bs.schedule(topologies,cluster);
+        cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removePortFromSupervisors(supMap,"sup-0",0),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), config);
+        for(int i=0;i<20;i++){
+            bs.schedule(topologies,cluster);
+        }
+        Set<Integer> cachedPorts=new HashSet<>();
+        cachedPorts.add(1);
+        cachedPorts.add(2);
+        cachedPorts.add(3);
+        Assert.assertEquals(cachedPorts,bs.cachedSupervisors.get("sup-0"));
+    }
 }

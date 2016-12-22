@@ -41,19 +41,19 @@ public class BlacklistScheduler implements IScheduler {
     @SuppressWarnings("rawtypes")
     private Map _conf;
 
-    private int toleranceTime;
-    private int toleranceCount;
-    private int resumeTime;
-    private IReporter reporter;
-    private IBlacklistStrategy blacklistStrategy;
+    protected int toleranceTime;
+    protected int toleranceCount;
+    protected int resumeTime;
+    protected IReporter reporter;
+    protected IBlacklistStrategy blacklistStrategy;
 
-    private int nimbusMonitorFreqSecs;
+    protected int nimbusMonitorFreqSecs;
 
-    private Map<String, Set<Integer>> cachedSupervisors;
+    protected Map<String, Set<Integer>> cachedSupervisors;
 
     //key is supervisor key ,value is supervisor ports
-    private CircularBuffer<HashMap<String, Set<Integer>>> badSupervisorsTolerance;
-    private Set<String> blacklistHost;
+    protected CircularBuffer<HashMap<String, Set<Integer>>> badSupervisorsTolerance;
+    protected Set<String> blacklistHost;
 
     public BlacklistScheduler(IScheduler underlyingScheduler) {
         this.underlyingScheduler = underlyingScheduler;
@@ -202,8 +202,11 @@ public class BlacklistScheduler implements IScheduler {
                 if (supervisorCountMap.containsKey(supervisor)) {
                     supervisorCount = supervisorCountMap.get(supervisor);
                 }
-                supervisorCountMap.put(supervisor, supervisorCount + 1);
-                for (Integer slot : item.get(supervisor)) {
+                Set<Integer> slots = item.get(supervisor);
+                if(slots.equals(cachedSupervisors.get(supervisor))){//only all slots are bad means supervisor is bad
+                    supervisorCountMap.put(supervisor, supervisorCount + 1);
+                }
+                for (Integer slot : slots) {
                     int slotCount = 0;
                     WorkerSlot workerSlot = new WorkerSlot(supervisor, slot);
                     if (slotCountMap.containsKey(workerSlot)) {
@@ -233,8 +236,8 @@ public class BlacklistScheduler implements IScheduler {
                 Set<Integer> slots = cachedSupervisors.get(supervisorKey);
                 if (slots != null) {//slots will be null while supervisor has been removed from cached supervisors
                     slots.remove(slot);
+                    cachedSupervisors.put(supervisorKey, slots);
                 }
-                cachedSupervisors.put(supervisorKey, slots);
                 LOG.info("slot {} has never exited once during tolerance time, proberbly be dead forever, removed from cache.", workerSlot);
             }
         }
