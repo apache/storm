@@ -129,6 +129,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
  * STORM-2216: Favor JSONValue.parseWithException
  * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
