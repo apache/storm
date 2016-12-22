@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2222: Repeated NPEs thrown in nimbus if rebalance fails
  * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
  * STORM-2216: Favor JSONValue.parseWithException
