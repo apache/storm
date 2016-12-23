@@ -41,11 +41,6 @@ public class KafkaSpoutStreamsWildcardTopics implements KafkaSpoutStreams {
     }
 
     @Override
-    public Fields getOutputFields() {
-        return kafkaSpoutStream.getOutputFields();
-    }
-
-    @Override
     public void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId) {
         kafkaSpoutStream.emit(collector, tuple, messageId);
     }
