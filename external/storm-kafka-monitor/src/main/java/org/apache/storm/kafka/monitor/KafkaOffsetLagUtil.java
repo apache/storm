@@ -35,6 +35,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.json.simple.JSONArray;
 import org.json.simple.JSONValue;
 
 import java.util.ArrayList;
