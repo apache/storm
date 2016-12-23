@@ -351,6 +351,7 @@
  * STORM-1585: Add DDL support for UDFs in storm-sql
 
 ## 1.0.0
+ * STORM-2223: PMML Bolt
  * STORM-1671: Enable logviewer to delete a dir without yaml
  * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
  * STORM-1669: Fix SolrUpdateBolt flush bug
