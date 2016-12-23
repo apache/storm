@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2223: PMML Bolt.
  * STORM-2222: Repeated NPEs thrown in nimbus if rebalance fails
  * STORM-2190: reduce contention between submission and scheduling
  * STORM-2239: Handle InterruptException in new Kafka spout
