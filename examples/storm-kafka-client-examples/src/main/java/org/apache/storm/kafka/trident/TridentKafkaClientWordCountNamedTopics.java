@@ -33,6 +33,12 @@ import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
@@ -59,7 +65,7 @@ public class TridentKafkaClientWordCountNamedTopics {
         public List<Object> apply(ConsumerRecord<String, String> record) {
             return new Values(record.value());
         }
-    }
+    };
 
     protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
         return KafkaSpoutConfig.builder(KAFKA_LOCAL_BROKER, TOPIC_1, TOPIC_2)
@@ -82,7 +88,7 @@ public class TridentKafkaClientWordCountNamedTopics {
         new TridentKafkaClientWordCountNamedTopics().run(args);
     }
 
-    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, InterruptedException {
         if (args.length > 0 && Arrays.binarySearch(args, "-h") >= 0) {
             System.out.printf("Usage: java %s [%s] [%s] [%s] [%s]\n", getClass().getName(),
                     "broker_host:broker_port", "topic1", "topic2", "topology_name");
@@ -101,6 +107,11 @@ public class TridentKafkaClientWordCountNamedTopics {
                 StormSubmitter.submitTopology(topic2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
                 // Consumer
                 StormSubmitter.submitTopology("topics-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque()));
+
+                // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+                Thread.sleep(2000);
+                DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
+
             } else { //Submit Local
 
                 final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
