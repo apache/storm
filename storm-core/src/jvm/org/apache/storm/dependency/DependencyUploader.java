@@ -18,7 +18,6 @@
 package org.apache.storm.dependency;
 
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang.StringUtils;
 import org.apache.storm.blobstore.AtomicOutputStream;
 import org.apache.storm.blobstore.BlobStoreUtils;
 import org.apache.storm.blobstore.ClientBlobStore;
@@ -38,7 +37,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 public class DependencyUploader {
     public static final Logger LOG = LoggerFactory.getLogger(DependencyUploader.class);
@@ -51,9 +49,7 @@ public class DependencyUploader {
     }
 
     public void init() {
-        if (blobStore == null) {
-            blobStore = Utils.getClientBlobStore(conf);
-        }
+        //NOOP
     }
 
     public void shutdown() {
@@ -67,7 +63,13 @@ public class DependencyUploader {
         this.blobStore = blobStore;
     }
 
-    @SuppressWarnings("unchecked")
+    private synchronized ClientBlobStore getBlobStore() {
+        if (blobStore == null) {
+            blobStore = Utils.getClientBlobStore(conf);
+        }
+        return blobStore;
+    }
+
     public List<String> uploadFiles(List<File> dependencies, boolean cleanupIfFails) throws IOException, AuthorizationException {
         checkFilesExist(dependencies);
 
@@ -87,7 +89,7 @@ public class DependencyUploader {
                 keys.add(key);
             }
         } catch (Throwable e) {
-            if (blobStore != null && cleanupIfFails) {
+            if (getBlobStore() != null && cleanupIfFails) {
                 deleteBlobs(keys);
             }
             throw new RuntimeException(e);
@@ -124,7 +126,7 @@ public class DependencyUploader {
     public void deleteBlobs(List<String> keys) {
         for (String key : keys) {
             try {
-                blobStore.deleteBlob(key);
+                getBlobStore().deleteBlob(key);
             } catch (Throwable e) {
                 LOG.warn("blob delete failed - key: {} continue...", key);
             }
@@ -142,10 +144,10 @@ public class DependencyUploader {
         try {
             // FIXME: we can filter by listKeys() with local blobstore when STORM-1986 is going to be resolved
             // as a workaround, we call getBlobMeta() for all keys
-            blobStore.getBlobMeta(key);
+            getBlobStore().getBlobMeta(key);
         } catch (KeyNotFoundException e) {
             // TODO: do we want to add ACL here?
-            AtomicOutputStream blob = blobStore
+            AtomicOutputStream blob = getBlobStore()
                     .createBlob(key, new SettableBlobMeta(new ArrayList<AccessControl>()));
             Files.copy(dependency.toPath(), blob);
             blob.close();

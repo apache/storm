@@ -18,7 +18,6 @@
 package org.apache.storm.utils;
 
 import org.apache.storm.Config;
-import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
@@ -78,32 +77,36 @@ public class NimbusClient extends ThriftClient {
 
         for (String host : seeds) {
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
-            ClusterSummary clusterInfo;
-            try (NimbusClient client = new NimbusClient(conf, host, port, null, asUser)) {
-                clusterInfo = client.getClient().getClusterInfo();
+            NimbusSummary nimbusSummary;
+            NimbusClient client = null;
+            try {
+                client = new NimbusClient(conf, host, port, null, asUser);
+                nimbusSummary = client.getClient().getLeader();
+                if (nimbusSummary != null) {
+                    String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
+                    LOG.info("Found leader nimbus : {}", leaderNimbus);
+                    if (nimbusSummary.get_host().equals(host) && nimbusSummary.get_port() == port) {
+                        NimbusClient ret = client;
+                        client = null;
+                        return ret;
+                    }
+                    try {
+                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
+                    } catch (TTransportException e) {
+                        throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
+                    }
+                }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
                         + ". will retry with a different seed host.", e);
                 continue;
-            }
-            List<NimbusSummary> nimbuses = clusterInfo.get_nimbuses();
-            if (nimbuses != null) {
-                for (NimbusSummary nimbusSummary : nimbuses) {
-                    if (nimbusSummary.is_isLeader()) {
-                        String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
-                        LOG.info("Found leader nimbus : {}", leaderNimbus);
-
-                        try {
-                            return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
-                        } catch (TTransportException e) {
-                            throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
-                        }
-                    }
+            } finally {
+                if (client != null) {
+                    client.close();
                 }
-                throw new NimbusLeaderNotFoundException(
-                        "Found nimbuses " + nimbuses + " none of which is elected as leader, please try " +
-                        "again after some time.");
             }
+            throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try " +
+                    "again after some time.");
         }
         throw new NimbusLeaderNotFoundException(
                 "Could not find leader nimbus from seed hosts " + seeds + ". " +

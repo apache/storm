@@ -1,4 +1,9 @@
 ## 2.0.0
+ * STORM-2217: Finish porting drpc to java
+ * STORM-1308: port backtype.storm.tick-tuple-test to java
+ * STORM-2245: integration-test constant compilation failure
+ * STORM-1607: Add MongoMapState for supporting trident's exactly once semantics
+ * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2104: More graceful handling of acked/failed tuples after partition reassignment
  * STORM-1281: LocalCluster, testing4j and testing.clj to java
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
@@ -181,6 +186,10 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2190: reduce contention between submission and scheduling
+ * STORM-2239: Handle InterruptException in new Kafka spout
+ * STORM-2238: Add Timestamp extractor for windowed bolt
+ * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-2235: Introduce new option: 'add remote repositories' for dependency resolver
  * STORM-2215: validate blobs are present before submitting
  * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
@@ -256,6 +265,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
  * STORM-2216: Favor JSONValue.parseWithException
  * STORM-2208: HDFS State Throws FileNotFoundException in Azure Data Lake Store file system (adl://)
@@ -341,6 +351,7 @@
  * STORM-1585: Add DDL support for UDFs in storm-sql
 
 ## 1.0.0
+ * STORM-2223: PMML Bolt
  * STORM-1671: Enable logviewer to delete a dir without yaml
  * STORM-1673: log4j2/worker.xml refers old package of LoggerMetricsConsumer
  * STORM-1669: Fix SolrUpdateBolt flush bug

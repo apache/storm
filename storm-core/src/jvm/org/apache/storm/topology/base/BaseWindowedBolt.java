@@ -22,6 +22,8 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IWindowedBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.TupleFieldTimestampExtractor;
+import org.apache.storm.windowing.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     private static final Logger LOG = LoggerFactory.getLogger(BaseWindowedBolt.class);
 
     protected final transient Map<String, Object> windowConfiguration;
+    protected TimestampExtractor timestampExtractor;
 
     /**
      * Holds a count value for count based windows and sliding intervals.
@@ -250,8 +253,25 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * @param fieldName the name of the field that contains the timestamp
      */
     public BaseWindowedBolt withTimestampField(String fieldName) {
-        windowConfiguration.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, fieldName);
+        return withTimestampExtractor(TupleFieldTimestampExtractor.of(fieldName));
+    }
+
+    /**
+     * Specify the timestamp extractor implementation.
+     *
+     * @param timestampExtractor the {@link TimestampExtractor} implementation
+     */
+    public BaseWindowedBolt withTimestampExtractor(TimestampExtractor timestampExtractor) {
+        if (this.timestampExtractor != null) {
+            throw new IllegalArgumentException("Window is already configured with a timestamp extractor: " + timestampExtractor);
+        }
+        this.timestampExtractor = timestampExtractor;
         return this;
+    }
+
+    @Override
+    public TimestampExtractor getTimestampExtractor() {
+        return timestampExtractor;
     }
 
     /**

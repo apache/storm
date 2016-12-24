@@ -21,18 +21,13 @@ import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.mongodb.common.mapper.MongoUpdateMapper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.mongodb.bolt.MongoInsertBolt;
 import org.apache.storm.mongodb.bolt.MongoUpdateBolt;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.SimpleQueryFilterCreator;
-import org.apache.storm.mongodb.common.mapper.MongoMapper;
-import org.apache.storm.mongodb.common.mapper.SimpleMongoMapper;
 import org.apache.storm.mongodb.common.mapper.SimpleMongoUpdateMapper;
-
-import java.util.HashMap;
-import java.util.Map;
 
 public class UpdateWordCount {
     private static final String WORD_SPOUT = "WORD_SPOUT";
@@ -57,16 +52,19 @@ public class UpdateWordCount {
         WordSpout spout = new WordSpout();
         WordCounter bolt = new WordCounter();
 
-        MongoMapper mapper = new SimpleMongoUpdateMapper()
+        MongoUpdateMapper mapper = new SimpleMongoUpdateMapper()
                 .withFields("word", "count");
 
-        QueryFilterCreator updateQueryCreator = new SimpleQueryFilterCreator()
+        QueryFilterCreator filterCreator = new SimpleQueryFilterCreator()
                 .withField("word");
         
-        MongoUpdateBolt updateBolt = new MongoUpdateBolt(url, collectionName, updateQueryCreator , mapper);
+        MongoUpdateBolt updateBolt = new MongoUpdateBolt(url, collectionName, filterCreator, mapper);
 
         //if a new document should be inserted if there are no matches to the query filter
         //updateBolt.withUpsert(true);
+
+        //whether find all documents according to the query filter
+        //updateBolt.withMany(true);
 
         // wordSpout ==> countBolt ==> MongoUpdateBolt
         TopologyBuilder builder = new TopologyBuilder();
