@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -77,11 +78,10 @@ public class ExclamationTopology {
     }
     else {
 
-      LocalCluster cluster = new LocalCluster();
-      cluster.submitTopology("test", conf, builder.createTopology());
-      Utils.sleep(10000);
-      cluster.killTopology("test");
-      cluster.shutdown();
+      try (LocalCluster cluster = new LocalCluster();
+           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
+        Utils.sleep(10000);
+      }
     }
   }
 }

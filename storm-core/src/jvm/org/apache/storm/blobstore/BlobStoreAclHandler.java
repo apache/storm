@@ -54,6 +54,7 @@ public class BlobStoreAclHandler {
     public static final List<AccessControl> DEFAULT = new ArrayList<AccessControl>();
     private Set<String> _supervisors;
     private Set<String> _admins;
+    private boolean doAclValidation;
 
     public BlobStoreAclHandler(Map conf) {
         _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
@@ -64,6 +65,9 @@ public class BlobStoreAclHandler {
         }
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
             _admins.addAll((List<String>)conf.get(Config.NIMBUS_ADMINS));
+        }
+        if (conf.containsKey(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED)) {
+           doAclValidation = (boolean)conf.get(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED);
         }
     }
 
@@ -245,6 +249,9 @@ public class BlobStoreAclHandler {
      * @throws AuthorizationException
      */
     public void hasAnyPermissions(List<AccessControl> acl, int mask, Subject who, String key) throws AuthorizationException {
+        if (!doAclValidation) {
+            return;
+        }
         Set<String> user = constructUserFromPrincipals(who);
         LOG.debug("user {}", user);
         if (checkForValidUsers(who, mask)) {
@@ -275,6 +282,9 @@ public class BlobStoreAclHandler {
      * @throws AuthorizationException
      */
     public void hasPermissions(List<AccessControl> acl, int mask, Subject who, String key) throws AuthorizationException {
+        if (!doAclValidation) {
+            return;
+        }
         Set<String> user = constructUserFromPrincipals(who);
         LOG.debug("user {}", user);
         if (checkForValidUsers(who, mask)) {

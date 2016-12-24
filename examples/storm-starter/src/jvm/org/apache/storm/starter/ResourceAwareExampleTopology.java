@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -59,7 +60,7 @@ public class ResourceAwareExampleTopology {
   public static void main(String[] args) throws Exception {
     TopologyBuilder builder = new TopologyBuilder();
 
-    SpoutDeclarer spout =  builder.setSpout("word", new TestWordSpout(), 10);
+    SpoutDeclarer spout =  builder.setSpout("word", new TestWordSpout(), 5);
     //set cpu requirement
     spout.setCPULoad(20);
     //set onheap and offheap memory requirement
@@ -96,11 +97,10 @@ public class ResourceAwareExampleTopology {
     }
     else {
 
-      LocalCluster cluster = new LocalCluster();
-      cluster.submitTopology("test", conf, builder.createTopology());
-      Utils.sleep(10000);
-      cluster.killTopology("test");
-      cluster.shutdown();
+      try (LocalCluster cluster = new LocalCluster();
+           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
+        Utils.sleep(10000);
+      }
     }
   }
 }

@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.testing.FeederSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
@@ -27,7 +28,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.starter.bolt.SingleJoinBolt;
 
 public class SingleJoinExample {
-  public static void main(String[] args) {
+  public static void main(String[] args) throws Exception {
     FeederSpout genderSpout = new FeederSpout(new Fields("id", "gender"));
     FeederSpout ageSpout = new FeederSpout(new Fields("id", "age"));
 
@@ -40,25 +41,25 @@ public class SingleJoinExample {
     Config conf = new Config();
     conf.setDebug(true);
 
-    LocalCluster cluster = new LocalCluster();
-    cluster.submitTopology("join-example", conf, builder.createTopology());
+    try (LocalCluster cluster = new LocalCluster();
+         LocalTopology topo = cluster.submitTopology("join-example", conf, builder.createTopology());) {
 
-    for (int i = 0; i < 10; i++) {
-      String gender;
-      if (i % 2 == 0) {
-        gender = "male";
+      for (int i = 0; i < 10; i++) {
+        String gender;
+        if (i % 2 == 0) {
+          gender = "male";
+        }
+        else {
+          gender = "female";
+        }
+        genderSpout.feed(new Values(i, gender));
       }
-      else {
-        gender = "female";
+
+      for (int i = 9; i >= 0; i--) {
+        ageSpout.feed(new Values(i, i + 20));
       }
-      genderSpout.feed(new Values(i, gender));
-    }
 
-    for (int i = 9; i >= 0; i--) {
-      ageSpout.feed(new Values(i, i + 20));
+      Utils.sleep(2000);
     }
-
-    Utils.sleep(2000);
-    cluster.shutdown();
   }
 }

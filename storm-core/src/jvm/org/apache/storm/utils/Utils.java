@@ -17,49 +17,6 @@
  */
 package org.apache.storm.utils;
 
-import org.apache.commons.exec.CommandLine;
-import org.apache.commons.exec.DefaultExecutor;
-import org.apache.commons.exec.ExecuteException;
-import org.apache.commons.io.FileUtils;
-import org.apache.commons.io.IOUtils;
-import org.apache.storm.Config;
-import org.apache.storm.blobstore.BlobStore;
-import org.apache.storm.blobstore.BlobStoreAclHandler;
-import org.apache.storm.blobstore.ClientBlobStore;
-import org.apache.storm.blobstore.InputStreamWithMeta;
-import org.apache.storm.blobstore.LocalFsBlobStore;
-import org.apache.storm.daemon.JarTransformer;
-import org.apache.storm.generated.*;
-import org.apache.storm.localizer.Localizer;
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.serialization.DefaultSerializationDelegate;
-import org.apache.storm.serialization.SerializationDelegate;
-import clojure.lang.RT;
-import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
-import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
-import org.apache.commons.io.input.ClassLoaderObjectInputStream;
-import org.apache.commons.lang.StringUtils;
-import org.apache.curator.ensemble.exhibitor.DefaultExhibitorRestClient;
-import org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
-import org.apache.curator.ensemble.exhibitor.Exhibitors;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.framework.CuratorFrameworkFactory;
-import org.apache.thrift.TBase;
-import org.apache.thrift.TDeserializer;
-import org.apache.thrift.TException;
-import org.apache.thrift.TSerializer;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
-import org.apache.zookeeper.data.Id;
-import org.eclipse.jetty.util.log.Log;
-import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.SafeConstructor;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -72,7 +29,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 import java.io.FileWriter;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -85,13 +41,13 @@ import java.io.RandomAccessFile;
 import java.io.Serializable;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
+import java.net.ServerSocket;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFilePermission;
 import java.util.ArrayList;
@@ -119,6 +75,65 @@ import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
+import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.exec.CommandLine;
+import org.apache.commons.exec.DefaultExecutor;
+import org.apache.commons.exec.ExecuteException;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.io.input.ClassLoaderObjectInputStream;
+import org.apache.commons.lang.StringUtils;
+import org.apache.curator.ensemble.exhibitor.DefaultExhibitorRestClient;
+import org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
+import org.apache.curator.ensemble.exhibitor.Exhibitors;
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.curator.framework.CuratorFrameworkFactory;
+import org.apache.storm.Config;
+import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
+import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.InputStreamWithMeta;
+import org.apache.storm.blobstore.LocalFsBlobStore;
+import org.apache.storm.daemon.JarTransformer;
+import org.apache.storm.generated.AccessControl;
+import org.apache.storm.generated.AccessControlType;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.ComponentObject;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.localizer.Localizer;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.serialization.DefaultSerializationDelegate;
+import org.apache.storm.serialization.SerializationDelegate;
+import org.apache.thrift.TBase;
+import org.apache.thrift.TDeserializer;
+import org.apache.thrift.TException;
+import org.apache.thrift.TSerializer;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
+import org.apache.zookeeper.data.Id;
+import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
+
+import com.google.common.annotations.VisibleForTesting;
+
+import clojure.lang.Keyword;
+import clojure.lang.RT;
+
 public class Utils {
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
@@ -137,7 +152,7 @@ public class Utils {
         return oldInstance;
     }
 
-    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final String CURRENT_BLOB_SUFFIX_ID = "current";
@@ -146,7 +161,7 @@ public class Utils {
     private static ThreadLocal<TDeserializer> threadDes = new ThreadLocal<TDeserializer>();
 
     private static SerializationDelegate serializationDelegate;
-    private static ClassLoader cl = ClassLoader.getSystemClassLoader();
+    private static ClassLoader cl = null;
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
@@ -156,10 +171,11 @@ public class Utils {
     public static final int SIGTERM = 15;
 
     static {
-        Map conf = readStormConfig();
+        Map<String, Object> conf = readStormConfig();
         serializationDelegate = getSerializationDelegate(conf);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> T newInstance(String klass) {
         try {
             return newInstance((Class<T>)Class.forName(klass));
@@ -197,11 +213,11 @@ public class Utils {
         return serializationDelegate.deserialize(serialized, clazz);
     }
 
-    public static <T> T thriftDeserialize(Class c, byte[] b, int offset, int length) {
+    public static <T> T thriftDeserialize(Class<T> c, byte[] b, int offset, int length) {
         try {
-            T ret = (T) c.newInstance();
+            T ret = c.newInstance();
             TDeserializer des = getDes();
-            des.deserialize((TBase)ret, b, offset, length);
+            des.deserialize((TBase) ret, b, offset, length);
             return ret;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -223,7 +239,13 @@ public class Utils {
     public static <T> T javaDeserialize(byte[] serialized, Class<T> clazz) {
         try {
             ByteArrayInputStream bis = new ByteArrayInputStream(serialized);
-            ObjectInputStream ois = new ClassLoaderObjectInputStream(cl, bis);
+            ObjectInputStream ois = null;
+            if (null == cl) {
+                ois = new ObjectInputStream(bis);
+            } else {
+                // Use custom class loader set in testing environment
+                ois = new ClassLoaderObjectInputStream(cl, bis);
+            }
             Object ret = ois.readObject();
             ois.close();
             return (T)ret;
@@ -283,9 +305,7 @@ public class Utils {
             Object ret = JSONValue.parseWithException(in);
             in.close();
             return (Map<String,Object>)ret;
-        } catch (IOException ioe) {
-            throw new RuntimeException(ioe);
-        } catch (ParseException e) {
+        } catch (IOException | ParseException e) {
             throw new RuntimeException(e);
         }
     }
@@ -300,6 +320,14 @@ public class Utils {
             }
         }
         return ret.toString();
+    }
+
+    public static long bitXorVals(List<Long> coll) {
+        long result = 0;
+        for (Long val : coll) {
+            result ^= val;
+        }
+        return result;
     }
 
     public static void sleep(long millis) {
@@ -323,16 +351,17 @@ public class Utils {
         }
     }
 
-    public static Map findAndReadConfigFile(String name, boolean mustExist) {
+    public static Map<String, Object> findAndReadConfigFile(String name, boolean mustExist) {
         InputStream in = null;
         boolean confFileEmpty = false;
         try {
             in = getConfigFileInputStream(name);
             if (null != in) {
                 Yaml yaml = new Yaml(new SafeConstructor());
-                Map ret = (Map) yaml.load(new InputStreamReader(in));
+                @SuppressWarnings("unchecked")
+                Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(in));
                 if (null != ret) {
-                    return new HashMap(ret);
+                    return new HashMap<>(ret);
                 } else {
                     confFileEmpty = true;
                 }
@@ -344,7 +373,7 @@ public class Utils {
                 else
                     throw new RuntimeException("Could not find config file on classpath " + name);
             } else {
-                return new HashMap();
+                return new HashMap<>();
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -386,19 +415,29 @@ public class Utils {
     }
 
 
-    public static Map findAndReadConfigFile(String name) {
+    public static Map<String, Object> findAndReadConfigFile(String name) {
         return findAndReadConfigFile(name, true);
     }
 
-    public static Map readDefaultConfig() {
+    public static Map<String, Object> readDefaultConfig() {
         return findAndReadConfigFile("defaults.yaml", true);
     }
 
-    public static Map readCommandLineOpts() {
-        Map ret = new HashMap();
+    public static Map<String, Object> readCommandLineOpts() {
+        Map<String, Object> ret = new HashMap<>();
         String commandOptions = System.getProperty("storm.options");
         if (commandOptions != null) {
-            String[] configs = commandOptions.split(",");
+            /*
+             Below regex uses negative lookahead to not split in the middle of json objects '{}'
+             or json arrays '[]'. This is needed to parse valid json object/arrays passed as options
+             via 'storm.cmd' in windows. This is not an issue while using 'storm.py' since it url-encodes
+             the options and the below regex just does a split on the commas that separates each option.
+
+             Note:- This regex handles only valid json strings and could produce invalid results
+             if the options contain un-encoded invalid json or strings with unmatched '[, ], { or }'. We can
+             replace below code with split(",") once 'storm.cmd' is fixed to send url-encoded options.
+              */
+            String[] configs = commandOptions.split(",(?![^\\[\\]{}]*(]|}))");
             for (String config : configs) {
                 config = URLDecoder.decode(config);
                 String[] options = config.split("=", 2);
@@ -416,10 +455,10 @@ public class Utils {
         return ret;
     }
 
-    public static Map readStormConfig() {
-        Map ret = readDefaultConfig();
+    public static Map<String, Object> readStormConfig() {
+        Map<String, Object> ret = readDefaultConfig();
         String confFile = System.getProperty("storm.conf.file");
-        Map storm;
+        Map<String, Object> storm;
         if (confFile == null || confFile.equals("")) {
             storm = findAndReadConfigFile("storm.yaml", false);
         } else {
@@ -528,6 +567,11 @@ public class Utils {
      */
     public static void downloadResourcesAsSupervisor(String key, String localFile,
                                                      ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
+        _instance.downloadResourcesAsSupervisorImpl(key, localFile, cb);
+    }
+
+    public void downloadResourcesAsSupervisorImpl(String key, String localFile,
+            ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException, IOException {
         final int MAX_RETRY_ATTEMPTS = 2;
         final int ATTEMPTS_INTERVAL_TIME = 100;
         for (int retryAttempts = 0; retryAttempts < MAX_RETRY_ATTEMPTS; retryAttempts++) {
@@ -546,11 +590,8 @@ public class Utils {
 
     private static boolean downloadResourcesAsSupervisorAttempt(ClientBlobStore cb, String key, String localFile) {
         boolean isSuccess = false;
-        FileOutputStream out = null;
-        InputStreamWithMeta in = null;
-        try {
-            out = new FileOutputStream(localFile);
-            in = cb.getBlob(key);
+        try (FileOutputStream out = new FileOutputStream(localFile);
+                InputStreamWithMeta in = cb.getBlob(key);) {
             long fileSize = in.getFileLength();
 
             byte[] buffer = new byte[1024];
@@ -564,17 +605,6 @@ public class Utils {
             isSuccess = (fileSize == downloadFileSize);
         } catch (TException | IOException e) {
             LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
-        } finally {
-            try {
-                if (out != null) {
-                    out.close();
-                }
-            } catch (IOException ignored) {}
-            try {
-                if (in != null) {
-                    in.close();
-                }
-            } catch (IOException ignored) {}
         }
         if (!isSuccess) {
             try {
@@ -586,12 +616,21 @@ public class Utils {
         return isSuccess;
     }
 
+    public static boolean checkFileExists(File path) {
+        return Files.exists(path.toPath());
+    }
+    
     public static boolean checkFileExists(String path) {
         return Files.exists(new File(path).toPath());
     }
 
     public static boolean checkFileExists(String dir, String file) {
-        return Files.exists(new File(dir, file).toPath());
+        return checkFileExists(dir + FILE_PATH_SEPARATOR + file);
+    }
+
+    public static boolean CheckDirExists(String dir) {
+        File file = new File(dir);
+        return file.isDirectory();
     }
 
     public static long nimbusVersionOfBlob(String key, ClientBlobStore cb) throws AuthorizationException, KeyNotFoundException {
@@ -736,7 +775,7 @@ public class Utils {
         }
     }
 
-    public static <T> T thriftDeserialize(Class c, byte[] b) {
+    public static <T> T thriftDeserialize(Class<T> c, byte[] b) {
         try {
             return Utils.thriftDeserialize(c, b, 0, b.length);
         } catch (Exception e) {
@@ -1040,6 +1079,10 @@ public class Utils {
         return newCurator(conf, servers, port, root, null);
     }
 
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
+        return newCurator(conf, servers, port, "", auth);
+    }
+
     public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         List<String> serverPorts = new ArrayList<String>();
         for (String zkServer : servers) {
@@ -1095,18 +1138,16 @@ public class Utils {
         setupBuilder(builder, zkStr, conf, auth);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
-        return newCurator(conf, servers, port, "", auth);
-    }
-
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth);
+        LOG.info("Starting Utils Curator...");
         ret.start();
         return ret;
     }
 
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, auth);
+        LOG.info("Starting Utils Curator (2)...");
         ret.start();
         return ret;
     }
@@ -1245,6 +1286,10 @@ public class Utils {
             dump.append('"');
             dump.append(threadInfo.getThreadName());
             dump.append("\" ");
+            dump.append("\n   lock: ");
+            dump.append(threadInfo.getLockName());
+            dump.append(" owner: ");
+            dump.append(threadInfo.getLockOwnerName());
             final Thread.State state = threadInfo.getThreadState();
             dump.append("\n   java.lang.Thread.State: ");
             dump.append(state);
@@ -1294,6 +1339,25 @@ public class Utils {
         }
     }
 
+    public static void validateTopologyBlobStoreMap(Map<String, ?> stormConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> blobStoreMap = (Map<String, Object>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        if (blobStoreMap != null) {
+            Set<String> mapKeys = blobStoreMap.keySet();
+            Set<String> missingKeys = new HashSet<>();
+
+            for (String key : mapKeys) {
+                if (!blobStoreKeys.contains(key)) {
+                    missingKeys.add(key);
+                }
+            }
+            if (!missingKeys.isEmpty()) {
+                throw new InvalidTopologyException("The topology blob store map does not " +
+                        "contain the valid keys to launch the topology " + missingKeys);
+            }
+        }
+    }
+    
     /**
      * Given a File input it will unzip the file in a the unzip directory
      * passed as the second parameter
@@ -1379,13 +1443,16 @@ public class Utils {
             }
             if (memoryOpts != null) {
                 int unit = 1;
-                if (memoryOpts.toLowerCase().endsWith("k")) {
+                memoryOpts = memoryOpts.toLowerCase();
+
+                if (memoryOpts.endsWith("k")) {
                     unit = 1024;
-                } else if (memoryOpts.toLowerCase().endsWith("m")) {
+                } else if (memoryOpts.endsWith("m")) {
                     unit = 1024 * 1024;
-                } else if (memoryOpts.toLowerCase().endsWith("g")) {
+                } else if (memoryOpts.endsWith("g")) {
                     unit = 1024 * 1024 * 1024;
                 }
+
                 memoryOpts = memoryOpts.replaceAll("[a-zA-Z]", "");
                 Double result =  Double.parseDouble(memoryOpts) * unit / 1024.0 / 1024.0;
                 return (result < 1.0) ? 1.0 : result;
@@ -1408,21 +1475,29 @@ public class Utils {
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map stormConf) {
-        NimbusClient client = NimbusClient.getConfiguredClientAs(stormConf, asUser);
-        TopologyInfo topologyInfo = null;
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(stormConf, asUser)) {
+            String topologyId = getTopologyId(name, client.getClient());
+            if (null != topologyId) {
+                return client.getClient().getTopologyInfo(topologyId);
+            }
+            return null;
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String getTopologyId(String name, Nimbus.Client client) {
         try {
-            ClusterSummary summary = client.getClient().getClusterInfo();
+            ClusterSummary summary = client.getClusterInfo();
             for(TopologySummary s : summary.get_topologies()) {
                 if(s.get_name().equals(name)) {
-                    topologyInfo = client.getClient().getTopologyInfo(s.get_id());
+                    return s.get_id();
                 }
             }
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
-        return topologyInfo;
+        return null;
     }
 
     /**
@@ -1438,12 +1513,35 @@ public class Utils {
         return number & Integer.MAX_VALUE;
     }
 
+    public static GlobalStreamId getGlobalStreamId(String streamId, String componentId) {
+        if (componentId == null) {
+            return new GlobalStreamId(streamId, DEFAULT_STREAM_ID);
+        }
+        return new GlobalStreamId(streamId, componentId);
+    }
+
     public static RuntimeException wrapInRuntime(Exception e){
         if (e instanceof RuntimeException){
             return (RuntimeException)e;
         } else {
             return new RuntimeException(e);
         }
+    }
+
+    public static int getAvailablePort(int prefferedPort) {
+        int localPort = -1;
+        try(ServerSocket socket = new ServerSocket(prefferedPort)) {
+            localPort = socket.getLocalPort();
+        } catch(IOException exp) {
+            if (prefferedPort > 0) {
+                return getAvailablePort(0);
+            }
+        }
+        return localPort;
+    }
+
+    public static int getAvailablePort() {
+        return getAvailablePort(0);
     }
 
     /**
@@ -1454,7 +1552,7 @@ public class Utils {
      * @return boolean whether or not the directory exists in the zip.
      */
     public static boolean zipDoesContainDir(String zipfile, String target) throws IOException {
-        List<ZipEntry> entries = (List<ZipEntry>)Collections.list(new ZipFile(zipfile).entries());
+        List<ZipEntry> entries = (List<ZipEntry>) Collections.list(new ZipFile(zipfile).entries());
 
         String targetDir = target + "/";
         for(ZipEntry entry : entries) {
@@ -1589,16 +1687,18 @@ public class Utils {
 
     /**
      * Creates a new map with a string value in the map replaced with an
-     * equivalently-lengthed string of '#'.
+     * equivalently-lengthed string of '#'.  (If the object is not a string
+     * to string will be called on it and replaced) 
      * @param m The map that a value will be redacted from
      * @param key The key pointing to the value to be redacted
      * @return a new map with the value redacted. The original map will not be modified.
      */
-    public static Map<Object, String> redactValue(Map<Object, String> m, Object key) {
-        if(m.containsKey(key)) {
-            HashMap<Object, String> newMap = new HashMap<>(m);
-            String value = newMap.get(key);
-            String redacted = new String(new char[value.length()]).replace("\0", "#");
+    public static Map<String, Object> redactValue(Map<String, Object> m, String key) {
+        if (m.containsKey(key)) {
+            HashMap<String, Object> newMap = new HashMap<>(m);
+            Object value = newMap.get(key);
+            String v = value.toString();
+            String redacted = new String(new char[v.length()]).replace("\0", "#");
             newMap.put(key, redacted);
             return newMap;
         }
@@ -1645,7 +1745,7 @@ public class Utils {
         if(map == null) {
             return null;
         }
-        return findOne(pred, (Set<T>)map.entrySet());
+        return findOne(pred, (Set<T>) map.entrySet());
     }
 
     public static String localHostname () throws UnknownHostException {
@@ -1687,15 +1787,19 @@ public class Utils {
         return UUID.randomUUID().toString();
     }
 
-    public static void exitProcess (int val, Object... msg) {
-        StringBuilder errorMessage = new StringBuilder();
-        errorMessage.append("Halting process: ");
-        for (Object oneMessage: msg) {
-            errorMessage.append(oneMessage);
-        }
-        String combinedErrorMessage = errorMessage.toString();
+    public static void exitProcess (int val, String msg) {
+        String combinedErrorMessage = "Halting process: " + msg;
         LOG.error(combinedErrorMessage, new RuntimeException(combinedErrorMessage));
         Runtime.getRuntime().exit(val);
+    }
+
+    public static Runnable mkSuicideFn() {
+        return new Runnable() {
+            @Override
+            public void run() {
+                Utils.exitProcess(1, "Worker died");
+            }
+        };
     }
 
     /**
@@ -1785,9 +1889,12 @@ public class Utils {
      * @param jarpath Path to the jar file
      * @param dir Directory in the jar to pull out
      * @param destdir Path to the directory where the extracted directory will be put
-     *
      */
-    public static void extractDirFromJar(String jarpath, String dir, String destdir) {
+    public static void extractDirFromJar(String jarpath, String dir, File destdir) {
+        _instance.extractDirFromJarImpl(jarpath, dir, destdir);
+    }
+    
+    public void extractDirFromJarImpl(String jarpath, String dir, File destdir) {
         try (JarFile jarFile = new JarFile(jarpath)) {
             Enumeration<JarEntry> jarEnums = jarFile.entries();
             while (jarEnums.hasMoreElements()) {
@@ -1845,6 +1952,7 @@ public class Utils {
             public void run() {
                 try {
                     Time.sleepSecs(1);
+                    LOG.warn("Forceing Halt...");
                     Runtime.getRuntime().halt(20);
                 } catch (Exception e) {
                     LOG.warn("Exception in the ShutDownHook", e);
@@ -1879,7 +1987,7 @@ public class Utils {
         return dir + FILE_PATH_SEPARATOR + "launch_container.sh";
     }
 
-    public static Object nullToZero (Object v) {
+    public static double nullToZero (Double v) {
         return (v != null ? v : 0);
     }
 
@@ -1900,34 +2008,6 @@ public class Utils {
                 FileUtils.forceDelete(new File(path));
             } catch (FileNotFoundException ignored) {}
         }
-    }
-
-    /**
-     * Creates a symbolic link to the target
-     * @param dir the parent directory of the link
-     * @param targetDir the parent directory of the link's target
-     * @param targetFilename the file name of the links target
-     * @param filename the file name of the link
-     * @throws IOException
-     */
-    public static void createSymlink(String dir, String targetDir,
-            String targetFilename, String filename) throws IOException {
-        Path path = Paths.get(dir, filename).toAbsolutePath();
-        Path target = Paths.get(targetDir, targetFilename).toAbsolutePath();
-        LOG.debug("Creating symlink [{}] to [{}]", path, target);
-        if (!path.toFile().exists()) {
-            Files.createSymbolicLink(path, target);
-        }
-    }
-
-    /**
-     * Convenience method for the case when the link's file name should be the
-     * same as the file name of the target
-     */
-    public static void createSymlink(String dir, String targetDir,
-                                     String targetFilename) throws IOException {
-        Utils.createSymlink(dir, targetDir, targetFilename,
-                            targetFilename);
     }
 
     /**
@@ -1960,59 +2040,14 @@ public class Utils {
         return System.getProperty("java.class.path");
     }
 
-    /**
-     * Returns a collection of jar file names found under the given directory.
-     * @param dir the directory to search
-     * @return the jar file names
-     */
-    private static List<String> getFullJars(String dir) {
-        File[] files = new File(dir).listFiles(jarFilter);
-
-        if(files == null) {
-            return new ArrayList<>();
-        }
-
-        List<String> ret = new ArrayList<>(files.length);
-        for (File f : files) {
-            ret.add(Paths.get(dir, f.getName()).toString());
-        }
-        return ret;
-    }
-    private static final FilenameFilter jarFilter = new FilenameFilter() {
-            @Override
-            public boolean accept(File dir, String name) {
-                return name.endsWith(".jar");
-            }
-        };
-
-
-    public static String workerClasspath() {
-        String stormDir = System.getProperty("storm.home");
-
-        if (stormDir == null) {
-            return Utils.currentClasspath();
-        }
-
-        String stormLibDir = Paths.get(stormDir, "lib").toString();
-        String stormConfDir =
-                System.getenv("STORM_CONF_DIR") != null ?
-                System.getenv("STORM_CONF_DIR") :
-                Paths.get(stormDir, "conf").toString();
-        String stormExtlibDir = Paths.get(stormDir, "extlib").toString();
-        String extcp = System.getenv("STORM_EXT_CLASSPATH");
-        List<String> pathElements = new LinkedList<>();
-        pathElements.addAll(Utils.getFullJars(stormLibDir));
-        pathElements.addAll(Utils.getFullJars(stormExtlibDir));
-        pathElements.add(extcp);
-        pathElements.add(stormConfDir);
-
-        return StringUtils.join(pathElements,
-                CLASS_PATH_SEPARATOR);
-    }
-
     public static String addToClasspath(String classpath,
                 Collection<String> paths) {
         return _instance.addToClasspathImpl(classpath, paths);
+    }
+
+    public static String addToClasspath(Collection<String> classpaths,
+                Collection<String> paths) {
+        return _instance.addToClasspathImpl(classpaths, paths);
     }
 
     // Non-static impl methods exist for mocking purposes.
@@ -2025,6 +2060,18 @@ public class Utils {
         l.add(classpath);
         l.addAll(paths);
         return StringUtils.join(l, CLASS_PATH_SEPARATOR);
+    }
+
+    public String addToClasspathImpl(Collection<String> classpaths,
+                Collection<String> paths) {
+        List<String> allPaths = new ArrayList<>();
+        if(classpaths != null) {
+            allPaths.addAll(classpaths);
+        }
+        if(paths != null) {
+            allPaths.addAll(paths);
+        }
+        return StringUtils.join(allPaths, CLASS_PATH_SEPARATOR);
     }
 
     public static class UptimeComputer {
@@ -2046,6 +2093,16 @@ public class Utils {
     // Non-static impl methods exist for mocking purposes.
     public UptimeComputer makeUptimeComputerImpl() {
         return new UptimeComputer();
+    }
+
+    /**
+     * a or b the first one that is not null
+     * @param a something
+     * @param b something else
+     * @return a or b the first one that is not null
+     */
+    public static <V> V OR(V a, V b) {
+        return a == null ? b : a;
     }
 
     /**
@@ -2177,75 +2234,60 @@ public class Utils {
                 null);
     }
 
-    /**
-     * A callback that can accept an integer.
-     * @param <V> the result type of method <code>call</code>
-     */
-    public interface ExitCodeCallable<V> extends Callable<V> {
-        V call(int exitCode);
-    }
-
-    /**
-     * Launch a new process as per {@link java.lang.ProcessBuilder} with a given
-     * callback.
-     * @param command the command to be executed in the new process
-     * @param environment the environment to be applied to the process. Can be
-     *                    null.
-     * @param logPrefix a prefix for log entries from the output of the process.
-     *                  Can be null.
-     * @param exitCodeCallback code to be called passing the exit code value
-     *                         when the process completes
-     * @param dir the working directory of the new process
-     * @return the new process
-     * @throws IOException
-     * @see java.lang.ProcessBuilder
-     */
-    public static Process launchProcess(List<String> command,
-                                        Map<String,String> environment,
-                                        final String logPrefix,
-                                        final ExitCodeCallable exitCodeCallback,
-                                        File dir)
-            throws IOException {
-        return _instance.launchProcessImpl(command, environment, logPrefix,
-                exitCodeCallback, dir);
-    }
-
-    public Process launchProcessImpl(
-            List<String> command,
-            Map<String,String> cmdEnv,
-            final String logPrefix,
-            final ExitCodeCallable exitCodeCallback,
-            File dir)
-            throws IOException {
-        ProcessBuilder builder = new ProcessBuilder(command);
-        Map<String,String> procEnv = builder.environment();
-        if (dir != null) {
-            builder.directory(dir);
-        }
-        builder.redirectErrorStream(true);
-        if (cmdEnv != null) {
-            procEnv.putAll(cmdEnv);
-        }
-        final Process process = builder.start();
-        if (logPrefix != null || exitCodeCallback != null) {
-            Utils.asyncLoop(new Callable() {
-                public Object call() {
-                    if (logPrefix != null ) {
-                        Utils.readAndLogStream(logPrefix,
-                                process.getInputStream());
-                    }
-                    if (exitCodeCallback != null) {
-                        try {
-                            process.waitFor();
-                        } catch (InterruptedException ie) {
-                            LOG.info("{} interrupted", logPrefix);
-                            exitCodeCallback.call(process.exitValue());
-                        }
-                    }
-                    return null; // Run only once.
+    public static <T> List<T> interleaveAll(List<List<T>> nodeList) {
+        if (nodeList != null && nodeList.size() > 0) {
+            List<T> first = new ArrayList<T>();
+            List<List<T>> rest = new ArrayList<List<T>>();
+            for (List<T> node : nodeList) {
+                if (node != null && node.size() > 0) {
+                  first.add(node.get(0));
+                  rest.add(node.subList(1, node.size()));
                 }
-            });
+            }
+            List<T> interleaveRest = interleaveAll(rest);
+            if (interleaveRest != null) {
+                first.addAll(interleaveRest);
+            }
+            return first;
         }
-        return process;
+        return null;
+      }
+
+    public static long bitXor(Long a, Long b) {
+        return a ^ b;
+    }
+
+    public static List<String> getRepeat(List<String> list) {
+        List<String> rtn = new ArrayList<String>();
+        Set<String> idSet = new HashSet<String>();
+
+        for (String id : list) {
+            if (idSet.contains(id)) {
+                rtn.add(id);
+            } else {
+                idSet.add(id);
+            }
+        }
+
+        return rtn;
+    }
+
+    /**
+     * converts a clojure PersistentMap to java HashMap
+     */
+    public static Map<String, Object> convertClojureMapToJavaMap(Map map) {
+        Map<String, Object> ret = new HashMap<>(map.size());
+        for (Object obj : map.entrySet()) {
+            Map.Entry entry = (Map.Entry) obj;
+            Keyword keyword = (Keyword) entry.getKey();
+            String key = keyword.getName();
+            if (key.startsWith(":")) {
+                key = key.substring(1, key.length());
+            }
+            Object value = entry.getValue();
+            ret.put(key, value);
+        }
+
+        return ret;
     }
 }

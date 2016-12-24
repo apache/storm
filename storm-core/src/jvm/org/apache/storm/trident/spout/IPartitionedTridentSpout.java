@@ -18,12 +18,12 @@
 package org.apache.storm.trident.spout;
 
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
+import org.apache.storm.tuple.Fields;
+
+import java.util.List;
+import java.util.Map;
 
 /**
  * This interface defines a transactional spout that reads its tuples from a partitioned set of 
@@ -31,7 +31,7 @@ import org.apache.storm.trident.topology.TransactionAttempt;
  * is always emitted for the same transaction id. The partition metadata is stored in Zookeeper.
  */
 public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPartition, T> extends ITridentDataSource {
-    public interface Coordinator<Partitions> {
+    interface Coordinator<Partitions> {
         /**
          * Return the partitions currently in the source of data. The idea is
          * is that if a new partition is added and a prior transaction is replayed, it doesn't
@@ -45,7 +45,7 @@ public interface IPartitionedTridentSpout<Partitions, Partition extends ISpoutPa
         void close();
     }
     
-    public interface Emitter<Partitions, Partition extends ISpoutPartition, X> {
+    interface Emitter<Partitions, Partition extends ISpoutPartition, X> {
         
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
         

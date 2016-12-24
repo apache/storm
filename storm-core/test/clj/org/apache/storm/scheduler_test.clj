@@ -15,9 +15,9 @@
 ;; limitations under the License.
 (ns org.apache.storm.scheduler-test
   (:use [clojure test])
-  (:use [org.apache.storm config testing])
-  (:use [org.apache.storm.scheduler EvenScheduler])
-  (:require [org.apache.storm.daemon [nimbus :as nimbus]])
+  (:use [org.apache.storm util config])
+  (:import [org.apache.storm.scheduler EvenScheduler])
+  (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
   (:import [org.apache.storm.generated StormTopology])
   (:import [org.apache.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
             SchedulerAssignmentImpl Topologies TopologyDetails]))
@@ -127,7 +127,7 @@
         assignment1 (SchedulerAssignmentImpl. "topology1" executor->slot1)
         assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2)
         assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3)
-        cluster (Cluster. (nimbus/standalone-nimbus)
+        cluster (Cluster. (Nimbus$StandaloneINimbus.)
                           {"supervisor1" supervisor1 "supervisor2" supervisor2}
                           {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
                   nil)]
@@ -262,20 +262,22 @@
 
 (deftest test-sort-slots
   ;; test supervisor2 has more free slots
-  (is (= '(["supervisor2" 6700] ["supervisor1" 6700]
-           ["supervisor2" 6701] ["supervisor1" 6701]
-           ["supervisor2" 6702])
-         (sort-slots [["supervisor1" 6700] ["supervisor1" 6701]
-                      ["supervisor2" 6700] ["supervisor2" 6701] ["supervisor2" 6702]
-                      ])))
+  (is (= [(WorkerSlot. "supervisor2" 6700) (WorkerSlot. "supervisor1" 6700)
+          (WorkerSlot. "supervisor2" 6701) (WorkerSlot. "supervisor1" 6701)
+          (WorkerSlot. "supervisor2" 6702)]
+         (clojurify-structure (EvenScheduler/sortSlots [
+                      (WorkerSlot. "supervisor1" 6700) (WorkerSlot. "supervisor1" 6701)
+                      (WorkerSlot. "supervisor2" 6700) (WorkerSlot. "supervisor2" 6701) (WorkerSlot. "supervisor2" 6702)
+                      ]))))
   ;; test supervisor3 has more free slots
-  (is (= '(["supervisor3" 6700] ["supervisor2" 6700] ["supervisor1" 6700]
-           ["supervisor3" 6703] ["supervisor2" 6701] ["supervisor1" 6701]
-           ["supervisor3" 6702] ["supervisor2" 6702]
-           ["supervisor3" 6701])
-         (sort-slots [["supervisor1" 6700] ["supervisor1" 6701]
-                      ["supervisor2" 6700] ["supervisor2" 6701] ["supervisor2" 6702]
-                      ["supervisor3" 6700] ["supervisor3" 6703] ["supervisor3" 6702] ["supervisor3" 6701]
-                      ])))
+  (is (= [(WorkerSlot. "supervisor3" 6700) (WorkerSlot. "supervisor2" 6700) (WorkerSlot. "supervisor1" 6700)
+          (WorkerSlot. "supervisor3" 6701) (WorkerSlot. "supervisor2" 6701) (WorkerSlot. "supervisor1" 6701)
+          (WorkerSlot. "supervisor3" 6702) (WorkerSlot. "supervisor2" 6702)
+          (WorkerSlot. "supervisor3" 6703)]
+         (clojurify-structure (EvenScheduler/sortSlots [
+                      (WorkerSlot. "supervisor1" 6700) (WorkerSlot. "supervisor1" 6701)
+                      (WorkerSlot. "supervisor2" 6700) (WorkerSlot. "supervisor2" 6701) (WorkerSlot. "supervisor2" 6702)
+                      (WorkerSlot. "supervisor3" 6700) (WorkerSlot. "supervisor3" 6703) (WorkerSlot. "supervisor3" 6702) (WorkerSlot. "supervisor3" 6701)
+                      ]))))
     )
 

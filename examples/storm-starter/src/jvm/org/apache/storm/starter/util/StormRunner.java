@@ -19,6 +19,7 @@ package org.apache.storm.starter.util;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
@@ -34,11 +35,12 @@ public final class StormRunner {
 
   public static void runTopologyLocally(StormTopology topology, String topologyName, Config conf, int runtimeInSeconds)
       throws InterruptedException {
-    LocalCluster cluster = new LocalCluster();
-    cluster.submitTopology(topologyName, conf, topology);
-    Thread.sleep((long) runtimeInSeconds * MILLIS_IN_SEC);
-    cluster.killTopology(topologyName);
-    cluster.shutdown();
+    try (LocalCluster cluster = new LocalCluster();
+         LocalTopology topo = cluster.submitTopology(topologyName, conf, topology);) {
+      Thread.sleep((long) runtimeInSeconds * MILLIS_IN_SEC);
+    } catch (Exception e) {
+      throw new RuntimeException(e);
+    }
   }
 
   public static void runTopologyRemotely(StormTopology topology, String topologyName, Config conf)

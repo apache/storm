@@ -25,7 +25,6 @@ import org.apache.storm.trident.JoinType;
 import org.apache.storm.trident.operation.GroupedMultiReducer;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentMultiReducerContext;
-import org.apache.storm.trident.operation.impl.JoinerMultiReducer.JoinState;
 import org.apache.storm.trident.tuple.ComboList;
 import org.apache.storm.trident.tuple.TridentTuple;
 
@@ -47,7 +46,7 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     public void prepare(Map conf, TridentMultiReducerContext context) {
         int[] sizes = new int[_sideFields.size() + 1];
         sizes[0] = _numGroupFields;
-        for(int i=0; i<_sideFields.size(); i++) {
+        for (int i = 0; i < _sideFields.size(); i++) {
             sizes[i+1] = _sideFields.get(i).size();
         }
         _factory = new ComboList.Factory(sizes);
@@ -77,13 +76,13 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     public void complete(JoinState state, TridentTuple group, TridentCollector collector) {
         List<List>[] sides = state.sides;
         boolean wasEmpty = state.numSidesReceived < sides.length;
-        for(int i=0; i<sides.length; i++) {
-            if(sides[i].isEmpty() && _types.get(i) == JoinType.OUTER) {
+        for (int i = 0; i < sides.length; i++) {
+            if (sides[i].isEmpty() && _types.get(i) == JoinType.OUTER) {
                 state.numSidesReceived++;
                 sides[i].add(makeNullList(_sideFields.get(i).size()));
             }
         }
-        if(wasEmpty && state.numSidesReceived == sides.length) {
+        if (wasEmpty && state.numSidesReceived == sides.length) {
             emitCrossJoin(state, collector, -1, null);
         }
     }
@@ -94,7 +93,7 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     
     private List<Object> makeNullList(int size) {
         List<Object> ret = new ArrayList(size);
-        for(int i=0; i<size; i++) {
+        for (int i = 0; i < size; i++) {
             ret.add(null);
         }
         return ret;
@@ -103,17 +102,17 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     private void emitCrossJoin(JoinState state, TridentCollector collector, int overrideIndex, TridentTuple overrideTuple) {
         List<List>[] sides = state.sides;
         int[] indices = state.indices;
-        for(int i=0; i<indices.length; i++) {
+        for (int i = 0; i < indices.length; i++) {
             indices[i] = 0;
         }
         
         boolean keepGoing = true;
         //emit cross-join of all emitted tuples
-        while(keepGoing) {
+        while (keepGoing) {
             List[] combined = new List[sides.length+1];
             combined[0] = state.group;
-            for(int i=0; i<sides.length; i++) {
-                if(i==overrideIndex) {
+            for (int i = 0; i < sides.length; i++) {
+                if (i == overrideIndex) {
                     combined[i+1] = overrideTuple;
                 } else {
                     combined[i+1] = sides[i].get(indices[i]);                
@@ -128,32 +127,16 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     //return false if can't increment anymore
     //TODO: DRY this code up with what's in ChainedAggregatorImpl
     private boolean increment(List[] lengths, int[] indices, int j, int overrideIndex) {
-        if(j==-1) return false;
-        if(j==overrideIndex) {
+        if (j == -1) return false;
+        if (j == overrideIndex) {
             return increment(lengths, indices, j-1, overrideIndex);
         }
         indices[j]++;
-        if(indices[j] >= lengths[j].size()) {
+        if (indices[j] >= lengths[j].size()) {
             indices[j] = 0;
             return increment(lengths, indices, j-1, overrideIndex);
         }
         return true;
     }
-    
-    public static class JoinState {
-        List<List>[] sides;
-        int numSidesReceived = 0;
-        int[] indices;
-        TridentTuple group;
-        
-        public JoinState(int numSides, TridentTuple group) {
-            sides = new List[numSides];
-            indices = new int[numSides];
-            this.group = group;
-            for(int i=0; i<numSides; i++) {
-                sides[i] = new ArrayList<List>();
-            }            
-        }
-    }
-    
+
 }

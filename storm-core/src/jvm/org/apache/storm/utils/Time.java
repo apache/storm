@@ -26,27 +26,55 @@ import org.slf4j.LoggerFactory;
 
 
 public class Time {
-    public static final Logger LOG = LoggerFactory.getLogger(Time.class);
-    
+    private static final Logger LOG = LoggerFactory.getLogger(Time.class);
     private static AtomicBoolean simulating = new AtomicBoolean(false);
-    //TODO: should probably use weak references here or something
+    private static AtomicLong autoAdvanceOnSleep = new AtomicLong(0);
     private static volatile Map<Thread, AtomicLong> threadSleepTimes;
     private static final Object sleepTimesLock = new Object();
+    private static AtomicLong simulatedCurrTimeMs;
     
-    private static AtomicLong simulatedCurrTimeMs; //should this be a thread local that's allowed to keep advancing?
-    
-    public static void startSimulating() {
-        synchronized(sleepTimesLock) {
-            simulating.set(true);
-            simulatedCurrTimeMs = new AtomicLong(0);
-            threadSleepTimes = new ConcurrentHashMap<>();
+    public static class SimulatedTime implements AutoCloseable {
+
+        public SimulatedTime() {
+            this(null);
+        }
+        
+        public SimulatedTime(Number ms) {
+            synchronized(Time.sleepTimesLock) {
+                Time.simulating.set(true);
+                Time.simulatedCurrTimeMs = new AtomicLong(0);
+                Time.threadSleepTimes = new ConcurrentHashMap<>();
+                if (ms != null) {
+                    Time.autoAdvanceOnSleep.set(ms.longValue());
+                }
+            }
+        }
+        
+        @Override
+        public void close() {
+            synchronized(Time.sleepTimesLock) {
+                Time.simulating.set(false);    
+                Time.autoAdvanceOnSleep.set(0);
+                Time.threadSleepTimes = null;
+            }
         }
     }
     
+    @Deprecated
+    public static void startSimulating() {
+        synchronized(Time.sleepTimesLock) {
+            Time.simulating.set(true);
+            Time.simulatedCurrTimeMs = new AtomicLong(0);
+            Time.threadSleepTimes = new ConcurrentHashMap<>();
+        }
+    }
+    
+    @Deprecated
     public static void stopSimulating() {
-        synchronized(sleepTimesLock) {
-            simulating.set(false);             
-            threadSleepTimes = null;  
+        synchronized(Time.sleepTimesLock) {
+            Time.simulating.set(false);    
+            Time.autoAdvanceOnSleep.set(0);
+            Time.threadSleepTimes = null;
         }
     }
     
@@ -70,6 +98,10 @@ public class Time {
                             LOG.debug("{} is still sleeping after simulated time disabled.", Thread.currentThread(), new RuntimeException("STACK TRACE"));
                             throw new InterruptedException();
                         }
+                    }
+                    long autoAdvance = autoAdvanceOnSleep.get();
+                    if (autoAdvance > 0) {
+                        advanceTime(autoAdvance);
                     }
                     Thread.sleep(10);
                 }
@@ -126,8 +158,14 @@ public class Time {
     }
     
     public static void advanceTime(long ms) {
-        if(!simulating.get()) throw new IllegalStateException("Cannot simulate time unless in simulation mode");
-        simulatedCurrTimeMs.set(simulatedCurrTimeMs.get() + ms);
+        if (!simulating.get()) throw new IllegalStateException("Cannot simulate time unless in simulation mode");
+        if (ms < 0) throw new IllegalArgumentException("advanceTime only accepts positive time as an argument");
+        long newTime = simulatedCurrTimeMs.addAndGet(ms);
+        LOG.debug("Advanced simulated time to {}", newTime);
+    }
+    
+    public static void advanceTimeSecs(long secs) {
+        advanceTime(secs * 1_000);
     }
     
     public static boolean isThreadWaiting(Thread t) {
@@ -137,5 +175,5 @@ public class Time {
             time = threadSleepTimes.get(t);
         }
         return !t.isAlive() || time!=null && currentTimeMillis() < time.longValue();
-    }    
+    }
 }

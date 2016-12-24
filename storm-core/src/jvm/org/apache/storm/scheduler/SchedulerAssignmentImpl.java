@@ -46,6 +46,22 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     }
 
     @Override
+    public String toString() {
+        return this.getClass().getSimpleName() + " topo: " + topologyId + " execToSlots: " + executorToSlot;
+    }
+    
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if (other instanceof SchedulerAssignmentImpl) {
+            SchedulerAssignmentImpl sother = (SchedulerAssignmentImpl) other;
+            return topologyId.equals(sother.topologyId) &&
+                    executorToSlot.equals(sother.executorToSlot);
+        }
+        return false;
+    }
+    
+    @Override
     public Set<WorkerSlot> getSlots() {
         return new HashSet<>(executorToSlot.values());
     }    

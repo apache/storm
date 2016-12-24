@@ -18,8 +18,7 @@
 
 <configuration monitorInterval="60">
 <properties>
-    <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %c{1.} [%p] %msg%n</property>
-    <property name="patternMetrics">%d %-8r %m%n</property>
+    <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %t %c{1.} [%p] %msg%n</property>
 </properties>
 <appenders>
     <RollingFile name="A1" immediateFlush="false"
@@ -55,14 +54,14 @@
         </Policies>
         <DefaultRolloverStrategy max="9"/>
     </RollingFile>
-    <RollingFile name="METRICS" immediateFlush="false"
-                 fileName="${sys:storm.log.dir}/metrics.log"
-                 filePattern="${sys:storm.log.dir}/metrics.log.%i.gz">
+    <RollingFile name="METRICS"
+                 fileName="${sys:storm.log.dir}/${sys:logfile.name}.metrics"
+                 filePattern="${sys:storm.log.dir}/${sys:logfile.name}.metrics.%i.gz">
         <PatternLayout>
             <pattern>${patternMetrics}</pattern>
         </PatternLayout>
         <Policies>
-            <SizeBasedTriggeringPolicy size="2 MB"/> <!-- Or every 100 MB -->
+            <SizeBasedTriggeringPolicy size="2 MB"/>
         </Policies>
         <DefaultRolloverStrategy max="9"/>
     </RollingFile>
@@ -81,8 +80,8 @@
         <AppenderRef ref="THRIFT-ACCESS"/>
         <AppenderRef ref="syslog"/>
     </Logger>
-    <Logger name="org.apache.storm.metric.LoggingMetricsConsumer" level="info">
-        <AppenderRef ref="METRICS"/>
+    <Logger name="org.apache.storm.metric.LoggingClusterMetricsConsumer" level="info" additivity="false">
+        <appender-ref ref="METRICS"/>
     </Logger>
     <root level="info"> <!-- We log everything -->
         <appender-ref ref="A1"/>

@@ -15,29 +15,35 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.auth-test
   (:use [clojure test])
-  (:require [org.apache.storm.daemon [nimbus :as nimbus]])
   (:import [org.apache.thrift TException]
            [org.json.simple JSONValue]
            [org.apache.storm.utils Utils]
            [org.apache.storm.security.auth.authorizer ImpersonationAuthorizer]
            [java.net Inet4Address])
+  (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.thrift.transport TTransportException])
+  (:import [org.apache.storm.testing.staticmocking MockedZookeeper])
+  (:import [org.apache.storm.nimbus ILeaderElector])
+  (:import [org.apache.storm.cluster IStormClusterState])
+  (:import [org.mockito Mockito])
+  (:import [org.apache.storm.zookeeper Zookeeper])
   (:import [java.nio ByteBuffer])
   (:import [java.security Principal AccessController])
   (:import [javax.security.auth Subject])
   (:import [java.net InetAddress])
-  (:import [org.apache.storm Config])
+  (:import [org.apache.storm Config Testing Testing$Condition])
   (:import [org.apache.storm.generated AuthorizationException])
-  (:import [org.apache.storm.utils NimbusClient ConfigUtils])
+  (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
+  (:import [org.apache.storm.utils NimbusClient ConfigUtils Time])
   (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
+  (:import [org.apache.storm.daemon StormCommon])
   (:use [org.apache.storm util config])
-  (:use [org.apache.storm.daemon common])
-  (:use [org.apache.storm testing])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
             KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]
-           (org.json.simple JSONValue)))
+           (org.json.simple JSONValue))
+  (:import [org.apache.storm.utils Utils]))
 
 (defn mk-principal [name]
   (reify Principal
@@ -55,21 +61,9 @@
 (def nimbus-timeout (Integer. (* 3 1000)))
 
 (defn nimbus-data [storm-conf inimbus]
-  (let [forced-scheduler (.getForcedScheduler inimbus)]
-    {:conf storm-conf
-     :inimbus inimbus
-     :authorization-handler (mk-authorization-handler (storm-conf NIMBUS-AUTHORIZER) storm-conf)
-     :submitted-count (atom 0)
-     :storm-cluster-state nil
-     :submit-lock (Object.)
-     :heartbeats-cache (atom {})
-     :downloaders nil
-     :uploaders nil
-     :uptime (Utils/makeUptimeComputer)
-     :validator nil
-     :timer nil
-     :scheduler nil
-     }))
+  (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
+                  (zkLeaderElectorImpl [conf blob-store] (Mockito/mock ILeaderElector))))]
+    (org.apache.storm.daemon.nimbus.Nimbus. storm-conf inimbus (Mockito/mock IStormClusterState) nil (Mockito/mock BlobStore) nil nil)))
 
 (defn dummy-service-handler
   ([conf inimbus auth-context]
@@ -79,25 +73,25 @@
          (^void submitTopologyWithOpts [this ^String storm-name ^String uploadedJarLocation ^String serializedConf ^StormTopology topology
                                         ^SubmitOptions submitOptions]
            (if (not (nil? serializedConf)) (swap! topo-conf (fn [prev new] new) (if serializedConf (clojurify-structure (JSONValue/parse serializedConf)))))
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "submitTopology" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "submitTopology" auth-context))
 
          (^void killTopology [this ^String storm-name]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "killTopology" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "killTopology" auth-context))
 
          (^void killTopologyWithOpts [this ^String storm-name ^KillOptions options]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "killTopology" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "killTopology" auth-context))
 
          (^void rebalance [this ^String storm-name ^RebalanceOptions options]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "rebalance" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "rebalance" auth-context))
 
          (activate [this storm-name]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "activate" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "activate" auth-context))
 
          (deactivate [this storm-name]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "deactivate" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "deactivate" auth-context))
 
          (uploadNewCredentials [this storm-name creds]
-           (nimbus/check-authorization! nimbus-d storm-name @topo-conf "uploadNewCredentials" auth-context))
+           (.checkAuthorization nimbus-d storm-name @topo-conf "uploadNewCredentials" auth-context))
 
          (beginFileUpload [this])
 
@@ -106,7 +100,7 @@
          (^void finishFileUpload [this ^String location])
 
          (^String beginFileDownload [this ^String file]
-           (nimbus/check-authorization! nimbus-d nil nil "fileDownload" auth-context)
+           (.checkAuthorization nimbus-d nil nil "fileDownload" auth-context)
            "Done!")
 
          (^ByteBuffer downloadChunk [this ^String id])
@@ -133,7 +127,7 @@
                       STORM-THRIFT-TRANSPORT-PLUGIN transportPluginClass})
         conf2 (if login-cfg (merge conf1 {"java.security.auth.login.config" login-cfg}) conf1)
         conf (if serverConf (merge conf2 serverConf) conf2)
-        nimbus (nimbus/standalone-nimbus)
+        nimbus (Nimbus$StandaloneINimbus.)
         service-handler (dummy-service-handler conf nimbus)
         server (ThriftServer.
                 conf
@@ -141,7 +135,7 @@
                 ThriftConnectionType/NIMBUS)]
     (.addShutdownHook (Runtime/getRuntime) (Thread. (fn [] (.stop server))))
     (.start (Thread. #(.serve server)))
-    (wait-for-condition #(.isServing server))
+    (Testing/whileTimeout (reify Testing$Condition (exec [this] (not (.isServing server)))) (fn [] (Time/sleep 100)))
     server ))
 
 (defmacro with-server [args & body]
@@ -158,7 +152,7 @@
     (is (= "someone" (.toLocal kptol (mk-principal "someone/host@realm"))))))
 
 (deftest Simple-authentication-test
-  (let [a-port (available-port)]
+  (let [a-port (Utils/getAvailablePort)]
     (with-server [a-port nil nil "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})
@@ -176,7 +170,7 @@
                               (NimbusClient. storm-conf "localhost" a-port nimbus-timeout))))))))
 
 (deftest negative-whitelist-authorization-test
-  (let [a-port (available-port)]
+  (let [a-port (Utils/getAvailablePort)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.SimpleWhitelistAuthorizer"
                   "org.apache.storm.testing.SingleUserSimpleTransport" nil]
@@ -190,7 +184,7 @@
         (.close client)))))
 
 (deftest positive-whitelist-authorization-test
-    (let [a-port (available-port)]
+    (let [a-port (Utils/getAvailablePort)]
       (with-server [a-port nil
                     "org.apache.storm.security.auth.authorizer.SimpleWhitelistAuthorizer"
                     "org.apache.storm.testing.SingleUserSimpleTransport" {SimpleWhitelistAuthorizer/WHITELIST_USERS_CONF ["user"]}]
@@ -333,7 +327,7 @@
 
 
 (deftest positive-authorization-test
-  (let [a-port (available-port)]
+  (let [a-port (Utils/getAvailablePort)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
                   "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
@@ -346,7 +340,7 @@
         (.close client)))))
 
 (deftest deny-authorization-test
-  (let [a-port (available-port)]
+  (let [a-port (Utils/getAvailablePort)]
     (with-server [a-port nil
                   "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
                   "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
@@ -362,7 +356,7 @@
         (.close client)))))
 
 (deftest digest-authentication-test
-  (let [a-port (available-port)]
+  (let [a-port (Utils/getAvailablePort)]
     (with-server [a-port
                   "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
                   nil

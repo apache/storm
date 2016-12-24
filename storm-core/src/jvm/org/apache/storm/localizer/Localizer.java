@@ -63,20 +63,6 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
  */
 public class Localizer {
   public static final Logger LOG = LoggerFactory.getLogger(Localizer.class);
-
-  private Map _conf;
-  private int _threadPoolSize;
-  // thread pool for initial download
-  private ExecutorService _execService;
-  // thread pool for updates
-  private ExecutorService _updateExecService;
-  private int _blobDownloadRetries;
-
-  // track resources - user to resourceSet
-  private final ConcurrentMap<String, LocalizedResourceSet> _userRsrc = new
-      ConcurrentHashMap<String, LocalizedResourceSet>();
-
-  private String _localBaseDir;
   public static final String USERCACHE = "usercache";
   public static final String FILECACHE = "filecache";
 
@@ -85,13 +71,29 @@ public class Localizer {
   public static final String ARCHIVESDIR = "archives";
 
   private static final String TO_UNCOMPRESS = "_tmp_";
+  
+  
+  
+  private final Map<String, Object> _conf;
+  private final int _threadPoolSize;
+  // thread pool for initial download
+  private final ExecutorService _execService;
+  // thread pool for updates
+  private final ExecutorService _updateExecService;
+  private final int _blobDownloadRetries;
+
+  // track resources - user to resourceSet
+  private final ConcurrentMap<String, LocalizedResourceSet> _userRsrc = new
+      ConcurrentHashMap<String, LocalizedResourceSet>();
+
+  private final String _localBaseDir;
 
   // cleanup
   private long _cacheTargetSize;
   private long _cacheCleanupPeriod;
   private ScheduledExecutorService _cacheCleanupService;
 
-  public Localizer(Map conf, String baseDir) {
+  public Localizer(Map<String, Object> conf, String baseDir) {
     _conf = conf;
     _localBaseDir = baseDir;
     // default cache size 10GB, converted to Bytes
@@ -189,7 +191,7 @@ public class Localizer {
         LOG.debug("local file is: {} path is: {}", rsrc.getPath(), path);
         LocalizedResource lrsrc = new LocalizedResource(new File(path).getName(), path,
             uncompress);
-        lrsrcSet.addResource(lrsrc.getKey(), lrsrc, uncompress);
+        lrsrcSet.add(lrsrc.getKey(), lrsrc, uncompress);
       }
     }
   }
@@ -369,7 +371,7 @@ public class Localizer {
           if (newlrsrcSet == null) {
             newlrsrcSet = newSet;
           }
-          newlrsrcSet.updateResource(lrsrc.getKey(), lrsrc, lrsrc.isUncompressed());
+          newlrsrcSet.putIfAbsent(lrsrc.getKey(), lrsrc, lrsrc.isUncompressed());
           results.add(lrsrc);
         }
         catch (ExecutionException e) {
@@ -451,7 +453,7 @@ public class Localizer {
       for (Future<LocalizedResource> futureRsrc: futures) {
         LocalizedResource lrsrc = futureRsrc.get();
         lrsrc.addReference(topo);
-        lrsrcSet.addResource(lrsrc.getKey(), lrsrc, lrsrc.isUncompressed());
+        lrsrcSet.add(lrsrc.getKey(), lrsrc, lrsrc.isUncompressed());
         results.add(lrsrc);
       }
     } catch (ExecutionException e) {

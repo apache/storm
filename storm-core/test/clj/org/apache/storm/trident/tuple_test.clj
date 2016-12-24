@@ -15,11 +15,11 @@
 ;; limitations under the License.
 (ns org.apache.storm.trident.tuple-test
   (:use [clojure test])
-  (:require [org.apache.storm [testing :as t]])
+  (:import [org.apache.storm.tuple Fields])
+  (:import [org.apache.storm Testing])
   (:import [org.apache.storm.trident.tuple TridentTupleView TridentTupleView$ProjectionFactory
             TridentTupleView$FreshOutputFactory TridentTupleView$OperationOutputFactory
-            TridentTupleView$RootFactory])
-  (:use [org.apache.storm.trident testing]))
+            TridentTupleView$RootFactory]))
 
 (defmacro letlocals
   [& body]
@@ -35,7 +35,7 @@
 
 (deftest test-fresh
   (letlocals
-    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (fields "a" "b" "c")))
+    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (Fields. ["a" "b" "c"])))
     (bind tt (.create fresh-factory [3 2 1]))
     (is (= [3 2 1] tt))
     (is (= 3 (.getValueByField tt "a")))
@@ -45,8 +45,8 @@
 
 (deftest test-projection
   (letlocals
-    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (fields "a" "b" "c" "d" "e")))
-    (bind project-factory (TridentTupleView$ProjectionFactory. fresh-factory (fields "d" "a")))
+    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (Fields. ["a" "b" "c" "d" "e"])))
+    (bind project-factory (TridentTupleView$ProjectionFactory. fresh-factory (Fields. ["d" "a"])))
     (bind tt (.create fresh-factory [3 2 1 4 5]))
     (bind tt2 (.create fresh-factory [9 8 7 6 10]))
 
@@ -63,9 +63,9 @@
 
 (deftest test-appends
   (letlocals
-    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (fields "a" "b" "c")))
-    (bind append-factory (TridentTupleView$OperationOutputFactory. fresh-factory (fields "d" "e")))
-    (bind append-factory2 (TridentTupleView$OperationOutputFactory. append-factory (fields "f")))
+    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (Fields. ["a" "b" "c"])))
+    (bind append-factory (TridentTupleView$OperationOutputFactory. fresh-factory (Fields. ["d" "e"])))
+    (bind append-factory2 (TridentTupleView$OperationOutputFactory. append-factory (Fields. ["f"])))
 
     (bind tt (.create fresh-factory [1 2 3]))
     (bind tt2 (.create append-factory tt [4 5]))
@@ -79,14 +79,14 @@
 
 (deftest test-root
   (letlocals
-    (bind root-factory (TridentTupleView$RootFactory. (fields "a" "b")))
-    (bind storm-tuple (t/test-tuple ["a" 1]))
+    (bind root-factory (TridentTupleView$RootFactory. (Fields. ["a" "b"])))
+    (bind storm-tuple (Testing/testTuple ["a" 1]))
     (bind tt (.create root-factory storm-tuple))
     (is (= ["a" 1] tt))
     (is (= "a" (.getValueByField tt "a")))
     (is (= 1 (.getValueByField tt "b")))
 
-    (bind append-factory (TridentTupleView$OperationOutputFactory. root-factory (fields "c")))
+    (bind append-factory (TridentTupleView$OperationOutputFactory. root-factory (Fields. ["c"])))
 
     (bind tt2 (.create append-factory tt [3]))
     (is (= ["a" 1 3] tt2))
@@ -97,11 +97,11 @@
 
 (deftest test-complex
   (letlocals
-    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (fields "a" "b" "c")))
-    (bind append-factory1 (TridentTupleView$OperationOutputFactory. fresh-factory (fields "d")))
-    (bind append-factory2 (TridentTupleView$OperationOutputFactory. append-factory1 (fields "e" "f")))
-    (bind project-factory1 (TridentTupleView$ProjectionFactory. append-factory2 (fields "a" "f" "b")))
-    (bind append-factory3 (TridentTupleView$OperationOutputFactory. project-factory1 (fields "c")))
+    (bind fresh-factory (TridentTupleView$FreshOutputFactory. (Fields. ["a" "b" "c"])))
+    (bind append-factory1 (TridentTupleView$OperationOutputFactory. fresh-factory (Fields. ["d"])))
+    (bind append-factory2 (TridentTupleView$OperationOutputFactory. append-factory1 (Fields. ["e" "f"])))
+    (bind project-factory1 (TridentTupleView$ProjectionFactory. append-factory2 (Fields. ["a" "f" "b"])))
+    (bind append-factory3 (TridentTupleView$OperationOutputFactory. project-factory1 (Fields. ["c"])))
 
     (bind tt (.create fresh-factory [1 2 3]))
     (bind tt2 (.create append-factory1 tt [4]))
@@ -123,11 +123,11 @@
 
 (deftest test-ituple-interface
   (letlocals
-    (bind tt (TridentTupleView/createFreshTuple (fields "a" "b" "c") [1 2 3]))
+    (bind tt (TridentTupleView/createFreshTuple (Fields. ["a" "b" "c"]) [1 2 3]))
     (is (= [1 2 3] tt))
     (is (= ["a" "b" "c"] (.toList (.getFields tt))))
     (is (true? (.contains tt "a")))
     (is (false? (.contains tt "abcd")))
     (is (= 0 (.fieldIndex tt "a")))
-    (is (= [3 1] (.select tt (fields "c" "a"))))
+    (is (= [3 1] (.select tt (Fields. ["c" "a"]))))
     ))

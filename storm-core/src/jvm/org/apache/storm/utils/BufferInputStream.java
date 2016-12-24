@@ -22,7 +22,7 @@ import java.io.InputStream;
 import java.util.Arrays;
 
 
-public class BufferInputStream {
+public class BufferInputStream implements AutoCloseable {
     byte[] buffer;
     InputStream stream;
 
@@ -47,6 +47,7 @@ public class BufferInputStream {
         }
     }
 
+    @Override
     public void close() throws IOException {
         stream.close();
     }

@@ -15,14 +15,7 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.config
-  (:import [java.io FileReader File IOException]
-           [org.apache.storm.generated StormTopology])
-  (:import [org.apache.storm Config])
-  (:import [org.apache.storm.utils Utils LocalState ConfigUtils MutableInt])
-  (:import [org.apache.storm.validation ConfigValidation])
-  (:import [org.apache.commons.io FileUtils])
-  (:require [clojure [string :as str]])
-  (:use [org.apache.storm log util]))
+  (:import [org.apache.storm Config]))
 
 (defn- clojure-config-name [name]
   (.replace (.toUpperCase name) "_" "-"))
@@ -33,39 +26,3 @@
         new-name (clojure-config-name name)]
     (eval
       `(def ~(symbol new-name) (. Config ~(symbol name))))))
-
-(def ALL-CONFIGS
-  (dofor [f (seq (.getFields Config))]
-         (.get f nil)))
-
-;; TODO this function and its callings will be replace when nimbus and supervisor move to Java
-(defn cluster-mode
-  [conf & args]
-  (keyword (conf STORM-CLUSTER-MODE)))
-
-(defn sampling-rate
-  [conf]
-  (->> (conf TOPOLOGY-STATS-SAMPLE-RATE)
-    (/ 1)
-    int))
-
-(defn- even-sampler
-  [freq]
-  (let [freq (int freq)
-        start (int 0)
-        r (java.util.Random.)
-        curr (MutableInt. -1)
-        target (MutableInt. (.nextInt r freq))]
-    (with-meta
-      (fn []
-        (let [i (.increment curr)]
-          (when (>= i freq)
-            (.set curr start)
-            (.set target (.nextInt r freq))))
-        (= (.get curr) (.get target)))
-      {:rate freq})))
-
-;; TODO this function together with sampling-rate are to be replaced with Java version when util.clj is in
-(defn mk-stats-sampler
-  [conf]
-  (even-sampler (sampling-rate conf)))
