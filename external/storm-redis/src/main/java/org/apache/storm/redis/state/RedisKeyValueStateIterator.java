@@ -39,6 +39,8 @@ import redis.clients.jedis.ScanResult;
 public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V>> {
 
     private final String namespace;
+    private final Iterator<Map.Entry<String, String>> pendingPrepareIterator;
+    private final Iterator<Map.Entry<String, String>> pendingCommitIterator;
     private final RedisEncoder<K, V> decoder;
     private final JedisCommandsInstanceContainer jedisContainer;
     private final ScanParams scanParams;
@@ -46,12 +48,10 @@ public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V
     private List<Map.Entry<String, String>> cachedResult;
     private int readPosition;
 
-    public RedisKeyValueStateIterator(String namespace, JedisCommandsInstanceContainer jedisContainer, int chunkSize, RedisEncoder<K, V> encoder) {
-        this(namespace, jedisContainer, chunkSize, encoder.getKeySerializer(), encoder.getValueSerializer());
-    }
-
-    public RedisKeyValueStateIterator(String namespace, JedisCommandsInstanceContainer jedisContainer, int chunkSize, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
+    public RedisKeyValueStateIterator(String namespace, JedisCommandsInstanceContainer jedisContainer, Iterator<Map.Entry<String, String>> pendingPrepareIterator, Iterator<Map.Entry<String, String>> pendingCommitIterator, int chunkSize, Serializer<K> keySerializer, Serializer<V> valueSerializer) {
         this.namespace = namespace;
+        this.pendingPrepareIterator = pendingPrepareIterator;
+        this.pendingCommitIterator = pendingCommitIterator;
         this.jedisContainer = jedisContainer;
         this.decoder = new RedisEncoder<K, V>(keySerializer, valueSerializer);
         this.scanParams = new ScanParams().count(chunkSize);
@@ -60,25 +60,38 @@ public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V
 
     @Override
     public boolean hasNext() {
-        return !cursor.equals("0");
+        if (pendingPrepareIterator != null && pendingPrepareIterator.hasNext()) {
+            return true;
+        } else if (pendingCommitIterator != null && pendingCommitIterator.hasNext()) {
+            return true;
+        } else {
+            return !cursor.equals("0");
+        }
     }
 
     @Override
     public Map.Entry<K, V> next() {
-        if (cachedResult == null || readPosition >= cachedResult.size()) {
-            JedisCommands commands = null;
-            try {
-                commands = jedisContainer.getInstance();
-                ScanResult<Map.Entry<String, String>> scanResult = commands.hscan(namespace, cursor, scanParams);
-                cachedResult = scanResult.getResult();
-                cursor = scanResult.getStringCursor();
-                readPosition = 0;
-            } finally {
-                jedisContainer.returnInstance(commands);
+        Map.Entry<String, String> redisKeyValue = null;
+        if (pendingPrepareIterator != null && pendingPrepareIterator.hasNext()) {
+            redisKeyValue = pendingPrepareIterator.next();
+        } else if (pendingCommitIterator != null && pendingCommitIterator.hasNext()) {
+            redisKeyValue = pendingCommitIterator.next();
+        } else {
+            if (cachedResult == null || readPosition >= cachedResult.size()) {
+                JedisCommands commands = null;
+                try {
+                    commands = jedisContainer.getInstance();
+                    ScanResult<Map.Entry<String, String>> scanResult = commands.hscan(namespace, cursor, scanParams);
+                    cachedResult = scanResult.getResult();
+                    cursor = scanResult.getStringCursor();
+                    readPosition = 0;
+                } finally {
+                    jedisContainer.returnInstance(commands);
+                }
             }
+            redisKeyValue = cachedResult.get(readPosition);
+            readPosition += 1;
         }
-        Map.Entry<String, String> redisKeyValue = cachedResult.get(readPosition);
-        readPosition += 1;
         K key = decoder.decodeKey(redisKeyValue.getKey());
         V value = decoder.decodeValue(redisKeyValue.getValue());
         return new AbstractMap.SimpleEntry(key, value);

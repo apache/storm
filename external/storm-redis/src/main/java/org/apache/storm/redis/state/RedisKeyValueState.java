@@ -161,8 +161,8 @@ public class RedisKeyValueState<K, V> implements KeyValueState<K, V> {
 
     @Override
     public Iterator<Map.Entry<K, V>> iterator() {
-        return new RedisKeyValueStateIterator<K, V>(namespace, jedisContainer, 
-                ITERATOR_CHUNK_SIZE, encoder);
+        return new RedisKeyValueStateIterator<K, V>(namespace, jedisContainer, pendingPrepare.entrySet().iterator(), pendingCommit.entrySet().iterator(),
+                ITERATOR_CHUNK_SIZE, encoder.getKeySerializer(), encoder.getValueSerializer());
     }
 
     @Override
