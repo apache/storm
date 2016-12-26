@@ -23,7 +23,7 @@ import java.util.Map;
 /**
  * A state that supports key-value mappings.
  */
-public interface KeyValueState<K, V> extends State {
+public interface KeyValueState<K, V> extends State, Iterable<Map.Entry<K, V>> {
     /**
      * Maps the value with the key
      *
@@ -55,9 +55,4 @@ public interface KeyValueState<K, V> extends State {
      * @param key   the key
      */
     V delete(K key);
-
-    /**
-     * @return an iterator over all key value mappings.
-     */
-    Iterator<Map.Entry<K, V>> iterator();
 }
