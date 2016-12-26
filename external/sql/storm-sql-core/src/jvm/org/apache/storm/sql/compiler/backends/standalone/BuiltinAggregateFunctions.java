@@ -51,6 +51,34 @@ public class BuiltinAggregateFunctions {
 
     static final Map<String, List<TypeClass>> TABLE = new HashMap<>();
 
+    public static class ByteSum {
+        public static Byte init() {
+            return 0;
+        }
+
+        public static Byte add(Byte accumulator, Byte val) {
+            return (byte) (accumulator + val);
+        }
+
+        public static Byte result(Byte accumulator) {
+            return accumulator;
+        }
+    }
+
+    public static class ShortSum {
+        public static Short init() {
+            return 0;
+        }
+
+        public static Short add(Short accumulator, Short val) {
+            return (short) (accumulator + val);
+        }
+
+        public static Short result(Short accumulator) {
+            return accumulator;
+        }
+    }
+
     public static class IntSum {
         public static Integer init() {
             return 0;
@@ -61,6 +89,34 @@ public class BuiltinAggregateFunctions {
         }
 
         public static Integer result(Integer accumulator) {
+            return accumulator;
+        }
+    }
+
+    public static class LongSum {
+        public static Long init() {
+            return 0L;
+        }
+
+        public static Long add(Long accumulator, Long val) {
+            return accumulator + val;
+        }
+
+        public static Long result(Long accumulator) {
+            return accumulator;
+        }
+    }
+
+    public static class FloatSum {
+        public static Float init() {
+            return 0.0f;
+        }
+
+        public static Float add(Float accumulator, Float val) {
+            return accumulator + val;
+        }
+
+        public static Float result(Float accumulator) {
             return accumulator;
         }
     }
@@ -166,7 +222,11 @@ public class BuiltinAggregateFunctions {
 
     static {
         TABLE.put("SUM", ImmutableList.of(
+                TypeClass.of(float.class, FloatSum.class),
                 TypeClass.of(double.class, DoubleSum.class),
+                TypeClass.of(byte.class, ByteSum.class),
+                TypeClass.of(short.class, ShortSum.class),
+                TypeClass.of(long.class, LongSum.class),
                 TypeClass.of(int.class, IntSum.class)));
         TABLE.put("AVG", ImmutableList.of(
                 TypeClass.of(double.class, DoubleAvg.class),
