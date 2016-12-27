@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2082: add sql external module storm-sql-hdfs
  * STORM-2256: storm-pmml breaks on java 1.7
  * STORM-2223: PMML Bolt.
  * STORM-2222: Repeated NPEs thrown in nimbus if rebalance fails
