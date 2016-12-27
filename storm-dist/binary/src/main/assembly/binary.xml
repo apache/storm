@@ -319,6 +319,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-hdfs/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-hdfs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
             <includes>
