@@ -187,6 +187,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2082: add sql external module storm-sql-hdfs
  * STORM-2190: reduce contention between submission and scheduling
  * STORM-2239: Handle InterruptException in new Kafka spout
  * STORM-2238: Add Timestamp extractor for windowed bolt
