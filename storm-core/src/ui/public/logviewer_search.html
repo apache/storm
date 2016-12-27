@@ -21,7 +21,7 @@
 <link href="/css/bootstrap-3.3.1.min.css" rel="stylesheet" type="text/css">
 <link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
 <link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css" rel="stylesheet" type="text/css">
+<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
 <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
 <script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
 <script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
@@ -30,7 +30,7 @@
 <script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
 <script src="/js/url.min.js" type="text/javascript"></script>
 <script src="/js/dataTables.bootstrap.min.js" type="text/javascript"></script>
-<script src="/js/script.js" type="text/javascript"></script>
+<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -47,14 +47,15 @@ $(document).ready(function() {
     var file = $.url("?file");
     var search = $.url("?search");
     var offset = $.url("?offset") || 0;
+    var isDaemon = $.url("?is-daemon") || "no";
     file = decodeURIComponent(file);
     search = decodeURIComponent(search);
 
-    $.get("/templates/logviewer-search-page-template.html", function(template) {
-        $("#search-form").append(Mustache.render($(template).filter("#search-single-file").html(),{file: file, search: search}));
+    getStatic("/templates/logviewer-search-page-template.html", function(template) {
+        $("#search-form").append(Mustache.render($(template).filter("#search-single-file").html(),{file: file, search: search, isDaemon: isDaemon}));
 
         var result = $("#result");
-        var url = "/search/"+encodeURIComponent(file)+"?search-string="+search+"&start-byte-offset="+offset;
+        var url = "/search/"+encodeURIComponent(file)+"?search-string="+search+"&start-byte-offset="+offset+"&is-daemon="+isDaemon;
         $.getJSON(url,function(response,status,jqXHR) {
            response.file = file;
            result.append(Mustache.render($(template).filter("#logviewer-search-result-template").html(),response));

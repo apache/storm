@@ -17,9 +17,9 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Tuple;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.SequenceFile;
@@ -28,6 +28,9 @@ import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.SequenceFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.common.AbstractHDFSWriter;
+import org.apache.storm.hdfs.common.Partitioner;
+import org.apache.storm.hdfs.common.SequenceFileWriter;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,6 +107,16 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
         return this;
     }
 
+    public SequenceFileBolt withPartitioner(Partitioner partitioner) {
+        this.partitioner = partitioner;
+        return this;
+    }
+
+    public SequenceFileBolt withMaxOpenFiles(int maxOpenFiles) {
+        this.maxOpenFiles = maxOpenFiles;
+        return this;
+    }
+
     @Override
     public void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException {
         LOG.info("Preparing Sequence File Bolt...");
@@ -114,30 +127,20 @@ public class SequenceFileBolt extends AbstractHdfsBolt {
     }
 
     @Override
-    void syncTuples() throws IOException {
-        LOG.debug("Attempting to sync all data to filesystem");
-        this.writer.hsync();
+    protected String getWriterKey(Tuple tuple) {
+        return "CONSTANT";
     }
 
     @Override
-    void writeTuple(Tuple tuple) throws IOException {
-        this.writer.append(this.format.key(tuple), this.format.value(tuple));
-        this.offset = this.writer.getLength();
-    }
-
-    Path createOutputFile() throws IOException {
-        Path p = new Path(this.fsUrl + this.fileNameFormat.getPath(), this.fileNameFormat.getName(this.rotation, System.currentTimeMillis()));
-        this.writer = SequenceFile.createWriter(
+    protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException {
+        SequenceFile.Writer writer = SequenceFile.createWriter(
                 this.hdfsConfig,
-                SequenceFile.Writer.file(p),
+                SequenceFile.Writer.file(path),
                 SequenceFile.Writer.keyClass(this.format.keyClass()),
                 SequenceFile.Writer.valueClass(this.format.valueClass()),
                 SequenceFile.Writer.compression(this.compressionType, this.codecFactory.getCodecByName(this.compressionCodec))
         );
-        return p;
-    }
 
-    void closeOutputFile() throws IOException {
-        this.writer.close();
+        return new SequenceFileWriter(this.rotationPolicy, path, writer, this.format);
     }
 }

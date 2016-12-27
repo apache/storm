@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>0.11.0-SNAPSHOT</version>
+        <version>2.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -36,8 +36,9 @@
     </developers>
 
     <properties>
-        <hbase.version>0.98.4-hadoop2</hbase.version>
+        <hbase.version>1.1.0</hbase.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
+        <caffeine.version>2.3.5</caffeine.version>
     </properties>
 
     <dependencies>
@@ -87,6 +88,11 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
         </dependency>
     </dependencies>
 </project>

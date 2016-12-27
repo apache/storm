@@ -18,7 +18,7 @@
 package org.apache.storm.hdfs.bolt.rotation;
 
 
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.tuple.Tuple;
 
 import java.io.Serializable;
 
@@ -48,4 +48,9 @@ public interface FileRotationPolicy extends Serializable {
      *
      */
     void reset();
+
+    /**
+     * Must be able to copy the rotation policy
+     */
+    FileRotationPolicy copy();
 }

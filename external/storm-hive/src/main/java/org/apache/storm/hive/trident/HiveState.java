@@ -15,13 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+
 package org.apache.storm.hive.trident;
 
-import storm.trident.operation.TridentCollector;
-import storm.trident.state.State;
-import storm.trident.tuple.TridentTuple;
-import backtype.storm.task.IMetricsContext;
-import backtype.storm.topology.FailedException;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.tuple.TridentTuple;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.hive.hcatalog.streaming.*;
@@ -38,7 +40,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map.Entry;
@@ -55,9 +57,10 @@ public class HiveState implements State {
     private ExecutorService callTimeoutPool;
     private transient Timer heartBeatTimer;
     private AtomicBoolean timeToSendHeartBeat = new AtomicBoolean(false);
+    private Boolean sendHeartBeat = true;
     private UserGroupInformation ugi = null;
     private Boolean kerberosEnabled = false;
-    HashMap<HiveEndPoint, HiveWriter> allWriters;
+    private Map<HiveEndPoint, HiveWriter> allWriters;
 
     public HiveState(HiveOptions options) {
         this.options = options;
@@ -93,7 +96,7 @@ public class HiveState implements State {
                 }
             }
 
-            allWriters = new HashMap<HiveEndPoint,HiveWriter>();
+            allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
                                                                 new ThreadFactoryBuilder().setNameFormat(timeoutName).build());
@@ -116,9 +119,6 @@ public class HiveState implements State {
 
     private void writeTuples(List<TridentTuple> tuples)
         throws Exception {
-        if(timeToSendHeartBeat.compareAndSet(true, false)) {
-            enableHeartBeatOnAllWriters();
-        }
         for (TridentTuple tuple : tuples) {
             List<String> partitionVals = options.getMapper().mapPartitions(tuple);
             HiveEndPoint endPoint = HiveUtils.makeEndPoint(partitionVals, options);
@@ -134,20 +134,18 @@ public class HiveState implements State {
 
     private void abortAndCloseWriters() {
         try {
+            sendHeartBeat = false;
             abortAllWriters();
             closeAllWriters();
-        } catch(InterruptedException e) {
-            LOG.warn("unable to close hive connections. ", e);
-        } catch(IOException ie) {
+        }  catch(Exception ie) {
             LOG.warn("unable to close hive connections. ", ie);
         }
     }
 
     /**
      * Abort current Txn on all writers
-     * @return number of writers retired
      */
-    private void abortAllWriters() throws InterruptedException {
+    private void abortAllWriters() throws InterruptedException, StreamingException, HiveWriter.TxnBatchFailure {
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             entry.getValue().abort();
         }
@@ -172,8 +170,15 @@ public class HiveState implements State {
             heartBeatTimer.schedule(new TimerTask() {
                     @Override
                     public void run() {
-                        timeToSendHeartBeat.set(true);
-                        setupHeartBeatTimer();
+                        try {
+                            if (sendHeartBeat) {
+                                LOG.debug("Start sending heartbeat on all writers");
+                                sendHeartBeatOnAllWriters();
+                                setupHeartBeatTimer();
+                            }
+                        } catch (Exception e) {
+                            LOG.warn("Failed to heartbeat on HiveWriter ", e);
+                        }
                     }
                 }, options.getHeartBeatInterval() * 1000);
         }
@@ -186,9 +191,9 @@ public class HiveState implements State {
         }
     }
 
-    private void enableHeartBeatOnAllWriters() {
+    private void sendHeartBeatOnAllWriters() throws InterruptedException {
         for (HiveWriter writer : allWriters.values()) {
-            writer.setHeartBeatNeeded();
+            writer.heartBeat();
         }
     }
 
@@ -199,7 +204,7 @@ public class HiveState implements State {
             if( writer == null ) {
                 LOG.info("Creating Writer to Hive end point : " + endPoint);
                 writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
-                if(allWriters.size() > options.getMaxOpenConnections()){
+                if(allWriters.size() > (options.getMaxOpenConnections() - 1)){
                     int retired = retireIdleWriters();
                     if(retired==0) {
                         retireEldestWriter();
@@ -231,12 +236,14 @@ public class HiveState implements State {
         }
         try {
             LOG.info("Closing least used Writer to Hive end point : " + eldest);
-            allWriters.remove(eldest).close();
+            allWriters.remove(eldest).flushAndClose();
         } catch (IOException e) {
             LOG.warn("Failed to close writer for end point: " + eldest, e);
         } catch (InterruptedException e) {
             LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
             Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
         }
     }
 
@@ -260,12 +267,14 @@ public class HiveState implements State {
         for(HiveEndPoint ep : retirees) {
             try {
                 LOG.info("Closing idle Writer to Hive end point : {}", ep);
-                allWriters.remove(ep).close();
+                allWriters.remove(ep).flushAndClose();
             } catch (IOException e) {
                 LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
             } catch (InterruptedException e) {
                 LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
                 Thread.currentThread().interrupt();
+            } catch (Exception e) {
+                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
             }
         }
         return count;
@@ -274,6 +283,7 @@ public class HiveState implements State {
     public void cleanup() {
         for (Entry<HiveEndPoint, HiveWriter> entry : allWriters.entrySet()) {
             try {
+                sendHeartBeat = false;
                 HiveWriter w = entry.getValue();
                 LOG.info("Flushing writer to {}", w);
                 w.flush(false);

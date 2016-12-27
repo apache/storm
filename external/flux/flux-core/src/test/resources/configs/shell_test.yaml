@@ -53,6 +53,13 @@ spouts:
       - ["node", "randomsentence.js"]
       # output fields
       - ["word"]
+    configMethods:
+      - name: "addComponentConfig"
+        args: ["rabbitmq.configfile", "etc/rabbit.yml"]
+      - name: "addComponentConfig"
+        args:
+        - "publisher.data_paths"
+        - ["actions"]
     parallelism: 1
     # ...
 
@@ -65,6 +72,13 @@ bolts:
       - ["python", "splitsentence.py"]
       # output fields
       - ["word"]
+    configMethods:
+      - name: "addComponentConfig"
+        args: ["rabbitmq.configfile", "etc/rabbit.yml"]
+      - name: "addComponentConfig"
+        args:
+        - "publisher.data_paths"
+        - ["actions"]
     parallelism: 1
     # ...
 
@@ -74,7 +88,7 @@ bolts:
     # ...
 
   - id: "count"
-    className: "backtype.storm.testing.TestWordCounter"
+    className: "org.apache.storm.testing.TestWordCounter"
     parallelism: 1
     # ...
 

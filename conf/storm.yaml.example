@@ -39,10 +39,38 @@
 #     - "server2"
 
 ## Metrics Consumers
+## max.retain.metric.tuples
+## - task queue will be unbounded when max.retain.metric.tuples is equal or less than 0.
+## whitelist / blacklist
+## - when none of configuration for metric filter are specified, it'll be treated as 'pass all'.
+## - you need to specify either whitelist or blacklist, or none of them. You can't specify both of them.
+## - you can specify multiple whitelist / blacklist with regular expression
+## expandMapType: expand metric with map type as value to multiple metrics
+## - set to true when you would like to apply filter to expanded metrics
+## - default value is false which is backward compatible value
+## metricNameSeparator: separator between origin metric name and key of entry from map
+## - only effective when expandMapType is set to true
+## - default value is "."
 # topology.metrics.consumer.register:
-#   - class: "backtype.storm.metric.LoggingMetricsConsumer"
+#   - class: "org.apache.storm.metric.LoggingMetricsConsumer"
+#     max.retain.metric.tuples: 100
 #     parallelism.hint: 1
 #   - class: "org.mycompany.MyMetricsConsumer"
+#     max.retain.metric.tuples: 100
+#     whitelist:
+#       - "execute.*"
+#       - "^__complete-latency$"
 #     parallelism.hint: 1
 #     argument:
 #       - endpoint: "metrics-collector.mycompany.org"
+#     expandMapType: true
+#     metricNameSeparator: "."
+
+## Cluster Metrics Consumers
+# storm.cluster.metrics.consumer.register:
+#   - class: "org.apache.storm.metric.LoggingClusterMetricsConsumer"
+#   - class: "org.mycompany.MyMetricsConsumer"
+#     argument:
+#       - endpoint: "metrics-collector.mycompany.org"
+#
+# storm.cluster.metrics.consumer.publish.interval.secs: 60

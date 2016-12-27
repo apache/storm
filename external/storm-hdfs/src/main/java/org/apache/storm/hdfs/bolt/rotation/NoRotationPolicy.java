@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.rotation;
 
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * File rotation policy that will never rotate...
@@ -31,5 +31,10 @@ public class NoRotationPolicy implements FileRotationPolicy {
 
     @Override
     public void reset() {
+    }
+
+    @Override
+    public FileRotationPolicy copy() {
+        return this;
     }
 }

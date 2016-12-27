@@ -17,14 +17,12 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.topology.base.BaseRichBolt;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.TupleUtils;
-import backtype.storm.utils.Utils;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -32,6 +30,9 @@ import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.common.AbstractHDFSWriter;
+import org.apache.storm.hdfs.common.NullPartitioner;
+import org.apache.storm.hdfs.common.Partitioner;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.slf4j.Logger;
@@ -39,6 +40,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.List;
@@ -48,15 +51,20 @@ import java.util.TimerTask;
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
     private static final Integer DEFAULT_RETRY_COUNT = 3;
+    /**
+     * Half of the default Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
+     */
+    private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
+    private static final Integer DEFAULT_MAX_OPEN_FILES = 50;
 
-    protected ArrayList<RotationAction> rotationActions = new ArrayList<RotationAction>();
-    private Path currentFile;
+    protected Map<String, AbstractHDFSWriter> writers;
+    protected Map<String, Integer> rotationCounterMap = new HashMap<>();
+    protected List<RotationAction> rotationActions = new ArrayList<>();
     protected OutputCollector collector;
     protected transient FileSystem fs;
     protected SyncPolicy syncPolicy;
     protected FileRotationPolicy rotationPolicy;
     protected FileNameFormat fileNameFormat;
-    protected int rotation = 0;
     protected String fsUrl;
     protected String configKey;
     protected transient Object writeLock;
@@ -64,23 +72,22 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private List<Tuple> tupleBatch = new LinkedList<>();
     protected long offset = 0;
     protected Integer fileRetryCount = DEFAULT_RETRY_COUNT;
-    protected Integer tickTupleInterval = 0;
+    protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
+    protected Integer maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
+    protected Partitioner partitioner = new NullPartitioner();
 
     protected transient Configuration hdfsConfig;
 
-    protected void rotateOutputFile() throws IOException {
+    protected void rotateOutputFile(AbstractHDFSWriter writer) throws IOException {
         LOG.info("Rotating output file...");
         long start = System.currentTimeMillis();
         synchronized (this.writeLock) {
-            closeOutputFile();
-            this.rotation++;
+            writer.close();
 
-            Path newFile = createOutputFile();
             LOG.info("Performing {} file rotation actions.", this.rotationActions.size());
             for (RotationAction action : this.rotationActions) {
-                action.execute(this.fs, this.currentFile);
+                action.execute(this.fs, writer.getFilePath());
             }
-            this.currentFile = newFile;
         }
         long time = System.currentTimeMillis() - start;
         LOG.info("File rotation took {} ms.", time);
@@ -100,6 +107,8 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             throw new IllegalStateException("File system URL must be specified.");
         }
 
+        writers = new WritersMap(this.maxOpenFiles);
+
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
         this.hdfsConfig = new Configuration();
@@ -110,37 +119,15 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             }
         }
 
-        // If interval is non-zero then it has already been explicitly set and we should not default it
-        if (conf.containsKey("topology.message.timeout.secs") && tickTupleInterval == 0)
-        {
-            Integer topologyTimeout = Utils.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
-            tickTupleInterval = (int)(Math.floor(topologyTimeout / 2));
-            LOG.debug("Setting tick tuple interval to [{}] based on topology timeout", tickTupleInterval);
-        }
-
         try{
             HdfsSecurityUtil.login(conf, hdfsConfig);
             doPrepare(conf, topologyContext, collector);
-            this.currentFile = createOutputFile();
-
         } catch (Exception e){
             throw new RuntimeException("Error preparing HdfsBolt: " + e.getMessage(), e);
         }
 
         if(this.rotationPolicy instanceof TimedRotationPolicy){
-            long interval = ((TimedRotationPolicy)this.rotationPolicy).getInterval();
-            this.rotationTimer = new Timer(true);
-            TimerTask task = new TimerTask() {
-                @Override
-                public void run() {
-                    try {
-                        rotateOutputFile();
-                    } catch(IOException e){
-                        LOG.warn("IOException during scheduled file rotation.", e);
-                    }
-                }
-            };
-            this.rotationTimer.scheduleAtFixedRate(task, interval, interval);
+            startTimedRotationPolicy();
         }
     }
 
@@ -149,12 +136,20 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         synchronized (this.writeLock) {
             boolean forceSync = false;
+            AbstractHDFSWriter writer = null;
+            String writerKey = null;
+
             if (TupleUtils.isTick(tuple)) {
                 LOG.debug("TICK! forcing a file system flush");
+                this.collector.ack(tuple);
                 forceSync = true;
             } else {
+
+                writerKey = getHashKeyForTuple(tuple);
+
                 try {
-                    writeTuple(tuple);
+                    writer = getOrCreateWriter(writerKey, tuple);
+                    this.offset = writer.write(tuple);
                     tupleBatch.add(tuple);
                 } catch (IOException e) {
                     //If the write failed, try to sync anything already written
@@ -174,7 +169,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                 while (success == false && attempts < fileRetryCount) {
                     attempts += 1;
                     try {
-                        syncTuples();
+                        syncAllWriters();
                         LOG.debug("Data synced to filesystem. Ack'ing [{}] tuples", tupleBatch.size());
                         for (Tuple t : tupleBatch) {
                             this.collector.ack(t);
@@ -201,63 +196,129 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                 }
             }
 
-            if(this.rotationPolicy.mark(tuple, this.offset)) {
-                try {
-                    rotateOutputFile();
-                    this.rotationPolicy.reset();
-                    this.offset = 0;
-                } catch (IOException e) {
-                    this.collector.reportError(e);
-                    LOG.warn("File could not be rotated");
-                    //At this point there is nothing to do.  In all likelihood any filesystem operations will fail.
-                    //The next tuple will almost certainly fail to write and/or sync, which force a rotation.  That
-                    //will give rotateAndReset() a chance to work which includes creating a fresh file handle.
-                }
+            if (writer != null && writer.needsRotation()) {
+                    doRotationAndRemoveWriter(writerKey, writer);
             }
+        }
+    }
+
+    private AbstractHDFSWriter getOrCreateWriter(String writerKey, Tuple tuple) throws IOException {
+        AbstractHDFSWriter writer;
+
+        writer = writers.get(writerKey);
+        if (writer == null) {
+            Path pathForNextFile = getBasePathForNextFile(tuple);
+            writer = makeNewWriter(pathForNextFile, tuple);
+            writers.put(writerKey, writer);
+        }
+        return writer;
+    }
+
+    /**
+     * A tuple must be mapped to a writer based on two factors:
+     *  - bolt specific logic that must separate tuples into different files in the same directory (see the avro bolt
+     *    for an example of this)
+     *  - the directory the tuple will be partioned into
+     *
+     * @param tuple
+     * @return
+     */
+    private String getHashKeyForTuple(Tuple tuple) {
+        final String boltKey = getWriterKey(tuple);
+        final String partitionDir = this.partitioner.getPartitionPath(tuple);
+        return boltKey + "****" + partitionDir;
+    }
+
+    void doRotationAndRemoveWriter(String writerKey, AbstractHDFSWriter writer) {
+        try {
+            rotateOutputFile(writer);
+        } catch (IOException e) {
+            this.collector.reportError(e);
+            LOG.error("File could not be rotated");
+            //At this point there is nothing to do.  In all likelihood any filesystem operations will fail.
+            //The next tuple will almost certainly fail to write and/or sync, which force a rotation.  That
+            //will give rotateAndReset() a chance to work which includes creating a fresh file handle.
+        } finally {
+            writers.remove(writerKey);
         }
     }
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        Map<String, Object> conf = super.getComponentConfiguration();
-        if (conf == null)
-            conf = new Config();
-
-        if (tickTupleInterval > 0) {
-            LOG.info("Enabling tick tuple with interval [{}]", tickTupleInterval);
-            conf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, tickTupleInterval);
-        }
-
-        return conf;
+        return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), tickTupleInterval);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
     }
 
-    /**
-     * writes a tuple to the underlying filesystem but makes no guarantees about syncing data.
-     *
-     * this.offset is also updated to reflect additional data written
-     *
-     * @param tuple
-     * @throws IOException
-     */
-    abstract void writeTuple(Tuple tuple) throws IOException;
+    @Override
+    public void cleanup() {
+        doRotationAndRemoveAllWriters();
+    }
 
-    /**
-     * Make the best effort to sync written data to the underlying file system.  Concrete classes should very clearly
-     * state the file state that sync guarantees.  For example, HdfsBolt can make a much stronger guarantee than
-     * SequenceFileBolt.
-     *
-     * @throws IOException
-     */
-    abstract void syncTuples() throws IOException;
+    private void doRotationAndRemoveAllWriters() {
+        for (final AbstractHDFSWriter writer : writers.values()) {
+            try {
+                rotateOutputFile(writer);
+            } catch (IOException e) {
+                LOG.warn("IOException during scheduled file rotation.", e);
+            }
+        }
+        writers.clear();
+    }
 
-    abstract void closeOutputFile() throws IOException;
+    private void syncAllWriters() throws IOException {
+        for (AbstractHDFSWriter writer : writers.values()) {
+            writer.sync();
+        }
+    }
 
-    abstract Path createOutputFile() throws IOException;
+    private void startTimedRotationPolicy() {
+        long interval = ((TimedRotationPolicy)this.rotationPolicy).getInterval();
+        this.rotationTimer = new Timer(true);
+        TimerTask task = new TimerTask() {
+            @Override
+            public void run() {
+                doRotationAndRemoveAllWriters();
+            }
+        };
+        this.rotationTimer.scheduleAtFixedRate(task, interval, interval);
+    }
 
-    abstract void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
+    protected Path getBasePathForNextFile(Tuple tuple) {
 
+        final String partitionPath = this.partitioner.getPartitionPath(tuple);
+        final int rotation;
+        if (rotationCounterMap.containsKey(partitionPath))
+        {
+            rotation = rotationCounterMap.get(partitionPath) + 1;
+        } else {
+            rotation = 0;
+        }
+        rotationCounterMap.put(partitionPath, rotation);
+
+        return new Path(this.fsUrl + this.fileNameFormat.getPath() + partitionPath,
+                this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
+    }
+
+    abstract protected void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
+
+    abstract protected String getWriterKey(Tuple tuple);
+
+    abstract protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException;
+
+    static class WritersMap extends LinkedHashMap<String, AbstractHDFSWriter> {
+        final long maxWriters;
+
+        public WritersMap(long maxWriters) {
+            super((int)maxWriters, 0.75f, true);
+            this.maxWriters = maxWriters;
+        }
+
+        @Override
+        protected boolean removeEldestEntry(Map.Entry<String, AbstractHDFSWriter> eldest) {
+            return this.size() > this.maxWriters;
+        }
+    }
 }

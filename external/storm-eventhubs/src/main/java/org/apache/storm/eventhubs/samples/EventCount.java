@@ -17,11 +17,12 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.samples;
 
-import backtype.storm.StormSubmitter;
-import backtype.storm.Config;
-import backtype.storm.LocalCluster;
-import backtype.storm.generated.StormTopology;
-import backtype.storm.topology.TopologyBuilder;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.topology.TopologyBuilder;
 
 import org.apache.storm.eventhubs.samples.bolt.GlobalCountBolt;
 import org.apache.storm.eventhubs.samples.bolt.PartialCountBolt;
@@ -126,7 +127,7 @@ public class EventCount {
 	  Config config = new Config();
     config.setDebug(false);
     //Enable metrics
-    config.registerMetricsConsumer(backtype.storm.metric.LoggingMetricsConsumer.class, 1);
+    config.registerMetricsConsumer(org.apache.storm.metric.LoggingMetricsConsumer.class, 1);
 
     
 	  if (args != null && args.length > 0) {
@@ -135,14 +136,12 @@ public class EventCount {
     } else {
       config.setMaxTaskParallelism(2);
 
-      LocalCluster localCluster = new LocalCluster();
-      localCluster.submitTopology("test", config, topology);
-
-      Thread.sleep(5000000);
-
-      localCluster.shutdown();
+      try (LocalCluster localCluster = new LocalCluster();
+           LocalTopology topo = localCluster.submitTopology("test", config, topology);) {
+        Thread.sleep(5000000);
+      }
     }
-	}
+  }
   
   protected void runScenario(String[] args) throws Exception{
     readEHConfig(args);

@@ -17,35 +17,155 @@
  */
 package org.apache.storm.flux.wrappers.spouts;
 
-import backtype.storm.spout.ShellSpout;
-import backtype.storm.topology.IRichSpout;
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Fields;
+import org.apache.storm.spout.ShellSpout;
+import org.apache.storm.topology.IRichSpout;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
 
+import java.util.List;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Iterator;
 
 /**
  * A generic `ShellSpout` implementation that allows you specify output fields
- * without having to subclass `ShellSpout` to do so.
+ * and even streams without having to subclass `ShellSpout` to do so.
  *
  */
 public class FluxShellSpout extends ShellSpout implements IRichSpout {
-    private String[] outputFields;
+    private Map<String, String[]> outputFields;
     private Map<String, Object> componentConfig;
+    
+    /**
+     * Create a ShellSpout with command line arguments
+     * @param command Command line arguments for the bolt
+     */
+    public FluxShellSpout(String[] command){
+        super(command);
+        this.outputFields = new HashMap<String, String[]>();
+    }
 
     /**
      * Create a ShellSpout with command line arguments and output fields
+     * 
+     * Keep this constructor for backward compatibility.
+     * 
      * @param args Command line arguments for the spout
      * @param outputFields Names of fields the spout will emit.
      */
     public FluxShellSpout(String[] args, String[] outputFields){
-        super(args);
-        this.outputFields = outputFields;
+        this(args);
+        this.setDefaultStream(outputFields);
+    }
+
+    /**
+     * Add configuration for this spout. This method is called from YAML file:
+     *
+     * ```
+     * className: "org.apache.storm.flux.wrappers.bolts.FluxShellSpout"
+     * constructorArgs:
+     * # command line
+     * - ["python", "splitsentence.py"]
+     * # output fields
+     * - ["word"]
+     * configMethods:
+     * - name: "addComponentConfig"
+     *   args: ["publisher.data_paths", "actions"]
+     * ```
+     *
+     * @param key
+     * @param value
+     */
+    public void addComponentConfig(String key, Object value) {
+        if (this.componentConfig == null) {
+            this.componentConfig = new HashMap<String, Object>();
+        }
+        this.componentConfig.put(key, value);
+    }
+
+    /**
+     * Add configuration for this spout. This method is called from YAML file:
+     *
+     * ```
+     * className: "org.apache.storm.flux.wrappers.bolts.FluxShellSpout"
+     * constructorArgs:
+     * # command line
+     * - ["python", "splitsentence.py"]
+     * # output fields
+     * - ["word"]
+     * configMethods:
+     * - name: "addComponentConfig"
+     *   args:
+     *   - "publisher.data_paths"
+     *   - ["actions"]
+     * ```
+     *
+     * @param key
+     * @param values
+     */
+    public void addComponentConfig(String key, List<Object> values) {
+        if (this.componentConfig == null) {
+            this.componentConfig = new HashMap<String, Object>();
+        }
+        this.componentConfig.put(key, values);
+    }
+
+    /**
+     * Set default stream outputFields, this method is called from YAML file:
+     * 
+     * ```
+     * spouts:
+     * - className: org.apache.storm.flux.wrappers.bolts.FluxShellSpout
+     *   id: my_spout
+     *   constructorArgs:
+     *   - [python, my_spout.py]
+     *   configMethods:
+     *   - name: setDefaultStream
+     *     args:
+     *     - [word, count]
+     * ```
+     * 
+     * @param outputFields Names of fields the spout will emit (if any) in default stream.
+     */
+    public void setDefaultStream(String[] outputFields) {
+        this.setNamedStream("default", outputFields);
+    }
+
+    /**
+     * Set custom *named* stream outputFields, this method is called from YAML file:
+     * 
+     * ```
+     * spouts:
+     * - className: org.apache.storm.flux.wrappers.bolts.FluxShellSpout
+     *   id: my_spout
+     *   constructorArgs:
+     *   - [python, my_spout.py]
+     *   configMethods:
+     *   - name: setNamedStream
+     *     args:
+     *     - first
+     *     - [word, count]
+     * ```
+     * @param name Name of stream the spout will emit into.
+     * @param outputFields Names of fields the spout will emit in custom *named* stream.
+     */
+    public void setNamedStream(String name, String[] outputFields) {
+        this.outputFields.put(name, outputFields);
     }
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields(this.outputFields));
+        Iterator it = this.outputFields.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry entryTuple = (Map.Entry)it.next();
+            String key = (String)entryTuple.getKey();
+            String[] value = (String[])entryTuple.getValue();
+            if(key.equals("default")) {
+                declarer.declare(new Fields(value));
+            } else {
+                declarer.declareStream(key, new Fields(value));
+            }
+        }
     }
 
     @Override

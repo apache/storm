@@ -27,6 +27,7 @@ import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.StreamingException;
+import org.apache.hive.hcatalog.streaming.SerializationError;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
 import org.apache.storm.hive.bolt.HiveSetupUtil;
@@ -36,13 +37,13 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 
-import backtype.storm.Config;
-import backtype.storm.task.GeneralTopologyContext;
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.TupleImpl;
-import backtype.storm.tuple.Values;
+import org.apache.storm.Config;
+import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
+import org.apache.storm.tuple.Values;
 import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 
 import java.io.IOException;
@@ -140,18 +141,22 @@ public class TestHiveWriter {
                                            , callTimeoutPool, mapper, ugi);
         Tuple tuple = generateTestTuple("1","abc");
         writer.write(mapper.mapRecord(tuple));
-        checkRecordCountInTable(dbName,tblName,0);
-        writer.flush(true);
-
         tuple = generateTestTuple("2","def");
         writer.write(mapper.mapRecord(tuple));
+        Assert.assertEquals(writer.getTotalRecords(), 2);
+        checkRecordCountInTable(dbName,tblName,0);
         writer.flush(true);
+        Assert.assertEquals(writer.getTotalRecords(), 0);
 
         tuple = generateTestTuple("3","ghi");
         writer.write(mapper.mapRecord(tuple));
         writer.flush(true);
+
+        tuple = generateTestTuple("4","klm");
+        writer.write(mapper.mapRecord(tuple));
+        writer.flush(true);
         writer.close();
-        checkRecordCountInTable(dbName,tblName,3);
+        checkRecordCountInTable(dbName,tblName,4);
     }
 
     private Tuple generateTestTuple(Object id, Object msg) {
@@ -167,7 +172,7 @@ public class TestHiveWriter {
     }
 
     private void writeTuples(HiveWriter writer, HiveMapper mapper, int count)
-            throws HiveWriter.WriteFailure, InterruptedException {
+        throws HiveWriter.WriteFailure, InterruptedException, SerializationError {
         Integer id = 100;
         String msg = "test-123";
         for (int i = 1; i <= count; i++) {

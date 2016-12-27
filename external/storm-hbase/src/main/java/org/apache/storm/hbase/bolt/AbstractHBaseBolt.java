@@ -17,10 +17,10 @@
  */
 package org.apache.storm.hbase.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.base.BaseRichBolt;
+import org.apache.storm.Config;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.commons.lang.Validate;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.HBaseConfiguration;
@@ -29,6 +29,7 @@ import org.apache.storm.hbase.common.HBaseClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -36,14 +37,11 @@ import java.util.Map;
 public abstract class AbstractHBaseBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHBaseBolt.class);
 
-    protected OutputCollector collector;
-
+    protected transient OutputCollector collector;
     protected transient HBaseClient hBaseClient;
     protected String tableName;
     protected HBaseMapper mapper;
     protected String configKey;
-    protected int batchSize = 15000;
-    protected int flushIntervalSecs = 0;
 
     public AbstractHBaseBolt(String tableName, HBaseMapper mapper) {
         Validate.notEmpty(tableName, "Table name can not be blank or null");
@@ -74,5 +72,14 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
         Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
         hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, map.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
         this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, tableName);
+    }
+
+    @Override
+    public void cleanup() {
+        try {
+            hBaseClient.close();
+        } catch (IOException e) {
+            LOG.error("HBase Client Close Failed ", e);
+        }
     }
 }

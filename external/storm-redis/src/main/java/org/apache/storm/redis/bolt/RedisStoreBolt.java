@@ -17,18 +17,18 @@
  */
 package org.apache.storm.redis.bolt;
 
-import backtype.storm.topology.OutputFieldsDeclarer;
-import backtype.storm.tuple.Tuple;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Tuple;
 import redis.clients.jedis.JedisCommands;
 
 /**
  * Basic bolt for writing to Redis
  * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
+ * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisStoreBolt extends AbstractRedisBolt {
     private final RedisStoreMapper storeMapper;
@@ -94,9 +94,21 @@ public class RedisStoreBolt extends AbstractRedisBolt {
 
                 case SORTED_SET:
                     jedisCommand.zadd(additionalKey, Double.valueOf(value), key);
+                    break;
 
                 case HYPER_LOG_LOG:
                     jedisCommand.pfadd(key, value);
+                    break;
+
+                case GEO:
+                    String[] array = value.split(":");
+                    if (array.length != 2) {
+                        throw new IllegalArgumentException("value structure should be longitude:latitude");
+                    }
+
+                    double longitude = Double.valueOf(array[0]);
+                    double latitude = Double.valueOf(array[1]);
+                    jedisCommand.geoadd(additionalKey, longitude, latitude, key);
                     break;
 
                 default:

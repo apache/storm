@@ -86,7 +86,11 @@ if not defined STORM_LOG_DIR (
 @rem retrieve storm.log4j2.conf.dir from conf file
 @rem
 
-"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value storm.log4j2.conf.dir > %CMD_TEMP_FILE%
+if not defined CMD_TEMP_FILE (
+  set CMD_TEMP_FILE=tmpfile
+)
+
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.ConfigValue storm.log4j2.conf.dir > %CMD_TEMP_FILE%
 
 FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 	FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -102,7 +106,7 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 @rem
 
 if not %STORM_LOG4J2_CONFIGURATION_DIR% == nil (
-	set STORM_LOG4J2_CONFIGURATION_FILE="file://%STORM_LOG4J2_CONFIGURATION_DIR%\cluster.xml"
+	set STORM_LOG4J2_CONFIGURATION_FILE="file:///%STORM_LOG4J2_CONFIGURATION_DIR%\cluster.xml"
 )
 
 @rem
@@ -110,10 +114,10 @@ if not %STORM_LOG4J2_CONFIGURATION_DIR% == nil (
 @rem
 
 if not defined STORM_LOG4J2_CONFIGURATION_FILE (
-  set STORM_LOG4J2_CONFIGURATION_FILE="file://%STORM_HOME%\log4j2\cluster.xml"
+  set STORM_LOG4J2_CONFIGURATION_FILE="file:///%STORM_HOME%\log4j2\cluster.xml"
 )
 
-"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" backtype.storm.command.config_value java.library.path > %CMD_TEMP_FILE%
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.ConfigValue java.library.path > %CMD_TEMP_FILE%
 
 FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -125,7 +129,11 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 
 
 :storm_opts
- set STORM_OPTS=-Dstorm.options= -Dstorm.home=%STORM_HOME% -Djava.library.path=%JAVA_LIBRARY_PATH%;%JAVA_HOME%\bin;%JAVA_HOME%\lib;%JAVA_HOME%\jre\bin;%JAVA_HOME%\jre\lib
+ if "%set_storm_options%"=="true" (
+  set STORM_OPTS=-Dstorm.options=
+ )
+
+ set STORM_OPTS=%STORM_OPTS% -Dstorm.home=%STORM_HOME% -Djava.library.path=%JAVA_LIBRARY_PATH%;%JAVA_HOME%\bin;%JAVA_HOME%\lib;%JAVA_HOME%\jre\bin;%JAVA_HOME%\jre\lib
  set STORM_OPTS=%STORM_OPTS% -Dlog4j.configurationFile=%STORM_LOG4J2_CONFIGURATION_FILE%
  set STORM_OPTS=%STORM_OPTS% -Dstorm.log.dir=%STORM_LOG_DIR%
  del /F %CMD_TEMP_FILE%

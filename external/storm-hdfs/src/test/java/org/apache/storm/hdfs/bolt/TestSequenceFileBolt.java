@@ -17,16 +17,16 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.Constants;
-import backtype.storm.task.GeneralTopologyContext;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.topology.TopologyBuilder;
-import backtype.storm.tuple.Fields;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.tuple.TupleImpl;
-import backtype.storm.tuple.Values;
+import org.apache.storm.Config;
+import org.apache.storm.Constants;
+import org.apache.storm.task.GeneralTopologyContext;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.TupleImpl;
+import org.apache.storm.tuple.Values;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
 import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.format.SequenceFormat;
@@ -127,14 +127,14 @@ public class TestSequenceFileBolt {
     @Test
     public void testFailedSync() throws IOException
     {
-        SequenceFileBolt bolt = makeSeqBolt(hdfsURI, 1, .00001f);
+        SequenceFileBolt bolt = makeSeqBolt(hdfsURI, 2, 10000f);
         bolt.prepare(new Config(), topologyContext, collector);
+        bolt.execute(tuple1);
 
         fs.setSafeMode(SafeModeAction.SAFEMODE_ENTER);
         // All writes/syncs will fail so this should cause a RuntimeException
         thrown.expect(RuntimeException.class);
         bolt.execute(tuple1);
-
     }
 
     private SequenceFileBolt makeSeqBolt(String nameNodeAddr, int countSync, float rotationSizeMB) {

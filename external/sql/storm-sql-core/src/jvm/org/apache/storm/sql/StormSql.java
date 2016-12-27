@@ -17,8 +17,8 @@
  */
 package org.apache.storm.sql;
 
-import backtype.storm.StormSubmitter;
-import backtype.storm.generated.SubmitOptions;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.sql.runtime.ChannelHandler;
 
 import java.util.Map;
@@ -46,6 +46,11 @@ public abstract class StormSql {
       String name, Iterable<String> statements, Map<String, ?> stormConf, SubmitOptions opts,
       StormSubmitter.ProgressListener progressListener, String asUser)
       throws Exception;
+
+  /**
+   * Print out query plan for each query.
+   */
+  public abstract void explain(Iterable<String> statements) throws Exception;
 
   public static StormSql construct() {
     return new StormSqlImpl();

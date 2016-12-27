@@ -9,3 +9,10 @@ github_username:  apache/storm
 markdown: redcarpet
 redcarpet:
   extensions: ["no_intra_emphasis", "fenced_code_blocks", "autolink", "tables", "with_toc_data"]
+
+keep_files:   [".git", ".svn"]
+encoding:     "utf-8"
+exclude: 
+  - READEME.md
+
+storm_release_only: true

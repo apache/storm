@@ -18,11 +18,11 @@
  */
 package org.apache.storm.cassandra.bolt;
 
-import backtype.storm.Config;
-import backtype.storm.task.OutputCollector;
-import backtype.storm.task.TopologyContext;
-import backtype.storm.tuple.Tuple;
-import backtype.storm.utils.Time;
+import org.apache.storm.Config;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.Time;
 import com.datastax.driver.core.Statement;
 import org.apache.storm.cassandra.executor.AsyncResultHandler;
 import org.apache.storm.cassandra.executor.impl.BatchAsyncResultHandler;
@@ -123,11 +123,11 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
 
                 checkTimeElapsedSinceLastExec(sinceLastModified);
 
-                GroupingBatchBuilder batchBuilder = new GroupingBatchBuilder(cassandraConfConfig.getBatchSizeRows(), psl);
+                GroupingBatchBuilder batchBuilder = new GroupingBatchBuilder(cassandraConf.getBatchSizeRows(), psl);
 
                 int batchSize = 0;
                 for (PairBatchStatementTuples batch : batchBuilder) {
-                    LOG.debug(logPrefix() + "Writing data to {} in batches of {} rows.", cassandraConfConfig.getKeyspace(), batch.getInputs().size());
+                    LOG.debug(logPrefix() + "Writing data to {} in batches of {} rows.", cassandraConf.getKeyspace(), batch.getInputs().size());
                     getAsyncExecutor().execAsync(batch.getStatement(), batch.getInputs());
                     batchSize++;
                 }

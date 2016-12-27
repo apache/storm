@@ -23,7 +23,7 @@
  * details.
  */
 
-namespace java backtype.storm.generated
+namespace java org.apache.storm.generated
 
 union JavaObjectArg {
   1: i32 int_arg;
@@ -118,6 +118,8 @@ struct StormTopology {
   2: required map<string, Bolt> bolts;
   3: required map<string, StateSpoutSpec> state_spouts;
   4: optional list<binary> worker_hooks;
+  5: optional list<string> dependency_jars;
+  6: optional list<string> dependency_artifacts;
 }
 
 exception AlreadyAliveException {
@@ -271,6 +273,7 @@ struct CommonAggregateStats {
 4: optional i64 transferred;
 5: optional i64 acked;
 6: optional i64 failed;
+7: optional map<string, double> resources_map;
 }
 
 struct SpoutAggregateStats {
@@ -309,6 +312,29 @@ struct TopologyStats {
 5: optional map<string, i64> window_to_failed;
 }
 
+struct WorkerSummary {
+  1: optional string supervisor_id; 
+  2: optional string host;
+  3: optional i32 port;
+  4: optional string topology_id;
+  5: optional string topology_name;
+  6: optional i32 num_executors;
+  7: optional map<string, i64> component_to_num_tasks;
+  8: optional i32 time_secs;
+  9: optional i32 uptime_secs;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
+}
+
+struct SupervisorPageInfo {
+  1: optional list<SupervisorSummary> supervisor_summaries;
+  2: optional list<WorkerSummary> worker_summaries;
+}
+
 struct TopologyPageInfo {
  1: required string id;
  2: optional string name;
@@ -325,6 +351,7 @@ struct TopologyPageInfo {
 13: optional string owner;
 14: optional DebugOptions debug_options;
 15: optional i32 replication_count;
+16: optional list<WorkerSummary> workers;
 521: optional double requested_memonheap;
 522: optional double requested_memoffheap;
 523: optional double requested_cpu;
@@ -354,6 +381,7 @@ struct ComponentPageInfo {
 13: optional i32 eventlog_port;
 14: optional DebugOptions debug_options;
 15: optional string topology_status;
+16: optional map<string, double> resources_map;
 }
 
 struct KillOptions {
@@ -629,7 +657,8 @@ service Nimbus {
   string beginFileUpload() throws (1: AuthorizationException aze);
   void uploadChunk(1: string location, 2: binary chunk) throws (1: AuthorizationException aze);
   void finishFileUpload(1: string location) throws (1: AuthorizationException aze);
-  
+
+  //@deprecated beginBlobDownload does that
   string beginFileDownload(1: string file) throws (1: AuthorizationException aze);
   //can stop downloading chunks when receive 0-length byte array back
   binary downloadChunk(1: string id) throws (1: AuthorizationException aze);
@@ -638,9 +667,12 @@ service Nimbus {
   string getNimbusConf() throws (1: AuthorizationException aze);
   // stats functions
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
+  NimbusSummary getLeader() throws (1: AuthorizationException aze);
+  bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   ComponentPageInfo getComponentPageInfo(1: string topology_id, 2: string component_id, 3: string window, 4: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
@@ -660,8 +692,16 @@ struct DRPCRequest {
   2: required string request_id;
 }
 
+enum DRPCExceptionType {
+  INTERNAL_ERROR,
+  SERVER_SHUTDOWN,
+  SERVER_TIMEOUT,
+  FAILED_REQUEST
+}
+
 exception DRPCExecutionException {
   1: required string msg;
+  2: optional DRPCExceptionType type;
 }
 
 service DistributedRPC {
@@ -672,6 +712,7 @@ service DistributedRPCInvocations {
   void result(1: string id, 2: string result) throws (1: AuthorizationException aze);
   DRPCRequest fetchRequest(1: string functionName) throws (1: AuthorizationException aze);
   void failRequest(1: string id) throws (1: AuthorizationException aze);  
+  void failRequestV2(1: string id, 2: DRPCExecutionException e) throws (1: AuthorizationException aze);  
 }
 
 enum HBServerMessageType {
@@ -696,6 +737,19 @@ enum HBServerMessageType {
   NOT_AUTHORIZED
 }
 
+struct HBPulse {
+  1: required string id;
+  2: binary details;
+}
+
+struct HBRecords {
+  1: list<HBPulse> pulses;
+}
+
+struct HBNodes {
+  1: list<string> pulseIds;
+}
+
 union HBMessageData {
   1: string path,
   2: HBPulse pulse,
@@ -718,17 +772,4 @@ exception HBAuthorizationException {
 
 exception HBExecutionException {
   1: required string msg;
-}
-
-struct HBPulse {
-  1: required string id;
-  2: binary details;
-}
-
-struct HBRecords {
-  1: list<HBPulse> pulses;
-}
-
-struct HBNodes {
-  1: list<string> pulseIds;
 }

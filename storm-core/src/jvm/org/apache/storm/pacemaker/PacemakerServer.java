@@ -17,11 +17,11 @@
  */
 package org.apache.storm.pacemaker;
 
-import backtype.storm.Config;
-import backtype.storm.generated.HBMessage;
-import backtype.storm.messaging.netty.ISaslServer;
-import backtype.storm.messaging.netty.NettyRenameThreadFactory;
-import backtype.storm.security.auth.AuthUtils;
+import org.apache.storm.Config;
+import org.apache.storm.generated.HBMessage;
+import org.apache.storm.messaging.netty.ISaslServer;
+import org.apache.storm.messaging.netty.NettyRenameThreadFactory;
+import org.apache.storm.security.auth.AuthUtils;
 import java.lang.InterruptedException;
 import java.net.InetSocketAddress;
 import java.util.Map;
@@ -138,8 +138,13 @@ class PacemakerServer implements ISaslServer {
         LOG.debug("received message. Passing to handler. {} : {} : {}",
                   handler.toString(), m.toString(), channel.toString());
         HBMessage response = handler.handleMessage(m, authenticated);
-        LOG.debug("Got Response from handler: {}", response.toString());
-        channel.write(response);
+        if(response != null) {
+            LOG.debug("Got Response from handler: {}", response);
+            channel.write(response);
+        }
+        else {
+            LOG.info("Got null response from handler handling message: {}", m);
+        }
     }
 
     public void closeChannel(Channel c) {

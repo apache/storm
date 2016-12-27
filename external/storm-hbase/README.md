@@ -170,6 +170,14 @@ The `HBaseLookupBolt` will use the mapper to get rowKey to lookup for. It will u
 figure out which columns to include in the result and it will leverage the `HBaseRowToStormValueMapper` to get the 
 values to be emitted by the bolt.
 
+In addition, the `HBaseLookupBolt` supports bolt-side HBase result caching using an in-memory LRU cache using Caffeine. To enable caching:
+
+`hbase.cache.enable` - to enable caching (default false)
+
+`hbase.cache.ttl.seconds` - set time to live for LRU cache in seconds (default 300)
+
+`hbase.cache.size` - set size of the cache (default 1000)
+
 You can look at an example topology LookupWordCount.java under `src/test/java`.
 ## Example: Persistent Word Count
 A runnable example can be found in the `src/test/java` directory.

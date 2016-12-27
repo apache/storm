@@ -17,7 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt.rotation;
 
-import backtype.storm.tuple.Tuple;
+import org.apache.storm.tuple.Tuple;
 
 public class TimedRotationPolicy implements FileRotationPolicy {
 
@@ -45,6 +45,9 @@ public class TimedRotationPolicy implements FileRotationPolicy {
         this.interval = (long)(count * units.getMilliSeconds());
     }
 
+    protected TimedRotationPolicy(long interval) {
+        this.interval = interval;
+    }
 
     /**
      * Called for every tuple the HdfsBolt executes.
@@ -64,6 +67,11 @@ public class TimedRotationPolicy implements FileRotationPolicy {
     @Override
     public void reset() {
 
+    }
+
+    @Override
+    public FileRotationPolicy copy() {
+        return new TimedRotationPolicy(this.interval);
     }
 
     public long getInterval(){
