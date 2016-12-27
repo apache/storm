@@ -23,6 +23,7 @@ import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
 import org.apache.storm.redis.utils.RedisEncoder;
@@ -44,6 +45,7 @@ public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V
     private final RedisEncoder<K, V> decoder;
     private final JedisCommandsInstanceContainer jedisContainer;
     private final ScanParams scanParams;
+    private Iterator<Map.Entry<String, String>> pendingIterator;
     private String cursor;
     private List<Map.Entry<String, String>> cachedResult;
     private int readPosition;
@@ -61,21 +63,25 @@ public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V
     @Override
     public boolean hasNext() {
         if (pendingPrepareIterator != null && pendingPrepareIterator.hasNext()) {
+            pendingIterator = pendingPrepareIterator;
             return true;
         } else if (pendingCommitIterator != null && pendingCommitIterator.hasNext()) {
+            pendingIterator = pendingCommitIterator;
             return true;
         } else {
+            pendingIterator = null;
             return !cursor.equals("0");
         }
     }
 
     @Override
     public Map.Entry<K, V> next() {
+        if (!hasNext()) {
+            throw new NoSuchElementException();
+        }
         Map.Entry<String, String> redisKeyValue = null;
-        if (pendingPrepareIterator != null && pendingPrepareIterator.hasNext()) {
-            redisKeyValue = pendingPrepareIterator.next();
-        } else if (pendingCommitIterator != null && pendingCommitIterator.hasNext()) {
-            redisKeyValue = pendingCommitIterator.next();
+        if (pendingIterator != null) {
+            redisKeyValue = pendingIterator.next();
         } else {
             if (cachedResult == null || readPosition >= cachedResult.size()) {
                 JedisCommands commands = null;
