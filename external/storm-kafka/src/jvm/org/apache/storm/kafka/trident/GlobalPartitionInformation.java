@@ -18,14 +18,25 @@
 package org.apache.storm.kafka.trident;
 
 import com.google.common.base.Objects;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import org.apache.storm.kafka.Broker;
 import org.apache.storm.kafka.Partition;
+import org.json.simple.JSONAware;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
 
 
-public class GlobalPartitionInformation implements Iterable<Partition>, Serializable {
+public class GlobalPartitionInformation implements Iterable<Partition>, Serializable, JSONAware {
+    private static final ObjectMapper json = new ObjectMapper();
+
 
     private Map<Integer, Broker> partitionMap;
     public String topic;
@@ -112,5 +123,14 @@ public class GlobalPartitionInformation implements Iterable<Partition>, Serializ
         }
         final GlobalPartitionInformation other = (GlobalPartitionInformation) obj;
         return Objects.equal(this.partitionMap, other.partitionMap);
+    }
+
+    @Override
+    public String toJSONString() {
+        try {
+            return json.writeValueAsString(this);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
