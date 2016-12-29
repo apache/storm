@@ -420,13 +420,7 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     private PairStream<K, V> partitionBy(Fields fields) {
-        return partitionBy(fields, node.parallelism);
-    }
-
-    private PairStream<K, V> partitionBy(Fields fields, int parallelism) {
-        return new PairStream<>(
-                streamBuilder,
-                addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
+        return toPairStream(partitionBy(fields, node.parallelism));
     }
 
     private PairStream<K, V> toPairStream(Stream<Pair<K, V>> stream) {

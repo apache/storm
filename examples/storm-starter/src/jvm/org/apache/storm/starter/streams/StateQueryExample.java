@@ -53,7 +53,7 @@ import java.util.Map;
 public class StateQueryExample {
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
-        StreamState<String, Long> ss = builder.newStream(new TestWordSpout(), new ValueMapper<String>(0))
+        StreamState<String, Long> ss = builder.newStream(new TestWordSpout(), new ValueMapper<String>(0), 2)
                 .mapToPair(w -> Pair.of(w, 1))
                 .updateStateByKey(0L, (count, val) -> count + 1);
 

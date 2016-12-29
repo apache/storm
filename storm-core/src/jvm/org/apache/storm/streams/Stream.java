@@ -370,9 +370,9 @@ public class Stream<T> {
      * @return the result stream
      */
     public <V> PairStream<T, V> stateQuery(StreamState<T, V> streamState) {
-        // need all grouping for state query since the state is per-task
-        Node node = all().addProcessorNode(new StateQueryProcessor<>(streamState), KEY_VALUE);
-        return new PairStream<>(streamBuilder, node);
+        // need field grouping for state query so that the query is routed to the correct task
+        Node newNode = partitionBy(VALUE, node.getParallelism()).addProcessorNode(new StateQueryProcessor<>(streamState), KEY_VALUE);
+        return new PairStream<>(streamBuilder, newNode);
     }
 
     Node getNode() {
@@ -435,12 +435,10 @@ public class Stream<T> {
         return new Stream<>(streamBuilder, partitionNode);
     }
 
-    private Stream<T> all() {
-        if (node.getParallelism() == 1) {
-            return this;
-        }
-        Node partitionNode = addNode(new PartitionNode(stream, node.getOutputFields(), GroupingInfo.all()));
-        return new Stream<>(streamBuilder, partitionNode);
+    protected Stream<T> partitionBy(Fields fields, int parallelism) {
+        return new Stream<>(
+                streamBuilder,
+                addNode(node, new PartitionNode(stream, node.getOutputFields(), GroupingInfo.fields(fields)), parallelism));
     }
 
     private boolean shouldPartition() {
