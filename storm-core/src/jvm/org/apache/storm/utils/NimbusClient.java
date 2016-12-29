@@ -78,16 +78,13 @@ public class NimbusClient extends ThriftClient {
         for (String host : seeds) {
             int port = Integer.parseInt(conf.get(Config.NIMBUS_THRIFT_PORT).toString());
             NimbusSummary nimbusSummary;
-            NimbusClient client = null;
-            try {
-                client = new NimbusClient(conf, host, port, null, asUser);
+            try(NimbusClient client = new NimbusClient(conf, host, port, null, asUser)) {
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
                     LOG.info("Found leader nimbus : {}", leaderNimbus);
                     if (nimbusSummary.get_host().equals(host) && nimbusSummary.get_port() == port) {
                         NimbusClient ret = client;
-                        client = null;
                         return ret;
                     }
                     try {
@@ -100,10 +97,6 @@ public class NimbusClient extends ThriftClient {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
                         + ". will retry with a different seed host.", e);
                 continue;
-            } finally {
-                if (client != null) {
-                    client.close();
-                }
             }
             throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try " +
                     "again after some time.");

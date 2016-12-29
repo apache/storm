@@ -45,6 +45,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     private static final Logger LOG = LoggerFactory.getLogger(HdfsClientBlobStore.class);
     private HdfsBlobStore _blobStore;
     private Map _conf;
+    private NimbusClient client;
 
     @Override
     public void prepare(Map conf) {
@@ -105,6 +106,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public boolean setClient(Map conf, NimbusClient client) {
+        this.client = client;
         return true;
     }
 
@@ -115,6 +117,9 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public void shutdown() {
-        // do nothing
+        if(client != null) {
+            client.close();
+            client = null;
+        }
     }
 }
