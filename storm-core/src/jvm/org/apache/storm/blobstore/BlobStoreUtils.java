@@ -108,7 +108,6 @@ public class BlobStoreUtils {
     // Download missing blobs from potential nimbodes
     public static boolean downloadMissingBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
-        NimbusClient client;
         ReadableBlobMeta rbm;
         ClientBlobStore remoteBlobStore;
         InputStreamWithMeta in;
@@ -118,8 +117,7 @@ public class BlobStoreUtils {
             if(isSuccess) {
                 break;
             }
-            try {
-                client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null);
+            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
@@ -158,7 +156,6 @@ public class BlobStoreUtils {
     // Download updated blobs from potential nimbodes
     public static boolean downloadUpdatedBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
-        NimbusClient client;
         ClientBlobStore remoteBlobStore;
         InputStreamWithMeta in;
         AtomicOutputStream out;
@@ -168,8 +165,7 @@ public class BlobStoreUtils {
             if (isSuccess) {
                 break;
             }
-            try {
-                client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null);
+            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
                 in = remoteBlobStore.getBlob(key);
