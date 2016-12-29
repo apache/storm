@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
  * STORM-2257: Add built in support for sum function with different types.
  * STORM-2082: add sql external module storm-sql-hdfs
  * STORM-2256: storm-pmml breaks on java 1.7
