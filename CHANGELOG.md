@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2203: Add a getAll method to KeyValueState interface
  * STORM-1886: Extend KeyValueState iface with delete
  * STORM-2022: update Fields test to match new behavior
  * STORM-2020: Stop using sun internal classes
