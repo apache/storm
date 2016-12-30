@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2203: Add a getAll method to KeyValueState interface
  * STORM-1239: port backtype.storm.scheduler.IsolationScheduler to java
  * STORM-2217: Finish porting drpc to java
  * STORM-1308: port backtype.storm.tick-tuple-test to java
