@@ -1,4 +1,8 @@
 ## 1.1.0
+ * STORM-1886: Extend KeyValueState iface with delete
+ * STORM-2022: update Fields test to match new behavior
+ * STORM-2020: Stop using sun internal classes
+ * STORM-1228: port fields_test to java
  * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
  * STORM-2257: Add built in support for sum function with different types.
  * STORM-2082: add sql external module storm-sql-hdfs
