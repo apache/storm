@@ -20,6 +20,7 @@ package org.apache.storm.submit.command;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.submit.dependency.AetherUtils;
 import org.apache.storm.submit.dependency.DependencyResolver;
 import org.json.simple.JSONValue;
@@ -28,6 +29,9 @@ import org.sonatype.aether.graph.Dependency;
 import org.sonatype.aether.repository.RemoteRepository;
 import org.sonatype.aether.resolution.ArtifactResult;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,7 +65,8 @@ public class DependencyResolverMain {
         }
 
         try {
-            DependencyResolver resolver = new DependencyResolver("local-repo", repositories);
+            String localMavenRepoPath = getOrDefaultLocalMavenRepositoryPath("local-repo");
+            DependencyResolver resolver = new DependencyResolver(localMavenRepoPath, repositories);
 
             List<ArtifactResult> artifactResults = resolver.resolve(dependencies);
 
@@ -130,4 +135,24 @@ public class DependencyResolverMain {
         return artifactToPath;
     }
 
+    private static String getOrDefaultLocalMavenRepositoryPath(String defaultPath) {
+        String localMavenRepoPathStr = getLocalMavenRepositoryPath();
+        if (StringUtils.isNotEmpty(localMavenRepoPathStr)) {
+            Path localMavenRepoPath = new File(localMavenRepoPathStr).toPath();
+            if (Files.exists(localMavenRepoPath) && Files.isDirectory(localMavenRepoPath)) {
+                return localMavenRepoPathStr;
+            }
+        }
+
+        return defaultPath;
+    }
+
+    private static String getLocalMavenRepositoryPath() {
+        String userHome = System.getProperty("user.home");
+        if (StringUtils.isNotEmpty(userHome)) {
+            return userHome + File.separator + ".m2" + File.separator + "repository";
+        }
+
+        return null;
+    }
 }
