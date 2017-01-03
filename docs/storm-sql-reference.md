@@ -1272,6 +1272,7 @@ Please note that it supports only one letter for delimiter.
 | Kafka | org.apache.storm:storm-sql-kafka | `kafka://zkhost:port/broker_path?topic=topic` | Yes | Yes | Yes
 | Redis | org.apache.storm:storm-sql-redis | `redis://:[password]@host:port/[dbIdx]` | No | Yes | Yes
 | MongoDB | org.apache.stormg:storm-sql-mongodb | `mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]` | No | Yes | Yes
+| HDFS | org.apache.storm:storm-sql-hdfs | `hdfs://host:port/path-to-file` | No | Yes | Yes
 
 #### Socket
 
@@ -1322,3 +1323,22 @@ You can use below as working reference for `--artifacts` option, and change depe
 `org.apache.storm:storm-sql-mongodb:2.0.0-SNAPSHOT,org.apache.storm:storm-mongodb:2.0.0-SNAPSHOT`
 
 Storing record with preserving fields are not supported for now.
+
+#### HDFS
+
+HDFS data source requires below properties to be set:
+
+* `hdfs.file.path`: HDFS file path
+* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/trident/format/SimpleFileNameFormat.java)
+* `hdfs.rotation.size.kb`: HDFS FileSizeRotationPolicy in KB
+* `hdfs.rotation.time.seconds`: HDFS TimedRotationPolicy in seconds
+
+Please note that `hdfs.rotation.size.kb` and `hdfs.rotation.time.seconds` only one can be used for hdfs rotation.
+
+And note that `storm-sql-hdfs` requires users to provide `storm-hdfs`.
+You can use below as working reference for `--artifacts` option, and change dependencies version if really needed:
+
+`org.apache.storm:storm-sql-hdfs:2.0.0-SNAPSHOT,org.apache.storm:storm-hdfs:2.0.0-SNAPSHOT`
+
+Also, hdfs configuration files should be provided.
+You can put the `core-site.xml` and `hdfs-site.xml` into the `conf` directory which is in Storm installation directory.

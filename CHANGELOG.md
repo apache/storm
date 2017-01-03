@@ -1,4 +1,13 @@
 ## 1.1.0
+ * STORM-2203: Add a getAll method to KeyValueState interface
+ * STORM-1886: Extend KeyValueState iface with delete
+ * STORM-2022: update Fields test to match new behavior
+ * STORM-2020: Stop using sun internal classes
+ * STORM-1228: port fields_test to java
+ * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
+ * STORM-2257: Add built in support for sum function with different types.
+ * STORM-2082: add sql external module storm-sql-hdfs
+ * STORM-2256: storm-pmml breaks on java 1.7
  * STORM-2223: PMML Bolt.
  * STORM-2222: Repeated NPEs thrown in nimbus if rebalance fails
  * STORM-2190: reduce contention between submission and scheduling

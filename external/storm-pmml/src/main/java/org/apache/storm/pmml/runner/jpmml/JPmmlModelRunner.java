@@ -82,7 +82,9 @@ public class JPmmlModelRunner implements PmmlModelRunner<Tuple,
         LOG.debug("Pre processing raw inputs: = [{}]", rawInputs);
         final Map<FieldName, FieldValue> preProcInputs = new LinkedHashMap<>();
         for (Map.Entry<FieldName, Object> rawEntry : rawInputs.entrySet()) {
-            preProcInputs.putIfAbsent(rawEntry.getKey(), EvaluatorUtil.prepare(eval, rawEntry.getKey(), rawEntry.getValue()));
+            if (!preProcInputs.containsKey(rawEntry.getKey())) {
+                preProcInputs.put(rawEntry.getKey(), EvaluatorUtil.prepare(eval, rawEntry.getKey(), rawEntry.getValue()));
+            }
         }
         LOG.debug("Pre processed inputs = [{}]", preProcInputs);
         return preProcInputs;

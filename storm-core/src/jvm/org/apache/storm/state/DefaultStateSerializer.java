@@ -20,6 +20,7 @@ package org.apache.storm.state;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Input;
 import com.esotericsoftware.kryo.io.Output;
+import org.objenesis.strategy.StdInstantiatorStrategy;
 
 import java.util.Collections;
 import java.util.List;
@@ -40,6 +41,7 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
      */
     public DefaultStateSerializer(List<Class<?>> classesToRegister) {
         kryo = new Kryo();
+        kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
         output = new Output(2000, 2000000000);
         for (Class<?> klazz : classesToRegister) {
             kryo.register(klazz);
