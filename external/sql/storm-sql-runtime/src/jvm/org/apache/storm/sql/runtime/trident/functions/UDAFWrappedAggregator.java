@@ -18,6 +18,8 @@
  */
 package org.apache.storm.sql.runtime.trident.functions;
 
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.storm.sql.runtime.trident.NumberConverter;
 import org.apache.storm.sql.runtime.trident.TridentUtils;
 import org.apache.storm.trident.operation.BaseAggregator;
@@ -25,9 +27,13 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 class UDAFAggregateState {
@@ -47,6 +53,7 @@ class UDAFAggregateState {
 }
 
 public class UDAFWrappedAggregator extends BaseAggregator<UDAFAggregateState> {
+    private static final Logger LOG = LoggerFactory.getLogger(UDAFWrappedAggregator.class);
 
     private final String declaringClassName;
     private final boolean isMethodsStatic;
@@ -146,9 +153,29 @@ public class UDAFWrappedAggregator extends BaseAggregator<UDAFAggregateState> {
             } else {
                 return method.invoke(aggrInstance, params);
             }
-        } catch (IllegalAccessException | InvocationTargetException e) {
+        } catch (IllegalAccessException | InvocationTargetException | IllegalArgumentException e) {
+            LOG.error("Method invocation failed: exception {}, method: {}, expected params type: {}, actual params type: {}",
+                    e, method.getName(), joinArrayToString(method.getParameterTypes()), joinArrayElementsTypeToString(params));
             throw new RuntimeException(e);
         }
+    }
+
+    private String joinArrayToString(Class<?>[] parameterTypes) {
+        List<String> paramStrings = new ArrayList<>(parameterTypes.length);
+        for (Class<?> parameterType : parameterTypes) {
+            paramStrings.add(parameterType.getCanonicalName());
+        }
+
+        return Joiner.on(",").join(paramStrings);
+    }
+
+    private String joinArrayElementsTypeToString(Object...params) {
+        List<String> paramStrings = new ArrayList<>(params.length);
+        for (Object param : params) {
+            paramStrings.add(param.getClass().getCanonicalName());
+        }
+
+        return Joiner.on(",").join(paramStrings);
     }
 
 }
