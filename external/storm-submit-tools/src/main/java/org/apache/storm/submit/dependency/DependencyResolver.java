@@ -54,7 +54,6 @@ public class DependencyResolver {
 
         remoteRepositories = new ArrayList<>();
         remoteRepositories.add(Booter.newCentralRepository());
-        remoteRepositories.add(Booter.newLocalRepository());
         remoteRepositories.addAll(repositories);
     }
 
