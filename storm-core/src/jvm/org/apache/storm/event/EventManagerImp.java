@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.InterruptedIOException;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -54,8 +55,10 @@ public class EventManagerImp implements EventManager {
                         r.run();
                         proccessInc();
                     } catch (Throwable t) {
-                        if (Utils.exceptionCauseIsInstanceOf(InterruptedIOException.class, t)) {
+                        if (Utils.exceptionCauseIsInstanceOf(InterruptedIOException.class, t) ) {
                             LOG.info("Event manager interrupted while doing IO");
+                        } else if (Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, t)) {
+                            LOG.info("Event manager interrupted while doing NIO");
                         } else if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, t)) {
                             LOG.info("Event manager interrupted");
                         } else {

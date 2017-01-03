@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon.drpc;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.concurrent.Semaphore;
 
 import org.apache.storm.generated.DRPCExceptionType;
