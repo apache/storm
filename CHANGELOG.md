@@ -188,6 +188,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
  * STORM-2244: Some shaded jars doesn't exclude dependency signature files
  * STORM-2266: Close NimbusClient instances appropriately
  * STORM-2257: Add built in support for sum function with different types
