@@ -30,9 +30,11 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -102,7 +104,7 @@ public class JpmmlModelOutputs implements ModelOutputs {
     // ======
 
     private static ModelOutputs create(PMML pmmlModel, List<String> streams) {
-        final List<String> fieldNames = new ArrayList<>();
+        final Set<String> fieldNames = new LinkedHashSet<>();
         final Evaluator evaluator = JpmmlFactory.newEvaluator(pmmlModel);
 
         for (FieldName predictedField : evaluator.getPredictedFields()) {
@@ -114,7 +116,7 @@ public class JpmmlModelOutputs implements ModelOutputs {
         }
 
         final Map<String, Fields> toDeclare = streams.stream()
-                .collect(Collectors.toMap(Function.identity(), (x) -> new Fields(fieldNames)));
+                .collect(Collectors.toMap(Function.identity(), (x) -> new Fields(new ArrayList<>(fieldNames))));
 
         return new JpmmlModelOutputs(toDeclare);
     }
