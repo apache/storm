@@ -188,6 +188,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2267: Use user's local maven repo. directory to local repo.
  * STORM-2254: Provide Socket time out for nimbus thrift client
  * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
  * STORM-2244: Some shaded jars doesn't exclude dependency signature files
