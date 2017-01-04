@@ -47,6 +47,7 @@ public class Time {
                 if (ms != null) {
                     Time.autoAdvanceOnSleep.set(ms.longValue());
                 }
+                LOG.warn("AutoCloseable Simulated Time Starting...");
             }
         }
         
@@ -56,6 +57,7 @@ public class Time {
                 Time.simulating.set(false);    
                 Time.autoAdvanceOnSleep.set(0);
                 Time.threadSleepTimes = null;
+                LOG.warn("AutoCloseable Simulated Time Ending...");
             }
         }
     }
@@ -66,6 +68,7 @@ public class Time {
             Time.simulating.set(true);
             Time.simulatedCurrTimeMs = new AtomicLong(0);
             Time.threadSleepTimes = new ConcurrentHashMap<>();
+            LOG.warn("Simulated Time Starting...");
         }
     }
     
@@ -75,6 +78,7 @@ public class Time {
             Time.simulating.set(false);    
             Time.autoAdvanceOnSleep.set(0);
             Time.threadSleepTimes = null;
+            LOG.warn("Simulated Time Ending...");
         }
     }
     
