@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2254: Provide Socket time out for nimbus thrift client
  * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
  * STORM-2266: Close NimbusClient instances appropriately
  * STORM-2203: Add a getAll method to KeyValueState interface
