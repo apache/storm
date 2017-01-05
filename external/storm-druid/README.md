@@ -118,6 +118,10 @@ public class SampleDruidBeamFactoryImpl implements DruidBeamFactory<Map<String, 
 
 Example code is available [here.](https://github.com/apache/storm/tree/master/external/storm-druid/src/test/java/org/apache/storm/druid)
 
+This version is built to work with Druid 0.8.x. This connector uses the Tranquility module built for Scala 2.11.
+This provides a shaded jar with all Tranquility dependencies. You should include Scala 2.11 dependency in your
+application.
+
 ## License
 
 Licensed to the Apache Software Foundation (ASF) under one

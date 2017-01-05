@@ -48,6 +48,7 @@ import java.util.Map;
  *
  */
 public class DruidBeamBolt<E> extends BaseRichBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(DruidBeamBolt.class);
 
     private volatile  OutputCollector collector;
     private DruidBeamFactory<E> beamFactory = null;
@@ -76,22 +77,27 @@ public class DruidBeamBolt<E> extends BaseRichBolt {
     @Override
     public void execute(final Tuple tuple) {
       Future future = tranquilizer.send((druidEventMapper.getEvent(tuple)));
-      future.addEventListener(new FutureEventListener() {
+        LOG.debug("Sent tuple : [{}]" , tuple);
+
+        future.addEventListener(new FutureEventListener() {
           @Override
           public void onFailure(Throwable cause) {
               if (cause instanceof MessageDroppedException) {
                   collector.ack(tuple);
+                  LOG.debug("Tuple Dropped due to MessageDroppedException : [{}]" , tuple);
                   if (druidConfig.getDiscardStreamId() != null)
                       collector.emit(druidConfig.getDiscardStreamId(), new Values(tuple, System.currentTimeMillis()));
               }
               else {
                   collector.fail(tuple);
+                  LOG.debug("Tuple Processing Failed : [{}]" , tuple);
               }
           }
 
           @Override
           public void onSuccess(Object value) {
-                  collector.ack(tuple);
+              collector.ack(tuple);
+              LOG.debug("Tuple Processing Success : [{}]" , tuple);
           }
       });
 
