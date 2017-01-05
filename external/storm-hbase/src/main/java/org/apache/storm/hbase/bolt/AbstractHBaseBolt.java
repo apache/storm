@@ -37,7 +37,7 @@ import java.util.Map;
 public abstract class AbstractHBaseBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHBaseBolt.class);
 
-    protected OutputCollector collector;
+    protected transient OutputCollector collector;
 
     protected transient HBaseClient hBaseClient;
     protected String tableName;
