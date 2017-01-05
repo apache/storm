@@ -202,7 +202,7 @@ public class PartitionManager {
             long partitionLatestOffset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.LatestTime());
             if (partitionLatestOffset < offset) {
                 offset = partitionLatestOffset;
-            }else{
+            } else {
                 offset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             }
             // fetch failed, so don't update the fetch metrics
