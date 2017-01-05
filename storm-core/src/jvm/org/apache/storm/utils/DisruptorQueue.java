@@ -63,6 +63,18 @@ public class DisruptorQueue implements IStatefulObject {
     private static final String PREFIX = "disruptor-";
     private static final FlusherPool FLUSHER = new FlusherPool();
 
+    private static int getNumFlusherPoolThreads() {
+        int numThreads = 100;
+        try {
+            String threads = System.getProperty("num_flusher_pool_threads", "100");
+            numThreads = Integer.parseInt(threads);
+        } catch (Exception e) {
+            LOG.warn("Error while parsing number of flusher pool threads", e);
+        }
+        LOG.debug("Reading num_flusher_pool_threads Flusher pool threads: {}", numThreads);
+        return numThreads;
+    }
+
     private static class FlusherPool { 
     	private static final String THREAD_PREFIX = "disruptor-flush";
         private Timer _timer = new Timer(THREAD_PREFIX + "-trigger", true);
@@ -71,7 +83,7 @@ public class DisruptorQueue implements IStatefulObject {
         private HashMap<Long, TimerTask> _tt = new HashMap<>();
 
         public FlusherPool() {
-            _exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+            _exec = new ThreadPoolExecutor(1, getNumFlusherPoolThreads(), 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
             ThreadFactory threadFactory = new ThreadFactoryBuilder()
                     .setDaemon(true)
                     .setNameFormat(THREAD_PREFIX + "-task-pool")
