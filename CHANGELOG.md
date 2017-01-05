@@ -6,7 +6,6 @@
  * STORM-1308: port backtype.storm.tick-tuple-test to java
  * STORM-2245: integration-test constant compilation failure
  * STORM-1607: Add MongoMapState for supporting trident's exactly once semantics
- * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2104: More graceful handling of acked/failed tuples after partition reassignment
  * STORM-1281: LocalCluster, testing4j and testing.clj to java
  * STORM-2226: Fix kafka spout offset lag ui for kerberized kafka
@@ -189,6 +188,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2267: Use user's local maven repo. directory to local repo.
  * STORM-2254: Provide Socket time out for nimbus thrift client
  * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
