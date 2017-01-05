@@ -247,7 +247,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private boolean poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
-        final boolean poll = !waitingToEmit() && numUncommittedOffsets < maxUncommittedOffsets;
+        //poll when: 
+        //  1). waitingToEmit is empty, 
+        //  and 2). uncommitted offset is less then threshold in none-autoCommitMode, or run in consumerAutoCommitMode
+        final boolean poll = !waitingToEmit() && (numUncommittedOffsets < maxUncommittedOffsets || consumerAutoCommitMode);
 
         if (!poll) {
             if (waitingToEmit()) {
@@ -319,8 +322,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             if (!isScheduled || retryService.isReady(msgId)) {   // not scheduled <=> never failed (i.e. never emitted) or ready to be retried
                 final List<Object> tuple = tuplesBuilder.buildTuple(record);
                 kafkaSpoutStreams.emit(collector, tuple, msgId);
-                emitted.add(msgId);
-                numUncommittedOffsets++;
+                if(!consumerAutoCommitMode){//only need to track in none-AutoCommitMode
+                    emitted.add(msgId);
+                    numUncommittedOffsets++;
+                }
                 if (isScheduled) { // Was scheduled for retry, now being re-emitted. Remove from schedule.
                     retryService.remove(msgId);
                 }
