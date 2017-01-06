@@ -145,6 +145,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
  * STORM-2095: remove any remaining files when deleting blobstore directory
  * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
