@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2275: Nimbus crashed during state transition of topology
  * STORM-2243: adds ip address to supervisor id
  * STORM-2214: add in cacheing of the Kerberos Login
  * STORM-2203: Add a getAll method to KeyValueState interface
