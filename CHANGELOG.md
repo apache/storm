@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
  * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
  * STORM-2095: remove any remaining files when deleting blobstore directory
  * STORM-2222: Repeated NPEs thrown in nimbus if rebalance fails
