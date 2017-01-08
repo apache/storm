@@ -162,7 +162,9 @@ public class TransactionalState {
         try {
             Object data;
             if(_curator.checkExists().forPath(path)!=null) {
-                data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
+                // intentionally using parse() instead of parseWithException() to handle error cases as null
+                // this have been used from the start of Trident so we could treat it as safer way
+                data = JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 data = null;
             }
