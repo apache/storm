@@ -192,6 +192,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2274: Support named output streams in Hdfs Spout
  * STORM-2204: Adding caching capabilities in HBaseLookupBolt
  * STORM-2267: Use user's local maven repo. directory to local repo.
  * STORM-2254: Provide Socket time out for nimbus thrift client
