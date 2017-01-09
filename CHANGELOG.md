@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2271: ClosedByInterruptException should be handled in few cases and removing a confusing debug statement
  * STORM-2272: don't leak simulated time
  * STORM-2275: Nimbus crashed during state transition of topology
  * STORM-2243: adds ip address to supervisor id
