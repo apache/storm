@@ -484,6 +484,13 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_THRIFT_TRANSPORT_PLUGIN = "nimbus.thrift.transport";
 
     /**
+     * How long before a Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String STORM_THRIFT_SOCKET_TIMEOUT_MS = "storm.thrift.socket.timeout.ms";
+
+    /**
      * The host that the master server is running on, added only for backward compatibility,
      * the usage deprecated in favor of nimbus.seeds config.
      */
@@ -2288,6 +2295,18 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String TOPOLOGY_METRICS_METRIC_NAME_SEPARATOR = "topology.metrics.metric.name.separator";
 
+    
+    /**
+     * This is a config that is not likely to be used.  Internally the disruptor queue will batch entries written
+     * into the queue.  A background thread pool will flush those batches if they get too old.  By default that
+     * pool can grow rather large, and sacrifice some CPU time to keep the latency low.  In some cases you may
+     * want the queue to be smaller so there is less CPU used, but the latency will increase in some situations.
+     * This configs is on a per cluster bases, if you want to control this on a per topology bases you need to set
+     * the java System property for the worker "num_flusher_pool_threads" to the value you want.
+     */
+    @isInteger
+    public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
+    
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

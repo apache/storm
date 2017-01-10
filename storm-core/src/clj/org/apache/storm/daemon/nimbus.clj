@@ -2329,8 +2329,11 @@
             (let [eventlogger-tasks (sort (get component->tasks
                                                EVENTLOGGER-COMPONENT-ID))
                   ;; Find the task the events from this component route to.
-                  task-index (mod (TupleUtils/listHashCode [component-id])
-                                  (count eventlogger-tasks))
+                  task-index (mod
+                              (+ (mod (TupleUtils/listHashCode [component-id])
+                                      (count eventlogger-tasks))
+                                 (count eventlogger-tasks))
+                              (count eventlogger-tasks))
                   task-id (nth eventlogger-tasks task-index)
                   eventlogger-exec (first (filter (fn [[start stop]]
                                                     (between? task-id start stop))

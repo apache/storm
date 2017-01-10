@@ -1,4 +1,12 @@
 ## 1.1.0
+ * STORM-2278: Allow max number of disruptor queue flusher threads to be configurable
+ * STORM-2277: Add shaded jar for Druid connector
+ * STORM-2274: Support named output streams in Hdfs Spout
+ * STORM-2204: Adding caching capabilities in HBaseLookupBolt
+ * STORM-2267: Use user's local maven repo. directory to local repo.
+ * STORM-2254: Provide Socket time out for nimbus thrift client
+ * STORM-2200: [Storm SQL] Drop Aggregate & Join support on Trident mode
+ * STORM-2266: Close NimbusClient instances appropriately
  * STORM-2203: Add a getAll method to KeyValueState interface
  * STORM-1886: Extend KeyValueState iface with delete
  * STORM-2022: update Fields test to match new behavior
@@ -140,6 +148,10 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2279: Unable to open bolt page of storm ui
+ * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
+ * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
+ * STORM-2095: remove any remaining files when deleting blobstore directory
  * STORM-2251: Integration test refers specific version of Storm which should be project version
  * STORM-2234: heartBeatExecutorService in shellSpout don't work well with deactivate
  * STORM-2216: Favor JSONValue.parseWithException

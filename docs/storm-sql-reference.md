@@ -1137,20 +1137,7 @@ Not implemented:
 
 ### Aggregate functions
 
-Storm SQL provides its own built-in aggregate functions, rather than supported by Calcite because of limitation of integration aggregate functions on Trident aggregate operation.
-More functions will be added to built-in, and we will try to support aggregate functions supported by Calcite eventually. 
-
-Note that Storm SQL doesn't support `DISTINCT` option on aggregate functions yet since it is normally very hard to consider element distinction while implementing aggregation.
-Storm SQL doesn't support `FILTER` option yet, too.
-
-| Operator syntax | Description
-|:--------------- |:-----------
-| COUNT( value ) | Returns the number of input rows for which *value* is not null (Storm SQL doesn't support composite value)
-| COUNT(*)       | Returns the number of input rows
-| AVG(numeric)   | Returns the average (arithmetic mean) of *numeric* across all input values
-| SUM(numeric)   | Returns the sum of *numeric* across all input values
-| MAX(value)     | Returns the maximum value of *value* across all input values
-| MIN(value)     | Returns the minimum value of *value* across all input values
+Storm SQL doesn't support aggregation yet.
 
 ### Window functions
 
@@ -1162,7 +1149,7 @@ Storm SQL doesn't support grouping functions.
 
 ### User-defined functions
 
-Users can define user defined function (scalar or aggregate) using `CREATE FUNCTION` statement.
+Users can define user defined function (scalar) using `CREATE FUNCTION` statement.
 For example, the following statement defines `MYPLUS` function which uses `org.apache.storm.sql.TestUtils$MyPlus` class.
 
 ```
@@ -1170,8 +1157,7 @@ CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'
 ```
 
 Storm SQL determines whether the function as scalar or aggregate by checking which methods are defined.
-If the class defines `evaluate` method, Storm SQL treats the function as `scalar`,
-and if the class defines `init`, `add`, `result` methods, Storm SQL treats the function as `aggregate`.
+If the class defines `evaluate` method, Storm SQL treats the function as `scalar`.
 
 Example of class for scalar function is here:
 
@@ -1183,27 +1169,6 @@ Example of class for scalar function is here:
   }
 
 ```
-
-and class for aggregate function is here:
-
-```
-  public class MyConcat {
-    public static String init() {
-      return "";
-    }
-    public static String add(String accumulator, String val) {
-      return accumulator + val;
-    }
-    public static String result(String accumulator) {
-      return accumulator;
-    }
-  }
-```
-
-For now users can skip implementing `result` method if it doesn't need transform accumulated value, 
-but this behavior is subject to change so providing `result` is recommended. 
-
-Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs and/or UDAFs are available in classpath.
 
 ## External Data Sources
 
@@ -1229,6 +1194,8 @@ For example, the following statement specifies a Kafka spout and sink:
 ```
 CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
 ```
+
+Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs are available in classpath. 
 
 ### Plugging in External Data Sources
 

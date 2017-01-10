@@ -70,7 +70,7 @@ public class NimbusClient extends ThriftClient {
         List<String> seeds;
         if(conf.containsKey(Config.NIMBUS_HOST)) {
             LOG.warn("Using deprecated config {} for backward compatibility. Please update your storm.yaml so it only has config {}",
-                    Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
+                     Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
             seeds = Lists.newArrayList(conf.get(Config.NIMBUS_HOST).toString());
         } else {
             seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
@@ -99,7 +99,7 @@ public class NimbusClient extends ThriftClient {
                 }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
-                        + ". will retry with a different seed host.", e);
+                                 + ". will retry with a different seed host.", e);
                 continue;
             } finally {
                 if (client != null) {
@@ -107,11 +107,11 @@ public class NimbusClient extends ThriftClient {
                 }
             }
             throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try " +
-                    "again after some time.");
+                                                            "again after some time.");
         }
         throw new NimbusLeaderNotFoundException(
                 "Could not find leader nimbus from seed hosts " + seeds + ". " +
-                "Did you specify a valid list of nimbus hosts for config " +
+                        "Did you specify a valid list of nimbus hosts for config " +
                         Config.NIMBUS_SEEDS + "?");
     }
 
