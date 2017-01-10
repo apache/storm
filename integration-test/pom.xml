@@ -26,7 +26,7 @@
         <relativePath>..</relativePath>
     </parent>
 
-    <name>storm-integration-test</name>
+    <name>Storm Integration Test</name>
     <groupId>org.apache.storm</groupId>
     <artifactId>storm-integration-test</artifactId>
     <packaging>jar</packaging>
