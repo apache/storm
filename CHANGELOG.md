@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2278: Allow max number of disruptor queue flusher threads to be configurable
  * STORM-2277: Add shaded jar for Druid connector
  * STORM-2274: Support named output streams in Hdfs Spout
  * STORM-2204: Adding caching capabilities in HBaseLookupBolt
