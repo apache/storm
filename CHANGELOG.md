@@ -192,6 +192,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2280: Upgrade Calcite version to 1.11.0
  * STORM-2278: Allow max number of disruptor queue flusher threads to be configurable
  * STORM-2277: Add shaded jar for Druid connector
  * STORM-2274: Support named output streams in Hdfs Spout
