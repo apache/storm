@@ -20,7 +20,7 @@ set -x
 set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo SCRIPT_DIR="${SCRIPT_DIR}"
-STORM_SRC_DIR=$(dirname ${SCRIPT_DIR})
+STORM_SRC_DIR=$(dirname "${SCRIPT_DIR}")
 echo SCRIPT_SRC_DIR="${SCRIPT_SRC_DIR}"
 function die() {
   echo $*
@@ -49,24 +49,28 @@ if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8
     export MAVEN_OPTS="-Xmx3000m"
 else
     ( while true; do echo "heartbeat"; sleep 300; done ) & #heartbeat needed by travis ci
-    (cd ${STORM_SRC_DIR} && mvn clean install -DskipTests=true) || die "maven install command failed"
-    (cd ${STORM_SRC_DIR}/storm-dist/binary && mvn package -Dgpg.skip=true) || die "maven package command failed"
+    (cd "${STORM_SRC_DIR}" && mvn clean install -DskipTests=true) || die "maven install command failed"
+    if [[ "${USER}" == "travis" ]]; then
+        ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
+    fi
+    (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
 fi
-storm_binary_zip=$(find ${STORM_SRC_DIR}/storm-dist -iname '*.zip')
-storm_binary_name=$(basename ${storm_binary_zip})
-export STORM_VERSION=$(grep -oPe '\d.*(?=.zip)' <<<${storm_binary_name})
+
+storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
+storm_binary_name=$(basename "${storm_binary_zip}")
+export STORM_VERSION=$(grep -oPe '\d.*(?=.zip)' <<<"${storm_binary_name}")
 echo "Using storm version:" ${STORM_VERSION}
 
 # setup storm cluster
 list_storm_processes || true
-sudo bash ${SCRIPT_DIR}/config/common.sh
-sudo bash ${SCRIPT_DIR}/config/install-zookeeper.sh
-sudo bash ${SCRIPT_DIR}/config/install-storm.sh $storm_binary_zip
-export JAVA_HOME
+sudo bash "${SCRIPT_DIR}/config/common.sh"
+sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh"
+sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
+export JAVA_HOME="${JAVA_HOME}"
 env
 function start_storm_process() {
     echo starting: storm $1
-    sudo su storm -c "export JAVA_HOME=${JAVA_HOME} && cd /home/storm && storm $1" &
+    sudo su storm -c "export JAVA_HOME=\"${JAVA_HOME}\" && cd /usr/share/storm && storm $1" &
 }
 start_storm_process nimbus
 start_storm_process ui
