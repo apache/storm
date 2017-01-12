@@ -28,8 +28,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.when;
@@ -112,6 +111,33 @@ public class ZkCoordinatorTest {
             List<PartitionManager> partitionManagersAfter = iterator.next();
             assertPartitionsAreDifferent(partitionManagersBefore, partitionManagersAfter, partitionsPerTask);
         }
+    }
+
+    @Test
+    public void testPartitionManagerRecreate() throws Exception {
+        final int totalTasks = 2;
+        int partitionsPerTask = 2;
+        List<ZkCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9092)));
+        List<List<PartitionManager>> partitionManagersBeforeRefresh = getPartitionManagers(coordinatorList);
+        waitForRefresh();
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
+        List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
+        assertEquals(partitionManagersAfterRefresh.size(), partitionManagersAfterRefresh.size());
+        Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
+        for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
+            List<PartitionManager> partitionManagersAfter = iterator.next();
+            for (PartitionManager before : partitionManagersBefore)
+                for (PartitionManager after: partitionManagersAfter)
+                    if (before.getPartition().partition == after.getPartition().partition)
+                        assertStateIsTheSame(before, after);
+        }
+    }
+
+    private void assertStateIsTheSame(PartitionManager managerBefore, PartitionManager managerAfter) {
+        // check if state was actually moved from old PartitionManager
+        assertNotSame(managerBefore, managerAfter);
+        assertSame(managerBefore._waitingToEmit, managerAfter._waitingToEmit);
     }
 
     private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter, int partitionsPerTask) {
