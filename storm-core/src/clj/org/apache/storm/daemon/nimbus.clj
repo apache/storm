@@ -291,13 +291,38 @@
                                   (assoc-non-nil :component->executors executor-overrides))
        })))
 
+(declare try-read-storm-topology)
+(declare get-version-for-key)
+
+(defn update-storm-code-parallelism [nimbus storm-id component->executors]
+  (let [subject (get-subject)
+        blob-store (:blob-store nimbus)
+        ^StormTopology topology (.deepCopy (try-read-storm-topology storm-id blob-store))
+        old-components (all-components topology)
+        storm-cluster-state (:storm-cluster-state nimbus)
+        code-key (master-stormcode-key storm-id)
+        nimbus-host-port-info (:nimbus-host-port-info nimbus)]
+    (doseq [[comp num-tasks] component->executors
+            :let [component (comp old-components)
+                  component-common (.get_common component)]]
+      (.set_parallelism_hint component-common num-tasks)
+      (.set_json_conf component-common
+        (->> {TOPOLOGY-TASKS num-tasks}
+          (merge (component-conf component))
+          to-json)))
+    (.deleteBlob blob-store code-key subject)
+    (.createBlob blob-store code-key (Utils/serialize topology) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
+    (if (instance? LocalFsBlobStore blob-store)
+      (.setup-blobstore! storm-cluster-state code-key nimbus-host-port-info (get-version-for-key code-key nimbus-host-port-info (:conf nimbus))))))
+
 (defn do-rebalance [nimbus storm-id status storm-base]
   (let [rebalance-options (:topology-action-options storm-base)]
     (.update-storm! (:storm-cluster-state nimbus)
       storm-id
         (-> {:topology-action-options nil}
           (assoc-non-nil :component->executors (:component->executors rebalance-options))
-          (assoc-non-nil :num-workers (:num-workers rebalance-options)))))
+          (assoc-non-nil :num-workers (:num-workers rebalance-options))))
+    (update-storm-code-parallelism nimbus storm-id (:component->executors rebalance-options)))
   (mk-assignments nimbus :scratch-topology-id storm-id))
 
 (defn state-transitions [nimbus storm-id status storm-base]
@@ -643,7 +668,7 @@
         task->component (storm-task-info topology storm-conf)]
     (if (nil? component->executors)
       []
-      (->> (storm-task-info topology storm-conf)
+      (->> task->component
            reverse-map
            (map-val sort)
            (join-maps component->executors)
@@ -1163,7 +1188,8 @@
 
 (defn- component-parallelism [storm-conf component]
   (let [storm-conf (merge storm-conf (component-conf component))
-        num-tasks (or (storm-conf TOPOLOGY-TASKS) (num-start-executors component))
+        ;;We should consider user defined parallelism first
+        num-tasks (or (num-start-executors component) (storm-conf TOPOLOGY-TASKS))
         max-parallelism (storm-conf TOPOLOGY-MAX-TASK-PARALLELISM)
         ]
     (if max-parallelism
