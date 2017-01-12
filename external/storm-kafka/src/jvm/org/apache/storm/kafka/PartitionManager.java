@@ -101,11 +101,12 @@ public class PartitionManager {
         if (previousManager != null) {
             _failedMsgRetryManager = previousManager._failedMsgRetryManager;
             _committedTo = previousManager._committedTo;
+            _emittedToOffset = previousManager._emittedToOffset;
             _waitingToEmit = previousManager._waitingToEmit;
             _pending = previousManager._pending;
             LOG.info("Recreating PartitionManager based on previous manager, _waitingToEmit size: {}, _pending size: {}",
-                    _waitingToEmit,
-                    _pending);
+                    _waitingToEmit.size(),
+                    _pending.size());
         } else {
             try {
                 _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
@@ -192,7 +193,7 @@ public class PartitionManager {
             } else {
                 tups = KafkaUtils.generateTuples(_spoutConfig, toEmit.message(), _partition.topic);
             }
-            
+
             if ((tups != null) && tups.iterator().hasNext()) {
                if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
                     for (List<Object> tup : tups) {
@@ -233,7 +234,7 @@ public class PartitionManager {
         } catch (TopicOffsetOutOfRangeException e) {
             offset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             // fetch failed, so don't update the fetch metrics
-            
+
             //fix bug [STORM-643] : remove outdated failed offsets
             if (!processingNewTuples) {
                 // For the case of EarliestTime it would be better to discard
@@ -246,7 +247,7 @@ public class PartitionManager {
                 if (null != omitted) {
                     _lostMessageCount.incrBy(omitted.size());
                 }
-                
+
                 LOG.warn("Removing the failed offsets for {} that are out of range: {}", _partition, omitted);
             }
 
@@ -255,7 +256,7 @@ public class PartitionManager {
                 _emittedToOffset = offset;
                 LOG.warn("{} Using new offset: {}", _partition, _emittedToOffset);
             }
-            
+
             return;
         }
         long end = System.nanoTime();
