@@ -149,6 +149,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2268: Fix integration test for Travis CI build
  * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
  * STORM-2279: Unable to open bolt page of storm ui
  * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
