@@ -30,8 +30,21 @@ import java.util.List;
  * the state.
  */
 public class DefaultStateSerializer<T> implements Serializer<T> {
-    private final Kryo kryo;
-    private final Output output;
+    private final ThreadLocal<Kryo> kryo = new ThreadLocal<Kryo>() {
+        @Override
+        protected Kryo initialValue() {
+            Kryo obj = new Kryo();
+            obj.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
+            return obj;
+        }
+    };
+
+    private final ThreadLocal<Output> output = new ThreadLocal<Output>() {
+        @Override
+        protected Output initialValue() {
+            return new Output(2000, 2000000000);
+        }
+    };
 
     /**
      * Constructs a {@link DefaultStateSerializer} instance with the given list
@@ -40,11 +53,8 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
      * @param classesToRegister the classes to register.
      */
     public DefaultStateSerializer(List<Class<?>> classesToRegister) {
-        kryo = new Kryo();
-        kryo.setInstantiatorStrategy(new Kryo.DefaultInstantiatorStrategy(new StdInstantiatorStrategy()));
-        output = new Output(2000, 2000000000);
         for (Class<?> klazz : classesToRegister) {
-            kryo.register(klazz);
+            kryo.get().register(klazz);
         }
     }
 
@@ -54,14 +64,14 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
 
     @Override
     public byte[] serialize(T obj) {
-        output.clear();
-        kryo.writeClassAndObject(output, obj);
-        return output.toBytes();
+        output.get().clear();
+        kryo.get().writeClassAndObject(output.get(), obj);
+        return output.get().toBytes();
     }
 
     @Override
     public T deserialize(byte[] b) {
         Input input = new Input(b);
-        return (T) kryo.readClassAndObject(input);
+        return (T) kryo.get().readClassAndObject(input);
     }
 }
