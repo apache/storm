@@ -318,10 +318,10 @@
 (defn do-rebalance [nimbus storm-id status storm-base]
   (let [rebalance-options (:topology-action-options storm-base)]
     (.update-storm! (:storm-cluster-state nimbus)
-                    storm-id
-                    (-> {}
-                        (assoc-non-nil :component->executors (:component->executors rebalance-options))
-                        (assoc-non-nil :num-workers (:num-workers rebalance-options))))
+      storm-id
+        (-> {}
+          (assoc-non-nil :component->executors (:component->executors rebalance-options))
+          (assoc-non-nil :num-workers (:num-workers rebalance-options))))
     (update-storm-code-parallelism nimbus storm-id (:component->executors rebalance-options)))
   (mk-assignments nimbus :scratch-topology-id storm-id))
 
