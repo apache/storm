@@ -307,9 +307,9 @@
                   component-common (.get_common component)]]
       (.set_parallelism_hint component-common num-tasks)
       (.set_json_conf component-common
-                      (->> {TOPOLOGY-TASKS num-tasks}
-                           (merge (component-conf component))
-                           to-json)))
+        (->> {TOPOLOGY-TASKS num-tasks}
+             (merge (component-conf component))
+             to-json)))
     (.deleteBlob blob-store code-key subject)
     (.createBlob blob-store code-key (Utils/serialize topology) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
     (if (instance? LocalFsBlobStore blob-store)
