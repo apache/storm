@@ -1,4 +1,7 @@
 ## 1.0.3
+ * STORM-2246: Logviewer download link has urlencoding on part of the URL
+ * STORM-1906: Window count/length of zero should be disallowed
+ * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-2268: Fix integration test for Travis CI build
  * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
  * STORM-2279: Unable to open bolt page of storm ui
