@@ -164,6 +164,7 @@ public class Utils {
 
     private static SerializationDelegate serializationDelegate;
     private static ClassLoader cl = null;
+    private static Map<String, Object> localConf;
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
@@ -173,8 +174,8 @@ public class Utils {
     public static final int SIGTERM = 15;
 
     static {
-        Map<String, Object> conf = readStormConfig();
-        serializationDelegate = getSerializationDelegate(conf);
+        localConf = readStormConfig();
+        serializationDelegate = getSerializationDelegate(localConf);
     }
 
     @SuppressWarnings("unchecked")
@@ -1744,14 +1745,13 @@ public class Utils {
     /**
      * Gets the storm.local.hostname value, or tries to figure out the local hostname
      * if it is not set in the config.
-     * @param conf The storm config to read from
      * @return a string representation of the hostname.
     */
-    public static String hostname (Map<String, Object> conf) throws UnknownHostException  {
-        if (conf == null) {
+    public static String hostname () throws UnknownHostException  {
+        if (localConf == null) {
             return memoizedLocalHostname();
         }
-        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        Object hostnameString = localConf.get(Config.STORM_LOCAL_HOSTNAME);
         if (hostnameString == null || hostnameString.equals("")) {
             return memoizedLocalHostname();
         }
