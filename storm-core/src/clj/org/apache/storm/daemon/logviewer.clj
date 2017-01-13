@@ -396,7 +396,7 @@
                         "Next" :enabled (> next-start start))])]]))
 
 (defn- download-link [fname]
-  [[:p (link-to (url-format "/download/%s" fname) "Download Full File")]])
+  [[:p (link-to (url-format "/download?file=%s" (to-array [fname])) "Download Full File")]])
 
 (defn- daemon-download-link [fname]
   [[:p (link-to (url-format "/daemondownload/%s" fname) "Download Full File")]])
@@ -1086,10 +1086,11 @@
       (catch InvalidRequestException ex
         (log-error ex)
         (ring-response-from-exception ex))))
-  (GET "/download/:file" [:as {:keys [servlet-request servlet-response log-root]} file & m]
+  (GET "/download" [:as {:keys [servlet-request servlet-response log-root]} & m]
     (try
-      (mark! logviewer:num-download-log-file-http-requests)
-      (let [user (.getUserName http-creds-handler servlet-request)]
+      (.mark logviewer:num-download-log-file-http-requests)
+      (let [user (.getUserName http-creds-handler servlet-request)
+            file (url-decode (:file m))]
         (download-log-file file servlet-request servlet-response user log-root))
       (catch InvalidRequestException ex
         (log-error ex)
