@@ -207,7 +207,6 @@
  * STORM-2190: reduce contention between submission and scheduling
  * STORM-2239: Handle InterruptException in new Kafka spout
  * STORM-2238: Add Timestamp extractor for windowed bolt
- * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-2235: Introduce new option: 'add remote repositories' for dependency resolver
  * STORM-2215: validate blobs are present before submitting
  * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
@@ -271,18 +270,19 @@
  * STORM-1907: PartitionedTridentSpoutExecutor has incompatible types that cause ClassCastException
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui.
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
  * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
  * STORM-1698: Asynchronous MetricsConsumerBolt
  * STORM-1887: Fixed help message for set_log_level command
- * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2246: Logviewer download link has urlencoding on part of the URL
+ * STORM-1906: Window count/length of zero should be disallowed
+ * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-2268: Fix integration test for Travis CI build
  * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
  * STORM-2279: Unable to open bolt page of storm ui
