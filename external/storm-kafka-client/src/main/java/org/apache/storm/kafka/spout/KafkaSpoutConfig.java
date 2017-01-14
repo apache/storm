@@ -36,6 +36,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;   // 30s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
+    public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000; // 2s
 
     // Kafka property names
     public interface Consumer {
@@ -76,6 +77,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final long offsetCommitPeriodMs;
     private final int maxRetries;
     private final int maxUncommittedOffsets;
+    private final long partitionRefreshPeriodMs;
+    private final boolean manualPartitionAssignment;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutStreams kafkaSpoutStreams;
     private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
@@ -91,6 +94,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.kafkaSpoutStreams = builder.kafkaSpoutStreams;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
+        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
+        this.manualPartitionAssignment = builder.manualPartitionAssignment;
         this.tuplesBuilder = builder.tuplesBuilder;
         this.retryService = builder.retryService;
     }
@@ -113,6 +118,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
         private final KafkaSpoutStreams kafkaSpoutStreams;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
+        private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
+        private boolean manualPartitionAssignment = false;
         private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
         private final KafkaSpoutRetryService retryService;
 
@@ -229,6 +236,25 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * Sets partition refresh period in milliseconds in manual partition assignment model. Default is 2s.
+         * @param partitionRefreshPeriodMs time in milliseconds
+         */
+        public Builder<K, V> setPartitionRefreshPeriodMs(long partitionRefreshPeriodMs) {
+            this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
+            return this;
+        }
+
+        /**
+         * Defines whether the consumer manages partition manually.
+         * If set to true, the consumer manage partition manually, otherwise it will rely on kafka to do partition assignment.
+         * @param manualPartitionAssignment True if using manual partition assignment.
+         */
+        public Builder<K, V> setManualPartitionAssignment(boolean manualPartitionAssignment) {
+            this.manualPartitionAssignment = manualPartitionAssignment;
+            return this;
+        }
+
         public KafkaSpoutConfig<K,V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -305,6 +331,14 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public KafkaSpoutRetryService getRetryService() {
         return retryService;
+    }
+
+    public long getPartitionRefreshPeriodMs() {
+        return partitionRefreshPeriodMs;
+    }
+
+    public boolean isManualPartitionAssignment() {
+        return manualPartitionAssignment;
     }
 
     @Override
