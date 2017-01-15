@@ -140,8 +140,8 @@ public class ShellSpout implements ISpout {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
-        _spoutMsg.setCommand("next");
-        _spoutMsg.setId("");
+        _spoutMsg.setCommand(command);
+        _spoutMsg.setId(msgId);
         querySubprocess();
     }
 
