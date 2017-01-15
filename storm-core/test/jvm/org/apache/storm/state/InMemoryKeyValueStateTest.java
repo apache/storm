@@ -44,6 +44,19 @@ public class InMemoryKeyValueStateTest {
     }
 
     @Test
+    public void testPutAndDelete() throws Exception {
+        keyValueState.put("a", "1");
+        keyValueState.put("b", "2");
+        assertEquals("1", keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+        assertEquals("1", keyValueState.delete("a"));
+        assertEquals(null, keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+    }
+
+    @Test
     public void testPrepareCommitRollback() throws Exception {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
@@ -60,6 +73,20 @@ public class InMemoryKeyValueStateTest {
         assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
         keyValueState.rollback();
         assertArrayEquals(new String[]{"1", "2", null}, getValues());
+        keyValueState.put("c", "3");
+        assertEquals("2", keyValueState.delete("b"));
+        assertEquals("3", keyValueState.delete("c"));
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.prepareCommit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.commit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.put("b", "2");
+        keyValueState.prepareCommit(3);
+        keyValueState.put("c", "3");
+        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        keyValueState.rollback();
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
     }
 
     private String[] getValues() {

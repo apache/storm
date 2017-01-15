@@ -34,7 +34,7 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
-public class TestEventLogSpout extends BaseRichSpout {
+public class TestEventLogSpout extends BaseRichSpout implements CompletableSpout {
     public static Logger LOG = LoggerFactory.getLogger(TestEventLogSpout.class);
     
     private static final Map<String, Integer> acked = new HashMap<String, Integer>();
@@ -135,5 +135,10 @@ public class TestEventLogSpout extends BaseRichSpout {
     
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("source", "eventId"));
+    }
+
+    @Override
+    public boolean isExhausted() {
+        return completed();
     }
 }

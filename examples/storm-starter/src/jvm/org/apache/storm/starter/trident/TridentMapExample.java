@@ -19,6 +19,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
@@ -83,7 +84,7 @@ public class TridentMapExample {
         TridentTopology topology = new TridentTopology();
         TridentState wordCounts = topology.newStream("spout1", spout).parallelismHint(16)
                 .flatMap(split)
-                .map(toUpper)
+                .map(toUpper, new Fields("uppercased"))
                 .filter(theFilter)
                 .peek(new Consumer() {
                     @Override
@@ -91,14 +92,14 @@ public class TridentMapExample {
                         System.out.println(input.getString(0));
                     }
                 })
-                .groupBy(new Fields("word"))
+                .groupBy(new Fields("uppercased"))
                 .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
                 .parallelismHint(16);
 
         topology.newDRPCStream("words", drpc)
-                .flatMap(split)
-                .groupBy(new Fields("args"))
-                .stateQuery(wordCounts, new Fields("args"), new MapGet(), new Fields("count"))
+                .flatMap(split, new Fields("word"))
+                .groupBy(new Fields("word"))
+                .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
                 .filter(new FilterNull())
                 .aggregate(new Fields("count"), new Sum(), new Fields("sum"));
         return topology.build();
@@ -108,12 +109,13 @@ public class TridentMapExample {
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
         if (args.length == 0) {
-            LocalDRPC drpc = new LocalDRPC();
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(drpc));
-            for (int i = 0; i < 100; i++) {
-                System.out.println("DRPC RESULT: " + drpc.execute("words", "CAT THE DOG JUMPED"));
-                Thread.sleep(1000);
+            try (LocalDRPC drpc = new LocalDRPC();
+                 LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(drpc));) {
+                for (int i = 0; i < 100; i++) {
+                    System.out.println("DRPC RESULT: " + drpc.execute("words", "CAT THE DOG JUMPED"));
+                    Thread.sleep(1000);
+                }
             }
         } else {
             conf.setNumWorkers(3);

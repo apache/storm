@@ -24,17 +24,18 @@
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.storm</groupId>
   <artifactId>storm-starter</artifactId>
   <packaging>jar</packaging>
 
   <name>storm-starter</name>
 
   <properties>
-     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-     <!-- see comment below... This fixes an annoyance with intellij -->
-     <provided.scope>provided</provided.scope>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <!-- see comment below... This fixes an annoyance with intellij -->
+    <provided.scope>provided</provided.scope>
+    <hbase.version>0.98.4-hadoop2</hbase.version>
   </properties>
+
   <profiles>
     <profile>
         <id>intellij</id>
@@ -78,9 +79,14 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-     <groupId>org.twitter4j</groupId>
-     <artifactId>twitter4j-stream</artifactId>
-     <version>3.0.3</version>
+        <groupId>org.apache.storm</groupId>
+        <artifactId>storm-clojure</artifactId>
+        <version>${project.version}</version>
+        <!--
+          Use "provided" scope to keep storm out of the jar-with-dependencies
+          For IntelliJ dev, intellij will load properly.
+        -->
+        <scope>${provided.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
@@ -130,38 +136,14 @@
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-kafka</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.storm</groupId>
       <artifactId>storm-hdfs</artifactId>
       <version>${project.version}</version>
     </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka_2.10</artifactId>
-      <version>0.8.2.1</version>
-      <!-- use provided scope, so users can pull in whichever scala version they choose -->
-      <scope>provided</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.apache.zookeeper</groupId>
-          <artifactId>zookeeper</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.kafka</groupId>
-      <artifactId>kafka-clients</artifactId>
-      <version>0.8.2.1</version>
-      <scope>provided</scope>
-    </dependency>
+      <dependency>
+          <groupId>org.apache.storm</groupId>
+          <artifactId>storm-hbase</artifactId>
+          <version>${project.version}</version>
+      </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
       <artifactId>storm-redis</artifactId>
@@ -184,6 +166,23 @@
             <artifactId>maven-shade-plugin</artifactId>
             <configuration>
                 <createDependencyReducedPom>true</createDependencyReducedPom>
+                <filters>
+                    <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                            <exclude>META-INF/*.SF</exclude>
+                            <exclude>META-INF/*.sf</exclude>
+                            <exclude>META-INF/*.DSA</exclude>
+                            <exclude>META-INF/*.dsa</exclude>
+                            <exclude>META-INF/*.RSA</exclude>
+                            <exclude>META-INF/*.rsa</exclude>
+                            <exclude>META-INF/*.EC</exclude>
+                            <exclude>META-INF/*.ec</exclude>
+                            <exclude>META-INF/MSFTSIG.SF</exclude>
+                            <exclude>META-INF/MSFTSIG.RSA</exclude>
+                        </excludes>
+                    </filter>
+                </filters>
             </configuration>
             <executions>
                 <execution>
@@ -212,6 +211,9 @@
           <sourceDirectories>
             <sourceDirectory>src/clj</sourceDirectory>
           </sourceDirectories>
+          <testSourceDirectories>
+            <testSourceDirectory>test/clj</testSourceDirectory>
+          </testSourceDirectories>
         </configuration>
         <executions>
           <execution>
@@ -219,6 +221,13 @@
             <phase>compile</phase>
             <goals>
               <goal>compile</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>test-clojure</id>
+            <phase>test</phase>
+            <goals>
+              <goal>test</goal>
             </goals>
           </execution>
         </executions>
@@ -240,6 +249,7 @@
           <includeProjectDependencies>true</includeProjectDependencies>
           <includePluginDependencies>false</includePluginDependencies>
           <classpathScope>compile</classpathScope>
+          <!-- allows you to specify which topology class to run by specifying -Dstorm.topology= on the command line -->
           <mainClass>${storm.topology}</mainClass>
         </configuration>
       </plugin>

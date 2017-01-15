@@ -45,9 +45,6 @@ FILE* ERRORFILE = NULL;
 static uid_t launcher_uid = -1;
 static gid_t launcher_gid = -1;
 
-char *concatenate(char *concat_pattern, char *return_path_name,
-   int numArgs, ...);
-
 void set_launcher_uid(uid_t user, gid_t group) {
   launcher_uid = user;
   launcher_gid = group;
@@ -186,50 +183,10 @@ int change_user(uid_t user, gid_t group) {
   return 0;
 }
 
-/**
- * Utility function to concatenate argB to argA using the concat_pattern.
- */
-char *concatenate(char *concat_pattern, char *return_path_name, 
-                  int numArgs, ...) {
-  va_list ap;
-  va_start(ap, numArgs);
-  int strlen_args = 0;
-  char *arg = NULL;
-  int j;
-  for (j = 0; j < numArgs; j++) {
-    arg = va_arg(ap, char*);
-    if (arg == NULL) {
-      fprintf(LOGFILE, "One of the arguments passed for %s in null.\n",
-          return_path_name);
-      return NULL;
-    }
-    strlen_args += strlen(arg);
-  }
-  va_end(ap);
-
-  char *return_path = NULL;
-  int str_len = strlen(concat_pattern) + strlen_args + 1;
-
-  return_path = (char *) malloc(str_len);
-  if (return_path == NULL) {
-    fprintf(LOGFILE, "Unable to allocate memory for %s.\n", return_path_name);
-    return NULL;
-  }
-  va_start(ap, numArgs);
-  vsnprintf(return_path, str_len, concat_pattern, ap);
-  va_end(ap);
-  return return_path;
-}
-
 char *get_container_launcher_file(const char* work_dir) {
-  return concatenate("%s/%s", "container launcher", 2, work_dir, CONTAINER_SCRIPT);
-}
-
-/**
- * Get the tmp directory under the working directory
- */
-char *get_tmp_directory(const char *work_dir) {
-  return concatenate("%s/%s", "tmp dir", 2, work_dir, TMP_DIR);
+  char *ret;
+  asprintf(&ret, "%s/%s", work_dir, CONTAINER_SCRIPT);
+  return ret;
 }
 
 /**
@@ -414,33 +371,45 @@ static int copy_file(int input, const char* in_filename,
   return 0;
 }
 
-int setup_stormdist(FTSENT* entry, uid_t euser) {
+/**
+ * Sets up permissions for a directory optionally making it user-writable.
+ * We set up the permissions r(w)xrws--- so that the file group (should be Storm's user group)
+ * has complete access to the directory, and the file user (The topology owner's user)
+ * is able to read and execute, and in certain directories, write. The setGID bit is set
+ * to make sure any files created under the directory will be accessible to storm's user for
+ * cleanup purposes.
+ */
+static int setup_permissions(FTSENT* entry, uid_t euser, int user_write) {
   if (lchown(entry->fts_path, euser, launcher_gid) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s\n",
-      strerror(errno));
+    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
      return -1;
   }
   mode_t mode = entry->fts_statp->st_mode;
-  mode_t new_mode = (mode & (S_IRWXU)) | S_IRGRP | S_IWGRP;
-  if ((mode & S_IXUSR) == S_IXUSR) {
-    new_mode = new_mode | S_IXGRP;
+  // Preserve user read and execute and set group read and write.
+  mode_t new_mode = (mode & (S_IRUSR | S_IXUSR)) | S_IRGRP | S_IWGRP;
+  if (user_write) {
+    new_mode = new_mode | S_IWUSR;
   }
+  // If the entry is a directory, Add group execute and setGID bits.
   if ((mode & S_IFDIR) == S_IFDIR) {
-    new_mode = new_mode | S_ISGID;
+    new_mode = new_mode | S_IXGRP | S_ISGID;
   }
   if (chmod(entry->fts_path, new_mode) != 0) {
-    fprintf(ERRORFILE, "Failure to exec app initialization process - %s\n",
-      strerror(errno));
+    fprintf(ERRORFILE, "Failure to exec app initialization process - %s, fts_path=%s\n",
+            strerror(errno), entry->fts_path);
     return -1;
   }
   return 0;
 }
 
-int setup_stormdist_dir(const char* local_dir) {
+
+int setup_dir_permissions(const char* local_dir, int user_writable) {
   //This is the same as
   //> chmod g+rwX -R $local_dir
-  //> chown -no-dereference -R $user:$supervisor-group $local_dir 
-
+  //> chmod g+s -R $local_dir
+  //> if [ $user_writable ]; then chmod u+w;  else u-w; fi
+  //> chown -no-dereference -R $user:$supervisor-group $local_dir
   int exit_code = 0;
   uid_t euser = geteuid();
 
@@ -450,7 +419,7 @@ int setup_stormdist_dir(const char* local_dir) {
   } else {
     char *(paths[]) = {strndup(local_dir,PATH_MAX), 0};
     if (paths[0] == NULL) {
-      fprintf(ERRORFILE, "Malloc failed in setup_stormdist_dir\n");
+      fprintf(ERRORFILE, "Malloc failed in setup_dir_permissions\n");
       return -1;
     }
     // check to make sure the directory exists
@@ -485,14 +454,14 @@ int setup_stormdist_dir(const char* local_dir) {
 
       case FTS_DP:        // A directory being visited in post-order
       case FTS_DOT:       // A dot directory
+      case FTS_SL:        // A symbolic link
+      case FTS_SLNONE:    // A broken symbolic link
         //NOOP
         fprintf(LOGFILE, "NOOP: %s\n", entry->fts_path); break;
       case FTS_D:         // A directory in pre-order
       case FTS_F:         // A regular file
-      case FTS_SL:        // A symbolic link
-      case FTS_SLNONE:    // A broken symbolic link
-        if (setup_stormdist(entry, euser) != 0) {
-          exit_code = -1;
+        if (setup_permissions(entry, euser, user_writable) != 0) {
+            exit_code = -1;
         }
         break;
       case FTS_DEFAULT:   // Unknown type of file
@@ -582,121 +551,88 @@ static int rmdir_as_nm(const char* path) {
   return ret;
 }
 
-/**
- * Recursively delete the given path.
- * full_path : the path to delete
- * needs_tt_user: the top level directory must be deleted by the tt user.
- */
-static int delete_path(const char *full_path, 
-                       int needs_tt_user) {
-  int exit_code = 0;
-
-  if (full_path == NULL) {
-    fprintf(LOGFILE, "Path is null\n");
-    exit_code = UNABLE_TO_BUILD_PATH; // may be malloc failed
-  } else {
-    char *(paths[]) = {strndup(full_path,PATH_MAX), 0};
-    if (paths[0] == NULL) {
-      fprintf(LOGFILE, "Malloc failed in delete_path\n");
-      return -1;
-    }
-    // check to make sure the directory exists
-    if (access(full_path, F_OK) != 0) {
-      if (errno == ENOENT) {
-        free(paths[0]);
-        paths[0] = NULL;
-        return 0;
+static int remove_files_from_dir(const char *path) {
+  DIR *dir;
+  struct dirent *entry;
+  dir = opendir(path);
+  if (dir) {
+    int exit_code = 0;
+    while ((entry = readdir(dir)) != NULL) {
+      if(strcmp(entry->d_name, ".") == 0
+         || strcmp(entry->d_name, "..") == 0) {
+          continue;
       }
-    }
-    FTS* tree = fts_open(paths, FTS_PHYSICAL | FTS_XDEV, NULL);
-    FTSENT* entry = NULL;
-    int ret = 0;
-
-    if (tree == NULL) {
-      fprintf(LOGFILE,
-              "Cannot open file traversal structure for the path %s:%s.\n", 
-              full_path, strerror(errno));
-      free(paths[0]);
-      paths[0] = NULL;
-      return -1;
-    }
-    while (((entry = fts_read(tree)) != NULL) && exit_code == 0) {
-      switch (entry->fts_info) {
-
-      case FTS_DP:        // A directory being visited in post-order
-        if (!needs_tt_user ||
-            strcmp(entry->fts_path, full_path) != 0) {
-          if (rmdir(entry->fts_accpath) != 0) {
-            fprintf(LOGFILE, "Couldn't delete directory %s - %s\n", 
-                    entry->fts_path, strerror(errno));
-            exit_code = -1;
-          }
+      char *newpath;
+      asprintf(&newpath, "%s/%s", path, entry->d_name);
+      if(newpath) {
+        // Recur on anything in the directory.
+        int new_exit = recursive_delete(newpath, 0);
+        if(!exit_code) {
+          exit_code = new_exit;
         }
-        break;
-
-      case FTS_F:         // A regular file
-      case FTS_SL:        // A symbolic link
-      case FTS_SLNONE:    // A broken symbolic link
-      case FTS_DEFAULT:   // Unknown type of file
-        if (unlink(entry->fts_accpath) != 0) {
-          fprintf(LOGFILE, "Couldn't delete file %s - %s\n", entry->fts_path,
-                  strerror(errno));
-          exit_code = -1;
-        }
-        break;
-
-      case FTS_DNR:       // Unreadable directory
-        fprintf(LOGFILE, "Unreadable directory %s. Skipping..\n", 
-                entry->fts_path);
-        break;
-
-      case FTS_D:         // A directory in pre-order
-        // if the directory isn't readable, chmod it
-        if ((entry->fts_statp->st_mode & 0200) == 0) {
-          fprintf(LOGFILE, "Unreadable directory %s, chmoding.\n", 
-                  entry->fts_path);
-          if (chmod(entry->fts_accpath, 0700) != 0) {
-            fprintf(LOGFILE, "Error chmoding %s - %s, continuing\n", 
-                    entry->fts_path, strerror(errno));
-          }
-        }
-        break;
-
-      case FTS_NS:        // A file with no stat(2) information
-        // usually a root directory that doesn't exist
-        fprintf(LOGFILE, "Directory not found %s\n", entry->fts_path);
-        break;
-
-      case FTS_DC:        // A directory that causes a cycle
-      case FTS_DOT:       // A dot directory
-      case FTS_NSOK:      // No stat information requested
-        break;
-
-      case FTS_ERR:       // Error return
-        fprintf(LOGFILE, "Error traversing directory %s - %s\n", 
-                entry->fts_path, strerror(entry->fts_errno));
-        exit_code = -1;
-        break;
-      default:
-        exit_code = -1;
-        break;
       }
+      free(newpath);
     }
-    ret = fts_close(tree);
-    if (exit_code == 0 && ret != 0) {
-      fprintf(LOGFILE, "Error in fts_close while deleting %s\n", full_path);
-      exit_code = -1;
-    }
-    if (needs_tt_user) {
-      // If the delete failed, try a final rmdir as root on the top level.
-      // That handles the case where the top level directory is in a directory
-      // that is owned by the node manager.
-      exit_code = rmdir_as_nm(full_path);
-    }
-    free(paths[0]);
-    paths[0] = NULL;
+    closedir(dir);
+    return exit_code;
   }
-  return exit_code;
+  return -1;
+}
+
+int recursive_delete(const char *path, int supervisor_owns_dir) {
+  if(path == NULL) {
+    fprintf(LOGFILE, "Cannot delete NULL path.\n");
+    return UNABLE_TO_BUILD_PATH;
+  }
+
+  if(access(path, F_OK) != 0) {
+    if(errno == ENOENT) {
+      return 0;
+    }
+    // Can probably return here, but we'll try to lstat anyway.
+  }
+
+  struct stat file_stat;
+  if(lstat(path, &file_stat) != 0) {
+    fprintf(LOGFILE, "Failed to delete %s: %s", path, strerror(errno));
+    return UNABLE_TO_STAT_FILE;
+  }
+
+  switch(file_stat.st_mode & S_IFMT) {
+  case S_IFDIR:
+    // Make sure we can read the directory.
+    if((file_stat.st_mode & 0200) == 0) {
+      fprintf(LOGFILE, "Unreadable directory %s, chmoding.\n", path);
+      if (chmod(path, 0700) != 0) {
+        fprintf(LOGFILE, "Error chmoding %s - %s, continuing\n", path, strerror(errno));
+      }
+    }
+
+    // Delete all the subfiles.
+    remove_files_from_dir(path);
+
+    // Delete the actual directory.
+    if (supervisor_owns_dir) {
+      return rmdir_as_nm(path);
+    }
+    else if (rmdir(path) != 0) {
+      fprintf(LOGFILE, "Couldn't delete directory %s - %s\n", path, strerror(errno));
+      return -1;
+    }
+    break;
+
+  case S_IFLNK:
+    // If it's a link, just unlink it. Don't follow.
+    if(unlink(path) != 0) {
+      fprintf(LOGFILE, "Couldn't delete symlink %s - %s\n", path, strerror(errno));
+      return -1;
+    }
+    break;
+
+  default: // Just rm all other kinds of files.
+    remove(path);
+  }
+  return 0;
 }
 
 int exec_as_user(const char * working_dir, const char * script_file) {
@@ -787,41 +723,3 @@ int fork_as_user(const char * working_dir, const char * script_file) {
   //Unreachable
   return -1;
 }
-
-/**
- * Delete the given directory as the user from each of the directories
- * user: the user doing the delete
- * subdir: the subdir to delete (if baseDirs is empty, this is treated as
-           an absolute path)
- * baseDirs: (optional) the baseDirs where the subdir is located
- */
-int delete_as_user(const char *user,
-                   const char *subdir,
-                   char* const* baseDirs) {
-  int ret = 0;
-
-  char** ptr;
-
-  // TODO: No switching user? !!!!
-  if (baseDirs == NULL || *baseDirs == NULL) {
-    return delete_path(subdir, 1);
-  }
-  // do the delete
-  for(ptr = (char**)baseDirs; *ptr != NULL; ++ptr) {
-    char* full_path = concatenate("%s/%s", "user subdir", 2,
-                              *ptr, subdir);
-    if (full_path == NULL) {
-      return -1;
-    }
-    int this_ret = delete_path(full_path, strlen(subdir) == 0);
-    free(full_path);
-    full_path = NULL;
-    // delete as much as we can, but remember the error
-    if (this_ret != 0) {
-      ret = this_ret;
-    }
-  }
-  return ret;
-}
-
-

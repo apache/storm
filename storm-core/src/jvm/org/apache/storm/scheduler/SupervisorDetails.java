@@ -49,7 +49,7 @@ public class SupervisorDetails {
     private Map<String, Double> _total_resources;
 
     public SupervisorDetails(String id, String host, Object meta, Object schedulerMeta,
-                             Collection<Number> allPorts, Map<String, Double> total_resources){
+                             Collection<? extends Number> allPorts, Map<String, Double> total_resources){
 
         this.id = id;
         this.host = host;
@@ -72,23 +72,29 @@ public class SupervisorDetails {
         this(id, null, meta, null, null, total_resources);
     }
 
-    public SupervisorDetails(String id, Object meta, Collection<Number> allPorts){
+    public SupervisorDetails(String id, Object meta, Collection<? extends Number> allPorts){
         this(id, null, meta, null, allPorts, null);
     }
 
-    public SupervisorDetails(String id, String host, Object schedulerMeta, Collection<Number> allPorts) {
+    public SupervisorDetails(String id, String host, Object schedulerMeta, Collection<? extends Number> allPorts) {
         this(id, host, null, schedulerMeta, allPorts, null);
     }
 
     public SupervisorDetails(String id, String host, Object schedulerMeta,
-                             Collection<Number> allPorts, Map<String, Double> total_resources) {
+                             Collection<? extends Number> allPorts, Map<String, Double> total_resources) {
         this(id, host, null, schedulerMeta, allPorts, total_resources);
     }
+    
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + " ID: " + id + " HOST: " + host + " META: " + meta +
+                " SCHED_META: " + schedulerMeta + " PORTS: " + allPorts;
+    }
 
-    private void setAllPorts(Collection<Number> allPorts) {
+    private void setAllPorts(Collection<? extends Number> allPorts) {
         this.allPorts = new HashSet<>();
-        if(allPorts!=null) {
-            for(Number n: allPorts) {
+        if (allPorts!=null) {
+            for (Number n: allPorts) {
                 this.allPorts.add(n.intValue());
             }
         }

@@ -77,12 +77,7 @@ public class TransactionalSpoutCoordinator extends BaseRichSpout {
         _collector = collector;
         _coordinator = _spout.getCoordinator(conf, context);
         _currTransaction = getStoredCurrTransaction(_state);
-        Object active = conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING);
-        if(active==null) {
-            _maxTransactionActive = 1;
-        } else {
-            _maxTransactionActive = Utils.getInt(active);
-        }
+        _maxTransactionActive = Utils.getInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 1);
         _initializer = new StateInitializer();
     }
 

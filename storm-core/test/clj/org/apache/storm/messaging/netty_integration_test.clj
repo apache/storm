@@ -1,3 +1,4 @@
+
 ;; Licensed to the Apache Software Foundation (ASF) under one
 ;; or more contributor license agreements.  See the NOTICE file
 ;; distributed with this work for additional information
@@ -15,14 +16,18 @@
 ;; limitations under the License.
 (ns org.apache.storm.messaging.netty-integration-test
   (:use [clojure test])
-  (:import [org.apache.storm.messaging TransportFactory])
-  (:import [org.apache.storm.testing TestWordSpout TestGlobalCount])
-  (:use [org.apache.storm testing util config])
-  (:require [org.apache.storm [thrift :as thrift]]))
+  (:import [org.apache.storm.messaging TransportFactory]
+           [org.apache.storm Thrift Testing LocalCluster$Builder])
+  (:import [org.apache.storm.testing CompleteTopologyParam MockedSources TestWordSpout TestGlobalCount])
+  (:import [org.apache.storm.utils Utils])
+  (:use [org.apache.storm util config]))
 
 (deftest test-integration
-  (with-simulated-time-local-cluster [cluster :supervisors 4 :supervisor-slot-port-min 6710
-                                      :daemon-conf {STORM-LOCAL-MODE-ZMQ true 
+  (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                (.withSimulatedTime)
+                                (.withSupervisors 4)
+                                (.withSupervisorSlotPortMin 6710)
+                                (.withDaemonConf {STORM-LOCAL-MODE-ZMQ true 
                                                     STORM-MESSAGING-TRANSPORT  "org.apache.storm.messaging.netty.Context"
                                                     STORM-MESSAGING-NETTY-AUTHENTICATION false
                                                     STORM-MESSAGING-NETTY-BUFFER-SIZE 1024000
@@ -30,17 +35,22 @@
                                                     STORM-MESSAGING-NETTY-MIN-SLEEP-MS 1000 
                                                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                                                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
-                                                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1}]
-    (let [topology (thrift/mk-topology
-                     {"1" (thrift/mk-spout-spec (TestWordSpout. true) :parallelism-hint 4)}
-                     {"2" (thrift/mk-bolt-spec {"1" :shuffle} (TestGlobalCount.)
-                                               :parallelism-hint 6)})
-          results (complete-topology cluster
+                                                    STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1})))]
+    (let [topology (Thrift/buildTopology
+                     {"1" (Thrift/prepareSpoutDetails
+                            (TestWordSpout. true) (Integer. 4))}
+                     {"2" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareShuffleGrouping)}
+                            (TestGlobalCount.) (Integer. 6))})
+          results (Testing/completeTopology cluster
                                      topology
-                                     ;; important for test that
-                                     ;; #tuples = multiple of 4 and 6
-                                     :storm-conf {TOPOLOGY-WORKERS 3}
-                                     :mock-sources {"1" [["a"] ["b"]
+                                     (doto (CompleteTopologyParam.)
+                                       ;; important for test that
+                                       ;; #tuples = multiple of 4 and 6
+                                       (.setStormConf {TOPOLOGY-WORKERS 3})
+                                       (.setMockedSources
+                                         (MockedSources. {"1" [["a"] ["b"]
                                                          ["a"] ["b"]
                                                          ["a"] ["b"]
                                                          ["a"] ["b"]
@@ -53,5 +63,5 @@
                                                          ["a"] ["b"]
                                                          ["a"] ["b"]
                                                          ]}
-                                     )]
-        (is (= (* 6 4) (.size (read-tuples results "2")))))))
+                                     ))))]
+        (is (= (* 6 4) (.size (Testing/readTuples results "2")))))))

@@ -22,6 +22,8 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IWindowedBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.TupleFieldTimestampExtractor;
+import org.apache.storm.windowing.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +35,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     private static final Logger LOG = LoggerFactory.getLogger(BaseWindowedBolt.class);
 
     protected final transient Map<String, Object> windowConfiguration;
+    protected TimestampExtractor timestampExtractor;
 
     /**
      * Holds a count value for count based windows and sliding intervals.
@@ -42,6 +45,23 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
 
         public Count(int value) {
             this.value = value;
+        }
+
+        /**
+         * Returns a {@link Count} of given value.
+         *
+         * @param value the count value
+         * @return the Count
+         */
+        public static Count of(int value) {
+            return new Count(value);
+        }
+
+        @Override
+        public String toString() {
+            return "Count{" +
+                    "value=" + value +
+                    '}';
         }
     }
 
@@ -54,6 +74,63 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         public Duration(int value, TimeUnit timeUnit) {
             this.value = (int) timeUnit.toMillis(value);
         }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in milli seconds.
+         *
+         * @param milliseconds the duration in milliseconds
+         * @return the Duration
+         */
+        public static Duration of(int milliseconds) {
+            return new Duration(milliseconds, TimeUnit.MILLISECONDS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in days.
+         *
+         * @param days the number of days
+         * @return the Duration
+         */
+        public static Duration days(int days) {
+            return new Duration(days, TimeUnit.DAYS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in hours.
+         *
+         * @param hours the number of hours
+         * @return the Duration
+         */
+        public static Duration hours(int hours) {
+            return new Duration(hours, TimeUnit.HOURS);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in minutes.
+         *
+         * @param minutes the number of minutes
+         * @return the Duration
+         */
+        public static Duration minutes(int minutes) {
+            return new Duration(minutes, TimeUnit.MINUTES);
+        }
+
+        /**
+         * Returns a {@link Duration} corresponding to the the given value in seconds.
+         *
+         * @param seconds the number of seconds
+         * @return the Duration
+         */
+        public static Duration seconds(int seconds) {
+            return new Duration(seconds, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public String toString() {
+            return "Duration{" +
+                    "value=" + value +
+                    '}';
+        }
     }
 
     protected BaseWindowedBolt() {
@@ -61,21 +138,34 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     }
 
     private BaseWindowedBolt withWindowLength(Count count) {
+        if (count.value <= 0) {
+            throw new IllegalArgumentException("Window length must be positive [" + count + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withWindowLength(Duration duration) {
+        if (duration.value <= 0) {
+            throw new IllegalArgumentException("Window length must be positive [" + duration + "]");
+        }
+
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, duration.value);
         return this;
     }
 
     private BaseWindowedBolt withSlidingInterval(Count count) {
+        if (count.value <= 0) {
+            throw new IllegalArgumentException("Sliding interval must be positive [" + count + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT, count.value);
         return this;
     }
 
     private BaseWindowedBolt withSlidingInterval(Duration duration) {
+        if (duration.value <= 0) {
+            throw new IllegalArgumentException("Sliding interval must be positive [" + duration + "]");
+        }
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, duration.value);
         return this;
     }
@@ -163,9 +253,40 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * @param fieldName the name of the field that contains the timestamp
      */
     public BaseWindowedBolt withTimestampField(String fieldName) {
-        windowConfiguration.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, fieldName);
+        return withTimestampExtractor(TupleFieldTimestampExtractor.of(fieldName));
+    }
+
+    /**
+     * Specify the timestamp extractor implementation.
+     *
+     * @param timestampExtractor the {@link TimestampExtractor} implementation
+     */
+    public BaseWindowedBolt withTimestampExtractor(TimestampExtractor timestampExtractor) {
+        if (this.timestampExtractor != null) {
+            throw new IllegalArgumentException("Window is already configured with a timestamp extractor: " + timestampExtractor);
+        }
+        this.timestampExtractor = timestampExtractor;
         return this;
     }
+
+    @Override
+    public TimestampExtractor getTimestampExtractor() {
+        return timestampExtractor;
+    }
+
+    /**
+     * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
+     * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
+     * It must be defined on a per-component basis, and in conjunction with the
+     * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+     *
+     * @param streamId the name of the stream used to emit late tuples on
+     */
+    public BaseWindowedBolt withLateTupleStream(String streamId) {
+        windowConfiguration.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, streamId);
+        return this;
+    }
+
 
     /**
      * Specify the maximum time lag of the tuple timestamp in milliseconds. It means that the tuple timestamps

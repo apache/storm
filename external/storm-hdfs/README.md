@@ -158,6 +158,20 @@ For example:
 
 By default, prefix is empty and extenstion is ".txt".
 
+**New FileNameFormat:**
+
+The new provided `org.apache.storm.hdfs.format.SimpleFileNameFormat` and `org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` are more flexible, and the `withName` method support parameters as following:
+
+* $TIME - current time. use `withTimeFormat` to format.
+* $NUM - rotation number
+* $HOST - local host name
+* $PARTITION - partition index (`org.apache.storm.hdfs.trident.format.SimpleFileNameFormat` only)
+* $COMPONENT - component id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+* $TASK - task id (`org.apache.storm.hdfs.format.SimpleFileNameFormat` only)
+
+eg: `seq.$TIME.$HOST.$COMPONENT.$NUM.dat`
+
+The default file `name` is `$TIME.$NUM.txt`, and the default `timeFormat` is `yyyyMMddHHmmss`.
 
 
 ### Sync Policies
@@ -184,6 +198,7 @@ Similar to sync policies, file rotation policies allow you to control when data 
 public interface FileRotationPolicy extends Serializable {
     boolean mark(Tuple tuple, long offset);
     void reset();
+    FileRotationPolicy copy();
 }
 ``` 
 
@@ -240,6 +255,23 @@ If you are using Trident and sequence files you can do something like this:
                 .addRotationAction(new MoveFileAction().withDestination("/dest2/"));
 ```
 
+### Data Partitioning
+Data can be partitioned to different HDFS directories based on characteristics of the tuple being processed or purely
+external factors, such as system time.  To partition your your data, write a class that implements the ```Partitioner```
+interface and pass it to the withPartitioner() method of your bolt. The getPartitionPath() method returns a partition
+path for a given tuple.
+
+Here's an example of a Partitioner that operates on a specific field of data:
+
+```java
+
+    Partitioner partitoner = new Partitioner() {
+            @Override
+            public String getPartitionPath(Tuple tuple) {
+                return Path.SEPARATOR + tuple.getStringByField("city");
+            }
+     };
+```
 
 ## HDFS Bolt Support for HDFS Sequence Files
 
@@ -303,21 +335,20 @@ The `org.apache.storm.hdfs.bolt.AvroGenericRecordBolt` class allows you to write
         AvroGenericRecordBolt bolt = new AvroGenericRecordBolt()
                 .withFsUrl("hdfs://localhost:54310")
                 .withFileNameFormat(fileNameFormat)
-                .withSchemaAsString(schema)
                 .withRotationPolicy(rotationPolicy)
                 .withSyncPolicy(syncPolicy);
 ```
-The setup is very similar to the `SequenceFileBolt` example above.  The key difference is that instead of specifying a
-`SequenceFormat` you must provide a string representation of an Avro schema through the `withSchemaAsString()` method.
-An `org.apache.avro.Schema` object cannot be directly provided since it does not implement `Serializable`.
 
-The AvroGenericRecordBolt expects to receive tuples containing an Avro GenericRecord that conforms to the provided
-schema.
+The avro bolt will write records to separate files based on the schema of the record being processed.  In other words,
+if the bolt receives records with two different schemas, it will write to two separate files.  Each file will be rotatated
+in accordance with the specified rotation policy. If a large number of Avro schemas are expected, then the bolt should
+be configured with a maximum number of open files at least equal to the number of schemas expected to prevent excessive
+file open/close/create operations.
 
 To use this bolt you **must** register the appropriate Kryo serializers with your topology configuration.  A convenience
 method is provided for this:
 
-`AvroGenericRecordBolt.addAvroKryoSerializations(conf);`
+`AvroUtils.addAvroKryoSerializations(conf);`
 
 By default Storm will use the ```GenericAvroSerializer``` to handle serialization.  This will work, but there are much 
 faster options available if you can pre-define the schemas you will be using or utilize an external schema registry. An
@@ -472,68 +503,59 @@ this once the DIRLOCK file becomes stale due to inactivity for hdfsspout.lock.ti
 The following example creates an HDFS spout that reads text files from HDFS path hdfs://localhost:54310/source.
 
 ```java
-// Instantiate spout
-HdfsSpout textReaderSpout = new HdfsSpout().withOutputFields(TextFileReader.defaultFields);
-// HdfsSpout seqFileReaderSpout = new HdfsSpout().withOutputFields(SequenceFileReader.defaultFields);
+// Instantiate spout to read text files
+HdfsSpout textReaderSpout = new HdfsSpout().setReaderType("text")
+                                           .withOutputFields(TextFileReader.defaultFields)                                      
+                                           .setHdfsUri("hdfs://localhost:54310")  // reqd
+                                           .setSourceDir("/data/in")              // reqd                                      
+                                           .setArchiveDir("/data/done")           // reqd
+                                           .setBadFilesDir("/data/badfiles");     // required                                      
+// If using Kerberos
+HashMap hdfsSettings = new HashMap();
+hdfsSettings.put("hdfs.keytab.file", "/path/to/keytab");
+hdfsSettings.put("hdfs.kerberos.principal","user@EXAMPLE.com");
 
-// textReaderSpout.withConfigKey("custom.keyname"); // Optional. Not required normally unless you need to change the keyname use to provide hds settings. This keyname defaults to 'hdfs.config' 
+textReaderSpout.setHdfsClientSettings(hdfsSettings);
 
-// Configure it
-Config conf = new Config();
-conf.put(Configs.SOURCE_DIR, "hdfs://localhost:54310/source");
-conf.put(Configs.ARCHIVE_DIR, "hdfs://localhost:54310/done");
-conf.put(Configs.BAD_DIR, "hdfs://localhost:54310/badfiles");
-conf.put(Configs.READER_TYPE, "text"); // or 'seq' for sequence files
-
-// Create & configure topology
+// Create topology
 TopologyBuilder builder = new TopologyBuilder();
 builder.setSpout("hdfsspout", textReaderSpout, SPOUT_NUM);
 
-// Setup bolts and other topology configuration
+// Setup bolts and wire up topology
      ..snip..
 
 // Submit topology with config
+Config conf = new Config();
 StormSubmitter.submitTopologyWithProgressBar("topologyName", conf, builder.createTopology());
 ```
 
-See sample HdfsSpoutTopolgy in storm-starter.
+A sample topology HdfsSpoutTopology is provided in storm-starter module.
 
 ## Configuration Settings
-Class HdfsSpout provided following methods for configuration:
+Below is a list of HdfsSpout member functions used for configuration. The equivalent config is also possible via Config object passed in during submitting topology.
+However, the later mechanism is deprecated as it does not allow multiple Hdfs spouts with differing settings. :  
 
-`HdfsSpout withOutputFields(String... fields)` : This sets the names for the output fields. 
-The number of fields depends upon the reader being used. For convenience, built-in reader types 
-expose a static member called `defaultFields` that can be used for this. 
- 
- `HdfsSpout withConfigKey(String configKey)`
-Optional setting. It allows overriding the default key name ('hdfs.config') with new name for 
-specifying HDFS configs. Typically used to specify kerberos keytab and principal.
 
-**E.g:**
-```java
-    HashMap map = new HashMap();
-    map.put("hdfs.keytab.file", "/path/to/keytab");
-    map.put("hdfs.kerberos.principal","user@EXAMPLE.com");
-    conf.set("hdfs.config", map)
-```
+Only methods mentioned in **bold** are required.
 
-Only settings mentioned in **bold** are required.
-
-| Setting                      | Default     | Description |
-|------------------------------|-------------|-------------|
-|**hdfsspout.reader.type**     |             | Indicates the reader for the file format. Set to 'seq' for reading sequence files or 'text' for text files. Set to a fully qualified class name if using a custom type (that implements interface org.apache.storm.hdfs.spout.FileReader)|
-|**hdfsspout.hdfs**            |             | HDFS URI. Example:  hdfs://namenodehost:8020
-|**hdfsspout.source.dir**      |             | HDFS location from where to read.  E.g. /data/inputfiles  |
-|**hdfsspout.archive.dir**     |             | After a file is processed completely it will be moved to this directory. E.g. /data/done|
-|**hdfsspout.badfiles.dir**    |             | if there is an error parsing a file's contents, the file is moved to this location.  E.g. /data/badfiles  |
-|hdfsspout.lock.dir            | '.lock' subdirectory under hdfsspout.source.dir | Dir in which lock files will be created. Concurrent HDFS spout instances synchronize using *lock* files. Before processing a file the spout instance creates a lock file in this directory with same name as input file and deletes this lock file after processing the file. Spouts also periodically makes a note of their progress (wrt reading the input file) in the lock file so that another spout instance can resume progress on the same file if the spout dies for any reason.|
-|hdfsspout.ignore.suffix       |   .ignore   | File names with this suffix in the in the hdfsspout.source.dir location will not be processed|
-|hdfsspout.commit.count        |    20000    | Record progress in the lock file after these many records are processed. If set to 0, this criterion will not be used. |
-|hdfsspout.commit.sec          |    10       | Record progress in the lock file after these many seconds have elapsed. Must be greater than 0 |
-|hdfsspout.max.outstanding     |   10000     | Limits the number of unACKed tuples by pausing tuple generation (if ACKers are used in the topology) |
-|hdfsspout.lock.timeout.sec    |  5 minutes  | Duration of inactivity after which a lock file is considered to be abandoned and ready for another spout to take ownership |
-|hdfsspout.clocks.insync       |    true     | Indicates whether clocks on the storm machines are in sync (using services like NTP). Used for detecting stale locks. |
-|hdfs.config (unless changed)  |             | Set it to a Map of Key/value pairs indicating the HDFS settigns to be used. For example, keytab and principle could be set using this. See section **Using keytabs on all worker hosts** under HDFS bolt below.| 
+| Method                     | Alternative config name (deprecated) | Default     | Description |
+|----------------------------|--------------------------------------|-------------|-------------|
+| **.setReaderType()**       |~~hdfsspout.reader.type~~             |             | Determines which file reader to use. Set to 'seq' for reading sequence files or 'text' for text files. Set to a fully qualified class name if using a custom file reader class (that implements interface org.apache.storm.hdfs.spout.FileReader)|
+| **.withOutputFields()**    |                                      |             | Sets the names for the output fields for the spout. The number of fields depends upon the reader being used. For convenience, built-in reader types expose a static member called `defaultFields` that can be used for setting this.|
+| **.setHdfsUri()**          |~~hdfsspout.hdfs~~                    |             | HDFS URI for the hdfs Name node. Example:  hdfs://namenodehost:8020|
+| **.setSourceDir()**        |~~hdfsspout.source.dir~~              |             | HDFS directory from where to read files. E.g. /data/inputdir|
+| **.setArchiveDir()**       |~~hdfsspout.archive.dir~~             |             | After a file is processed completely it will be moved to this HDFS directory. If this directory does not exist it will be created. E.g. /data/done|
+| **.setBadFilesDir()**      |~~hdfsspout.badfiles.dir~~            |             | if there is an error parsing a file's contents, the file is moved to this location.  If this directory does not exist it will be created. E.g. /data/badfiles  |
+| .setLockDir()              |~~hdfsspout.lock.dir~~                | '.lock' subdirectory under hdfsspout.source.dir | Dir in which lock files will be created. Concurrent HDFS spout instances synchronize using *lock* files. Before processing a file the spout instance creates a lock file in this directory with same name as input file and deletes this lock file after processing the file. Spouts also periodically makes a note of their progress (wrt reading the input file) in the lock file so that another spout instance can resume progress on the same file if the spout dies for any reason.|
+| .setIgnoreSuffix()         |~~hdfsspout.ignore.suffix~~           |   .ignore   | File names with this suffix in the in the hdfsspout.source.dir location will not be processed|
+| .setCommitFrequencyCount() |~~hdfsspout.commit.count~~            |    20000    | Record progress in the lock file after these many records are processed. If set to 0, this criterion will not be used. |
+| .setCommitFrequencySec()   |~~hdfsspout.commit.sec~~              |    10       | Record progress in the lock file after these many seconds have elapsed. Must be greater than 0 |
+| .setMaxOutstanding()       |~~hdfsspout.max.outstanding~~         |   10000     | Limits the number of unACKed tuples by pausing tuple generation (if ACKers are used in the topology) |
+| .setLockTimeoutSec()       |~~hdfsspout.lock.timeout.sec~~        |  5 minutes  | Duration of inactivity after which a lock file is considered to be abandoned and ready for another spout to take ownership |
+| .setClocksInSync()         |~~hdfsspout.clocks.insync~~           |    true     | Indicates whether clocks on the storm machines are in sync (using services like NTP). Used for detecting stale locks. |
+| .withConfigKey()           |                                      |             | Optional setting. Overrides the default key name ('hdfs.config', see below) used for specifying HDFS client configs. |
+| .setHdfsClientSettings()   |~~hdfs.config~~ (unless changed via withConfigKey)| | Set it to a Map of Key/value pairs indicating the HDFS settings to be used. For example, keytab and principle could be set using this. See section **Using keytabs on all worker hosts** under HDFS bolt below.|
+| .withOutputStream()        |                                      |             | Name of output stream. If set, the tuples will be emited to the specified stream. Else tuples will be emited to the default output stream |
 
 ---
 

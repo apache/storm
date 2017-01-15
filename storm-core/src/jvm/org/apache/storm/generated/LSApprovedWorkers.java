@@ -365,15 +365,15 @@ public class LSApprovedWorkers implements org.apache.thrift.TBase<LSApprovedWork
           case 1: // APPROVED_WORKERS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map652 = iprot.readMapBegin();
-                struct.approved_workers = new HashMap<String,Integer>(2*_map652.size);
-                String _key653;
-                int _val654;
-                for (int _i655 = 0; _i655 < _map652.size; ++_i655)
+                org.apache.thrift.protocol.TMap _map722 = iprot.readMapBegin();
+                struct.approved_workers = new HashMap<String,Integer>(2*_map722.size);
+                String _key723;
+                int _val724;
+                for (int _i725 = 0; _i725 < _map722.size; ++_i725)
                 {
-                  _key653 = iprot.readString();
-                  _val654 = iprot.readI32();
-                  struct.approved_workers.put(_key653, _val654);
+                  _key723 = iprot.readString();
+                  _val724 = iprot.readI32();
+                  struct.approved_workers.put(_key723, _val724);
                 }
                 iprot.readMapEnd();
               }
@@ -399,10 +399,10 @@ public class LSApprovedWorkers implements org.apache.thrift.TBase<LSApprovedWork
         oprot.writeFieldBegin(APPROVED_WORKERS_FIELD_DESC);
         {
           oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, struct.approved_workers.size()));
-          for (Map.Entry<String, Integer> _iter656 : struct.approved_workers.entrySet())
+          for (Map.Entry<String, Integer> _iter726 : struct.approved_workers.entrySet())
           {
-            oprot.writeString(_iter656.getKey());
-            oprot.writeI32(_iter656.getValue());
+            oprot.writeString(_iter726.getKey());
+            oprot.writeI32(_iter726.getValue());
           }
           oprot.writeMapEnd();
         }
@@ -427,10 +427,10 @@ public class LSApprovedWorkers implements org.apache.thrift.TBase<LSApprovedWork
       TTupleProtocol oprot = (TTupleProtocol) prot;
       {
         oprot.writeI32(struct.approved_workers.size());
-        for (Map.Entry<String, Integer> _iter657 : struct.approved_workers.entrySet())
+        for (Map.Entry<String, Integer> _iter727 : struct.approved_workers.entrySet())
         {
-          oprot.writeString(_iter657.getKey());
-          oprot.writeI32(_iter657.getValue());
+          oprot.writeString(_iter727.getKey());
+          oprot.writeI32(_iter727.getValue());
         }
       }
     }
@@ -439,15 +439,15 @@ public class LSApprovedWorkers implements org.apache.thrift.TBase<LSApprovedWork
     public void read(org.apache.thrift.protocol.TProtocol prot, LSApprovedWorkers struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
       {
-        org.apache.thrift.protocol.TMap _map658 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
-        struct.approved_workers = new HashMap<String,Integer>(2*_map658.size);
-        String _key659;
-        int _val660;
-        for (int _i661 = 0; _i661 < _map658.size; ++_i661)
+        org.apache.thrift.protocol.TMap _map728 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
+        struct.approved_workers = new HashMap<String,Integer>(2*_map728.size);
+        String _key729;
+        int _val730;
+        for (int _i731 = 0; _i731 < _map728.size; ++_i731)
         {
-          _key659 = iprot.readString();
-          _val660 = iprot.readI32();
-          struct.approved_workers.put(_key659, _val660);
+          _key729 = iprot.readString();
+          _val730 = iprot.readI32();
+          struct.approved_workers.put(_key729, _val730);
         }
       }
       struct.set_approved_workers_isSet(true);

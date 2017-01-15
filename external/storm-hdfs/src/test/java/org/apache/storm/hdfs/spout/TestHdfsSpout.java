@@ -57,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.hdfs.common.HdfsUtils.Pair;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 
 public class TestHdfsSpout {
@@ -118,11 +117,12 @@ public class TestHdfsSpout {
     Path file2 = new Path(source.toString() + "/file2.txt");
     createTextFile(file2, 5);
 
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-    conf.put(Configs.COMMIT_FREQ_SEC, "1");
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(1);
+    spout.setCommitFrequencySec(1);
 
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
 
     runSpout(spout,"r11");
 
@@ -139,11 +139,13 @@ public class TestHdfsSpout {
     Path file2 = new Path(source.toString() + "/file2.txt");
     createTextFile(file2, 5);
 
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-    conf.put(Configs.COMMIT_FREQ_SEC, "1");
-    conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable acking
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(1);
+    spout.setCommitFrequencySec(1);
+
+    Map conf = getCommonConfigs();
+    conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
+    openSpout(spout, 0, conf);
 
     // consume file 1
     runSpout(spout, "r6", "a0", "a1", "a2", "a3", "a4");
@@ -162,16 +164,26 @@ public class TestHdfsSpout {
     createTextFile(file1, 6);
 
     final Integer lockExpirySec = 1;
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-    conf.put(Configs.COMMIT_FREQ_SEC, "1000"); // basically disable it
-    conf.put(Configs.LOCK_TIMEOUT, lockExpirySec.toString());
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
-    HdfsSpout spout2 = makeSpout(1, conf, Configs.TEXT, TextFileReader.defaultFields);
+
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(1);
+    spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
+    spout.setLockTimeoutSec(lockExpirySec);
+
+
+    HdfsSpout spout2 = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout2.setCommitFrequencyCount(1);
+    spout2.setCommitFrequencySec(1000);  // effectively disable commits based on time
+    spout2.setLockTimeoutSec(lockExpirySec);
+
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
+    openSpout(spout2, 1, conf);
 
     // consume file 1 partially
     List<String> res = runSpout(spout, "r2");
     Assert.assertEquals(2, res.size());
+
     // abandon file
     FileLock lock = getField(spout, "lock");
     TestFileLock.closeUnderlyingLockFile(lock);
@@ -209,12 +221,21 @@ public class TestHdfsSpout {
     createSeqFile(fs, file1, 6);
 
     final Integer lockExpirySec = 1;
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-    conf.put(Configs.COMMIT_FREQ_SEC, "1000"); // basically disable it
-    conf.put(Configs.LOCK_TIMEOUT, lockExpirySec.toString());
-    HdfsSpout spout = makeSpout(0, conf, Configs.SEQ, SequenceFileReader.defaultFields);
-    HdfsSpout spout2 = makeSpout(1, conf, Configs.SEQ, SequenceFileReader.defaultFields);
+
+    HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
+    spout.setCommitFrequencyCount(1);
+    spout.setCommitFrequencySec(1000); // effectively disable commits based on time
+    spout.setLockTimeoutSec(lockExpirySec);
+
+
+    HdfsSpout spout2 = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
+    spout2.setCommitFrequencyCount(1);
+    spout2.setCommitFrequencySec(1000); // effectively disable commits based on time
+    spout2.setLockTimeoutSec(lockExpirySec);
+
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
+    openSpout(spout2, 1, conf);
 
     // consume file 1 partially
     List<String> res = runSpout(spout, "r2");
@@ -322,11 +343,14 @@ public class TestHdfsSpout {
     Path file1 = new Path(source.toString() + "/file1.txt");
     createTextFile(file1, 5);
 
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-    conf.put(Configs.COMMIT_FREQ_SEC, "1");
+
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(1);
+    spout.setCommitFrequencySec(1);
+
+    Map conf = getCommonConfigs();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+    openSpout(spout, 0, conf);
 
     // read few lines from file1 dont ack
     runSpout(spout, "r3");
@@ -401,8 +425,10 @@ public class TestHdfsSpout {
     Path file2 = new Path(source + "/file2.seq");
     createSeqFile(fs, file2, 5);
 
-    Map conf = getDefaultConfig();
-    HdfsSpout spout = makeSpout(0, conf, Configs.SEQ, SequenceFileReader.defaultFields);
+
+    HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
 
     // consume both files
     List<String> res = runSpout(spout, "r11");
@@ -428,8 +454,10 @@ public class TestHdfsSpout {
     Assert.assertEquals(2, listDir(source).size());
 
     // 2) run spout
-    Map conf = getDefaultConfig();
-    HdfsSpout spout = makeSpout(0, conf, MockTextFailingReader.class.getName(), MockTextFailingReader.defaultFields);
+    HdfsSpout spout = makeSpout(MockTextFailingReader.class.getName(), MockTextFailingReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
+
     List<String> res = runSpout(spout, "r11");
     String[] expected = new String[] {"[line 0]","[line 1]","[line 2]","[line 0]","[line 1]","[line 2]"};
     Assert.assertArrayEquals(expected, res.toArray());
@@ -447,10 +475,14 @@ public class TestHdfsSpout {
      createTextFile(file1, 10);
 
      // 0) config spout to log progress in lock file for each tuple
-     Map conf = getDefaultConfig();
-     conf.put(Configs.COMMIT_FREQ_COUNT, "1");
-     conf.put(Configs.COMMIT_FREQ_SEC, "100"); // make it irrelvant
-     HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+
+     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+     spout.setCommitFrequencyCount(1);
+     spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
+
+
+     Map conf = getCommonConfigs();
+     openSpout(spout, 0, conf);
 
      // 1) read initial lines in file, then check if lock exists
      List<String> res = runSpout(spout, "r5");
@@ -494,10 +526,13 @@ public class TestHdfsSpout {
     createTextFile(file1, 10);
 
     // 0) config spout to log progress in lock file for each tuple
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "2");  // 1 lock log entry every 2 tuples
-    conf.put(Configs.COMMIT_FREQ_SEC, "1000"); // make it irrelevant for this test
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(2);   // 1 lock log entry every 2 tuples
+    spout.setCommitFrequencySec(1000);  // Effectively disable commits based on time
+
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
 
     // 1) read 5 lines in file,
     runSpout(spout, "r5");
@@ -519,11 +554,12 @@ public class TestHdfsSpout {
     createTextFile(file1, 10);
 
     // 0) config spout to log progress in lock file for each tuple
-    Map conf = getDefaultConfig();
-    conf.put(Configs.COMMIT_FREQ_COUNT, "0");  // disable it
-    conf.put(Configs.COMMIT_FREQ_SEC, "2"); // log every 2 sec
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    spout.setCommitFrequencyCount(0); // disable it
+    spout.setCommitFrequencySec(2);   // log every 2 sec
 
-    HdfsSpout spout = makeSpout(0, conf, Configs.TEXT, TextFileReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
 
     // 1) read 5 lines in file
     runSpout(spout, "r5");
@@ -551,24 +587,27 @@ public class TestHdfsSpout {
     return result;
   }
 
-  private Map getDefaultConfig() {
+
+  private Map getCommonConfigs() {
     Map conf = new HashMap();
-    conf.put(Configs.SOURCE_DIR, source.toString());
-    conf.put(Configs.ARCHIVE_DIR, archive.toString());
-    conf.put(Configs.BAD_DIR, badfiles.toString());
-    conf.put(Configs.HDFS_URI, hdfsCluster.getURI().toString());
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "0");
     return conf;
   }
 
+  private HdfsSpout makeSpout(String readerType, String[] outputFields) {
+    HdfsSpout spout = new HdfsSpout().withOutputFields(outputFields)
+                                    .setReaderType(readerType)
+                                    .setHdfsUri(hdfsCluster.getURI().toString())
+                                    .setSourceDir(source.toString())
+                                    .setArchiveDir(archive.toString())
+                                    .setBadFilesDir(badfiles.toString());
 
-  private static HdfsSpout makeSpout(int spoutId, Map conf, String readerType, String[] outputFields) {
-    HdfsSpout spout = new HdfsSpout().withOutputFields(outputFields);
-    MockCollector collector = new MockCollector();
-    conf.put(Configs.READER_TYPE, readerType);
-    spout.open(conf, new MockTopologyContext(spoutId), collector);
-    conf.put(Configs.HDFS_URI, hdfsCluster.getURI().toString());
     return spout;
+  }
+
+  private void openSpout(HdfsSpout spout, int spoutId, Map conf) {
+    MockCollector collector = new MockCollector();
+    spout.open(conf, new MockTopologyContext(spoutId), collector);
   }
 
   /**
@@ -664,12 +703,12 @@ public class TestHdfsSpout {
 
     @Override
     public void emitDirect(int arg0, String arg1, List<Object> arg2, Object arg3) {
-      throw new NotImplementedException();
+      throw new UnsupportedOperationException("NOT Implemented");
     }
 
     @Override
     public void reportError(Throwable arg0) {
-      throw new NotImplementedException();
+        throw new UnsupportedOperationException("NOT Implemented");
     }
 
     @Override

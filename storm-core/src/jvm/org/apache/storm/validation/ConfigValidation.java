@@ -457,6 +457,22 @@ public class ConfigValidation {
         }
     }
 
+    public static class ClusterMetricRegistryValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if (!((Map) o).containsKey("class")) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
+            }
+
+            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
+        }
+    }
+
     public static class MetricRegistryValidator extends Validator {
 
         @Override
@@ -473,7 +489,7 @@ public class ConfigValidation {
             }
 
             SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
-            SimpleTypeValidator.validateField(name, Long.class, ((Map) o).get("parallelism.hint"));
+            new IntegerValidator().validateField(name, ((Map) o).get("parallelism.hint"));
         }
     }
 

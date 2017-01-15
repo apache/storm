@@ -36,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 
 public class ReturnResults extends BaseRichBolt {
@@ -59,13 +60,20 @@ public class ReturnResults extends BaseRichBolt {
     public void execute(Tuple input) {
         String result = (String) input.getValue(0);
         String returnInfo = (String) input.getValue(1);
-        if(returnInfo!=null) {
-            Map retMap = (Map) JSONValue.parse(returnInfo);
+        if (returnInfo!=null) {
+            Map retMap = null;
+            try {
+                retMap = (Map) JSONValue.parseWithException(returnInfo);
+            } catch (ParseException e) {
+                 LOG.error("Parseing returnInfo failed", e);
+                 _collector.fail(input);
+                 return;
+            }
             final String host = (String) retMap.get("host");
             final int port = Utils.getInt(retMap.get("port"));
             String id = (String) retMap.get("id");
             DistributedRPCInvocations.Iface client;
-            if(local) {
+            if (local) {
                 client = (DistributedRPCInvocations.Iface) ServiceRegistry.getService(host);
             } else {
                 List server = new ArrayList() {{

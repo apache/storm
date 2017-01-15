@@ -187,7 +187,7 @@ public class WindowManagerTest {
             windowManager.add(i, now - 1000);
         }
         // simulate the time trigger by setting the reference time and invoking onTrigger() manually
-        evictionPolicy.setContext(now + 100);
+        evictionPolicy.setContext(new DefaultEvictionContext(now + 100));
         windowManager.onTrigger();
 
         // 100 events with past ts should expire
@@ -210,7 +210,7 @@ public class WindowManagerTest {
         }
         activationsEvents.addAll(newEvents);
         // simulate the time trigger by setting the reference time and invoking onTrigger() manually
-        evictionPolicy.setContext(now + 200);
+        evictionPolicy.setContext(new DefaultEvictionContext(now + 200));
         windowManager.onTrigger();
         assertTrue(listener.onExpiryEvents.isEmpty());
         assertEquals(activationsEvents, listener.onActivationEvents);
@@ -236,20 +236,20 @@ public class WindowManagerTest {
             windowManager.add(i);
         }
         // simulate the time trigger by setting the reference time and invoking onTrigger() manually
-        evictionPolicy.setContext(now + 60);
+        evictionPolicy.setContext(new DefaultEvictionContext(now + 60));
         windowManager.onTrigger();
 
         assertEquals(seq(1, 10), listener.onActivationEvents);
         assertTrue(listener.onActivationExpiredEvents.isEmpty());
         listener.clear();
         // wait so all events expire
-        evictionPolicy.setContext(now + 120);
+        evictionPolicy.setContext(new DefaultEvictionContext(now + 120));
         windowManager.onTrigger();
 
         assertEquals(seq(1, 10), listener.onExpiryEvents);
         assertTrue(listener.onActivationEvents.isEmpty());
         listener.clear();
-        evictionPolicy.setContext(now + 180);
+        evictionPolicy.setContext(new DefaultEvictionContext(now + 180));
         windowManager.onTrigger();
         assertTrue(listener.onActivationExpiredEvents.isEmpty());
         assertTrue(listener.onActivationEvents.isEmpty());
@@ -354,7 +354,7 @@ public class WindowManagerTest {
 
     @Test
     public void testCountBasedWindowWithEventTs() throws Exception {
-        EvictionPolicy<Integer> evictionPolicy = new WatermarkCountEvictionPolicy<>(3, windowManager);
+        EvictionPolicy<Integer> evictionPolicy = new WatermarkCountEvictionPolicy<>(3);
         windowManager.setEvictionPolicy(evictionPolicy);
         TriggerPolicy<Integer> triggerPolicy = new WatermarkTimeTriggerPolicy<Integer>(10, windowManager, evictionPolicy, windowManager);
         triggerPolicy.start();
@@ -430,7 +430,64 @@ public class WindowManagerTest {
         assertEquals(seq(9), listener.allOnActivationEvents.get(0));
         assertEquals(seq(9, 12), listener.allOnActivationEvents.get(1));
     }
+
     @Test
+    public void testCountBasedTumblingWithSameEventTs() throws Exception {
+        EvictionPolicy<Integer> evictionPolicy = new WatermarkCountEvictionPolicy<>(2);
+        windowManager.setEvictionPolicy(evictionPolicy);
+        TriggerPolicy<Integer> triggerPolicy = new WatermarkCountTriggerPolicy<Integer>(2, windowManager, evictionPolicy, windowManager);
+        triggerPolicy.start();
+        windowManager.setTriggerPolicy(triggerPolicy);
+
+        windowManager.add(1, 10);
+        windowManager.add(2, 10);
+        windowManager.add(3, 11);
+        windowManager.add(4, 12);
+        windowManager.add(5, 12);
+        windowManager.add(6, 12);
+        windowManager.add(7, 12);
+        windowManager.add(8, 13);
+        windowManager.add(9, 14);
+        windowManager.add(10, 15);
+
+        windowManager.add(new WaterMarkEvent<Integer>(20));
+        assertEquals(5, listener.allOnActivationEvents.size());
+        assertEquals(seq(1, 2), listener.allOnActivationEvents.get(0));
+        assertEquals(seq(3, 4), listener.allOnActivationEvents.get(1));
+        assertEquals(seq(5, 6), listener.allOnActivationEvents.get(2));
+        assertEquals(seq(7, 8), listener.allOnActivationEvents.get(3));
+        assertEquals(seq(9, 10), listener.allOnActivationEvents.get(4));
+    }
+
+    @Test
+    public void testCountBasedSlidingWithSameEventTs() throws Exception {
+        EvictionPolicy<Integer> evictionPolicy = new WatermarkCountEvictionPolicy<>(5);
+        windowManager.setEvictionPolicy(evictionPolicy);
+        TriggerPolicy<Integer> triggerPolicy = new WatermarkCountTriggerPolicy<Integer>(2, windowManager, evictionPolicy, windowManager);
+        triggerPolicy.start();
+        windowManager.setTriggerPolicy(triggerPolicy);
+
+        windowManager.add(1, 10);
+        windowManager.add(2, 10);
+        windowManager.add(3, 11);
+        windowManager.add(4, 12);
+        windowManager.add(5, 12);
+        windowManager.add(6, 12);
+        windowManager.add(7, 12);
+        windowManager.add(8, 13);
+        windowManager.add(9, 14);
+        windowManager.add(10, 15);
+
+        windowManager.add(new WaterMarkEvent<Integer>(20));
+        assertEquals(5, listener.allOnActivationEvents.size());
+        assertEquals(seq(1, 2), listener.allOnActivationEvents.get(0));
+        assertEquals(seq(1, 4), listener.allOnActivationEvents.get(1));
+        assertEquals(seq(2, 6), listener.allOnActivationEvents.get(2));
+        assertEquals(seq(4, 8), listener.allOnActivationEvents.get(3));
+        assertEquals(seq(6, 10), listener.allOnActivationEvents.get(4));
+
+    }
+        @Test
     public void testEventTimeLag() throws Exception {
         EvictionPolicy<Integer> evictionPolicy = new WatermarkTimeEvictionPolicy<>(20, 5);
         windowManager.setEvictionPolicy(evictionPolicy);

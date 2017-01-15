@@ -56,6 +56,7 @@ public class DRPCExecutionException extends TException implements org.apache.thr
   private static final org.apache.thrift.protocol.TStruct STRUCT_DESC = new org.apache.thrift.protocol.TStruct("DRPCExecutionException");
 
   private static final org.apache.thrift.protocol.TField MSG_FIELD_DESC = new org.apache.thrift.protocol.TField("msg", org.apache.thrift.protocol.TType.STRING, (short)1);
+  private static final org.apache.thrift.protocol.TField TYPE_FIELD_DESC = new org.apache.thrift.protocol.TField("type", org.apache.thrift.protocol.TType.I32, (short)2);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -64,10 +65,16 @@ public class DRPCExecutionException extends TException implements org.apache.thr
   }
 
   private String msg; // required
+  private DRPCExceptionType type; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
-    MSG((short)1, "msg");
+    MSG((short)1, "msg"),
+    /**
+     * 
+     * @see DRPCExceptionType
+     */
+    TYPE((short)2, "type");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -84,6 +91,8 @@ public class DRPCExecutionException extends TException implements org.apache.thr
       switch(fieldId) {
         case 1: // MSG
           return MSG;
+        case 2: // TYPE
+          return TYPE;
         default:
           return null;
       }
@@ -124,11 +133,14 @@ public class DRPCExecutionException extends TException implements org.apache.thr
   }
 
   // isset id assignments
+  private static final _Fields optionals[] = {_Fields.TYPE};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
     tmpMap.put(_Fields.MSG, new org.apache.thrift.meta_data.FieldMetaData("msg", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.TYPE, new org.apache.thrift.meta_data.FieldMetaData("type", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.EnumMetaData(org.apache.thrift.protocol.TType.ENUM, DRPCExceptionType.class)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(DRPCExecutionException.class, metaDataMap);
   }
@@ -150,6 +162,9 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     if (other.is_set_msg()) {
       this.msg = other.msg;
     }
+    if (other.is_set_type()) {
+      this.type = other.type;
+    }
   }
 
   public DRPCExecutionException deepCopy() {
@@ -159,6 +174,7 @@ public class DRPCExecutionException extends TException implements org.apache.thr
   @Override
   public void clear() {
     this.msg = null;
+    this.type = null;
   }
 
   public String get_msg() {
@@ -184,6 +200,37 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     }
   }
 
+  /**
+   * 
+   * @see DRPCExceptionType
+   */
+  public DRPCExceptionType get_type() {
+    return this.type;
+  }
+
+  /**
+   * 
+   * @see DRPCExceptionType
+   */
+  public void set_type(DRPCExceptionType type) {
+    this.type = type;
+  }
+
+  public void unset_type() {
+    this.type = null;
+  }
+
+  /** Returns true if field type is set (has been assigned a value) and false otherwise */
+  public boolean is_set_type() {
+    return this.type != null;
+  }
+
+  public void set_type_isSet(boolean value) {
+    if (!value) {
+      this.type = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case MSG:
@@ -194,6 +241,14 @@ public class DRPCExecutionException extends TException implements org.apache.thr
       }
       break;
 
+    case TYPE:
+      if (value == null) {
+        unset_type();
+      } else {
+        set_type((DRPCExceptionType)value);
+      }
+      break;
+
     }
   }
 
@@ -201,6 +256,9 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     switch (field) {
     case MSG:
       return get_msg();
+
+    case TYPE:
+      return get_type();
 
     }
     throw new IllegalStateException();
@@ -215,6 +273,8 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     switch (field) {
     case MSG:
       return is_set_msg();
+    case TYPE:
+      return is_set_type();
     }
     throw new IllegalStateException();
   }
@@ -241,6 +301,15 @@ public class DRPCExecutionException extends TException implements org.apache.thr
         return false;
     }
 
+    boolean this_present_type = true && this.is_set_type();
+    boolean that_present_type = true && that.is_set_type();
+    if (this_present_type || that_present_type) {
+      if (!(this_present_type && that_present_type))
+        return false;
+      if (!this.type.equals(that.type))
+        return false;
+    }
+
     return true;
   }
 
@@ -252,6 +321,11 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     list.add(present_msg);
     if (present_msg)
       list.add(msg);
+
+    boolean present_type = true && (is_set_type());
+    list.add(present_type);
+    if (present_type)
+      list.add(type.getValue());
 
     return list.hashCode();
   }
@@ -270,6 +344,16 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     }
     if (is_set_msg()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.msg, other.msg);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_type()).compareTo(other.is_set_type());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_type()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.type, other.type);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -301,6 +385,16 @@ public class DRPCExecutionException extends TException implements org.apache.thr
       sb.append(this.msg);
     }
     first = false;
+    if (is_set_type()) {
+      if (!first) sb.append(", ");
+      sb.append("type:");
+      if (this.type == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.type);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -356,6 +450,14 @@ public class DRPCExecutionException extends TException implements org.apache.thr
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 2: // TYPE
+            if (schemeField.type == org.apache.thrift.protocol.TType.I32) {
+              struct.type = org.apache.storm.generated.DRPCExceptionType.findByValue(iprot.readI32());
+              struct.set_type_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -373,6 +475,13 @@ public class DRPCExecutionException extends TException implements org.apache.thr
         oprot.writeFieldBegin(MSG_FIELD_DESC);
         oprot.writeString(struct.msg);
         oprot.writeFieldEnd();
+      }
+      if (struct.type != null) {
+        if (struct.is_set_type()) {
+          oprot.writeFieldBegin(TYPE_FIELD_DESC);
+          oprot.writeI32(struct.type.getValue());
+          oprot.writeFieldEnd();
+        }
       }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
@@ -392,6 +501,14 @@ public class DRPCExecutionException extends TException implements org.apache.thr
     public void write(org.apache.thrift.protocol.TProtocol prot, DRPCExecutionException struct) throws org.apache.thrift.TException {
       TTupleProtocol oprot = (TTupleProtocol) prot;
       oprot.writeString(struct.msg);
+      BitSet optionals = new BitSet();
+      if (struct.is_set_type()) {
+        optionals.set(0);
+      }
+      oprot.writeBitSet(optionals, 1);
+      if (struct.is_set_type()) {
+        oprot.writeI32(struct.type.getValue());
+      }
     }
 
     @Override
@@ -399,6 +516,11 @@ public class DRPCExecutionException extends TException implements org.apache.thr
       TTupleProtocol iprot = (TTupleProtocol) prot;
       struct.msg = iprot.readString();
       struct.set_msg_isSet(true);
+      BitSet incoming = iprot.readBitSet(1);
+      if (incoming.get(0)) {
+        struct.type = org.apache.storm.generated.DRPCExceptionType.findByValue(iprot.readI32());
+        struct.set_type_isSet(true);
+      }
     }
   }
 

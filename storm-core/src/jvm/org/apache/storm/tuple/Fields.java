@@ -48,10 +48,19 @@ public class Fields implements Iterable<String>, Serializable {
         index();
     }
     
+    /**
+     * Select values out of tuple given a Fields selector
+     * Note that this function can throw a NullPointerException if the 
+     * fields in selector are not found in the _index
+     *  
+     * @param selector Fields to select
+     * @param tuple tuple to select from
+     *
+     */
     public List<Object> select(Fields selector, List<Object> tuple) {
         List<Object> ret = new ArrayList<>(selector.size());
-        for(String s: selector) {
-            ret.add(tuple.get(_index.get(s)));
+        for (String s : selector) {
+            ret.add(tuple.get(fieldIndex(s))); 
         }
         return ret;
     }

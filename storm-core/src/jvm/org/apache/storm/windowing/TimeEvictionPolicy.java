@@ -57,8 +57,8 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
     }
 
     @Override
-    public void setContext(Object context) {
-        referenceTime = ((Number) context).longValue();
+    public void setContext(EvictionContext context) {
+        referenceTime = context.getReferenceTime();
     }
 
     @Override

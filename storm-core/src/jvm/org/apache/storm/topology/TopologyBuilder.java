@@ -30,13 +30,17 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.windowing.TupleWindow;
 import org.json.simple.JSONValue;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
@@ -84,10 +88,10 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * conf.put(Config.TOPOLOGY_DEBUG, true);
  *
- * LocalCluster cluster = new LocalCluster();
- * cluster.submitTopology("mytopology", conf, builder.createTopology());
- * Utils.sleep(10000);
- * cluster.shutdown();
+ * try (LocalCluster cluster = new LocalCluster();
+ *      LocalTopology topo = cluster.submitTopology("mytopology", conf, builder.createTopology());){
+ *     Utils.sleep(10000);
+ * }
  * ```
  *
  * The pattern for `TopologyBuilder` is to map component ids to components using the setSpout
@@ -218,6 +222,20 @@ public class TopologyBuilder {
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the windowed bolt
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, IWindowedBolt bolt) throws IllegalArgumentException {
+        return setBolt(id, bolt, null);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a windowed bolt, intended
+     * for windowing operations. The {@link IWindowedBolt#execute(TupleWindow)} method
+     * is triggered for each window interval with the list of current events in the window.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the windowed bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around the cluster.
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -231,7 +249,28 @@ public class TopologyBuilder {
      * state (of computation) to be saved. When this bolt is initialized, the {@link IStatefulBolt#initState(State)} method
      * is invoked after {@link IStatefulBolt#prepare(Map, TopologyContext, OutputCollector)} but before {@link IStatefulBolt#execute(Tuple)}
      * with its previously saved state.
-     *
+     * <p>
+     * The framework provides at-least once guarantee for the state updates. Bolts (both stateful and non-stateful) in a stateful topology
+     * are expected to anchor the tuples while emitting and ack the input tuples once its processed.
+     * </p>
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the stateful bolt
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt) throws IllegalArgumentException {
+        return setBolt(id, bolt, null);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a stateful bolt, that requires its
+     * state (of computation) to be saved. When this bolt is initialized, the {@link IStatefulBolt#initState(State)} method
+     * is invoked after {@link IStatefulBolt#prepare(Map, TopologyContext, OutputCollector)} but before {@link IStatefulBolt#execute(Tuple)}
+     * with its previously saved state.
+     * <p>
+     * The framework provides at-least once guarantee for the state updates. Bolts (both stateful and non-stateful) in a stateful topology
+     * are expected to anchor the tuples while emitting and ack the input tuples once its processed.
+     * </p>
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param bolt the stateful bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somwehere around the cluster.
@@ -241,6 +280,22 @@ public class TopologyBuilder {
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
         return setBolt(id, new StatefulBoltExecutor<T>(bolt), parallelism_hint);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a stateful windowed bolt, intended for stateful
+     * windowing operations. The {@link IStatefulWindowedBolt#execute(TupleWindow)} method is triggered
+     * for each window interval with the list of current events in the window. During initialization of
+     * this bolt {@link IStatefulWindowedBolt#initState(State)} is invoked with its previously saved state.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param bolt the stateful windowed bolt
+     * @param <T> the type of the state (e.g. {@link org.apache.storm.state.KeyValueState})
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt) throws IllegalArgumentException {
+        return setBolt(id, bolt, null);
     }
 
     /**
@@ -357,15 +412,17 @@ public class TopologyBuilder {
      * add checkpoint stream from the previous bolt to its input.
      */
     private void addCheckPointInputs(ComponentCommon component) {
+        Set<GlobalStreamId> checkPointInputs = new HashSet<>();
         for (GlobalStreamId inputStream : component.get_inputs().keySet()) {
             String sourceId = inputStream.get_componentId();
             if (_spouts.containsKey(sourceId)) {
-                GlobalStreamId checkPointStream = new GlobalStreamId(CHECKPOINT_COMPONENT_ID, CHECKPOINT_STREAM_ID);
-                component.put_to_inputs(checkPointStream, Grouping.all(new NullStruct()));
+                checkPointInputs.add(new GlobalStreamId(CHECKPOINT_COMPONENT_ID, CHECKPOINT_STREAM_ID));
             } else {
-                GlobalStreamId checkPointStream = new GlobalStreamId(sourceId, CHECKPOINT_STREAM_ID);
-                component.put_to_inputs(checkPointStream, Grouping.all(new NullStruct()));
+                checkPointInputs.add(new GlobalStreamId(sourceId, CHECKPOINT_STREAM_ID));
             }
+        }
+        for (GlobalStreamId streamId : checkPointInputs) {
+            component.put_to_inputs(streamId, Grouping.all(new NullStruct()));
         }
     }
 
@@ -512,8 +569,15 @@ public class TopologyBuilder {
     }
     
     private static Map parseJson(String json) {
-        if(json==null) return new HashMap();
-        else return (Map) JSONValue.parse(json);
+        if (json==null) {
+            return new HashMap();
+        } else {
+            try {
+                return (Map) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     
     private static String mergeIntoJson(Map into, Map newMap) {

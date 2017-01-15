@@ -23,7 +23,7 @@
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <groupId>org.apache.storm</groupId>
+
     <artifactId>storm-core</artifactId>
     <packaging>jar</packaging>
     <name>Storm Core</name>
@@ -42,20 +42,18 @@
             This is here as a work around to place it at the beginning of the classpath
             even though maven does not officially support ordering of the classpath.-->
         <dependency>
+            <groupId>uk.org.lidalia</groupId>
+            <artifactId>sysout-over-slf4j</artifactId>
+        </dependency>
+        <dependency>
             <groupId>log4j</groupId>
             <artifactId>log4j</artifactId>
             <version>1.2.17</version>
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.esotericsoftware.kryo</groupId>
+            <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.objenesis</groupId>
-                    <artifactId>objenesis</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <!--clojure-->
         <dependency>
@@ -73,6 +71,10 @@
         <dependency>
             <groupId>hiccup</groupId>
             <artifactId>hiccup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ring</groupId>
+            <artifactId>ring-core</artifactId>
         </dependency>
         <dependency>
             <groupId>ring</groupId>
@@ -142,8 +144,12 @@
           <artifactId>java.jmx</artifactId>
           <version>${java_jmx.version}</version>
         </dependency>
-        
+
         <!--java-->
+        <dependency>
+            <groupId>commons-cli</groupId>
+            <artifactId>commons-cli</artifactId>
+        </dependency>
         <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
@@ -157,6 +163,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -278,14 +288,17 @@
             <groupId>metrics-clojure</groupId>
             <artifactId>metrics-clojure</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!-- hamcrest-core dependency is shaded inside the mockito-all and junit depends on newer version of hamcrest-core.
+        To give higher precedence to classes from newer version of hamcrest-core, Junit has been placed above mockito.
+         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -500,7 +513,9 @@
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.apache.commons:commons-exec</include>
                             <include>org.apache.commons:commons-compress</include>
+                            <include>commons-collections:commons-collections</include>
                             <include>org.apache.hadoop:hadoop-auth</include>
+                            <include>commons-cli:commons-cli</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-codec:commons-codec</include>
                             <include>commons-fileupload:commons-fileupload</include>
@@ -521,6 +536,7 @@
                             <include>org.clojure:core.incubator</include>
                             <include>io.dropwizard.metrics:*</include>
                             <include>metrics-clojure:*</include>
+                            <include>uk.org.lidalia:*</include>
                         </includes>
                     </artifactSet>
                     <relocations>
@@ -638,6 +654,10 @@
                           <shadedPattern>org.apache.storm.shade.com.metamx.http.client</shadedPattern>
                         </relocation>
                         <relocation>
+                          <pattern>org.apache.commons.cli</pattern>
+                          <shadedPattern>org.apache.storm.shade.org.apache.commons.cli</shadedPattern>
+                        </relocation>
+                        <relocation>
                           <pattern>org.apache.commons.io</pattern>
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.io</shadedPattern>
                         </relocation>
@@ -660,6 +680,10 @@
                         <relocation>
                           <pattern>org.apache.commons.lang</pattern>
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
+                        </relocation>
+                        <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
                         </relocation>
                         <relocation>
                           <pattern>org.json.simple</pattern>
@@ -725,6 +749,10 @@
                             <pattern>metrics.utils</pattern>
                             <shadedPattern>org.apache.storm.shade.metrics.utils</shadedPattern>
                         </relocation>
+                        <relocation>
+                            <pattern>uk.org.lidalia</pattern>
+                            <shadedPattern>org.apache.storm.shade.uk.org.lidalia</shadedPattern>
+                        </relocation>
                     </relocations>
                     <transformers>
                         <transformer implementation="org.apache.storm.maven.shade.clojure.ClojureTransformer" />
@@ -778,6 +806,13 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>commons-collections:commons-collections</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>commons-io:commons-io</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
@@ -810,6 +845,21 @@
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.sf</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.dsa</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/*.rsa</exclude>
+                                <exclude>META-INF/*.EC</exclude>
+                                <exclude>META-INF/*.ec</exclude>
+                                <exclude>META-INF/MSFTSIG.SF</exclude>
+                                <exclude>META-INF/MSFTSIG.RSA</exclude>
                             </excludes>
                         </filter>
                     </filters>

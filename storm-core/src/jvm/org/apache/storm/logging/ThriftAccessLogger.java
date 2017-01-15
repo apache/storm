@@ -16,12 +16,41 @@
  * limitations under the License.
  */
 package org.apache.storm.logging;
+import java.net.InetAddress;
+import java.security.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ThriftAccessLogger {
-  private static final Logger LOG = LoggerFactory.getLogger(ThriftAccessLogger.class);
-  public void log(String logMessage) {
-    LOG.info(logMessage);
-  }
+    private static final Logger LOG = LoggerFactory.getLogger(ThriftAccessLogger.class);
+
+    private static String accessLogBase = "Request ID: {} access from: {} principal: {} operation: {}";
+
+    public static void logAccessFunction(Integer requestId, InetAddress remoteAddress,
+                                         Principal principal, String operation, 
+                                         String function) {
+        String functionPart = "";
+        if (function != null) {
+            functionPart = " function: {}";
+        }
+
+        LOG.info(accessLogBase + functionPart,
+                 requestId, remoteAddress, principal, operation, function);
+    }
+
+    public static void logAccess(Integer requestId, InetAddress remoteAddress,
+                                 Principal principal, String operation,
+                                 String stormName, String accessResult) {
+        if (stormName != null && accessResult != null) {
+            LOG.info(accessLogBase + " storm-name: {} access result: {}",
+                     requestId, remoteAddress, principal, operation, stormName, accessResult);
+        } else if (accessResult != null) {
+            LOG.info(accessLogBase + " access result: {}",
+                     requestId, remoteAddress, principal, operation, accessResult);
+        } else {
+            // for completeness
+            LOG.info(accessLogBase + " storm-name: {}",
+                     requestId, remoteAddress, principal, operation, stormName);
+        }
+    }
 }

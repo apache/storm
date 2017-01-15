@@ -18,23 +18,29 @@
 
 package org.apache.storm.utils;
 
-import org.apache.storm.Config;
-import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.generated.StormTopology;
 import org.apache.commons.io.FileUtils;
+import org.apache.storm.Config;
+import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import java.util.Set;
-import java.util.HashSet;
-import java.util.Collections;
-import java.net.URLEncoder;
+import java.util.concurrent.Callable;
 
 public class ConfigUtils {
     private final static Logger LOG = LoggerFactory.getLogger(ConfigUtils.class);
@@ -44,27 +50,19 @@ public class ConfigUtils {
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
-    private static final ConfigUtils INSTANCE = new ConfigUtils();
-    private static ConfigUtils _instance = INSTANCE;
+    private static ConfigUtils _instance = new ConfigUtils();
 
     /**
      * Provide an instance of this class for delegates to use.  To mock out
      * delegated methods, provide an instance of a subclass that overrides the
      * implementation of the delegated method.
-     *
-     * @param u a ConfigUtils instance
+     * @param u a Utils instance
+     * @return the previously set instance
      */
-    public static void setInstance(ConfigUtils u) {
+    public static ConfigUtils setInstance(ConfigUtils u) {
+        ConfigUtils oldInstance = _instance;
         _instance = u;
-    }
-
-    /**
-     * Resets the singleton instance to the default. This is helpful to reset
-     * the class to its original functionality when mocking is no longer
-     * desired.
-     */
-    public static void resetInstance() {
-        _instance = INSTANCE;
+        return oldInstance;
     }
 
     public static String getLogDir() {
@@ -74,8 +72,10 @@ public class ConfigUtils {
             dir = System.getProperty("storm.log.dir");
         } else if ((conf = readStormConfig()).get("storm.log.dir") != null) {
             dir = String.valueOf(conf.get("storm.log.dir"));
-        } else  {
-            dir = concatIfNotNull(System.getProperty("storm.home")) + FILE_SEPARATOR + "logs";
+        } else if (System.getProperty("storm.home") != null) {
+            dir = System.getProperty("storm.home") + FILE_SEPARATOR + "logs";
+        } else {
+            dir = "logs";
         }
         try {
             return new File(dir).getCanonicalPath();
@@ -112,7 +112,7 @@ public class ConfigUtils {
         return mode;
     }
 
-    public static boolean isLocalMode(Map conf) {
+    public static boolean isLocalMode(Map<String, Object> conf) {
         String mode = (String) conf.get(Config.STORM_CLUSTER_MODE);
         if (mode != null) {
             if ("local".equals(mode)) {
@@ -121,8 +121,9 @@ public class ConfigUtils {
             if ("distributed".equals(mode)) {
                 return false;
             }
+            throw new IllegalArgumentException("Illegal cluster mode in conf: " + mode);
         }
-        throw new IllegalArgumentException("Illegal cluster mode in conf: " + mode);
+        return true;
     }
 
     public static int samplingRate(Map conf) {
@@ -133,21 +134,42 @@ public class ConfigUtils {
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
     }
 
-    // public static mkStatsSampler // depends on Utils.evenSampler() TODO, this is sth we need to do after util
+    public static Callable<Boolean> evenSampler(final int samplingFreq) {
+        final Random random = new Random();
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
-    public static Map readStormConfig() {
+        return new Callable<Boolean>() {
+            private int curr = -1;
+            private int target = random.nextInt(samplingFreq);
+
+            @Override
+            public Boolean call() throws Exception {
+                curr++;
+                if (curr >= samplingFreq) {
+                    curr = 0;
+                    target = random.nextInt(samplingFreq);
+                }
+                return (curr == target);
+            }
+        };
+    }
+
+    public static Callable<Boolean> mkStatsSampler(Map conf) {
+        return evenSampler(samplingRate(conf));
+    }
+
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
+    public static Map<String, Object> readStormConfig() {
         return _instance.readStormConfigImpl();
     }
 
-    public Map readStormConfigImpl() {
-        Map conf = Utils.readStormConfig();
+    public Map<String, Object> readStormConfigImpl() {
+        Map<String, Object> conf = Utils.readStormConfig();
         ConfigValidation.validateFields(conf);
         return conf;
     }
 
-    public static Map readYamlConfig(String name, boolean mustExist) {
-        Map conf = Utils.findAndReadConfigFile(name, mustExist);
+    public static Map<String, Object> readYamlConfig(String name, boolean mustExist) {
+        Map<String, Object> conf = Utils.findAndReadConfigFile(name, mustExist);
         ConfigValidation.validateFields(conf);
         return conf;
     }
@@ -221,10 +243,14 @@ public class ConfigUtils {
         return ret + FILE_SEPARATOR + "stormdist";
     }
 
-    public static Map readSupervisorStormConfGivenPath(Map conf, String stormConfPath) throws IOException {
-        Map ret = new HashMap(conf);
+    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf, String stormConfPath) throws IOException {
+        Map<String, Object> ret = new HashMap<>(conf);
         ret.putAll(Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(stormConfPath))));
         return ret;
+    }
+
+    public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath, AdvancedFSOps ops) throws IOException {
+        return Utils.deserialize(ops.slurp(new File(stormCodePath)), StormTopology.class);
     }
 
     public static String masterStormJarPath(String stormRoot) {
@@ -241,7 +267,7 @@ public class ConfigUtils {
         return (masterLocalDir(conf) + FILE_SEPARATOR + "inimbus");
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorLocalDir(Map conf) throws IOException {
         return _instance.supervisorLocalDirImpl(conf);
     }
@@ -256,7 +282,7 @@ public class ConfigUtils {
         return (supervisorLocalDir(conf) + FILE_SEPARATOR + "isupervisor");
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorStormDistRoot(Map conf) throws IOException {
         return _instance.supervisorStormDistRootImpl(conf);
     }
@@ -265,7 +291,7 @@ public class ConfigUtils {
         return stormDistPath(supervisorLocalDir(conf));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String supervisorStormDistRoot(Map conf, String stormId) throws IOException {
         return _instance.supervisorStormDistRootImpl(conf, stormId);
     }
@@ -305,7 +331,7 @@ public class ConfigUtils {
         return (concatIfNotNull(stormRoot) + FILE_SEPARATOR + RESOURCES_SUBDIR);
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static LocalState supervisorState(Map conf) throws IOException {
         return _instance.supervisorStateImpl(conf);
     }
@@ -314,7 +340,7 @@ public class ConfigUtils {
         return new LocalState((supervisorLocalDir(conf) + FILE_SEPARATOR + "localstate"));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static LocalState nimbusTopoHistoryState(Map conf) throws IOException {
         return _instance.nimbusTopoHistoryStateImpl(conf);
     }
@@ -323,21 +349,25 @@ public class ConfigUtils {
         return new LocalState((masterLocalDir(conf) + FILE_SEPARATOR + "history"));
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
-    public static Map readSupervisorStormConf(Map conf, String stormId) throws IOException {
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
+    public static Map<String, Object> readSupervisorStormConf(Map<String, Object> conf, String stormId) throws IOException {
         return _instance.readSupervisorStormConfImpl(conf, stormId);
     }
 
-    public Map readSupervisorStormConfImpl(Map conf, String stormId) throws IOException {
+    public Map<String, Object> readSupervisorStormConfImpl(Map<String, Object> conf, String stormId) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String confPath = supervisorStormConfPath(stormRoot);
         return readSupervisorStormConfGivenPath(conf, confPath);
     }
 
-    public static StormTopology readSupervisorTopology(Map conf, String stormId) throws IOException {
+    public static StormTopology readSupervisorTopology(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
+        return _instance.readSupervisorTopologyImpl(conf, stormId, ops);
+    }
+  
+    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
-        return Utils.deserialize(FileUtils.readFileToByteArray(new File(topologyPath)), StormTopology.class);
+        return readSupervisorStormCodeGivenPath(topologyPath, ops);
     }
 
     public static String workerUserRoot(Map conf) {
@@ -346,27 +376,6 @@ public class ConfigUtils {
 
     public static String workerUserFile(Map conf, String workerId) {
         return (workerUserRoot(conf) + FILE_SEPARATOR + workerId);
-    }
-
-    public static String getWorkerUser(Map conf, String workerId) {
-        LOG.info("GET worker-user for {}", workerId);
-        File file = new File(workerUserFile(conf, workerId));
-
-        try (InputStream in = new FileInputStream(file);
-             Reader reader = new InputStreamReader(in);
-             BufferedReader br = new BufferedReader(reader);) {
-            StringBuilder sb = new StringBuilder();
-            int r;
-            while ((r = br.read()) != -1) {
-                char ch = (char) r;
-                sb.append(ch);
-            }
-            String ret = sb.toString().trim();
-            return ret;
-        } catch (IOException e) {
-            LOG.error("Failed to get worker user for {}.", workerId);
-            return null;
-        }
     }
 
     public static String getIdFromBlobKey(String key) {
@@ -386,28 +395,7 @@ public class ConfigUtils {
         return ret;
     }
 
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
-    public static void setWorkerUserWSE(Map conf, String workerId, String user) throws IOException {
-        _instance.setWorkerUserWSEImpl(conf, workerId, user);
-    }
-
-    public void setWorkerUserWSEImpl(Map conf, String workerId, String user) throws IOException {
-        LOG.info("SET worker-user {} {}", workerId, user);
-        File file = new File(workerUserFile(conf, workerId));
-        file.getParentFile().mkdirs();
-
-        try (FileWriter fw = new FileWriter(file);
-             BufferedWriter writer = new BufferedWriter(fw);) {
-            writer.write(user);
-        }
-    }
-
-    public static void removeWorkerUserWSE(Map conf, String workerId) {
-        LOG.info("REMOVE worker-user {}", workerId);
-        new File(workerUserFile(conf, workerId)).delete();
-    }
-
-    // we use this "wired" wrapper pattern temporarily for mocking in clojure test
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String workerArtifactsRoot(Map conf) {
         return _instance.workerArtifactsRootImpl(conf);
     }
@@ -453,7 +441,12 @@ public class ConfigUtils {
         return new File((logRoot + FILE_SEPARATOR + id + FILE_SEPARATOR + port));
     }
 
+    // we use this "weird" wrapper pattern temporarily for mocking in clojure test
     public static String workerRoot(Map conf) {
+        return _instance.workerRootImpl(conf);
+    }
+
+    public String workerRootImpl(Map conf) {
         return (absoluteStormLocalDir(conf) + FILE_SEPARATOR + "workers");
     }
 
@@ -465,8 +458,17 @@ public class ConfigUtils {
         return (workerRoot(conf, id) + FILE_SEPARATOR + "pids");
     }
 
+    public static String workerTmpRoot(Map conf, String id) {
+        return (workerRoot(conf, id) + FILE_SEPARATOR + "tmp");
+    }
+
+
     public static String workerPidPath(Map conf, String id, String pid) {
         return (workerPidsRoot(conf, id) + FILE_SEPARATOR + pid);
+    }
+    
+    public static String workerPidPath(Map<String, Object> conf, String id, long pid) {
+        return workerPidPath(conf, id, String.valueOf(pid));
     }
 
     public static String workerHeartbeatsRoot(Map conf, String id) {

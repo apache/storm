@@ -75,7 +75,8 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T> {
         long windowEndTs = nextWindowEndTs;
         LOG.debug("Window end ts {} Watermark ts {}", windowEndTs, watermarkTs);
         while (windowEndTs <= watermarkTs) {
-            evictionPolicy.setContext(windowEndTs);
+            long currentCount = windowManager.getEventCount(windowEndTs);
+            evictionPolicy.setContext(new DefaultEvictionContext(windowEndTs, currentCount));
             if (handler.onTrigger()) {
                 windowEndTs += slidingIntervalMs;
             } else {

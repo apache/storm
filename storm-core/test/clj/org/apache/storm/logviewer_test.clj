@@ -15,13 +15,17 @@
 ;; limitations under the License.
 (ns org.apache.storm.logviewer-test
   (:use [org.apache.storm config util])
-  (:require [org.apache.storm.daemon [logviewer :as logviewer]
-                                   [supervisor :as supervisor]])
+  (:require [org.apache.storm.daemon [logviewer :as logviewer]])
   (:require [conjure.core])
   (:use [clojure test])
   (:use [conjure core])
   (:use [org.apache.storm.ui helpers])
-  (:import [org.apache.storm.daemon DirectoryCleaner])
+  (:import [org.apache.storm.daemon DirectoryCleaner]
+           [org.apache.storm.utils Utils Time]
+           [org.apache.storm.utils.staticmocking UtilsInstaller]
+           [org.apache.storm.daemon.supervisor SupervisorUtils]
+           [org.apache.storm.testing.staticmocking MockedSupervisorUtils]
+           [org.apache.storm.generated LSWorkerHeartbeat])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
   (:import [java.nio.file.attribute FileAttribute])
@@ -68,7 +72,7 @@
 (deftest test-get-size-for-logdir
   (testing "get the file sizes of a worker log directory"
   (stubbing [logviewer/get-stream-for-dir (fn [x] (map #(mk-mock-Path %) (.listFiles x)))]
-            (let [now-millis (current-time-millis)
+            (let [now-millis (Time/currentTimeMillis)
                   files1 (into-array File (map #(mk-mock-File {:name (str %)
                                                                :type :file
                                                                :mtime (- now-millis (* 100 %))
@@ -82,7 +86,7 @@
 (deftest test-mk-FileFilter-for-log-cleanup
   (testing "log file filter selects the correct worker-log dirs for purge"
     (stubbing [logviewer/get-stream-for-dir (fn [x] (map #(mk-mock-Path %) (.listFiles x)))]
-    (let [now-millis (current-time-millis)
+    (let [now-millis (Time/currentTimeMillis)
           conf {LOGVIEWER-CLEANUP-AGE-MINS 60
                 LOGVIEWER-CLEANUP-INTERVAL-SECS 300}
           cutoff-millis (logviewer/cleanup-cutoff-age-millis conf now-millis)
@@ -125,104 +129,106 @@
 
 (deftest test-per-workerdir-cleanup!
   (testing "cleaner deletes oldest files in each worker dir if files are larger than per-dir quota."
-    (stubbing [rmr nil]
-              (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
-                              (getStreamForDirectory
-                                ([^File dir]
-                                  (mk-DirectoryStream
-                                    (ArrayList.
-                                      (map #(mk-mock-Path %) (.listFiles dir)))))))
-                    now-millis (current-time-millis)
-                    files1 (into-array File (map #(mk-mock-File {:name (str "A" %)
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    files2 (into-array File (map #(mk-mock-File {:name (str "B" %)
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    files3 (into-array File (map #(mk-mock-File {:name (str "C" %)
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    port1-dir (mk-mock-File {:name "/workers-artifacts/topo1/port1"
-                                             :type :directory
-                                             :files files1})
-                    port2-dir (mk-mock-File {:name "/workers-artifacts/topo1/port2"
-                                             :type :directory
-                                             :files files2})
-                    port3-dir (mk-mock-File {:name "/workers-artifacts/topo2/port3"
-                                             :type :directory
-                                             :files files3})
-                    topo1-files (into-array File [port1-dir port2-dir])
-                    topo2-files (into-array File [port3-dir])
-                    topo1-dir (mk-mock-File {:name "/workers-artifacts/topo1"
-                                             :type :directory
-                                             :files topo1-files})
-                    topo2-dir (mk-mock-File {:name "/workers-artifacts/topo2"
-                                             :type :directory
-                                             :files topo2-files})
-                    root-files (into-array File [topo1-dir topo2-dir])
-                    root-dir (mk-mock-File {:name "/workers-artifacts"
-                                            :type :directory
-                                            :files root-files})
-                    deletedFiles (logviewer/per-workerdir-cleanup! root-dir 1200 cleaner)]
-                (is (= (first deletedFiles) 4))
-                (is (= (second deletedFiles) 4))
-                (is (= (last deletedFiles) 4))))))
+    (with-open [_ (UtilsInstaller. (proxy [Utils] []
+                                     (forceDeleteImpl [path])))]
+      (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
+                      (getStreamForDirectory
+                        ([^File dir]
+                          (mk-DirectoryStream
+                            (ArrayList.
+                              (map #(mk-mock-Path %) (.listFiles dir)))))))
+            now-millis (Time/currentTimeMillis)
+            files1 (into-array File (map #(mk-mock-File {:name (str "A" %)
+                                                         :type :file
+                                                         :mtime (+ now-millis (* 100 %))
+                                                         :length 200 })
+                                         (range 0 10)))
+            files2 (into-array File (map #(mk-mock-File {:name (str "B" %)
+                                                         :type :file
+                                                         :mtime (+ now-millis (* 100 %))
+                                                         :length 200 })
+                                         (range 0 10)))
+            files3 (into-array File (map #(mk-mock-File {:name (str "C" %)
+                                                         :type :file
+                                                         :mtime (+ now-millis (* 100 %))
+                                                         :length 200 })
+                                         (range 0 10)))
+            port1-dir (mk-mock-File {:name "/workers-artifacts/topo1/port1"
+                                     :type :directory
+                                     :files files1})
+            port2-dir (mk-mock-File {:name "/workers-artifacts/topo1/port2"
+                                     :type :directory
+                                     :files files2})
+            port3-dir (mk-mock-File {:name "/workers-artifacts/topo2/port3"
+                                     :type :directory
+                                     :files files3})
+            topo1-files (into-array File [port1-dir port2-dir])
+            topo2-files (into-array File [port3-dir])
+            topo1-dir (mk-mock-File {:name "/workers-artifacts/topo1"
+                                     :type :directory
+                                     :files topo1-files})
+            topo2-dir (mk-mock-File {:name "/workers-artifacts/topo2"
+                                     :type :directory
+                                     :files topo2-files})
+            root-files (into-array File [topo1-dir topo2-dir])
+            root-dir (mk-mock-File {:name "/workers-artifacts"
+                                    :type :directory
+                                    :files root-files})
+            deletedFiles (logviewer/per-workerdir-cleanup! root-dir 1200 cleaner)]
+        (is (= (first deletedFiles) 4))
+        (is (= (second deletedFiles) 4))
+        (is (= (last deletedFiles) 4))))))
 
 (deftest test-global-log-cleanup!
   (testing "cleaner deletes oldest when files' sizes are larger than the global quota."
-    (stubbing [rmr nil
-               logviewer/get-alive-worker-dirs ["/workers-artifacts/topo1/port1"]]
-              (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
-                              (getStreamForDirectory
-                                ([^File dir]
-                                  (mk-DirectoryStream
-                                    (ArrayList.
-                                      (map #(mk-mock-Path %) (.listFiles dir)))))))
-                    now-millis (current-time-millis)
-                    files1 (into-array File (map #(mk-mock-File {:name (str "A" % ".log")
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    files2 (into-array File (map #(mk-mock-File {:name (str "B" %)
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    files3 (into-array File (map #(mk-mock-File {:name (str "C" %)
-                                                                 :type :file
-                                                                 :mtime (+ now-millis (* 100 %))
-                                                                 :length 200 })
-                                                 (range 0 10)))
-                    port1-dir (mk-mock-File {:name "/workers-artifacts/topo1/port1"
-                                             :type :directory
-                                             :files files1}) ;; note that port1-dir is active worker containing active logs
-                    port2-dir (mk-mock-File {:name "/workers-artifacts/topo1/port2"
-                                             :type :directory
-                                             :files files2})
-                    port3-dir (mk-mock-File {:name "/workers-artifacts/topo2/port3"
-                                             :type :directory
-                                             :files files3})
-                    topo1-files (into-array File [port1-dir port2-dir])
-                    topo2-files (into-array File [port3-dir])
-                    topo1-dir (mk-mock-File {:name "/workers-artifacts/topo1"
-                                             :type :directory
-                                             :files topo1-files})
-                    topo2-dir (mk-mock-File {:name "/workers-artifacts/topo2"
-                                             :type :directory
-                                             :files topo2-files})
-                    root-files (into-array File [topo1-dir topo2-dir])
-                    root-dir (mk-mock-File {:name "/workers-artifacts"
-                                            :type :directory
-                                            :files root-files})
-                    deletedFiles (logviewer/global-log-cleanup! root-dir 2400 cleaner)]
-                (is (= deletedFiles 18))))))
+    (stubbing [logviewer/get-alive-worker-dirs ["/workers-artifacts/topo1/port1"]]
+              (with-open [_ (UtilsInstaller. (proxy [Utils] []
+                                               (forceDeleteImpl [path])))]
+                (let [cleaner (proxy [org.apache.storm.daemon.DirectoryCleaner] []
+                                (getStreamForDirectory
+                                  ([^File dir]
+                                    (mk-DirectoryStream
+                                      (ArrayList.
+                                        (map #(mk-mock-Path %) (.listFiles dir)))))))
+                      now-millis (Time/currentTimeMillis)
+                      files1 (into-array File (map #(mk-mock-File {:name (str "A" % ".log")
+                                                                   :type :file
+                                                                   :mtime (+ now-millis (* 100 %))
+                                                                   :length 200 })
+                                                   (range 0 10)))
+                      files2 (into-array File (map #(mk-mock-File {:name (str "B" %)
+                                                                   :type :file
+                                                                   :mtime (+ now-millis (* 100 %))
+                                                                   :length 200 })
+                                                   (range 0 10)))
+                      files3 (into-array File (map #(mk-mock-File {:name (str "C" %)
+                                                                   :type :file
+                                                                   :mtime (+ now-millis (* 100 %))
+                                                                   :length 200 })
+                                                   (range 0 10)))
+                      port1-dir (mk-mock-File {:name "/workers-artifacts/topo1/port1"
+                                               :type :directory
+                                               :files files1}) ;; note that port1-dir is active worker containing active logs
+                      port2-dir (mk-mock-File {:name "/workers-artifacts/topo1/port2"
+                                               :type :directory
+                                               :files files2})
+                      port3-dir (mk-mock-File {:name "/workers-artifacts/topo2/port3"
+                                               :type :directory
+                                               :files files3})
+                      topo1-files (into-array File [port1-dir port2-dir])
+                      topo2-files (into-array File [port3-dir])
+                      topo1-dir (mk-mock-File {:name "/workers-artifacts/topo1"
+                                               :type :directory
+                                               :files topo1-files})
+                      topo2-dir (mk-mock-File {:name "/workers-artifacts/topo2"
+                                               :type :directory
+                                               :files topo2-files})
+                      root-files (into-array File [topo1-dir topo2-dir])
+                      root-dir (mk-mock-File {:name "/workers-artifacts"
+                                              :type :directory
+                                              :files root-files})
+                      deletedFiles (logviewer/global-log-cleanup! root-dir 2400 cleaner)]
+                  (is (= deletedFiles 18)))))))
 
 (deftest test-identify-worker-log-dirs
   (testing "Build up workerid-workerlogdir map for the old workers' dirs"
@@ -231,38 +237,50 @@
           mock-metaFile (mk-mock-File {:name "worker.yaml"
                                        :type :file})
           exp-id "id12345"
-          expected {exp-id port1-dir}]
-      (stubbing [supervisor/read-worker-heartbeats nil
-                 logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
-                 logviewer/get-worker-id-from-metadata-file exp-id]
-        (is (= expected (logviewer/identify-worker-log-dirs [port1-dir])))))))
+          expected {exp-id port1-dir}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+        (stubbing [logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
+                   logviewer/get-worker-id-from-metadata-file exp-id]
+          (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn nil))
+          (is (= expected (logviewer/identify-worker-log-dirs [port1-dir]))))))))
 
 (deftest test-get-dead-worker-dirs
-  (testing "removes any files of workers that are still alive"
+  (testing "return directories for workers that are not alive"
     (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
-          id->hb {"42" {:time-secs 1}}
+          hb (let [lwb (LSWorkerHeartbeat.)]
+                   (.set_time_secs lwb (int 1)) lwb)
+          id->hb {"42" hb}
           now-secs 2
-          unexpected-dir (mk-mock-File {:name "dir1" :type :directory})
-          expected-dir (mk-mock-File {:name "dir2" :type :directory})
-          log-dirs #{unexpected-dir expected-dir}]
-      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir,
-                                                     "007" expected-dir}
-                 supervisor/read-worker-heartbeats id->hb]
-        (is (= #{expected-dir}
-              (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
+          unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
+          expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
+          expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
+          log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
+                                                     "007" expected-dir2,
+                                                     "" expected-dir3}] ;; this tests a directory with no yaml file thus no worker id
+        (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn id->hb))
+        (is (= #{expected-dir2 expected-dir3}
+              (logviewer/get-dead-worker-dirs conf now-secs log-dirs))))))))
 
 (deftest test-cleanup-fn
-  (testing "cleanup function rmr's files of dead workers"
+  (testing "cleanup function forceDeletes files of dead workers"
     (let [mockfile1 (mk-mock-File {:name "delete-me1" :type :file})
-          mockfile2 (mk-mock-File {:name "delete-me2" :type :file})]
-      (stubbing [logviewer/select-dirs-for-cleanup nil
-                 logviewer/get-dead-worker-dirs (sorted-set mockfile1 mockfile2)
-                 logviewer/cleanup-empty-topodir! nil
-                 rmr nil]
-        (logviewer/cleanup-fn! "/bogus/path")
-        (verify-call-times-for rmr 2)
-        (verify-nth-call-args-for 1 rmr (.getCanonicalPath mockfile1))
-        (verify-nth-call-args-for 2 rmr (.getCanonicalPath mockfile2))))))
+          mockfile2 (mk-mock-File {:name "delete-me2" :type :file})
+          forceDelete-args (atom [])
+          utils-proxy (proxy [Utils] []
+                        (forceDeleteImpl [path]
+                          (swap! forceDelete-args conj path)))]
+      (with-open [_ (UtilsInstaller. utils-proxy)]
+        (stubbing [logviewer/select-dirs-for-cleanup nil
+                   logviewer/get-dead-worker-dirs (sorted-set mockfile1 mockfile2)
+                   logviewer/cleanup-empty-topodir! nil]
+          (logviewer/cleanup-fn! "/bogus/path")
+          (is (= 2 (count @forceDelete-args)))
+          (is (= (.getCanonicalPath mockfile1) (get @forceDelete-args 0)))
+          (is (= (.getCanonicalPath mockfile2) (get @forceDelete-args 1))))))))
 
 (deftest test-authorized-log-user
   (testing "allow cluster admin"
@@ -341,7 +359,7 @@
           returned-all (logviewer/list-log-files "user" nil nil root-path nil origin)
           returned-filter-port (logviewer/list-log-files "user" nil "port1" root-path nil origin)
           returned-filter-topoId (logviewer/list-log-files "user" "topoB" nil root-path nil origin)]
-      (rmr root-path)
+      (Utils/forceDelete root-path)
       (is   (= expected-all returned-all))
       (is   (= expected-filter-port returned-filter-port))
       (is   (= expected-filter-topoId returned-filter-topoId)))))
@@ -360,28 +378,44 @@
         ;; match.
         exp-offset-fn #(- (/ logviewer/default-bytes-per-page 2) %)]
 
-    (stubbing [local-hostname expected-host
-               logviewer/logviewer-port expected-port]
+    (stubbing [logviewer/logviewer-port expected-port]
+      (with-open [_ (UtilsInstaller. (proxy [Utils] []
+                                       (localHostnameImpl [] expected-host)))]
+        (testing "Logviewer link centers the match in the page"
+          (let [expected-fname "foobar.log"]
+            (is (= (str "http://"
+                     expected-host
+                     ":"
+                     expected-port
+                     "/log?file="
+                     expected-fname
+                     "&start=1947&length="
+                     logviewer/default-bytes-per-page)
+                  (logviewer/url-to-match-centered-in-log-page (byte-array 42)
+                    expected-fname
+                    27526
+                    8888)))))
 
-      (testing "Logviewer link centers the match in the page"
+      (testing "Logviewer link centers the match in the page (daemon)"
         (let [expected-fname "foobar.log"]
           (is (= (str "http://"
                    expected-host
                    ":"
                    expected-port
-                   "/log?file="
+                   "/daemonlog?file="
                    expected-fname
                    "&start=1947&length="
                    logviewer/default-bytes-per-page)
-                (logviewer/url-to-match-centered-in-log-page (byte-array 42)
+                (logviewer/url-to-match-centered-in-log-page-daemon-file (byte-array 42)
                   expected-fname
                   27526
                   8888)))))
 
-      (let [file (->> "logviewer-search-context-tests.log"
+      (let [file (->> "logviewer-search-context-tests.log.test"
                    (clojure.java.io/file "src" "dev"))]
         (testing "returns correct before/after context"
-          (is (= {"searchString" pattern
+          (is (= {"isDaemon" "no"
+                  "searchString" pattern
                   "startByteOffset" 0
                   "matches" [{"byteOffset" 0
                               "beforeString" ""
@@ -430,9 +464,10 @@
                              ]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "small-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "small-worker.log.test")]
         (testing "a really small log file"
-          (is (= {"searchString" pattern
+          (is (= {"isDaemon" "no"
+                  "searchString" pattern
                   "startByteOffset" 0
                   "matches" [{"byteOffset" 7
                               "beforeString" "000000 "
@@ -447,10 +482,29 @@
                                                "&start=0&length=51200")}]}
                 (logviewer/substring-search file pattern)))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-3072.log")]
+      (let [file (clojure.java.io/file "src" "dev" "small-worker.log.test")]
+        (testing "a really small log file (daemon)"
+          (is (= {"isDaemon" "yes"
+                  "searchString" pattern
+                  "startByteOffset" 0
+                  "matches" [{"byteOffset" 7
+                              "beforeString" "000000 "
+                              "afterString" " 000000\n"
+                              "matchString" pattern
+                              "logviewerURL" (str "http://"
+                                               expected-host
+                                               ":"
+                                               expected-port
+                                               "/daemonlog?file="
+                                               (.getName file)
+                                               "&start=0&length=51200")}]}
+                (logviewer/substring-search file pattern :is-daemon true)))))
+
+      (let [file (clojure.java.io/file "src" "dev" "test-3072.log.test")]
         (testing "no offset returned when file ends on buffer offset"
           (let [expected
-                {"searchString" pattern
+                {"isDaemon" "no"
+                 "searchString" pattern
                  "startByteOffset" 0
                  "matches" [{"byteOffset" 3066
                              "beforeString" (->>
@@ -470,7 +524,7 @@
             (is (= expected
                   (logviewer/substring-search file pattern :num-matches 1))))))
 
-      (let [file (clojure.java.io/file "src" "dev" "test-worker.log")]
+      (let [file (clojure.java.io/file "src" "dev" "test-worker.log.test")]
 
         (testing "next byte offsets are correct for each match"
           (doseq [[num-matches-sought
@@ -497,7 +551,8 @@
               (is (= num-matches-found (count (get result "matches")))))))
 
         (is
-          (= {"nextByteOffset" 6252
+          (= {"isDaemon" "no"
+              "nextByteOffset" 6252
               "searchString" pattern
               "startByteOffset" 0
               "matches" [
@@ -583,7 +638,8 @@
 
         (testing "Correct match offset is returned when skipping bytes"
           (let [start-byte-offset 3197]
-            (is (= {"nextByteOffset" 6252
+            (is (= {"isDaemon" "no"
+                    "nextByteOffset" 6252
                     "searchString" pattern
                     "startByteOffset" start-byte-offset
                     "matches" [{"byteOffset" 6246
@@ -604,7 +660,8 @@
 
         (let [pattern (clojure.string/join (repeat 1024 'X))]
           (is
-            (= {"nextByteOffset" 6183
+            (= {"isDaemon" "no"
+                "nextByteOffset" 6183
                 "searchString" pattern
                 "startByteOffset" 0
                 "matches" [
@@ -635,7 +692,8 @@
 
         (let [pattern "𐄀𐄁𐄂"]
           (is
-            (= {"nextByteOffset" 7176
+            (= {"isDaemon" "no"
+                "nextByteOffset" 7176
                 "searchString" pattern
                 "startByteOffset" 0
                 "matches" [
@@ -655,17 +713,18 @@
 
         (testing "Returns 0 matches for unseen pattern"
           (let [pattern "Not There"]
-            (is (= {"searchString" pattern
+            (is (= {"isDaemon" "no"
+                    "searchString" pattern
                     "startByteOffset" 0
                     "matches" []}
                   (logviewer/substring-search file
                     pattern
                     :num-matches nil
-                    :start-byte-offset nil)))))))))
+                    :start-byte-offset nil))))))))))
 
 (deftest test-find-n-matches
   (testing "find-n-matches looks through logs properly"
-    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+    (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                  (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
           matches1 ((logviewer/find-n-matches files 20 0 0 "needle") "matches")
           matches2 ((logviewer/find-n-matches files 20 0 126 "needle") "matches")
@@ -674,7 +733,7 @@
       (is (= 2 (count matches1)))
       (is (= 4 (count ((first matches1) "matches"))))
       (is (= 4 (count ((second matches1) "matches"))))
-      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log"))
+      (is (= ((first matches1) "fileName") "src/dev/logviewer-search-context-tests.log.test"))
       (is (= ((second matches1) "fileName") "src/dev/logviewer-search-context-tests.log.gz"))
 
       (is (= 2 (count ((first matches2) "matches"))))
@@ -684,7 +743,7 @@
       (is (= 4 (count ((first matches3) "matches")))))))
 
 (deftest test-deep-search-logs-for-topology
-  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log")
+  (let [files [(clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.test")
                (clojure.java.io/file "src" "dev" "logviewer-search-context-tests.log.gz")]
         attrs (make-array FileAttribute 0)
         topo-path (.getCanonicalPath (.toFile (Files/createTempDirectory "topoA" attrs)))
@@ -761,5 +820,5 @@
           ; Called with a bad port (not in the config) No searching should be done.
           (verify-call-times-for logviewer/find-n-matches 0)
           (verify-call-times-for logviewer/logs-for-port 0)))
-      (rmr topo-path))))
+      (Utils/forceDelete topo-path))))
 

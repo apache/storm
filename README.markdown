@@ -1,4 +1,6 @@
-Master Branch: [![Travis CI](https://travis-ci.org/apache/storm.svg?branch=master)](https://travis-ci.org/apache/storm)
+Master Branch:  
+[![Travis CI](https://travis-ci.org/apache/storm.svg?branch=master)](https://travis-ci.org/apache/storm)
+[![Maven Version](https://maven-badges.herokuapp.com/maven-central/org.apache.storm/storm-core/badge.svg)](http://search.maven.org/#search|gav|1|g:"org.apache.storm"%20AND%20a:"storm-core")
 
 Storm is a distributed realtime computation system. Similar to how Hadoop provides a set of general primitives for doing batch processing, Storm provides a set of general primitives for doing realtime computation. Storm is simple, can be used with any programming language, [is used by many companies](http://storm.apache.org/documentation/Powered-By.html), and is a lot of fun to use!
 
@@ -92,6 +94,11 @@ under the License.
 * Zhuo Liu ([@zhuoliu](https://github.com/zhuoliu))
 * Haohui Mai ([@haohui](https://github.com/haohui))
 * Sanket Chintapalli ([@redsanket](https://github.com/redsanket))
+* Longda Feng ([@longda](https://github.com/longdafeng))
+* John Fang ([@hustfxj](https://github.com/hustfxj))
+* Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
+* Satish Duggana ([@satishd](https://github.com/satishd))
+* Xin Wang ([@vesense](https://github.com/vesense))
 
 ## Contributors
 
@@ -211,7 +218,6 @@ under the License.
 * Shyam Rajendran ([@bourneagain](https://github.com/bourneagain))
 * Reza Farivar ([@rfarivar](https://github.com/rfarivar))
 * Hugo Louro ([@hmcl](https://github.com/hmcl))
-* Xin Wang ([@vesense](https://github.com/vesense))
 * Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 * Chuanlei Ni ([@chuanlei](https://github.com/chuanlei))
 * Xingyu Su ([@errordaiwa](https://github.com/errordaiwa))
@@ -229,7 +235,6 @@ under the License.
 * Renkai Ge ([@Renkai](https://github.com/Renkai))
 * Aaron Coburn ([@acoburn](https://github.com/acoburn))
 * Rick Kellogg ([@rmkellogg](https://github.com/rmkellogg))
-* Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
 * chenyuzhao ([@danny0405](https://github.com/danny0405))
 * Michael Schonfeld ([@schonfeld](https://github.com/schonfeld))
 * Erik Weathers ([@erikdw](https://github.com/erikdw))
@@ -251,11 +256,26 @@ under the License.
 * Seth Ammons ([@sethgrid](https://github.com/sethgrid))
 * Aaron Dixon ([@atdixon](https://github.com/atdixon))
 * Roshan Naik ([@roshannaik](https://github.com/roshannaik))
-* John Fang ([@hustfxj](https://github.com/hustfxj))
-* Dan Bahir([#dbahir](https://github.com/dbahir))
-
+* Dan Bahir ([#dbahir](https://github.com/dbahir))
+* Alessandro Bellina ([#abellina](https://github.com/abellina))
+* Basti Liu ([@basti](https://github.com/bastiliu))
+* Jark Wu ([@jark](https://github.com/wuchong))
+* Cody Wang ([@unsleepy22](https://github.com/unsleepy22))
+* Karthick Duraisamy Soundararaj ([@dsKarthick](https://github.com/dsKarthick))
+* Olivier Mallassi ([@omallassi](https://github.com/omallassi))
+* Balázs Kossovics ([@kosii](https://github.com/kosii))
+* csivaguru ([@csivaguru](https://github.com/csivaguru))
+* sakanaou ([@sakanaou](https://github.com/sakanaou))
+* wangperry ([@wangperry](https://github.com/wangperry))
+* Slava Andreyev ([@slava92](https://github.com/slava92))
+* Pavel Grochal ([@Darkless012](https://github.com/Darkless012))
+* Manikumar Reddy O ([@omkreddy](https://github.com/omkreddy))
+* Dohyun Lee ([@leedohyun](https://github.com/leedohyun))
+* Arthur Maciejewicz ([@Zintinio](https://github.com/Zintinio]))
+* Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo)) 
+* Ambud Sharma ([@ambud](https://github.com/ambud]))
+* Abhishek ([@aandis](https://github.com/aandis]))
+ 
 ## Acknowledgements
 
 YourKit is kindly supporting open source projects with its full-featured Java Profiler. YourKit, LLC is the creator of innovative and intelligent tools for profiling Java and .NET applications. Take a look at YourKit's leading software products: [YourKit Java Profiler](http://www.yourkit.com/java/profiler/index.jsp) and [YourKit .NET Profiler](http://www.yourkit.com/.net/profiler/index.jsp).
-
-

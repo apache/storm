@@ -19,6 +19,7 @@ package org.apache.storm.flux;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
@@ -159,20 +160,16 @@ public class Flux {
         if(!cmd.hasOption(OPTION_DRY_RUN)) {
             if (cmd.hasOption(OPTION_REMOTE)) {
                 LOG.info("Running remotely...");
-                try {
-                    // should the topology be active or inactive
-                    SubmitOptions submitOptions = null;
-                    if(cmd.hasOption(OPTION_INACTIVE)){
-                        LOG.info("Deploying topology in an INACTIVE state...");
-                        submitOptions = new SubmitOptions(TopologyInitialStatus.INACTIVE);
-                    } else {
-                        LOG.info("Deploying topology in an ACTIVE state...");
-                        submitOptions = new SubmitOptions(TopologyInitialStatus.ACTIVE);
-                    }
-                    StormSubmitter.submitTopology(topologyName, conf, topology, submitOptions, null);
-                } catch (Exception e) {
-                    LOG.warn("Unable to deploy topology to remote cluster.", e);
+                // should the topology be active or inactive
+                SubmitOptions submitOptions = null;
+                if(cmd.hasOption(OPTION_INACTIVE)){
+                    LOG.info("Deploying topology in an INACTIVE state...");
+                    submitOptions = new SubmitOptions(TopologyInitialStatus.INACTIVE);
+                } else {
+                    LOG.info("Deploying topology in an ACTIVE state...");
+                    submitOptions = new SubmitOptions(TopologyInitialStatus.ACTIVE);
                 }
+                StormSubmitter.submitTopology(topologyName, conf, topology, submitOptions, null);
             } else {
                 LOG.info("Running in local mode...");
 
@@ -208,11 +205,11 @@ public class Flux {
                 } else {
                     cluster = new LocalCluster();
                 }
-                cluster.submitTopology(topologyName, conf, topology);
-
-                Utils.sleep(sleepTime);
-                cluster.killTopology(topologyName);
-                cluster.shutdown();
+                try (LocalTopology topo = cluster.submitTopology(topologyName, conf, topology)) {
+                    Utils.sleep(sleepTime);
+                } finally {
+                    cluster.shutdown();
+                }
             }
         }
     }
