@@ -18,6 +18,13 @@
 
 package org.apache.storm.kafka.spout;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.OutputFieldsGetter;
@@ -25,13 +32,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * Represents the {@link KafkaSpoutStream} associated with each topic, and provides a public API to
@@ -62,7 +62,7 @@ public class KafkaSpoutStreamsNamedTopics implements KafkaSpoutStreams {
 
     @Override
     public Fields getOutputFields() {
-        final Set<String> allFields = new HashSet<>();
+        final Set<String> allFields = new LinkedHashSet<>();
         for (KafkaSpoutStream kafkaSpoutStream : topicToStream.values()) {
             allFields.addAll(kafkaSpoutStream.getOutputFields().toList());
         }
