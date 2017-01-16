@@ -12,7 +12,7 @@ public class KafkaSpoutStreamsNamedTopicsTest {
 		String[] topics = new String[]{"testTopic"};
 		String streamId = "test";
 		KafkaSpoutStreamsNamedTopics build = new KafkaSpoutStreamsNamedTopics.Builder(outputFields, streamId, topics)
-        .addStream(outputFields, streamId, topics)  // contents of topic test2 sent to test2_stream
+        .addStream(outputFields, streamId, topics)
         .build();
 		Fields actualFields = build.getOutputFields();
 		Assert.assertEquals(outputFields.get(0), actualFields.get(0));
