@@ -32,6 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,7 +59,7 @@ public class OpenTsdbBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(OpenTsdbBolt.class);
 
     private final OpenTsdbClient.Builder openTsdbClientBuilder;
-    private final List<TupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers;
+    private final List<ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers;
     private int batchSize;
     private int flushIntervalInSeconds;
     private boolean failTupleForFailedMetrics;
@@ -68,7 +69,12 @@ public class OpenTsdbBolt extends BaseRichBolt {
     private Map<OpenTsdbMetricDatapoint, Tuple> metricPointsWithTuple = new HashMap<>();
     private OutputCollector collector;
 
-    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, List<TupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
+    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, ITupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper) {
+        this.openTsdbClientBuilder = openTsdbClientBuilder;
+        this.tupleOpenTsdbDatapointMappers = Collections.singletonList(tupleOpenTsdbDatapointMapper);
+    }
+
+    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, List<ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleOpenTsdbDatapointMappers = tupleOpenTsdbDatapointMappers;
     }
@@ -155,7 +161,7 @@ public class OpenTsdbBolt extends BaseRichBolt {
 
     private List<OpenTsdbMetricDatapoint> getMetricPoints(Tuple tuple) {
         List<OpenTsdbMetricDatapoint> metricDataPoints = new ArrayList<>();
-        for (TupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper : tupleOpenTsdbDatapointMappers) {
+        for (ITupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper : tupleOpenTsdbDatapointMappers) {
             metricDataPoints.add(tupleOpenTsdbDatapointMapper.getMetricPoint(tuple));
         }
 
