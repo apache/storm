@@ -294,7 +294,7 @@
 (declare try-read-storm-topology)
 (declare get-version-for-key)
 
-(defn update-storm-code-parallelism [nimbus storm-id component->executors]
+(defn update-storm-code-tasks [nimbus storm-id component->executors]
   (let [subject (get-subject)
         blob-store (:blob-store nimbus)
         ^StormTopology topology (.deepCopy (try-read-storm-topology storm-id blob-store))
@@ -304,12 +304,13 @@
         nimbus-host-port-info (:nimbus-host-port-info nimbus)]
     (doseq [[comp num-tasks] component->executors
             :let [component (get old-components comp)
-                  component-common (.get_common component)]]
-      (.set_parallelism_hint component-common num-tasks)
-      (.set_json_conf component-common
-        (->> {TOPOLOGY-TASKS num-tasks}
-             (merge (component-conf component))
-             to-json)))
+                  component-common (if (some? component) (.get_common component) nil)]]
+      (when (some? component-common)
+        (.set_parallelism_hint component-common num-tasks)
+        (.set_json_conf component-common
+          (->> {TOPOLOGY-TASKS num-tasks}
+               (merge (component-conf component))
+               to-json))))
     (.deleteBlob blob-store code-key subject)
     (.createBlob blob-store code-key (Utils/serialize topology) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
     (if (instance? LocalFsBlobStore blob-store)
@@ -322,7 +323,7 @@
         (-> {:topology-action-options nil}
           (assoc-non-nil :component->executors (:component->executors rebalance-options))
           (assoc-non-nil :num-workers (:num-workers rebalance-options))))
-    (update-storm-code-parallelism nimbus storm-id (:component->executors rebalance-options)))
+    (update-storm-code-tasks nimbus storm-id (:component->executors rebalance-options)))
   (mk-assignments nimbus :scratch-topology-id storm-id))
 
 (defn state-transitions [nimbus storm-id status storm-base]
@@ -994,14 +995,16 @@
         topologies (locking (:submit-lock nimbus) (into {} (for [tid (.active-storms storm-cluster-state)]
                               {tid (read-topology-details nimbus tid)})))
         topologies (Topologies. topologies)
+        ;; for the topology which wants rebalance (specified by the scratch-topology-id)
+        ;; we remove its assignment, meaning that all the slots occupied by its assignment
+        ;; will be treated as free slot in the scheduler code
+        ;; and supervisors will kill all the old workers for rebalancing topology.
+        _ (when-not (nil? scratch-topology-id)
+            (.remove-assignment! storm-cluster-state scratch-topology-id))
         ;; read all the assignments
         assigned-topology-ids (.assignments storm-cluster-state nil)
         existing-assignments (into {} (for [tid assigned-topology-ids]
-                                        ;; for the topology which wants rebalance (specified by the scratch-topology-id)
-                                        ;; we exclude its assignment, meaning that all the slots occupied by its assignment
-                                        ;; will be treated as free slot in the scheduler code.
-                                        (when (or (nil? scratch-topology-id) (not= tid scratch-topology-id))
-                                          {tid (.assignment-info storm-cluster-state tid nil)})))]
+                                          {tid (.assignment-info storm-cluster-state tid nil)}))]
       ;; make the new assignments for topologies
       (locking (:sched-lock nimbus) (let [
           new-scheduler-assignments (compute-new-scheduler-assignments

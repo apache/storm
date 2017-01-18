@@ -88,6 +88,7 @@
   (update-storm! [this storm-id new-elems])
   (remove-storm-base! [this storm-id])
   (set-assignment! [this storm-id info])
+  (remove-assignment! [this storm-id])
   ;; sets up information related to key consisting of nimbus
   ;; host:port and version info of the blob
   (setup-blobstore! [this key nimbusInfo versionInfo])
@@ -565,6 +566,11 @@
         [this storm-id info]
         (let [thrift-assignment (thriftify-assignment info)]
           (.set_data cluster-state (assignment-path storm-id) (Utils/serialize thrift-assignment) acls)))
+
+      (remove-assignment!
+        [this storm-id]
+        (log-debug "removing assignment for storm " storm-id)
+        (.delete_node cluster-state (assignment-path storm-id)))
 
       (remove-blobstore-key!
         [this blob-key]
