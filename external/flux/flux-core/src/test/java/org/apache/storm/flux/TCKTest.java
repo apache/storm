@@ -227,6 +227,7 @@ public class TCKTest {
         assertTrue(bolt.getFoo().equals("foo"));
         assertTrue(bolt.getBar().equals("bar"));
         assertTrue(bolt.getFooBar().equals("foobar"));
+        assertArrayEquals(new TestBolt.TestClass[] {new TestBolt.TestClass("foo"), new TestBolt.TestClass("bar"), new TestBolt.TestClass("baz")}, bolt.getClasses());
     }
 
     @Test
