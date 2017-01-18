@@ -23,7 +23,6 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.*;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.flux.api.TopologySource;
 import org.apache.storm.flux.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -279,6 +278,15 @@ public class FluxBuilder {
         for (Object arg : args) {
             if (arg instanceof BeanReference) {
                 cArgs.add(context.getComponent(((BeanReference) arg).getId()));
+            } else if (arg instanceof BeanListReference) {
+                List<Object> components = new ArrayList<>();
+                BeanListReference ref = (BeanListReference) arg;
+                for (String id : ref.getIds()) {
+                    components.add(context.getComponent(id));
+                }
+
+                LOG.debug("BeanListReference resolved as {}", components);
+                cArgs.add(components);
             } else {
                 cArgs.add(arg);
             }
@@ -393,7 +401,7 @@ public class FluxBuilder {
         Constructor retval = null;
         int eligibleCount = 0;
 
-        LOG.debug("Target class: {}", target.getName());
+        LOG.debug("Target class: {}, constructor args: {}", target.getName(), args);
         Constructor[] cons = target.getDeclaredConstructors();
 
         for (Constructor con : cons) {
@@ -451,7 +459,7 @@ public class FluxBuilder {
         Method retval = null;
         int eligibleCount = 0;
 
-        LOG.debug("Target class: {}", target.getName());
+        LOG.debug("Target class: {}, methodName: {}, args: {}", target.getName(), methodName, args);
         Method[] methods = target.getMethods();
 
         for (Method method : methods) {
@@ -583,6 +591,9 @@ public class FluxBuilder {
 
         for (int i = 0; i < args.size(); i++) {
             Object obj = args.get(i);
+            if (obj == null) {
+                throw new IllegalArgumentException("argument shouldn't be null - index: " + i);
+            }
             Class paramType = parameterTypes[i];
             Class objectType = obj.getClass();
             LOG.debug("Comparing parameter class {} to object class {} to see if assignment is possible.",
