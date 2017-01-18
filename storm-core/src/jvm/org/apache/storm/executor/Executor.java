@@ -167,7 +167,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.hasEventLoggers = StormCommon.hasEventLoggers(stormConf);
 
         try {
-            this.hostname = Utils.hostname(stormConf);
+            this.hostname = Utils.hostname();
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
