@@ -192,6 +192,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2297: [storm-opentsdb] Support Flux for OpenTSDBBolt
  * STORM-2294: Send activate and deactivate command to ShellSpout
  * STORM-2236: Kafka Spout with manual partition management.
  * STORM-2280: Upgrade Calcite version to 1.11.0
