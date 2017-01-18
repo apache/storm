@@ -18,10 +18,10 @@
  */
 package org.apache.storm.cassandra.query.impl;
 
-import org.apache.storm.tuple.ITuple;
-import com.datastax.driver.core.DataType;
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.ProtocolVersion;
 import com.google.common.base.Preconditions;
+import org.apache.storm.tuple.ITuple;
 
 import java.io.Serializable;
 import java.nio.ByteBuffer;
@@ -45,7 +45,8 @@ public class RoutingKeyGenerator implements Serializable {
         List<ByteBuffer> keys = new ArrayList<>(routingKeys.size());
         for(String s : routingKeys) {
             Object value = tuple.getValueByField(s);
-            keys.add(DataType.serializeValue(value, ProtocolVersion.NEWEST_SUPPORTED));
+            ByteBuffer serialized = CodecRegistry.DEFAULT_INSTANCE.codecFor(value).serialize(value, ProtocolVersion.NEWEST_SUPPORTED);
+            keys.add(serialized);
         }
         return keys;
     }
