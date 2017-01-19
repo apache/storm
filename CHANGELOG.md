@@ -1,4 +1,7 @@
 ## 1.1.0
+ * STORM-2297: [storm-opentsdb] Support Flux for OpenTSDBBolt
+ * STORM-2294: Send activate and deactivate command to ShellSpout
+ * STORM-2280: Upgrade Calcite version to 1.11.0
  * STORM-2278: Allow max number of disruptor queue flusher threads to be configurable
  * STORM-2277: Add shaded jar for Druid connector
  * STORM-2274: Support named output streams in Hdfs Spout
@@ -22,7 +25,6 @@
  * STORM-2239: Handle InterruptException in new Kafka spout
  * STORM-2087: Storm-kafka-client: Failed tuples are not always replayed
  * STORM-2238: Add Timestamp extractor for windowed bolt
- * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-2235: Introduce new option: 'add remote repositories' for dependency resolver
  * STORM-2215: validate blobs are present before submitting
  * STORM-2170: [Storm SQL] Add built-in socket datasource to runtime
@@ -116,7 +118,6 @@
  * STORM-1909: Update HDFS spout documentation
  * STORM-1136: Command line module to return kafka spout offsets lag and display in storm ui
  * STORM-1911: IClusterMetricsConsumer should use seconds to timestamp unit
- * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1893: Support OpenTSDB for storing timeseries data.
  * STORM-1723: Introduce ClusterMetricsConsumer
  * STORM-1700: Introduce 'whitelist' / 'blacklist' option to MetricsConsumer
@@ -143,11 +144,16 @@
  * STORM-1674: Idle KafkaSpout consumes more bandwidth than needed
  * STORM-1842: Forward references in storm.thrift cause tooling issues
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
- * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2293: hostname should only refer node's 'storm.local.hostname'
+ * STORM-2246: Logviewer download link has urlencoding on part of the URL
+ * STORM-1906: Window count/length of zero should be disallowed
+ * STORM-1841: Address a few minor issues in windowing and doc
+ * STORM-2268: Fix integration test for Travis CI build
+ * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
  * STORM-2279: Unable to open bolt page of storm ui
  * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
  * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)

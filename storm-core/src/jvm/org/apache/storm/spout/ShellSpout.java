@@ -121,32 +121,18 @@ public class ShellSpout implements ISpout {
     }
 
     public void nextTuple() {
-        if (_exception != null) {
-            throw _exception;
-        }
-
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("next");
-        _spoutMsg.setId("");
-        querySubprocess();
+        this.sendSyncCommand("next", "");
     }
 
     public void ack(Object msgId) {
-        if (_exception != null) {
-            throw _exception;
-        }
-
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("ack");
-        _spoutMsg.setId(msgId);
-        querySubprocess();
+        this.sendSyncCommand("ack", msgId);
     }
 
     public void fail(Object msgId) {
+        this.sendSyncCommand("fail", msgId);
+    }
+
+    private void sendSyncCommand(String command, Object msgId) {
         if (_exception != null) {
             throw _exception;
         }
@@ -154,10 +140,11 @@ public class ShellSpout implements ISpout {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
-        _spoutMsg.setCommand("fail");
+        _spoutMsg.setCommand(command);
         _spoutMsg.setId(msgId);
         querySubprocess();
     }
+
     
     private void handleMetrics(ShellMsg shellMsg) {
         //get metric name
@@ -276,10 +263,12 @@ public class ShellSpout implements ISpout {
             heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
         }
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+        this.sendSyncCommand("activate", "");
     }
 
     @Override
     public void deactivate() {
+        this.sendSyncCommand("deactivate", "");
         heartBeatExecutorService.shutdownNow();
     }
 
