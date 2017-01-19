@@ -48,6 +48,11 @@ public class ConfigMethodDef {
                 if(map.containsKey("ref") && map.size() == 1){
                     newVal.add(new BeanReference((String)map.get("ref")));
                     this.hasReferences = true;
+                } else if (map.containsKey("reflist") && map.size() == 1) {
+                    newVal.add(new BeanListReference((List<String>) map.get("reflist")));
+                    this.hasReferences = true;
+                } else {
+                    newVal.add(obj);
                 }
             } else {
                 newVal.add(obj);
