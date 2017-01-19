@@ -48,7 +48,7 @@ public class MessagingTest {
                     .withDaemonConf(stormConf).build()) {
 
             TopologyBuilder builder = new TopologyBuilder();
-            builder.setSpout("1", new TestWordSpout(false), 2);
+            builder.setSpout("1", new TestWordSpout(true), 2);
             builder.setBolt("2", new TestGlobalCount(), 6).shuffleGrouping("1");
             StormTopology stormTopology = builder.createTopology();
 
