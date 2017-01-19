@@ -59,7 +59,7 @@ public class OpenTsdbBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(OpenTsdbBolt.class);
 
     private final OpenTsdbClient.Builder openTsdbClientBuilder;
-    private final List<ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers;
+    private final List<? extends ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers;
     private int batchSize;
     private int flushIntervalInSeconds;
     private boolean failTupleForFailedMetrics;
@@ -74,7 +74,7 @@ public class OpenTsdbBolt extends BaseRichBolt {
         this.tupleOpenTsdbDatapointMappers = Collections.singletonList(tupleOpenTsdbDatapointMapper);
     }
 
-    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, List<ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
+    public OpenTsdbBolt(OpenTsdbClient.Builder openTsdbClientBuilder, List<? extends ITupleOpenTsdbDatapointMapper> tupleOpenTsdbDatapointMappers) {
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleOpenTsdbDatapointMappers = tupleOpenTsdbDatapointMappers;
     }
