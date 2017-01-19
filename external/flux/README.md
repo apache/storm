@@ -400,6 +400,25 @@ components:
     constructorArgs:
       - ref: "stringScheme" # component with id "stringScheme" must be declared above.
 ```
+
+You can also reference existing components in list via specifying the id of the components with the `reflist` tag.
+The type of the reflist will be `List<Object>`, but Flux can automatically convert List to Array (also varargs), 
+so you can use reflist on argument which type is `List<Type>`, or `Type[]`, or `Type...`.
+
+Please note that all components in the list must be same type.
+
+```yaml
+components:
+  - id: "boundCQLStatementMapperBuilder"
+    className: "org.apache.storm.cassandra.query.builder.BoundCQLStatementMapperBuilder"
+    constructorArgs:
+    - "INSERT INTO sink_cassandra (eventKey, driverId, truckId, driverName) VALUES (?, ?, ?, ?)"
+    configMethods:
+    - name: "bind"
+      args:
+      - reflist: ["FieldSelector-1", "FieldSelector-2", "FieldSelector-3", "FieldSelector-4"]
+```
+
 **N.B.:** References can only be used after (below) the object they point to has been declared.
 
 ####Properties
