@@ -264,7 +264,6 @@
  * STORM-1956: Disabling Backpressure by default 
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
  * STORM-1919: Introduce FilterBolt on storm-redis
- * STORM-1742: More accurate 'complete latency'
  * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
  * STORM-1719: Introduce REST API: Topology metric stats for stream
  * STORM-1941: Nimbus discovery can fail when zookeeper reconnect happens
@@ -285,6 +284,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-1742: More accurate 'complete latency'
  * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
  * STORM-2293: hostname should only refer node's 'storm.local.hostname'
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
