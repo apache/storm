@@ -21,6 +21,7 @@ import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Table;
+import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.streams.operations.IdentityFunction;
 import org.apache.storm.streams.operations.mappers.PairValueMapper;
@@ -58,6 +59,7 @@ import java.util.stream.Collectors;
 /**
  * A builder for constructing a {@link StormTopology} via storm streams api (DSL)
  */
+@InterfaceStability.Unstable
 public class StreamBuilder {
     private static final Logger LOG = LoggerFactory.getLogger(StreamBuilder.class);
     private final DefaultDirectedGraph<Node, Edge> graph;

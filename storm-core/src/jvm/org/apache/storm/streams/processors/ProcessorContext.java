@@ -17,12 +17,15 @@
  */
 package org.apache.storm.streams.processors;
 
+import org.apache.storm.annotation.InterfaceStability;
+
 import java.io.Serializable;
 import java.util.Set;
 
 /**
  * Context information passed to the {@link Processor}.
  */
+@InterfaceStability.Unstable
 public interface ProcessorContext extends Serializable {
     /**
      * Forwards the input to all downstream processors.

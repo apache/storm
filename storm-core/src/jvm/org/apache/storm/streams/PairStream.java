@@ -18,6 +18,7 @@
 package org.apache.storm.streams;
 
 import org.apache.storm.Config;
+import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.streams.operations.BiFunction;
 import org.apache.storm.streams.operations.CombinerAggregator;
 import org.apache.storm.streams.operations.Consumer;
@@ -50,6 +51,7 @@ import java.util.Set;
  * @param <K> the key type
  * @param <V> the value type
  */
+@InterfaceStability.Unstable
 public class PairStream<K, V> extends Stream<Pair<K, V>> {
 
     PairStream(StreamBuilder topology, Node node) {

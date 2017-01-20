@@ -17,6 +17,8 @@
  */
 package org.apache.storm.streams.processors;
 
+import org.apache.storm.annotation.InterfaceStability;
+
 import java.io.Serializable;
 
 /**
@@ -24,6 +26,7 @@ import java.io.Serializable;
  *
  * @param <T> the type of the input that is processed
  */
+@InterfaceStability.Unstable
 public interface Processor<T> extends Serializable {
     /**
      * Initializes the processor. This is typically invoked from the underlying

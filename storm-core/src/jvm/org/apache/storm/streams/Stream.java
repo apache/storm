@@ -17,6 +17,7 @@
  */
 package org.apache.storm.streams;
 
+import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.streams.operations.BiFunction;
 import org.apache.storm.streams.operations.CombinerAggregator;
 import org.apache.storm.streams.operations.Consumer;
@@ -58,6 +59,7 @@ import java.util.Set;
  *
  * @param <T> the type of the value
  */
+@InterfaceStability.Unstable
 public class Stream<T> {
     private static final Logger LOG = LoggerFactory.getLogger(Stream.class);
 
