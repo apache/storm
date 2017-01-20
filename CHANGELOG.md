@@ -157,7 +157,6 @@
  * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-2268: Fix integration test for Travis CI build
  * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
- * STORM-2279: Unable to open bolt page of storm ui
  * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
  * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
  * STORM-2095: remove any remaining files when deleting blobstore directory
