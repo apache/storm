@@ -1,4 +1,5 @@
 ## 1.0.3
+ * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
  * STORM-2293: hostname should only refer node's 'storm.local.hostname'
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-1906: Window count/length of zero should be disallowed
