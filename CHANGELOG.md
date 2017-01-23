@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2305: STORM-2279 calculates task index different from grouper code
  * STORM-1292: port backtype.storm.messaging-test to java
  * STORM-2271: ClosedByInterruptException should be handled in few cases and removing a confusing debug statement
  * STORM-2272: don't leak simulated time
