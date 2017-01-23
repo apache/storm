@@ -24,14 +24,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
-import org.apache.kafka.common.errors.InterruptException;
-import org.apache.kafka.common.errors.RetriableException;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
-import org.apache.storm.kafka.spout.internal.Timer;
-import org.apache.storm.kafka.spout.internal.fetcher.KafkaRecordsFetcher;
-import org.apache.storm.kafka.spout.internal.fetcher.KafkaRecordsFetchers;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -53,11 +46,16 @@ import java.util.NavigableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
+import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
+import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+
+import org.apache.kafka.common.errors.InterruptException;
 
 public class KafkaSpout<K, V> extends BaseRichSpout {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
@@ -65,7 +63,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     // Storm
     protected SpoutOutputCollector collector;
-    private TopologyContext topologyContext;
 
     // Kafka
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
@@ -80,7 +77,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient KafkaSpoutRetryService retryService;              // Class that has the logic to handle tuple failure
     private transient Timer commitTimer;                                // timer == null for auto commit mode
     private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
-    private transient KafkaRecordsFetcher<K, V> recordsFetcher;         // Class that encapsulates the logic of managing partitions and fetching records
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
     private KafkaSpoutStreams kafkaSpoutStreams;                        // Object that wraps all the logic to declare output fields and emit tuples
@@ -106,9 +102,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         initialized = false;
+
         // Spout internals
         this.collector = collector;
-        this.topologyContext = context;
         maxRetries = kafkaSpoutConfig.getMaxTupleRetries();
         numUncommittedOffsets = 0;
 
@@ -231,11 +227,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 }
 
                 if (poll()) {
-                    try {
-                        setWaitingToEmit(pollKafkaBroker());
-                    } catch (RetriableException e) {
-                        LOG.error("Failed to poll from kafka.", e);
-                    }
+                    setWaitingToEmit(pollKafkaBroker());
                 }
 
                 if (waitingToEmit()) {
@@ -291,7 +283,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private ConsumerRecords<K, V> pollKafkaBroker() {
         doSeekRetriableTopicPartitions();
 
-        final ConsumerRecords<K, V> consumerRecords = recordsFetcher.fetchRecords(kafkaSpoutConfig.getPollTimeoutMs());
+        final ConsumerRecords<K, V> consumerRecords = kafkaConsumer.poll(kafkaSpoutConfig.getPollTimeoutMs());
         final int numPolledRecords = consumerRecords.count();
         LOG.debug("Polled [{}] records from Kafka. [{}] uncommitted offsets across all topic partitions", numPolledRecords, numUncommittedOffsets);
         return consumerRecords;
@@ -418,8 +410,19 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private void subscribeKafkaConsumer() {
         kafkaConsumer = kafkaConsumerFactory.createConsumer(kafkaSpoutConfig);
-        recordsFetcher = KafkaRecordsFetchers.create(kafkaSpoutConfig, kafkaConsumer, topologyContext,
-            new KafkaSpoutConsumerRebalanceListener());
+
+        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
+            final List<String> topics = ((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics();
+            kafkaConsumer.subscribe(topics, new KafkaSpoutConsumerRebalanceListener());
+            LOG.info("Kafka consumer subscribed topics {}", topics);
+        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
+            final Pattern pattern = ((KafkaSpoutStreamsWildcardTopics) kafkaSpoutStreams).getTopicWildcardPattern();
+            kafkaConsumer.subscribe(pattern, new KafkaSpoutConsumerRebalanceListener());
+            LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
+        }
+        // Initial poll to get the consumer registration process going.
+        // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
+        kafkaConsumer.poll(0);
     }
 
     @Override
@@ -613,6 +616,62 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     ", committedOffset=" + committedOffset +
                     ", ackedMsgs=" + ackedMsgs +
                     '}';
+        }
+    }
+
+    // =========== Timer ===========
+
+    private class Timer {
+        private final long delay;
+        private final long period;
+        private final TimeUnit timeUnit;
+        private final long periodNanos;
+        private long start;
+
+        /**
+         * Creates a class that mimics a single threaded timer that expires periodically. If a call to {@link
+         * #isExpiredResetOnTrue()} occurs later than {@code period} since the timer was initiated or reset, this method returns
+         * true. Each time the method returns true the counter is reset. The timer starts with the specified time delay.
+         *
+         * @param delay    the initial delay before the timer starts
+         * @param period   the period between calls {@link #isExpiredResetOnTrue()}
+         * @param timeUnit the time unit of delay and period
+         */
+        public Timer(long delay, long period, TimeUnit timeUnit) {
+            this.delay = delay;
+            this.period = period;
+            this.timeUnit = timeUnit;
+
+            periodNanos = timeUnit.toNanos(period);
+            start = System.nanoTime() + timeUnit.toNanos(delay);
+        }
+
+        public long period() {
+            return period;
+        }
+
+        public long delay() {
+            return delay;
+        }
+
+        public TimeUnit getTimeUnit() {
+            return timeUnit;
+        }
+
+        /**
+         * Checks if a call to this method occurs later than {@code period} since the timer was initiated or reset. If that is the
+         * case the method returns true, otherwise it returns false. Each time this method returns true, the counter is reset
+         * (re-initiated) and a new cycle will start.
+         *
+         * @return true if the time elapsed since the last call returning true is greater than {@code period}. Returns false
+         * otherwise.
+         */
+        public boolean isExpiredResetOnTrue() {
+            final boolean expired = System.nanoTime() - start > periodNanos;
+            if (expired) {
+                start = System.nanoTime();
+            }
+            return expired;
         }
     }
 }
