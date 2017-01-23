@@ -15,34 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.trident;
 
-import org.apache.calcite.DataContext;
-import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.trident.Stream;
-import org.apache.storm.trident.TridentTopology;
+package org.apache.storm.sql.planner;
 
-import java.util.Map;
+import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.rel.type.RelDataTypeSystemImpl;
 
-public abstract class AbstractTridentProcessor {
-  protected Stream outputStream;
-  protected DataContext dataContext;
-  /**
-   * @return the output stream of the SQL
-   */
-  public Stream outputStream() {
-    return outputStream;
-  }
+public class StormRelDataTypeSystem extends RelDataTypeSystemImpl {
+    public static final RelDataTypeSystem STORM_REL_DATATYPE_SYSTEM = new StormRelDataTypeSystem();
 
-  /**
-   * Construct the trident topology based on the SQL.
-   */
-  public abstract TridentTopology build();
+    @Override
+    public int getMaxNumericScale() {
+        return 38;
+    }
 
-  /**
-   * @return DataContext instance which is used with execution of query
-   */
-  public DataContext getDataContext() {
-    return dataContext;
-  }
+    @Override
+    public int getMaxNumericPrecision() {
+        return 38;
+    }
+
 }
