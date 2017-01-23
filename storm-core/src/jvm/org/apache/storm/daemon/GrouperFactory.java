@@ -156,9 +156,10 @@ public class GrouperFactory {
 
         @Override
         public List<Integer> chooseTasks(int taskId, List<Object> values) {
-            int targetTaskIndex = Math.abs(TupleUtils.listHashCode(outFields.select(groupFields, values))) % numTasks;
+            int targetTaskIndex = TupleUtils.chooseTaskIndex(outFields.select(groupFields, values), numTasks);
             return Collections.singletonList(targetTasks.get(targetTaskIndex));
         }
+
     }
 
     public static class GlobalGrouper implements CustomStreamGrouping {
