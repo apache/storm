@@ -1,4 +1,8 @@
 ## 1.1.0
+ * STORM-2303: [storm-opentsdb] Fix list invariant issue for JDK 7
+ * STORM-2236: storm kafka client should support manual partition management
+ * STORM-2295: KafkaSpoutStreamsNamedTopics should return output fields with predictable ordering
+ * STORM-2300: [Flux] support list of references
  * STORM-2297: [storm-opentsdb] Support Flux for OpenTSDBBolt
  * STORM-2294: Send activate and deactivate command to ShellSpout
  * STORM-2280: Upgrade Calcite version to 1.11.0
@@ -108,7 +112,6 @@
  * STORM-1956: Disabling Backpressure by default
  * STORM-1934: Fix race condition between sync-supervisor and sync-processes
  * STORM-1919: Introduce FilterBolt on storm-redis
- * STORM-1742: More accurate 'complete latency'
  * STORM-1945: Fix NPE bugs on topology spout lag for storm-kafka-monitor
  * STORM-1888: add description for shell command
  * STORM-1902: add a simple & flexible FileNameFormat for storm-hdfs
@@ -148,13 +151,14 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-1742: More accurate 'complete latency'
+ * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
  * STORM-2293: hostname should only refer node's 'storm.local.hostname'
  * STORM-2246: Logviewer download link has urlencoding on part of the URL
  * STORM-1906: Window count/length of zero should be disallowed
  * STORM-1841: Address a few minor issues in windowing and doc
  * STORM-2268: Fix integration test for Travis CI build
  * STORM-2283: Fix DefaultStateHandler kryo multithreading issues
- * STORM-2279: Unable to open bolt page of storm ui
  * STORM-2264: OpaqueTridentKafkaSpout failing after STORM-2216
  * STORM-2276: Remove twitter4j usages due to license issue (JSON.org is catalog X)
  * STORM-2095: remove any remaining files when deleting blobstore directory
