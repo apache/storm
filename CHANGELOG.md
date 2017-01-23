@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2303: [storm-opentsdb] Fix list invariant issue for JDK 7
  * STORM-2236: storm kafka client should support manual partition management
  * STORM-2295: KafkaSpoutStreamsNamedTopics should return output fields with predictable ordering
  * STORM-2300: [Flux] support list of references
