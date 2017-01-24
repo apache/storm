@@ -356,83 +356,91 @@ public class LocalCluster implements ILocalCluster {
         } else {
             time = null;
         }
-        this.trackId = builder.trackId;
-        if (trackId != null) {
-            ConcurrentHashMap<String, AtomicInteger> metrics = new ConcurrentHashMap<>();
-            metrics.put("spout-emitted", new AtomicInteger(0));
-            metrics.put("transferred", new AtomicInteger(0));
-            metrics.put("processed", new AtomicInteger(0));
-            this.commonInstaller = new StormCommonInstaller(new TrackedStormCommon(this.trackId));
-            LOG.warn("Adding tracked metrics for ID {}", this.trackId);
-            RegisteredGlobalState.setState(this.trackId, metrics);
-            LocalExecutor.setTrackId(this.trackId);
-        } else {
-            this.commonInstaller = null;
-        }
-        
-        this.tmpDirs = new ArrayList<>();
-        this.supervisors = new ArrayList<>();
-        TmpPath nimbusTmp = new TmpPath();
-        this.tmpDirs.add(nimbusTmp);
-        Map<String, Object> conf = ConfigUtils.readStormConfig();
-        conf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, true);
-        conf.put(Config.ZMQ_LINGER_MILLIS, 0);
-        conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
-        conf.put(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS, 50);
-        conf.put(Config.STORM_CLUSTER_MODE, "local");
-        conf.put(Config.BLOBSTORE_SUPERUSER, System.getProperty("user.name"));
-        conf.put(Config.BLOBSTORE_DIR, nimbusTmp.getPath());
-        
-        InProcessZookeeper zookeeper = null;
-        if (!builder.daemonConf.containsKey(Config.STORM_ZOOKEEPER_SERVERS)) {
-            zookeeper = new InProcessZookeeper();
-            conf.put(Config.STORM_ZOOKEEPER_PORT, zookeeper.getPort());
-            conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
-        }
-        this.zookeeper = zookeeper;
-        conf.putAll(builder.daemonConf);
-        this.daemonConf = new HashMap<>(conf);
-        
-        this.portCounter = new AtomicInteger(builder.supervisorSlotPortMin);
-        ClusterStateContext cs = new ClusterStateContext();
-        this.state = ClusterUtils.mkStateStorage(this.daemonConf, null, null, cs);
-        if (builder.clusterState == null) {
-            clusterState = ClusterUtils.mkStormClusterState(this.daemonConf, null, cs);
-        } else {
-            this.clusterState = builder.clusterState;
-        }
-        //Set it for nimbus only
-        conf.put(Config.STORM_LOCAL_DIR, nimbusTmp.getPath());
-        Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus, 
-                this.getClusterState(), null, builder.store, builder.leaderElector, builder.groupMapper);
-        if (builder.nimbusWrapper != null) {
-            nimbus = builder.nimbusWrapper.apply(nimbus);
-        }
-        this.nimbus = nimbus;
-        this.nimbus.launchServer();
-        IContext context = null;
-        if (!Utils.getBoolean(this.daemonConf.get(Config.STORM_LOCAL_MODE_ZMQ), false)) {
-            context = new Context();
-            context.prepare(this.daemonConf);
-        }
-        this.sharedContext = context;
-        this.thriftServer = builder.nimbusDaemon ? startNimbusDaemon(this.daemonConf, this.nimbus) : null;
-        
-        for (int i = 0; i < builder.supervisors; i++) {
-            addSupervisor(builder.portsPerSupervisor, null, null);
-        }
-        
-        //Wait for a leader to be elected (or topology submission can be rejected)
+        boolean success = false;
         try {
-            long timeoutAfter = System.currentTimeMillis() + 10_000;
-            while (!hasLeader()) {
-                if (timeoutAfter > System.currentTimeMillis()) {
-                    throw new IllegalStateException("Timed out waiting for nimbus to become the leader");
-                }
-                Thread.sleep(1);
+            this.trackId = builder.trackId;
+            if (trackId != null) {
+                ConcurrentHashMap<String, AtomicInteger> metrics = new ConcurrentHashMap<>();
+                metrics.put("spout-emitted", new AtomicInteger(0));
+                metrics.put("transferred", new AtomicInteger(0));
+                metrics.put("processed", new AtomicInteger(0));
+                this.commonInstaller = new StormCommonInstaller(new TrackedStormCommon(this.trackId));
+                LOG.warn("Adding tracked metrics for ID {}", this.trackId);
+                RegisteredGlobalState.setState(this.trackId, metrics);
+                LocalExecutor.setTrackId(this.trackId);
+            } else {
+                this.commonInstaller = null;
             }
-        } catch (Exception e) {
-            //Ignore any exceptions we might be doing a test for authentication 
+        
+            this.tmpDirs = new ArrayList<>();
+            this.supervisors = new ArrayList<>();
+            TmpPath nimbusTmp = new TmpPath();
+            this.tmpDirs.add(nimbusTmp);
+            Map<String, Object> conf = ConfigUtils.readStormConfig();
+            conf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, true);
+            conf.put(Config.ZMQ_LINGER_MILLIS, 0);
+            conf.put(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS, false);
+            conf.put(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS, 50);
+            conf.put(Config.STORM_CLUSTER_MODE, "local");
+            conf.put(Config.BLOBSTORE_SUPERUSER, System.getProperty("user.name"));
+            conf.put(Config.BLOBSTORE_DIR, nimbusTmp.getPath());
+        
+            InProcessZookeeper zookeeper = null;
+            if (!builder.daemonConf.containsKey(Config.STORM_ZOOKEEPER_SERVERS)) {
+                zookeeper = new InProcessZookeeper();
+                conf.put(Config.STORM_ZOOKEEPER_PORT, zookeeper.getPort());
+                conf.put(Config.STORM_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
+            }
+            this.zookeeper = zookeeper;
+            conf.putAll(builder.daemonConf);
+            this.daemonConf = new HashMap<>(conf);
+        
+            this.portCounter = new AtomicInteger(builder.supervisorSlotPortMin);
+            ClusterStateContext cs = new ClusterStateContext();
+            this.state = ClusterUtils.mkStateStorage(this.daemonConf, null, null, cs);
+            if (builder.clusterState == null) {
+                clusterState = ClusterUtils.mkStormClusterState(this.daemonConf, null, cs);
+            } else {
+                this.clusterState = builder.clusterState;
+            }
+            //Set it for nimbus only
+            conf.put(Config.STORM_LOCAL_DIR, nimbusTmp.getPath());
+            Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus, 
+                this.getClusterState(), null, builder.store, builder.leaderElector, builder.groupMapper);
+            if (builder.nimbusWrapper != null) {
+                nimbus = builder.nimbusWrapper.apply(nimbus);
+            }
+            this.nimbus = nimbus;
+            this.nimbus.launchServer();
+            IContext context = null;
+            if (!Utils.getBoolean(this.daemonConf.get(Config.STORM_LOCAL_MODE_ZMQ), false)) {
+                context = new Context();
+                context.prepare(this.daemonConf);
+            }
+            this.sharedContext = context;
+            this.thriftServer = builder.nimbusDaemon ? startNimbusDaemon(this.daemonConf, this.nimbus) : null;
+        
+            for (int i = 0; i < builder.supervisors; i++) {
+                addSupervisor(builder.portsPerSupervisor, null, null);
+            }
+        
+            //Wait for a leader to be elected (or topology submission can be rejected)
+            try {
+                long timeoutAfter = System.currentTimeMillis() + 10_000;
+                while (!hasLeader()) {
+                    if (timeoutAfter > System.currentTimeMillis()) {
+                        throw new IllegalStateException("Timed out waiting for nimbus to become the leader");
+                    }
+                    Thread.sleep(1);
+                }
+            } catch (Exception e) {
+                //Ignore any exceptions we might be doing a test for authentication 
+            }
+            success = true;
+        } finally {
+            if (!success) {
+                close();
+            }
         }
     }
     
@@ -605,7 +613,9 @@ public class LocalCluster implements ILocalCluster {
 
     @Override
     public synchronized void close() throws Exception {
-        nimbus.shutdown();
+        if (nimbus != null) {
+            nimbus.shutdown();
+        }
         if (thriftServer != null) {
             LOG.info("shutting down thrift server");
             try {

@@ -22,7 +22,6 @@ import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
-import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.junit.Assert;
 import org.junit.Test;
 

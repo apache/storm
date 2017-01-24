@@ -42,6 +42,11 @@ public class EvaluationFilter extends BaseFilter {
     private final Object[] outputValues;
 
     public EvaluationFilter(String expression, DataContext dataContext) {
+        if (!expression.contains("return ")) {
+            // we use out parameter and don't use the return value but compile fails...
+            expression = expression + "\nreturn 0;";
+        }
+
         this.expression = expression;
         this.dataContext = dataContext;
         this.outputValues = new Object[1];

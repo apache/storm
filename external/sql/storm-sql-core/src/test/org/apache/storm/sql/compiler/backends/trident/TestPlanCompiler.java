@@ -22,17 +22,13 @@ package org.apache.storm.sql.compiler.backends.trident;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
 import org.apache.calcite.DataContext;
-import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.avatica.util.DateTimeUtils;
-import org.apache.storm.sql.runtime.calcite.StormDataContext;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
-import org.apache.calcite.rel.type.RelDataTypeSystem;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.sql.TestUtils;
-import org.apache.storm.sql.compiler.TestCompilerUtils;
+import org.apache.storm.sql.planner.trident.QueryPlanner;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
 import org.apache.storm.trident.TridentTopology;
@@ -55,9 +51,6 @@ import java.util.concurrent.Callable;
 import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
 
 public class TestPlanCompiler {
-  private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
-          RelDataTypeSystem.DEFAULT);
-  private final DataContext dataContext = new StormDataContext();
   private static LocalCluster cluster;
 
   @BeforeClass
@@ -85,9 +78,9 @@ public class TestPlanCompiler {
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final TridentTopology topo = proc.build();
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
             f, new TestUtils.MockStateUpdater(), new Fields());
@@ -103,9 +96,10 @@ public class TestPlanCompiler {
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
     data.put("BAR", new TestUtils.MockSqlTridentDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final TridentTopology topo = proc.build();
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
     Assert.assertArrayEquals(new Values[] { new Values(4, "abcde", "y")}, getCollectedValues().toArray());
   }
@@ -119,9 +113,10 @@ public class TestPlanCompiler {
     TestCompilerUtils.CalciteState state = TestCompilerUtils.sqlOverDummyTable(sql);
     Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final TridentTopology topo = proc.build();
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(),
             f, new TestUtils.MockStateUpdater(), new Fields());
@@ -138,9 +133,10 @@ public class TestPlanCompiler {
 
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final TridentTopology topo = proc.build();
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
@@ -158,9 +154,10 @@ public class TestPlanCompiler {
 
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentNestedDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final TridentTopology topo = proc.build();
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);
@@ -181,9 +178,10 @@ public class TestPlanCompiler {
 
     final Map<String, ISqlTridentDataSource> data = new HashMap<>();
     data.put("FOO", new TestUtils.MockSqlTridentDataSource());
-    PlanCompiler compiler = new PlanCompiler(data, typeFactory, dataContext);
-    final AbstractTridentProcessor proc = compiler.compileForTest(state.tree());
-    final TridentTopology topo = proc.build(data);
+    QueryPlanner planner = new QueryPlanner(state.schema());
+    AbstractTridentProcessor proc = planner.compile(data, sql);
+    final DataContext dataContext = proc.getDataContext();
+    final TridentTopology topo = proc.build();
     Fields f = proc.outputStream().getOutputFields();
     proc.outputStream().partitionPersist(new TestUtils.MockStateFactory(), f, new TestUtils.MockStateUpdater(), new Fields());
     runTridentTopology(EXPECTED_VALUE_SIZE, proc, topo);

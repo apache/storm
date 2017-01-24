@@ -118,7 +118,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.assignmentId = iSupervisor.getAssignmentId();
 
         try {
-            this.hostName = Utils.hostname(conf);
+            this.hostName = Utils.hostname();
         } catch (UnknownHostException e) {
             throw Utils.wrapInRuntime(e);
         }

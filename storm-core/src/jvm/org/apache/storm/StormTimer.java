@@ -23,6 +23,7 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.PriorityBlockingQueue;
@@ -100,7 +101,8 @@ public class StormTimer implements AutoCloseable {
                         Time.sleep(1000);
                     }
                 } catch (Throwable e) {
-                    if (!(Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e))) {
+                    if (!(Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e))
+                            && !(Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, e))) {
                         this.onKill.uncaughtException(this, e);
                         this.setActive(false);
                     }

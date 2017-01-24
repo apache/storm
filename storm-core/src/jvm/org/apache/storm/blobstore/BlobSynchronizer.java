@@ -22,6 +22,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -86,8 +87,8 @@ public class BlobSynchronizer {
             if (zkClient !=null) {
                 zkClient.close();
             }
-        } catch(InterruptedException exp) {
-            LOG.error("InterruptedException {}", exp);
+        } catch(InterruptedException | ClosedByInterruptException exp) {
+            LOG.error("Interrupt Exception {}", exp);
         } catch(Exception exp) {
             throw new RuntimeException(exp);
         }

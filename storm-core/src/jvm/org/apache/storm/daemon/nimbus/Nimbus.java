@@ -1212,10 +1212,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         synchronized(submitLock) {
             IStormClusterState clusterState = stormClusterState;
             StormBase base = clusterState.stormBase(topoId, null);
-            TopologyStatus status = base.get_status();
-            if (status == null) {
+            if (base == null || base.get_status() == null) {
                 LOG.info("Cannot apply event {} to {} because topology no longer exists", event, topoId);
             } else {
+                TopologyStatus status = base.get_status();
                 TopologyStateTransition transition = TOPO_STATE_TRANSITIONS.get(status).get(event);
                 if (transition == null) {
                     String message = "No transition for event: " + event + ", status: " + status + " storm-id: " + topoId;
@@ -3600,8 +3600,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 List<Integer> tasks = compToTasks.get(StormCommon.EVENTLOGGER_COMPONENT_ID);
                 tasks.sort(null);
                 // Find the task the events from this component route to.
-                int taskIndex = TupleUtils.listHashCode(Arrays.asList(componentId)) %
-                        tasks.size();
+                int taskIndex = TupleUtils.chooseTaskIndex(Collections.singletonList(componentId), tasks.size());
                 int taskId = tasks.get(taskIndex);
                 String host = null;
                 Integer port = null;
