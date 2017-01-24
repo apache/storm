@@ -1170,6 +1170,8 @@ Example of class for scalar function is here:
 
 ```
 
+Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs are available in classpath. 
+
 ## External Data Sources
 
 ### Specifying External Data Sources
