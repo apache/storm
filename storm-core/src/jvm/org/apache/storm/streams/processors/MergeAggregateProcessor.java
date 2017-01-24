@@ -33,7 +33,7 @@ public class MergeAggregateProcessor<T, A, R> extends BaseProcessor<A> implement
             state = aggregator.init();
         }
         state = aggregator.merge(state, input);
-        mayBeForwardAggUpdate(aggregator.result(state));
+        mayBeForwardAggUpdate(() -> aggregator.result(state));
     }
 
     @Override

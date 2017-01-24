@@ -36,9 +36,9 @@ public class ReduceByKeyProcessor<K, V> extends BaseProcessor<Pair<K, V>> implem
         K key = input.getFirst();
         V val = input.getSecond();
         V agg = state.get(key);
-        agg = (agg == null) ? val : reducer.apply(agg, val);
-        state.put(key, agg);
-        mayBeForwardAggUpdate(Pair.of(key, agg));
+        final V res = (agg == null) ? val : reducer.apply(agg, val);
+        state.put(key, res);
+        mayBeForwardAggUpdate(() -> Pair.of(key, res));
     }
 
     @Override

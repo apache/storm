@@ -54,7 +54,14 @@ public class StateQueryExample {
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
         StreamState<String, Long> ss = builder.newStream(new TestWordSpout(), new ValueMapper<String>(0), 2)
+                /*
+                 * Transform the stream of words to a stream of (word, 1) pairs
+                 */
                 .mapToPair(w -> Pair.of(w, 1))
+                /*
+                 *  Update the count in the state. Here the first argument 0L is the initial value for the count and
+                 *  the second argument is a function that increments the count for each value received.
+                 */
                 .updateStateByKey(0L, (count, val) -> count + 1);
 
         /*
@@ -77,11 +84,10 @@ public class StateQueryExample {
             config.setNumWorkers(1);
             StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
         } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.build());
-            Utils.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
+                Utils.sleep(60_000);
+            }
         }
     }
 

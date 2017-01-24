@@ -30,7 +30,7 @@ public class ReduceProcessor<T> extends BaseProcessor<T> implements BatchProcess
     @Override
     public void execute(T input) {
         agg = (agg == null) ? input : reducer.apply(agg, input);
-        mayBeForwardAggUpdate(agg);
+        mayBeForwardAggUpdate(() -> agg);
     }
 
     @Override

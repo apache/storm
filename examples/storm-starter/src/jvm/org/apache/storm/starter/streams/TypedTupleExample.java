@@ -54,11 +54,10 @@ public class TypedTupleExample {
             config.setNumWorkers(1);
             StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
         } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.build());
-            Utils.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
+                Utils.sleep(60_000);
+            }
         }
     }
 }

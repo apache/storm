@@ -22,6 +22,7 @@ import org.apache.storm.streams.operations.CombinerAggregator;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Supplier;
 
 public class AggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair<K, V>> implements BatchProcessor {
     private final CombinerAggregator<V, A, R> aggregator;
@@ -47,9 +48,9 @@ public class AggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair<K, V
         }
         state.put(key, aggregator.apply(accumulator, val));
         if (emitAggregate) {
-            mayBeForwardAggUpdate(Pair.of(key, state.get(key)));
+            mayBeForwardAggUpdate(() -> Pair.of(key, state.get(key)));
         } else {
-            mayBeForwardAggUpdate(Pair.of(key, aggregator.result(state.get(key))));
+            mayBeForwardAggUpdate(() -> Pair.of(key, aggregator.result(state.get(key))));
         }
     }
 

@@ -40,7 +40,7 @@ public class MergeAggregateByKeyProcessor<K, V, A, R> extends BaseProcessor<Pair
             accumulator = aggregator.init();
         }
         state.put(key, aggregator.merge(accumulator, val));
-        mayBeForwardAggUpdate(Pair.of(key, aggregator.result(state.get(key))));
+        mayBeForwardAggUpdate(() -> Pair.of(key, aggregator.result(state.get(key))));
     }
 
     @Override

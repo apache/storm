@@ -22,7 +22,7 @@ import org.apache.storm.streams.operations.CombinerAggregator;
 /**
  * Computes the long sum of the input values
  */
-public class Sum implements CombinerAggregator<Number, Long, Long> {
+public class LongSum implements CombinerAggregator<Number, Long, Long> {
     @Override
     public Long init() {
         return 0L;

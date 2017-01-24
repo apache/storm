@@ -19,7 +19,7 @@ package org.apache.storm.streams;
 
 import com.google.common.collect.Multimap;
 import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.streams.operations.aggregators.Sum;
+import org.apache.storm.streams.operations.aggregators.LongSum;
 import org.apache.storm.streams.processors.AggregateProcessor;
 import org.apache.storm.streams.processors.FilterProcessor;
 import org.apache.storm.streams.processors.Processor;
@@ -89,7 +89,7 @@ public class ProcessorBoltTest {
 
     @Test
     public void testAggResultAndAck() throws Exception {
-        setUpProcessorBolt(new AggregateProcessor<>(new Sum()), Collections.singleton("inputstream"), true, null);
+        setUpProcessorBolt(new AggregateProcessor<>(new LongSum()), Collections.singleton("inputstream"), true, null);
         bolt.execute(mockTuple2);
         bolt.execute(mockTuple3);
         bolt.execute(punctuation);

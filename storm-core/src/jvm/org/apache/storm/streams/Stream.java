@@ -278,8 +278,9 @@ public class Stream<T> {
      * Returns an array of streams by splitting the given stream into multiple branches based on the given
      * predicates. The predicates are applied in the given order to the values of this stream and the result
      * is forwarded to the corresponding (index based) result stream based on the (index of) predicate that matches.
-     * If none of the predicates match a value, that value is dropped.
-     *
+     * <p>
+     * <b>Note:</b> If none of the predicates match a value, that value is dropped.
+     * </p>
      * @param predicates the predicates
      * @return an array of result streams (branches) corresponding to the given predicates
      */

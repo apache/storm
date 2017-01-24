@@ -19,6 +19,8 @@ package org.apache.storm.streams.processors;
 
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static org.apache.storm.streams.WindowNode.PUNCTUATION;
 
@@ -91,12 +93,12 @@ abstract class BaseProcessor<T> implements Processor<T> {
      * can use this to emit the partial results on each input
      * if they are operating in non-windowed mode.
      *
-     * @param result the result
+     * @param result the result function
      * @param <R>    the result type
      */
-    protected final <R> void mayBeForwardAggUpdate(R result) {
+    protected final <R> void mayBeForwardAggUpdate(Supplier<R> result) {
         if (!context.isWindowed()) {
-            context.forward(result);
+            context.forward(result.get());
         }
     }
 

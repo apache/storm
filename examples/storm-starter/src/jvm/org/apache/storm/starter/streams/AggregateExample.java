@@ -60,11 +60,10 @@ public class AggregateExample {
             config.setNumWorkers(1);
             StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
         } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.build());
-            Utils.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
+                Utils.sleep(60_000);
+            }
         }
     }
 
@@ -76,21 +75,21 @@ public class AggregateExample {
 
         @Override
         public Pair<Integer, Integer> apply(Pair<Integer, Integer> sumAndCount, Integer value) {
-            return Pair.of(sumAndCount.getFirst() + value, sumAndCount.getSecond() + 1);
+            return Pair.of(sumAndCount._1 + value, sumAndCount._2 + 1);
         }
 
         @Override
         public Pair<Integer, Integer> merge(Pair<Integer, Integer> sumAndCount1, Pair<Integer, Integer> sumAndCount2) {
             System.out.println("Merge " + sumAndCount1 + " and " + sumAndCount2);
             return Pair.of(
-                    sumAndCount1.getFirst() + sumAndCount2.getFirst(),
-                    sumAndCount1.getSecond() + sumAndCount2.getSecond()
+                    sumAndCount1._1 + sumAndCount2._1,
+                    sumAndCount1._2 + sumAndCount2._2
             );
         }
 
         @Override
         public Double result(Pair<Integer, Integer> sumAndCount) {
-            return (double) sumAndCount.getFirst()/sumAndCount.getSecond();
+            return (double) sumAndCount._1/sumAndCount._2;
         }
     }
 }

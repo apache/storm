@@ -37,7 +37,7 @@ public interface Processor<T> extends Serializable {
     void init(ProcessorContext context);
 
     /**
-     * Executes some operation on the input and possibly emits some result.
+     * Executes some operations on the input and possibly emits some results.
      *
      * @param input    the input to be processed
      * @param streamId the source stream id from where the input is received

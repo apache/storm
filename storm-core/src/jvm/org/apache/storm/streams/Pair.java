@@ -26,8 +26,14 @@ import java.io.Serializable;
  * @param <T2> the type of the second value
  */
 public final class Pair<T1, T2> implements Serializable {
-    private final T1 first;
-    private final T2 second;
+    /**
+     * The first value
+     */
+    public final T1 _1;
+    /**
+     * The second value
+     */
+    public final T2 _2;
 
     /**
      * Constructs a new pair of values
@@ -36,8 +42,8 @@ public final class Pair<T1, T2> implements Serializable {
      * @param second the second value
      */
     private Pair(T1 first, T2 second) {
-        this.first = first;
-        this.second = second;
+        _1 = first;
+        _2 = second;
     }
 
     /**
@@ -46,7 +52,7 @@ public final class Pair<T1, T2> implements Serializable {
      * @return the first value
      */
     public T1 getFirst() {
-        return first;
+        return _1;
     }
 
     /**
@@ -55,7 +61,7 @@ public final class Pair<T1, T2> implements Serializable {
      * @return the second value
      */
     public T2 getSecond() {
-        return second;
+        return _2;
     }
 
     /**
@@ -78,20 +84,20 @@ public final class Pair<T1, T2> implements Serializable {
 
         Pair<?, ?> pair = (Pair<?, ?>) o;
 
-        if (first != null ? !first.equals(pair.first) : pair.first != null) return false;
-        return second != null ? second.equals(pair.second) : pair.second == null;
+        if (_1 != null ? !_1.equals(pair._1) : pair._1 != null) return false;
+        return _2 != null ? _2.equals(pair._2) : pair._2 == null;
 
     }
 
     @Override
     public int hashCode() {
-        int result = first != null ? first.hashCode() : 0;
-        result = 31 * result + (second != null ? second.hashCode() : 0);
+        int result = _1 != null ? _1.hashCode() : 0;
+        result = 31 * result + (_2 != null ? _2.hashCode() : 0);
         return result;
     }
 
     @Override
     public String toString() {
-        return "(" + first + ", " + second + ')';
+        return "(" + _1 + ", " + _2 + ')';
     }
 }

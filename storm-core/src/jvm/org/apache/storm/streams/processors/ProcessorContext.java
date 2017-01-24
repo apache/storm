@@ -45,10 +45,10 @@ public interface ProcessorContext extends Serializable {
     <T> void forward(T input, String stream);
 
     /**
-     * Returns if the processing is in a windowed context and should wait for
+     * Returns true if the processing is in a windowed context and should wait for
      * punctuation before emitting results.
      *
-     * @return if this is a windowed context or not
+     * @return whether this is a windowed context or not
      */
     boolean isWindowed();
 

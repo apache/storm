@@ -376,7 +376,8 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
      * @return the {@link StreamState} which can be used to query the state
      */
     public <R> StreamState<K, R> updateStateByKey(StateUpdater<? super V, ? extends R> stateUpdater) {
-        return partitionByKey().updateStateByKeyPartition(stateUpdater);
+        // repartition so that state query fields grouping works correctly. this can be optimized further
+        return partitionBy(KEY).updateStateByKeyPartition(stateUpdater);
     }
 
     private <R> StreamState<K, R> updateStateByKeyPartition(StateUpdater<? super V, ? extends R> stateUpdater) {

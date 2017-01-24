@@ -52,6 +52,9 @@ public class GroupByKeyAndWindowExample {
                 /*
                  * The elements having the same key within the window will be grouped
                  * together and the corresponding values will be merged.
+                 *
+                 * The result is a PairStream<String, Iterable<Double>> with
+                 * 'stock symbol' as the key and 'stock prices' for that symbol within the window as the value.
                  */
                 .groupByKeyAndWindow(SlidingWindows.of(Count.of(6), Count.of(3)))
                 .print();
@@ -61,8 +64,11 @@ public class GroupByKeyAndWindowExample {
                 /*
                  * The elements having the same key within the window will be grouped
                  * together and their values will be reduced using the given reduce function.
+                 *
+                 * Here the result is a PairStream<String, Double> with
+                 * 'stock symbol' as the key and the maximum price for that symbol within the window as the value.
                  */
-                .reduceByKeyAndWindow((x, y) -> (x + y) / 2.0, SlidingWindows.of(Count.of(6), Count.of(3)))
+                .reduceByKeyAndWindow((x, y) -> x > y ? x : y, SlidingWindows.of(Count.of(6), Count.of(3)))
                 .print();
 
         Config config = new Config();
@@ -70,19 +76,18 @@ public class GroupByKeyAndWindowExample {
             config.setNumWorkers(1);
             StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
         } else {
-            LocalCluster cluster = new LocalCluster();
-            config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
-            cluster.submitTopology("test", config, builder.build());
-            Utils.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
+                Utils.sleep(60_000);
+            }
         }
     }
 
     private static class StockQuotes extends BaseRichSpout {
         private final List<List<Values>> values = Arrays.asList(
                 Arrays.asList(new Values("AAPL", 100.0), new Values("GOOG", 780.0), new Values("FB", 125.0)),
-                Arrays.asList(new Values("AAPL", 105.0), new Values("GOOG", 790.0), new Values("FB", 130.0))
+                Arrays.asList(new Values("AAPL", 105.0), new Values("GOOG", 790.0), new Values("FB", 130.0)),
+                Arrays.asList(new Values("AAPL", 102.0), new Values("GOOG", 788.0), new Values("FB", 128.0))
         );
         private SpoutOutputCollector collector;
         private int index = 0;
@@ -103,7 +108,7 @@ public class GroupByKeyAndWindowExample {
 
         @Override
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
-            declarer.declare(new Fields("key", "val"));
+            declarer.declare(new Fields("symbol", "price"));
         }
     }
 }

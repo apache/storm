@@ -40,9 +40,9 @@ public class AggregateProcessor<T, A, R> extends BaseProcessor<T> implements Bat
         }
         state = aggregator.apply(state, input);
         if (emitAggregate) {
-            mayBeForwardAggUpdate(state);
+            mayBeForwardAggUpdate(() -> state);
         } else {
-            mayBeForwardAggUpdate(aggregator.result(state));
+            mayBeForwardAggUpdate(() -> aggregator.result(state));
         }
     }
 

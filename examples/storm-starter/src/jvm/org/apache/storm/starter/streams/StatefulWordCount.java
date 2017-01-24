@@ -60,9 +60,11 @@ public class StatefulWordCount {
                  */
                 .countByKey()
                 /*
-                 * update the word counts in the state
+                 * update the word counts in the state.
+                 * Here the first argument 0L is the initial value for the state
+                 * and the second argument is a function that adds the count to the current value in the state.
                  */
-                .updateStateByKey(0L, (x, y) -> x + y)
+                .updateStateByKey(0L, (state, count) -> state + count)
                  /*
                   * convert the state back to a stream and print the results
                   */
@@ -77,11 +79,10 @@ public class StatefulWordCount {
             config.setNumWorkers(1);
             StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
         } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.build());
-            Utils.sleep(60000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
+                Utils.sleep(60_000);
+            }
         }
     }
 }
