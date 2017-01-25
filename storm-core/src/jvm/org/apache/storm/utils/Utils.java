@@ -1746,8 +1746,13 @@ public class Utils {
      * Gets the storm.local.hostname value, or tries to figure out the local hostname
      * if it is not set in the config.
      * @return a string representation of the hostname.
-    */
-    public static String hostname () throws UnknownHostException  {
+     */
+    public static String hostname() throws UnknownHostException {
+        return _instance.hostnameImpl();
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String hostnameImpl () throws UnknownHostException  {
         if (localConf == null) {
             return memoizedLocalHostname();
         }
