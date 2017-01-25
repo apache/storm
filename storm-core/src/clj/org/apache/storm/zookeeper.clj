@@ -32,7 +32,8 @@
   (:import [java.io File])
   (:import [java.util List Map])
   (:import [org.apache.storm.utils Utils ZookeeperAuthInfo]
-           (org.apache.storm.blobstore KeyFilter BlobStore))
+           (org.apache.storm.blobstore KeyFilter BlobStore)
+           (org.apache.storm.zookeeper Zookeeper))
   (:use [org.apache.storm util log config]))
 
 (def zk-keeper-states
@@ -249,28 +250,6 @@
                 (filter [this key] (get-id-from-blob-key key)))]
     (set (.filterAndListKeys blob-store to-id))))
 
-(defn leader-latch-listener-impl
-  "Leader latch listener that will be invoked when we either gain or lose leadership"
-  [conf zk blob-store leader-latch]
-  (let [hostname (.getCanonicalHostName (InetAddress/getLocalHost))
-        STORMS-ROOT (str (conf STORM-ZOOKEEPER-ROOT) "/storms")]
-    (reify LeaderLatchListener
-      (^void isLeader[this]
-        (log-message (str hostname " gained leadership, checking if it has all the topology code locally."))
-        (let [active-topology-ids (set (get-children zk STORMS-ROOT false))
-              local-topology-ids (set (code-ids blob-store))
-              diff-topology (set/difference active-topology-ids local-topology-ids)]
-          (log-message "active-topology-ids [" (clojure.string/join "," active-topology-ids)
-                       "] local-topology-ids [" (clojure.string/join "," local-topology-ids)
-                       "] diff-topology [" (clojure.string/join "," diff-topology) "]")
-          (if (empty? diff-topology)
-            (log-message "Accepting leadership, all active topology found localy.")
-            (do
-              (log-message "code for all active topologies not available locally, giving up leadership.")
-              (.close leader-latch)))))
-      (^void notLeader[this]
-        (log-message (str hostname " lost leadership."))))))
-
 (defn zk-leader-elector
   "Zookeeper Implementation of ILeaderElector."
   [conf blob-store]
@@ -279,7 +258,7 @@
         leader-lock-path (str (conf STORM-ZOOKEEPER-ROOT) "/leader-lock")
         id (.toHostPortString (NimbusInfo/fromConf conf))
         leader-latch (atom (LeaderLatch. zk leader-lock-path id))
-        leader-latch-listener (atom (leader-latch-listener-impl conf zk blob-store @leader-latch))
+        leader-latch-listener (atom (Zookeeper/leaderLatchListenerImpl conf zk blob-store @leader-latch))
         ]
     (reify ILeaderElector
       (prepare [this conf]
@@ -290,7 +269,7 @@
         (if (.equals LeaderLatch$State/CLOSED (.getState @leader-latch))
           (do
             (reset! leader-latch (LeaderLatch. zk leader-lock-path id))
-            (reset! leader-latch-listener (leader-latch-listener-impl conf zk blob-store @leader-latch))
+            (reset! leader-latch-listener (Zookeeper/leaderLatchListenerImpl conf zk blob-store @leader-latch))
             (log-message "LeaderLatch was in closed state. Resetted the leaderLatch and listeners.")
             ))
 
