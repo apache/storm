@@ -17,12 +17,13 @@
  */
 package org.apache.storm.starter;
 
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.storm.starter.spout.RandomSentenceSpout;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.topology.BasicOutputCollector;
+import org.apache.storm.topology.ConfigurableTopology;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
@@ -30,15 +31,12 @@ import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.starter.spout.RandomSentenceSpout;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
- * This topology demonstrates Storm's stream groupings and multilang capabilities.
+ * This topology demonstrates Storm's stream groupings and multilang
+ * capabilities.
  */
-public class WordCountTopology {
+public class WordCountTopology extends ConfigurableTopology {
   public static class SplitSentence extends ShellBolt implements IRichBolt {
 
     public SplitSentence() {
@@ -77,6 +75,10 @@ public class WordCountTopology {
   }
 
   public static void main(String[] args) throws Exception {
+    ConfigurableTopology.start(new WordCountTopology(), args);
+  }
+
+  protected int run(String[] args) {
 
     TopologyBuilder builder = new TopologyBuilder();
 
@@ -85,21 +87,21 @@ public class WordCountTopology {
     builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
     builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
 
-    Config conf = new Config();
     conf.setDebug(true);
 
-    if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
+    String topologyName = "word-count";
 
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-    }
-    else {
+    if (isLocal) {
       conf.setMaxTaskParallelism(3);
-
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("word-count", conf, builder.createTopology());) {
-        Thread.sleep(10000);
-      }
+      ttl = 10;
+    } else {
+      conf.setNumWorkers(3);
     }
+
+    if (args != null && args.length > 0) {
+      topologyName = args[0];
+    }
+
+    return submit(topologyName, conf, builder);
   }
 }
