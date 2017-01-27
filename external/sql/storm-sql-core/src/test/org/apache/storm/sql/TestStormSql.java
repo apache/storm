@@ -35,6 +35,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -356,6 +357,23 @@ public class TestStormSql {
     Assert.assertEquals(9, values.get(3).get(1));
     Assert.assertEquals("x", values.get(3).get(2));
     Assert.assertEquals(Arrays.asList(9), values.get(3).get(3));
+  }
+
+  @Test
+  public void testAggFnNonSqlReturnType() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY, SALARY INT, PCT DOUBLE, NAME VARCHAR) LOCATION 'mockgroup:///foo'");
+    stmt.add("CREATE FUNCTION TOPN AS 'org.apache.storm.sql.TestUtils$TopN'");
+    stmt.add("SELECT STREAM ID, SUM(SALARY), TOPN(1, SALARY) FROM FOO WHERE ID >= 0 GROUP BY (ID) HAVING MAX(SALARY) > 0");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(4, values.size());
+    Assert.assertEquals(Collections.singletonList(2), values.get(0).get(2));
+    Assert.assertEquals(Collections.singletonList(5), values.get(1).get(2));
+    Assert.assertEquals(Collections.singletonList(8), values.get(2).get(2));
+    Assert.assertEquals(Collections.singletonList(9), values.get(3).get(2));
   }
 
   @Test
