@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2330: Fix storm sql code generation for UDAF with non standard sql types
  * STORM-2298: Don't kill Nimbus when ClusterMetricsConsumer is failed to initialize
  * STORM-2301: [storm-cassandra] upgrade cassandra driver to 3.1.2
  * STORM-1446: Compile the Calcite logical plan to Storm Trident logical plan
@@ -154,6 +155,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2325: Logviewer doesn't consider 'storm.local.hostname'
  * STORM-1742: More accurate 'complete latency'
  * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
  * STORM-2293: hostname should only refer node's 'storm.local.hostname'
