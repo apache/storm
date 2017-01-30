@@ -18,21 +18,19 @@
 
 package org.apache.storm.kafka.spout.trident;
 
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.RecordTranslator;
-import org.apache.storm.kafka.spout.internal.Timer;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
 
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
@@ -43,34 +41,59 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     // Bookkeeping
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     // Declare some KafkaSpoutConfig references for convenience
-    private final Fields fields;
+    private Fields fields;
 
     public KafkaTridentSpoutManager(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
-        RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
-        Fields fields = null;
-        for (String stream: translator.streams()) {
-            if (fields == null) {
-                fields = translator.getFieldsFor(stream);
-            } else {
-                if (!fields.equals(translator.getFieldsFor(stream))) {
-                    throw new IllegalArgumentException("Trident Spouts do not support multiple output Fields");
-                }
-            }
-        }
-        this.fields = fields;
+        this.fields = getFields();
         LOG.debug("Created {}", this);
     }
 
-    void subscribeKafkaConsumer(TopologyContext context) {
+    KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
 
         kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
+        return kafkaConsumer;
+    }
 
-        // Initial poll to get the consumer registration process going.
-        // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
-        kafkaConsumer.poll(0);
+    KafkaConsumer<K, V> getKafkaConsumer() {
+        return kafkaConsumer;
+    }
+
+    Set<TopicPartition> getTopicPartitions() {
+        return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
+    }
+
+    Fields getFields() {
+        if (fields == null) {
+            RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
+            Fields fs = null;
+            for (String stream : translator.streams()) {
+                if (fs == null) {
+                    fs = translator.getFieldsFor(stream);
+                } else {
+                    if (!fs.equals(translator.getFieldsFor(stream))) {
+                        throw new IllegalArgumentException("Trident Spouts do not support multiple output Fields");
+                    }
+                }
+            }
+            fields = fs;
+        }
+        LOG.debug("OutputFields = {}", fields);
+        return fields;
+    }
+
+    KafkaSpoutConfig<K, V> getKafkaSpoutConfig() {
+        return kafkaSpoutConfig;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() +
+                "{kafkaConsumer=" + kafkaConsumer +
+                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
+                '}';
     }
 
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
@@ -87,29 +110,5 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
             LOG.info("Partitions reassignment. [consumer-group={}, consumer={}, topic-partitions={}]",
                     kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
         }
-    }
-
-    KafkaConsumer<K, V> getKafkaConsumer() {
-        return kafkaConsumer;
-    }
-
-    Set<TopicPartition> getTopicPartitions() {
-        return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
-    }
-    
-    Fields getFields() {
-        return fields;
-    }
-
-    KafkaSpoutConfig<K, V> getKafkaSpoutConfig() {
-        return kafkaSpoutConfig;
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaTridentSpoutManager{" +
-                "kafkaConsumer=" + kafkaConsumer +
-                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
-                '}';
     }
 }
