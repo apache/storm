@@ -194,6 +194,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2330: Fix storm sql code generation for UDAF with non standard sql types
  * STORM-2298: Don't kill Nimbus when ClusterMetricsConsumer is failed to initialize
  * STORM-2301: [storm-cassandra] upgrade cassandra driver to 3.1.2
  * STORM-1446: Compile the Calcite logical plan to Storm Trident logical plan
