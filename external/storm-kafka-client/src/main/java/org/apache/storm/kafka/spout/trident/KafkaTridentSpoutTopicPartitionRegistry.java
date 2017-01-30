@@ -22,7 +22,7 @@ import org.apache.kafka.common.TopicPartition;
 
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 
 public enum KafkaTridentSpoutTopicPartitionRegistry {
@@ -31,7 +31,7 @@ public enum KafkaTridentSpoutTopicPartitionRegistry {
     private Set<TopicPartition> topicPartitions;
 
     KafkaTridentSpoutTopicPartitionRegistry() {
-        this.topicPartitions = new HashSet<>();
+        this.topicPartitions = new LinkedHashSet<>();
     }
 
     public Set<TopicPartition> getTopicPartitions() {

@@ -18,16 +18,13 @@
 
 package org.apache.storm.kafka.trident;
 
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
-
-import java.util.Arrays;
-import java.util.concurrent.TimeUnit;
-
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.kafka.spout.Func;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
@@ -35,6 +32,13 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 public class TridentKafkaClientWordCountNamedTopics {
     private static final String TOPIC_1 = "test-trident";
@@ -45,11 +49,23 @@ public class TridentKafkaClientWordCountNamedTopics {
         return new KafkaTridentSpoutOpaque<>(newKafkaSpoutConfig());
     }
 
+    private static Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new JustValueFunc();
+
+    /**
+     * Needs to be serializable
+     */
+    private static class JustValueFunc implements Func<ConsumerRecord<String, String>, List<Object>>, Serializable {
+        @Override
+        public List<Object> apply(ConsumerRecord<String, String> record) {
+            return new Values(record.value());
+        }
+    }
+
     protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
         return KafkaSpoutConfig.builder(KAFKA_LOCAL_BROKER, TOPIC_1, TOPIC_2)
-                .setGroupId("kafkaSpoutTestGroup")
+                .setGroupId("kafkaSpoutTestGroup_" + System.nanoTime())
                 .setMaxPartitionFectchBytes(200)
-                .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))
+                .setRecordTranslator(JUST_VALUE_FUNC, new Fields("str"))
                 .setRetry(newRetryService())
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
@@ -77,7 +93,7 @@ public class TridentKafkaClientWordCountNamedTopics {
 
             System.out.printf("Running with broker_url: [%s], topics: [%s, %s]\n", brokerUrl, topic1, topic2);
 
-            Config tpConf = LocalSubmitter.defaultConfig();
+            Config tpConf = LocalSubmitter.defaultConfig(true);
 
             if (args.length == 4) { //Submit Remote
                 // Producers
@@ -102,11 +118,15 @@ public class TridentKafkaClientWordCountNamedTopics {
                     localSubmitter.submit(topic1Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic1));
                     localSubmitter.submit(topic2Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
                     // Consumer
-                    localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
-                            localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
+                    try {
+                        localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
+                                localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
+                        // print
+                        localSubmitter.printResults(15, 1, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                    // print
-                    new DrpcResultsPrinter(localSubmitter.getDrpc()).printResults(60, 1, TimeUnit.SECONDS);
                 } finally {
                     // kill
                     localSubmitter.kill(topic1Tp);

@@ -43,7 +43,7 @@ public class KafkaTridentSpoutTopicPartition implements ISpoutPartition, Seriali
 
     @Override
     public String getId() {
-        return topicPartition.topic() + "/" + topicPartition.partition();
+        return topicPartition.topic() + "@" + topicPartition.partition();
     }
 
     @Override
