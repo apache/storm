@@ -154,6 +154,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2325: Logviewer doesn't consider 'storm.local.hostname'
  * STORM-1742: More accurate 'complete latency'
  * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
  * STORM-2293: hostname should only refer node's 'storm.local.hostname'
