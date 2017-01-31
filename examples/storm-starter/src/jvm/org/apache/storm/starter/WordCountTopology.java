@@ -22,6 +22,7 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.ShellBolt;
+import org.apache.storm.topology.ConfigurableTopology;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -38,7 +39,7 @@ import java.util.Map;
 /**
  * This topology demonstrates Storm's stream groupings and multilang capabilities.
  */
-public class WordCountTopology {
+public class WordCountTopology extends ConfigurableTopology {
   public static class SplitSentence extends ShellBolt implements IRichBolt {
 
     public SplitSentence() {
@@ -77,6 +78,10 @@ public class WordCountTopology {
   }
 
   public static void main(String[] args) throws Exception {
+	    ConfigurableTopology.start(new WordCountTopology(), args);
+  }
+  
+  protected int run(String[] args) {
 
     TopologyBuilder builder = new TopologyBuilder();
 
@@ -85,21 +90,22 @@ public class WordCountTopology {
     builder.setBolt("split", new SplitSentence(), 8).shuffleGrouping("spout");
     builder.setBolt("count", new WordCount(), 12).fieldsGrouping("split", new Fields("word"));
 
-    Config conf = new Config();
     conf.setDebug(true);
-
-    if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
-
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
+    
+    String topologyName = "word-count";
+    
+    if (isLocal){
+    	conf.setMaxTaskParallelism(3);
+    	ttl = 10;
     }
     else {
-      conf.setMaxTaskParallelism(3);
-
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("word-count", conf, builder.createTopology());) {
-        Thread.sleep(10000);
-      }
+    	conf.setNumWorkers(3);
     }
+    
+    if (args != null && args.length > 0) {
+    	topologyName = args[0];
+    }
+    
+    return submit(topologyName, conf, builder);
   }
 }
