@@ -28,7 +28,6 @@ import org.apache.storm.task.TopologyContext;
  * The complete TopologyContext is passed in, but it is suggested that you use the index of the spout and the total
  * number of spouts to avoid missing partitions or double assigning partitions.
  */
-@FunctionalInterface
 public interface ManualPartitioner {
     /**
      * Get the partitions for this assignment
