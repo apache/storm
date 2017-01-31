@@ -17,6 +17,7 @@
  */
 package org.apache.storm.blobstore;
 
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -78,9 +79,15 @@ public class BlobSynchronizer {
             LOG.debug("Key set Blobstore-> Zookeeper-> DownloadSet {}-> {}-> {}", getBlobStoreKeySet(), getZookeeperKeySet(), keySetToDownload);
 
             for (String key : keySetToDownload) {
-                Set<NimbusInfo> nimbusInfoSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
-                if(BlobStoreUtils.downloadMissingBlob(conf, blobStore, key, nimbusInfoSet)) {
-                    BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
+                try {
+                    Set<NimbusInfo> nimbusInfoSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
+                    if (BlobStoreUtils.downloadMissingBlob(conf, blobStore, key, nimbusInfoSet)) {
+                        BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
+                    }
+                } catch (KeyNotFoundException e) {
+                    LOG.debug("Detected deletion for the key {} - deleting the blob instead", key);
+                    // race condition with a delete, delete the blob in key instead
+                    blobStore.deleteBlob(key, BlobStoreUtils.getNimbusSubject());
                 }
             }
             if (zkClient !=null) {
