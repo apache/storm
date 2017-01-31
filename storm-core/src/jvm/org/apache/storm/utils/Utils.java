@@ -197,6 +197,27 @@ public class Utils {
             throw new RuntimeException(e);
         }
     }
+    
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(String klass, Map<String, Object> conf) {
+        try {
+            return newInstance((Class<T>)Class.forName(klass), conf);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T newInstance(Class<T> klass, Map<String, Object> conf) {
+        try {
+            try {
+                return klass.getConstructor(Map.class).newInstance(conf);
+            } catch (Exception e) {
+                return klass.newInstance();
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static JarTransformer jarTransformer(String klass) {
         JarTransformer ret = null;
