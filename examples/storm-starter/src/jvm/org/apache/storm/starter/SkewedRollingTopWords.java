@@ -51,7 +51,7 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
   /**
    * Submits (runs) the topology.
    *
-   * Usage: "RollingTopWords [topology-name] [-local]"
+   * Usage: "SkewedRollingTopWords [topology-name] [-local]"
    *
    * By default, the topology is run locally under the name
    * "slidingWindowCounts".
@@ -60,25 +60,17 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
    *
    * ```
    *
-   * # Runs in local mode (LocalCluster), with topology name
-   * "slidingWindowCounts" $ storm jar storm-starter-jar-with-dependencies.jar
-   * org.apache.storm.starter.RollingTopWords -local
+   * # Runs in local mode (LocalCluster), with topology name "slidingWindowCounts"
+   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.SkewedRollingTopWords -local
    *
-   * # Runs in local mode (LocalCluster), with topology name "foobar" $ storm
-   * jar storm-starter-jar-with-dependencies.jar
-   * org.apache.storm.starter.RollingTopWords foobar -local
-   *
-   * # Runs in local mode (LocalCluster), with topology name "foobar" $ storm
-   * jar storm-starter-jar-with-dependencies.jar
-   * org.apache.storm.starter.RollingTopWords foobar -local
+   * # Runs in local mode (LocalCluster), with topology name "foobar"
+   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.SkewedRollingTopWords foobar -local
    * 
-   * # Runs in local mode (LocalCluster) for 5 seconds, with topology name "foobar" 
-   * $ storm jar storm-starter-jar-with-dependencies.jar
-   * org.apache.storm.starter.RollingTopWords foobar -local -ttl 5
+   * # Runs in local mode (LocalCluster) for 30 seconds, with topology name "foobar" 
+   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.SkewedRollingTopWords foobar -local -ttl 30
    *
-   * # Runs in remote/cluster mode, with topology name "production-topology" $
-   * storm jar storm-starter-jar-with-dependencies.jar
-   * org.apache.storm.starter.RollingTopWords production-topology ```
+   * # Runs in remote/cluster mode, with topology name "production-topology"
+   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.SkewedRollingTopWords production-topology ```
    *
    * @param args
    *          First positional argument (optional) is topology name, second
@@ -100,8 +92,7 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
     builder.setSpout(spoutId, new TestWordSpout(), 5);
     builder.setBolt(counterId, new RollingCountBolt(9, 3), 4).partialKeyGrouping(spoutId, new Fields("word"));
     builder.setBolt(aggId, new RollingCountAggBolt(), 4).fieldsGrouping(counterId, new Fields("obj"));
-    builder.setBolt(intermediateRankerId, new IntermediateRankingsBolt(TOP_N), 4).fieldsGrouping(aggId,
-        new Fields("obj"));
+    builder.setBolt(intermediateRankerId, new IntermediateRankingsBolt(TOP_N), 4).fieldsGrouping(aggId, new Fields("obj"));
     builder.setBolt(totalRankerId, new TotalRankingsBolt(TOP_N)).globalGrouping(intermediateRankerId);
     LOG.info("Topology name: " + topologyName);
 
