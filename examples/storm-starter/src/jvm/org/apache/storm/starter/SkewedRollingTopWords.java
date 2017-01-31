@@ -71,6 +71,10 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
    * # Runs in local mode (LocalCluster), with topology name "foobar" $ storm
    * jar storm-starter-jar-with-dependencies.jar
    * org.apache.storm.starter.RollingTopWords foobar -local
+   * 
+   * # Runs in local mode (LocalCluster) for 5 seconds, with topology name "foobar" 
+   * $ storm jar storm-starter-jar-with-dependencies.jar
+   * org.apache.storm.starter.RollingTopWords foobar -local -ttl 5
    *
    * # Runs in remote/cluster mode, with topology name "production-topology" $
    * storm jar storm-starter-jar-with-dependencies.jar
@@ -100,7 +104,7 @@ public class SkewedRollingTopWords extends ConfigurableTopology {
         new Fields("obj"));
     builder.setBolt(totalRankerId, new TotalRankingsBolt(TOP_N)).globalGrouping(intermediateRankerId);
     LOG.info("Topology name: " + topologyName);
-    
+
     return submit(topologyName, conf, builder);
   }
 }
