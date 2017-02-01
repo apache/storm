@@ -77,7 +77,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final StormTimer eventTimer;
     private final StormTimer blobUpdateTimer;
     private final Localizer localizer;
-    private final ILocalizer asyncLocalizer;
+    private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
     
@@ -279,6 +279,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             if (readState != null) {
                 readState.close();
             }
+            asyncLocalizer.shutdown();
+            localizer.shutdown();
             getStormClusterState().disconnect();
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);
