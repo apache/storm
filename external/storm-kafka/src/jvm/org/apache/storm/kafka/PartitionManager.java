@@ -133,7 +133,7 @@ public class PartitionManager {
     }
 
     public Map getMetricsDataMap() {
-        Map ret = new HashMap();
+        Map<String, Object> ret = new HashMap<>();
         ret.put(_partition + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
         ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
         ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());

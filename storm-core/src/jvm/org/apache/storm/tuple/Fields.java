@@ -29,6 +29,7 @@ import java.io.Serializable;
  * Collection of unique named fields using in an ITuple
  */
 public class Fields implements Iterable<String>, Serializable {
+    private static final long serialVersionUID = -3377931843059975424L;
     private List<String> _fields;
     private Map<String, Integer> _index = new HashMap<>();
     
@@ -122,5 +123,20 @@ public class Fields implements Iterable<String>, Serializable {
     @Override
     public String toString() {
         return _fields.toString();
-    }    
+    }
+
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (other instanceof Fields) {
+            Fields of = (Fields)other;
+            return _fields.equals(of._fields);
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+        return _fields.hashCode();
+    }
 }

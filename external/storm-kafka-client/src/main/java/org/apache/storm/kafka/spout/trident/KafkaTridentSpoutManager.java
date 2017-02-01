@@ -18,22 +18,21 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsWildcardTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
+import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.kafka.spout.internal.Timer;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.List;
-import java.util.Set;
-import java.util.regex.Pattern;
 
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
@@ -44,29 +43,30 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     // Bookkeeping
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     // Declare some KafkaSpoutConfig references for convenience
-    private KafkaSpoutStreams kafkaSpoutStreams;                // Object that wraps all the logic to declare output fields and emit tuples
-    private KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;        // Object that contains the logic to build tuples for each ConsumerRecord
+    private final Fields fields;
 
     public KafkaTridentSpoutManager(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
-        kafkaSpoutStreams = kafkaSpoutConfig.getKafkaSpoutStreams();
-        tuplesBuilder = kafkaSpoutConfig.getTuplesBuilder();
+        RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
+        Fields fields = null;
+        for (String stream: translator.streams()) {
+            if (fields == null) {
+                fields = translator.getFieldsFor(stream);
+            } else {
+                if (!fields.equals(translator.getFieldsFor(stream))) {
+                    throw new IllegalArgumentException("Trident Spouts do not support multiple output Fields");
+                }
+            }
+        }
+        this.fields = fields;
         LOG.debug("Created {}", this);
     }
 
-    void subscribeKafkaConsumer() {
+    void subscribeKafkaConsumer(TopologyContext context) {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
 
-        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
-            final List<String> subTopics = kafkaSpoutConfig.getSubscribedTopics();
-            kafkaConsumer.subscribe(subTopics, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics {}", subTopics);
-        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
-            final Pattern pattern = kafkaSpoutConfig.getTopicWildcardPattern();
-            kafkaConsumer.subscribe(pattern, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
-        }
+        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
 
         // Initial poll to get the consumer registration process going.
         // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
@@ -93,16 +93,12 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
         return kafkaConsumer;
     }
 
-    KafkaSpoutTuplesBuilder<K, V> getTuplesBuilder() {
-        return tuplesBuilder;
-    }
-
     Set<TopicPartition> getTopicPartitions() {
         return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
     }
-
-    KafkaSpoutStreams getKafkaSpoutStreams() {
-        return kafkaSpoutStreams;
+    
+    Fields getFields() {
+        return fields;
     }
 
     KafkaSpoutConfig<K, V> getKafkaSpoutConfig() {

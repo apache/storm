@@ -40,21 +40,19 @@ import java.util.Properties;
 
 
 /**
- * Bolt implementation that can send Tuple data to Kafka
+ * Bolt implementation that can send Tuple data to Kafka.
  * <p/>
- * It expects the producer configuration and topic in storm config under
+ * Most configuration for this bolt should be through the various 
+ * setter methods in the bolt.
+ * For backwards compatibility it supports the producer
+ * configuration and topic to be placed in the storm config under
  * <p/>
  * 'kafka.broker.properties' and 'topic'
  * <p/>
  * respectively.
- * <p/>
- * This bolt uses 0.8.2 Kafka Producer API.
- * <p/>
- * It works for sending tuples to older Kafka version (0.8.1).
- * @deprecated Please use the KafkaBolt in storm-kafka-client
  */
-@Deprecated
 public class KafkaBolt<K, V> extends BaseRichBolt {
+    private static final long serialVersionUID = -5205886631877033478L;
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaBolt.class);
 
@@ -64,14 +62,14 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
     private OutputCollector collector;
     private TupleToKafkaMapper<K,V> mapper;
     private KafkaTopicSelector topicSelector;
-    private Properties boltSpecfiedProperties = new Properties();
+    private Properties boltSpecifiedProperties = new Properties();
     /**
-     * With default setting for fireAndForget and async, the callback is called when the sending succeeds.
-     * By setting fireAndForget true, the send will not wait at all for kafka to ack.
-     * "acks" setting in 0.8.2 Producer API config doesn't matter if fireAndForget is set.
-     * By setting async false, synchronous sending is used. 
+     * {@see KafkaBolt#setFireAndForget(boolean)} for more details on this. 
      */
     private boolean fireAndForget = false;
+    /**
+     * {@see KafkaBolt#setAsync(boolean)} for more details on this. 
+     */
     private boolean async = true;
 
     public KafkaBolt() {}
@@ -81,34 +79,54 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
         return this;
     }
 
+    /**
+     * Set the messages to be published to a single topic
+     * @param topic the topic to publish to
+     * @return this
+     */
+    public KafkaBolt<K, V> withTopicSelector(String topic) {
+        return withTopicSelector(new DefaultTopicSelector(topic));
+    }
+    
     public KafkaBolt<K,V> withTopicSelector(KafkaTopicSelector selector) {
         this.topicSelector = selector;
         return this;
     }
 
     public KafkaBolt<K,V> withProducerProperties(Properties producerProperties) {
-        this.boltSpecfiedProperties = producerProperties;
+        this.boltSpecifiedProperties = producerProperties;
         return this;
     }
 
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        LOG.info("Preparing bolt with configuration {}", this);
         //for backward compatibility.
-        if(mapper == null) {
+        if (mapper == null) {
+            LOG.info("Mapper not specified. Setting default mapper to {}", FieldNameBasedTupleToKafkaMapper.class.getSimpleName());
             this.mapper = new FieldNameBasedTupleToKafkaMapper<K,V>();
         }
 
         //for backward compatibility.
-        if(topicSelector == null) {
-            if(stormConf.containsKey(TOPIC)) {
+        if (topicSelector == null) {
+            if (stormConf.containsKey(TOPIC)) {
+                LOG.info("TopicSelector not specified. Using [{}] for topic [{}] specified in bolt configuration,",
+                        DefaultTopicSelector.class.getSimpleName(), stormConf.get(TOPIC));
                 this.topicSelector = new DefaultTopicSelector((String) stormConf.get(TOPIC));
             } else {
-                throw new IllegalArgumentException("topic should be specified in bolt's configuration");
+                throw new IllegalStateException("topic should be specified in bolt's configuration");
             }
         }
 
-        producer = new KafkaProducer<>(boltSpecfiedProperties);
+        producer = mkProducer(boltSpecifiedProperties);
         this.collector = collector;
+    }
+    
+    /**
+     * Intended to be overridden for tests.  Make the producer with the given props
+     */
+    protected KafkaProducer<K, V> mkProducer(Properties props) {
+        return new KafkaProducer<>(props);
     }
 
     @Override
@@ -174,11 +192,32 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
         producer.close();
     }
 
+    /**
+     * If set to true the bolt will assume that sending a message to kafka will succeed and will ack
+     * the tuple as soon as it has handed the message off to the producer API
+     * if false (the default) the message will be acked after it was successfully sent to kafka or
+     * failed if it was not successfully sent.
+     * @param fireAndForget
+     */
     public void setFireAndForget(boolean fireAndForget) {
         this.fireAndForget = fireAndForget;
     }
 
+    /**
+     * If set to true(the default) the bolt will not wait for the message
+     * to be fully sent to Kafka before getting another tuple to send.
+     * @param async true to have multiple tuples in flight to kafka, else false.
+     */
     public void setAsync(boolean async) {
         this.async = async;
+    }
+    
+    @Override
+    public String toString() {
+        return "KafkaBolt: {mapper: " + mapper +
+                " topicSelector: " + topicSelector +
+                " fireAndForget: " + fireAndForget +
+                " async: " + async +
+                " proerties: " + boltSpecifiedProperties;
     }
 }

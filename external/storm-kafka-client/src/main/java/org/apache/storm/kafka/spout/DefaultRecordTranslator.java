@@ -15,33 +15,28 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+package org.apache.storm.kafka.spout;
 
-package org.apache.storm.kafka.spout.internal.partition;
-
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
-import org.apache.kafka.common.TopicPartition;
-
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 
-public class NamedTopicPartitionReader implements KafkaPartitionReader {
-    private final Set<String > topics;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
-    public NamedTopicPartitionReader(Set<String> topics) {
-        this.topics = topics;
+public class DefaultRecordTranslator<K, V> implements RecordTranslator<K, V> {
+    private static final long serialVersionUID = -5782462870112305750L;
+    public static final Fields FIELDS = new Fields("topic", "partition", "offset", "key", "value");
+    @Override
+    public List<Object> apply(ConsumerRecord<K, V> record) {
+        return new Values(record.topic(),
+                record.partition(),
+                record.offset(),
+                record.key(),
+                record.value());
     }
 
     @Override
-    public List<TopicPartition> readPartitions(KafkaConsumer<?, ?> consumer) {
-        List<TopicPartition> topicPartitions = new ArrayList<>();
-        for (String topic : topics) {
-            for (PartitionInfo partitionInfo: consumer.partitionsFor(topic)) {
-                topicPartitions.add(KafkaPartitionReaders.toTopicPartition(partitionInfo));
-            }
-        }
-
-        return topicPartitions;
+    public Fields getFieldsFor(String stream) {
+        return FIELDS;
     }
 }

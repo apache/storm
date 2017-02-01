@@ -18,26 +18,27 @@
 
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.kafka.spout.KafkaSpoutStream;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsWildcardTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderWildcardTopics;
-import org.apache.storm.tuple.Fields;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
 
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+
 public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClientWordCountNamedTopics {
-    private static final String TOPIC_WILDCARD_PATTERN = "test-trident(-1)?";
+    private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
-    protected KafkaSpoutTuplesBuilder<String, String> newTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilderWildcardTopics<>(new TopicsTupleBuilder<>(TOPIC_WILDCARD_PATTERN));
-    }
-
-    protected KafkaSpoutStreams newKafkaSpoutStreams() {
-        final Fields outputFields = new Fields("str");
-        final KafkaSpoutStream kafkaSpoutStream = new KafkaSpoutStream(outputFields, Pattern.compile(TOPIC_WILDCARD_PATTERN));
-        return new KafkaSpoutStreamsWildcardTopics(kafkaSpoutStream);
+    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
+        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
+                .setGroupId("kafkaSpoutTestGroup")
+                .setMaxPartitionFectchBytes(200)
+                .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))
+                .setRetry(newRetryService())
+                .setOffsetCommitPeriodMs(10_000)
+                .setFirstPollOffsetStrategy(EARLIEST)
+                .setMaxUncommittedOffsets(250)
+                .build();
     }
 
     public static void main(String[] args) throws Exception {
