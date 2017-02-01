@@ -85,6 +85,10 @@ public class TridentKafkaWordCount implements Serializable {
             // Consumer
             StormSubmitter.submitTopology(args[2] + "-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(
                     new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
+
+            // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+            Thread.sleep(2000);
+            DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
         } else { //Submit Local
             final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
             final String prodTpName = "kafkaBolt";
@@ -98,7 +102,7 @@ public class TridentKafkaWordCount implements Serializable {
                         new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
 
                 // print
-                localSubmitter.printResults(60, 1, TimeUnit.SECONDS);
+                new DrpcResultsPrinter(localSubmitter.getDrpc()).printResults(60, 1, TimeUnit.SECONDS);
             } finally {
                 // kill
                 localSubmitter.kill(prodTpName);
@@ -133,7 +137,7 @@ public class TridentKafkaWordCount implements Serializable {
         TridentKafkaConfig config = new TridentKafkaConfig(hosts, "test");
         config.scheme = new SchemeAsMultiScheme(new StringScheme());
 
-        // Consume new data from the topicÓÓ
+        // Consume new data from the topic
         config.startOffsetTime = kafka.api.OffsetRequest.LatestTime();
         return config;
     }

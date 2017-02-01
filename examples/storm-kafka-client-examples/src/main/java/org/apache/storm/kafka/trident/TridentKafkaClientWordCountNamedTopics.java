@@ -66,7 +66,7 @@ public class TridentKafkaClientWordCountNamedTopics {
         new TridentKafkaClientWordCountNamedTopics().run(args);
     }
 
-    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, InterruptedException {
         if (args.length > 0 && Arrays.stream(args).anyMatch(option -> option.equals("-h"))) {
             System.out.printf("Usage: java %s [%s] [%s] [%s] [%s]\n", getClass().getName(),
                     "broker_host:broker_port", "topic1", "topic2", "topology_name");
@@ -85,6 +85,11 @@ public class TridentKafkaClientWordCountNamedTopics {
                 StormSubmitter.submitTopology(topic2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
                 // Consumer
                 StormSubmitter.submitTopology("topics-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque()));
+
+                // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+                Thread.sleep(2000);
+                DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
+
             } else { //Submit Local
 
                 final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
@@ -101,7 +106,7 @@ public class TridentKafkaClientWordCountNamedTopics {
                             localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
 
                     // print
-                    localSubmitter.printResults(15, 1, TimeUnit.SECONDS);
+                    new DrpcResultsPrinter(localSubmitter.getDrpc()).printResults(60, 1, TimeUnit.SECONDS);
                 } finally {
                     // kill
                     localSubmitter.kill(topic1Tp);
