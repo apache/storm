@@ -309,7 +309,7 @@ function gather_stream_count(stats, stream, time) {
     var transferred = 0;
     if(stats)
         for(var i = 0; i < stats.length; i++) {
-            if(stats[i][":transferred"] != null)
+            if(stats[i][":transferred"] != null && stats[i][":transferred"][time] != undefined)
             {
                 var stream_trans = stats[i][":transferred"][time][stream];
                 if(stream_trans != null)
@@ -391,12 +391,14 @@ function show_visualization(sys) {
         getStatic("/templates/topology-page-template.html", function(template) {
             jsError(function() {
                 var topologyVisualization = $("#visualization-container");
-                topologyVisualization.append(
-                    Mustache.render($(template)
-                        .filter("#topology-visualization-container-template")
-                        .html(),
-                        response));
-                });
+                if (topologyVisualization.find("canvas").length == 0) {
+                    topologyVisualization.append(
+                        Mustache.render($(template)
+                            .filter("#topology-visualization-container-template")
+                            .html(),
+                            response));
+                }
+            });
 
             if(sys == null)
             {
