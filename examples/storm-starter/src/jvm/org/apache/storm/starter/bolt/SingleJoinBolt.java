@@ -29,6 +29,10 @@ import org.apache.storm.utils.TimeCacheMap;
 
 import java.util.*;
 
+/** Example of a simple custom bolt for joining two streams
+ *  NOTE: Prefer to use the built-in JoinBolt wherever applicable
+ */
+
 public class SingleJoinBolt extends BaseRichBolt {
   OutputCollector _collector;
   Fields _idFields;

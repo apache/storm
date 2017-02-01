@@ -27,6 +27,10 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.starter.bolt.SingleJoinBolt;
 
+/** Example of using a simple custom join bolt
+ *  NOTE: Prefer to use the built-in JoinBolt wherever applicable
+ */
+
 public class SingleJoinExample {
   public static void main(String[] args) throws Exception {
     FeederSpout genderSpout = new FeederSpout(new Fields("id", "gender"));
