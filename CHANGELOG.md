@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2225: change spout config to be simpler.
  * STORM-2323: Precondition for Leader Nimbus should check all topology blobs and also corresponding dependencies
  * STORM-2330: Fix storm sql code generation for UDAF with non standard sql types
  * STORM-2298: Don't kill Nimbus when ClusterMetricsConsumer is failed to initialize
