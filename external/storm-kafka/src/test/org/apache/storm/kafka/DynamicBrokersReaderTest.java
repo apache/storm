@@ -54,7 +54,7 @@ public class DynamicBrokersReaderTest {
     public void setUp() throws Exception {
         server = new TestingServer();
         String connectionString = server.getConnectString();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 1000);
         conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 4);
@@ -64,7 +64,7 @@ public class DynamicBrokersReaderTest {
         zookeeper = CuratorFrameworkFactory.newClient(connectionString, retryPolicy);
         dynamicBrokersReader = new DynamicBrokersReader(conf, connectionString, masterPath, topic);
 
-        Map conf2 = new HashMap();
+        Map<String, Object> conf2 = new HashMap<>();
         conf2.putAll(conf);
         conf2.put("kafka.topic.wildcard.match",true);
 
@@ -240,7 +240,7 @@ public class DynamicBrokersReaderTest {
     @Test(expected = NullPointerException.class)
     public void testErrorLogsWhenConfigIsMissing() throws Exception {
         String connectionString = server.getConnectString();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 1000);
 //        conf.put(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT, 1000);
         conf.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, 4);

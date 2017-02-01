@@ -15,18 +15,26 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
+import static org.junit.Assert.*;
 
-import java.io.Serializable;
-import java.util.List;
+import java.util.HashMap;
 
-/**
- * {@link KafkaSpoutTuplesBuilder} wraps all the logic that builds tuples from {@link ConsumerRecord}s.
- * The logic is provided by the user by implementing the appropriate number of {@link KafkaSpoutTupleBuilder} instances
- */
-public interface KafkaSpoutTuplesBuilder<K,V> extends Serializable {
-    List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord);
+import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
+import org.junit.Test;
+
+public class KafkaSpoutConfigTest {
+
+    @Test
+    public void testBasic() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic").build();
+        assertEquals(FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST, conf.getFirstPollOffsetStrategy());
+        assertNull(conf.getConsumerGroupId());
+        assertTrue(conf.getTranslator() instanceof DefaultRecordTranslator);
+        HashMap<String, Object> expected = new HashMap<>();
+        expected.put("bootstrap.servers", "localhost:1234");
+        expected.put("enable.auto.commit", "false");
+        assertEquals(expected, conf.getKafkaProps());
+    }
 }

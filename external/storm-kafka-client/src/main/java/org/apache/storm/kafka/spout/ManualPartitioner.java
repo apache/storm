@@ -17,33 +17,23 @@
  */
 package org.apache.storm.kafka.spout;
 
-import java.util.Comparator;
+import java.util.List;
 
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.task.TopologyContext;
 
 /**
- * Singleton comparator of TopicPartitions.  Topics have precedence over partitions.
- * Topics are compared through String.compare and partitions are compared
- * numerically.
- * 
- * Use INSTANCE for all sorting.
+ * A function used to assign partitions to this spout.
+ * WARNING if this is not done correctly you can really mess things up, like not reading data in some partitions.
+ * The complete TopologyContext is passed in, but it is suggested that you use the index of the spout and the total
+ * number of spouts to avoid missing partitions or double assigning partitions.
  */
-public class TopicPartitionComparator implements Comparator<TopicPartition> {
-    public static final TopicPartitionComparator INSTANCE = new TopicPartitionComparator();
-    
+public interface ManualPartitioner {
     /**
-     * Private to make it a singleton
+     * Get the partitions for this assignment
+     * @param allPartitions all of the partitions that the set of spouts want to subscribe to, in a strict ordering
+     * @param context the context of the topology
+     * @return the subset of the partitions that this spout should use.
      */
-    private TopicPartitionComparator() {
-        //Empty
-    }
-    
-    @Override
-    public int compare(TopicPartition o1, TopicPartition o2) {
-        if (!o1.topic().equals(o2.topic())) {
-            return o1.topic().compareTo(o2.topic());
-        } else {
-            return o1.partition() - o2.partition();
-        }
-    }
+    public List<TopicPartition> partition(List<TopicPartition> allPartitions, TopologyContext context);
 }

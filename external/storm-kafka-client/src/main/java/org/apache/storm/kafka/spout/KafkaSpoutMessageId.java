@@ -26,7 +26,7 @@ public class KafkaSpoutMessageId {
     private transient long offset;
     private transient int numFails = 0;
 
-    public KafkaSpoutMessageId(ConsumerRecord consumerRecord) {
+    public KafkaSpoutMessageId(ConsumerRecord<?, ?> consumerRecord) {
         this(new TopicPartition(consumerRecord.topic(), consumerRecord.partition()), consumerRecord.offset());
     }
 
