@@ -21,8 +21,7 @@ package org.apache.storm.sql.runtime.trident.functions;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;
-import org.apache.storm.trident.operation.BaseFunction;
-import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.operation.OperationAwareMapFunction;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
@@ -34,7 +33,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 
-public class EvaluationFunction extends BaseFunction {
+public class EvaluationFunction implements OperationAwareMapFunction {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFunction.class);
 
     private transient ScriptEvaluator evaluator;
@@ -44,6 +43,11 @@ public class EvaluationFunction extends BaseFunction {
     private final DataContext dataContext;
 
     public EvaluationFunction(String expression, int outputCount, DataContext dataContext) {
+        if (!expression.contains("return ")) {
+            // we use out parameter and don't use the return value but compile fails...
+            expression = expression + "\nreturn 0;";
+        }
+
         this.expression = expression;
         this.outputValues = new Object[outputCount];
         this.dataContext = dataContext;
@@ -62,13 +66,18 @@ public class EvaluationFunction extends BaseFunction {
     }
 
     @Override
-    public void execute(TridentTuple tuple, TridentCollector collector) {
+    public void cleanup() {
+
+    }
+
+    @Override
+    public Values execute(TridentTuple input) {
         try {
             Context calciteContext = new StormContext(dataContext);
-            calciteContext.values = tuple.getValues().toArray();
+            calciteContext.values = input.getValues().toArray();
             evaluator.evaluate(
                     new Object[]{calciteContext, outputValues});
-            collector.emit(new Values(outputValues));
+            return new Values(outputValues);
         } catch (InvocationTargetException e) {
             throw new RuntimeException(e);
         }

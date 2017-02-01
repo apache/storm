@@ -61,7 +61,7 @@ public class KafkaSpout extends BaseRichSpout {
     public void open(Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
         _collector = collector;
         String topologyInstanceId = context.getStormId();
-        Map stateConf = new HashMap(conf);
+        Map<String, Object> stateConf = new HashMap<>(conf);
         List<String> zkServers = _spoutConfig.zkServers;
         if (zkServers == null) {
             zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);

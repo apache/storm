@@ -59,7 +59,12 @@ public class RexNodeToBlockStatementCompiler {
     for (RexNode node : nodes) {
       programBuilder.addProject(node, null);
     }
-    final RexProgram program = programBuilder.getProgram();
+
+    return compile(programBuilder.getProgram());
+  }
+
+  public BlockStatement compile(final RexProgram program) {
+    RelDataType inputRowType = program.getInputRowType();
 
     final BlockBuilder builder = new BlockBuilder();
     final ParameterExpression context_ =
@@ -67,7 +72,7 @@ public class RexNodeToBlockStatementCompiler {
     final ParameterExpression outputValues_ =
         Expressions.parameter(Object[].class, "outputValues");
     final JavaTypeFactoryImpl javaTypeFactory =
-        new JavaTypeFactoryImpl(rexBuilder.getTypeFactory().getTypeSystem());
+        new StormSqlTypeFactoryImpl(rexBuilder.getTypeFactory().getTypeSystem());
 
     final RexToLixTranslator.InputGetter inputGetter =
             new RexToLixTranslator.InputGetterImpl(

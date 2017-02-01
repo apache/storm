@@ -17,38 +17,43 @@
  */
 package org.apache.storm.sql;
 
-import org.apache.calcite.DataContext;
-import org.apache.storm.sql.runtime.calcite.StormDataContext;
-import org.apache.calcite.jdbc.CalciteSchema;
-import org.apache.calcite.plan.RelOptUtil;
-import org.apache.calcite.prepare.CalciteCatalogReader;
-import org.apache.calcite.schema.Function;
-import org.apache.calcite.schema.impl.AggregateFunctionImpl;
-import org.apache.calcite.schema.impl.ScalarFunctionImpl;
-import org.apache.calcite.sql.SqlExplainLevel;
-import org.apache.calcite.sql.SqlOperatorTable;
-import org.apache.calcite.sql.fun.SqlStdOperatorTable;
-import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
-import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.SubmitOptions;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
+import org.apache.calcite.jdbc.CalciteSchema;
+import org.apache.calcite.prepare.CalciteCatalogReader;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
+import org.apache.calcite.schema.Function;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.schema.Table;
+import org.apache.calcite.schema.impl.AggregateFunctionImpl;
+import org.apache.calcite.schema.impl.ScalarFunctionImpl;
+import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.SqlOperatorTable;
+import org.apache.calcite.sql.fun.SqlStdOperatorTable;
+import org.apache.calcite.sql.util.ChainedSqlOperatorTable;
 import org.apache.calcite.tools.FrameworkConfig;
 import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.sql.compiler.StormSqlTypeFactoryImpl;
 import org.apache.storm.sql.compiler.backends.standalone.PlanCompiler;
 import org.apache.storm.sql.parser.ColumnConstraint;
 import org.apache.storm.sql.parser.ColumnDefinition;
 import org.apache.storm.sql.parser.SqlCreateFunction;
 import org.apache.storm.sql.parser.SqlCreateTable;
 import org.apache.storm.sql.parser.StormParser;
-import org.apache.storm.sql.runtime.*;
+import org.apache.storm.sql.planner.StormRelUtils;
+import org.apache.storm.sql.planner.trident.QueryPlanner;
+import org.apache.storm.sql.runtime.AbstractValuesProcessor;
+import org.apache.storm.sql.runtime.ChannelHandler;
+import org.apache.storm.sql.runtime.DataSource;
+import org.apache.storm.sql.runtime.DataSourcesRegistry;
+import org.apache.storm.sql.runtime.FieldInfo;
+import org.apache.storm.sql.runtime.ISqlTridentDataSource;
+import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
 import org.apache.storm.trident.TridentTopology;
 
 import java.io.BufferedOutputStream;
@@ -69,7 +74,7 @@ import java.util.jar.Manifest;
 import static org.apache.storm.sql.compiler.CompilerUtil.TableBuilderInfo;
 
 class StormSqlImpl extends StormSql {
-  private final JavaTypeFactory typeFactory = new JavaTypeFactoryImpl(
+  private final JavaTypeFactory typeFactory = new StormSqlTypeFactoryImpl(
       RelDataTypeSystem.DEFAULT);
   private final SchemaPlus schema = Frameworks.createRootSchema(true);
   private boolean hasUdf = false;
@@ -113,18 +118,13 @@ class StormSqlImpl extends StormSql {
       } else if (node instanceof SqlCreateFunction) {
         handleCreateFunction((SqlCreateFunction) node);
       }  else {
-        DataContext dataContext = new StormDataContext();
-        FrameworkConfig config = buildFrameWorkConfig();
-        Planner planner = Frameworks.getPlanner(config);
-        SqlNode parse = planner.parse(sql);
-        SqlNode validate = planner.validate(parse);
-        RelNode tree = planner.convert(validate);
-        org.apache.storm.sql.compiler.backends.trident.PlanCompiler compiler =
-                new org.apache.storm.sql.compiler.backends.trident.PlanCompiler(dataSources, typeFactory, dataContext);
-        TridentTopology topo = compiler.compile(tree);
+        QueryPlanner planner = new QueryPlanner(schema);
+        AbstractTridentProcessor processor = planner.compile(dataSources, sql);
+        TridentTopology topo = processor.build();
+
         Path jarPath = null;
         try {
-          // PlanCompiler configures the topology without any new classes, so we don't need to add anything into topology jar
+          // QueryPlanner on Trident mode configures the topology without any new classes, so we don't need to add anything into topology jar
           // packaging empty jar since topology jar is needed for topology submission
           // Topology will be serialized and sent to Nimbus, and deserialized and executed in workers.
 
@@ -166,8 +166,7 @@ class StormSqlImpl extends StormSql {
         SqlNode validate = planner.validate(parse);
         RelNode tree = planner.convert(validate);
 
-        // TODO: change to all attributes when we change to cost-based planner
-        String plan = RelOptUtil.toString(tree, SqlExplainLevel.NON_COST_ATTRIBUTES);
+        String plan = StormRelUtils.explain(tree, SqlExplainLevel.ALL_ATTRIBUTES);
         System.out.println("plan>");
         System.out.println(plan);
       }

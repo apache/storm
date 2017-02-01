@@ -17,6 +17,7 @@
  */
 package org.apache.storm.sql.runtime.trident;
 
+import org.apache.calcite.DataContext;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
@@ -25,6 +26,7 @@ import java.util.Map;
 
 public abstract class AbstractTridentProcessor {
   protected Stream outputStream;
+  protected DataContext dataContext;
   /**
    * @return the output stream of the SQL
    */
@@ -34,7 +36,13 @@ public abstract class AbstractTridentProcessor {
 
   /**
    * Construct the trident topology based on the SQL.
-   * @param sources the data sources.
    */
-  public abstract TridentTopology build(Map<String, ISqlTridentDataSource> sources);
+  public abstract TridentTopology build();
+
+  /**
+   * @return DataContext instance which is used with execution of query
+   */
+  public DataContext getDataContext() {
+    return dataContext;
+  }
 }

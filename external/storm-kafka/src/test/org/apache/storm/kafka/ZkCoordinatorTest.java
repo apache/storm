@@ -124,7 +124,7 @@ public class ZkCoordinatorTest {
     }
 
     private List<List<PartitionManager>> getPartitionManagers(List<ZkCoordinator> coordinatorList) {
-        List<List<PartitionManager>> partitions = new ArrayList();
+        List<List<PartitionManager>> partitions = new ArrayList<>();
         for (ZkCoordinator coordinator : coordinatorList) {
             partitions.add(coordinator.getMyManagedPartitions());
         }

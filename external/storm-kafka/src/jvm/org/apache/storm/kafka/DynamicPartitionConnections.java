@@ -41,7 +41,7 @@ public class DynamicPartitionConnections {
         }
     }
 
-    Map<Broker, ConnectionInfo> _connections = new HashMap();
+    Map<Broker, ConnectionInfo> _connections = new HashMap<>();
     KafkaConfig _config;
     IBrokerReader _reader;
 
