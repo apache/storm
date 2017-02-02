@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
  * STORM-2331: Emitting from JavaScript should work when not anchoring.
  * STORM-2225: change spout config to be simpler.
  * STORM-2323: Precondition for Leader Nimbus should check all topology blobs and also corresponding dependencies
