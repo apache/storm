@@ -18,35 +18,40 @@
 
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-
 import java.io.Serializable;
-import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 import java.util.regex.Pattern;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
+import org.apache.storm.tuple.Fields;
 
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
  */
 public class KafkaSpoutConfig<K, V> implements Serializable {
+    private static final long serialVersionUID = 141902646130682494L;
     public static final long DEFAULT_POLL_TIMEOUT_MS = 200;            // 200ms
     public static final long DEFAULT_OFFSET_COMMIT_PERIOD_MS = 30_000;   // 30s
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000; // 2s
-
-    // Kafka property names
-    public interface Consumer {
-        String GROUP_ID = "group.id";
-        String BOOTSTRAP_SERVERS = "bootstrap.servers";
-        String ENABLE_AUTO_COMMIT = "enable.auto.commit";
-        String AUTO_COMMIT_INTERVAL_MS = "auto.commit.interval.ms";
-        String KEY_DESERIALIZER = "key.deserializer";
-        String VALUE_DESERIALIZER = "value.deserializer";
-    }
+    public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =  
+            new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
+                    DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
+    /**
+     * Retry in a tight loop (keep unit tests fasts) do not use in production.
+     */
+    public static final KafkaSpoutRetryService UNIT_TEST_RETRY_SERVICE = 
+    new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(0),
+            DEFAULT_MAX_RETRIES, TimeInterval.milliSeconds(0));
 
     /**
      * The offset used by the Kafka spout in the first poll to Kafka broker. The choice of this parameter will
@@ -61,129 +66,254 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * If no offset has been committed, it behaves as LATEST.</li>
      * </ul>
      * */
-    public enum FirstPollOffsetStrategy {
+    public static enum FirstPollOffsetStrategy {
         EARLIEST,
         LATEST,
         UNCOMMITTED_EARLIEST,
         UNCOMMITTED_LATEST }
-
-    // Kafka consumer configuration
-    private final Map<String, Object> kafkaProps;
-    private final Deserializer<K> keyDeserializer;
-    private final Deserializer<V> valueDeserializer;
-    private final long pollTimeoutMs;
-
-    // Kafka spout configuration
-    private final long offsetCommitPeriodMs;
-    private final int maxRetries;
-    private final int maxUncommittedOffsets;
-    private final long partitionRefreshPeriodMs;
-    private final boolean manualPartitionAssignment;
-    private final FirstPollOffsetStrategy firstPollOffsetStrategy;
-    private final KafkaSpoutStreams kafkaSpoutStreams;
-    private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
-    private final KafkaSpoutRetryService retryService;
-
-    private KafkaSpoutConfig(Builder<K,V> builder) {
-        this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
-        this.keyDeserializer = builder.keyDeserializer;
-        this.valueDeserializer = builder.valueDeserializer;
-        this.pollTimeoutMs = builder.pollTimeoutMs;
-        this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-        this.maxRetries = builder.maxRetries;
-        this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
-        this.kafkaSpoutStreams = builder.kafkaSpoutStreams;
-        this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
-        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
-        this.manualPartitionAssignment = builder.manualPartitionAssignment;
-        this.tuplesBuilder = builder.tuplesBuilder;
-        this.retryService = builder.retryService;
+    
+    public static Builder<String, String> builder(String bootstrapServers, String ... topics) {
+        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
     }
-
-    private Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
+    
+    public static Builder<String, String> builder(String bootstrapServers, Collection<String> topics) {
+        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
+    }
+    
+    public static Builder<String, String> builder(String bootstrapServers, Pattern topics) {
+        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
+    }
+    
+    private static Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
         // set defaults for properties not specified
-        if (!kafkaProps.containsKey(Consumer.ENABLE_AUTO_COMMIT)) {
-            kafkaProps.put(Consumer.ENABLE_AUTO_COMMIT, "false");
+        if (!kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
+            kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         }
         return kafkaProps;
     }
-
+    
     public static class Builder<K,V> {
         private final Map<String, Object> kafkaProps;
-        private SerializableDeserializer<K> keyDeserializer;
-        private SerializableDeserializer<V> valueDeserializer;
+        private Subscription subscription;
+        private final SerializableDeserializer<K> keyDes;
+        private final Class<? extends Deserializer<K>> keyDesClazz;
+        private final SerializableDeserializer<V> valueDes;
+        private final Class<? extends Deserializer<V>> valueDesClazz;
+        private RecordTranslator<K, V> translator;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
         private int maxRetries = DEFAULT_MAX_RETRIES;
         private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
-        private final KafkaSpoutStreams kafkaSpoutStreams;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
+        private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
-        private boolean manualPartitionAssignment = false;
-        private final KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;
-        private final KafkaSpoutRetryService retryService;
-
-        /**
-         * Please refer to javadoc in {@link #Builder(Map, KafkaSpoutStreams, KafkaSpoutTuplesBuilder, KafkaSpoutRetryService)}.<p/>
-         * This constructor uses by the default the following implementation for {@link KafkaSpoutRetryService}:<p/>
-         * {@code new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
-         *           DEFAULT_MAX_RETRIES, TimeInterval.seconds(10)))}
-         */
-        public Builder(Map<String, Object> kafkaProps, KafkaSpoutStreams kafkaSpoutStreams,
-                       KafkaSpoutTuplesBuilder<K,V> tuplesBuilder) {
-            this(kafkaProps, kafkaSpoutStreams, tuplesBuilder,
-                    new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
-                            DEFAULT_MAX_RETRIES, TimeInterval.seconds(10)));
+        
+        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, String ... topics) {
+            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, Collection<String> topics) {
+            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, Pattern topics) {
+            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, Subscription subscription) {
+            this(bootstrapServers, keyDes, null, valDes, null, subscription);
+        }
+        
+        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, String ... topics) {
+            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, Collection<String> topics) {
+            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, Pattern topics) {
+            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
+        }
+        
+        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, Subscription subscription) {
+            this(bootstrapServers, null, keyDes, null, valDes, subscription);
+        }
+        
+        private Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
+                SerializableDeserializer<V> valDes, Class<? extends Deserializer<V>> valDesClazz, Subscription subscription) {
+            kafkaProps = new HashMap<>();
+            if (bootstrapServers == null || bootstrapServers.isEmpty()) {
+                throw new IllegalArgumentException("bootstrap servers cannot be null");
+            }
+            kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
+            this.keyDes = keyDes;
+            this.keyDesClazz = keyDesClazz;
+            this.valueDes = valDes;
+            this.valueDesClazz = valDesClazz;
+            this.subscription = subscription;
+            this.translator = new DefaultRecordTranslator<K,V>();
         }
 
-        /***
-         * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
-         * The optional configuration can be specified using the set methods of this builder
-         * @param kafkaProps    properties defining consumer connection to Kafka broker as specified in @see <a href="http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html">KafkaConsumer</a>
-         * @param kafkaSpoutStreams    streams to where the tuples are emitted for each tuple. Multiple topics can emit in the same stream.
-         * @param tuplesBuilder logic to build tuples from {@link ConsumerRecord}s.
-         * @param retryService  logic that manages the retrial of failed tuples
-         */
-        public Builder(Map<String, Object> kafkaProps, KafkaSpoutStreams kafkaSpoutStreams,
-                       KafkaSpoutTuplesBuilder<K,V> tuplesBuilder, KafkaSpoutRetryService retryService) {
-            if (kafkaProps == null || kafkaProps.isEmpty()) {
-                throw new IllegalArgumentException("Properties defining consumer connection to Kafka broker are required: " + kafkaProps);
-            }
-
-            if (kafkaSpoutStreams == null)  {
-                throw new IllegalArgumentException("Must specify stream associated with each topic. Multiple topics can emit to the same stream");
-            }
-
-            if (tuplesBuilder == null) {
-                throw new IllegalArgumentException("Must specify at last one tuple builder per topic declared in KafkaSpoutStreams");
-            }
-
-            if (retryService == null) {
-                throw new IllegalArgumentException("Must specify at implementation of retry service");
-            }
-
-            this.kafkaProps = kafkaProps;
-            this.kafkaSpoutStreams = kafkaSpoutStreams;
-            this.tuplesBuilder = tuplesBuilder;
-            this.retryService = retryService;
+        private Builder(Builder<?, ?> builder, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
+                SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz) {
+            this.kafkaProps = new HashMap<>(builder.kafkaProps);
+            this.subscription = builder.subscription;
+            this.pollTimeoutMs = builder.pollTimeoutMs;
+            this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
+            this.maxRetries = builder.maxRetries;
+            this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
+            this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
+            //this could result in a lot of class case exceptions at runtime,
+            // but because some translators will work no matter what the generics
+            // are I thought it best not to force someone to reset the translator
+            // when they change the key/value types.
+            this.translator = (RecordTranslator<K, V>) builder.translator;
+            this.retryService = builder.retryService;
+            this.keyDes = keyDes;
+            this.keyDesClazz = keyDesClazz;
+            this.valueDes = valueDes;
+            this.valueDesClazz = valueDesClazz;
         }
 
         /**
-         * Specifying this key deserializer overrides the property key.deserializer
+         * Specifying this key deserializer overrides the property key.deserializer. If you have
+         * set a custom RecordTranslator before calling this it may result in class cast
+         * exceptions at runtime.
          */
-        public Builder<K,V> setKeyDeserializer(SerializableDeserializer<K> keyDeserializer) {
-            this.keyDeserializer = keyDeserializer;
+        public <NK> Builder<NK,V> setKey(SerializableDeserializer<NK> keyDeserializer) {
+            return new Builder<>(this, keyDeserializer, null, valueDes, valueDesClazz);
+        }
+        
+        /**
+         * Specify a class that can be instantiated to create a key.deserializer
+         * This is the same as setting key.deserializer, but overrides it. If you have
+         * set a custom RecordTranslator before calling this it may result in class cast
+         * exceptions at runtime.
+         */
+        public <NK> Builder<NK, V> setKey(Class<? extends Deserializer<NK>> clazz) {
+            return new Builder<>(this, null, clazz, valueDes, valueDesClazz);
+        }
+
+        /**
+         * Specifying this value deserializer overrides the property value.deserializer.  If you have
+         * set a custom RecordTranslator before calling this it may result in class cast
+         * exceptions at runtime.
+         */
+        public <NV> Builder<K,NV> setValue(SerializableDeserializer<NV> valueDeserializer) {
+            return new Builder<>(this, keyDes, keyDesClazz, valueDeserializer, null);
+        }
+        
+        /**
+         * Specify a class that can be instantiated to create a value.deserializer
+         * This is the same as setting value.deserializer, but overrides it.  If you have
+         * set a custom RecordTranslator before calling this it may result in class cast
+         * exceptions at runtime.
+         */
+        public <NV> Builder<K,NV> setValue(Class<? extends Deserializer<NV>> clazz) {
+            return new Builder<>(this, keyDes, keyDesClazz, null, clazz);
+        }
+        
+        /**
+         * Set a Kafka property config
+         */
+        public Builder<K,V> setProp(String key, Object value) {
+            kafkaProps.put(key, value);
             return this;
         }
-
+        
         /**
-         * Specifying this value deserializer overrides the property value.deserializer
+         * Set multiple Kafka property configs
          */
-        public Builder<K,V> setValueDeserializer(SerializableDeserializer<V> valueDeserializer) {
-            this.valueDeserializer = valueDeserializer;
+        public Builder<K,V> setProp(Map<String, Object> props) {
+            kafkaProps.putAll(props);
             return this;
         }
+        
+        /**
+         * Set multiple Kafka property configs
+         */
+        public Builder<K,V> setProp(Properties props) {
+            for (String name: props.stringPropertyNames()) {
+                kafkaProps.put(name, props.get(name));
+            }
+            return this;
+        }
+        
+        /**
+         * Set the group.id for the consumers
+         */
+        public Builder<K,V> setGroupId(String id) {
+            return setProp("group.id", id);
+        }
+        
+        /**
+         * reset the bootstrap servers for the Consumer
+         */
+        public Builder<K,V> setBootstrapServers(String servers) {
+            return setProp(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
+        }
+        
+        /**
+         * The minimum amount of data the broker should return for a fetch request.
+         */
+        public Builder<K,V> setFetchMinBytes(int bytes) {
+            return setProp(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, bytes);
+        }
+        
+        /**
+         * The maximum amount of data per-partition the broker will return.
+         */
+        public Builder<K,V> setMaxPartitionFectchBytes(int bytes) {
+            return setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, bytes);
+        }
+        
+        /**
+         * The maximum number of records a poll will return.
+         * Will only work with Kafka 0.10.0 and above.
+         */
+        public Builder<K,V> setMaxPollRecords(int records) {
+            //to avoid issues with 0.9 versions that technically still work
+            // with this we do not use ConsumerConfig.MAX_POLL_RECORDS_CONFIG
+            return setProp("max.poll.records", records);
+        }
+        
+        //Security Related Configs
+        
+        /**
+         * Configure the SSL Keystore for mutual authentication
+         */
+        public Builder<K,V> setSSLKeystore(String location, String password) {
+            return setProp("ssl.keystore.location", location)
+                    .setProp("ssl.keystore.password", password);
+        }
+       
+        /**
+         * Configure the SSL Keystore for mutual authentication
+         */
+        public Builder<K,V> setSSLKeystore(String location, String password, String keyPassword) {
+            return setProp("ssl.key.password", keyPassword)
+                    .setSSLKeystore(location, password);
+        }
+        
+        /**
+         * Configure the SSL Truststore to authenticate with the brokers
+         */
+        public Builder<K,V> setSSLTruststore(String location, String password) {
+            return setSecurityProtocol("SSL")
+                    .setProp("ssl.truststore.location", location)
+                    .setProp("ssl.truststore.password", password);
+        }
+        
+        /**
+         * Protocol used to communicate with brokers. 
+         * Valid values are: PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL.
+         */
+        public Builder<K, V> setSecurityProtocol(String protocol) {
+            return setProp("security.protocol", protocol);
+        }
 
+        //Spout Settings
         /**
          * Specifies the time, in milliseconds, spent waiting in poll if data is not available. Default is 2s
          * @param pollTimeoutMs time in ms
@@ -235,29 +365,97 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.firstPollOffsetStrategy = firstPollOffsetStrategy;
             return this;
         }
-
+        
         /**
-         * Sets partition refresh period in milliseconds in manual partition assignment model. Default is 2s.
+         * Sets the retry service for the spout to use.
+         * @param retryService the new retry service
+         * @return the builder (this).
+         */
+        public Builder<K, V> setRetry(KafkaSpoutRetryService retryService) {
+            if (retryService == null) {
+                throw new NullPointerException("retryService cannot be null");
+            }
+            this.retryService = retryService;
+            return this;
+        }
+
+        public Builder<K, V> setRecordTranslator(RecordTranslator<K, V> translator) {
+            this.translator = translator;
+            return this;
+        }
+        
+        /**
+         * Configure a translator with tuples to be emitted on the default stream.
+         * @param func extracts and turns a Kafka ConsumerRecord into a list of objects to be emitted
+         * @param fields the names of the fields extracted
+         * @return this to be able to chain configuration
+         */
+        public Builder<K, V> setRecordTranslator(Func<ConsumerRecord<K, V>, List<Object>> func, Fields fields) {
+            return setRecordTranslator(new SimpleRecordTranslator<>(func, fields));
+        }
+        
+        /**
+         * Configure a translator with tuples to be emitted to a given stream.
+         * @param func extracts and turns a Kafka ConsumerRecord into a list of objects to be emitted
+         * @param fields the names of the fields extracted
+         * @param stream the stream to emit the tuples on
+         * @return this to be able to chain configuration
+         */
+        public Builder<K, V> setRecordTranslator(Func<ConsumerRecord<K, V>, List<Object>> func, Fields fields, String stream) {
+            return setRecordTranslator(new SimpleRecordTranslator<>(func, fields, stream));
+        }
+        
+        /**
+         * Sets partition refresh period in milliseconds. This is how often kafka will be polled
+         * to check for new topics and/or new partitions.
+         * This is mostly for Subscription implementations that manually assign partitions. NamedSubscription and
+         * PatternSubscription rely on kafka to handle this instead.
          * @param partitionRefreshPeriodMs time in milliseconds
+         * @return the builder (this)
          */
         public Builder<K, V> setPartitionRefreshPeriodMs(long partitionRefreshPeriodMs) {
             this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
             return this;
         }
-
-        /**
-         * Defines whether the consumer manages partition manually.
-         * If set to true, the consumer manage partition manually, otherwise it will rely on kafka to do partition assignment.
-         * @param manualPartitionAssignment True if using manual partition assignment.
-         */
-        public Builder<K, V> setManualPartitionAssignment(boolean manualPartitionAssignment) {
-            this.manualPartitionAssignment = manualPartitionAssignment;
-            return this;
-        }
-
+        
         public KafkaSpoutConfig<K,V> build() {
             return new KafkaSpoutConfig<>(this);
         }
+    }
+
+    // Kafka consumer configuration
+    private final Map<String, Object> kafkaProps;
+    private final Subscription subscription;
+    private final SerializableDeserializer<K> keyDes;
+    private final Class<? extends Deserializer<K>> keyDesClazz;
+    private final SerializableDeserializer<V> valueDes;
+    private final Class<? extends Deserializer<V>> valueDesClazz;
+    private final long pollTimeoutMs;
+
+    // Kafka spout configuration
+    private final RecordTranslator<K, V> translator;
+    private final long offsetCommitPeriodMs;
+    private final int maxRetries;
+    private final int maxUncommittedOffsets;
+    private final FirstPollOffsetStrategy firstPollOffsetStrategy;
+    private final KafkaSpoutRetryService retryService;
+    private final long partitionRefreshPeriodMs;
+
+    private KafkaSpoutConfig(Builder<K,V> builder) {
+        this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
+        this.subscription = builder.subscription;
+        this.translator = builder.translator;
+        this.pollTimeoutMs = builder.pollTimeoutMs;
+        this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
+        this.maxRetries = builder.maxRetries;
+        this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
+        this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
+        this.retryService = builder.retryService;
+        this.keyDes = builder.keyDes;
+        this.keyDesClazz = builder.keyDesClazz;
+        this.valueDes = builder.valueDes;
+        this.valueDesClazz = builder.valueDesClazz;
+        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
     }
 
     public Map<String, Object> getKafkaProps() {
@@ -265,11 +463,33 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     public Deserializer<K> getKeyDeserializer() {
-        return keyDeserializer;
+        if (keyDesClazz != null) {
+            try {
+                return keyDesClazz.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Could not instantiate key deserializer " + keyDesClazz);
+            }
+        }
+        return keyDes;
     }
 
     public Deserializer<V> getValueDeserializer() {
-        return valueDeserializer;
+        if (valueDesClazz != null) {
+            try {
+                return valueDesClazz.newInstance();
+            } catch (InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("Could not instantiate value deserializer " + valueDesClazz);
+            }
+        }
+        return valueDes;
+    }
+    
+    public Subscription getSubscription() {
+        return subscription;
+    }
+    
+    public RecordTranslator<K,V> getTranslator() {
+        return translator;
     }
 
     public long getPollTimeoutMs() {
@@ -281,32 +501,12 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     public boolean isConsumerAutoCommitMode() {
-        return kafkaProps.get(Consumer.ENABLE_AUTO_COMMIT) == null     // default is true
-                || Boolean.valueOf((String)kafkaProps.get(Consumer.ENABLE_AUTO_COMMIT));
+        return kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) == null     // default is true
+                || Boolean.valueOf((String)kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
     }
 
     public String getConsumerGroupId() {
-        return (String) kafkaProps.get(Consumer.GROUP_ID);
-    }
-
-    /**
-     * @return list of topics subscribed and emitting tuples to a stream as configured by {@link KafkaSpoutStream},
-     * or null if this stream is associated with a wildcard pattern topic
-     */
-    public List<String> getSubscribedTopics() {
-        return kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics ?
-            new ArrayList<>(((KafkaSpoutStreamsNamedTopics) kafkaSpoutStreams).getTopics()) :
-            null;
-    }
-
-    /**
-     * @return the wildcard pattern topic associated with this {@link KafkaSpoutStream}, or null
-     * if this stream is associated with a specific named topic
-     */
-    public Pattern getTopicWildcardPattern() {
-        return kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics ?
-                ((KafkaSpoutStreamsWildcardTopics)kafkaSpoutStreams).getTopicWildcardPattern() :
-                null;
+        return (String) kafkaProps.get(ConsumerConfig.GROUP_ID_CONFIG);
     }
 
     public int getMaxTupleRetries() {
@@ -317,46 +517,32 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return firstPollOffsetStrategy;
     }
 
-    public KafkaSpoutStreams getKafkaSpoutStreams() {
-        return kafkaSpoutStreams;
-    }
-
     public int getMaxUncommittedOffsets() {
         return maxUncommittedOffsets;
-    }
-
-    public KafkaSpoutTuplesBuilder<K, V> getTuplesBuilder() {
-        return tuplesBuilder;
     }
 
     public KafkaSpoutRetryService getRetryService() {
         return retryService;
     }
-
+    
     public long getPartitionRefreshPeriodMs() {
         return partitionRefreshPeriodMs;
-    }
-
-    public boolean isManualPartitionAssignment() {
-        return manualPartitionAssignment;
     }
 
     @Override
     public String toString() {
         return "KafkaSpoutConfig{" +
                 "kafkaProps=" + kafkaProps +
-                ", keyDeserializer=" + keyDeserializer +
-                ", valueDeserializer=" + valueDeserializer +
+                ", key=" + getKeyDeserializer() +
+                ", value=" + getValueDeserializer() +
                 ", pollTimeoutMs=" + pollTimeoutMs +
                 ", offsetCommitPeriodMs=" + offsetCommitPeriodMs +
                 ", maxRetries=" + maxRetries +
                 ", maxUncommittedOffsets=" + maxUncommittedOffsets +
                 ", firstPollOffsetStrategy=" + firstPollOffsetStrategy +
-                ", kafkaSpoutStreams=" + kafkaSpoutStreams +
-                ", tuplesBuilder=" + tuplesBuilder +
+                ", subscription=" + subscription +
+                ", translator=" + translator +
                 ", retryService=" + retryService +
-                ", topics=" + getSubscribedTopics() +
-                ", topicWildcardPattern=" + getTopicWildcardPattern() +
                 '}';
     }
 }

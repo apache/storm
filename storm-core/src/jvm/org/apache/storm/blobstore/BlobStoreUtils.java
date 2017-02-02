@@ -30,6 +30,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -237,7 +238,7 @@ public class BlobStoreUtils {
             LOG.debug("StateInfo for update {}", stateInfo);
             Set<NimbusInfo> nimbusInfoList = getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
 
-            for (NimbusInfo nimbusInfo:nimbusInfoList) {
+            for (NimbusInfo nimbusInfo : nimbusInfoList) {
                 if (nimbusInfo.getHost().equals(nimbusDetails.getHost())) {
                     isListContainsCurrentNimbusInfo = true;
                     break;
@@ -248,6 +249,9 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
+        } catch (KeeperException.NoNodeException | KeyNotFoundException e) {
+            //race condition with a delete
+            return;
         } catch (Exception exp) {
             throw new RuntimeException(exp);
         }

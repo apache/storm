@@ -18,32 +18,26 @@
 
 package org.apache.storm.kafka.trident;
 
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.kafka.spout.Func;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderNamedTopics;
-import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutManager;
 import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 public class TridentKafkaClientWordCountNamedTopics {
     private static final String TOPIC_1 = "test-trident";
@@ -51,54 +45,31 @@ public class TridentKafkaClientWordCountNamedTopics {
     private static final String KAFKA_LOCAL_BROKER = "localhost:9092";
 
     private KafkaTridentSpoutOpaque<String, String> newKafkaTridentSpoutOpaque() {
-        return new KafkaTridentSpoutOpaque<>(new KafkaTridentSpoutManager<>(
-                        newKafkaSpoutConfig(
-                        newKafkaSpoutStreams())));
+        return new KafkaTridentSpoutOpaque<>(newKafkaSpoutConfig());
     }
 
-    private KafkaSpoutConfig<String,String> newKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams) {
-        return new KafkaSpoutConfig.Builder<>(newKafkaConsumerProps(),
-                    kafkaSpoutStreams, newTuplesBuilder(), newRetryService())
+    private static Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
+        @Override
+        public List<Object> apply(ConsumerRecord<String, String> record) {
+            return new Values(record.value());
+        }
+    };
+    
+    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
+        return KafkaSpoutConfig.builder(KAFKA_LOCAL_BROKER, TOPIC_1, TOPIC_2)
+                .setGroupId("kafkaSpoutTestGroup")
+                .setMaxPartitionFectchBytes(200)
+                .setRecordTranslator(JUST_VALUE_FUNC, new Fields("str"))
+                .setRetry(newRetryService())
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
                 .setMaxUncommittedOffsets(250)
                 .build();
     }
 
-    protected Map<String,Object> newKafkaConsumerProps() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS, "127.0.0.1:9092");
-        props.put(KafkaSpoutConfig.Consumer.GROUP_ID, "kafkaSpoutTestGroup");
-        props.put(KafkaSpoutConfig.Consumer.KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(KafkaSpoutConfig.Consumer.VALUE_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("max.partition.fetch.bytes", 200);
-        return props;
-    }
-
-    protected KafkaSpoutTuplesBuilder<String, String> newTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
-                new TopicsTupleBuilder<String, String>(TOPIC_1, TOPIC_2))
-                .build();
-    }
-
     protected KafkaSpoutRetryService newRetryService() {
-        return new KafkaSpoutRetryExponentialBackoff(new KafkaSpoutRetryExponentialBackoff.TimeInterval(500L, TimeUnit.MICROSECONDS),
-                KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(2),
-                Integer.MAX_VALUE, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(10));
-    }
-
-    protected KafkaSpoutStreams newKafkaSpoutStreams() {
-        return new KafkaSpoutStreamsNamedTopics.Builder(new Fields("str"), new String[]{"test-trident","test-trident-1"}).build();
-    }
-
-    protected static class TopicsTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
-        public TopicsTupleBuilder(String... topics) {
-            super(topics);
-        }
-        @Override
-        public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-            return new Values(consumerRecord.value());
-        }
+        return new KafkaSpoutRetryExponentialBackoff(new TimeInterval(500L, TimeUnit.MICROSECONDS),
+                TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
     }
 
     public static void main(String[] args) throws Exception {

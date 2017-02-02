@@ -15,26 +15,33 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package org.apache.storm.kafka.spout.builders;
+package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
 import org.apache.storm.tuple.Values;
 
-import java.util.List;
-
-public class TopicKeyValueTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
-    /**
-     * @param topics list of topics that use this implementation to build tuples
-     */
-    public TopicKeyValueTupleBuilder(String... topics) {
-        super(topics);
+/**
+ * A list of Values in a tuple that can be routed 
+ * to a given stream. {@see org.apache.storm.kafka.spout.RecordTranslator#apply}
+ */
+public class KafkaTuple extends Values {
+    private static final long serialVersionUID = 4803794470450587992L;
+    private String stream = null;
+    
+    public KafkaTuple() {
+        super();
+    }
+    
+    public KafkaTuple(Object... vals) {
+        super(vals);
+    }
+    
+    public KafkaTuple routedTo(String stream) {
+        assert(this.stream == null);
+        this.stream = stream;
+        return this;
     }
 
-    @Override
-    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-        return new Values(consumerRecord.topic(),
-                consumerRecord.key(),
-                consumerRecord.value());
+    public String getStream() {
+        return stream;
     }
 }
