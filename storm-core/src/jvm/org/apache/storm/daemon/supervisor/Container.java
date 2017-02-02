@@ -410,12 +410,19 @@ public abstract class Container implements Killable {
                 blobFileNames.add(ret);
             }
         }
+        File targetResourcesDir = new File(stormRoot, ConfigUtils.RESOURCES_SUBDIR);
         List<String> resourceFileNames = new ArrayList<>();
-        resourceFileNames.add(ConfigUtils.RESOURCES_SUBDIR);
+        if (targetResourcesDir.exists()) {
+            resourceFileNames.add(ConfigUtils.RESOURCES_SUBDIR);
+        }
         resourceFileNames.addAll(blobFileNames);
+
         LOG.info("Creating symlinks for worker-id: {} storm-id: {} for files({}): {}", _workerId, _topologyId, resourceFileNames.size(), resourceFileNames);
-        _ops.createSymlink(new File(workerRoot, ConfigUtils.RESOURCES_SUBDIR), 
-                new File(stormRoot, ConfigUtils.RESOURCES_SUBDIR));
+        if(targetResourcesDir.exists()) {
+            _ops.createSymlink(new File(workerRoot, ConfigUtils.RESOURCES_SUBDIR),  targetResourcesDir );
+        } else {
+            LOG.info("Topology jar for worker-id: {} storm-id: {} does not contain re sources directory {}." , _workerId, _topologyId, targetResourcesDir.toString() );
+        }
         for (String fileName : blobFileNames) {
             _ops.createSymlink(new File(workerRoot, fileName),
                     new File(stormRoot, fileName));
