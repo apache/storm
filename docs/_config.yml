@@ -13,6 +13,6 @@ redcarpet:
 keep_files:   [".git", ".svn"]
 encoding:     "utf-8"
 exclude: 
-  - READEME.md
+  - README.md
 
 storm_release_only: true
