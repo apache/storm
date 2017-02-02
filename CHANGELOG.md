@@ -196,6 +196,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
  * STORM-2331: Emitting from JavaScript should work when not anchoring.
  * STORM-2320:  DRPC client printer class reusable for local and remote DRPC.
  * STORM-2225: change spout config to be simpler.
