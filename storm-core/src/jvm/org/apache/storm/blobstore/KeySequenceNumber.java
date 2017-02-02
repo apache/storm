@@ -18,10 +18,12 @@
 
 package org.apache.storm.blobstore;
 
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -130,12 +132,12 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public synchronized int getKeySequenceNumber(Map conf) {
+    public synchronized int getKeySequenceNumber(Map conf) throws KeyNotFoundException {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
         CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
         try {
             // Key has not been created yet and it is the first time it is being created
-            if(zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
+            if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
                 zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
                         .withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key);
                 zkClient.setData().forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
@@ -148,7 +150,7 @@ public class KeySequenceNumber {
             // if all go down which is unlikely. Hence there might be a need to update the blob if all go down.
             List<String> stateInfoList = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
             LOG.debug("stateInfoList-size {} stateInfoList-data {}", stateInfoList.size(), stateInfoList);
-            if(stateInfoList.isEmpty()) {
+            if (stateInfoList.isEmpty()) {
                 return getMaxSequenceNumber(zkClient);
             }
 
@@ -156,7 +158,7 @@ public class KeySequenceNumber {
             // In all other cases check for the latest update sequence of the blob on the nimbus
             // and assign the appropriate number. Check if all are have same sequence number,
             // if not assign the highest sequence number.
-            for (String stateInfo:stateInfoList) {
+            for (String stateInfo : stateInfoList) {
                 sequenceNumbers.add(Integer.parseInt(BlobStoreUtils.normalizeNimbusHostPortSequenceNumberInfo(stateInfo)
                         .getSequenceNumber()));
             }
@@ -195,15 +197,22 @@ public class KeySequenceNumber {
                     return sequenceNumbers.first() + 1;
                 }
             }
+
+            // Normal create update sync scenario returns the greatest sequence number in the set
+            return sequenceNumbers.last();
+        } catch (KeeperException.NoNodeException e) {
+            // there's a race condition with a delete: either blobstore or blobstoremaxsequence
+            // this should be thrown to the caller to indicate that the key is invalid now
+            throw new KeyNotFoundException(key);
         } catch(Exception e) {
+            // in other case, just set this to 0 to trigger re-sync later
             LOG.error("Exception {}", e);
+            return INITIAL_SEQUENCE_NUMBER - 1;
         } finally {
             if (zkClient != null) {
                 zkClient.close();
             }
         }
-        // Normal create update sync scenario returns the greatest sequence number in the set
-        return sequenceNumbers.last();
     }
 
     private boolean checkIfStateContainsCurrentNimbusHost(List<String> stateInfoList, NimbusInfo nimbusInfo) {
