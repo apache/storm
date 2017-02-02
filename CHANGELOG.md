@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber
  * STORM-2336: Close Localizer and AsyncLocalizer when supervisor is shutting down
  * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
  * STORM-2331: Emitting from JavaScript should work when not anchoring.
