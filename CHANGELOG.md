@@ -1,4 +1,5 @@
 ## 2.0.0
+ * STORM-2327: Introduce ConfigurableTopology
  * STORM-2323: Precondition for Leader Nimbus should check all topology blobs and also corresponding dependencies.
  * STORM-2305: STORM-2279 calculates task index different from grouper code
  * STORM-1292: port backtype.storm.messaging-test to java
