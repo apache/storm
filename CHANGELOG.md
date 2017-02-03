@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2324: Fix deployment failure if resources directory is missing in topology jar
  * STORM-1443: [Storm SQL] Support customizing parallelism in StormSQL
  * STORM-2148: [Storm SQL] Trident mode: back to code generate and compile Trident topology
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber
