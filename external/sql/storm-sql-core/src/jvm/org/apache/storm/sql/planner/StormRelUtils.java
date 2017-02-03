@@ -31,9 +31,15 @@ public class StormRelUtils {
     private static final Logger LOG = LoggerFactory.getLogger(StormRelUtils.class);
 
     private static final AtomicInteger sequence = new AtomicInteger(0);
+    private static final AtomicInteger classSequence = new AtomicInteger(0);
 
     public static String getStageName(TridentRel relNode) {
         return relNode.getClass().getSimpleName().toUpperCase() + "_" + relNode.getId() + "_" + sequence.getAndIncrement();
+    }
+
+    public static String getClassName(TridentRel relNode) {
+        return "Generated_" + relNode.getClass().getSimpleName().toUpperCase() + "_" + relNode.getId() + "_" +
+                classSequence.getAndIncrement();
     }
 
     public static TridentRel getStormRelInput(RelNode input) {

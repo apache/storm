@@ -21,62 +21,40 @@ package org.apache.storm.sql.runtime.trident.functions;
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
 import org.apache.calcite.interpreter.StormContext;
-import org.apache.storm.trident.operation.BaseFunction;
+import org.apache.storm.sql.runtime.calcite.DebuggableExecutableExpression;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.trident.operation.OperationAwareFlatMapFunction;
-import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
-import org.codehaus.commons.compiler.CompileException;
-import org.codehaus.janino.ScriptEvaluator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Map;
 
 public class EvaluationCalc implements OperationAwareFlatMapFunction {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationCalc.class);
 
-    private transient ScriptEvaluator evaluator;
-
-    private final String expression;
+    private final ExecutableExpression filterInstance;
+    private final ExecutableExpression projectionInstance;
     private final Object[] outputValues;
     private final DataContext dataContext;
 
-    public EvaluationCalc(String filterExpression, String projectionExpression, int outputCount, DataContext dataContext) {
-        expression = buildCompleteExpression(filterExpression, projectionExpression);
+    public EvaluationCalc(ExecutableExpression filterInstance, ExecutableExpression projectionInstance, int outputCount, DataContext dataContext) {
+        this.filterInstance = filterInstance;
+        this.projectionInstance = projectionInstance;
         this.outputValues = new Object[outputCount];
         this.dataContext = dataContext;
     }
 
-    private String buildCompleteExpression(String filterExpression, String projectionExpression) {
-        StringBuilder sb = new StringBuilder();
-
-        if (filterExpression != null && !filterExpression.isEmpty()) {
-            sb.append(filterExpression);
-            // TODO: Convert this with Linq4j?
-            sb.append("if (outputValues[0] == null || !((Boolean) outputValues[0])) { return 0; }\n\n");
-        }
-
-        if (projectionExpression != null && !projectionExpression.isEmpty()) {
-            sb.append(projectionExpression);
-        }
-        sb.append("\nreturn 1;");
-
-        return sb.toString();
-    }
-
     @Override
     public void prepare(Map conf, TridentOperationContext context) {
-        LOG.info("Expression: {}", expression);
-        try {
-            evaluator = new ScriptEvaluator(expression, int.class,
-                    new String[] {"context", "outputValues"},
-                    new Class[] { Context.class, Object[].class });
-        } catch (CompileException e) {
-            throw new RuntimeException(e);
+        if (projectionInstance != null && projectionInstance instanceof DebuggableExecutableExpression) {
+            LOG.info("Expression code for projection: \n{}", ((DebuggableExecutableExpression) projectionInstance).getDelegateCode());
+        }
+        if (filterInstance != null && filterInstance instanceof DebuggableExecutableExpression) {
+            LOG.info("Expression code for filter: \n{}", ((DebuggableExecutableExpression) filterInstance).getDelegateCode());
         }
     }
 
@@ -87,20 +65,22 @@ public class EvaluationCalc implements OperationAwareFlatMapFunction {
 
     @Override
     public Iterable<Values> execute(TridentTuple input) {
-        try {
-            Context calciteContext = new StormContext(dataContext);
-            calciteContext.values = input.getValues().toArray();
-            int keepFlag = (int) evaluator.evaluate(
-                    new Object[]{calciteContext, outputValues});
-            // script
-            if (keepFlag == 1) {
-                return Collections.singletonList(new Values(outputValues));
-            } else {
+        Context calciteContext = new StormContext(dataContext);
+        calciteContext.values = input.getValues().toArray();
+
+        if (filterInstance != null) {
+            filterInstance.execute(calciteContext, outputValues);
+            // filtered out
+            if (outputValues[0] == null || !((Boolean) outputValues[0])) {
                 return Collections.emptyList();
             }
-        } catch (InvocationTargetException e) {
-            throw new RuntimeException(e);
         }
 
+        if (projectionInstance != null) {
+            projectionInstance.execute(calciteContext, outputValues);
+            return Collections.singletonList(new Values(outputValues));
+        } else {
+            return Collections.singletonList(new Values(input.getValues()));
+        }
     }
 }

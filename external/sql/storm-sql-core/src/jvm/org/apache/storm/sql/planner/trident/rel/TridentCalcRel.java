@@ -29,9 +29,8 @@ import org.apache.calcite.rex.RexProgram;
 import org.apache.storm.sql.planner.StormRelUtils;
 import org.apache.storm.sql.planner.rel.StormCalcRelBase;
 import org.apache.storm.sql.planner.trident.TridentPlanCreator;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationCalc;
-import org.apache.storm.sql.runtime.trident.functions.EvaluationFilter;
-import org.apache.storm.sql.runtime.trident.functions.ForwardFunction;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.tuple.Fields;
 
@@ -54,41 +53,43 @@ public class TridentCalcRel extends StormCalcRelBase implements TridentRel {
         RelNode input = getInput();
         StormRelUtils.getStormRelInput(input).tridentPlan(planCreator);
         Stream inputStream = planCreator.pop().toStream();
-        Fields inputFields = inputStream.getOutputFields();
 
         String stageName = StormRelUtils.getStageName(this);
+
         RelDataType inputRowType = getInput(0).getRowType();
 
         List<String> outputFieldNames = getRowType().getFieldNames();
         int outputCount = outputFieldNames.size();
 
         // filter
+        ExecutableExpression filterInstance = null;
         RexLocalRef condition = program.getCondition();
-        String conditionExpr = null;
         if (condition != null) {
             RexNode conditionNode = program.expandLocalRef(condition);
-            conditionExpr = planCreator.createExpression(Lists.newArrayList(conditionNode), inputRowType);
+            filterInstance = planCreator.createScalarInstance(Lists.newArrayList(conditionNode), inputRowType,
+                    StormRelUtils.getClassName(this));
         }
 
         // projection
+        ExecutableExpression projectionInstance = null;
         List<RexLocalRef> projectList = program.getProjectList();
-        String projectionExpr = null;
         if (projectList != null && !projectList.isEmpty()) {
             List<RexNode> expandedNodes = new ArrayList<>();
             for (RexLocalRef project : projectList) {
                 expandedNodes.add(program.expandLocalRef(project));
             }
 
-            projectionExpr = planCreator.createExpression(expandedNodes, inputRowType);
+            projectionInstance = planCreator.createScalarInstance(expandedNodes, inputRowType,
+                    StormRelUtils.getClassName(this));
         }
 
-        if (projectionExpr == null && conditionExpr == null) {
+        if (projectionInstance == null && filterInstance == null) {
             // it shouldn't be happen
             throw new IllegalStateException("Either projection or condition, or both should be provided.");
         }
 
         final Stream finalStream = inputStream
-                .flatMap(new EvaluationCalc(conditionExpr, projectionExpr, outputCount, planCreator.getDataContext()), new Fields(outputFieldNames))
+                .flatMap(new EvaluationCalc(filterInstance, projectionInstance, outputCount, planCreator.getDataContext()), new Fields(outputFieldNames))
                 .name(stageName);
 
         planCreator.addStream(finalStream);
