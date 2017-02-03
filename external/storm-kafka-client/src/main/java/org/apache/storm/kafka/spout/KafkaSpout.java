@@ -242,14 +242,15 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private boolean poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
-        final boolean poll = !waitingToEmit() && numUncommittedOffsets < maxUncommittedOffsets;
+        final boolean poll = !waitingToEmit() 
+        		&& ( numUncommittedOffsets < maxUncommittedOffsets || consumerAutoCommitMode);
 
         if (!poll) {
             if (waitingToEmit()) {
                 LOG.debug("Not polling. Tuples waiting to be emitted. [{}] uncommitted offsets across all topic partitions", numUncommittedOffsets);
             }
 
-            if (numUncommittedOffsets >= maxUncommittedOffsets) {
+            if (numUncommittedOffsets >= maxUncommittedOffsets && !consumerAutoCommitMode) {
                 LOG.debug("Not polling. [{}] uncommitted offsets across all topic partitions has reached the threshold of [{}]", numUncommittedOffsets, maxUncommittedOffsets);
             }
         }
@@ -319,8 +320,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 } else {
                     collector.emit(tuple, msgId);
                 }
-                emitted.add(msgId);
-                numUncommittedOffsets++;
+                if(!consumerAutoCommitMode){//only need to track in none-AutoCommitMode
+                    emitted.add(msgId);
+                    numUncommittedOffsets++;
+                }
                 if (isScheduled) { // Was scheduled for retry, now being re-emitted. Remove from schedule.
                     retryService.remove(msgId);
                 }
