@@ -124,18 +124,26 @@ public class ZkCoordinatorTest {
         when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
         List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
         assertEquals(partitionManagersBeforeRefresh.size(), partitionManagersAfterRefresh.size());
-        Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
+
+        HashMap<Integer, PartitionManager> managersAfterRefresh = new HashMap<Integer, PartitionManager>();
+        for (List<PartitionManager> partitionManagersAfter : partitionManagersAfterRefresh) {
+            for (PartitionManager manager : partitionManagersAfter) {
+                assertFalse("Multiple PartitionManagers for same partition", managersAfterRefresh.containsKey(manager.getPartition().partition));
+                managersAfterRefresh.put(manager.getPartition().partition, manager);
+            }
+        }
+
         for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
-            List<PartitionManager> partitionManagersAfter = iterator.next();
-            for (PartitionManager before : partitionManagersBefore)
-                for (PartitionManager after: partitionManagersAfter)
-                    if (before.getPartition().partition == after.getPartition().partition)
-                        assertStateIsTheSame(before, after);
+            for (PartitionManager manager : partitionManagersBefore) {
+                assertStateIsTheSame(manager, managersAfterRefresh.get(manager.getPartition().partition));
+            }
         }
     }
 
     private void assertStateIsTheSame(PartitionManager managerBefore, PartitionManager managerAfter) {
         // check if state was actually moved from old PartitionManager
+        assertNotNull(managerBefore);
+        assertNotNull(managerAfter);
         assertNotSame(managerBefore, managerAfter);
         assertSame(managerBefore._waitingToEmit, managerAfter._waitingToEmit);
     }
