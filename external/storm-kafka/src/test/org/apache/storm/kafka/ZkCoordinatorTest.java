@@ -105,7 +105,7 @@ public class ZkCoordinatorTest {
         waitForRefresh();
         when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
         List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
-        assertEquals(partitionManagersAfterRefresh.size(), partitionManagersAfterRefresh.size());
+        assertEquals(partitionManagersBeforeRefresh.size(), partitionManagersAfterRefresh.size());
         Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
         for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
             List<PartitionManager> partitionManagersAfter = iterator.next();
@@ -123,7 +123,7 @@ public class ZkCoordinatorTest {
         waitForRefresh();
         when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
         List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
-        assertEquals(partitionManagersAfterRefresh.size(), partitionManagersAfterRefresh.size());
+        assertEquals(partitionManagersBeforeRefresh.size(), partitionManagersAfterRefresh.size());
         Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
         for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
             List<PartitionManager> partitionManagersAfter = iterator.next();
