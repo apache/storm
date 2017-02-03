@@ -28,8 +28,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.*;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.*;
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyInt;
 import static org.mockito.Mockito.when;
@@ -106,12 +105,49 @@ public class ZkCoordinatorTest {
         waitForRefresh();
         when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
         List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
-        assertEquals(partitionManagersAfterRefresh.size(), partitionManagersAfterRefresh.size());
+        assertEquals(partitionManagersBeforeRefresh.size(), partitionManagersAfterRefresh.size());
         Iterator<List<PartitionManager>> iterator = partitionManagersAfterRefresh.iterator();
         for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
             List<PartitionManager> partitionManagersAfter = iterator.next();
             assertPartitionsAreDifferent(partitionManagersBefore, partitionManagersAfter, partitionsPerTask);
         }
+    }
+
+    @Test
+    public void testPartitionManagerRecreate() throws Exception {
+        final int totalTasks = 2;
+        int partitionsPerTask = 2;
+        List<ZkCoordinator> coordinatorList = buildCoordinators(totalTasks / partitionsPerTask);
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9092)));
+        List<List<PartitionManager>> partitionManagersBeforeRefresh = getPartitionManagers(coordinatorList);
+        waitForRefresh();
+        when(reader.getBrokerInfo()).thenReturn(TestUtils.buildPartitionInfoList(TestUtils.buildPartitionInfo(totalTasks, 9093)));
+        List<List<PartitionManager>> partitionManagersAfterRefresh = getPartitionManagers(coordinatorList);
+        assertEquals(partitionManagersBeforeRefresh.size(), partitionManagersAfterRefresh.size());
+
+        HashMap<Integer, PartitionManager> managersAfterRefresh = new HashMap<Integer, PartitionManager>();
+        for (List<PartitionManager> partitionManagersAfter : partitionManagersAfterRefresh) {
+            for (PartitionManager manager : partitionManagersAfter) {
+                assertFalse("Multiple PartitionManagers for same partition", managersAfterRefresh.containsKey(manager.getPartition().partition));
+                managersAfterRefresh.put(manager.getPartition().partition, manager);
+            }
+        }
+
+        for (List<PartitionManager> partitionManagersBefore : partitionManagersBeforeRefresh) {
+            for (PartitionManager manager : partitionManagersBefore) {
+                assertStateIsTheSame(manager, managersAfterRefresh.get(manager.getPartition().partition));
+            }
+        }
+    }
+
+    private void assertStateIsTheSame(PartitionManager managerBefore, PartitionManager managerAfter) {
+        // check if state was actually moved from old PartitionManager
+        assertNotNull(managerBefore);
+        assertNotNull(managerAfter);
+        assertNotSame(managerBefore, managerAfter);
+        assertSame(managerBefore._waitingToEmit, managerAfter._waitingToEmit);
+        assertSame(managerBefore._emittedToOffset, managerAfter._emittedToOffset);
+        assertSame(managerBefore._committedTo, managerAfter._committedTo);
     }
 
     private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter, int partitionsPerTask) {
