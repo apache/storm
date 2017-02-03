@@ -30,8 +30,11 @@ import org.apache.storm.trident.fluent.IAggregatableStream;
 import java.util.Map;
 
 public class TridentStreamScanRel extends StormStreamScanRelBase implements TridentRel {
-    public TridentStreamScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table) {
+    private final int parallelismHint;
+
+    public TridentStreamScanRel(RelOptCluster cluster, RelTraitSet traitSet, RelOptTable table, int parallelismHint) {
         super(cluster, traitSet, table);
+        this.parallelismHint = parallelismHint;
     }
 
     @Override
@@ -45,7 +48,8 @@ public class TridentStreamScanRel extends StormStreamScanRelBase implements Trid
         }
 
         String stageName = StormRelUtils.getStageName(this);
-        IAggregatableStream finalStream = planCreator.getTopology().newStream(stageName, sources.get(sourceName).getProducer());
+        IAggregatableStream finalStream = planCreator.getTopology().newStream(stageName, sources.get(sourceName).getProducer())
+                .parallelismHint(parallelismHint);
         planCreator.addStream(finalStream);
     }
 }

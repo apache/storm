@@ -46,11 +46,19 @@ CREATE EXTERNAL TABLE table_name field_list
       OUTPUTFORMAT output_format_classname
     ]
     LOCATION location
+    [ PARALLELISM parallelism ]
     [ TBLPROPERTIES tbl_properties ]
     [ AS select_stmt ]
 ```
 
-You can find detailed explanations of the properties in [Hive Data Definition Language](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL). For example, the following statement specifies a Kafka spout and sink:
+You can find detailed explanations of the properties in [Hive Data Definition Language](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL). 
+
+`PARALLELISM` is StormSQL's own keyword which describes parallelism hint for input data source. This is same as providing parallelism hint to Trident Spout.
+As same as Trident, downstream operators are executed with same parallelism before repartition (Aggregation triggers repartition).
+
+Default value is 1, and this option is no effect on output data source. (We might change if needed. Normally repartition is the thing to avoid.)
+
+For example, the following statement specifies a Kafka spout and sink:
 
 ```
 CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
@@ -159,5 +167,3 @@ LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], updateColumnList=
 
 - Windowing is yet to be implemented.
 - Aggregation and join are not supported (waiting for `Streaming SQL` to be matured)
-- Specifying parallelism hints in the topology is not yet supported. 
-  - All processors have a parallelism hint of 1.
