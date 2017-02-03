@@ -1,4 +1,5 @@
 ## 1.1.0
+ * STORM-2244: Some shaded jars doesn't exclude dependency signature files
  * STORM-2014: New Kafka spout duplicates checking if failed messages have reached max retries
  * STORM-2324: Fix deployment failure if resources directory is missing in topology jar
  * STORM-1443: [Storm SQL] Support customizing parallelism in StormSQL
