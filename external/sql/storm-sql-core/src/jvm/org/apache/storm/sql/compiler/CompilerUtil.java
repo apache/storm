@@ -30,6 +30,7 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.sql.validate.SqlMonotonicity;
 import org.apache.calcite.util.ImmutableBitSet;
 import org.apache.calcite.util.Util;
+import org.apache.storm.sql.calcite.ParallelStreamableTable;
 import org.apache.storm.sql.parser.ColumnConstraint;
 
 import java.util.ArrayList;
@@ -75,6 +76,7 @@ public class CompilerUtil {
     private final ArrayList<FieldType> fields = new ArrayList<>();
     private final ArrayList<Object[]> rows = new ArrayList<>();
     private int primaryKey = -1;
+    private Integer parallelismHint;
     private SqlMonotonicity primaryKeyMonotonicity;
     private Statistic stats;
 
@@ -110,6 +112,11 @@ public class CompilerUtil {
       return this;
     }
 
+    public TableBuilderInfo parallelismHint(int parallelismHint) {
+      this.parallelismHint = parallelismHint;
+      return this;
+    }
+
     public StreamableTable build() {
       final Statistic stat = buildStatistic();
       final Table tbl = new Table() {
@@ -135,7 +142,12 @@ public class CompilerUtil {
         }
       };
 
-      return new StreamableTable() {
+      return new ParallelStreamableTable() {
+        @Override
+        public Integer parallelismHint() {
+          return parallelismHint;
+        }
+
         @Override
         public Table stream() {
           return tbl;

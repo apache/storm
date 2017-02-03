@@ -266,6 +266,9 @@ class StormSqlImpl extends StormSql {
       fields.add(new FieldInfo(col.name(), javaType, isPrimary));
     }
 
+    if (n.parallelism() != null) {
+      builder.parallelismHint(n.parallelism());
+    }
     Table table = builder.build();
     schema.add(n.tableName(), table);
     return fields;
