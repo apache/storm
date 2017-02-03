@@ -17,16 +17,16 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.junit.Assert.*;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
 
 public class ByTopicRecordTranslatorTest {
     public static Func<ConsumerRecord<String, String>, List<Object>> JUST_KEY_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
@@ -63,15 +63,15 @@ public class ByTopicRecordTranslatorTest {
         assertEquals(expectedStreams, new HashSet<>(trans.streams()));
 
         ConsumerRecord<String, String> cr1 = new ConsumerRecord<>("TOPIC OTHER", 100, 100, "THE KEY", "THE VALUE");
-        assertEquals(new Fields("key"), trans.getFieldsFor("default"));
+        assertEquals(new Fields("key").toList(), trans.getFieldsFor("default").toList());
         assertEquals(Arrays.asList("THE KEY"), trans.apply(cr1));
         
         ConsumerRecord<String, String> cr2 = new ConsumerRecord<>("TOPIC 1", 100, 100, "THE KEY", "THE VALUE");
-        assertEquals(new Fields("value"), trans.getFieldsFor("value-stream"));
+        assertEquals(new Fields("value").toList(), trans.getFieldsFor("value-stream").toList());
         assertEquals(Arrays.asList("THE VALUE"), trans.apply(cr2));
         
         ConsumerRecord<String, String> cr3 = new ConsumerRecord<>("TOPIC 2", 100, 100, "THE KEY", "THE VALUE");
-        assertEquals(new Fields("key", "value"), trans.getFieldsFor("key-value-stream"));
+        assertEquals(new Fields("key", "value").toList(), trans.getFieldsFor("key-value-stream").toList());
         assertEquals(Arrays.asList("THE KEY", "THE VALUE"), trans.apply(cr3));
     }
     

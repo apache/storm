@@ -17,20 +17,20 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.junit.Assert.*;
-
-import java.util.Arrays;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 import org.junit.Test;
+
+import java.util.Arrays;
+
+import static org.junit.Assert.assertEquals;
 
 public class DefaultRecordTranslatorTest {
     @Test
     public void testBasic() {
         DefaultRecordTranslator<String, String> trans = new DefaultRecordTranslator<>();
         assertEquals(Arrays.asList("default"), trans.streams());
-        assertEquals(new Fields("topic", "partition", "offset", "key", "value"), trans.getFieldsFor("default"));
+        assertEquals(new Fields("topic", "partition", "offset", "key", "value").toList(), trans.getFieldsFor("default").toList());
         ConsumerRecord<String, String> cr = new ConsumerRecord<>("TOPIC", 100, 100, "THE KEY", "THE VALUE");
         assertEquals(Arrays.asList("TOPIC", 100, 100l, "THE KEY", "THE VALUE"), trans.apply(cr));
     }
