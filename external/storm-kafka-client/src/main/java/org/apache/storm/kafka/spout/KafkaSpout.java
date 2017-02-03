@@ -72,7 +72,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
 
     // Bookkeeping
-    private transient int maxRetries;                                   // Max number of times a tuple is retried
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;  // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient KafkaSpoutRetryService retryService;              // Class that has the logic to handle tuple failure
     private transient Timer commitTimer;                                // timer == null for auto commit mode
@@ -104,7 +103,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         // Spout internals
         this.collector = collector;
-        maxRetries = kafkaSpoutConfig.getMaxTupleRetries();
         numUncommittedOffsets = 0;
 
         // Offset management
@@ -389,11 +387,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.debug("Received fail for tuple this spout is no longer tracking. Partitions may have been reassigned. Ignoring message [{}]", msgId);
             return;
         }
-        if (msgId.numFails() < maxRetries) {
-            emitted.remove(msgId);
-            msgId.incrementNumFails();
-            retryService.schedule(msgId);
-        } else { // limit to max number of retries
+        emitted.remove(msgId);
+        msgId.incrementNumFails();
+        if (!retryService.schedule(msgId)) {
             LOG.debug("Reached maximum number of retries. Message [{}] being marked as acked.", msgId);
             ack(msgId);
         }
@@ -511,6 +507,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
 
         /**
+         * An offset is only committed when all records with lower offset have
+         * been acked. This guarantees that all offsets smaller than the
+         * committedOffset have been delivered.
          * @return the next OffsetAndMetadata to commit, or null if no offset is ready to commit.
          */
         public OffsetAndMetadata findNextCommitOffset() {
