@@ -146,6 +146,8 @@ public class ZkCoordinatorTest {
         assertNotNull(managerAfter);
         assertNotSame(managerBefore, managerAfter);
         assertSame(managerBefore._waitingToEmit, managerAfter._waitingToEmit);
+        assertSame(managerBefore._emittedToOffset, managerAfter._emittedToOffset);
+        assertSame(managerBefore._committedTo, managerAfter._committedTo);
     }
 
     private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter, int partitionsPerTask) {
