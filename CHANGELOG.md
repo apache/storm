@@ -196,6 +196,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2148: [Storm SQL] Trident mode: back to code generate and compile Trident topology
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber.
  * STORM-2336: Close Localizer and AsyncLocalizer when supervisor is shutting down
  * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
