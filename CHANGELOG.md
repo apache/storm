@@ -1,4 +1,4 @@
-## 1.1.0
+﻿## 1.1.0
  * STORM-2296: Kafka spout no dup on leader changes
  * STORM-2244: Some shaded jars doesn't exclude dependency signature files
  * STORM-2014: New Kafka spout duplicates checking if failed messages have reached max retries
@@ -167,6 +167,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.3
+ * STORM-2337: Broken documentation generation for storm-metrics-profiling-internal-actions.md and windows-users-guide.md
  * STORM-2325: Logviewer doesn't consider 'storm.local.hostname'
  * STORM-1742: More accurate 'complete latency'
  * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed
