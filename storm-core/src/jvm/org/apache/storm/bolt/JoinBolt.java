@@ -83,7 +83,7 @@ public class JoinBolt extends BaseWindowedBolt {
      *    Invalid ex:  new WindowedQueryBolt(s1,k1). join(s3,k3, s2). join(s2,k2, s1);
      */
     public JoinBolt join(String newStream, String key, String priorStream) {
-        return join_common(newStream, key, priorStream, JoinType.INNER);
+        return joinCommon(newStream, key, priorStream, JoinType.INNER);
     }
 
     /**
@@ -96,10 +96,10 @@ public class JoinBolt extends BaseWindowedBolt {
      *    Invalid ex:  new WindowedQueryBolt(s1,k1). leftJoin(s3,k3, s2). leftJoin(s2,k2, s1);
      */
     public JoinBolt leftJoin(String newStream, String key, String priorStream) {
-        return join_common(newStream, key, priorStream, JoinType.LEFT);
+        return joinCommon(newStream, key, priorStream, JoinType.LEFT);
     }
 
-    private JoinBolt join_common(String newStream, String key, String priorStream, JoinType joinType) {
+    private JoinBolt joinCommon(String newStream, String key, String priorStream, JoinType joinType) {
         hashedInputs.put(newStream, new HashMap<Object, ArrayList<Tuple>>());
         JoinInfo joinInfo = joinCriteria.get(priorStream);
         if( joinInfo==null )

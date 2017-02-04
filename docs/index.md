@@ -70,6 +70,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Metrics](Metrics.html)
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
+* [Joining Streams](Joins.html)
 * [Blobstore(Distcahce)](distcache-blobstore.html)
 
 ### Debugging
