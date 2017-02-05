@@ -39,6 +39,7 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.Ignore;
 import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -179,6 +180,7 @@ public class BlobStoreTest {
     return store;
   }
 
+  @Ignore
   @Test
   public void testHdfsReplication()
           throws Exception {
@@ -186,12 +188,14 @@ public class BlobStoreTest {
     testReplication("/storm/blobstoreReplication/test", store);
   }
 
+  @Ignore
   @Test
   public void testBasicHdfs()
           throws Exception {
     testBasic(initHdfs("/storm/blobstore1"));
   }
 
+  @Ignore
   @Test
   public void testMultipleHdfs()
           throws Exception {
@@ -199,6 +203,7 @@ public class BlobStoreTest {
     testMultiple(initHdfs("/storm/blobstore2"));
   }
 
+  @Ignore
   @Test
   public void testHdfsWithAuth()
           throws Exception {
