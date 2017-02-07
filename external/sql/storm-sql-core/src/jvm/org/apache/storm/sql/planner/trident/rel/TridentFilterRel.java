@@ -26,6 +26,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.storm.sql.planner.StormRelUtils;
 import org.apache.storm.sql.planner.rel.StormFilterRelBase;
 import org.apache.storm.sql.planner.trident.TridentPlanCreator;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFilter;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.fluent.IAggregatableStream;
@@ -53,8 +54,12 @@ public class TridentFilterRel extends StormFilterRelBase implements TridentRel {
 
         List<RexNode> childExps = getChildExps();
         RelDataType inputRowType = getInput(0).getRowType();
-        String expression = planCreator.createExpression(childExps, inputRowType);
-        IAggregatableStream finalStream = inputStream.filter(new EvaluationFilter(expression, planCreator.getDataContext())).name(stageName);
+
+        String filterClassName = StormRelUtils.getClassName(this);
+        ExecutableExpression filterInstance = planCreator.createScalarInstance(childExps, inputRowType, filterClassName);
+
+        IAggregatableStream finalStream = inputStream.filter(new EvaluationFilter(filterInstance, planCreator.getDataContext()))
+                .name(stageName);
         planCreator.addStream(finalStream);
     }
 }

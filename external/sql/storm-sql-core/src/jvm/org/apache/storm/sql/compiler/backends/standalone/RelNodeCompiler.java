@@ -19,7 +19,6 @@ package org.apache.storm.sql.compiler.backends.standalone;
 
 import com.google.common.base.Joiner;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
-import org.apache.calcite.linq4j.tree.BlockStatement;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
@@ -37,7 +36,7 @@ import org.apache.calcite.schema.AggregateFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
-import org.apache.storm.sql.compiler.RexNodeToBlockStatementCompiler;
+import org.apache.storm.sql.compiler.RexNodeToJavaCodeCompiler;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
@@ -57,7 +56,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private final PrintWriter pw;
   private final JavaTypeFactory typeFactory;
-  private final RexNodeToBlockStatementCompiler rexCompiler;
+  private final RexNodeToJavaCodeCompiler rexCompiler;
 
   private static final String STAGE_PROLOGUE = NEW_LINE_JOINER.join(
     "  private static final ChannelHandler %1$s = ",
@@ -201,7 +200,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   RelNodeCompiler(PrintWriter pw, JavaTypeFactory typeFactory) {
     this.pw = pw;
     this.typeFactory = typeFactory;
-    this.rexCompiler = new RexNodeToBlockStatementCompiler(new RexBuilder(typeFactory));
+    this.rexCompiler = new RexNodeToJavaCodeCompiler(new RexBuilder(typeFactory));
   }
 
   @Override
@@ -221,8 +220,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     pw.print("context.values = _data.toArray();\n");
     pw.print("Object[] outputValues = new Object[1];\n");
 
-    BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
-    pw.write(codeBlock.toString());
+    pw.write(rexCompiler.compileToBlock(childExps, inputRowType).toString());
 
     String r = "((Boolean) outputValues[0])";
     if (filter.getCondition().getType().isNullable()) {
@@ -246,8 +244,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     pw.print("context.values = _data.toArray();\n");
     pw.print(String.format("Object[] outputValues = new Object[%d];\n", outputCount));
 
-    BlockStatement codeBlock = rexCompiler.compile(childExps, inputRowType);
-    pw.write(codeBlock.toString());
+    pw.write(rexCompiler.compileToBlock(childExps, inputRowType).toString());
 
     pw.print("    ctx.emit(new Values(outputValues));\n");
     endStage();

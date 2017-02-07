@@ -43,12 +43,13 @@ import org.apache.calcite.tools.Frameworks;
 import org.apache.calcite.tools.Planner;
 import org.apache.calcite.tools.RelConversionException;
 import org.apache.calcite.tools.ValidationException;
+import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.planner.StormRelDataTypeSystem;
 import org.apache.storm.sql.planner.UnsupportedOperatorsVisitor;
 import org.apache.storm.sql.planner.trident.rel.TridentLogicalConvention;
 import org.apache.storm.sql.planner.trident.rel.TridentRel;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
-import org.apache.storm.sql.runtime.trident.AbstractTridentProcessor;
+import org.apache.storm.sql.AbstractTridentProcessor;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.fluent.IAggregatableStream;
@@ -100,6 +101,7 @@ public class QueryPlanner {
         final TridentTopology topology = tridentPlanCreator.getTopology();
         final IAggregatableStream lastStream = tridentPlanCreator.pop();
         final DataContext dc = tridentPlanCreator.getDataContext();
+        final List<CompilingClassLoader> cls = tridentPlanCreator.getClassLoaders();
 
         return new AbstractTridentProcessor() {
             @Override
@@ -115,6 +117,11 @@ public class QueryPlanner {
             @Override
             public DataContext getDataContext() {
                 return dc;
+            }
+
+            @Override
+            public List<CompilingClassLoader> getClassLoaders() {
+                return cls;
             }
         };
     }

@@ -26,12 +26,11 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.storm.sql.planner.StormRelUtils;
 import org.apache.storm.sql.planner.rel.StormProjectRelBase;
 import org.apache.storm.sql.planner.trident.TridentPlanCreator;
+import org.apache.storm.sql.runtime.calcite.ExecutableExpression;
 import org.apache.storm.sql.runtime.trident.functions.EvaluationFunction;
-import org.apache.storm.sql.runtime.trident.functions.ForwardFunction;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.tuple.Fields;
 
-import java.util.ArrayList;
 import java.util.List;
 
 public class TridentProjectRel extends StormProjectRelBase implements TridentRel {
@@ -50,19 +49,19 @@ public class TridentProjectRel extends StormProjectRelBase implements TridentRel
         RelNode input = getInput();
         StormRelUtils.getStormRelInput(input).tridentPlan(planCreator);
         Stream inputStream = planCreator.pop().toStream();
-        Fields inputFields = inputStream.getOutputFields();
 
         String stageName = StormRelUtils.getStageName(this);
+        String projectionClassName = StormRelUtils.getClassName(this);
 
         List<String> outputFieldNames = getRowType().getFieldNames();
         int outputCount = outputFieldNames.size();
 
         List<RexNode> childExps = getChildExps();
         RelDataType inputRowType = getInput(0).getRowType();
-        final String expression = planCreator.createExpression(childExps, inputRowType);
 
+        ExecutableExpression projectionInstance = planCreator.createScalarInstance(childExps, inputRowType, projectionClassName);
         Stream finalStream = inputStream
-                .map(new EvaluationFunction(expression, outputCount, planCreator.getDataContext()), new Fields(outputFieldNames))
+                .map(new EvaluationFunction(projectionInstance, outputCount, planCreator.getDataContext()), new Fields(outputFieldNames))
                 .name(stageName);
 
         planCreator.addStream(finalStream);

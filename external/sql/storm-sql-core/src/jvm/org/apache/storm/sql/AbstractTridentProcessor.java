@@ -15,18 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.trident;
+package org.apache.storm.sql;
 
 import org.apache.calcite.DataContext;
+import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 
+import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractTridentProcessor {
   protected Stream outputStream;
   protected DataContext dataContext;
+  protected List<CompilingClassLoader> classLoaders;
   /**
    * @return the output stream of the SQL
    */
@@ -44,5 +47,12 @@ public abstract class AbstractTridentProcessor {
    */
   public DataContext getDataContext() {
     return dataContext;
+  }
+
+  /**
+   * @return Classloaders to compile. They're all chaining so the last classloader can access all classes.
+   */
+  public List<CompilingClassLoader> getClassLoaders() {
+    return classLoaders;
   }
 }

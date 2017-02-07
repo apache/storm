@@ -23,11 +23,13 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.schema.Table;
+import org.apache.storm.sql.calcite.ParallelStreamableTable;
 import org.apache.storm.sql.planner.trident.rel.TridentLogicalConvention;
 import org.apache.storm.sql.planner.trident.rel.TridentStreamScanRel;
 
 public class TridentScanRule extends ConverterRule {
   public static final TridentScanRule INSTANCE = new TridentScanRule();
+  public static final int DEFAULT_PARALLELISM_HINT = 1;
 
   private TridentScanRule() {
     super(EnumerableTableScan.class, EnumerableConvention.INSTANCE, TridentLogicalConvention.INSTANCE, "TridentScanRule");
@@ -36,13 +38,19 @@ public class TridentScanRule extends ConverterRule {
   @Override
   public RelNode convert(RelNode rel) {
     final TableScan scan = (TableScan) rel;
-    final Table table = scan.getTable().unwrap(Table.class);
+    int parallelismHint = DEFAULT_PARALLELISM_HINT;
 
+    final ParallelStreamableTable parallelTable = scan.getTable().unwrap(ParallelStreamableTable.class);
+    if (parallelTable != null && parallelTable.parallelismHint() != null) {
+      parallelismHint = parallelTable.parallelismHint();
+    }
+
+    final Table table = scan.getTable().unwrap(Table.class);
     switch (table.getJdbcTableType()) {
       case STREAM:
         return new TridentStreamScanRel(scan.getCluster(),
             scan.getTraitSet().replace(TridentLogicalConvention.INSTANCE),
-            scan.getTable());
+            scan.getTable(), parallelismHint);
       default:
         throw new IllegalArgumentException(String.format("Unsupported table type: %s", table.getJdbcTableType()));
     }
