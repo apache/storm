@@ -346,11 +346,11 @@ Currently the Kafka spout has has the following default values, which have shown
 * max.uncommitted.offsets = 10000000
 <br/>
 
-# support At-Most-Once mode 
+# Kafka AutoCommitMode 
 
-If reliability isn't important to you -- that is, you don't care about losing tuples in failure situations --, and want to remove the overhead of tuple tracking, then you can run a topology with *At-Most-Once* mode, by leveraging AutoCommitMode in Kafka consumer.
+If reliability isn't important to you -- that is, you don't care about losing tuples in failure situations --, and want to remove the overhead of tuple tracking, then you can run a KafkaSpout with AutoCommitMode.
 
-To run in *At-Most-Once* mode, you need to:
+To enable it, you need to:
 * set Config.TOPOLOGY_ACKERS to 0;
 * enable *AutoCommitMode* in Kafka consumer configuration; 
 
@@ -364,3 +364,8 @@ KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
 		.setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
 		.build();
 ```
+
+*Note that it's not exactly At-Most-Once in Storm, as offset is committed periodically by Kafka consumer, some tuples could be replayed when KafkaSpout is crashed.*
+
+
+
