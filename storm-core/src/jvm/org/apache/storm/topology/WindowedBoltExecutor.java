@@ -327,9 +327,9 @@ public class WindowedBoltExecutor implements IRichBolt {
             }
 
             @Override
-            public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples) {
+            public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
                 windowedOutputCollector.setContext(tuples);
-                bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples));
+                bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, timestamp));
             }
         };
     }

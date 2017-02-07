@@ -45,4 +45,11 @@ public interface Window<T> {
      * @return the list of events expired from the window.
      */
     List<T> getExpired();
+
+    /**
+     * If processing based on event time, returns the watermark time otherwise the current timestamp.
+     *
+     * @return the window timestamp
+     */
+    Long getTimestamp();
 }
