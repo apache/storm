@@ -213,9 +213,9 @@ public class ContainerTest {
         
         //Create links to artifacts dir
         verify(ops).createSymlink(new File(workerRoot, "artifacts"), workerArtifacts);
-        
-        //Create links to blobs 
-        verify(ops).createSymlink(new File(workerRoot, "resources"), new File(distRoot, "resources"));
+
+        //Create links to blobs
+        verify(ops, never()).createSymlink(new File(workerRoot, "resources"), new File(distRoot, "resources"));
     }
     
     @Test
