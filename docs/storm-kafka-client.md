@@ -345,3 +345,22 @@ Currently the Kafka spout has has the following default values, which have shown
 * offset.commit.period.ms = 30000   (30s)
 * max.uncommitted.offsets = 10000000
 <br/>
+
+# support At-Most-Once mode 
+
+If reliability isn't important to you -- that is, you don't care about losing tuples in failure situations --, and want to remove the overhead of tuple tracking, then you can run a topology with *At-Most-Once* mode, by leveraging AutoCommitMode in Kafka consumer.
+
+To run in *At-Most-Once* mode, you need to:
+* set Config.TOPOLOGY_ACKERS to 0;
+* enable *AutoCommitMode* in Kafka consumer configuration; 
+
+Here's one example to set AutoCommitMode in KafkaSpout:
+```java
+Map<String, Object> props = new HashMap<String, Object>();
+props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
+		.builder(String bootstrapServers, String ... topics)
+		.setProp(props)
+		.setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
+		.build();
+```
