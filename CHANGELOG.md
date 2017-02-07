@@ -1,4 +1,5 @@
-## 2.0.0
+﻿## 2.0.0
+ * STORM-2346: Files with unapproved licenses: download-rc-directory.sh verify-release-file.sh
  * STORM-1961: Stream api for storm core use cases
  * STORM-2327: Introduce ConfigurableTopology
  * STORM-2323: Precondition for Leader Nimbus should check all topology blobs and also corresponding dependencies.
