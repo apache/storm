@@ -61,11 +61,7 @@ public class TestBlacklistScheduler {
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
         TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, true);
-        //TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8,true);
-        //TopologyDetails topo3 = TestUtilsForBlacklistScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16,true);
         topoMap.put(topo1.getId(), topo1);
-        //topoMap.put(topo2.getId(), topo2);
-        //topoMap.put(topo3.getId(), topo3);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
         Topologies topologies = new Topologies(topoMap);
@@ -95,16 +91,10 @@ public class TestBlacklistScheduler {
         config.put(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT, 2);
         config.put(Config.BLACKLIST_SCHEDULER_RESUME_TIME, 300);
 
-        //config.put(Config.BLACKLIST_SCHEDULER_BLACKLIST_ENABLE,true);
-
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
 
         TopologyDetails topo1 = TestUtilsForBlacklistScheduler.getTopology("topo-1", config, 5, 15, 1, 1, currentTime - 2, true);
-        //TopologyDetails topo2 = TestUtilsForBlacklistScheduler.getTopology("topo-2", config, 5, 15, 1, 1, currentTime - 8,true);
-        //TopologyDetails topo3 = TestUtilsForBlacklistScheduler.getTopology("topo-3", config, 5, 15, 1, 1, currentTime - 16,true);
         topoMap.put(topo1.getId(), topo1);
-        //topoMap.put(topo2.getId(), topo2);
-        //topoMap.put(topo3.getId(), topo3);
 
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
         Topologies topologies = new Topologies(topoMap);

@@ -17,6 +17,7 @@
  */
 package org.apache.storm.scheduler.blacklist;
 
+import com.google.common.collect.EvictingQueue;
 import org.apache.storm.Config;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.Cluster;
@@ -26,9 +27,11 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -37,7 +40,7 @@ import java.util.concurrent.Callable;
 
 public class BlacklistScheduler implements IScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(BlacklistScheduler.class);
-    IScheduler underlyingScheduler;
+    private final IScheduler underlyingScheduler;
     @SuppressWarnings("rawtypes")
     private Map _conf;
 
@@ -52,7 +55,8 @@ public class BlacklistScheduler implements IScheduler {
     protected Map<String, Set<Integer>> cachedSupervisors;
 
     //key is supervisor key ,value is supervisor ports
-    protected CircularBuffer<HashMap<String, Set<Integer>>> badSupervisorsTolerance;
+    protected EvictingQueue<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow;
+    protected int windowSize;
     protected Set<String> blacklistHost;
 
     public BlacklistScheduler(IScheduler underlyingScheduler) {
@@ -62,19 +66,18 @@ public class BlacklistScheduler implements IScheduler {
     @Override
     public void prepare(Map conf) {
         LOG.info("prepare black list scheduler");
-        LOG.info(conf.toString());
         underlyingScheduler.prepare(conf);
         _conf = conf;
         if (_conf.containsKey(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME)) {
-            toleranceTime = (Integer) _conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME);
+            toleranceTime = Utils.getInt( _conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_TIME));
         }
         if (_conf.containsKey(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT)) {
-            toleranceCount = (Integer) _conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+            toleranceCount = Utils.getInt( _conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT));
         }
         if (_conf.containsKey(Config.BLACKLIST_SCHEDULER_RESUME_TIME)) {
-            resumeTime = (Integer) _conf.get(Config.BLACKLIST_SCHEDULER_RESUME_TIME);
+            resumeTime = Utils.getInt( _conf.get(Config.BLACKLIST_SCHEDULER_RESUME_TIME));
         }
-        String reporterClassName = _conf.containsKey(Config.BLACKLIST_SCHEDULER_REPORTER) ? (String) _conf.get(Config.BLACKLIST_SCHEDULER_REPORTER) : "";
+        String reporterClassName = _conf.containsKey(Config.BLACKLIST_SCHEDULER_REPORTER) ? (String) _conf.get(Config.BLACKLIST_SCHEDULER_REPORTER) : "org.apache.storm.scheduler.blacklist.reporters.LogReporter" ;
         try {
             reporter = (IReporter) Class.forName(reporterClassName).newInstance();
         } catch (ClassNotFoundException e) {
@@ -88,7 +91,7 @@ public class BlacklistScheduler implements IScheduler {
             throw new RuntimeException(e);
         }
 
-        String strategyClassName = _conf.containsKey(Config.BLACKLIST_SCHEDULER_STRATEGY) ? (String) _conf.get(Config.BLACKLIST_SCHEDULER_STRATEGY) : "";
+        String strategyClassName = _conf.containsKey(Config.BLACKLIST_SCHEDULER_STRATEGY) ? (String) _conf.get(Config.BLACKLIST_SCHEDULER_STRATEGY) : "org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy";
         try {
             blacklistStrategy = (IBlacklistStrategy) Class.forName(strategyClassName).newInstance();
         } catch (ClassNotFoundException e) {
@@ -102,10 +105,11 @@ public class BlacklistScheduler implements IScheduler {
             throw new RuntimeException(e);
         }
 
-        nimbusMonitorFreqSecs = (Integer) _conf.get(Config.NIMBUS_MONITOR_FREQ_SECS);
-        blacklistStrategy.prepare(reporter, toleranceTime, toleranceCount, resumeTime, nimbusMonitorFreqSecs);
+        nimbusMonitorFreqSecs = Utils.getInt( _conf.get(Config.NIMBUS_MONITOR_FREQ_SECS));
+        blacklistStrategy.prepare(_conf);
 
-        badSupervisorsTolerance = new CircularBuffer<HashMap<String, Set<Integer>>>(toleranceTime / nimbusMonitorFreqSecs);
+        windowSize=toleranceTime / nimbusMonitorFreqSecs;
+        badSupervisorsToleranceSlidingWindow =EvictingQueue.create(windowSize);
         cachedSupervisors = new HashMap<>();
         blacklistHost = new HashSet<>();
 
@@ -157,7 +161,7 @@ public class BlacklistScheduler implements IScheduler {
             }
         }
 
-        badSupervisorsTolerance.add(badSupervisors);
+        badSupervisorsToleranceSlidingWindow.add(badSupervisors);
     }
 
     private Set<Integer> badSlots(SupervisorDetails supervisor, String supervisorKey) {
@@ -175,7 +179,7 @@ public class BlacklistScheduler implements IScheduler {
     }
 
     public Set<String> getBlacklistHosts(Cluster cluster, Topologies topologies) {
-        Set<String> blacklistSet = blacklistStrategy.getBlacklist(badSupervisorsTolerance.toList(), cluster, topologies);
+        Set<String> blacklistSet = blacklistStrategy.getBlacklist(new ArrayList<>(badSupervisorsToleranceSlidingWindow), cluster, topologies);
         Set<String> blacklistHostSet = new HashSet<>();
         for (String supervisor : blacklistSet) {
             String host = cluster.getHost(supervisor);
@@ -189,13 +193,15 @@ public class BlacklistScheduler implements IScheduler {
         return blacklistHostSet;
     }
 
-    //supervisor or port never exits once in tolerance time will be removed from cache
+    /**
+     * supervisor or port never exits once in tolerance time will be removed from cache.
+     */
     private void removeLongTimeDisappearFromCache() {
 
         Map<String, Integer> supervisorCountMap = new HashMap<String, Integer>();
         Map<WorkerSlot, Integer> slotCountMap = new HashMap<WorkerSlot, Integer>();
 
-        for (Map<String, Set<Integer>> item : badSupervisorsTolerance) {
+        for (Map<String, Set<Integer>> item : badSupervisorsToleranceSlidingWindow) {
             Set<String> supervisors = item.keySet();
             for (String supervisor : supervisors) {
                 int supervisorCount = 0;
@@ -217,7 +223,6 @@ public class BlacklistScheduler implements IScheduler {
             }
         }
 
-        int windowSize = badSupervisorsTolerance.capacity();
         for (Map.Entry<String, Integer> entry : supervisorCountMap.entrySet()) {
             String key = entry.getKey();
             int value = entry.getValue();

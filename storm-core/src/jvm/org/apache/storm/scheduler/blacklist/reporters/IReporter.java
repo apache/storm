@@ -25,7 +25,7 @@ import java.util.Set;
  * report blacklist to alert system
  */
 public interface IReporter {
-    public void report(String message);
+    void report(String message);
 
-    public void reportBlacklist(String supervisor, List<HashMap<String, Set<Integer>>> toleranceBuffer);
+    void reportBlacklist(String supervisor, List<HashMap<String, Set<Integer>>> toleranceBuffer);
 }

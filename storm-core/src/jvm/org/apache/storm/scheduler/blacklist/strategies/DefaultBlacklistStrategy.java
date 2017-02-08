@@ -17,12 +17,14 @@
  */
 package org.apache.storm.scheduler.blacklist.strategies;
 
+import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +41,6 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
     private IReporter _reporter;
 
-    private int _toleranceTime;
     private int _toleranceCount;
     private int _resumeTime;
     private int _nimbusMonitorFreqSecs;
@@ -47,13 +48,28 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     private TreeMap<String, Integer> blacklist;
 
     @Override
-    public void prepare(IReporter reporter, int toleranceTime, int toleranceCount, int resumeTime, int nimbusMonitorFreqSecs) {
-        _reporter = reporter;
+    public void prepare(Map conf){
+        if (conf.containsKey(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT)) {
+            _toleranceCount = Utils.getInt( conf.get(Config.BLACKLIST_SCHEDULER_TOLERANCE_COUNT));
+        }
+        if (conf.containsKey(Config.BLACKLIST_SCHEDULER_RESUME_TIME)) {
+            _resumeTime = Utils.getInt( conf.get(Config.BLACKLIST_SCHEDULER_RESUME_TIME));
+        }
+        String reporterClassName = conf.containsKey(Config.BLACKLIST_SCHEDULER_REPORTER) ? (String) conf.get(Config.BLACKLIST_SCHEDULER_REPORTER) : "org.apache.storm.scheduler.blacklist.reporters.LogReporter" ;
+        try {
+            _reporter = (IReporter) Class.forName(reporterClassName).newInstance();
+        } catch (ClassNotFoundException e) {
+            LOG.error("Can't find blacklist reporter for name {}", reporterClassName);
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
+            LOG.error("Throw InstantiationException blacklist reporter for name {}", reporterClassName);
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            LOG.error("Throw illegalAccessException blacklist reporter for name {}", reporterClassName);
+            throw new RuntimeException(e);
+        }
 
-        _toleranceTime = toleranceTime;
-        _toleranceCount = toleranceCount;
-        _resumeTime = resumeTime;
-        _nimbusMonitorFreqSecs = nimbusMonitorFreqSecs;
+        _nimbusMonitorFreqSecs = Utils.getInt( conf.get(Config.NIMBUS_MONITOR_FREQ_SECS));
         blacklist = new TreeMap<>();
     }
 

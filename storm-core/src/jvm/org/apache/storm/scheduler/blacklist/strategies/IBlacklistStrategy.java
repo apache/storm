@@ -19,19 +19,35 @@ package org.apache.storm.scheduler.blacklist.strategies;
 
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Topologies;
-import org.apache.storm.scheduler.blacklist.CircularBuffer;
-import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public interface IBlacklistStrategy {
 
-    public void prepare(IReporter reporter, int toleranceTime, int toleranceCount, int resumeTime, int nimbusMonitorFreqSecs);
+    void prepare(Map conf);
 
-    public Set<String> getBlacklist(List<HashMap<String, Set<Integer>>> toleranceBuffer, Cluster cluster, Topologies topologies);
+    /**
+     * Get blacklist by blacklist strategy
+     * @param badSupervisorsToleranceSlidingWindow bad supervisors buffered in sliding window
+     * @param cluster the cluster these topologies are running in. `cluster` contains everything user
+     *       need to develop a new scheduling logic. e.g. supervisors information, available slots, current
+     *       assignments for all the topologies etc. User can set the new assignment for topologies using
+     *       cluster.setAssignmentById()`
+     * @param topologies all the topologies in the cluster, some of them need schedule. Topologies object here
+     *       only contain static information about topologies. Information like assignments, slots are all in
+     *       the `cluster` object.
+     * @return blacklisted supervisors' id set
+     */
+    Set<String> getBlacklist(List<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster, Topologies topologies);
 
-    public void resumeFromBlacklist();
+    /**
+     * resume supervisors form blacklist. Blacklist is just a temporary list for supervisors,
+     * or there will be less and less available resources.
+     * This will be called every time before getBlacklist() and schedule.
+     */
+    void resumeFromBlacklist();
 
 }
