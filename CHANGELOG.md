@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2320: DRPC client printer class reusable for local and remote DRPC
  * STORM-2281: Running Multiple Kafka Spouts (Trident) Throws Illegal State Exception
  * STORM-2296: Kafka spout no dup on leader changes
  * STORM-2244: Some shaded jars doesn't exclude dependency signature files
