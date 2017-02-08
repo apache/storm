@@ -112,7 +112,7 @@ public interface PreparedStatementBinder extends Serializable {
                 statement.setInet(name, (InetAddress)value);
 
             if (value instanceof Date)
-                statement.setDate(name, (Date)value);
+                statement.setTimestamp(name, (Date)value);
 
             if (value instanceof UUID)
                 statement.setUUID(name, (UUID)value);
