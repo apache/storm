@@ -44,6 +44,23 @@ public class JpmmlModelOutputs implements ModelOutputs {
         this.declared = declaredFields;
     }
 
+    @Override
+    public Map<String, ? extends Fields> streamFields() {
+        return declared;
+    }
+
+    @Override
+    public Set<String> streams() {
+        return streamFields().keySet();
+    }
+
+    @Override
+    public String toString() {
+        return "JpmmlModelOutputs{" + declared + '}';
+    }
+
+    // =================  Factory Methods Declaring ModelOutputs to Default Stream  ==================
+
     /**
      * Factory method that creates an instance of {@link ModelOutputs} that declares
      * the {@code predicted} and {@code output} fields specified in the {@link PMML} model
@@ -70,6 +87,25 @@ public class JpmmlModelOutputs implements ModelOutputs {
         }
     }
 
+    public static ModelOutputs toDefaultStream(String blobKey) {
+        return toDefaultStream(blobKey, Utils.readStormConfig());
+    }
+
+    public static ModelOutputs toDefaultStream(String blobKey, Map config) {
+        try {
+            return toDefaultStream(JpmmlFactory.newPmml(blobKey, config));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // =================  Factory Methods Declaring ModelOutputs to Multiple Streams  ==================
+
+    /**
+     * Factory method that creates an instance of {@link ModelOutputs} that declares
+     * the {@code predicted} and {@code output} fields specified in the {@link PMML} model
+     * specified as argument into the list of streams specified
+     */
     public static ModelOutputs toStreams(PMML pmmlModel, List<String> streams) {
         return create(pmmlModel, streams);
     }
@@ -90,18 +126,16 @@ public class JpmmlModelOutputs implements ModelOutputs {
         }
     }
 
-    @Override
-    public Map<String, ? extends Fields> streamFields() {
-        return declared;
+    public static ModelOutputs toStreams(String blobKey, List<String> streams) {
+        return toStreams(blobKey, Utils.readStormConfig(), streams);
     }
 
-    public Set<String> streams() {
-        return streamFields().keySet();
-    }
-
-    @Override
-    public String toString() {
-        return "JpmmlModelOutputFields{" + declared + '}';
+    public static ModelOutputs toStreams(String blobKey, Map config, List<String> streams) {
+        try {
+            return toStreams(JpmmlFactory.newPmml(blobKey, config), streams);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     // ======
