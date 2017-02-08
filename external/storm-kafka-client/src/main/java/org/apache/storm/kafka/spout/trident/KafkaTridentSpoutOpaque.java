@@ -34,7 +34,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
-    private KafkaTridentSpoutManager<K, V> kafkaManager;
+    private final KafkaTridentSpoutManager<K, V> kafkaManager;
     private KafkaTridentSpoutEmitter<K, V> kafkaTridentSpoutEmitter;
     private KafkaTridentSpoutOpaqueCoordinator<K, V> coordinator;
 
@@ -50,19 +50,12 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(Map conf, TopologyContext context) {
-        // Instance is created on first call rather than in constructor to avoid NotSerializableException caused by KafkaConsumer
-        if (kafkaTridentSpoutEmitter == null) {
-            kafkaTridentSpoutEmitter = new KafkaTridentSpoutEmitter<>(kafkaManager, context);
-        }
-        return kafkaTridentSpoutEmitter;
+        return new KafkaTridentSpoutEmitter<>(kafkaManager, context);
     }
 
     @Override
     public Coordinator<List<TopicPartition>> getCoordinator(Map conf, TopologyContext context) {
-        if (coordinator == null) {
-            coordinator = new KafkaTridentSpoutOpaqueCoordinator<>(kafkaManager);
-        }
-        return coordinator;
+        return new KafkaTridentSpoutOpaqueCoordinator<>(kafkaManager);
     }
 
     @Override
@@ -79,8 +72,8 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public String toString() {
-        return "KafkaTridentSpoutOpaque{" +
-                "kafkaManager=" + kafkaManager +
+        return super.toString() +
+                "{kafkaManager=" + kafkaManager +
                 ", kafkaTridentSpoutEmitter=" + kafkaTridentSpoutEmitter +
                 ", coordinator=" + coordinator +
                 '}';

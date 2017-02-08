@@ -47,10 +47,13 @@ public class LocalSubmitter {
     }
 
     public static Config defaultConfig() {
+        return defaultConfig(false);
+    }
+
+    public static Config defaultConfig(boolean debug) {
         final Config conf = new Config();
         conf.setMaxSpoutPending(20);
-        conf.setMaxTaskParallelism(1);
-        conf.setNumWorkers(1);
+        conf.setDebug(debug);
         return conf;
     }
 
