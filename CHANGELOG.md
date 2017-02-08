@@ -1,3 +1,6 @@
+## 1.0.4
+ * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
+
 ## 1.0.3
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber.
