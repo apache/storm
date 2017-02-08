@@ -19,8 +19,11 @@
 package org.apache.storm.cassandra.query.impl;
 
 import org.apache.storm.tuple.ITuple;
+
+import com.datastax.driver.core.CodecRegistry;
 import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.ProtocolVersion;
+import com.datastax.driver.core.TypeCodec;
 import com.google.common.base.Preconditions;
 
 import java.io.Serializable;
@@ -41,11 +44,18 @@ public class RoutingKeyGenerator implements Serializable {
         this.routingKeys = routingKeys;
     }
 
-    public List<ByteBuffer> getRoutingKeys(ITuple tuple) {
+    public List<ByteBuffer> getRoutingKeys(ITuple tuple, ProtocolVersion version) {
         List<ByteBuffer> keys = new ArrayList<>(routingKeys.size());
         for(String s : routingKeys) {
             Object value = tuple.getValueByField(s);
-            keys.add(DataType.serializeValue(value, ProtocolVersion.NEWEST_SUPPORTED));
+            // TODO: codecFor(Object) return first codec that accepts value.
+            // perhaps we could provide a way to the programmer give more info
+            // to allow other forms of codedFor more suitable to the case we
+            // known the the correct CSQL types involved. Anyway, does not
+            // impact when Token-aware Load Balancing Policy is not used.
+            TypeCodec<Object> codec = CodecRegistry.DEFAULT_INSTANCE.codecFor(value);
+            keys.add(codec.serialize(value, version));
+            // keys.add(DataType.serializeValue(value, ProtocolVersion.NEWEST_SUPPORTED));
         }
         return keys;
     }

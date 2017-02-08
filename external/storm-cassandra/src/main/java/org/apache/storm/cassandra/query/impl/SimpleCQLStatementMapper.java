@@ -72,7 +72,7 @@ public class SimpleCQLStatementMapper implements CQLStatementTupleMapper {
         SimpleStatement statement = new SimpleStatement(queryString, Column.getVals(columns));
 
         if(hasRoutingKeys()) {
-            List<ByteBuffer> keys = rkGenerator.getRoutingKeys(tuple);
+            List<ByteBuffer> keys = rkGenerator.getRoutingKeys(tuple, session.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion());
             if( keys.size() == 1)
                 statement.setRoutingKey(keys.get(0));
             else

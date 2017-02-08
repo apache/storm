@@ -75,7 +75,7 @@ public class BoundCQLStatementTupleMapper implements CQLStatementTupleMapper {
 
         PreparedStatement statement = getPreparedStatement(session, query);
         if(hasRoutingKeys()) {
-            List<ByteBuffer> keys = rkGenerator.getRoutingKeys(tuple);
+            List<ByteBuffer> keys = rkGenerator.getRoutingKeys(tuple, session.getCluster().getConfiguration().getProtocolOptions().getProtocolVersion());
             if( keys.size() == 1)
                 statement.setRoutingKey(keys.get(0));
             else
