@@ -43,7 +43,10 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.core.Is.is;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
 
 /**
  * Unit tests for {@link WindowedBoltExecutor}
@@ -102,12 +105,12 @@ public class WindowedBoltExecutorTest {
     @Before
     public void setUp() {
         testWindowedBolt = new TestWindowedBolt();
+        testWindowedBolt.withTimestampField("ts");
         executor = new WindowedBoltExecutor(testWindowedBolt);
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100000);
         conf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, 20);
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
-        conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, "ts");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
         // trigger manually to avoid timing issues
         conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 100000);
@@ -174,12 +177,12 @@ public class WindowedBoltExecutorTest {
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100000);
         conf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, 20);
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
-        conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, "ts");
         conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
         conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 10);
 
         testWindowedBolt = new TestWindowedBolt();
+        testWindowedBolt.withTimestampField("ts");
         executor = new WindowedBoltExecutor(testWindowedBolt);
         TopologyContext context = getTopologyContext();
         try {
@@ -194,6 +197,7 @@ public class WindowedBoltExecutorTest {
     @Test
     public void testExecuteWithLateTupleStream() throws Exception {
         testWindowedBolt = new TestWindowedBolt();
+        testWindowedBolt.withTimestampField("ts");
         executor = new WindowedBoltExecutor(testWindowedBolt);
         TopologyContext context = getTopologyContext();
         Mockito.when(context.getThisStreams()).thenReturn(new HashSet<>(Arrays.asList("default", "$late")));
@@ -203,7 +207,6 @@ public class WindowedBoltExecutorTest {
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100000);
         conf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, 20);
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
-        conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, "ts");
         conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
         conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 10);

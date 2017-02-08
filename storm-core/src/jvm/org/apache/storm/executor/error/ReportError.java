@@ -65,7 +65,7 @@ public class ReportError implements IReportError {
         }
         if (intervalErrors.incrementAndGet() <= maxPerInterval) {
             try {
-                stormClusterState.reportError(stormId, componentId, Utils.hostname(stormConf),
+                stormClusterState.reportError(stormId, componentId, Utils.hostname(),
                         workerTopologyContext.getThisWorkerPort().longValue(), error);
             } catch (UnknownHostException e) {
                 throw Utils.wrapInRuntime(e);

@@ -162,6 +162,7 @@ public class Utils {
 
     private static SerializationDelegate serializationDelegate;
     private static ClassLoader cl = null;
+    private static Map<String, Object> localConf;
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
@@ -171,8 +172,8 @@ public class Utils {
     public static final int SIGTERM = 15;
 
     static {
-        Map<String, Object> conf = readStormConfig();
-        serializationDelegate = getSerializationDelegate(conf);
+        localConf = readStormConfig();
+        serializationDelegate = getSerializationDelegate(localConf);
     }
 
     @SuppressWarnings("unchecked")
@@ -1140,12 +1141,14 @@ public class Utils {
 
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth);
+        LOG.info("Starting Utils Curator...");
         ret.start();
         return ret;
     }
 
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, auth);
+        LOG.info("Starting Utils Curator (2)...");
         ret.start();
         return ret;
     }
@@ -1767,14 +1770,18 @@ public class Utils {
     /**
      * Gets the storm.local.hostname value, or tries to figure out the local hostname
      * if it is not set in the config.
-     * @param conf The storm config to read from
      * @return a string representation of the hostname.
-    */
-    public static String hostname (Map<String, Object> conf) throws UnknownHostException  {
-        if (conf == null) {
+     */
+    public static String hostname() throws UnknownHostException {
+        return _instance.hostnameImpl();
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String hostnameImpl () throws UnknownHostException  {
+        if (localConf == null) {
             return memoizedLocalHostname();
         }
-        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        Object hostnameString = localConf.get(Config.STORM_LOCAL_HOSTNAME);
         if (hostnameString == null || hostnameString.equals("")) {
             return memoizedLocalHostname();
         }
@@ -1950,6 +1957,7 @@ public class Utils {
             public void run() {
                 try {
                     Time.sleepSecs(1);
+                    LOG.warn("Forceing Halt...");
                     Runtime.getRuntime().halt(20);
                 } catch (Exception e) {
                     LOG.warn("Exception in the ShutDownHook", e);

@@ -40,6 +40,7 @@ storm.exhibitor.poll.uripath: "/exhibitor/v1/cluster/list"
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
+storm.thrift.socket.timeout.ms: 600000
 storm.principal.tolocal: "org.apache.storm.security.auth.DefaultPrincipalToLocal"
 storm.group.mapping.service: "org.apache.storm.security.auth.ShellBasedGroupsMapping"
 storm.group.mapping.service.params: null
@@ -149,7 +150,7 @@ supervisor.worker.start.timeout.secs: 120
 #how long between heartbeats until supervisor considers that worker dead and tries to restart it
 supervisor.worker.timeout.secs: 30
 #how many seconds to sleep for before shutting down threads on worker
-supervisor.worker.shutdown.sleep.secs: 1
+supervisor.worker.shutdown.sleep.secs: 3
 #how frequently the supervisor checks on the status of the processes it's monitoring and restarts if necessary
 supervisor.monitor.frequency.secs: 3
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)

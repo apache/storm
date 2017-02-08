@@ -37,6 +37,8 @@ import java.util.List;
 import java.util.Properties;
 
 public class SqlCreateTable extends SqlCall {
+  private static final int DEFAULT_PARALLELISM = 1;
+
   public static final SqlSpecialOperator OPERATOR = new SqlSpecialOperator(
       "CREATE_TABLE", SqlKind.OTHER) {
     @Override
@@ -44,7 +46,7 @@ public class SqlCreateTable extends SqlCall {
         SqlLiteral functionQualifier, SqlParserPos pos, SqlNode... o) {
       assert functionQualifier == null;
       return new SqlCreateTable(pos, (SqlIdentifier) o[0], (SqlNodeList) o[1],
-                                o[2], o[3], o[4], o[5], o[6]);
+                                o[2], o[3], o[4], o[5], o[6], o[7]);
     }
 
     @Override
@@ -60,6 +62,9 @@ public class SqlCreateTable extends SqlCall {
             t.outputFormatClass);
       }
       u.keyword("LOCATION").node(t.location);
+      if (t.parallelism != null) {
+        u.keyword("PARALLELISM").node(t.parallelism);
+      }
       if (t.properties != null) {
         u.keyword("TBLPROPERTIES").node(t.properties);
       }
@@ -74,19 +79,21 @@ public class SqlCreateTable extends SqlCall {
   private final SqlNode inputFormatClass;
   private final SqlNode outputFormatClass;
   private final SqlNode location;
+  private final SqlNode parallelism;
   private final SqlNode properties;
   private final SqlNode query;
 
   public SqlCreateTable(
-      SqlParserPos pos, SqlIdentifier tblName, SqlNodeList fieldList,
-      SqlNode inputFormatClass, SqlNode outputFormatClass, SqlNode location,
-      SqlNode properties, SqlNode query) {
+          SqlParserPos pos, SqlIdentifier tblName, SqlNodeList fieldList,
+          SqlNode inputFormatClass, SqlNode outputFormatClass, SqlNode location,
+          SqlNode parallelism, SqlNode properties, SqlNode query) {
     super(pos);
     this.tblName = tblName;
     this.fieldList = fieldList;
     this.inputFormatClass = inputFormatClass;
     this.outputFormatClass = outputFormatClass;
     this.location = location;
+    this.parallelism = parallelism;
     this.properties = properties;
     this.query = query;
   }
@@ -114,6 +121,15 @@ public class SqlCreateTable extends SqlCall {
 
   public URI location() {
     return URI.create(getString(location));
+  }
+
+  public Integer parallelism() {
+    String parallelismStr = getString(parallelism);
+    if (parallelismStr != null) {
+      return Integer.parseInt(parallelismStr);
+    } else {
+      return DEFAULT_PARALLELISM;
+    }
   }
 
   public String inputFormatClass() {

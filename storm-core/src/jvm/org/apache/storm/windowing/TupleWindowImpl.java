@@ -28,11 +28,17 @@ public class TupleWindowImpl implements TupleWindow {
     private final List<Tuple> tuples;
     private final List<Tuple> newTuples;
     private final List<Tuple> expiredTuples;
+    private final Long timestamp;
 
     public TupleWindowImpl(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples) {
+        this(tuples, newTuples, expiredTuples, null);
+    }
+
+    public TupleWindowImpl(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
         this.tuples = tuples;
         this.newTuples = newTuples;
         this.expiredTuples = expiredTuples;
+        this.timestamp = timestamp;
     }
 
     @Override
@@ -48,6 +54,11 @@ public class TupleWindowImpl implements TupleWindow {
     @Override
     public List<Tuple> getExpired() {
         return expiredTuples;
+    }
+
+    @Override
+    public Long getTimestamp() {
+        return timestamp != null ? timestamp : System.currentTimeMillis();
     }
 
     @Override

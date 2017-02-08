@@ -37,6 +37,7 @@ public interface WindowLifecycleListener<T> {
      * @param events the list of current events in the window.
      * @param newEvents the newly added events since last activation.
      * @param expired the expired events since last activation.
+     * @param referenceTime the reference (event or processing) time that resulted in activation
      */
-    void onActivation(List<T> events, List<T> newEvents, List<T> expired);
+    void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long referenceTime);
 }

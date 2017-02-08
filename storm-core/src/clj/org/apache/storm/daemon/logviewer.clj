@@ -399,7 +399,7 @@
                         "Next" :enabled (> next-start start))])]]))
 
 (defn- download-link [fname]
-  [[:p (link-to (UIHelpers/urlFormat "/download/%s" (to-array [fname])) "Download Full File")]])
+  [[:p (link-to (UIHelpers/urlFormat "/download?file=%s" (to-array [fname])) "Download Full File")]])
 
 (defn- daemon-download-link [fname]
   [[:p (link-to (UIHelpers/urlFormat "/daemondownload/%s" (to-array [fname])) "Download Full File")]])
@@ -529,7 +529,7 @@
 
 (defn url-to-match-centered-in-log-page
   [needle fname offset port]
-  (let [host (Utils/localHostname)
+  (let [host (Utils/hostname)
         port (logviewer-port)
         fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 3 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/log")
@@ -542,7 +542,7 @@
 
 (defn url-to-match-centered-in-log-page-daemon-file
   [needle fname offset port]
-  (let [host (Utils/localHostname)
+  (let [host (Utils/hostname)
         port (logviewer-port)
         fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 1 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/daemonlog")
@@ -1097,10 +1097,11 @@
       (catch InvalidRequestException ex
         (log-error ex)
         (ring-response-from-exception ex))))
-  (GET "/download/:file" [:as {:keys [servlet-request servlet-response log-root]} file & m]
+  (GET "/download" [:as {:keys [servlet-request servlet-response log-root]} & m]
     (try
       (.mark logviewer:num-download-log-file-http-requests)
-      (let [user (.getUserName http-creds-handler servlet-request)]
+      (let [user (.getUserName http-creds-handler servlet-request)
+            file (URLDecoder/decode (:file m))]
         (download-log-file file servlet-request servlet-response user log-root))
       (catch InvalidRequestException ex
         (log-error ex)

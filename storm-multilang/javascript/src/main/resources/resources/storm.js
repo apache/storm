@@ -138,9 +138,10 @@ Storm.prototype.handleNewTaskId = function(taskIds) {
  *
  * For bolt, the json must contain the required fields:
  * - tuple - the value to emit
- * - anchorTupleId - the value of the anchor tuple (the input tuple that lead to this emit). Used to track the source
  * tuple and return ack when all components successfully finished to process it.
  * and may contain the optional fields:
+ * - anchorTupleId - the value of the anchor tuple or array of anchor tuples (the input tuple(s) that lead to this emit).
+ * Used to track the source tuple and return ack when all components successfully finished to process it.
  * - stream (if empty - emit to default stream)
  *
  * For spout, the json must contain the required fields:
@@ -175,10 +176,10 @@ Storm.prototype.emit = function(messageDetails, onTaskIds) {
  *
  * For bolt, the json must contain the required fields:
  * - tuple - the value to emit
- * - anchorTupleId - the value of the anchor tuple (the input tuple that lead to this emit). Used to track the source
- * tuple and return ack when all components successfully finished to process it.
  * - task - indicate the task to send the tuple to.
  * and may contain the optional fields:
+ * - anchorTupleId - the value of the anchor tuple or array of anchor tuples (the input tuple(s) that lead to this emit).
+ * Used to track the source tuple and return ack when all components successfully finished to process it.
  * - stream (if empty - emit to default stream)
  *
  * For spout, the json must contain the required fields:
@@ -246,21 +247,28 @@ BasicBolt.prototype.constructor = BasicBolt;
  * Emit message.
  * @param commandDetails json with the required fields:
  * - tuple - the value to emit
- * - anchorTupleId - the value of the anchor tuple (the input tuple that lead to this emit). Used to track the source
- * tuple and return ack when all components successfully finished to process it.
  * and the optional fields:
+ * - anchorTupleId - the value of the anchor tuple or array of anchor tuples (the input tuple(s) that lead to this emit).
+ * Used to track the source tuple and return ack when all components successfully finished to process it.
  * - stream (if empty - emit to default stream)
  * - task (pass only to emit to specific task)
  */
 BasicBolt.prototype.__emit = function(commandDetails) {
     var self = this;
 
+    var anchors = [];
+    if (commandDetails.anchorTupleId instanceof Array) {
+        anchors = commandDetails.anchorTupleId;
+    } else if (commandDetails.anchorTupleId) {
+        anchors = [commandDetails.anchorTupleId];
+    }
+
     var message = {
         command: "emit",
         tuple: commandDetails.tuple,
         stream: commandDetails.stream,
         task: commandDetails.task,
-        anchors: [commandDetails.anchorTupleId]
+        anchors: anchors
     };
 
     this.sendMsgToParent(message);

@@ -21,6 +21,20 @@ config:
   topology.workers: 1
   # ...
 
+components:
+  - id: "foo"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "foo"
+  - id: "bar"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "bar"
+  - id: "baz"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "baz"
+
 # spout definitions
 spouts:
   - id: "spout-1"
@@ -37,6 +51,7 @@ bolts:
       - FOO # enum class
       - 1.0
       - true
+      - reflist: ["foo", "bar"]
     configMethods:
       - name: "withFoo"
         args:
@@ -49,7 +64,12 @@ bolts:
         args:
           - "foo"
           - "bar"
-
+      - name: "withClasses"
+        args:
+          - reflist:
+            - "foo"
+            - "bar"
+            - "baz"
 
 
 #stream definitions

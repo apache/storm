@@ -29,11 +29,9 @@
   (:import [org.apache.storm.generated DRPCExecutionException DRPCRequest])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:import [org.apache.storm Thrift])
-  (:import [org.apache.storm.daemon DrpcServer])
   (:import [org.mockito ArgumentCaptor Mockito Matchers])
   (:use [org.apache.storm config])
   (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon drpc])
   (:use [conjure core]))
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]
@@ -229,32 +227,6 @@
     (.shutdown cluster)
     (.shutdown drpc)
     ))
-
-(deftest test-dequeue-req-after-timeout
-  (let [queue (ConcurrentLinkedQueue.)
-        delay-seconds 2
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}
-        mock-cu (proxy [ConfigUtils] []
-                  (readStormConfigImpl [] conf))
-        drpc-handler (proxy [DrpcServer] [conf]
-                       (acquireQueue [function] queue))]
-    (with-open [_ (ConfigUtilsInstaller. mock-cu)]
-      (is (thrown? DRPCExecutionException
-            (.execute drpc-handler "ArbitraryDRPCFunctionName" "")))
-      (is (= 0 (.size queue))))))
-
-(deftest test-drpc-timeout-cleanup
-  (let [queue (ConcurrentLinkedQueue.)
-        delay-seconds 1
-        conf {DRPC-REQUEST-TIMEOUT-SECS delay-seconds}
-        mock-cu (proxy [ConfigUtils] []
-                  (readStormConfigImpl [] conf))
-        drpc-handler (proxy [DrpcServer] [conf]
-          (acquireQueue [function] queue)
-          (getTimeoutCheckSecs [] delay-seconds))]
-    (with-open [_ (ConfigUtilsInstaller. mock-cu)]
-      (is (thrown? DRPCExecutionException
-            (.execute drpc-handler "ArbitraryDRPCFunctionName" "no-args"))))))
 
 (deftest test-drpc-attempts-two-reconnects-in-fail-request
   (let [handler (Mockito/mock DRPCInvocationsClient 

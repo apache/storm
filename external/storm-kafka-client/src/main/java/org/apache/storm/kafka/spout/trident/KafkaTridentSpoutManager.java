@@ -22,18 +22,15 @@ import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsWildcardTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
+import org.apache.storm.kafka.spout.RecordTranslator;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
-import java.util.regex.Pattern;
 
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
@@ -44,33 +41,59 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     // Bookkeeping
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     // Declare some KafkaSpoutConfig references for convenience
-    private KafkaSpoutStreams kafkaSpoutStreams;                // Object that wraps all the logic to declare output fields and emit tuples
-    private KafkaSpoutTuplesBuilder<K, V> tuplesBuilder;        // Object that contains the logic to build tuples for each ConsumerRecord
+    private Fields fields;
 
     public KafkaTridentSpoutManager(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
-        kafkaSpoutStreams = kafkaSpoutConfig.getKafkaSpoutStreams();
-        tuplesBuilder = kafkaSpoutConfig.getTuplesBuilder();
+        this.fields = getFields();
         LOG.debug("Created {}", this);
     }
 
-    void subscribeKafkaConsumer() {
+    KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
         kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
 
-        if (kafkaSpoutStreams instanceof KafkaSpoutStreamsNamedTopics) {
-            final List<String> subTopics = kafkaSpoutConfig.getSubscribedTopics();
-            kafkaConsumer.subscribe(subTopics, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics {}", subTopics);
-        } else if (kafkaSpoutStreams instanceof KafkaSpoutStreamsWildcardTopics) {
-            final Pattern pattern = kafkaSpoutConfig.getTopicWildcardPattern();
-            kafkaConsumer.subscribe(pattern, new KafkaSpoutConsumerRebalanceListener());
-            LOG.info("Kafka consumer subscribed topics matching wildcard pattern [{}]", pattern);
-        }
+        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
+        return kafkaConsumer;
+    }
 
-        // Initial poll to get the consumer registration process going.
-        // KafkaSpoutConsumerRebalanceListener will be called following this poll, upon partition registration
-        kafkaConsumer.poll(0);
+    KafkaConsumer<K, V> getKafkaConsumer() {
+        return kafkaConsumer;
+    }
+
+    Set<TopicPartition> getTopicPartitions() {
+        return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
+    }
+
+    Fields getFields() {
+        if (fields == null) {
+            RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
+            Fields fs = null;
+            for (String stream : translator.streams()) {
+                if (fs == null) {
+                    fs = translator.getFieldsFor(stream);
+                } else {
+                    if (!fs.equals(translator.getFieldsFor(stream))) {
+                        throw new IllegalArgumentException("Trident Spouts do not support multiple output Fields");
+                    }
+                }
+            }
+            fields = fs;
+        }
+        LOG.debug("OutputFields = {}", fields);
+        return fields;
+    }
+
+    KafkaSpoutConfig<K, V> getKafkaSpoutConfig() {
+        return kafkaSpoutConfig;
+    }
+
+    @Override
+    public String toString() {
+        return super.toString() +
+                "{kafkaConsumer=" + kafkaConsumer +
+                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
+                '}';
     }
 
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
@@ -87,33 +110,5 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
             LOG.info("Partitions reassignment. [consumer-group={}, consumer={}, topic-partitions={}]",
                     kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
         }
-    }
-
-    KafkaConsumer<K, V> getKafkaConsumer() {
-        return kafkaConsumer;
-    }
-
-    KafkaSpoutTuplesBuilder<K, V> getTuplesBuilder() {
-        return tuplesBuilder;
-    }
-
-    Set<TopicPartition> getTopicPartitions() {
-        return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
-    }
-
-    KafkaSpoutStreams getKafkaSpoutStreams() {
-        return kafkaSpoutStreams;
-    }
-
-    KafkaSpoutConfig<K, V> getKafkaSpoutConfig() {
-        return kafkaSpoutConfig;
-    }
-
-    @Override
-    public String toString() {
-        return "KafkaTridentSpoutManager{" +
-                "kafkaConsumer=" + kafkaConsumer +
-                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
-                '}';
     }
 }

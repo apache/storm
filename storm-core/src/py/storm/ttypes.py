@@ -156,6 +156,26 @@ class LogLevelAction:
     "REMOVE": 3,
   }
 
+class DRPCExceptionType:
+  INTERNAL_ERROR = 0
+  SERVER_SHUTDOWN = 1
+  SERVER_TIMEOUT = 2
+  FAILED_REQUEST = 3
+
+  _VALUES_TO_NAMES = {
+    0: "INTERNAL_ERROR",
+    1: "SERVER_SHUTDOWN",
+    2: "SERVER_TIMEOUT",
+    3: "FAILED_REQUEST",
+  }
+
+  _NAMES_TO_VALUES = {
+    "INTERNAL_ERROR": 0,
+    "SERVER_SHUTDOWN": 1,
+    "SERVER_TIMEOUT": 2,
+    "FAILED_REQUEST": 3,
+  }
+
 class HBServerMessageType:
   CREATE_PATH = 0
   CREATE_PATH_RESPONSE = 1
@@ -11002,15 +11022,18 @@ class DRPCExecutionException(TException):
   """
   Attributes:
    - msg
+   - type
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRING, 'msg', None, None, ), # 1
+    (2, TType.I32, 'type', None, None, ), # 2
   )
 
-  def __init__(self, msg=None,):
+  def __init__(self, msg=None, type=None,):
     self.msg = msg
+    self.type = type
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -11024,6 +11047,11 @@ class DRPCExecutionException(TException):
       if fid == 1:
         if ftype == TType.STRING:
           self.msg = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.I32:
+          self.type = iprot.readI32()
         else:
           iprot.skip(ftype)
       else:
@@ -11040,6 +11068,10 @@ class DRPCExecutionException(TException):
       oprot.writeFieldBegin('msg', TType.STRING, 1)
       oprot.writeString(self.msg.encode('utf-8'))
       oprot.writeFieldEnd()
+    if self.type is not None:
+      oprot.writeFieldBegin('type', TType.I32, 2)
+      oprot.writeI32(self.type)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -11055,6 +11087,7 @@ class DRPCExecutionException(TException):
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.msg)
+    value = (value * 31) ^ hash(self.type)
     return value
 
   def __repr__(self):
