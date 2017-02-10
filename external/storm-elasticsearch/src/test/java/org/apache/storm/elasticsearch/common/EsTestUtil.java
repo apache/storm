@@ -27,7 +27,7 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
@@ -53,7 +53,7 @@ public class EsTestUtil {
 
     public static Node startEsNode(){
         Node node = NodeBuilder.nodeBuilder().data(true).settings(
-                ImmutableSettings.builder()
+                Settings.builder()
                         .put(ClusterName.SETTING, EsConstants.clusterName)
                         .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
                         .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)

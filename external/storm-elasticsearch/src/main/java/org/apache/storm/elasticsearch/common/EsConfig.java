@@ -22,11 +22,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
 import org.elasticsearch.common.settings.Settings;
 
-import static org.elasticsearch.common.base.Preconditions.checkArgument;
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import static org.apache.storm.shade.com.google.common.base.Preconditions.checkArgument;
+import static org.apache.storm.shade.com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @since 0.11
@@ -74,7 +73,7 @@ public class EsConfig implements Serializable {
     }
 
     Settings toBasicSettings() {
-        return ImmutableSettings.settingsBuilder()
+        return Settings.settingsBuilder()
                                 .put("cluster.name", clusterName)
                                 .put(additionalConfiguration)
                                 .build();

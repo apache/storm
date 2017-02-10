@@ -20,12 +20,12 @@ package org.apache.storm.elasticsearch.bolt;
 import org.apache.storm.testing.IntegrationTest;
 import org.apache.commons.io.FileUtils;
 import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.client.Requests;
 import org.elasticsearch.cluster.ClusterName;
+import org.elasticsearch.cluster.health.ClusterHealthStatus;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
 import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.node.Node;
@@ -60,8 +60,8 @@ public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt>
         Thread.sleep(1000);
     }
 
-    private static ImmutableSettings.Builder createSettings() {
-        return ImmutableSettings.builder()
+    private static Settings.Builder createSettings() {
+        return Settings.builder()
                                 .put(ClusterName.SETTING, "test-cluster")
                                 .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
                                 .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
@@ -73,7 +73,6 @@ public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt>
 
     @AfterClass
     public static void closeElasticSearchNode() throws Exception {
-        node.stop();
         node.close();
         FileUtils.deleteDirectory(new File("./data"));
     }
