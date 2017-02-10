@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2344: Flux YAML File Viewer for Nimbus UI
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
  * STORM-2270 Kafka spout should consume from latest when ZK partition commit offset bigger than the latest offset
  * STORM-1464: storm-hdfs support for multiple output files and partitioning
