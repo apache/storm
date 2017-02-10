@@ -356,11 +356,9 @@ To enable it, you need to:
 
 Here's one example to set AutoCommitMode in KafkaSpout:
 ```java
-Map<String, Object> props = new HashMap<String, Object>();
-props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
 		.builder(String bootstrapServers, String ... topics)
-		.setProp(props)
+		.setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
 		.setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
 		.build();
 ```

@@ -318,7 +318,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 final List<Object> tuple = kafkaSpoutConfig.getTranslator().apply(record);
                 
                 if(consumerAutoCommitMode){
-                	if (tuple instanceof KafkaTuple) {
+                    if (tuple instanceof KafkaTuple) {
                         collector.emit(((KafkaTuple)tuple).getStream(), tuple);
                     } else {
                         collector.emit(tuple);
