@@ -1,4 +1,7 @@
 ## 2.0.0
+ * STORM-2346: Files with unapproved licenses: download-rc-directory.sh verify-release-file.sh
+ * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
+ * STORM-1961: Stream api for storm core use cases
  * STORM-2327: Introduce ConfigurableTopology
  * STORM-2323: Precondition for Leader Nimbus should check all topology blobs and also corresponding dependencies.
  * STORM-2305: STORM-2279 calculates task index different from grouper code
@@ -28,7 +31,6 @@
  * storm-2205: Racecondition in getting nimbus summaries while ZK connections are reconnected
  * STORM-1278: Port org.apache.storm.daemon.worker to java
  * STORM-2192: Add a new IAutoCredentials plugin to support SSL files
- * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2185: Storm Supervisor doesn't delete directories properly sometimes
  * STORM-2188: Interrupt all executor threads before joining in executor shutdown
  * STORM-203: Adding paths to default java library path
@@ -196,13 +198,12 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2344: Flux YAML File Viewer for Nimbus UI
+ * STORM-2281: Running Multiple Kafka Spouts (Trident) Throws Illegal State Exception
+ * STORM-2296: Kafka spout no dup on leader changes
  * STORM-2014: New Kafka spout duplicates checking if failed messages have reached max retries
- * STORM-2324: Fix deployment failure if resources directory is missing in topology jar
  * STORM-1443: [Storm SQL] Support customizing parallelism in StormSQL
  * STORM-2148: [Storm SQL] Trident mode: back to code generate and compile Trident topology
- * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber.
- * STORM-2336: Close Localizer and AsyncLocalizer when supervisor is shutting down
- * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
  * STORM-2331: Emitting from JavaScript should work when not anchoring.
  * STORM-2320:  DRPC client printer class reusable for local and remote DRPC.
  * STORM-2225: change spout config to be simpler.
@@ -303,6 +304,13 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.3
+ * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
+ * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber.
+ * STORM-2324: Fix deployment failure if resources directory is missing in topology jar
+ * STORM-2335: Fix broken Topology visualization with empty ':transferred' in executor stats
+ * STORM-2336: Close Localizer and AsyncLocalizer when supervisor is shutting down
+ * STORM-2338: Subprocess exception handling is broken in storm.py on Windows environment
+ * STORM-2337: Broken documentation generation for storm-metrics-profiling-internal-actions.md and windows-users-guide.md
  * STORM-2325: Logviewer doesn't consider 'storm.local.hostname'
  * STORM-1742: More accurate 'complete latency'
  * STORM-2176: Workers do not shutdown cleanly and worker hooks don't run when a topology is killed

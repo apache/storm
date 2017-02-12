@@ -18,9 +18,7 @@
 
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.Config;
 import org.apache.storm.LocalDRPC;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.starter.trident.DebugMemoryMapState;
 import org.apache.storm.trident.Stream;
@@ -41,14 +39,6 @@ import org.slf4j.LoggerFactory;
 
 public class TridentKafkaConsumerTopology {
     protected static final Logger LOG = LoggerFactory.getLogger(TridentKafkaConsumerTopology.class);
-
-    public static void submitRemote(String name, ITridentDataSource tridentSpout) {
-        try {
-            StormSubmitter.submitTopology(name, newTpConfig(), newTopology(null, tridentSpout));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * See {@link TridentKafkaConsumerTopology#newTopology(LocalDRPC, ITridentDataSource)}
@@ -85,19 +75,11 @@ public class TridentKafkaConsumerTopology {
     }
 
     private static TridentState addTridentState(TridentTopology tridentTopology, ITridentDataSource tridentSpout) {
-        final Stream spoutStream = tridentTopology.newStream("spout1", tridentSpout).parallelismHint(1);
+        final Stream spoutStream = tridentTopology.newStream("spout1", tridentSpout).parallelismHint(2);
 
         return spoutStream.each(spoutStream.getOutputFields(), new Debug(true))
                 .each(new Fields("str"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .persistentAggregate(new DebugMemoryMapState.Factory(), new Count(), new Fields("count"));
     }
-
-    private static Config newTpConfig() {
-        Config conf = new Config();
-        conf.setMaxSpoutPending(20);
-        conf.setMaxTaskParallelism(1);
-        return conf;
-    }
-    
 }

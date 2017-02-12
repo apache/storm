@@ -88,14 +88,24 @@ public class ZkCoordinator implements PartitionCoordinator {
 
             LOG.info(taskId(_taskIndex, _totalTasks) + "Deleted partition managers: " + deletedPartitions.toString());
 
+            Map<Integer, PartitionManager> deletedManagers = new HashMap<>();
             for (Partition id : deletedPartitions) {
-                PartitionManager man = _managers.remove(id);
-                man.close();
+                deletedManagers.put(id.partition, _managers.remove(id));
+            }
+            for (PartitionManager manager : deletedManagers.values()) {
+                if (manager != null) manager.close();
             }
             LOG.info(taskId(_taskIndex, _totalTasks) + "New partition managers: " + newPartitions.toString());
 
             for (Partition id : newPartitions) {
-                PartitionManager man = new PartitionManager(_connections, _topologyInstanceId, _state, _stormConf, _spoutConfig, id);
+                PartitionManager man = new PartitionManager(
+                        _connections,
+                        _topologyInstanceId,
+                        _state,
+                        _stormConf,
+                        _spoutConfig,
+                        id,
+                        deletedManagers.get(id.partition));
                 _managers.put(id, man);
             }
 

@@ -28,6 +28,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
     protected final int threshold;
     protected final AtomicLong currentCount;
+    private EvictionContext context;
 
     public CountEvictionPolicy(int count) {
         this.threshold = count;
@@ -62,7 +63,12 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
 
     @Override
     public void setContext(EvictionContext context) {
-        // NOOP
+        this.context = context;
+    }
+
+    @Override
+    public EvictionContext getContext() {
+        return context;
     }
 
     @Override
