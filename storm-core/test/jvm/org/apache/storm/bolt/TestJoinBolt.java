@@ -113,6 +113,32 @@ public class TestJoinBolt {
 
 
     @Test
+    public void testProjection_FieldsWithStreamName() throws Exception {
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
+        ArrayList<Tuple> storeStream = makeStream("stores", storeFields, stores);
+
+        TupleWindow window = makeTupleWindow(storeStream, userStream);
+
+        // join users and stores on city name
+        JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[2])
+                .join("stores", "city", "users")
+                .select("userId,name,storeName,users:city,stores:city");
+
+        MockCollector collector = new MockCollector();
+        bolt.prepare(null, null, collector);
+        bolt.execute(window);
+        printResults(collector);
+        Assert.assertEquals( storeStream.size()+1, collector.actualResults.size() );
+        // ensure 5 fields per tuple and no null fields
+        for (List<Object> tuple : collector.actualResults) {
+            Assert.assertEquals(5, tuple.size());
+            for (Object o : tuple) {
+                Assert.assertNotNull(o);
+            }
+        }
+    }
+
+    @Test
     public void testInnerJoin() throws Exception {
         ArrayList<Tuple> userStream = makeStream("users", userFields, users);
         ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders);
