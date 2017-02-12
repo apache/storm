@@ -21,7 +21,6 @@ package org.apache.storm.hdfs.spout;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,11 +29,14 @@ import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.hadoop.hdfs.DFSClient;
+import org.apache.hadoop.hdfs.client.HdfsAdmin;
 import org.apache.storm.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.common.HdfsUtils;
+import org.apache.storm.hdfs.common.HdfsDirectoryMonitor;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -82,6 +84,8 @@ public class HdfsSpout extends BaseRichSpout {
 
   private FileSystem hdfs;
   private FileReader reader;
+  private HdfsDirectoryMonitor hdfsDirectoryMonitor;
+  private boolean inotifyEnabled = false;
 
   private SpoutOutputCollector collector;
   HashMap<MessageId, List<Object> > inflight = new HashMap<>();
@@ -166,6 +170,11 @@ public class HdfsSpout extends BaseRichSpout {
 
   public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
     this.ignoreSuffix = ignoreSuffix;
+    return this;
+  }
+
+  public HdfsSpout setInotifyEnabled(boolean inotifyEnabled) {
+    this.inotifyEnabled = inotifyEnabled;
     return this;
   }
 
@@ -503,6 +512,23 @@ public class HdfsSpout extends BaseRichSpout {
       clocksInSync = Boolean.parseBoolean(conf.get(Configs.CLOCKS_INSYNC).toString());
     }
 
+    if ( conf.get(Configs.INOTIFY_ENABLED) != null ) {
+      this.inotifyEnabled = Boolean.parseBoolean(conf.get(Configs.INOTIFY_ENABLED).toString());
+    }
+
+    if (this.inotifyEnabled) {
+      try {
+        DFSClient dfsClient = new DFSClient(URI.create(hdfsUri), hdfsConfig);
+        HdfsAdmin hdfsAdmin = new HdfsAdmin(hdfs.getUri(), hdfsConfig);
+        this.hdfsDirectoryMonitor = HdfsDirectoryMonitor.createInotifyMonitor(sourceDirPath, hdfs, dfsClient, hdfsAdmin);
+      } catch (IOException e) {
+        LOG.error("Error creating inotify based HDFS directory monitor. Are we running as root?", e);
+        throw new RuntimeException("Error creating inotify based HDFS directory monitor. Are we running as root?", e);
+      }
+    } else {
+      this.hdfsDirectoryMonitor = HdfsDirectoryMonitor.createPollMonitor(sourceDirPath, hdfs);
+    }
+
     // -- spout id
     spoutId = context.getThisComponentId();
 
@@ -596,9 +622,16 @@ public class HdfsSpout extends BaseRichSpout {
       }
 
       // 2) If no abandoned files, then pick oldest file in sourceDirPath, lock it and rename it
-      Collection<Path> listing = HdfsUtils.listFilesByModificationTime(hdfs, sourceDirPath, 0);
-
-      for (Path file : listing) {
+      try {
+        hdfsDirectoryMonitor.update();
+      } catch (Exception e) {
+        LOG.error("Unable to update source dir: " + sourceDirPath, e);
+        return null;
+      }
+      for (Path file : hdfsDirectoryMonitor) {
+        if (Path.getPathWithoutSchemeAndAuthority(file).toString().startsWith(lockDirPath.toString())) {
+          continue;
+        }
         if (file.getName().endsWith(inprogress_suffix)) {
           continue;
         }

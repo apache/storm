@@ -44,21 +44,22 @@ import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.storm.hdfs.common.HdfsUtils.Pair;
 
 
+@RunWith(Parameterized.class)
 public class TestHdfsSpout {
 
   @Rule
@@ -70,6 +71,14 @@ public class TestHdfsSpout {
 
 
   public TestHdfsSpout() {
+  }
+
+  @Parameter
+  public String inotifyEnabled;
+
+  @Parameters(name="inotifyEnabled={0}")
+  public static Collection<Object[]> inotifyEnabledValues() {
+    return Arrays.asList(new Object[][] { { "false" }, { "true" } });
   }
 
   static MiniDFSCluster.Builder builder;
@@ -111,18 +120,18 @@ public class TestHdfsSpout {
 
   @Test
   public void testSimpleText_noACK() throws IOException {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 5);
-
-    Path file2 = new Path(source.toString() + "/file2.txt");
-    createTextFile(file2, 5);
-
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 5);
+
+    Path file2 = new Path(source.toString() + "/file2.txt");
+    createTextFile(file2, 5);
 
     runSpout(spout,"r11");
 
@@ -133,12 +142,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testSimpleText_ACK() throws IOException {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 5);
-
-    Path file2 = new Path(source.toString() + "/file2.txt");
-    createTextFile(file2, 5);
-
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
@@ -146,6 +149,12 @@ public class TestHdfsSpout {
     Map conf = getCommonConfigs();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
     openSpout(spout, 0, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 5);
+
+    Path file2 = new Path(source.toString() + "/file2.txt");
+    createTextFile(file2, 5);
 
     // consume file 1
     runSpout(spout, "r6", "a0", "a1", "a2", "a3", "a4");
@@ -160,9 +169,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testResumeAbandoned_Text_NoAck() throws Exception {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 6);
-
     final Integer lockExpirySec = 1;
 
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
@@ -179,6 +185,9 @@ public class TestHdfsSpout {
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
     openSpout(spout2, 1, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 6);
 
     // consume file 1 partially
     List<String> res = runSpout(spout, "r2");
@@ -217,9 +226,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testResumeAbandoned_Seq_NoAck() throws Exception {
-    Path file1 = new Path(source.toString() + "/file1.seq");
-    createSeqFile(fs, file1, 6);
-
     final Integer lockExpirySec = 1;
 
     HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
@@ -236,6 +242,9 @@ public class TestHdfsSpout {
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
     openSpout(spout2, 1, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.seq");
+    createSeqFile(fs, file1, 6);
 
     // consume file 1 partially
     List<String> res = runSpout(spout, "r2");
@@ -340,9 +349,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testMultipleFileConsumption_Ack() throws Exception {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 5);
-
 
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
     spout.setCommitFrequencyCount(1);
@@ -351,6 +357,9 @@ public class TestHdfsSpout {
     Map conf = getCommonConfigs();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
     openSpout(spout, 0, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 5);
 
     // read few lines from file1 dont ack
     runSpout(spout, "r3");
@@ -413,22 +422,20 @@ public class TestHdfsSpout {
 
   @Test
   public void testSimpleSequenceFile() throws IOException {
-    //1) create a couple files to consume
     source = new Path("/tmp/hdfsspout/source");
     fs.mkdirs(source);
     archive = new Path("/tmp/hdfsspout/archive");
     fs.mkdirs(archive);
+
+    HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
 
     Path file1 = new Path(source + "/file1.seq");
     createSeqFile(fs, file1, 5);
 
     Path file2 = new Path(source + "/file2.seq");
     createSeqFile(fs, file2, 5);
-
-
-    HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
-    Map conf = getCommonConfigs();
-    openSpout(spout, 0, conf);
 
     // consume both files
     List<String> res = runSpout(spout, "r11");
@@ -445,7 +452,10 @@ public class TestHdfsSpout {
 
   @Test
   public void testReadFailures() throws Exception {
-    // 1) create couple of input files to read
+    HdfsSpout spout = makeSpout(MockTextFailingReader.class.getName(), MockTextFailingReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
+
     Path file1 = new Path(source.toString() + "/file1.txt");
     Path file2 = new Path(source.toString() + "/file2.txt");
 
@@ -453,16 +463,11 @@ public class TestHdfsSpout {
     createTextFile(file2, 7);
     Assert.assertEquals(2, listDir(source).size());
 
-    // 2) run spout
-    HdfsSpout spout = makeSpout(MockTextFailingReader.class.getName(), MockTextFailingReader.defaultFields);
-    Map conf = getCommonConfigs();
-    openSpout(spout, 0, conf);
-
     List<String> res = runSpout(spout, "r11");
     String[] expected = new String[] {"[line 0]","[line 1]","[line 2]","[line 0]","[line 1]","[line 2]"};
     Assert.assertArrayEquals(expected, res.toArray());
 
-    // 3) make sure 6 lines (3 from each file) were read in all
+    // make sure 6 lines (3 from each file) were read in all
     Assert.assertEquals(((MockCollector) spout.getCollector()).lines.size(), 6);
     ArrayList<Path> badFiles = HdfsUtils.listFilesByModificationTime(fs, badfiles, 0);
     Assert.assertEquals(badFiles.size(), 2);
@@ -471,18 +476,16 @@ public class TestHdfsSpout {
   // check lock creation/deletion and contents
    @Test
   public void testLocking() throws Exception {
-     Path file1 = new Path(source.toString() + "/file1.txt");
-     createTextFile(file1, 10);
-
      // 0) config spout to log progress in lock file for each tuple
-
      HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
      spout.setCommitFrequencyCount(1);
      spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
 
-
      Map conf = getCommonConfigs();
      openSpout(spout, 0, conf);
+
+     Path file1 = new Path(source.toString() + "/file1.txt");
+     createTextFile(file1, 10);
 
      // 1) read initial lines in file, then check if lock exists
      List<String> res = runSpout(spout, "r5");
@@ -522,9 +525,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testLockLoggingFreqCount() throws Exception {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 10);
-
     // 0) config spout to log progress in lock file for each tuple
 
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
@@ -533,6 +533,9 @@ public class TestHdfsSpout {
 
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 10);
 
     // 1) read 5 lines in file,
     runSpout(spout, "r5");
@@ -550,9 +553,6 @@ public class TestHdfsSpout {
 
   @Test
   public void testLockLoggingFreqSec() throws Exception {
-    Path file1 = new Path(source.toString() + "/file1.txt");
-    createTextFile(file1, 10);
-
     // 0) config spout to log progress in lock file for each tuple
     HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
     spout.setCommitFrequencyCount(0); // disable it
@@ -560,6 +560,9 @@ public class TestHdfsSpout {
 
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
+
+    Path file1 = new Path(source.toString() + "/file1.txt");
+    createTextFile(file1, 10);
 
     // 1) read 5 lines in file
     runSpout(spout, "r5");
@@ -590,6 +593,7 @@ public class TestHdfsSpout {
 
   private Map getCommonConfigs() {
     Map conf = new HashMap();
+    conf.put(Configs.INOTIFY_ENABLED, inotifyEnabled);
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "0");
     return conf;
   }

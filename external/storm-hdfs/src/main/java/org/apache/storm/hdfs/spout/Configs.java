@@ -34,6 +34,7 @@ public class Configs {
   public static final String LOCK_TIMEOUT = "hdfsspout.lock.timeout.sec";   // inactivity duration after which locks are considered candidates for being reassigned to another spout
   public static final String CLOCKS_INSYNC = "hdfsspout.clocks.insync";     // if clocks on machines in the Storm cluster are in sync
   public static final String IGNORE_SUFFIX = "hdfsspout.ignore.suffix";     // filenames with this suffix in archive dir will be ignored by the Spout
+  public static final String INOTIFY_ENABLED = "hdfsspout.inotify.enabled"; // enables inotify based directory watch mode if set to "true"
 
   public static final String DEFAULT_LOCK_DIR = ".lock";
   public static final int DEFAULT_COMMIT_FREQ_COUNT = 20000;
