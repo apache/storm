@@ -50,9 +50,9 @@ public class KafkaSpoutTopologyMainNamedTopics {
 
     protected void runMain(String[] args) throws Exception {
         if (args.length == 0) {
-            submitTopologyLocalCluster(getTopolgyKafkaSpout(), getConfig());
+            submitTopologyLocalCluster(getTopologyKafkaSpout(), getConfig());
         } else {
-            submitTopologyRemoteCluster(args[0], getTopolgyKafkaSpout(), getConfig());
+            submitTopologyRemoteCluster(args[0], getTopologyKafkaSpout(), getConfig());
         }
     }
 
@@ -82,7 +82,7 @@ public class KafkaSpoutTopologyMainNamedTopics {
         return config;
     }
 
-    protected StormTopology getTopolgyKafkaSpout() {
+    protected StormTopology getTopologyKafkaSpout() {
         final TopologyBuilder tp = new TopologyBuilder();
         tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig()), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt())
