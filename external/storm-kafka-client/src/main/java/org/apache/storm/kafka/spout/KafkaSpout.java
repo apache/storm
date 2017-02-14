@@ -286,11 +286,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         final Set<TopicPartition> retriableTopicPartitions = retryService.retriableTopicPartitions();
 
         for (TopicPartition rtp : retriableTopicPartitions) {
-            final OffsetAndMetadata offsetAndMeta = acked.get(rtp).findNextCommitOffset();
-            if (offsetAndMeta != null) {
-                kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
-            } else {
-                kafkaConsumer.seek(rtp, acked.get(rtp).committedOffset + 1);    // Seek to last committed offset
+            if (acked.get(rtp)!=null) {
+                final OffsetAndMetadata offsetAndMeta = acked.get(rtp).findNextCommitOffset();
+                if (offsetAndMeta != null) {
+                    kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
+                } else {
+                    kafkaConsumer.seek(rtp, acked.get(rtp).committedOffset + 1);    // Seek to last committed offset
+                }
             }
         }
     }
