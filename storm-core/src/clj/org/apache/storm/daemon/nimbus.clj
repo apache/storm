@@ -297,7 +297,7 @@
 (defn update-storm-code-tasks [nimbus storm-id component->executors]
   (let [subject (get-subject)
         blob-store (:blob-store nimbus)
-        ^StormTopology topology (.deepCopy (try-read-storm-topology storm-id blob-store))
+        ^StormTopology topology (try-read-storm-topology storm-id blob-store)
         old-components (all-components topology)
         storm-cluster-state (:storm-cluster-state nimbus)
         code-key (master-stormcode-key storm-id)
@@ -310,7 +310,8 @@
         (.set_json_conf component-common
           (->> {TOPOLOGY-TASKS num-tasks}
                (merge (component-conf component))
-               to-json))))
+               to-json))
+        (log-message "Override "  storm-id " component: " comp " json conf to " (.get_json_conf component-common) " for rebalancing")))
     (.deleteBlob blob-store code-key subject)
     (.createBlob blob-store code-key (Utils/serialize topology) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
     (if (instance? LocalFsBlobStore blob-store)
