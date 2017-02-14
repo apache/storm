@@ -57,7 +57,7 @@ public class ZippedTextFileReader extends AbstractFileReader {
   private final Logger LOG = LoggerFactory.getLogger(ZippedTextFileReader.class);
   private ZippedTextFileReader.Offset offset;
   private Text value = new Text();  
-  
+  FSDataInputStream fsin = null;
   public ZippedTextFileReader(FileSystem fs, Path file, Map conf) throws IOException {
     this(fs, file, conf, new ZippedTextFileReader.Offset(0,0) );
   }
@@ -94,8 +94,6 @@ public class ZippedTextFileReader extends AbstractFileReader {
 		zipFilename = path.getName();
 
 		LOG.info("zipFilename: ============:" + zipFilename);
-		System.out.println("zipFilename: ============:" + zipFilename);
-
 		// Open current file for reading by wrapping it inside zip reader
 		FileSystem fs = path.getFileSystem(conf);
 		fsin = fs.open(path);
