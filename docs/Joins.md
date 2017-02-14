@@ -40,7 +40,7 @@ topoBuilder.setBolt("joiner", jbolt, 1)
             .fieldsGrouping("spout4", new Fields("key4") );
 ```
 
-The bolt constructor takes two arguments. The 1st argument introduces the data from `spout1`'
+The bolt constructor takes two arguments. The 1st argument introduces the data from `spout1`
 to be the first stream and specifies that it will always use field `key1` when joining this with the others streams.
 The name of the component specified must refer to the spout or bolt that is directly connected to the Join bolt. 
 Here data received from `spout1` must be fields grouped on `key1`. Similarly, each of the `leftJoin()` and `join()` method
@@ -60,7 +60,7 @@ The call to `withTumblingWindow()` above, configures the join window to be a 10 
 is a Windowed Bolt, we can also use the `withWindow` method to configure it as a sliding window (see tips section below). 
 
 ## Stream names and Join order
-1. Stream names must be introduced (in constructor or as 1st arg to various join methods) before being referred
+* Stream names must be introduced (in constructor or as 1st arg to various join methods) before being referred
 to (in the 3rd argument of the join methods). Forward referencing of stream names, as shown below, is not allowed:
 
 ```java
@@ -68,8 +68,7 @@ new JoinBolt( "spout1", "key1")
   .join     ( "spout2", "userId",  "spout3") //not allowed. spout3 not yet introduced
   .join     ( "spout3", "key3",    "spout1")
 ```
-
-2. Internally, the joins will be performed in the order expressed by the user.
+* Internally, the joins will be performed in the order expressed by the user.
 
 ## Joining based on Stream names
 
