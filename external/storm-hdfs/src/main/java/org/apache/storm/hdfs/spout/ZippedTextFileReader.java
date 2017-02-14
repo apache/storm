@@ -104,7 +104,7 @@ public class ZippedTextFileReader extends AbstractFileReader {
     return offset.clone();
   }
 
-  public List<Object> next() throws IOException, ParseException {
+  public List<Object> next() throws ParseException {
 	boolean done = false;
 
 	try {
@@ -140,7 +140,7 @@ public class ZippedTextFileReader extends AbstractFileReader {
 
 
   @Override
-  public void close() throws IOException {
+  public void close() {
 	 if (in != null) {
 			in.close();
 		}
