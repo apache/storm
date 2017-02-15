@@ -43,6 +43,10 @@ group storm {
        }
        cpu {
        }
+       memory {
+       }
+       cpuacct {
+       }
 }
 ```
 
@@ -68,4 +72,31 @@ Since limiting CPU usage via cpu.shares only limits the proportional CPU usage o
 
 CGroups can be used in conjunction with the Resource Aware Scheduler.  CGroups will then enforce the resource usage of workers as allocated by the Resource Aware Scheduler.  To use cgroups with the Resource Aware Scheduler, simply enable cgroups and be sure NOT to set storm.worker.cgroup.memory.mb.limit and storm.worker.cgroup.cpu.limit configs.
 
+# CGroup Metrics
 
+CGroups not only can limit the amount of resources a worker has access to, but it can also help monitor the resource consumption of a worker.  There are several metrics enabled by default that will check if the worker is a part of a CGroup and report correspndign metrics.
+
+## CGroupCPU
+
+org.apache.storm.metric.cgroup.CGroupCPU reports back metrics similar to org.apache.storm.metrics.sigar.CPUMetric, except for everything within the CGroup.  It reports both user and system CPU usage in ms as a map
+
+```
+{
+   "user-ms": number
+   "sys-ms": number
+}
+```
+
+CGroup reports these as CLK_TCK counts, and not milliseconds so the accuracy is determined by what CLK_TCK is set to.  On most systems it is 100 times a second so at most the accuracy is 10 ms.
+
+## CGroupCpuGuarantee
+
+org.apache.storm.metric.cgroup.CGroupCpuGuarantee reports back an approximate number of ms of CPU time that this worker is guaranteed to get.  This is calculated from the resources requested by the tasks in that given worker.
+
+## CGroupMemory
+
+org.apache.storm.metric.cgroup.CGroupMemoryUsage reports the current memory usage of all processes in the cgroup in bytes
+
+## CGroupMemoryLimit
+
+org.apache.storm.metric.cgroup.CGroupMemoryLimit report the current limit in bytes for all of the processes in the cgroup.  If running with CGroups enabeld in storm this is the on-heap request + the off-heap request for all tasks within the worker + any extra slop space given to workers.
