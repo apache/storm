@@ -37,7 +37,7 @@ public class KafkaSpoutTopologyMainWildcardTopics extends KafkaSpoutTopologyMain
         new KafkaSpoutTopologyMainWildcardTopics().runMain(args);
     }
 
-    protected StormTopology getTopolgyKafkaSpout() {
+    protected StormTopology getTopologyKafkaSpout() {
         final TopologyBuilder tp = new TopologyBuilder();
         tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig()), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);

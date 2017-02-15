@@ -198,6 +198,8 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2340: fix AutoCommitMode issue in KafkaSpout
+ * STORM-2344: Flux YAML File Viewer for Nimbus UI
  * STORM-2281: Running Multiple Kafka Spouts (Trident) Throws Illegal State Exception
  * STORM-2296: Kafka spout no dup on leader changes
  * STORM-2014: New Kafka spout duplicates checking if failed messages have reached max retries
