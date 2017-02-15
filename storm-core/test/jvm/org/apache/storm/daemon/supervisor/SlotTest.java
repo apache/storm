@@ -43,6 +43,7 @@ import org.apache.storm.localizer.ILocalizer;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.Test;
 
 public class SlotTest {
@@ -113,8 +114,7 @@ public class SlotTest {
     
     @Test
     public void testEmptyToEmpty() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             ILocalizer localizer = mock(ILocalizer.class);
             LocalState state = mock(LocalState.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
@@ -125,15 +125,12 @@ public class SlotTest {
             DynamicState nextState = Slot.handleEmpty(dynamicState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
             assertTrue(Time.currentTimeMillis() > 1000);
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testLaunchContainerFromEmpty() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             int port = 8080;
             String topoId = "NEW";
             List<ExecutorInfo> execList =  mkExecutorInfoList(1,2,3,4,5);
@@ -210,16 +207,13 @@ public class SlotTest {
             assertSame(newAssignment, nextState.currentAssignment);
             assertSame(container, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
-        } finally {
-            Time.stopSimulating();
         }
     }
 
 
     @Test
     public void testRelaunch() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             int port = 8080;
             String topoId = "CURRENT";
             List<ExecutorInfo> execList =  mkExecutorInfoList(1,2,3,4,5);
@@ -260,15 +254,12 @@ public class SlotTest {
             
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testReschedule() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList =  mkExecutorInfoList(1,2,3,4,5);
@@ -368,16 +359,13 @@ public class SlotTest {
             assertSame(nAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 4000);
-        } finally {
-            Time.stopSimulating();
         }
     }
 
     
     @Test
     public void testRunningToEmpty() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList =  mkExecutorInfoList(1,2,3,4,5);
@@ -432,15 +420,12 @@ public class SlotTest {
             assertEquals(null, nextState.container);
             assertEquals(null, nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 3000);
-        } finally {
-            Time.stopSimulating();
         }
     }
     
     @Test
     public void testRunWithProfileActions() throws Exception {
-        Time.startSimulatingAutoAdvanceOnSleep(1010);
-        try {
+        try (SimulatedTime simulatedTime = new SimulatedTime(1010)) {
             int port = 8080;
             String cTopoId = "CURRENT";
             List<ExecutorInfo> cExecList =  mkExecutorInfoList(1,2,3,4,5);
@@ -508,8 +493,6 @@ public class SlotTest {
             assertEquals(Collections.<TopoProfileAction> emptySet(), nextState.pendingStopProfileActions);
             assertEquals(Collections.<TopoProfileAction> emptySet(), nextState.profileActions);
             assertTrue(Time.currentTimeMillis() > 5000);
-        } finally {
-            Time.stopSimulating();
         }
     }
 }
