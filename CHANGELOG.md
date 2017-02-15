@@ -1,4 +1,5 @@
-## 2.0.0
+﻿## 2.0.0
+ * STORM-2250: Kafka Spout Refactoring to Increase Modularity and Testability
  * STORM-2346: Files with unapproved licenses: download-rc-directory.sh verify-release-file.sh
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
  * STORM-1961: Stream api for storm core use cases
