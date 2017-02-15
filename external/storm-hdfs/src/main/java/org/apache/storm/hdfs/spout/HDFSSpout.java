@@ -45,11 +45,11 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
-public class HdfsSpout extends BaseRichSpout {
+public class HDFSSpout extends BaseRichSpout {
 
   // user configurable
   private String hdfsUri;            // required
-  private String readerType;         // required
+  private Class<? extends FileReader> readerType;         // required
   private Fields outputFields;       // required
 
   private String sourceDir;        // required
@@ -76,7 +76,7 @@ public class HdfsSpout extends BaseRichSpout {
   private String outputStreamName= null;
 
   // other members
-  private static final Logger LOG = LoggerFactory.getLogger(HdfsSpout.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HDFSSpout.class);
 
   private ProgressTracker tracker = null;
 
@@ -105,79 +105,79 @@ public class HdfsSpout extends BaseRichSpout {
 
   private String configKey = Configs.DEFAULT_HDFS_CONFIG_KEY; // key for hdfs Kerberos configs
 
-  public HdfsSpout() {
+  public HDFSSpout() {
   }
 
-  public HdfsSpout setHdfsUri(String hdfsUri) {
+  public HDFSSpout setHdfsUri(String hdfsUri) {
     this.hdfsUri = hdfsUri;
     return this;
   }
 
-  public HdfsSpout setReaderType(String readerType) {
+  public HDFSSpout setReaderType(Class<? extends FileReader> readerType) {
     this.readerType = readerType;
     return this;
   }
 
-  public HdfsSpout setSourceDir(String sourceDir) {
+  public HDFSSpout setSourceDir(String sourceDir) {
     this.sourceDir = sourceDir;
     return this;
   }
 
-  public HdfsSpout setArchiveDir(String archiveDir) {
+  public HDFSSpout setArchiveDir(String archiveDir) {
     this.archiveDir = archiveDir;
     return this;
   }
 
-  public HdfsSpout setBadFilesDir(String badFilesDir) {
+  public HDFSSpout setBadFilesDir(String badFilesDir) {
     this.badFilesDir = badFilesDir;
     return this;
   }
 
-  public HdfsSpout setLockDir(String lockDir) {
+  public HDFSSpout setLockDir(String lockDir) {
     this.lockDir = lockDir;
     return this;
   }
 
-  public HdfsSpout setCommitFrequencyCount(int commitFrequencyCount) {
+  public HDFSSpout setCommitFrequencyCount(int commitFrequencyCount) {
     this.commitFrequencyCount = commitFrequencyCount;
     return this;
   }
 
-  public HdfsSpout setCommitFrequencySec(int commitFrequencySec) {
+  public HDFSSpout setCommitFrequencySec(int commitFrequencySec) {
     this.commitFrequencySec = commitFrequencySec;
     return this;
   }
 
-  public HdfsSpout setMaxOutstanding(int maxOutstanding) {
+  public HDFSSpout setMaxOutstanding(int maxOutstanding) {
     this.maxOutstanding = maxOutstanding;
     return this;
   }
 
-  public HdfsSpout setLockTimeoutSec(int lockTimeoutSec) {
+  public HDFSSpout setLockTimeoutSec(int lockTimeoutSec) {
     this.lockTimeoutSec = lockTimeoutSec;
     return this;
   }
 
-  public HdfsSpout setClocksInSync(boolean clocksInSync) {
+  public HDFSSpout setClocksInSync(boolean clocksInSync) {
     this.clocksInSync = clocksInSync;
     return this;
   }
 
 
-  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
+  public HDFSSpout setIgnoreSuffix(String ignoreSuffix) {
     this.ignoreSuffix = ignoreSuffix;
     return this;
   }
 
   /** Output field names. Number of fields depends upon the reader type */
-  public HdfsSpout withOutputFields(String... fields) {
+  public HDFSSpout withOutputFields(String... fields) {
     outputFields = new Fields(fields);
     return this;
   }
 
   /** set key name under which HDFS options are placed. (similar to HDFS bolt).
    * default key name is 'hdfs.config' */
-  public HdfsSpout withConfigKey(String configKey) {
+  public HDFSSpout withConfigKey(String configKey) {
     this.configKey = configKey;
     return this;
   }
@@ -185,7 +185,7 @@ public class HdfsSpout extends BaseRichSpout {
   /**
    * Set output stream name
    */
-  public HdfsSpout withOutputStream(String streamName) {
+  public HDFSSpout withOutputStream(String streamName) {
     this.outputStreamName = streamName;
     return this;
   }
@@ -409,9 +409,14 @@ public class HdfsSpout extends BaseRichSpout {
 
     // Reader type config
     if ( readerType==null && conf.containsKey(Configs.READER_TYPE) ) {
-      readerType = conf.get(Configs.READER_TYPE).toString();
+    	String className = (String) conf.get(Configs.READER_TYPE);
+      try {
+		readerType = (Class<? extends FileReader>) Class.forName(className);
+	} catch (ClassNotFoundException e) {
+		throw new RuntimeException("Unable to instantiate " + className, e);
+	}
     }
-    checkValidReader(readerType);
+
 
     // -- source dir config
     if ( sourceDir==null && conf.containsKey(Configs.SOURCE_DIR) ) {
@@ -529,22 +534,6 @@ public class HdfsSpout extends BaseRichSpout {
 
   private String getDefaultLockDir(Path sourceDirPath) {
     return sourceDirPath.toString() + Path.SEPARATOR + Configs.DEFAULT_LOCK_DIR;
-  }
-
-  private static void checkValidReader(String readerType) {
-    if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
-      return;
-    try {
-      Class<?> classType = Class.forName(readerType);
-      classType.getConstructor(FileSystem.class, Path.class, Map.class);
-      return;
-    } catch (ClassNotFoundException e) {
-      LOG.error(readerType + " not found in classpath.", e);
-      throw new IllegalArgumentException(readerType + " not found in classpath.", e);
-    } catch (NoSuchMethodException e) {
-      LOG.error(readerType + " is missing the expected constructor for Readers.", e);
-      throw new IllegalArgumentException(readerType + " is missing the expected constuctor for Readers.");
-    }
   }
 
   @Override
@@ -696,18 +685,10 @@ public class HdfsSpout extends BaseRichSpout {
    */
   private FileReader createFileReader(Path file)
           throws IOException {
-    if ( readerType.equalsIgnoreCase(Configs.SEQ) ) {
-      return new SequenceFileReader(this.hdfs, file, conf);
-    }
-    if ( readerType.equalsIgnoreCase(Configs.TEXT) ) {
-      return new TextFileReader(this.hdfs, file, conf);
-    }
     try {
-      Class<?> clsType = Class.forName(readerType);
-      Constructor<?> constructor = clsType.getConstructor(FileSystem.class, Path.class, Map.class);
+      Constructor<?> constructor = readerType.getConstructor(FileSystem.class, Path.class, Map.class);
       return (FileReader) constructor.newInstance(this.hdfs, file, conf);
     } catch (Exception e) {
-      LOG.error(e.getMessage(), e);
       throw new RuntimeException("Unable to instantiate " + readerType + " reader", e);
     }
   }
@@ -722,19 +703,10 @@ public class HdfsSpout extends BaseRichSpout {
    */
   private FileReader createFileReader(Path file, String offset)
           throws IOException {
-    if ( readerType.equalsIgnoreCase(Configs.SEQ) ) {
-      return new SequenceFileReader(this.hdfs, file, conf, offset);
-    }
-    if ( readerType.equalsIgnoreCase(Configs.TEXT) ) {
-      return new TextFileReader(this.hdfs, file, conf, offset);
-    }
-
     try {
-      Class<?> clsType = Class.forName(readerType);
-      Constructor<?> constructor = clsType.getConstructor(FileSystem.class, Path.class, Map.class, String.class);
+      Constructor<?> constructor = readerType.getConstructor(FileSystem.class, Path.class, Map.class, String.class);
       return (FileReader) constructor.newInstance(this.hdfs, file, conf, offset);
     } catch (Exception e) {
-      LOG.error(e.getMessage(), e);
       throw new RuntimeException("Unable to instantiate " + readerType, e);
     }
   }

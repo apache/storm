@@ -504,7 +504,7 @@ The following example creates an HDFS spout that reads text files from HDFS path
 
 ```java
 // Instantiate spout to read text files
-HdfsSpout textReaderSpout = new HdfsSpout().setReaderType("text")
+HdfsSpout textReaderSpout = new HDFSSpout().setReaderType(TextFileReader.class)
                                            .withOutputFields(TextFileReader.defaultFields)                                      
                                            .setHdfsUri("hdfs://localhost:54310")  // reqd
                                            .setSourceDir("/data/in")              // reqd                                      
@@ -540,7 +540,7 @@ Only methods mentioned in **bold** are required.
 
 | Method                     | Alternative config name (deprecated) | Default     | Description |
 |----------------------------|--------------------------------------|-------------|-------------|
-| **.setReaderType()**       |~~hdfsspout.reader.type~~             |             | Determines which file reader to use. Set to 'seq' for reading sequence files or 'text' for text files. Set to a fully qualified class name if using a custom file reader class (that implements interface org.apache.storm.hdfs.spout.FileReader)|
+| **.setReaderType()**       |~~hdfsspout.reader.type~~             |             | Determines which file reader to use. Set to 'org.apache.storm.hdfs.spout.SequenceFileReader' for reading sequence files or 'org.apache.storm.hdfs.spout.TextFileReader' for text files OR set to custom file reader class (that implements interface org.apache.storm.hdfs.spout.FileReader)|
 | **.withOutputFields()**    |                                      |             | Sets the names for the output fields for the spout. The number of fields depends upon the reader being used. For convenience, built-in reader types expose a static member called `defaultFields` that can be used for setting this.|
 | **.setHdfsUri()**          |~~hdfsspout.hdfs~~                    |             | HDFS URI for the hdfs Name node. Example:  hdfs://namenodehost:8020|
 | **.setSourceDir()**        |~~hdfsspout.source.dir~~              |             | HDFS directory from where to read files. E.g. /data/inputdir|
