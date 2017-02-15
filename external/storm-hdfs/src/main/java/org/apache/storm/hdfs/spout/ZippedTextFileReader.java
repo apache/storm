@@ -104,7 +104,7 @@ public class ZippedTextFileReader extends AbstractFileReader {
     return offset.clone();
   }
 
-  public List<Object> next() throws ParseException {
+  public List<Object> next() {
 	boolean done = false;
 
 	try {
