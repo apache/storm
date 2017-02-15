@@ -17,6 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.google.common.base.Strings;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -242,7 +243,11 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(scheme.getOutputFields());
+    if (Strings.isNullOrEmpty(eventHubConfig.getOutputStreamId())) {
+      declarer.declare(scheme.getOutputFields());
+    } else {
+      declarer.declareStream(eventHubConfig.getOutputStreamId(), scheme.getOutputFields());
+    }
   }
 
   private void checkpointIfNeeded() {
