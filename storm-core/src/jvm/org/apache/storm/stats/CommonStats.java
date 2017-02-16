@@ -23,10 +23,11 @@ import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.internal.MultiCountStatAndMetric;
 import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
+import org.apache.storm.utils.Utils;
 
 @SuppressWarnings("unchecked")
 public abstract class CommonStats {
-    public static final int NUM_STAT_BUCKETS = 20;
+    public static final int NUM_STAT_BUCKETS =(int) Utils.readStormConfig().get("num.stat.buckets");
 
     public static final String RATE = "rate";
 
