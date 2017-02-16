@@ -76,12 +76,12 @@ public class TridentKafkaState implements State {
         String topic = null;
         try {
             long currentTime=System.currentTimeMillis();
-	    int numberOfRecords = tuples.size();
-	    List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
+	     int numberOfRecords = tuples.size();
+	     List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
             for (TridentTuple tuple : tuples) {
                 topic = topicSelector.getTopic(tuple);
                 Object messageFromTuple = mapper.getMessageFromTuple(tuple);
-		Object keyFromTuple = mapper.getKeyFromTuple(tuple);
+		 Object keyFromTuple = mapper.getKeyFromTuple(tuple);
 				
                 if(topic != null) {
                 	if(messageFromTuple!=null){
@@ -105,7 +105,7 @@ public class TridentKafkaState implements State {
                     exceptions.add(e);
                 }
             }
-            
+
             if(exceptions.size() > 0){
 		StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages ").append(tuples)
 			.append(" from topic = ").append(topic).append(" because of the following exceptions: ").append(System.lineSeparator());
