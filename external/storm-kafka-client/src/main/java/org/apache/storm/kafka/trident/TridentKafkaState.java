@@ -84,15 +84,15 @@ public class TridentKafkaState implements State {
 		 Object keyFromTuple = mapper.getKeyFromTuple(tuple);
 				
                 if(topic != null) {
-                	if(messageFromTuple!=null){
-				Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
-				futures.add(result);
-			} else {
-				LOG.warn("skipping Message with Key "+keyFromTuple+" as message was null");
-			}
+                   if(messageFromTuple!=null){
+		      Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
+		      futures.add(result);
+		   } else {
+		      LOG.warn("skipping Message with Key "+keyFromTuple+" as message was null");
+		   }
 			
                 } else {
-                    	LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
+                      LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
                 }
             }
             
