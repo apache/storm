@@ -38,74 +38,75 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
 public class TridentKafkaState implements State {
-	private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaState.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaState.class);
 
-	private KafkaProducer producer;
-	private OutputCollector collector;
+    private KafkaProducer producer;
+    private OutputCollector collector;
 
-	private TridentTupleToKafkaMapper mapper;
-	private KafkaTopicSelector topicSelector;
+    private TridentTupleToKafkaMapper mapper;
+    private KafkaTopicSelector topicSelector;
 
-	public TridentKafkaState withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
-		this.mapper = mapper;
-		return this;
-	}
+    public TridentKafkaState withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+        this.mapper = mapper;
+        return this;
+    }
 
-	public TridentKafkaState withKafkaTopicSelector(KafkaTopicSelector selector) {
-		this.topicSelector = selector;
-		return this;
-	}
+    public TridentKafkaState withKafkaTopicSelector(KafkaTopicSelector selector) {
+        this.topicSelector = selector;
+        return this;
+    }
 
-	@Override
-	public void beginCommit(Long txid) {
-		LOG.debug("beginCommit is Noop.");
-	}
+    @Override
+    public void beginCommit(Long txid) {
+        LOG.debug("beginCommit is Noop.");
+    }
 
-	@Override
-	public void commit(Long txid) {
-		LOG.debug("commit is Noop.");
-	}
+    @Override
+    public void commit(Long txid) {
+        LOG.debug("commit is Noop.");
+    }
 
-	public void prepare(Properties options) {
-		Objects.requireNonNull(mapper, "mapper can not be null");
-		Objects.requireNonNull(topicSelector, "topicSelector can not be null");
-		producer = new KafkaProducer(options);
-	}
+    public void prepare(Properties options) {
+        Objects.requireNonNull(mapper, "mapper can not be null");
+        Objects.requireNonNull(topicSelector, "topicSelector can not be null");
+        producer = new KafkaProducer(options);
+    }
 
-	public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
-		String topic = null;
-		try {
-			long currentTime=System.currentTimeMillis();
+    public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
+        String topic = null;
+        try {
+        	long currentTime=System.currentTimeMillis();
 			int numberOfRecords = tuples.size();
 			List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
-			for (TridentTuple tuple : tuples) {
-				topic = topicSelector.getTopic(tuple);
-				Object messageFromTuple = mapper.getMessageFromTuple(tuple);
+            for (TridentTuple tuple : tuples) {
+                topic = topicSelector.getTopic(tuple);
+                Object messageFromTuple = mapper.getMessageFromTuple(tuple);
 				Object keyFromTuple = mapper.getKeyFromTuple(tuple);
-				if(topic != null) {
-					if(messageFromTuple!=null){
+				
+                if(topic != null) {
+                	if(messageFromTuple!=null){
 						Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
 						futures.add(result);
 					} else {
 						LOG.warn("skipping Message with Key "+keyFromTuple+" as message was null");
 					}
-
-				} else {
-					LOG.warn("skipping key = " + keyFromTuple + " and value= "+ messageFromTuple +", topic selector returned null.");
-				}
-			}
-
-			int emittedRecords = futures.size();
-			List<ExecutionException> exceptions = new ArrayList<>(emittedRecords);
-			for (Future<RecordMetadata> future : futures) {
-				try {
-					future.get();
-				} catch (ExecutionException e) {
-					exceptions.add(e);
-				}
-			}
-
-			if(exceptions.size() > 0){
+                } else {
+                	
+                    LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
+                }
+            }
+            
+            int emittedRecords = futures.size();
+            List<ExecutionException> exceptions = new ArrayList<>(emittedRecords);
+            for (Future<RecordMetadata> future : futures) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    exceptions.add(e);
+                }
+            }
+            
+            if(exceptions.size() > 0){
 				StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages ").append(tuples)
 						.append(" from topic = ").append(topic).append(" because of the following exceptions: ").append(System.lineSeparator());
 				
@@ -118,12 +119,11 @@ public class TridentKafkaState implements State {
 			}
 			long latestTime=System.currentTimeMillis();
 			LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", new Object[]{emittedRecords,latestTime-currentTime,topic});
-
-		} catch (Exception ex) {
-			String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
-			LOG.warn(errorMsg, ex);
-			throw new FailedException(errorMsg, ex);
-		}
-	}
+			
+        } catch (Exception ex) {
+            String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
+            LOG.warn(errorMsg, ex);
+            throw new FailedException(errorMsg, ex);
+        }
+    }
 }
-
