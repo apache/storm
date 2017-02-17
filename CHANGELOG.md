@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2365: Support for specifying output stream in event hubs spout 
  * STORM-2250: Kafka spout refactoring to increase modularity and testability
  * STORM-2340: fix AutoCommitMode issue in KafkaSpout
  * STORM-2344: Flux YAML File Viewer for Nimbus UI
