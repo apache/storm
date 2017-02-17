@@ -31,6 +31,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.storm.Config;
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -49,7 +50,8 @@ public class HDFSSpout extends BaseRichSpout {
 
   // user configurable
   private String hdfsUri;            // required
-  private Class<? extends FileReader> readerType;         // required
+  private String readerType;         
+  private Class<? extends FileReader> readerTypeClass;         // required
   private Fields outputFields;       // required
 
   private String sourceDir;        // required
@@ -112,9 +114,17 @@ public class HDFSSpout extends BaseRichSpout {
     this.hdfsUri = hdfsUri;
     return this;
   }
-
-  public HDFSSpout setReaderType(Class<? extends FileReader> readerType) {
-    this.readerType = readerType;
+  /**
+   * @deprecated use {@link #setReaderType(Class)} instead.
+   */
+  @Deprecated
+  public HDFSSpout setReaderType(String readerType) {
+	    this.readerType = readerType;
+	    return this;
+  }
+  
+  public HDFSSpout setReaderType(Class<? extends FileReader> readerTypeClass) {
+    this.readerTypeClass = readerTypeClass;
     return this;
   }
 
@@ -411,7 +421,7 @@ public class HDFSSpout extends BaseRichSpout {
     if ( readerType==null && conf.containsKey(Configs.READER_TYPE) ) {
     	String className = (String) conf.get(Configs.READER_TYPE);
       try {
-		readerType = (Class<? extends FileReader>) Class.forName(className);
+		readerTypeClass = (Class<? extends FileReader>) Class.forName(className);
 	} catch (ClassNotFoundException e) {
 		throw new RuntimeException("Unable to instantiate " + className, e);
 	}
@@ -686,7 +696,10 @@ public class HDFSSpout extends BaseRichSpout {
   private FileReader createFileReader(Path file)
           throws IOException {
     try {
-      Constructor<?> constructor = readerType.getConstructor(FileSystem.class, Path.class, Map.class);
+    	if(StringUtils.isNotBlank(readerType)){
+    		readerTypeClass = (Class<? extends FileReader>) Class.forName(readerType);
+    	}
+      Constructor<?> constructor = readerTypeClass.getConstructor(FileSystem.class, Path.class, Map.class);
       return (FileReader) constructor.newInstance(this.hdfs, file, conf);
     } catch (Exception e) {
       throw new RuntimeException("Unable to instantiate " + readerType + " reader", e);
@@ -704,7 +717,10 @@ public class HDFSSpout extends BaseRichSpout {
   private FileReader createFileReader(Path file, String offset)
           throws IOException {
     try {
-      Constructor<?> constructor = readerType.getConstructor(FileSystem.class, Path.class, Map.class, String.class);
+    	if(StringUtils.isNotBlank(readerType)){
+    		readerTypeClass = (Class<? extends FileReader>) Class.forName(readerType);
+    	}
+      Constructor<?> constructor = readerTypeClass.getConstructor(FileSystem.class, Path.class, Map.class, String.class);
       return (FileReader) constructor.newInstance(this.hdfs, file, conf, offset);
     } catch (Exception e) {
       throw new RuntimeException("Unable to instantiate " + readerType, e);
