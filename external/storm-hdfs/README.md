@@ -504,7 +504,7 @@ The following example creates an HDFS spout that reads text files from HDFS path
 
 ```java
 // Instantiate spout to read text files
-HdfsSpout textReaderSpout = new HDFSSpout().setReaderType(TextFileReader.class)
+HdfsSpout textReaderSpout = new HdfsSpout().setReaderType(TextFileReader.class)
                                            .withOutputFields(TextFileReader.defaultFields)                                      
                                            .setHdfsUri("hdfs://localhost:54310")  // reqd
                                            .setSourceDir("/data/in")              // reqd                                      

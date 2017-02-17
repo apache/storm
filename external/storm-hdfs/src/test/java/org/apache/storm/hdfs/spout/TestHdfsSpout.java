@@ -59,7 +59,7 @@ import java.util.Map;
 import org.apache.storm.hdfs.common.HdfsUtils.Pair;
 
 
-public class TestHDFSSpout {
+public class TestHdfsSpout {
 
   @Rule
   public TemporaryFolder tempFolder = new TemporaryFolder();
@@ -69,7 +69,7 @@ public class TestHDFSSpout {
   private Path badfiles;
 
 
-  public TestHDFSSpout() {
+  public TestHdfsSpout() {
   }
 
   static MiniDFSCluster.Builder builder;
@@ -95,7 +95,7 @@ public class TestHDFSSpout {
 
   @Before
   public void setup() throws Exception {
-    baseFolder = tempFolder.newFolder("hdfsspout");
+    baseFolder = tempFolder.newFolder("HdfsSpout");
     source = new Path(baseFolder.toString() + "/source");
     fs.mkdirs(source);
     archive = new Path(baseFolder.toString() + "/archive");
@@ -117,7 +117,7 @@ public class TestHDFSSpout {
     Path file2 = new Path(source.toString() + "/file2.txt");
     createTextFile(file2, 5);
 
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
@@ -139,7 +139,7 @@ public class TestHDFSSpout {
     Path file2 = new Path(source.toString() + "/file2.txt");
     createTextFile(file2, 5);
 
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
@@ -165,13 +165,13 @@ public class TestHDFSSpout {
 
     final Integer lockExpirySec = 1;
 
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
     spout.setLockTimeoutSec(lockExpirySec);
 
 
-    HDFSSpout spout2 = makeSpout(TextFileReader.class);
+    HdfsSpout spout2 = makeSpout(TextFileReader.class);
     spout2.setCommitFrequencyCount(1);
     spout2.setCommitFrequencySec(1000);  // effectively disable commits based on time
     spout2.setLockTimeoutSec(lockExpirySec);
@@ -222,13 +222,13 @@ public class TestHDFSSpout {
 
     final Integer lockExpirySec = 1;
 
-    HDFSSpout spout = makeSpout(SequenceFileReader.class);
+    HdfsSpout spout = makeSpout(SequenceFileReader.class);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1000); // effectively disable commits based on time
     spout.setLockTimeoutSec(lockExpirySec);
 
 
-    HDFSSpout spout2 = makeSpout(SequenceFileReader.class);
+    HdfsSpout spout2 = makeSpout(SequenceFileReader.class);
     spout2.setCommitFrequencyCount(1);
     spout2.setCommitFrequencySec(1000); // effectively disable commits based on time
     spout2.setLockTimeoutSec(lockExpirySec);
@@ -278,7 +278,7 @@ public class TestHDFSSpout {
     }
 
     List<String> actual = new ArrayList<>();
-    for (Pair<HDFSSpout.MessageId, List<Object>> item : collector.items) {
+    for (Pair<HdfsSpout.MessageId, List<Object>> item : collector.items) {
       actual.add(item.getValue().get(0).toString());
     }
     Assert.assertEquals(expected, actual);
@@ -344,7 +344,7 @@ public class TestHDFSSpout {
     createTextFile(file1, 5);
 
 
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
@@ -398,14 +398,14 @@ public class TestHDFSSpout {
     Assert.assertEquals(true, getBoolField(spout, "fileReadCompletely"));
   }
 
-  private static <T> T getField(HDFSSpout spout, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-    Field readerFld = HDFSSpout.class.getDeclaredField(fieldName);
+  private static <T> T getField(HdfsSpout spout, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+    Field readerFld = HdfsSpout.class.getDeclaredField(fieldName);
     readerFld.setAccessible(true);
     return (T) readerFld.get(spout);
   }
 
-  private static boolean getBoolField(HDFSSpout spout, String fieldName) throws NoSuchFieldException, IllegalAccessException {
-    Field readerFld = HDFSSpout.class.getDeclaredField(fieldName);
+  private static boolean getBoolField(HdfsSpout spout, String fieldName) throws NoSuchFieldException, IllegalAccessException {
+    Field readerFld = HdfsSpout.class.getDeclaredField(fieldName);
     readerFld.setAccessible(true);
     return readerFld.getBoolean(spout);
   }
@@ -414,9 +414,9 @@ public class TestHDFSSpout {
   @Test
   public void testSimpleSequenceFile() throws IOException {
     //1) create a couple files to consume
-    source = new Path("/tmp/hdfsspout/source");
+    source = new Path("/tmp/HdfsSpout/source");
     fs.mkdirs(source);
-    archive = new Path("/tmp/hdfsspout/archive");
+    archive = new Path("/tmp/HdfsSpout/archive");
     fs.mkdirs(archive);
 
     Path file1 = new Path(source + "/file1.seq");
@@ -426,7 +426,7 @@ public class TestHDFSSpout {
     createSeqFile(fs, file2, 5);
 
 
-    HDFSSpout spout = makeSpout(SequenceFileReader.class);
+    HdfsSpout spout = makeSpout(SequenceFileReader.class);
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
@@ -454,7 +454,7 @@ public class TestHDFSSpout {
     Assert.assertEquals(2, listDir(source).size());
 
     // 2) run spout
-    HDFSSpout spout = makeSpout(MockTextFailingReader.class);
+    HdfsSpout spout = makeSpout(MockTextFailingReader.class);
     Map conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
@@ -476,7 +476,7 @@ public class TestHDFSSpout {
 
      // 0) config spout to log progress in lock file for each tuple
 
-     HDFSSpout spout = makeSpout(TextFileReader.class);
+     HdfsSpout spout = makeSpout(TextFileReader.class);
      spout.setCommitFrequencyCount(1);
      spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
 
@@ -527,7 +527,7 @@ public class TestHDFSSpout {
 
     // 0) config spout to log progress in lock file for each tuple
 
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(2);   // 1 lock log entry every 2 tuples
     spout.setCommitFrequencySec(1000);  // Effectively disable commits based on time
 
@@ -554,7 +554,7 @@ public class TestHDFSSpout {
     createTextFile(file1, 10);
 
     // 0) config spout to log progress in lock file for each tuple
-    HDFSSpout spout = makeSpout(TextFileReader.class);
+    HdfsSpout spout = makeSpout(TextFileReader.class);
     spout.setCommitFrequencyCount(0); // disable it
     spout.setCommitFrequencySec(2);   // log every 2 sec
 
@@ -594,8 +594,8 @@ public class TestHDFSSpout {
     return conf;
   }
 
-  private HDFSSpout makeSpout(Class<? extends AbstractFileReader> readerType) {
-    HDFSSpout spout = new HDFSSpout().setReaderType(readerType)
+  private HdfsSpout makeSpout(Class<? extends AbstractFileReader> readerType) {
+    HdfsSpout spout = new HdfsSpout().setReaderType(readerType)
                                     .setHdfsUri(hdfsCluster.getURI().toString())
                                     .setSourceDir(source.toString())
                                     .setArchiveDir(archive.toString())
@@ -604,7 +604,7 @@ public class TestHDFSSpout {
     return spout;
   }
 
-  private void openSpout(HDFSSpout spout, int spoutId, Map conf) {
+  private void openSpout(HdfsSpout spout, int spoutId, Map conf) {
     MockCollector collector = new MockCollector();
     spout.open(conf, new MockTopologyContext(spoutId), collector);
   }
@@ -619,7 +619,7 @@ public class TestHDFSSpout {
    * fN - fail, item number: N
    */
 
-  private List<String> runSpout(HDFSSpout spout, String...  cmds) {
+  private List<String> runSpout(HdfsSpout spout, String...  cmds) {
     MockCollector collector = (MockCollector) spout.getCollector();
       for(String cmd : cmds) {
         if(cmd.startsWith("r")) {
@@ -633,12 +633,12 @@ public class TestHDFSSpout {
         }
         else if(cmd.startsWith("a")) {
           int n = Integer.parseInt(cmd.substring(1));
-          Pair<HDFSSpout.MessageId, List<Object>> item = collector.items.get(n);
+          Pair<HdfsSpout.MessageId, List<Object>> item = collector.items.get(n);
           spout.ack(item.getKey());
         }
         else if(cmd.startsWith("f")) {
           int n = Integer.parseInt(cmd.substring(1));
-          Pair<HDFSSpout.MessageId, List<Object>> item = collector.items.get(n);
+          Pair<HdfsSpout.MessageId, List<Object>> item = collector.items.get(n);
           spout.fail(item.getKey());
         }
       }
@@ -683,7 +683,7 @@ public class TestHDFSSpout {
   static class MockCollector extends SpoutOutputCollector {
     //comma separated offsets
     public ArrayList<String> lines;
-    public ArrayList<Pair<HDFSSpout.MessageId, List<Object> > > items;
+    public ArrayList<Pair<HdfsSpout.MessageId, List<Object> > > items;
 
     public MockCollector() {
       super(null);

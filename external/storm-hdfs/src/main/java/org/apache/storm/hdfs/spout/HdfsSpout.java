@@ -46,7 +46,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 
-public class HDFSSpout extends BaseRichSpout {
+public class HdfsSpout extends BaseRichSpout {
 
   // user configurable
   private String hdfsUri;            // required
@@ -78,7 +78,7 @@ public class HDFSSpout extends BaseRichSpout {
   private String outputStreamName= null;
 
   // other members
-  private static final Logger LOG = LoggerFactory.getLogger(HDFSSpout.class);
+  private static final Logger LOG = LoggerFactory.getLogger(HdfsSpout.class);
 
   private ProgressTracker tracker = null;
 
@@ -107,10 +107,10 @@ public class HDFSSpout extends BaseRichSpout {
 
   private String configKey = Configs.DEFAULT_HDFS_CONFIG_KEY; // key for hdfs Kerberos configs
 
-  public HDFSSpout() {
+  public HdfsSpout() {
   }
 
-  public HDFSSpout setHdfsUri(String hdfsUri) {
+  public HdfsSpout setHdfsUri(String hdfsUri) {
     this.hdfsUri = hdfsUri;
     return this;
   }
@@ -118,76 +118,76 @@ public class HDFSSpout extends BaseRichSpout {
    * @deprecated use {@link #setReaderType(Class)} instead.
    */
   @Deprecated
-  public HDFSSpout setReaderType(String readerType) {
+  public HdfsSpout setReaderType(String readerType) {
 	    this.readerType = readerType;
 	    return this;
   }
   
-  public HDFSSpout setReaderType(Class<? extends FileReader> readerTypeClass) {
+  public HdfsSpout setReaderType(Class<? extends FileReader> readerTypeClass) {
     this.readerTypeClass = readerTypeClass;
     return this;
   }
 
-  public HDFSSpout setSourceDir(String sourceDir) {
+  public HdfsSpout setSourceDir(String sourceDir) {
     this.sourceDir = sourceDir;
     return this;
   }
 
-  public HDFSSpout setArchiveDir(String archiveDir) {
+  public HdfsSpout setArchiveDir(String archiveDir) {
     this.archiveDir = archiveDir;
     return this;
   }
 
-  public HDFSSpout setBadFilesDir(String badFilesDir) {
+  public HdfsSpout setBadFilesDir(String badFilesDir) {
     this.badFilesDir = badFilesDir;
     return this;
   }
 
-  public HDFSSpout setLockDir(String lockDir) {
+  public HdfsSpout setLockDir(String lockDir) {
     this.lockDir = lockDir;
     return this;
   }
 
-  public HDFSSpout setCommitFrequencyCount(int commitFrequencyCount) {
+  public HdfsSpout setCommitFrequencyCount(int commitFrequencyCount) {
     this.commitFrequencyCount = commitFrequencyCount;
     return this;
   }
 
-  public HDFSSpout setCommitFrequencySec(int commitFrequencySec) {
+  public HdfsSpout setCommitFrequencySec(int commitFrequencySec) {
     this.commitFrequencySec = commitFrequencySec;
     return this;
   }
 
-  public HDFSSpout setMaxOutstanding(int maxOutstanding) {
+  public HdfsSpout setMaxOutstanding(int maxOutstanding) {
     this.maxOutstanding = maxOutstanding;
     return this;
   }
 
-  public HDFSSpout setLockTimeoutSec(int lockTimeoutSec) {
+  public HdfsSpout setLockTimeoutSec(int lockTimeoutSec) {
     this.lockTimeoutSec = lockTimeoutSec;
     return this;
   }
 
-  public HDFSSpout setClocksInSync(boolean clocksInSync) {
+  public HdfsSpout setClocksInSync(boolean clocksInSync) {
     this.clocksInSync = clocksInSync;
     return this;
   }
 
 
-  public HDFSSpout setIgnoreSuffix(String ignoreSuffix) {
+  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
     this.ignoreSuffix = ignoreSuffix;
     return this;
   }
 
   /** Output field names. Number of fields depends upon the reader type */
-  public HDFSSpout withOutputFields(String... fields) {
+  public HdfsSpout withOutputFields(String... fields) {
     outputFields = new Fields(fields);
     return this;
   }
 
   /** set key name under which HDFS options are placed. (similar to HDFS bolt).
    * default key name is 'hdfs.config' */
-  public HDFSSpout withConfigKey(String configKey) {
+  public HdfsSpout withConfigKey(String configKey) {
     this.configKey = configKey;
     return this;
   }
@@ -195,7 +195,7 @@ public class HDFSSpout extends BaseRichSpout {
   /**
    * Set output stream name
    */
-  public HDFSSpout withOutputStream(String streamName) {
+  public HdfsSpout withOutputStream(String streamName) {
     this.outputStreamName = streamName;
     return this;
   }
