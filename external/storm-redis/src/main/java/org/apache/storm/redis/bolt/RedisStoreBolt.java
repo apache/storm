@@ -17,8 +17,7 @@
  */
 package org.apache.storm.redis.bolt;
 
-import org.apache.storm.redis.common.config.JedisClusterConfig;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
+import org.apache.storm.redis.common.config.JedisConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.common.mapper.RedisStoreMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -36,25 +35,11 @@ public class RedisStoreBolt extends AbstractRedisBolt {
     private final String additionalKey;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
-     * @param config configuration for initializing JedisPool
+     * Constructor for single Redis or Redis cluster environment
+     * @param config configuration for initializing JedisPool or JedisCluster
      * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
      */
-    public RedisStoreBolt(JedisPoolConfig config, RedisStoreMapper storeMapper) {
-        super(config);
-        this.storeMapper = storeMapper;
-
-        RedisDataTypeDescription dataTypeDescription = storeMapper.getDataTypeDescription();
-        this.dataType = dataTypeDescription.getDataType();
-        this.additionalKey = dataTypeDescription.getAdditionalKey();
-    }
-
-    /**
-     * Constructor for Redis Cluster environment (JedisCluster)
-     * @param config configuration for initializing JedisCluster
-     * @param storeMapper mapper containing which datatype, storing value's key that Bolt uses
-     */
-    public RedisStoreBolt(JedisClusterConfig config, RedisStoreMapper storeMapper) {
+    public RedisStoreBolt(JedisConfig config, RedisStoreMapper storeMapper) {
         super(config);
         this.storeMapper = storeMapper;
 

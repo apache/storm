@@ -29,7 +29,7 @@ import java.util.Set;
 /**
  * Configuration for JedisCluster.
  */
-public class JedisClusterConfig implements Serializable {
+public class JedisClusterConfig implements Serializable, JedisConfig {
     private Set<InetSocketAddress> nodes;
     private int timeout;
     private int maxRedirections;

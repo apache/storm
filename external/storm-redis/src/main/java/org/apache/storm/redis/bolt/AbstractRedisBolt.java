@@ -17,6 +17,7 @@
  */
 package org.apache.storm.redis.bolt;
 
+import org.apache.storm.redis.common.config.JedisConfig;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichBolt;
@@ -24,6 +25,8 @@ import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.JedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import redis.clients.jedis.JedisCommands;
 
 import java.util.Map;
@@ -49,27 +52,20 @@ import java.util.Map;
  */
 // TODO: Separate Jedis / JedisCluster to provide full operations for each environment to users
 public abstract class AbstractRedisBolt extends BaseRichBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(AbstractRedisBolt.class);
+
     protected OutputCollector collector;
 
     private transient JedisCommandsInstanceContainer container;
 
-    private JedisPoolConfig jedisPoolConfig;
-    private JedisClusterConfig jedisClusterConfig;
+    private JedisConfig jedisConfig;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
-     * @param config configuration for initializing JedisPool
+     * Constructor for single Redis or Redis cluster environment
+     * @param config configuration for initializing JedisPool or JedisCluster
      */
-    public AbstractRedisBolt(JedisPoolConfig config) {
-        this.jedisPoolConfig = config;
-    }
-
-    /**
-     * Constructor for Redis Cluster environment (JedisCluster)
-     * @param config configuration for initializing JedisCluster
-     */
-    public AbstractRedisBolt(JedisClusterConfig config) {
-        this.jedisClusterConfig = config;
+    public AbstractRedisBolt(JedisConfig config) {
+        this.jedisConfig = config;
     }
 
     /**
@@ -80,10 +76,12 @@ public abstract class AbstractRedisBolt extends BaseRichBolt {
         // FIXME: stores map (stormConf), topologyContext and expose these to derived classes
         this.collector = collector;
 
-        if (jedisPoolConfig != null) {
-            this.container = JedisCommandsContainerBuilder.build(jedisPoolConfig);
-        } else if (jedisClusterConfig != null) {
-            this.container = JedisCommandsContainerBuilder.build(jedisClusterConfig);
+        if (jedisConfig instanceof JedisPoolConfig) {
+            LOG.info("Using Jedis Pool Config");
+            this.container = JedisCommandsContainerBuilder.build((JedisPoolConfig) jedisConfig);
+        } else if (jedisConfig instanceof JedisClusterConfig) {
+            LOG.info("Using Jedis Cluster Config");
+            this.container = JedisCommandsContainerBuilder.build((JedisClusterConfig) jedisConfig);
         } else {
             throw new IllegalArgumentException("Jedis configuration not found");
         }

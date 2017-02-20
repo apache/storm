@@ -24,7 +24,7 @@ import java.io.Serializable;
 /**
  * Configuration for JedisPool.
  */
-public class JedisPoolConfig implements Serializable {
+public class JedisPoolConfig implements Serializable, JedisConfig {
 
     private String host;
     private int port;
