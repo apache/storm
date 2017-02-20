@@ -412,6 +412,10 @@
                                 <exclude>**/src/ui/public/js/arbor-tween.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.mustache.js</exclude>
                                 <exclude>**/src/ui/public/js/typeahead.jquery.min.js</exclude>
+                                <exclude>**/src/ui/public/js/cytoscape-dagre.js</exclude>
+                                <exclude>**/src/ui/public/js/dagre.min.js</exclude>
+                                <exclude>**/src/ui/public/js/esprima.min.js</exclude>
+                                <exclude>**/src/ui/public/js/js-yaml.min.js</exclude>
                                 <exclude>**/src/main/resources/Audit.50.csv</exclude>
                                 <exclude>**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml</exclude>
 
