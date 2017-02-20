@@ -75,7 +75,7 @@ public class TridentKafkaState implements State {
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
         try {
-            long currentTime=System.currentTimeMillis();
+            long startTime = System.currentTimeMillis();
 	     int numberOfRecords = tuples.size();
 	     List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
             for (TridentTuple tuple : tuples) {
@@ -83,12 +83,12 @@ public class TridentKafkaState implements State {
                 Object messageFromTuple = mapper.getMessageFromTuple(tuple);
 		 Object keyFromTuple = mapper.getKeyFromTuple(tuple);
 				
-                if(topic != null) {
-                   if(messageFromTuple!=null){
+                if (topic != null) {
+                   if (messageFromTuple != null) {
 		      Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
 		      futures.add(result);
 		   } else {
-		      LOG.warn("skipping Message with Key "+keyFromTuple+" as message was null");
+		      LOG.warn("skipping Message with Key "+ keyFromTuple +" as message was null");
 		   }
 			
                 } else {
@@ -106,9 +106,9 @@ public class TridentKafkaState implements State {
                 }
             }
 
-            if(exceptions.size() > 0){
-		StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages ").append(tuples)
-			.append(" from topic = ").append(topic).append(" because of the following exceptions: ").append(System.lineSeparator());
+            if (exceptions.size() > 0){
+		StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages " + tuples + " from topic = " + topic 
+				+ " because of the following exceptions:" + System.lineSeparator());
 				
 		for (ExecutionException exception : exceptions) {
 			errorMsg = errorMsg.append(exception.getMessage()).append(System.lineSeparator()); ;
@@ -117,8 +117,8 @@ public class TridentKafkaState implements State {
 		LOG.error(message);
 		throw new FailedException(message);
 	    }
-	    long latestTime=System.currentTimeMillis();
-	    LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", new Object[]{emittedRecords,latestTime-currentTime,topic});
+	    long latestTime = System.currentTimeMillis();
+	    LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime-startTime, topic);
 			
         } catch (Exception ex) {
             String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
