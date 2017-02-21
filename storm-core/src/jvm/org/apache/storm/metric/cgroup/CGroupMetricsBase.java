@@ -57,6 +57,11 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
             LOG.warn("{} is disabled {} is not set", simpleName, Config.STORM_CGROUP_HIERARCHY_DIR);
             return;
         }
+
+        if (!new File(hierarchyDir).exists()) {
+            LOG.warn("{} is disabled {} does not exist", simpleName, hierarchyDir);
+            return;
+        }
         
         //Good so far, check if we are in a CGroup
         File cgroupFile = new File("/proc/self/cgroup");
