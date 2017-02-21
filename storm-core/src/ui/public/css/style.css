@@ -19,6 +19,13 @@
     display: none;
 }
 
+#ui-flux img {
+    width: 50px;
+    padding: 0.5em;
+    padding-top: 1em;
+    float:right;
+}
+
 #ui-user {
     text-align: right;
     padding: 0.5em;

@@ -18,14 +18,13 @@
 
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.Config;
 import org.apache.storm.LocalDRPC;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.starter.trident.DebugMemoryMapState;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.trident.operation.BaseFilter;
 import org.apache.storm.trident.operation.builtin.Count;
 import org.apache.storm.trident.operation.builtin.Debug;
 import org.apache.storm.trident.operation.builtin.FilterNull;
@@ -33,20 +32,13 @@ import org.apache.storm.trident.operation.builtin.MapGet;
 import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.testing.Split;
+import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TridentKafkaConsumerTopology {
     protected static final Logger LOG = LoggerFactory.getLogger(TridentKafkaConsumerTopology.class);
-
-    public static void submitRemote(String name, ITridentDataSource tridentSpout) {
-        try {
-            StormSubmitter.submitTopology(name, newTpConfig(), newTopology(null, tridentSpout));
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     /**
      * See {@link TridentKafkaConsumerTopology#newTopology(LocalDRPC, ITridentDataSource)}
@@ -66,29 +58,28 @@ public class TridentKafkaConsumerTopology {
         return tridentTopology.build();
     }
 
-    private static Stream addDRPCStream(TridentTopology tridentTopology, TridentState state, LocalDRPC drpc) {
+    private static Stream addDRPCStream(TridentTopology tridentTopology, final TridentState state, LocalDRPC drpc) {
         return tridentTopology.newDRPCStream("words", drpc)
                 .each(new Fields("args"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .stateQuery(state, new Fields("word"), new MapGet(), new Fields("count"))
                 .each(new Fields("count"), new FilterNull())
-                .project(new Fields("word", "count"));
+                .project(new Fields("word", "count"))
+                .filter(new BaseFilter() {
+                    @Override
+                    public boolean isKeep(TridentTuple tuple) {
+                        LOG.debug("DRPC RESULT: " + tuple);  // Used to show the DRPC results in the worker log. Useful for debugging
+                        return true;
+                    }
+                });
     }
 
     private static TridentState addTridentState(TridentTopology tridentTopology, ITridentDataSource tridentSpout) {
-        final Stream spoutStream = tridentTopology.newStream("spout1", tridentSpout).parallelismHint(1);
+        final Stream spoutStream = tridentTopology.newStream("spout1", tridentSpout).parallelismHint(2);
 
         return spoutStream.each(spoutStream.getOutputFields(), new Debug(true))
                 .each(new Fields("str"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .persistentAggregate(new DebugMemoryMapState.Factory(), new Count(), new Fields("count"));
     }
-
-    private static Config newTpConfig() {
-        Config conf = new Config();
-        conf.setMaxSpoutPending(20);
-        conf.setMaxTaskParallelism(1);
-        return conf;
-    }
-    
 }

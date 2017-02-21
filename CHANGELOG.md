@@ -1,4 +1,13 @@
 ﻿## 1.1.0
+ * STORM-2365: Support for specifying output stream in event hubs spout 
+ * STORM-2250: Kafka spout refactoring to increase modularity and testability
+ * STORM-2340: fix AutoCommitMode issue in KafkaSpout
+ * STORM-2344: Flux YAML File Viewer for Nimbus UI
+ * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
+ * STORM-2270 Kafka spout should consume from latest when ZK partition commit offset bigger than the latest offset
+ * STORM-1464: storm-hdfs support for multiple output files and partitioning
+ * STORM-2320: DRPC client printer class reusable for local and remote DRPC
+ * STORM-2281: Running Multiple Kafka Spouts (Trident) Throws Illegal State Exception
  * STORM-2296: Kafka spout no dup on leader changes
  * STORM-2244: Some shaded jars doesn't exclude dependency signature files
  * STORM-2014: New Kafka spout duplicates checking if failed messages have reached max retries

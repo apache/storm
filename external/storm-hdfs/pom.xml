@@ -215,26 +215,6 @@
             </exclusions>
         </dependency>
     </dependencies>
-    <profiles>
-    	<profile>
-      	<id>hwx-common</id>
-      	<activation>
-        	<activeByDefault>true</activeByDefault>
-      	</activation>
-      	<dependencies>
-        	<dependency>
-          		<groupId>org.apache.hadoop</groupId>
-          		<artifactId>hadoop-aws</artifactId>
-				<version>${hadoop.version}</version>
-        	</dependency>
-        	<dependency>
-          		<groupId>org.apache.hadoop</groupId>
-          		<artifactId>hadoop-azure</artifactId>
-				<version>${hadoop.version}</version>
-        	</dependency>
-      	</dependencies>
-  	  	</profile>
-    </profiles> 
     <build>
         <plugins>
             <plugin>

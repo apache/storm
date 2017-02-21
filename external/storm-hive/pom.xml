@@ -93,26 +93,6 @@
       <groupId>org.apache.hive</groupId>
       <artifactId>hive-cli</artifactId>
       <version>${hive.version}</version>
-      <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.calcite</groupId>
-          <artifactId>calcite-core</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>org.apache.calcite</groupId>
-          <artifactId>calcite-avatica</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.hive</groupId>
-      <artifactId>hive-exec</artifactId>
-      <version>${hive.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -131,7 +111,7 @@
     <dependency>
 	    <groupId>org.apache.calcite</groupId>
 	    <artifactId>calcite-core</artifactId>
-      <version>1.8.0</version>
+      <version>0.9.2-incubating</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -155,17 +135,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>org.apache.hadoop</groupId>
-      <artifactId>hadoop-common</artifactId>
-      <version>${hadoop.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-log4j12</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
       <version>4.11</version>
@@ -180,7 +149,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.9.0</version>
+      <version>0.9.3</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
