@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.redis.common.container;
 
 import org.apache.storm.redis.common.config.JedisClusterConfig;
@@ -24,9 +23,9 @@ import redis.clients.jedis.JedisCluster;
 import redis.clients.jedis.JedisPool;
 
 /**
- * Container Builder which helps abstraction of two env. - single instance or Redis Cluster.
+ * The binary version of container builder which helps abstraction of two env. - single instance or Redis Cluster.
  */
-public class JedisCommandsContainerBuilder {
+public class RedisCommandsContainerBuilder {
 
     // FIXME: We're using default config since it cannot be serialized
     // We still needs to provide some options externally
@@ -37,9 +36,9 @@ public class JedisCommandsContainerBuilder {
      * @param config configuration for JedisPool
      * @return container for single Redis environment
      */
-    public static JedisCommandsInstanceContainer build(JedisPoolConfig config) {
+    public static RedisCommandsInstanceContainer build(JedisPoolConfig config) {
         JedisPool jedisPool = new JedisPool(DEFAULT_POOL_CONFIG, config.getHost(), config.getPort(), config.getTimeout(), config.getPassword(), config.getDatabase());
-        return new JedisContainer(jedisPool);
+        return new RedisContainer(jedisPool);
     }
 
     /**
@@ -47,8 +46,8 @@ public class JedisCommandsContainerBuilder {
      * @param config configuration for JedisCluster
      * @return container for Redis Cluster environment
      */
-    public static JedisCommandsInstanceContainer build(JedisClusterConfig config) {
-        JedisCluster jedisCluster = new JedisCluster(config.getNodes(), config.getTimeout(), config.getTimeout(), config.getMaxRedirections(), config.getPassword(), DEFAULT_POOL_CONFIG);
-        return new JedisClusterContainer(jedisCluster);
+    public static RedisCommandsInstanceContainer build(JedisClusterConfig config) {
+        JedisCluster jedisCluster = new JedisCluster(config.getNodes(), config.getTimeout(), config.getMaxRedirections(), DEFAULT_POOL_CONFIG);
+        return new RedisClusterContainer(jedisCluster);
     }
 }

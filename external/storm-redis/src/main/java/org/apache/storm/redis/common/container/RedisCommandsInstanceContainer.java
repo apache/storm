@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,32 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.redis.common.container;
 
-import redis.clients.jedis.JedisCommands;
+import org.apache.storm.redis.common.commands.RedisCommands;
 
 import java.io.Closeable;
 
 /**
- * Interfaces for containers which stores instances implementing JedisCommands.
+ * Interfaces for containers which stores instances implementing RedisCommands.
  */
-public interface JedisCommandsInstanceContainer extends Closeable {
+public interface RedisCommandsInstanceContainer extends Closeable {
     /**
      * Borrows instance from container.
-     * @return instance which implements JedisCommands
+     * @return instance which implements RedisCommands
      */
-    JedisCommands getInstance();
+    RedisCommands getInstance();
 
     /**
      * Returns instance to container.
-     * @param jedisCommands borrowed instance
+     * @param redisCommands borrowed instance
      */
-    void returnInstance(JedisCommands jedisCommands);
-
-    /**
-     * Release Container
-     */
-    @Override
-    public void close();
+    void returnInstance(RedisCommands redisCommands);
 }
