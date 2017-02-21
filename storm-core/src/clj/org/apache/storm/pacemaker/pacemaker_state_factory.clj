@@ -86,15 +86,21 @@
       (delete_worker_hb [this path]
         (util/retry-on-exception
          max-retries
-         "delete_worker_hb"
-         #(let [response
-                (.send pacemaker-client
-                       (HBMessage. HBServerMessageType/DELETE_PATH
-                                   (HBMessageData/path path)))]
-            (if (= (.get_type response) HBServerMessageType/DELETE_PATH_RESPONSE)
-              :ok
-              (throw (HBExecutionException. "Invalid Response Type"))))))
-      
+         "delete-worker-hb"
+         #(let [pacemaker-client-pool (makeClientPool conf pacemaker-client-pool servers)
+                results (map (fn [[host client]]
+                               (try
+                                 (if (is-connection-ready client)
+                                   (delete-worker-hb path client)
+                                   :error)
+                                 (catch Exception e
+                                   :error)))
+                             @pacemaker-client-pool)]
+            (when (every? (fn [result] (= :error result)) results)
+              (throw (HBExecutionException. "Cannot connect to any pacemaker servers"))))
+         nil))
+
+      ;; aggregating worker heartbeat details
       (get_worker_hb [this path watch?]
         (util/retry-on-exception
          max-retries
