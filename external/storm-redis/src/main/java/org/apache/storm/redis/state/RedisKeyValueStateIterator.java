@@ -18,153 +18,97 @@
 
 package org.apache.storm.redis.state;
 
-import com.google.common.collect.Iterators;
-import com.google.common.collect.PeekingIterator;
-
-import java.util.AbstractMap;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Set;
 
-import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
-import org.apache.storm.redis.utils.RedisEncoder;
+import org.apache.storm.redis.common.commands.RedisCommands;
+import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
+import org.apache.storm.state.BaseBinaryStateIterator;
+import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 
-import redis.clients.jedis.JedisCommands;
+import org.apache.storm.state.StateEncoder;
 import redis.clients.jedis.ScanParams;
 import redis.clients.jedis.ScanResult;
 
 /**
  * An iterator over {@link RedisKeyValueState}.
  */
-public class RedisKeyValueStateIterator<K, V> implements Iterator<Map.Entry<K, V>> {
+public class RedisKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K, V> {
 
-    private final String namespace;
-    private final PeekingIterator<Map.Entry<String, String>> pendingPrepareIterator;
-    private final PeekingIterator<Map.Entry<String, String>> pendingCommitIterator;
-    private final RedisEncoder<K, V> decoder;
-    private final JedisCommandsInstanceContainer jedisContainer;
+    private final byte[] namespace;
+    private final StateEncoder<K, V, byte[], byte[]> encoder;
+    private final RedisCommandsInstanceContainer container;
     private final ScanParams scanParams;
-    private final Set<String> providedKeys;
 
-    private PeekingIterator<Map.Entry<String, String>> cachedResultIterator;
-    private String cursor;
-    private boolean firstLoad = true;
-    private PeekingIterator<Map.Entry<String, String>> pendingIterator;
+    private Iterator<Map.Entry<byte[], byte[]>> cachedResultIterator;
+    private byte[] cursor;
 
     /**
      * Constructor.
      *
      * @param namespace The namespace of State
-     * @param jedisContainer The instance of JedisContainter
+     * @param container The instance of RedisCommandsInstanceContainer
      * @param pendingPrepareIterator The iterator of pendingPrepare
      * @param pendingCommitIterator The iterator of pendingCommit
      * @param chunkSize The size of chunk to get entries from Redis
      * @param keySerializer The serializer of key
      * @param valueSerializer The serializer of value
      */
-    public RedisKeyValueStateIterator(String namespace, JedisCommandsInstanceContainer jedisContainer,
-                                      Iterator<Map.Entry<String, String>> pendingPrepareIterator,
-                                      Iterator<Map.Entry<String, String>> pendingCommitIterator,
+    public RedisKeyValueStateIterator(byte[] namespace, RedisCommandsInstanceContainer container,
+                                      Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,
+                                      Iterator<Map.Entry<byte[], byte[]>> pendingCommitIterator,
                                       int chunkSize, Serializer<K> keySerializer,
                                       Serializer<V> valueSerializer) {
+        super(pendingPrepareIterator, pendingCommitIterator);
         this.namespace = namespace;
-        this.pendingPrepareIterator = Iterators.peekingIterator(pendingPrepareIterator);
-        this.pendingCommitIterator = Iterators.peekingIterator(pendingCommitIterator);
-        this.jedisContainer = jedisContainer;
-        this.decoder = new RedisEncoder<K, V>(keySerializer, valueSerializer);
+        this.container = container;
+        this.encoder = new DefaultStateEncoder<K, V>(keySerializer, valueSerializer);
         this.scanParams = new ScanParams().count(chunkSize);
-        this.cursor = ScanParams.SCAN_POINTER_START;
-        this.providedKeys = new HashSet<>();
+        this.cursor = ScanParams.SCAN_POINTER_START_BINARY;
     }
 
     @Override
-    public boolean hasNext() {
-        if (seekToAvailableEntry(pendingPrepareIterator)) {
-            pendingIterator = pendingPrepareIterator;
-            return true;
-        }
-
-        if (seekToAvailableEntry(pendingCommitIterator)) {
-            pendingIterator = pendingCommitIterator;
-            return true;
-        }
-
-        if (firstLoad) {
-            // load the first part of entries
-            loadChunkFromRedis();
-            firstLoad = false;
-        }
-
-        while (true) {
-            if (seekToAvailableEntry(cachedResultIterator)) {
-                pendingIterator = cachedResultIterator;
-                return true;
-            }
-
-            if (cursor.equals(ScanParams.SCAN_POINTER_START)) {
-                break;
-            }
-
-            loadChunkFromRedis();
-        }
-
-        pendingIterator = null;
-        return false;
+    protected Iterator<Map.Entry<byte[], byte[]>> loadChunkFromStateStorage() {
+        loadChunkFromRedis();
+        return cachedResultIterator;
     }
 
     @Override
-    public Map.Entry<K, V> next() {
-        if (!hasNext()) {
-            throw new NoSuchElementException();
-        }
-        Map.Entry<String, String> redisKeyValue = pendingIterator.next();
-        K key = decoder.decodeKey(redisKeyValue.getKey());
-        V value = decoder.decodeValue(redisKeyValue.getValue());
-
-        providedKeys.add(redisKeyValue.getKey());
-        return new AbstractMap.SimpleEntry(key, value);
+    protected boolean isEndOfDataFromStorage() {
+        return (cachedResultIterator == null || !cachedResultIterator.hasNext())
+            && Arrays.equals(cursor, ScanParams.SCAN_POINTER_START_BINARY);
     }
 
     @Override
-    public void remove() {
-        throw new UnsupportedOperationException();
+    protected K decodeKey(byte[] key) {
+        return encoder.decodeKey(key);
     }
 
-    private boolean seekToAvailableEntry(PeekingIterator<Map.Entry<String, String>> iterator) {
-        if (iterator != null) {
-            while (iterator.hasNext()) {
-                Map.Entry<String, String> entry = iterator.peek();
-                if (!providedKeys.contains(entry.getKey())) {
-                    if (entry.getValue().equals(RedisEncoder.TOMBSTONE)) {
-                        providedKeys.add(entry.getKey());
-                    } else {
-                        return true;
-                    }
-                }
+    @Override
+    protected V decodeValue(byte[] value) {
+        return encoder.decodeValue(value);
+    }
 
-                iterator.next();
-            }
-        }
-
-        return false;
+    @Override
+    protected boolean isTombstoneValue(byte[] value) {
+        return Arrays.equals(value, encoder.getTombstoneValue());
     }
 
     private void loadChunkFromRedis() {
-        JedisCommands commands = null;
+        RedisCommands commands = null;
         try {
-            commands = jedisContainer.getInstance();
-            ScanResult<Map.Entry<String, String>> scanResult = commands.hscan(namespace, cursor, scanParams);
-            List<Map.Entry<String, String>> result = scanResult.getResult();
+            commands = container.getInstance();
+            ScanResult<Map.Entry<byte[], byte[]>> scanResult = commands.hscan(namespace, cursor, scanParams);
+            List<Map.Entry<byte[], byte[]>> result = scanResult.getResult();
             if (result != null) {
-                cachedResultIterator = Iterators.peekingIterator(result.iterator());
+                cachedResultIterator = result.iterator();
             }
-            cursor = scanResult.getStringCursor();
+            cursor = scanResult.getCursorAsBytes();
         } finally {
-            jedisContainer.returnInstance(commands);
+            container.returnInstance(commands);
         }
     }
 
