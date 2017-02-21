@@ -22,11 +22,7 @@ package org.apache.storm.windowing;
  */
 public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
     private final int windowLength;
-    /**
-     * The reference time in millis for window calculations and
-     * expiring events. If not set it will default to System.currentTimeMillis()
-     */
-    protected Long referenceTime;
+    protected EvictionContext evictionContext;
 
     /**
      * Constructs a TimeEvictionPolicy that evicts events older
@@ -43,7 +39,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
      */
     @Override
     public Action evict(Event<T> event) {
-        long now = referenceTime == null ? System.currentTimeMillis() : referenceTime;
+        long now = evictionContext == null ? System.currentTimeMillis() : evictionContext.getReferenceTime();
         long diff = now - event.getTimestamp();
         if (diff >= windowLength) {
             return Action.EXPIRE;
@@ -58,14 +54,19 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
 
     @Override
     public void setContext(EvictionContext context) {
-        referenceTime = context.getReferenceTime();
+        this.evictionContext = context;
+    }
+
+    @Override
+    public EvictionContext getContext() {
+        return evictionContext;
     }
 
     @Override
     public String toString() {
         return "TimeEvictionPolicy{" +
                 "windowLength=" + windowLength +
-                ", referenceTime=" + referenceTime +
+                ", evictionContext=" + evictionContext +
                 '}';
     }
 }

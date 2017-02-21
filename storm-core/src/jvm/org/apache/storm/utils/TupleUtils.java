@@ -40,7 +40,11 @@ public final class TupleUtils {
              && Constants.SYSTEM_TICK_STREAM_ID.equals(tuple.getSourceStreamId());
     }
 
-    public static <T> int listHashCode(List<T> alist) {
+    public static <T> int chooseTaskIndex(List<T> keys, int numTasks) {
+        return Math.abs(listHashCode(keys)) % numTasks;
+    }
+
+    private static <T> int listHashCode(List<T> alist) {
       if (alist == null) {
           return 1;
       } else {
@@ -60,5 +64,4 @@ public final class TupleUtils {
 
       return conf;
     }
-
 }

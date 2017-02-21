@@ -44,6 +44,8 @@ public class EventHubSpoutConfig implements Serializable {
 	private IEventDataScheme scheme = new StringEventDataScheme();
 	private String consumerGroupName = null; // if null then use default
 												// consumer group
+	private String outputStreamId;
+
 
 	// These are mandatory parameters
 	public EventHubSpoutConfig(String username, String password,
@@ -238,5 +240,13 @@ public class EventHubSpoutConfig implements Serializable {
 	public EventHubSpoutConfig withTargetAddress(String targetFqnAddress) {
 		setTargetAddress(targetFqnAddress);
 		return this;
+	}
+
+	public String getOutputStreamId() {
+		return outputStreamId;
+	}
+
+	public void setOutputStreamId(String outputStreamId) {
+		this.outputStreamId = outputStreamId;
 	}
 }

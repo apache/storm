@@ -88,21 +88,21 @@ Example filename of the uberjar:
 You can submit (run) a topology contained in this uberjar to Storm via the `storm` CLI tool:
 
     # Example 1: Run the ExclamationTopology in local mode (LocalCluster)
-    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.ExclamationTopology
+    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.ExclamationTopology -local
 
     # Example 2: Run the RollingTopWords in remote/cluster mode,
     #            under the name "production-topology"
-    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology remote
+    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology
 
 With submitting you can run topologies which use multilang, for example, `WordCountTopology`.
 
 _Submitting a topology in local vs. remote mode:_
 It depends on the actual code of a topology how you can or even must tell Storm whether to run the topology locally (in
-an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of
-[RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java), for instance, this can be done by passing command line
-arguments.
-Topologies other than `RollingTopWords` -- such as [ExclamationTopology](src/jvm/org/apache/storm/starter/ExclamationTopology.java)
--- may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
+an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of topologies extending
+[ConfigurableTopology](https://github.com/apache/storm/tree/master/storm-core/src/jvm/org/apache/storm/topology/ConfigurableTopology.java),
+such as [RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java) or [ExclamationTopology](src/jvm/org/apache/storm/starter/ExclamationTopology.java), 
+this is done by specifying `-local` in the command line arguments.
+Other topologies may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
 cannot change without modifying the topology code), or by requiring a customized configuration file that the topology
 code will parse prior submitting the topology to Storm.  Similarly, further options such as the name of the topology may
 be user-configurable or be hardcoded into the topology code.  So make sure you understand how the topology of your

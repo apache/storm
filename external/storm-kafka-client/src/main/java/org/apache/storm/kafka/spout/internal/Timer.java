@@ -15,10 +15,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout.internal;
 
 import java.util.concurrent.TimeUnit;
+import org.apache.storm.utils.Time;
 
 public class Timer {
     private final long delay;
@@ -42,7 +42,7 @@ public class Timer {
         this.timeUnit = timeUnit;
 
         periodNanos = timeUnit.toNanos(period);
-        start = System.nanoTime() + timeUnit.toNanos(delay);
+        start = Time.nanoTime() + timeUnit.toNanos(delay);
     }
 
     public long period() {
@@ -66,9 +66,9 @@ public class Timer {
      * otherwise.
      */
     public boolean isExpiredResetOnTrue() {
-        final boolean expired = System.nanoTime() - start > periodNanos;
+        final boolean expired = Time.nanoTime() - start >= periodNanos;
         if (expired) {
-            start = System.nanoTime();
+            start = Time.nanoTime();
         }
         return expired;
     }

@@ -30,6 +30,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,7 +77,15 @@ public class BlobStoreUtils {
 
     // Check for latest sequence number of a key inside zookeeper and return nimbodes containing the latest sequence number
     public static Set<NimbusInfo> getNimbodesWithLatestSequenceNumberOfBlob(CuratorFramework zkClient, String key) throws Exception {
-        List<String> stateInfoList = zkClient.getChildren().forPath("/blobstore/" + key);
+        List<String> stateInfoList;
+        try {
+            stateInfoList = zkClient.getChildren().forPath("/blobstore/" + key);
+        } catch (KeeperException.NoNodeException e) {
+            // there's a race condition with a delete: blobstore
+            // this should be thrown to the caller to indicate that the key is invalid now
+            throw new KeyNotFoundException(key);
+        }
+
         Set<NimbusInfo> nimbusInfoSet = new HashSet<NimbusInfo>();
         int latestSeqNumber = getLatestSequenceNumber(stateInfoList);
         LOG.debug("getNimbodesWithLatestSequenceNumberOfBlob stateInfo {} version {}", stateInfoList, latestSeqNumber);
@@ -240,7 +249,7 @@ public class BlobStoreUtils {
             LOG.debug("StateInfo for update {}", stateInfo);
             Set<NimbusInfo> nimbusInfoList = getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
 
-            for (NimbusInfo nimbusInfo:nimbusInfoList) {
+            for (NimbusInfo nimbusInfo : nimbusInfoList) {
                 if (nimbusInfo.getHost().equals(nimbusDetails.getHost())) {
                     isListContainsCurrentNimbusInfo = true;
                     break;
@@ -251,7 +260,7 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
-        } catch (NoNodeException e) {
+        } catch (NoNodeException | KeyNotFoundException e) {
             //race condition with a delete
             return;
         } catch (Exception exp) {

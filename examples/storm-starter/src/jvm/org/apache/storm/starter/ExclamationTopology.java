@@ -17,27 +17,23 @@
  */
 package org.apache.storm.starter;
 
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
+import java.util.Map;
+
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.TestWordSpout;
+import org.apache.storm.topology.ConfigurableTopology;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-
-import java.util.Map;
 
 /**
  * This is a basic example of a Storm topology.
  */
-public class ExclamationTopology {
+public class ExclamationTopology extends ConfigurableTopology {
 
   public static class ExclamationBolt extends BaseRichBolt {
     OutputCollector _collector;
@@ -58,30 +54,33 @@ public class ExclamationTopology {
       declarer.declare(new Fields("word"));
     }
 
-
   }
 
   public static void main(String[] args) throws Exception {
+    ConfigurableTopology.start(new ExclamationTopology(), args);
+  }
+
+  protected int run(String[] args) {
     TopologyBuilder builder = new TopologyBuilder();
 
     builder.setSpout("word", new TestWordSpout(), 10);
     builder.setBolt("exclaim1", new ExclamationBolt(), 3).shuffleGrouping("word");
     builder.setBolt("exclaim2", new ExclamationBolt(), 2).shuffleGrouping("exclaim1");
 
-    Config conf = new Config();
     conf.setDebug(true);
 
-    if (args != null && args.length > 0) {
+    String topologyName = "test";
+
+    if (isLocal) {
+      ttl = 10;
+    } else {
       conf.setNumWorkers(3);
-
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
     }
-    else {
 
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-        Utils.sleep(10000);
-      }
+    if (args != null && args.length > 0) {
+      topologyName = args[0];
     }
+
+    return submit(topologyName, conf, builder);
   }
 }

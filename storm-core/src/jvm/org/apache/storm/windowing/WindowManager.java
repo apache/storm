@@ -142,7 +142,7 @@ public class WindowManager<T> implements TriggerHandler {
         if (!events.isEmpty()) {
             prevWindowEvents.addAll(windowEvents);
             LOG.debug("invoking windowLifecycleListener onActivation, [{}] events in window.", events.size());
-            windowLifecycleListener.onActivation(events, newEvents, expired);
+            windowLifecycleListener.onActivation(events, newEvents, expired, evictionPolicy.getContext().getReferenceTime());
         } else {
             LOG.debug("No events in the window, skipping onActivation");
         }

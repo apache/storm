@@ -553,7 +553,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
     
-    private static int getVersionForKey(String key, NimbusInfo nimbusInfo, Map<String, Object> conf) {
+    private static int getVersionForKey(String key, NimbusInfo nimbusInfo, Map<String, Object> conf) throws KeyNotFoundException {
         KeySequenceNumber kseq = new KeySequenceNumber(key, nimbusInfo);
         return kseq.getKeySequenceNumber(conf);
     }
@@ -2085,7 +2085,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         LOG.debug("Creating list of key entries for blobstore inside zookeeper {} local {}", activeKeys, activeLocalKeys);
         for (String key: activeLocalKeys) {
-            state.setupBlobstore(key, nimbusInfo, getVersionForKey(key, nimbusInfo, conf));
+            try {
+                state.setupBlobstore(key, nimbusInfo, getVersionForKey(key, nimbusInfo, conf));
+            } catch (KeyNotFoundException e) {
+                // invalid key, remove it from blobstore
+                store.deleteBlob(key, NIMBUS_SUBJECT);
+            }
         }
     }
 
@@ -3137,7 +3142,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             LOG.debug("Created state in zookeeper {} {} {}", state, store, ni);
         } catch (Exception e) {
-            LOG.warn("Begin file upload exception", e);
+            LOG.warn("Exception while creating state in zookeeper - key: " + key, e);
             if (e instanceof TException) {
                 throw (TException)e;
             }
@@ -3600,8 +3605,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 List<Integer> tasks = compToTasks.get(StormCommon.EVENTLOGGER_COMPONENT_ID);
                 tasks.sort(null);
                 // Find the task the events from this component route to.
-                int taskIndex = (TupleUtils.listHashCode(Arrays.asList(componentId)) % tasks.size() + tasks.size()) %
-                        tasks.size();
+                int taskIndex = TupleUtils.chooseTaskIndex(Collections.singletonList(componentId), tasks.size());
                 int taskId = tasks.get(taskIndex);
                 String host = null;
                 Integer port = null;

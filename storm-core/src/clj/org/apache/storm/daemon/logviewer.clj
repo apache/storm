@@ -529,7 +529,7 @@
 
 (defn url-to-match-centered-in-log-page
   [needle fname offset port]
-  (let [host (Utils/localHostname)
+  (let [host (Utils/hostname)
         port (logviewer-port)
         fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 3 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/log")
@@ -542,7 +542,7 @@
 
 (defn url-to-match-centered-in-log-page-daemon-file
   [needle fname offset port]
-  (let [host (Utils/localHostname)
+  (let [host (Utils/hostname)
         port (logviewer-port)
         fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 1 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/daemonlog")

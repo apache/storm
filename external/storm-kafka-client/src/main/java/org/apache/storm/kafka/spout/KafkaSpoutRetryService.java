@@ -29,14 +29,18 @@ import java.util.Set;
  */
 public interface KafkaSpoutRetryService extends Serializable {
     /**
-     * Schedules this {@link KafkaSpoutMessageId} if not yet scheduled, or updates retry time if it has already been scheduled.
+     * Schedules this {@link KafkaSpoutMessageId} if not yet scheduled, or
+     * updates retry time if it has already been scheduled. It may also indicate
+     * that the message should not be retried, in which case the message will not be scheduled.
      * @param msgId message to schedule for retrial
+     * @return true if the message will be retried, false otherwise
      */
-    void schedule(KafkaSpoutMessageId msgId);
+    boolean schedule(KafkaSpoutMessageId msgId);
 
     /**
      * Removes a message from the list of messages scheduled for retrial
      * @param msgId message to remove from retrial
+     * @return true if the message was scheduled for retrial, false otherwise
      */
     boolean remove(KafkaSpoutMessageId msgId);
 
@@ -56,8 +60,9 @@ public interface KafkaSpoutRetryService extends Serializable {
     Set<TopicPartition> retriableTopicPartitions();
 
     /**
-     * Checks if a specific failed {@link KafkaSpoutMessageId} is is ready to be retried,
+     * Checks if a specific failed {@link KafkaSpoutMessageId} is ready to be retried,
      * i.e is scheduled and has retry time that is less than current time.
+     * @param msgId message to check for readiness
      * @return true if message is ready to be retried, false otherwise
      */
     boolean isReady(KafkaSpoutMessageId msgId);
@@ -65,6 +70,7 @@ public interface KafkaSpoutRetryService extends Serializable {
     /**
      * Checks if a specific failed {@link KafkaSpoutMessageId} is scheduled to be retried.
      * The message may or may not be ready to be retried yet.
+     * @param msgId message to check for scheduling status
      * @return true if the message is scheduled to be retried, regardless of being or not ready to be retried.
      * Returns false is this message is not scheduled for retrial
      */

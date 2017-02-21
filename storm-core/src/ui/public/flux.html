@@ -1,0 +1,157 @@
+<html>
+<head>
+    <!--
+     Licensed to the Apache Software Foundation (ASF) under one or more
+     contributor license agreements.  See the NOTICE file distributed with
+     this work for additional information regarding copyright ownership.
+     The ASF licenses this file to You under the Apache License, Version 2.0
+     (the "License"); you may not use this file except in compliance with
+     the License.  You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+    -->
+<meta charset="UTF-8">
+    <title>Storm Flux Viewer</title>
+    <style>
+      body {
+        font-family: helvetica;
+        font-size: 16px;
+      }
+
+      textarea {
+        font-size: 16px;
+      }
+
+      .cy {
+        width: 49%;
+        height: 80%;
+        z-index: 999;
+        float: left;
+	border: 1px solid black;
+      }
+    </style>
+    <script src="/js/jquery-1.11.1.min.js"></script>
+    <script src="/js/cytoscape.min.js"></script>
+    <script src="/js/dagre.min.js"></script>
+    <script src="/js/cytoscape-dagre.js"></script>
+
+    <script src="/js/esprima.min.js"></script>
+    <script src="/js/js-yaml.min.js"></script>
+    <script type="text/javascript">
+      function toCytoscapeGraph(doc) {
+        var nodes = [];
+        for(i in doc.bolts) {
+          var e = doc.bolts[i];
+          e.type='bolt';
+          nodes[e.id] = e;
+        }
+        for(i in doc.spouts) {
+          var e = doc.spouts[i];
+          e.type='spout';
+          nodes[e.id] = e;
+        }
+        var nNodes = [];
+        for(i in nodes) {
+          var node = nodes[i];
+          nNodes.push({data:{id:i, class:node.className, type:node.type}});
+        }
+        var edges = [];
+        for(i in doc.streams) {
+          var e = doc.streams[i];
+          edges.push({ data:{source:e.from, target:e.to, label: e.grouping.type}});
+        }
+        var graph = { nodes:nNodes, edges:edges }
+        return graph
+      }
+
+      function parseAndRender() {
+        var input = document.getElementById('taInput').value;
+        var doc = jsyaml.load(input);
+	if(doc==null){
+	   return;
+	}
+        var graph = toCytoscapeGraph(doc)
+
+        $(function(){
+
+        var cy = window.cy = cytoscape({
+          container: document.getElementById('cy'),
+
+          boxSelectionEnabled: false,
+          autounselectify: true,
+
+          layout: {
+            name: 'dagre'
+          },
+
+          style: [
+            {
+              selector: 'node',
+              style: {
+                'content': 'data(id)',
+                'text-valign': 'bottom'
+              }
+            },
+
+            {
+              selector: '[type=\'spout\']',
+              style: {
+                'content': 'data(id)',
+                'text-valign': 'bottom',
+                'height': 100,
+                'width': 100,
+                'background-image': '/images/spout.png'
+              }
+            },
+
+            {
+              selector: '[type=\'bolt\']',
+              style: {
+                'content': 'data(id)',
+                'text-valign': 'bottom',
+                'height': 100,
+                'width': 100,
+                'background-image': '/images/bolt.png'
+              }
+            },
+
+            {
+              selector: 'edge',
+              style: {
+                'content': 'data(label)',
+                'curve-style': 'haystack',
+                'haystack-radius': 0,
+                'width': 5,
+                'opacity': 0.5,
+                'line-color': 'black'
+              }
+            }
+          ],
+
+          elements: graph});
+        });
+      }
+    </script>
+</head>
+<body>
+  <h1><a href="/">Storm UI</a></h1>
+  <h3>Flux Topology Viewer<button style="float:right" onclick="parseAndRender()">Refresh</button></h3>
+  <div id="input">
+    <textarea id="taInput" class="cy"  onchange="parseAndRender()"># YAML Definition</textarea>
+  </div>
+
+  <div id="cy" class="cy" >
+  </div>
+
+  <script type="text/javascript">
+    parseAndRender();
+  </script>
+
+</body>
+</html>
