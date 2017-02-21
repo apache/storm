@@ -53,7 +53,7 @@ public class PartitionManager extends SimplePartitionManager {
 
     EventData eventData;
     if (toResend.isEmpty()) {
-      eventData = receiver.receive(ehReceiveTimeoutMs);
+      eventData = receiver.receive();
     } else {
       eventData = toResend.pollFirst();
     }

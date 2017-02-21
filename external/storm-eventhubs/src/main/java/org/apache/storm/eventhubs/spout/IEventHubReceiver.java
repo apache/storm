@@ -24,13 +24,13 @@ import com.microsoft.eventhubs.client.IEventHubFilter;
 
 public interface IEventHubReceiver {
 
-  void open(IEventHubFilter filter) throws EventHubException;
+  void open(String offset) throws EventHubException;
 
   void close();
-  
+
   boolean isOpen();
 
-  EventData receive(long timeoutInMilliseconds);
-  
+  EventData receive();
+
   Map getMetricsData();
 }

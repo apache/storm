@@ -49,10 +49,10 @@ public class TridentPartitionManager implements ITridentPartitionManager {
     try {
       if((offset == null || offset.equals(Constants.DefaultStartingOffset)) 
         && spoutConfig.getEnqueueTimeFilter() != 0) {
-          receiver.open(new EventHubEnqueueTimeFilter(spoutConfig.getEnqueueTimeFilter()));
+          receiver.open(offset);
       }
       else {
-        receiver.open(new EventHubOffsetFilter(offset));
+        receiver.open(offset);
       }
       lastOffset = offset;
       return true;
@@ -81,7 +81,7 @@ public class TridentPartitionManager implements ITridentPartitionManager {
     }
     
     for(int i=0; i<count; ++i) {
-      EventData ed = receiver.receive(receiveTimeoutMs);
+      EventData ed = receiver.receive();
       if(ed == null) {
         break;
       }

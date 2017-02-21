@@ -59,8 +59,8 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   }
 
   @Override
-  public void open(IEventHubFilter filter) throws EventHubException {
-    currentOffset = Long.parseLong(filter.getFilterValue());
+  public void open(String offset) throws EventHubException {
+    currentOffset = Long.parseLong(offset);
     isOpen = true;
   }
 
@@ -68,14 +68,14 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   public void close() {
     isOpen = false;
   }
-  
+
   @Override
   public boolean isOpen() {
     return isOpen;
   }
 
   @Override
-  public EventData receive(long timeoutInMilliseconds) {
+  public EventData receive() {
     if(isPaused) {
       return null;
     }

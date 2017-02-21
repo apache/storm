@@ -65,16 +65,13 @@ public class SimplePartitionManager implements IPartitionManager {
       offset = Constants.DefaultStartingOffset;
     }
 
-    IEventHubFilter filter;
     if (offset.equals(Constants.DefaultStartingOffset)
         && config.getEnqueueTimeFilter() != 0) {
-      filter = new EventHubEnqueueTimeFilter(config.getEnqueueTimeFilter());
-    }
-    else {
-      filter = new EventHubOffsetFilter(offset);
+      offset = Long.toString(config.getEnqueueTimeFilter());
     }
 
-    receiver.open(filter);
+
+    receiver.open(offset);
   }
   
   @Override
@@ -99,7 +96,7 @@ public class SimplePartitionManager implements IPartitionManager {
 
   @Override
   public EventData receive() {
-    EventData eventData = receiver.receive(5000);
+    EventData eventData = receiver.receive();
     if (eventData != null) {
       lastOffset = eventData.getMessageId().getOffset();
     }
