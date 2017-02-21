@@ -200,9 +200,18 @@
         (pacemaker-retry-on-exception
           max-retries
           "delete-worker-hb"
-          #(delete-worker-hb path (get-pacemaker-write-client conf servers pacemaker-client-pool))
-          (fn delete_worker_hb_error [err]
-            (shutdown-rotate servers pacemaker-client-pool))))
+          #(let [pacemaker-client-pool (makeClientPool conf pacemaker-client-pool servers)
+                 results (map (fn [[host client]]
+                                (try
+                                  (if (is-connection-ready client)
+                                    (delete-worker-hb path client)
+                                    :error)
+                                  (catch Exception e
+                                    :error)))
+                              @pacemaker-client-pool)]
+             (when (every? (fn [result] (= :error result)) results)
+               (throw (HBExecutionException. "Cannot connect to any pacemaker servers"))))
+          nil))
 
       ;; aggregating worker heartbeat details
       (get_worker_hb [this path watch?]
