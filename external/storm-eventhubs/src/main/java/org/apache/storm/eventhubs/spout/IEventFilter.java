@@ -15,19 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
+import java.time.Instant;
 
-public interface IEventHubReceiver {
+public interface IEventFilter {
 
-  void open(IEventFilter filter) throws EventHubException;
+    String getOffset();
 
-  void close();
-
-  boolean isOpen();
-
-  EventDataWrap receive();
-
-  Map getMetricsData();
+    Instant getTime();
 }

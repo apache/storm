@@ -17,9 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.List;
+import org.apache.storm.eventhubs.spout.EventDataWrap;
 
-import org.apache.storm.eventhubs.spout.EventData;
+import java.util.List;
 
 public interface ITridentPartitionManager {
   boolean open(String offset);
@@ -31,5 +31,5 @@ public interface ITridentPartitionManager {
    * @param count max number of messages in this batch
    * @return list of EventData, if failed to receive, return empty list
    */
-  public List<EventData> receiveBatch(String offset, int count);
+  public List<EventDataWrap> receiveBatch(String offset, int count);
 }

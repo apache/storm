@@ -24,15 +24,13 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventHubSpout extends BaseRichSpout {
 
@@ -138,7 +136,7 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void open(Map config, TopologyContext context, SpoutOutputCollector collector) {
-    logger.info("begin: open()");
+    logger.info("begin:start open()");
     String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
     eventHubConfig.setTopologyName(topologyName);
 
@@ -174,7 +172,7 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void nextTuple() {
-    EventData eventData = null;
+    EventDataWrap eventDatawrap = null;
 
     List<IPartitionManager> partitionManagers = partitionCoordinator.getMyPartitionManagers();
     for (int i = 0; i < partitionManagers.size(); i++) {
@@ -185,20 +183,16 @@ public class EventHubSpout extends BaseRichSpout {
         throw new RuntimeException("partitionManager doesn't exist.");
       }
 
-      eventData = partitionManager.receive();
+      eventDatawrap = partitionManager.receive();
 
-      if (eventData != null) {
+      if (eventDatawrap != null) {
         break;
       }
     }
 
-
-    if (eventData != null) {
-      MessageId messageId = eventData.getMessageId();
-      Message message = eventData.getMessage();
-
-      List<Object> tuples = scheme.deserialize(message);
-
+    if (eventDatawrap != null) {
+      MessageId messageId = eventDatawrap.getMessageId();
+      List<Object> tuples = scheme.deserialize(eventDatawrap.getEventData());
       if (tuples != null) {
         collector.emit(tuples, messageId);
       }

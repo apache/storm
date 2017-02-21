@@ -15,19 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.ObjectOutputStream;
 
-public interface IEventHubReceiver {
-
-  void open(IEventFilter filter) throws EventHubException;
-
-  void close();
-
-  boolean isOpen();
-
-  EventDataWrap receive();
-
-  Map getMetricsData();
+public class SerializeDeserializeUtil {
+    public static byte[] serialize(Object obj) throws IOException {
+        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
+                o.writeObject(obj);
+            }
+            return b.toByteArray();
+        }
+    }
 }
