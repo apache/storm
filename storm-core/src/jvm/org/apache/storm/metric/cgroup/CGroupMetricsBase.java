@@ -20,10 +20,13 @@ package org.apache.storm.metric.cgroup;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
-import java.io.IOException;
 import java.util.Map;
 
 import org.apache.storm.Config;
+import org.apache.storm.container.cgroup.CgroupCenter;
+import org.apache.storm.container.cgroup.CgroupCoreFactory;
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.apache.storm.metric.api.IMetric;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,15 +37,27 @@ import org.slf4j.LoggerFactory;
 public abstract class CGroupMetricsBase<T> implements IMetric {
     private static final Logger LOG = LoggerFactory.getLogger(CGroupMetricsBase.class);
     private boolean enabled;
-    private File fullFile;
+    private CgroupCore core = null;
     
-    public CGroupMetricsBase(Map<String, Object> conf, String fileName) {
+    public CGroupMetricsBase(Map<String, Object> conf, SubSystemType type) {
+        final String simpleName = getClass().getSimpleName();
         enabled = false;
-        String hierarchyDir = (String)conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
-        if (hierarchyDir == null || hierarchyDir.isEmpty()) {
-            LOG.warn("{} is disabled {} is not set", getClass().getSimpleName(), Config.STORM_CGROUP_HIERARCHY_DIR);
+        CgroupCenter center = CgroupCenter.getInstance();
+        if (center == null) {
+            LOG.warn("{} is diabled. cgroups do not appear to be enabled on this system", simpleName);
             return;
         }
+        if (!center.isSubSystemEnabled(type)) {
+            LOG.warn("{} is disabled. {} is not an enabled subsystem", simpleName, type);
+            return;
+        }
+        
+        String hierarchyDir = (String)conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
+        if (hierarchyDir == null || hierarchyDir.isEmpty()) {
+            LOG.warn("{} is disabled {} is not set", simpleName, Config.STORM_CGROUP_HIERARCHY_DIR);
+            return;
+        }
+        
         //Good so far, check if we are in a CGroup
         File cgroupFile = new File("/proc/self/cgroup");
         if (!cgroupFile.exists()) {
@@ -58,18 +73,13 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
             //parts[0] == 0 for CGroup V2, else maps to hierarchy in /proc/cgroups
             //parts[1] is empty for CGroups V2 else what is mapped that we are looking for
             String cgroupPath = parts[2];
-            
-            fullFile = new File(new File(new File(hierarchyDir), cgroupPath), fileName);
-            if (!fullFile.exists()) {
-                LOG.warn("{} is disabled {} does not exist", getClass().getSimpleName(), fullFile);
-                return;
-            }
+            core = CgroupCoreFactory.getInstance(type, new File(hierarchyDir, cgroupPath).getAbsolutePath());
         } catch (Exception e) {
-            LOG.warn("{} is disabled error trying to read or parse {}", getClass().getSimpleName(), cgroupFile);
+            LOG.warn("{} is disabled error trying to read or parse {}", simpleName, cgroupFile);
             return;
         }
         enabled = true;
-        LOG.info("{} is ENABLED {} exists...", getClass().getSimpleName(), fullFile);
+        LOG.info("{} is ENABLED {} exists...", simpleName);
     }
     
     @Override
@@ -77,20 +87,12 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         if (!enabled) {
             return null;
         }
-        StringBuffer contents = new StringBuffer();
-        try (BufferedReader reader = new BufferedReader(new FileReader(fullFile))) {
-            char[] buf = new char[4096];
-            int len;
-            while((len = reader.read(buf)) > 0) {
-                contents.append(buf, 0, len);
-            }
-            Object ret = parseFileContents(contents.toString());
-            LOG.debug("{} is returning {} from {}", getClass().getSimpleName(), ret, fullFile);
-            return ret;
-        } catch (IOException e) {
+        try {
+            return getDataFrom(core);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
     
-    public abstract T parseFileContents(String contents);
+    public abstract T getDataFrom(CgroupCore core) throws Exception;
 }

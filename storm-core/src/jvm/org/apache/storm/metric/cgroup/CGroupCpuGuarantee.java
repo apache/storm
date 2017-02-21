@@ -17,8 +17,11 @@
  */
 package org.apache.storm.metric.cgroup;
 
+import java.io.IOException;
 import java.util.Map;
 
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
 import org.apache.storm.container.cgroup.core.CpuCore;
 
 /**
@@ -26,23 +29,28 @@ import org.apache.storm.container.cgroup.core.CpuCore;
  */
 public class CGroupCpuGuarantee extends CGroupMetricsBase<Long> {
     long previousTime = -1;
-    
+
     public CGroupCpuGuarantee(Map<String, Object> conf) {
-        super(conf, CpuCore.CPU_SHARES);
+        super(conf, SubSystemType.cpu);
     }
 
     @Override
-    public Long parseFileContents(String contents) {
-        Long msGuarantee = null;
-        long now = System.currentTimeMillis();
-        if (previousTime > 0) {
-            long shares = Long.valueOf(contents.trim());
-            //By convention each share corresponds to 1% of a CPU core
-            // or 100 = 1 core full time. So the guaranteed number of ms
-            // (approximately) should be ...
-            msGuarantee = (shares * (now - previousTime))/100;
+    public Long getDataFrom(CgroupCore core) {
+        try {
+            CpuCore cpu = (CpuCore)core;
+            Long msGuarantee = null;
+            long now = System.currentTimeMillis();
+            if (previousTime > 0) {
+                long shares = cpu.getCpuShares();
+                //By convention each share corresponds to 1% of a CPU core
+                // or 100 = 1 core full time. So the guaranteed number of ms
+                // (approximately) should be ...
+                msGuarantee = (shares * (now - previousTime))/100;
+            }
+            previousTime = now;
+            return msGuarantee;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        previousTime = now;
-        return msGuarantee;
     }
 }

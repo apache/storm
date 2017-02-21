@@ -22,7 +22,7 @@ A sample/default cgconfig.conf file is supplied in the <stormroot>/conf director
 mount {
 	cpuset	= /cgroup/cpuset;
 	cpu	= /cgroup/storm_resources;
-	cpuacct	= /cgroup/cpuacct;
+	cpuacct	= /cgroup/storm_resources;
 	memory	= /cgroup/storm_resources;
 	devices	= /cgroup/devices;
 	freezer	= /cgroup/freezer;
@@ -53,6 +53,13 @@ group storm {
 For a more detailed explanation of the format and configs for the cgconfig.conf file, please visit:
 
 https://access.redhat.com/documentation/en-US/Red_Hat_Enterprise_Linux/6/html/Resource_Management_Guide/ch-Using_Control_Groups.html#The_cgconfig.conf_File
+
+To let storm manage the cgroups for indavidual workers you need to make sure that the resources you want to control are mounted under the same directory as in the example above.
+If they are not in the same directory the supervisor will throw an exception.
+
+The perm section needs to be configured so that the user the supervisor is running as can modify the group.
+
+If run as user is enabled so the supervisor spawns other processes as the user that launched the topology make sure that the permissions are such that indavidual users have read access but not write access.
 
 # Settings Related To CGroups in Storm
 
@@ -88,6 +95,8 @@ org.apache.storm.metric.cgroup.CGroupCPU reports back metrics similar to org.apa
 ```
 
 CGroup reports these as CLK_TCK counts, and not milliseconds so the accuracy is determined by what CLK_TCK is set to.  On most systems it is 100 times a second so at most the accuracy is 10 ms.
+
+To make this metric work cpuacct must be mounted.
 
 ## CGroupCpuGuarantee
 

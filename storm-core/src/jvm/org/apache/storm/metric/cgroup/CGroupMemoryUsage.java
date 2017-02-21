@@ -19,17 +19,21 @@ package org.apache.storm.metric.cgroup;
 
 import java.util.Map;
 
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
+import org.apache.storm.container.cgroup.core.MemoryCore;
+
 /**
  * Reports the current memory usage of the cgroup for this worker
  */
 public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
 
     public CGroupMemoryUsage(Map<String, Object> conf) {
-        super(conf, "memory.usage_in_bytes");
+        super(conf, SubSystemType.memory);
     }
 
     @Override
-    public Long parseFileContents(String contents) {
-        return Long.parseLong(contents.trim());
+    public Long getDataFrom(CgroupCore core) throws Exception {
+        return ((MemoryCore) core).getPhysicalUsage();
     }
 }

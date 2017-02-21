@@ -19,17 +19,21 @@ package org.apache.storm.metric.cgroup;
 
 import java.util.Map;
 
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
+import org.apache.storm.container.cgroup.core.MemoryCore;
+
 /**
  * Reports the current memory limit of the cgroup for this worker
  */
 public class CGroupMemoryLimit extends CGroupMetricsBase<Long> {
 
     public CGroupMemoryLimit(Map<String, Object> conf) {
-        super(conf, "memory.limit_in_bytes");
+        super(conf, SubSystemType.memory);
     }
 
     @Override
-    public Long parseFileContents(String contents) {
-        return Long.parseLong(contents.trim());
+    public Long getDataFrom(CgroupCore core) throws Exception {
+        return ((MemoryCore) core).getPhysicalUsageLimit();
     }
 }

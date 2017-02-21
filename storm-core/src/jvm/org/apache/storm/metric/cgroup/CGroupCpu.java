@@ -17,8 +17,16 @@
  */
 package org.apache.storm.metric.cgroup;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
+import org.apache.storm.container.cgroup.core.CpuacctCore;
+import org.apache.storm.container.cgroup.core.CpuacctCore.StatType;
 
 /**
  * Report CPU used in the cgroup
@@ -26,43 +34,37 @@ import java.util.Map;
 public class CGroupCpu extends CGroupMetricsBase<Map<String,Long>> {
     long previousSystem = 0;
     long previousUser = 0;
+    private int userHz = -1;
     
     public CGroupCpu(Map<String, Object> conf) {
-        super(conf, "cpuacct.stat");
+        super(conf, SubSystemType.cpuacct);
     }
 
-    public int getUserHZ() {
-        return 100; // On most systems (x86) this is fine.
-        // If someone really does want full support
-        // we need to run `getconf CLK_TCK` and cache the result.
+    public synchronized int getUserHZ() throws IOException {
+        if (userHz < 0) {
+            ProcessBuilder pb = new ProcessBuilder("getconf", "CLK_TCK");
+            Process p = pb.start();
+            BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            String line = in.readLine().trim();
+            userHz = Integer.valueOf(line);
+        }
+        return userHz;
     }
 
     @Override
-    public Map<String, Long> parseFileContents(String contents) {
-        try {
-            long systemHz = 0;
-            long userHz = 0;
-            for (String line: contents.split("\n")) {
-                if (!line.isEmpty()) {
-                    String [] parts = line.toLowerCase().split("\\s+");
-                    if (parts[0].contains("system")) {
-                        systemHz = Long.parseLong(parts[1].trim());
-                    } else if (parts[0].contains("user")) {
-                        userHz = Long.parseLong(parts[1].trim());
-                    }
-                }   
-            }
-            long user = userHz - previousUser;
-            long sys = systemHz - previousSystem;
-            previousUser = userHz;
-            previousSystem = systemHz;
-            long hz = getUserHZ();
-            HashMap<String, Long> ret = new HashMap<>();
-            ret.put("user-ms", user * 1000/hz); //Convert to millis
-            ret.put("sys-ms", sys * 1000/hz);
-            return ret;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+    public Map<String, Long> getDataFrom(CgroupCore core) throws IOException {
+        CpuacctCore cpu = (CpuacctCore) core;
+        Map<StatType, Long> stat = cpu.getCpuStat();
+        long systemHz = stat.get(StatType.system);
+        long userHz = stat.get(StatType.user);
+        long user = userHz - previousUser;
+        long sys = systemHz - previousSystem;
+        previousUser = userHz;
+        previousSystem = systemHz;
+        long hz = getUserHZ();
+        HashMap<String, Long> ret = new HashMap<>();
+        ret.put("user-ms", user * 1000/hz); //Convert to millis
+        ret.put("sys-ms", sys * 1000/hz);
+        return ret;
     }
 }
