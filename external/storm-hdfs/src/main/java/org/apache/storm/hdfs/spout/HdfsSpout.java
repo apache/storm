@@ -21,6 +21,8 @@ package org.apache.storm.hdfs.spout;
 import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.net.URI;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
@@ -30,20 +32,19 @@ import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.apache.storm.Config;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.storm.Config;
 import org.apache.storm.hdfs.common.HdfsUtils;
 import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HdfsSpout extends BaseRichSpout {
 
@@ -71,7 +72,7 @@ public class HdfsSpout extends BaseRichSpout {
   private boolean clocksInSync = true;
 
   private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
-  private String ignoreSuffix = ".ignore";
+  private List<String> ignoreSuffixes = new ArrayList<>();
 
   private String outputStreamName= null;
 
@@ -163,12 +164,19 @@ public class HdfsSpout extends BaseRichSpout {
     return this;
   }
 
-
+  /**
+	* @deprecated use {@link #setIgnoreSuffix(List)} instead.
+	*/
   public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
-    this.ignoreSuffix = ignoreSuffix;
-    return this;
+	ignoreSuffixes.add(ignoreSuffix);
+	return this;
   }
 
+  public HdfsSpout setIgnoreSuffix(List<String> ignoreSuffixes) {
+	ignoreSuffixes.addAll(ignoreSuffixes);
+	return this;
+  }
+  
   /** Output field names. Number of fields depends upon the reader type */
   public HdfsSpout withOutputFields(String... fields) {
     outputFields = new Fields(fields);
@@ -447,7 +455,9 @@ public class HdfsSpout extends BaseRichSpout {
 
     // -- ignore file names config
     if ( conf.containsKey(Configs.IGNORE_SUFFIX) ) {
-      this.ignoreSuffix = conf.get(Configs.IGNORE_SUFFIX).toString();
+		ignoreSuffixes = Arrays.asList(conf.get(Configs.IGNORE_SUFFIX).toString().split(","));
+	} else {
+		ignoreSuffixes.add(".ignore");
     }
 
     // -- lock dir config
@@ -596,15 +606,13 @@ public class HdfsSpout extends BaseRichSpout {
       }
 
       // 2) If no abandoned files, then pick oldest file in sourceDirPath, lock it and rename it
-      Collection<Path> listing = HdfsUtils.listFilesByModificationTime(hdfs, sourceDirPath, 0);
+	  Collection<Path> listing = HdfsUtils.listFilesByModificationTimeWithIgnoreSuffixes(hdfs, sourceDirPath,0,ignoreSuffixes);
 
       for (Path file : listing) {
         if (file.getName().endsWith(inprogress_suffix)) {
           continue;
         }
-        if (file.getName().endsWith(ignoreSuffix)) {
-          continue;
-        }
+        
         lock = FileLock.tryLock(hdfs, file, lockDirPath, spoutId);
         if (lock == null) {
           LOG.debug("Unable to get FileLock for {}, so skipping it.", file);
