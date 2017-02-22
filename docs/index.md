@@ -31,9 +31,6 @@ documentation: true
 
 ### Layers on Top of Storm
 
-* [Flux Data Driven Topology Builder](flux.html)
-* [SQL](storm-sql.html)
-
 #### Trident
 
 Trident is an alternative interface to Storm. It provides exactly-once processing, "transactional" datastore persistence, and a set of common stream analytics operations.
@@ -43,6 +40,22 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Trident State](Trident-state.html)        -- exactly-once processing and fast, persistent aggregation
 * [Trident spouts](Trident-spouts.html)       -- transactional and non-transactional data intake
 * [Trident RAS API](Trident-RAS-API.html)     -- using the Resource Aware Scheduler with Trident.
+
+#### SQL
+
+The Storm SQL integration allows users to run SQL queries over streaming data in Storm.  
+
+NOTE: Storm SQL is an `experimental` feature, so the internals of Storm SQL and supported features are subject to change. 
+But small change will not affect the user experience. We will notify the user when breaking UX change is introduced.
+
+* [Storm SQL overview](storm-sql.html)
+* [Storm SQL example](storm-sql-example.html)
+* [Storm SQL reference](storm-sql-reference.html)
+* [Storm SQL internal](storm-sql-internal.html)
+
+#### Flux
+
+* [Flux Data Driven Topology Builder](flux.html)
 
 ### Setup and Deploying
 
