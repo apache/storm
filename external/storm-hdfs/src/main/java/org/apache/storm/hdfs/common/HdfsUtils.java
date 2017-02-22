@@ -18,19 +18,19 @@
 
 package org.apache.storm.hdfs.common;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.LocatedFileStatus;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.RemoteIterator;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.ipc.RemoteException;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
 
 public class HdfsUtils {
   /** list files sorted by modification time that have not been modified since 'olderThan'. if
@@ -75,6 +75,49 @@ public class HdfsUtils {
         throw e;
       }
     }
+  }
+  /**
+   * list files sorted by modification time that have not been modified since
+   * 'olderThan'. if 'olderThan' is <= 0 then the filtering is disabled
+   *
+   * @param fs
+   *            - {@link FileSystem}
+   * @param directory
+   *            - Directory in which it will look for
+   * @param olderThan
+   *            - Files updated olderthan this time
+   * @param ignoreSuffixes
+   *            - List of ignoreSuffixes
+   * @return - List file path satisfied by criteria
+   * @throws IOException
+   */
+  public static ArrayList<Path> listFilesByModificationTimeWithIgnoreSuffixes(FileSystem fs, Path directory,
+      long olderThan, List<String> ignoreSuffixes) throws IOException {
+    ArrayList<Path> list = listFilesByModificationTime(fs, directory, olderThan);
+    ArrayList<Path> result = new ArrayList<>(list.size());
+    for (Path path : list) {
+      if (!filterSufix(path.getName(), ignoreSuffixes)) {
+        result.add(path);
+      }
+    }
+    return result;
+  }
+
+  /**
+   *
+   * @param name
+   *            -name of file
+   * @param ignoreSuffixes
+   *            - List of suffixes to be ignored
+   * @return
+   */
+  private static boolean filterSufix(String name, List<String> ignoreSuffixes) {
+    for (String suffix : ignoreSuffixes) {
+      if (name.endsWith(suffix)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   public static class Pair<K,V> {

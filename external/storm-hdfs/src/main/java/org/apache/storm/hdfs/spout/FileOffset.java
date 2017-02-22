@@ -29,7 +29,7 @@ package org.apache.storm.hdfs.spout;
  *       - constructor(string) for deserialization
  */
 
-interface FileOffset extends Comparable<FileOffset>, Cloneable {
+public interface FileOffset extends Comparable<FileOffset>, Cloneable {
   /** tests if rhs == currOffset+1 */
   boolean isNextOffset(FileOffset rhs);
   FileOffset clone();
