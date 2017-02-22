@@ -35,22 +35,18 @@ public class CGroupCpuGuarantee extends CGroupMetricsBase<Long> {
     }
 
     @Override
-    public Long getDataFrom(CgroupCore core) {
-        try {
-            CpuCore cpu = (CpuCore)core;
-            Long msGuarantee = null;
-            long now = System.currentTimeMillis();
-            if (previousTime > 0) {
-                long shares = cpu.getCpuShares();
-                //By convention each share corresponds to 1% of a CPU core
-                // or 100 = 1 core full time. So the guaranteed number of ms
-                // (approximately) should be ...
-                msGuarantee = (shares * (now - previousTime))/100;
-            }
-            previousTime = now;
-            return msGuarantee;
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+    public Long getDataFrom(CgroupCore core) throws IOException {
+        CpuCore cpu = (CpuCore)core;
+        Long msGuarantee = null;
+        long now = System.currentTimeMillis();
+        if (previousTime > 0) {
+            long shares = cpu.getCpuShares();
+            //By convention each share corresponds to 1% of a CPU core
+            // or 100 = 1 core full time. So the guaranteed number of ms
+            // (approximately) should be ...
+            msGuarantee = (shares * (now - previousTime))/100;
         }
+        previousTime = now;
+        return msGuarantee;
     }
 }
