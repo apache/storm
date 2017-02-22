@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2367: Documentation for streams API
  * STORM-2365: Support for specifying output stream in event hubs spout
  * STORM-2250: Kafka Spout Refactoring to Increase Modularity and Testability
  * STORM-2346: Files with unapproved licenses: download-rc-directory.sh verify-release-file.sh
