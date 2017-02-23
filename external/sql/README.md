@@ -70,7 +70,7 @@ To run this example, users need to include the data sources (`storm-sql-kafka` i
 class path. One approach is to put the required jars into the `extlib` directory:
 
 ```
-$ cp curator-client-2.5.0.jar curator-framework-2.5.0.jar zookeeper-3.4.6.jar
+$ cp curator-client-2.5.0.jar curator-framework-2.5.0.jar zookeeper-3.4.9.jar
  extlib/
 $ cp scala-library-2.10.4.jar kafka-clients-0.8.2.1.jar kafka_2.10-0.8.2.1.jar metrics-core-2.2.0.jar extlib/
 $ cp json-simple-1.1.1.jar extlib/
