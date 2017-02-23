@@ -19,6 +19,7 @@ package org.apache.storm.metric.cgroup;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.Map;
 
@@ -49,6 +50,12 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         }
         if (!center.isSubSystemEnabled(type)) {
             LOG.warn("{} is disabled. {} is not an enabled subsystem", simpleName, type);
+            return;
+        }
+
+        //Check to see if the CGroup is mounted at all
+        if (null == center.getHierarchyWithSubSystem(type)) {
+            LOG.warn("{} is disabled. {} is not a mounted subsystem", simpleName, type);
             return;
         }
         
@@ -94,6 +101,10 @@ public abstract class CGroupMetricsBase<T> implements IMetric {
         }
         try {
             return getDataFrom(core);
+        } catch (FileNotFoundException e) {
+             LOG.warn("Exception trying to read a file {}", e);
+             //Something happened and we couldn't find the file, so ignore it for now.
+            return null;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
