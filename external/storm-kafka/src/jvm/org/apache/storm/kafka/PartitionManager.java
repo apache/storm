@@ -204,15 +204,14 @@ public class PartitionManager {
                 if (null != omitted) {
                     _lostMessageCount.incrBy(omitted.size());
                 }
-
+                
                 LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
             }
 
             if (offset > _emittedToOffset) {
                 _lostMessageCount.incrBy(offset - _emittedToOffset);
-                LOG.warn("Partition [{}]'s old offset: {} is out-of-range, jumping to lowest-valid-offset: {}. Number of offsets skipped: {}",
-                    _partition.partition, _emittedToOffset, offset, offset - _emittedToOffset);
                 _emittedToOffset = offset;
+                LOG.warn("{} Using new offset: {}", _partition.partition, _emittedToOffset);
             }
             
             return;
