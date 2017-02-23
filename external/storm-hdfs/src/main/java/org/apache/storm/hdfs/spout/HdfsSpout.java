@@ -166,8 +166,8 @@ public class HdfsSpout extends BaseRichSpout {
 
 
   public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
-	ignoreSuffixes = Arrays.asList(ignoreSuffix.split(","));
-	return this;
+    ignoreSuffixes = Arrays.asList(ignoreSuffix.split(","));
+    return this;
   }
 
   
@@ -449,12 +449,12 @@ public class HdfsSpout extends BaseRichSpout {
 
     // -- ignore file names config
     if ( conf.containsKey(Configs.IGNORE_SUFFIX) ) {
-		ignoreSuffixes = Arrays.asList(conf.get(Configs.IGNORE_SUFFIX).toString().split(","));
+      ignoreSuffixes = Arrays.asList(conf.get(Configs.IGNORE_SUFFIX).toString().split(","));
     }
 	
     //To support backward compatibility
     if (ignoreSuffixes.isEmpty()) {
-		ignoreSuffixes.add(".ignore");
+      ignoreSuffixes.add(".ignore");
     }
 
     // -- lock dir config
