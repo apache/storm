@@ -189,7 +189,7 @@ public class PartitionManager {
             msgs = KafkaUtils.fetchMessages(_spoutConfig, _consumer, _partition, offset);
         } catch (TopicOffsetOutOfRangeException e) {
 
-            Long lowestValidOffset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
+            offset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             // fetch failed, so don't update the fetch metrics
             
             //fix bug [STORM-643] : remove outdated failed offsets
@@ -198,31 +198,29 @@ public class PartitionManager {
                 // all the failed offsets, that are earlier than actual EarliestTime
                 // offset, since they are anyway not there.
                 // These calls to broker API will be then saved.
-                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(lowestValidOffset);
+                Set<Long> omitted = this._failedMsgRetryManager.clearInvalidMessages(offset);
 
                 // Omitted messages have not been acked and may be lost
                 if (null != omitted) {
                     _lostMessageCount.incrBy(omitted.size());
-                    LOG.warn("{} failed offsets were out of range, dropping them on floor. Offsets = {}",
-                        omitted.size(), omitted);
                 }
+
+                LOG.warn("Removing the failed offsets that are out of range: {}", omitted);
             }
 
-            if (lowestValidOffset > _emittedToOffset) {
-                _lostMessageCount.incrBy(lowestValidOffset - _emittedToOffset);
+            if (offset > _emittedToOffset) {
+                _lostMessageCount.incrBy(offset - _emittedToOffset);
                 LOG.warn("Partition [{}]'s old offset: {} is out-of-range, jumping to lowest-valid-offset: {}. Number of offsets skipped: {}",
-                    _partition.partition, _emittedToOffset, lowestValidOffset, lowestValidOffset - _emittedToOffset);
-                _emittedToOffset = lowestValidOffset;
+                    _partition.partition, _emittedToOffset, offset, offset - _emittedToOffset);
+                _emittedToOffset = offset;
             }
             
             return;
         }
-
         long millis = System.currentTimeMillis() - start;
         _fetchAPILatencyMax.update(millis);
         _fetchAPILatencyMean.update(millis);
         _fetchAPICallCount.incr();
-
         if (msgs != null) {
             int numMessages = 0;
 
@@ -260,12 +258,11 @@ public class PartitionManager {
 
     public void fail(Long offset) {
         if (offset < _emittedToOffset - _spoutConfig.maxOffsetBehind) {
-            LOG.warn(
+            LOG.info(
                     "Skipping failed tuple at offset=" + offset +
                             " because it's more than maxOffsetBehind=" + _spoutConfig.maxOffsetBehind +
                             " behind _emittedToOffset=" + _emittedToOffset
             );
-            _lostMessageCount.incrBy(1);
         } else {
             LOG.debug("failing at offset={} with _pending.size()={} pending and _emittedToOffset={}", offset, _pending.size(), _emittedToOffset);
             numberFailed++;
