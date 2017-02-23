@@ -69,6 +69,9 @@ public class HdfsDirectoryMonitor implements Iterable<Path> {
         HdfsDirectoryMonitor monitor = new HdfsDirectoryMonitor(watchDir, WatchMode.INOTIFY, hdfs, dfsClient, hdfsAdmin);
         monitor.lastTxId = dfsClient.getNamenode().getCurrentEditLogTxid();
 
+        /* Do an initial collection in the input dir to pick up the leftover files */
+        monitor.newFiles = HdfsUtils.listFilesByModificationTime(hdfs, watchDir, 0);
+
         return monitor;
     }
 

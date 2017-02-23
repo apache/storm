@@ -421,6 +421,27 @@ public class TestHdfsSpout {
 
 
   @Test
+  public void testLeftoverFiles() throws IOException {
+    Path file1 = new Path(source.toString() + "/leftover1.txt");
+    createTextFile(file1, 5);
+
+    Path file2 = new Path(source.toString() + "/leftover2.txt");
+    createTextFile(file2, 5);
+
+    HdfsSpout spout = makeSpout(Configs.TEXT, TextFileReader.defaultFields);
+    Map conf = getCommonConfigs();
+    openSpout(spout, 0, conf);
+
+    runSpout(spout,"r11");
+
+    List<String> res = runSpout(spout, "r11");
+    Assert.assertEquals(10, res.size());
+
+    Assert.assertEquals(2, listDir(archive).size());
+    Assert.assertEquals(0, listDir(source).size());
+  }
+
+  @Test
   public void testSimpleSequenceFile() throws IOException {
     source = new Path("/tmp/hdfsspout/source");
     fs.mkdirs(source);
