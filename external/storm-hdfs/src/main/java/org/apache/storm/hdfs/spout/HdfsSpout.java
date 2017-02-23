@@ -164,18 +164,12 @@ public class HdfsSpout extends BaseRichSpout {
     return this;
   }
 
-  /**
-	* @deprecated use {@link #setIgnoreSuffix(List)} instead.
-	*/
+
   public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
-	ignoreSuffixes.add(ignoreSuffix);
+	ignoreSuffixes = Arrays.asList(ignoreSuffix.split(","));
 	return this;
   }
 
-  public HdfsSpout setIgnoreSuffix(List<String> ignoreSuffixes) {
-	ignoreSuffixes.addAll(ignoreSuffixes);
-	return this;
-  }
   
   /** Output field names. Number of fields depends upon the reader type */
   public HdfsSpout withOutputFields(String... fields) {
