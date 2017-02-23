@@ -456,7 +456,10 @@ public class HdfsSpout extends BaseRichSpout {
     // -- ignore file names config
     if ( conf.containsKey(Configs.IGNORE_SUFFIX) ) {
 		ignoreSuffixes = Arrays.asList(conf.get(Configs.IGNORE_SUFFIX).toString().split(","));
-	} else {
+    }
+	
+    //To support backward compatibility
+    if (ignoreSuffixes.isEmpty()) {
 		ignoreSuffixes.add(".ignore");
     }
 
