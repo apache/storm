@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+* STORM-2334: Join Bolt implementation
 * STORM-1363: TridentKafkaState should handle null values from TridentTupleToKafkaMapper.getMessageFromTuple()
 
 ## 1.1.0
