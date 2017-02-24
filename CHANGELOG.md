@@ -1,4 +1,5 @@
-## 1.0.4
+﻿## 1.0.4
+ * STORM-2326: Upgrade log4j and slf4j
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
 
 ## 1.0.3
