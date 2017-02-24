@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
  * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
  * STORM-2326: Upgrade log4j and slf4j
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
