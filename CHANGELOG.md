@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
  * STORM-2334: Join Bolt implementation
  * STORM-2367: Documentation for streams API
  * STORM-2365: Support for specifying output stream in event hubs spout
