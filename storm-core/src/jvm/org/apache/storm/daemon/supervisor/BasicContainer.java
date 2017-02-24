@@ -30,6 +30,8 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -409,10 +411,17 @@ public class BasicContainer extends Container {
         if (value instanceof String) {
             String string = substituteChildOptsInternal((String) value, memOnheap);
             if (StringUtils.isNotBlank(string)) {
-                String[] strings = string.split("\\s+");
-                for (String s: strings) {
-                    if (StringUtils.isNotBlank(s)) {
-                        rets.add(s);
+                /* This pattern matches
+                 * 1.everything starts with -XX:\w+ or -D[\w.]+ and followed with quoted (both ' and ") strings
+                 * 2.everything without \s, ' and " in it
+                 * This will solve the problem which params like -XX:OnError="pstack %p >~/pstack%p.log" will be split into pieces
+                 */
+                Matcher m= Pattern.compile("(?:-XX:\\w+|-D[\\w.]+)=((?<![\\\\])['\\\"])((?:.(?!(?<![\\\\])\\1))*.?)\\1|[^\\s\\\"']+")
+                        .matcher(string);
+                while (m.find()){
+                    String opt=m.group();
+                    if(StringUtils.isNotBlank(opt)){
+                        rets.add(opt);
                     }
                 }
             }
