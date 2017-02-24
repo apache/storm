@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Collectors;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -411,10 +413,17 @@ public class BasicContainer extends Container {
         if (value instanceof String) {
             String string = substituteChildOptsInternal((String) value, memOnheap);
             if (StringUtils.isNotBlank(string)) {
-                String[] strings = string.split("\\s+");
-                for (String s: strings) {
-                    if (StringUtils.isNotBlank(s)) {
-                        rets.add(s);
+                /* This pattern matches
+                 * 1.everything starts with -XX:\w+ or -D[\w.]+ and followed with quoted (both ' and ") strings
+                 * 2.everything without \s, ' and " in it
+                 * This will solve the problem which params like -XX:OnError="pstack %p >~/pstack%p.log" will be split into pieces
+                 */
+                Matcher m= Pattern.compile("(?:-XX:\\w+|-D[\\w.]+)=((?<![\\\\])['\\\"])((?:.(?!(?<![\\\\])\\1))*.?)\\1|[^\\s\\\"']+")
+                        .matcher(string);
+                while (m.find()){
+                    String opt=m.group();
+                    if(StringUtils.isNotBlank(opt)){
+                        rets.add(opt);
                     }
                 }
             }
@@ -479,14 +488,14 @@ public class BasicContainer extends Container {
         private final String _topologyId;
         private final AdvancedFSOps _ops;
         private final String _stormRoot;
-        
+
         public DependencyLocations(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
             _conf = conf;
             _topologyId = topologyId;
             _ops = ops;
             _stormRoot = stormRoot;
         }
-        
+
         public String toString() {
             List<String> data;
             synchronized(this) {
@@ -494,7 +503,7 @@ public class BasicContainer extends Container {
             }
             return "DEP_LOCS for " + _topologyId +" => " + data;
         }
-        
+
         public synchronized List<String> get() throws IOException {
             if (_data != null) {
                 return _data;
@@ -519,7 +528,7 @@ public class BasicContainer extends Container {
 
     static class DepLRUCache {
         public final int _maxSize = 100; //We could make this configurable in the future...
-        
+
         @SuppressWarnings("serial")
         private LinkedHashMap<String, DependencyLocations> _cache = new LinkedHashMap<String, DependencyLocations>() {
             @Override
@@ -527,7 +536,7 @@ public class BasicContainer extends Container {
                 return (size() > _maxSize);
             }
         };
-        
+
         public synchronized DependencyLocations get(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) {
             //Only go off of the topology id for now.
             DependencyLocations dl = _cache.get(topologyId);
@@ -537,18 +546,18 @@ public class BasicContainer extends Container {
             }
             return dl;
         }
-        
+
         public synchronized void clear() {
             _cache.clear();
         }
     }
-    
+
     static final DepLRUCache DEP_LOC_CACHE = new DepLRUCache();
-    
+
     public static List<String> getDependencyLocationsFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) throws IOException {
         return DEP_LOC_CACHE.get(conf, topologyId, ops, stormRoot).get();
     }
-    
+
     /**
      * Get parameters for the class path of the worker process.  Also used by the
      * log Writer
@@ -611,7 +620,7 @@ public class BasicContainer extends Container {
         }
         return workerProfilerChildopts;
     }
-    
+
     protected String javaCmd(String cmd) {
         String ret = null;
         String javaHome = System.getenv().get("JAVA_HOME");
@@ -700,7 +709,7 @@ public class BasicContainer extends Container {
         if (_resourceIsolationManager != null) {
             int memoffheap = (int) Math.ceil(resources.get_mem_off_heap());
             int cpu = (int) Math.ceil(resources.get_cpu());
-            
+
             int cGroupMem = (int) (Math.ceil((double) _conf.get(Config.STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB)));
             int memoryValue = memoffheap + memOnheap + cGroupMem;
             int cpuValue = cpu;
