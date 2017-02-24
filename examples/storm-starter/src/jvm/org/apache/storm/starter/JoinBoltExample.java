@@ -31,7 +31,7 @@ import org.apache.storm.LocalCluster;
 import java.util.concurrent.TimeUnit;
 
 public class JoinBoltExample {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
 
         FeederSpout genderSpout = new FeederSpout(new Fields("id", "gender"));
         FeederSpout ageSpout = new FeederSpout(new Fields("id", "age"));
