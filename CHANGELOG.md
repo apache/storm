@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
  * STORM-2326: Upgrade log4j and slf4j
  * STORM-2334: Join Bolt implementation
  * STORM-1363: TridentKafkaState should handle null values from TridentTupleToKafkaMapper.getMessageFromTuple()
