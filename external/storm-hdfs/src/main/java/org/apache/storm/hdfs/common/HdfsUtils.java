@@ -93,7 +93,6 @@ public class HdfsUtils {
    */
   public static ArrayList<Path> listFilesByModificationTimeWithIgnoreSuffixes(FileSystem fs, Path directory,
       long olderThan, List<String> ignoreSuffixes) throws IOException {
-
     ArrayList<Path> list = listFilesByModificationTime(fs, directory, olderThan);
     ArrayList<Path> result = new ArrayList<>(list.size());
     for (Path path : list) {
@@ -113,7 +112,6 @@ public class HdfsUtils {
    * @return
    */
   private static boolean filterSufix(String name, List<String> ignoreSuffixes) {
-
     for (String suffix : ignoreSuffixes) {
       if (name.endsWith(suffix)) {
         return true;
