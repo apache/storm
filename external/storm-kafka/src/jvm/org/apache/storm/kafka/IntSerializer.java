@@ -19,6 +19,8 @@ package org.apache.storm.kafka;
 
 import org.apache.kafka.common.serialization.Serializer;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.Map;
 
 public class IntSerializer implements Serializer<Integer> {
