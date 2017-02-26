@@ -205,6 +205,7 @@
 
 ## 1.1.1
 * STORM-1363: TridentKafkaState should handle null values from TridentTupleToKafkaMapper.getMessageFromTuple()
+* STORM-2381: Add logging of JDBC connection string in storm-jdbc integration for debugging failures.
 
 ## 1.1.0
  * STORM-2340: fix AutoCommitMode issue in KafkaSpout
