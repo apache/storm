@@ -2342,6 +2342,9 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB = "storm.cgroup.memory.limit.tolerance.margin.mb";
 
+	@isInteger
+    @isPositiveNumber
+    public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

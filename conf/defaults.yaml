@@ -307,3 +307,5 @@ storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
 storm.cgroup.memory.limit.tolerance.margin.mb: 128.0
 storm.topology.classpath.beginning.enabled: false
+
+num.stat.buckets: 20
