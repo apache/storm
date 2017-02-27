@@ -170,8 +170,10 @@ public class SpoutExecutor extends Executor {
                     spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
                     if (throttleOn) {
                         spoutThrottlingMetrics.skippedThrottle(stats);
+                        LOG.debug("Skipped spout emit because queue is full and backpressure is on.");
                     } else if (reachedMaxSpoutPending) {
                         spoutThrottlingMetrics.skippedMaxSpout(stats);
+                        LOG.debug("Skipped spout emit because max spout pending is reached.");
                     }
                 } else {
                     emptyEmitStreak.set(0);
