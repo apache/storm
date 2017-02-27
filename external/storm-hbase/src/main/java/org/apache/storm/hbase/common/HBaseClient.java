@@ -19,6 +19,7 @@ package org.apache.storm.hbase.common;
 
 import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HConstants;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
@@ -83,6 +84,19 @@ public class HBaseClient implements Closeable{
             mutations.add(inc);
         }
 
+        if (cols.hasColumnsToDelete()) {
+            Delete delete = new Delete(rowKey);
+            delete.setDurability(durability);
+            for (ColumnList.Column col : cols.getColumnsToDelete()) {
+                if (col.getTs() > 0) {
+                    delete.addColumn(col.getFamily(), col.getQualifier(), col.getTs());
+                } else {
+                    delete.addColumn(col.getFamily(), col.getQualifier());
+                }
+            }
+            mutations.add(delete);
+        }
+
         if (mutations.isEmpty()) {
             mutations.add(new Put(rowKey));
         }
@@ -124,6 +138,32 @@ public class HBaseClient implements Closeable{
             return table.get(gets);
         } catch (Exception e) {
             LOG.warn("Could not perform HBASE lookup.", e);
+            throw e;
+        }
+    }
+
+    public ResultScanner scan(byte[] startRow, byte[] stopRow) throws Exception {
+        try {
+            if (startRow == null) {
+                startRow = HConstants.EMPTY_START_ROW;
+            }
+            if (stopRow == null) {
+                stopRow = HConstants.EMPTY_END_ROW;
+            }
+
+            Scan scan = new Scan(startRow, stopRow);
+            return table.getScanner(scan);
+        } catch (Exception e) {
+            LOG.warn("Could not open HBASE scanner.", e);
+            throw e;
+        }
+    }
+
+    public boolean exists(Get get) throws Exception {
+        try {
+            return table.exists(get);
+        } catch (Exception e) {
+            LOG.warn("Could not perform HBASE existence check.", e);
             throw e;
         }
     }
