@@ -1,5 +1,5 @@
 #Storm Apache Kafka integration using the kafka-client jar
-This includes the new Apache Kafka copnsumer API.
+This includes the new Apache Kafka consumer API.
 
 ##Compatibility
 
