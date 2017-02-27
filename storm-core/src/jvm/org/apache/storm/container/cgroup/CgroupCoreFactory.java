@@ -34,39 +34,37 @@ import java.util.Set;
 
 public class CgroupCoreFactory {
 
+    public static CgroupCore getInstance(SubSystemType type, String dir) {
+        switch (type) {
+        case blkio:
+            return new BlkioCore(dir);
+        case cpuacct:
+            return new CpuacctCore(dir);
+        case cpuset:
+            return new CpusetCore(dir);
+        case cpu:
+            return new CpuCore(dir);
+        case devices:
+            return new DevicesCore(dir);
+        case freezer:
+            return new FreezerCore(dir);
+        case memory:
+            return new MemoryCore(dir);
+        case net_cls:
+            return new NetClsCore(dir);
+        case net_prio:
+            return new NetPrioCore(dir);
+        default:
+           return null;
+        }
+    }
+
     public static Map<SubSystemType, CgroupCore> getInstance(Set<SubSystemType> types, String dir) {
         Map<SubSystemType, CgroupCore> result = new HashMap<SubSystemType, CgroupCore>();
         for (SubSystemType type : types) {
-            switch (type) {
-            case blkio:
-                result.put(SubSystemType.blkio, new BlkioCore(dir));
-                break;
-            case cpuacct:
-                result.put(SubSystemType.cpuacct, new CpuacctCore(dir));
-                break;
-            case cpuset:
-                result.put(SubSystemType.cpuset, new CpusetCore(dir));
-                break;
-            case cpu:
-                result.put(SubSystemType.cpu, new CpuCore(dir));
-                break;
-            case devices:
-                result.put(SubSystemType.devices, new DevicesCore(dir));
-                break;
-            case freezer:
-                result.put(SubSystemType.freezer, new FreezerCore(dir));
-                break;
-            case memory:
-                result.put(SubSystemType.memory, new MemoryCore(dir));
-                break;
-            case net_cls:
-                result.put(SubSystemType.net_cls, new NetClsCore(dir));
-                break;
-            case net_prio:
-                result.put(SubSystemType.net_prio, new NetPrioCore(dir));
-                break;
-            default:
-                break;
+            CgroupCore inst = getInstance(type, dir);
+            if (inst != null) {
+                result.put(type, inst);
             }
         }
         return result;

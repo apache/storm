@@ -15,16 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.metric.api;
+package org.apache.storm.metric.cgroup;
+
+import java.util.Map;
+
+import org.apache.storm.container.cgroup.SubSystemType;
+import org.apache.storm.container.cgroup.core.CgroupCore;
+import org.apache.storm.container.cgroup.core.MemoryCore;
 
 /**
- * Produces metrics
+ * Reports the current memory usage of the cgroup for this worker
  */
-public interface IMetric {
-    /**
-     * @return an object that will be sent sent to {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo, java.util.Collection)}.
-     * If null is returned nothing will be sent.
-     * If this value can be reset, like with a counter, a side effect of calling this should be that the value is reset.
-     */
-    public Object getValueAndReset();
+public class CGroupMemoryUsage extends CGroupMetricsBase<Long> {
+
+    public CGroupMemoryUsage(Map<String, Object> conf) {
+        super(conf, SubSystemType.memory);
+    }
+
+    @Override
+    public Long getDataFrom(CgroupCore core) throws Exception {
+        return ((MemoryCore) core).getPhysicalUsage();
+    }
 }
