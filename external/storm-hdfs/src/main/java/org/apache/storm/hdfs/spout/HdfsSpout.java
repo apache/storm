@@ -32,6 +32,7 @@ import java.util.TimerTask;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -449,7 +450,15 @@ public class HdfsSpout extends BaseRichSpout {
 
     // -- ignore file names config
     if ( conf.containsKey(Configs.IGNORE_SUFFIX) ) {
-      ignoreSuffixes = Arrays.asList(conf.get(Configs.IGNORE_SUFFIX).toString().split(","));
+      String[] suffixes = conf.get(Configs.IGNORE_SUFFIX).toString().split(",");
+      if (suffixes!=null) {
+    	  for (String suffix : suffixes) {
+			String trimmedSuffix = StringUtils.trim(suffix);
+			if (StringUtils.isNotEmpty(trimmedSuffix)) {
+				ignoreSuffixes.add(trimmedSuffix);
+			}
+    	  }
+      }
     }
 	
     //To support backward compatibility
