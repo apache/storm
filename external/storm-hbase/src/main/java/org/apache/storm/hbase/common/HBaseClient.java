@@ -15,27 +15,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hbase.common;
 
 import com.google.common.collect.Lists;
+
+import java.io.Closeable;
+import java.io.IOException;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.client.*;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Increment;
+import org.apache.hadoop.hbase.client.Mutation;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.Scan;
 import org.apache.hadoop.hbase.security.UserProvider;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.security.token.Token;
-import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
-import java.util.List;
-import java.util.Map;
-
-public class HBaseClient implements Closeable{
+/**
+ * HBase client for constructing requests and do actual interaction with HBase.
+ */
+public class HBaseClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseClient.class);
 
     private HTable table;
@@ -44,7 +55,7 @@ public class HBaseClient implements Closeable{
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
             this.table = Utils.getTable(provider, configuration, tableName);
-        } catch(Exception e) {
+        } catch (Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }
     }
@@ -85,6 +96,19 @@ public class HBaseClient implements Closeable{
                 );
             }
             mutations.add(inc);
+        }
+
+        if (cols.hasColumnsToDelete()) {
+            Delete delete = new Delete(rowKey);
+            delete.setDurability(durability);
+            for (ColumnList.Column col : cols.getColumnsToDelete()) {
+                if (col.getTs() > 0) {
+                    delete.addColumn(col.getFamily(), col.getQualifier(), col.getTs());
+                } else {
+                    delete.addColumn(col.getFamily(), col.getQualifier());
+                }
+            }
+            mutations.add(delete);
         }
 
         if (mutations.isEmpty()) {
@@ -128,6 +152,32 @@ public class HBaseClient implements Closeable{
             return table.get(gets);
         } catch (Exception e) {
             LOG.warn("Could not perform HBASE lookup.", e);
+            throw e;
+        }
+    }
+
+    public ResultScanner scan(byte[] startRow, byte[] stopRow) throws Exception {
+        try {
+            if (startRow == null) {
+                startRow = HConstants.EMPTY_START_ROW;
+            }
+            if (stopRow == null) {
+                stopRow = HConstants.EMPTY_END_ROW;
+            }
+
+            Scan scan = new Scan(startRow, stopRow);
+            return table.getScanner(scan);
+        } catch (Exception e) {
+            LOG.warn("Could not open HBASE scanner.", e);
+            throw e;
+        }
+    }
+
+    public boolean exists(Get get) throws Exception {
+        try {
+            return table.exists(get);
+        } catch (Exception e) {
+            LOG.warn("Could not perform HBASE existence check.", e);
             throw e;
         }
     }
