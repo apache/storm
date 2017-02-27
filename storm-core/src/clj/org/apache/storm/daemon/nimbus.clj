@@ -1395,6 +1395,7 @@
                            (doto (ErrorInfo. (:error e) (:time-secs e))
                              (.set_host (:host e))
                              (.set_port (:port e)))))]
+
     (.prepare ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus) conf)
 
     ;add to nimbuses
@@ -1473,7 +1474,13 @@
             (.validate ^org.apache.storm.nimbus.ITopologyValidator (:validator nimbus)
                        storm-name
                        topo-conf
-                       topology))
+                       topology)
+            (when (.get conf DISABLE-SYMLINKS)
+              (let [blob-map (.get topo-conf TOPOLOGY-BLOBSTORE-MAP)]
+                (when (and (not-nil? blob-map) (not (.isEmpty blob-map)))
+                  (throw (InvalidTopologyException.
+                           (str "symlinks are disabled so blobs are not supported but " TOPOLOGY-BLOBSTORE-MAP
+                                " = " blob-map)))))))
           (swap! (:submitted-count nimbus) inc)
           (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
                 credentials (.get_creds submitOptions)
