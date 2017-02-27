@@ -25,3 +25,8 @@ If you don't want to execute Storm processes directly (not on command prompt), p
 
 Starting with Windows 10 Creators Update, it will be possible to activate a Developer Mode that supports creating symbolic links without `run as administrator`
 [Symlinks in Windows 10!](https://blogs.windows.com/buildingapps/2016/12/02/symlinks-windows-10/)
+
+Alternatively you can disable usage of symbolic links by setting the config `storm.disable.symlinks` to `true`
+on Nimbus and all of the Supervisor nodes.  This will also disable features that require symlinks.  Currently this is only downloading
+dependent blobs, but may change in the future.  Some topologies may rely on symbolic links to resources in the current working directory of the worker that are
+created as a convienence, so it is not a 100% backwards compatible change.
