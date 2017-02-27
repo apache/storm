@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2333: CGroup memory and CPU metrics
  * STORM-2374: Storm Kafka Client Test Topologies Must be Serializable
  * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
  * STORM-2334: Join Bolt implementation
