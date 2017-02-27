@@ -166,8 +166,16 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
 
-  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) {
-    ignoreSuffixes = Arrays.asList(ignoreSuffix.split(","));
+  public HdfsSpout setIgnoreSuffix(String ignoreSuffix) { 
+	String[] suffixes = ignoreSuffix.toString().split(",");
+	if (suffixes!=null) {
+		for (String suffix : suffixes) {
+			String trimmedSuffix = StringUtils.trim(suffix);
+			if (StringUtils.isNotEmpty(trimmedSuffix)) {
+				ignoreSuffixes.add(trimmedSuffix);
+		}
+	  }
+  }
     return this;
   }
 
