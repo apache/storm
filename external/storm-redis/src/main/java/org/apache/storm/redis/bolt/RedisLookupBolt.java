@@ -72,7 +72,7 @@ public class RedisLookupBolt extends AbstractRedisBolt {
      * {@inheritDoc}
      */
     @Override
-    public void execute(Tuple input) {
+    public void process(Tuple input) {
         String key = lookupMapper.getKeyFromTuple(input);
         Object lookupValue;
 

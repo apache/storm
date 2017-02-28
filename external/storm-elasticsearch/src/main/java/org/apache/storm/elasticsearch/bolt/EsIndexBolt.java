@@ -23,6 +23,7 @@ import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.utils.TupleUtils;
 
 import java.util.Map;
 
@@ -54,7 +55,7 @@ public class EsIndexBolt extends AbstractEsBolt {
      * Tuple should have relevant fields (source, index, type, id) for tupleMapper to extract ES document.
      */
     @Override
-    public void execute(Tuple tuple) {
+    public void process(Tuple tuple) {
         try {
             String source = tupleMapper.getSource(tuple);
             String index = tupleMapper.getIndex(tuple);
