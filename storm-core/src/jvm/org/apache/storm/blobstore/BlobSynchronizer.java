@@ -86,9 +86,7 @@ public class BlobSynchronizer {
                         BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
                     }
                 } catch (KeyNotFoundException e) {
-                    LOG.debug("Detected deletion for the key {} - deleting the blob instead", key);
-                    // race condition with a delete, delete the blob in key instead
-                    blobStore.deleteBlob(key, BlobStoreUtils.getNimbusSubject());
+                    LOG.debug("Detected deletion for the key {} while downloading - skipping download", key);
                 }
             }
             if (zkClient !=null) {
