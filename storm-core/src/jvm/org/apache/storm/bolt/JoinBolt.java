@@ -18,6 +18,7 @@
 package org.apache.storm.bolt;
 
 
+import com.google.common.base.Joiner;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -476,7 +477,7 @@ public class JoinBolt extends BaseWindowedBolt {
         }
 
         public FieldSelector(String stream, String[] field)  {
-            this( stream, String.join(".", field) );
+            this( stream, Joiner.on(".").join(field) );
         }
 
 
