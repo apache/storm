@@ -26,9 +26,11 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -47,7 +49,7 @@ import java.util.Map;
  * <p/>
  *
  */
-public class DruidBeamBolt<E> extends BaseRichBolt {
+public class DruidBeamBolt<E> extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(DruidBeamBolt.class);
 
     private volatile  OutputCollector collector;
@@ -75,31 +77,30 @@ public class DruidBeamBolt<E> extends BaseRichBolt {
     }
 
     @Override
-    public void execute(final Tuple tuple) {
-      Future future = tranquilizer.send((druidEventMapper.getEvent(tuple)));
-        LOG.debug("Sent tuple : [{}]" , tuple);
+    protected void process(final Tuple tuple) {
+        Future future = tranquilizer.send((druidEventMapper.getEvent(tuple)));
+        LOG.debug("Sent tuple : [{}]", tuple);
 
         future.addEventListener(new FutureEventListener() {
-          @Override
-          public void onFailure(Throwable cause) {
-              if (cause instanceof MessageDroppedException) {
-                  collector.ack(tuple);
-                  LOG.debug("Tuple Dropped due to MessageDroppedException : [{}]" , tuple);
-                  if (druidConfig.getDiscardStreamId() != null)
-                      collector.emit(druidConfig.getDiscardStreamId(), new Values(tuple, System.currentTimeMillis()));
-              }
-              else {
-                  collector.fail(tuple);
-                  LOG.debug("Tuple Processing Failed : [{}]" , tuple);
-              }
-          }
+            @Override
+            public void onFailure(Throwable cause) {
+                if (cause instanceof MessageDroppedException) {
+                    collector.ack(tuple);
+                    LOG.debug("Tuple Dropped due to MessageDroppedException : [{}]", tuple);
+                    if (druidConfig.getDiscardStreamId() != null)
+                        collector.emit(druidConfig.getDiscardStreamId(), new Values(tuple, System.currentTimeMillis()));
+                } else {
+                    collector.fail(tuple);
+                    LOG.debug("Tuple Processing Failed : [{}]", tuple);
+                }
+            }
 
-          @Override
-          public void onSuccess(Object value) {
-              collector.ack(tuple);
-              LOG.debug("Tuple Processing Success : [{}]" , tuple);
-          }
-      });
+            @Override
+            public void onSuccess(Object value) {
+                collector.ack(tuple);
+                LOG.debug("Tuple Processing Success : [{}]", tuple);
+            }
+        });
 
     }
 

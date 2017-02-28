@@ -28,6 +28,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
@@ -36,7 +37,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 
 
-public class MqttBolt extends BaseRichBolt {
+public class MqttBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(MqttBolt.class);
     private MqttTupleMapper mapper;
     private transient MqttPublisher publisher;
@@ -84,19 +85,16 @@ public class MqttBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple input) {
-        //ignore tick tuples
-        if(!TupleUtils.isTick(input)){
-            MqttMessage message = this.mapper.toMessage(input);
-            try {
-                this.publisher.publish(message);
-                this.collector.ack(input);
-            } catch (Exception e) {
-                LOG.warn("Error publishing MQTT message. Failing tuple.", e);
-                // should we fail the tuple or kill the worker?
-                collector.reportError(e);
-                collector.fail(input);
-            }
+    protected void process(Tuple input) {
+        MqttMessage message = this.mapper.toMessage(input);
+        try {
+            this.publisher.publish(message);
+            this.collector.ack(input);
+        } catch (Exception e) {
+            LOG.warn("Error publishing MQTT message. Failing tuple.", e);
+            // should we fail the tuple or kill the worker?
+            collector.reportError(e);
+            collector.fail(input);
         }
     }
 

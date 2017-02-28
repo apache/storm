@@ -23,6 +23,7 @@ import org.apache.storm.mongodb.common.mapper.MongoLookupMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.TupleUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -51,6 +52,10 @@ public class MongoLookupBolt extends AbstractMongoBolt {
 
     @Override
     public void execute(Tuple tuple) {
+        if (TupleUtils.isTick(tuple)) {
+            return;
+        }
+
         try{
             //get query filter
             Bson filter = queryCreator.createFilter(tuple);
