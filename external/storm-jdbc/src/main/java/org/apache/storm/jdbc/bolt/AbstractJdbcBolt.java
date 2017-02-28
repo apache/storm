@@ -24,12 +24,15 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.commons.lang.Validate;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
-public abstract class AbstractJdbcBolt extends BaseRichBolt {
+public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractJdbcBolt.class);
 
     protected OutputCollector collector;
