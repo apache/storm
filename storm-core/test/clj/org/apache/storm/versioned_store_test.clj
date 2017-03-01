@@ -15,15 +15,15 @@
 ;; limitations under the License.
 (ns org.apache.storm.versioned-store-test
   (:use [clojure test])
-  (:use [org.apache.storm testing])
   (:import [java.io File])
+  (:import [org.apache.storm.testing TmpPath])
   (:import [org.apache.commons.io FileUtils])
   (:import [org.apache.storm.utils VersionedStore]))
 
 (defmacro defvstest [name [vs-sym] & body]
   `(deftest ~name
-    (with-local-tmp [dir#]
-      (let [~vs-sym (VersionedStore. dir#)]
+    (with-open [dir# (TmpPath.)]
+      (let [~vs-sym (VersionedStore. (.getPath dir#))]
         ~@body
         ))))
 

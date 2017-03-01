@@ -23,6 +23,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.nio.channels.ClosedByInterruptException;
 
 /**
  * A class that implements system operations for using cgroups
@@ -68,7 +69,7 @@ public class SystemOperation {
                 throw new IOException(errorOutput);
             }
             return output;
-        } catch (InterruptedException ie) {
+        } catch (InterruptedException | ClosedByInterruptException ie) {
             throw new IOException(ie);
         }
     }

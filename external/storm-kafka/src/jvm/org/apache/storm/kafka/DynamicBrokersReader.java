@@ -28,7 +28,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 
-import java.io.UnsupportedEncodingException;
 import java.net.SocketTimeoutException;
 import java.util.ArrayList;
 import java.util.List;
@@ -37,7 +36,7 @@ import java.util.Map;
 
 public class DynamicBrokersReader {
 
-    public static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicBrokersReader.class);
 
     private CuratorFramework _curator;
     private String _zkPath;
@@ -160,7 +159,7 @@ public class DynamicBrokersReader {
         try {
             String topicBrokersPath = partitionPath(topic);
             byte[] hostPortData = _curator.getData().forPath(topicBrokersPath + "/" + partition + "/state");
-            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(hostPortData, "UTF-8"));
+            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parseWithException(new String(hostPortData, "UTF-8"));
             Integer leader = ((Number) value.get("leader")).intValue();
             if (leader == -1) {
                 throw new RuntimeException("No leader found for partition " + partition);
@@ -186,11 +185,13 @@ public class DynamicBrokersReader {
      */
     private Broker getBrokerHost(byte[] contents) {
         try {
-            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parse(new String(contents, "UTF-8"));
+            Map<Object, Object> value = (Map<Object, Object>) JSONValue.parseWithException(new String(contents, "UTF-8"));
             String host = (String) value.get("host");
             Integer port = ((Long) value.get("port")).intValue();
             return new Broker(host, port);
-        } catch (UnsupportedEncodingException e) {
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }

@@ -31,6 +31,10 @@ public class ThriftTopologyUtils {
         return f.equals(StormTopology._Fields.WORKER_HOOKS);
     }
 
+    public static boolean isDependencies(StormTopology._Fields f) {
+        return f.equals(StormTopology._Fields.DEPENDENCY_JARS) || f.equals(StormTopology._Fields.DEPENDENCY_ARTIFACTS);
+    }
+
     public static Set<String> getComponentIds(StormTopology topology) {
         Set<String> ret = new HashSet<String>();
         for(StormTopology._Fields f: StormTopology.metaDataMap.keySet()) {

@@ -17,15 +17,16 @@ Tuples are grouped in windows and window slides every sliding interval. A tuple 
 For example a time duration based sliding window with length 10 secs and sliding interval of 5 seconds.
 
 ```
-| e1 e2 | e3 e4 e5 e6 | e7 e8 e9 |...
-0       5             10         15    -> time
-
-|<------- w1 -------->|
-        |------------ w2 ------->|
+........| e1 e2 | e3 e4 e5 e6 | e7 e8 e9 |...
+-5      0       5            10          15   -> time
+|<------- w1 -->|
+        |<---------- w2 ----->|
+                |<-------------- w3 ---->|
 ```
 
 The window is evaluated every 5 seconds and some of the tuples in the first window overlaps with the second one.
-		
+
+Note: The window first slides at t = 5 secs and would contain events received up to the first five secs.
 
 ## Tumbling Window
 
@@ -145,12 +146,20 @@ public BaseWindowedBolt withTimestampField(String fieldName)
 ```
 
 The value for the above `fieldName` will be looked up from the incoming tuple and considered for windowing calculations. 
-If the field is not present in the tuple an exception will be thrown. Along with the timestamp field name, a time lag parameter 
-can also be specified which indicates the max time limit for tuples with out of order timestamps. 
+If the field is not present in the tuple an exception will be thrown. Alternatively a [TimestampExtractor](../storm-core/src/jvm/org/apache/storm/windowing/TimestampExtractor.java) can be used to
+derive a timestamp value from a tuple (e.g. extract timestamp from a nested field within the tuple).
 
-E.g. If the lag is 5 secs and a tuple `t1` arrived with timestamp `06:00:05` no tuples may arrive with tuple timestamp earlier than `06:00:00`. If a tuple
-arrives with timestamp 05:59:59 after `t1` and the window has moved past `t1`, it will be treated as a late tuple and not processed. Currently the late
- tuples are just logged in the worker log files at INFO level.
+```java
+/**
+* Specify the timestamp extractor implementation.
+*
+* @param timestampExtractor the {@link TimestampExtractor} implementation
+*/
+public BaseWindowedBolt withTimestampExtractor(TimestampExtractor timestampExtractor)
+```
+
+
+Along with the timestamp field name/extractor, a time lag parameter can also be specified which indicates the max time limit for tuples with out of order timestamps.
 
 ```java
 /**
@@ -161,6 +170,26 @@ arrives with timestamp 05:59:59 after `t1` and the window has moved past `t1`, i
 */
 public BaseWindowedBolt withLag(Duration duration)
 ```
+
+E.g. If the lag is 5 secs and a tuple `t1` arrived with timestamp `06:00:05` no tuples may arrive with tuple timestamp earlier than `06:00:00`. If a tuple
+arrives with timestamp 05:59:59 after `t1` and the window has moved past `t1`, it will be treated as a late tuple. Late tuples are not processed by default,
+just logged in the worker log files at INFO level.
+
+```java
+/**
+ * Specify a stream id on which late tuples are going to be emitted. They are going to be accessible via the
+ * {@link org.apache.storm.topology.WindowedBoltExecutor#LATE_TUPLE_FIELD} field.
+ * It must be defined on a per-component basis, and in conjunction with the
+ * {@link BaseWindowedBolt#withTimestampField}, otherwise {@link IllegalArgumentException} will be thrown.
+ *
+ * @param streamId the name of the stream used to emit late tuples on
+ */
+public BaseWindowedBolt withLateTupleStream(String streamId)
+
+```
+This behaviour can be changed by specifying the above `streamId`. In this case late tuples are going to be emitted on the specified stream and accessible
+via the field `WindowedBoltExecutor.LATE_TUPLE_FIELD`.
+
 
 ### Watermarks
 For processing tuples with timestamp field, storm internally computes watermarks based on the incoming tuple timestamp. Watermark is 
@@ -221,7 +250,7 @@ e10 is not evaluated since the tuple ts `8:00:39` is beyond the watermark time `
 
 The window calculation considers the time gaps and computes the windows based on the tuple timestamp.
 
-## Guarentees
+## Guarantees
 The windowing functionality in storm core currently provides at-least once guarentee. The values emitted from the bolts
 `execute(TupleWindow inputWindow)` method are automatically anchored to all the tuples in the inputWindow. The downstream
 bolts are expected to ack the received tuple (i.e the tuple emitted from the windowed bolt) to complete the tuple tree. 

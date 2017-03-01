@@ -9,22 +9,26 @@
 #  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #  See the License for the specific language governing permissions and
 #  limitations under the License.
+addons:
+  hosts:
+    - node1
 
 env:
   - MODULES=storm-core
   - MODULES='!storm-core'
+  - MODULES='INTEGRATION-TEST'
 
 language: java
 jdk:
-  - oraclejdk7
   - oraclejdk8
 before_install:
   - rvm use 2.1.5 --install
   - nvm install 0.12.2
   - nvm use 0.12.2
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
-script: /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
-sudo: false
+script:
+  - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
+sudo: true
 cache:
   directories:
     - "$HOME/.m2/repository"

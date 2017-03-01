@@ -27,8 +27,12 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
-import org.apache.storm.Config;
+import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.TaskMessage;
@@ -39,7 +43,7 @@ public class Context implements IContext {
     private static final Logger LOG = LoggerFactory.getLogger(Context.class);
 
     private static class LocalServer implements IConnection {
-        IConnectionCallback _cb;
+        volatile IConnectionCallback _cb;
         final ConcurrentHashMap<Integer, Double> _load = new ConcurrentHashMap<>();
 
         @Override
@@ -82,31 +86,76 @@ public class Context implements IContext {
 
     private static class LocalClient implements IConnection {
         private final LocalServer _server;
+        //Messages sent before the server registered a callback
+        private final LinkedBlockingQueue<TaskMessage> _pendingDueToUnregisteredServer;
+        private final ScheduledExecutorService _pendingFlusher;
 
         public LocalClient(LocalServer server) {
             _server = server;
+            _pendingDueToUnregisteredServer = new LinkedBlockingQueue<>();
+            _pendingFlusher = Executors.newScheduledThreadPool(1, new ThreadFactory(){
+                @Override
+                public Thread newThread(Runnable runnable) {
+                    Thread thread = new Thread(runnable);
+                    thread.setName("LocalClientFlusher-" + thread.getId());
+                    thread.setDaemon(true);
+                    return thread;
+                }
+            });
+            _pendingFlusher.scheduleAtFixedRate(new Runnable(){
+                @Override
+                public void run(){
+                    try {
+                        //Ensure messages are flushed even if no more sends are performed
+                        flushPending();
+                    } catch (Throwable t) {
+                        LOG.error("Uncaught throwable in pending message flusher thread, messages may be lost", t);
+                        throw new RuntimeException(t);
+                    }
+                }
+            }, 5, 5, TimeUnit.SECONDS);
         }
 
         @Override
         public void registerRecv(IConnectionCallback cb) {
             throw new IllegalArgumentException("SHOULD NOT HAPPEN");
         }
-
+        
+        private void flushPending(){
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
+                ArrayList<TaskMessage> ret = new ArrayList<>();
+                _pendingDueToUnregisteredServer.drainTo(ret);
+                serverCb.recv(ret);
+            }
+        }
+        
         @Override
         public void send(int taskId,  byte[] payload) {
-            if (_server._cb != null) {
-                _server._cb.recv(Arrays.asList(new TaskMessage(taskId, payload)));
+            TaskMessage message = new TaskMessage(taskId, payload);
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null) {
+                flushPending();
+                serverCb.recv(Arrays.asList(message));
+            } else {
+                _pendingDueToUnregisteredServer.add(message);
             }
         }
  
         @Override
         public void send(Iterator<TaskMessage> msgs) {
-            if (_server._cb != null) {
+            IConnectionCallback serverCb = _server._cb;
+            if (serverCb != null) {
+                flushPending();
                 ArrayList<TaskMessage> ret = new ArrayList<>();
                 while (msgs.hasNext()) {
                     ret.add(msgs.next());
                 }
-                _server._cb.recv(ret);
+                serverCb.recv(ret);
+            } else {
+                while(msgs.hasNext()){
+                    _pendingDueToUnregisteredServer.add(msgs.next());
+                }
             }
         }
 
@@ -122,7 +171,12 @@ public class Context implements IContext {
  
         @Override
         public void close() {
-            //NOOP
+            _pendingFlusher.shutdown();
+            try{
+                _pendingFlusher.awaitTermination(5, TimeUnit.SECONDS);
+            } catch (InterruptedException e){
+                throw new RuntimeException("Interrupted while awaiting flusher shutdown", e);
+            }
         }
     };
 

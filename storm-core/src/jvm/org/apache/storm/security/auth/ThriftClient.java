@@ -27,7 +27,7 @@ import org.apache.thrift.transport.TTransport;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.Config;
 
-public class ThriftClient {
+public class ThriftClient implements AutoCloseable {
     private TTransport _transport;
     protected TProtocol _protocol;
     private String _host;
@@ -74,9 +74,10 @@ public class ThriftClient {
     }
     
     public synchronized void reconnect() {
-        close();    
+        close();
+        TSocket socket = null;
         try {
-            TSocket socket = new TSocket(_host, _port);
+            socket = new TSocket(_host, _port);
             if(_timeout!=null) {
                 socket.setTimeout(_timeout);
             }
@@ -97,7 +98,13 @@ public class ThriftClient {
                                       Utils.getInt(_conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING)),
                                       _retryForever);
             _transport = connectionRetry.doConnectWithRetry(transportPlugin, socket, _host, _asUser);
-        } catch (IOException ex) {
+        } catch (Exception ex) {
+            // close the socket, which releases connection if it has created any.
+            if(socket != null) {
+                try {
+                    socket.close();
+                } catch (Exception e) {}
+            }
             throw new RuntimeException(ex);
         }
         _protocol = null;
@@ -106,6 +113,7 @@ public class ThriftClient {
         }
     }
 
+    @Override
     public synchronized void close() {
         if (_transport != null) {
             _transport.close();

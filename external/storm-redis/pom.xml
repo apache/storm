@@ -41,7 +41,7 @@
     </developers>
 
     <properties>
-        <jedis.version>2.7.0</jedis.version>
+        <jedis.version>2.8.1</jedis.version>
     </properties>
 
     <dependencies>
@@ -50,6 +50,10 @@
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
             <groupId>redis.clients</groupId>

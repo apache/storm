@@ -17,7 +17,7 @@
  */
 package org.apache.storm.windowing;
 
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * An eviction policy that tracks event counts and can
@@ -26,12 +26,13 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @param <T> the type of event tracked by this policy.
  */
 public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
-    private final int threshold;
-    protected final AtomicInteger currentCount;
+    protected final int threshold;
+    protected final AtomicLong currentCount;
+    private EvictionContext context;
 
     public CountEvictionPolicy(int count) {
         this.threshold = count;
-        this.currentCount = new AtomicInteger();
+        this.currentCount = new AtomicLong();
     }
 
     @Override
@@ -41,7 +42,7 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
          * return if the event should be evicted
          */
         while (true) {
-            int curVal = currentCount.get();
+            long curVal = currentCount.get();
             if (curVal > threshold) {
                 if (currentCount.compareAndSet(curVal, curVal - 1)) {
                     return Action.EXPIRE;
@@ -61,8 +62,13 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
     }
 
     @Override
-    public void setContext(Object context) {
-        // NOOP
+    public void setContext(EvictionContext context) {
+        this.context = context;
+    }
+
+    @Override
+    public EvictionContext getContext() {
+        return context;
     }
 
     @Override

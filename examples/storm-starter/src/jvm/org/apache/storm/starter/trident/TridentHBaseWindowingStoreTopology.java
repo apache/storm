@@ -20,6 +20,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hbase.trident.windowing.HBaseWindowsStoreFactory;
@@ -77,12 +78,10 @@ public class TridentHBaseWindowingStoreTopology {
         HBaseWindowsStoreFactory windowStoreFactory = new HBaseWindowsStoreFactory(new HashMap<String, Object>(), "window-state", "cf".getBytes("UTF-8"), "tuples".getBytes("UTF-8"));
 
         if (args.length == 0) {
-            LocalCluster cluster = new LocalCluster();
-            String topologyName = "wordCounterWithWindowing";
-            cluster.submitTopology(topologyName, conf, buildTopology(windowStoreFactory));
-            Utils.sleep(120 * 1000);
-            cluster.killTopology(topologyName);
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("wordCounterWithWindowing", conf, buildTopology(windowStoreFactory));) {
+                Utils.sleep(120 * 1000);
+            }
             System.exit(0);
         } else {
             conf.setNumWorkers(3);

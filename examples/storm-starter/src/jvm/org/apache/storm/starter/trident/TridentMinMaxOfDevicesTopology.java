@@ -19,6 +19,7 @@ package org.apache.storm.starter.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.starter.spout.RandomNumberGeneratorSpout;
@@ -113,10 +114,10 @@ public class TridentMinMaxOfDevicesTopology {
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
         if (args.length == 0) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("devices-topology", conf, topology);
-            Utils.sleep(60 * 1000);
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("devices-topology", conf, topology);) {
+                Utils.sleep(60 * 1000);
+            }
             System.exit(0);
         } else {
             conf.setNumWorkers(3);

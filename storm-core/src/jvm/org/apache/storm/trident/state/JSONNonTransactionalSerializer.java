@@ -19,6 +19,7 @@ package org.apache.storm.trident.state;
 
 import java.io.UnsupportedEncodingException;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 
 public class JSONNonTransactionalSerializer implements Serializer {
@@ -35,8 +36,8 @@ public class JSONNonTransactionalSerializer implements Serializer {
     @Override
     public Object deserialize(byte[] b) {
         try {
-            return JSONValue.parse(new String(b, "UTF-8"));
-        } catch (UnsupportedEncodingException e) {
+            return JSONValue.parseWithException(new String(b, "UTF-8"));
+        } catch (UnsupportedEncodingException | ParseException e) {
             throw new RuntimeException(e);
         }
     }

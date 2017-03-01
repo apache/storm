@@ -93,7 +93,7 @@ public class LocalizedResourceRetentionSet {
           i.remove();
         } else {
           // since it failed to delete add it back so it gets retried
-          set.addResource(resource.getKey(), resource, resource.isUncompressed());
+          set.add(resource.getKey(), resource, resource.isUncompressed());
         }
       }
     }

@@ -45,7 +45,6 @@ public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
      */
     public WatermarkTimeEvictionPolicy(int windowLength, int lag) {
         super(windowLength);
-        referenceTime = 0L;
         this.lag = lag;
     }
 
@@ -58,7 +57,8 @@ public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
      */
     @Override
     public Action evict(Event<T> event) {
-        long diff = referenceTime - event.getTimestamp();
+        long referenceTime = evictionContext.getReferenceTime() != null ? evictionContext.getReferenceTime() : 0L;
+        long diff =  referenceTime - event.getTimestamp();
         if (diff < -lag) {
             return Action.STOP;
         } else if (diff < 0) {

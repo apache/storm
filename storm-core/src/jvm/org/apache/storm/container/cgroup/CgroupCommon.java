@@ -89,11 +89,11 @@ public class CgroupCommon implements CgroupCommonOperation {
     }
 
     @Override
-    public Set<Integer> getPids() throws IOException {
+    public Set<Long> getPids() throws IOException {
         List<String> stringPids = CgroupUtils.readFileByLine(CgroupUtils.getDir(this.dir, CGROUP_PROCS));
-        Set<Integer> pids = new HashSet<Integer>();
+        Set<Long> pids = new HashSet<>();
         for (String task : stringPids) {
-            pids.add(Integer.valueOf(task));
+            pids.add(Long.valueOf(task));
         }
         return pids;
     }

@@ -35,6 +35,8 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.annotations.VisibleForTesting;
+
 public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     public static final Logger LOG =
         LoggerFactory.getLogger(DRPCSimpleACLAuthorizer.class);
@@ -47,7 +49,8 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     protected IPrincipalToLocal _ptol;
     protected boolean _permitWhenMissingFunctionEntry = false;
 
-    protected static class AclFunctionEntry {
+    @VisibleForTesting
+    public static class AclFunctionEntry {
         final public Set<String> clientUsers;
         final public String invocationUser;
         public AclFunctionEntry(Collection<String> clientUsers,

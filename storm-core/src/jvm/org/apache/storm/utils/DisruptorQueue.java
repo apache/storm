@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import com.lmax.disruptor.AlertException;
 import com.lmax.disruptor.EventFactory;
 import com.lmax.disruptor.EventHandler;
@@ -30,6 +31,7 @@ import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
 import org.slf4j.Logger;
@@ -44,6 +46,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,12 +63,40 @@ public class DisruptorQueue implements IStatefulObject {
     private static final Object INTERRUPT = new Object();
     private static final String PREFIX = "disruptor-";
     private static final FlusherPool FLUSHER = new FlusherPool();
+    
+    private static int getNumFlusherPoolThreads() {
+        int numThreads = 100;
+        try {
+        	Map<String, Object> conf = Utils.readStormConfig();
+        	numThreads = Utils.getInt(conf.get(Config.STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE), numThreads);
+        } catch (Exception e) {
+        	LOG.warn("Error while trying to read system config", e);
+        }
+        try {
+            String threads = System.getProperty("num_flusher_pool_threads", String.valueOf(numThreads));
+            numThreads = Integer.parseInt(threads);
+        } catch (Exception e) {
+            LOG.warn("Error while parsing number of flusher pool threads", e);
+        }
+        LOG.debug("Reading num_flusher_pool_threads Flusher pool threads: {}", numThreads);
+        return numThreads;
+    }
 
     private static class FlusherPool { 
-        private Timer _timer = new Timer("disruptor-flush-trigger", true);
-        private ThreadPoolExecutor _exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+    	private static final String THREAD_PREFIX = "disruptor-flush";
+        private Timer _timer = new Timer(THREAD_PREFIX + "-trigger", true);
+        private ThreadPoolExecutor _exec;
         private HashMap<Long, ArrayList<Flusher>> _pendingFlush = new HashMap<>();
         private HashMap<Long, TimerTask> _tt = new HashMap<>();
+
+        public FlusherPool() {
+            _exec = new ThreadPoolExecutor(1, getNumFlusherPoolThreads(), 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+            ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                    .setDaemon(true)
+                    .setNameFormat(THREAD_PREFIX + "-task-pool")
+                    .build();
+            _exec.setThreadFactory(threadFactory);
+        }
 
         public synchronized void start(Flusher flusher, final long flushInterval) {
             ArrayList<Flusher> pending = _pendingFlush.get(flushInterval);
@@ -95,10 +126,12 @@ public class DisruptorQueue implements IStatefulObject {
 
         public synchronized void stop(Flusher flusher, long flushInterval) {
             ArrayList<Flusher> pending = _pendingFlush.get(flushInterval);
-            pending.remove(flusher);
-            if (pending.size() == 0) {
-                _pendingFlush.remove(flushInterval);
-                _tt.remove(flushInterval).cancel();
+            if (pending != null) {
+                pending.remove(flusher);
+                if (pending.size() == 0) {
+                    _pendingFlush.remove(flushInterval);
+                    _tt.remove(flushInterval).cancel();
+                }
             }
         }
     }

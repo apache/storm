@@ -41,10 +41,7 @@ import org.apache.zookeeper.data.ACL;
  * Never use the same paths with the *_hb* methods as you do with the others.
  */
 public interface IStateStorage {
-
-    public static final String DATA = "data";
-    public static final String VERSION = "version";
-
+    
     /**
      * Registers a callback function that gets called when CuratorEvents happen.
      * @param callback is a clojure IFn that accepts the type - translated to
@@ -157,9 +154,9 @@ public interface IStateStorage {
      * @param watch Whether or not to set a watch on the path. Watched paths
      * emit events which are consumed by functions registered with the
      * register method. Very useful for catching updates to nodes.
-     * @return An Map in the form {:data data :version version}
+     * @return the data with a version
      */
-    Map get_data_with_version(String path, boolean watch);
+    VersionedData<byte[]> get_data_with_version(String path, boolean watch);
 
     /**
      * Write a worker heartbeat at the path.

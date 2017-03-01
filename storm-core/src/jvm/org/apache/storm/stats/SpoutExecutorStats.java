@@ -58,6 +58,7 @@ public class SpoutExecutorStats extends CommonStats {
         this.getFailed().incBy(stream, this.rate);
     }
 
+    @Override
     public ExecutorStats renderStats() {
         ExecutorStats ret = new ExecutorStats();
         // common fields

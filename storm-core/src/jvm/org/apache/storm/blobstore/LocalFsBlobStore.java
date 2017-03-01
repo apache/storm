@@ -26,6 +26,7 @@ import org.apache.storm.generated.ReadableBlobMeta;
 
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
+import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -270,7 +271,12 @@ public class LocalFsBlobStore extends BlobStore {
         if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + key) == null) {
             return 0;
         }
-        replicationCount = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + key).size();
+        try {
+            replicationCount = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + key).size();
+        } catch (NoNodeException e) {
+            //Race with delete
+            //If it is not here the replication is 0 
+        }
         return replicationCount;
     }
 
@@ -281,7 +287,7 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     //This additional check and download is for nimbus high availability in case you have more than one nimbus
-    public synchronized boolean checkForBlobOrDownload(String key) {
+    public synchronized boolean checkForBlobOrDownload(String key) throws KeyNotFoundException {
         boolean checkBlobDownload = false;
         try {
             List<String> keyList = BlobStoreUtils.getKeyListFromBlobStore(this);
@@ -295,6 +301,8 @@ public class LocalFsBlobStore extends BlobStore {
                     }
                 }
             }
+        } catch (KeyNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

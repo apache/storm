@@ -3,7 +3,7 @@ title: Guaranteeing Message Processing
 layout: documentation
 documentation: true
 ---
-Storm offers several different levels of guaranteed message processing, includeing best effort, at least once, and exactly once through [Trident](Trident-tutorial.html). 
+Storm offers several different levels of guaranteed message processing, including best effort, at least once, and exactly once through [Trident](Trident-tutorial.html).
 This page describes how Storm can guarantee at least once processing.
 
 ### What does it mean for a message to be "fully processed"?
@@ -54,7 +54,7 @@ Let's use `KestrelSpout` again to see what a `Spout` needs to do to guarantee me
 
 ### What is Storm's reliability API?
 
-There's two things you have to do as a user to benefit from Storm's reliability capabilities. First, you need to tell Storm whenever you're creating a new link in the tree of tuples. Second, you need to tell Storm when you have finished processing an individual tuple. By doing both these things, Storm can detect when the tree of tuples is fully processed and can ack or fail the spout tuple appropriately. Storm's API provides a concise way of doing both of these tasks. 
+There are two things you have to do as a user to benefit from Storm's reliability capabilities. First, you need to tell Storm whenever you're creating a new link in the tree of tuples. Second, you need to tell Storm when you have finished processing an individual tuple. By doing both these things, Storm can detect when the tree of tuples is fully processed and can ack or fail the spout tuple appropriately. Storm's API provides a concise way of doing both of these tasks.
 
 Specifying a link in the tuple tree is called _anchoring_. Anchoring is done at the same time you emit a new tuple. Let's use the following bolt as an example. This bolt splits a tuple containing a sentence into a tuple for each word:
 

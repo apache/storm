@@ -6,28 +6,12 @@ documentation: true
 
 This page lists a variety of common patterns in Storm topologies.
 
-1. Streaming joins
-2. Batching
-3. BasicBolt
-4. In-memory caching + fields grouping combo
-5. Streaming top N
-6. TimeCacheMap for efficiently keeping a cache of things that have been recently updated
-7. CoordinatedBolt and KeyedFairBolt for Distributed RPC
-
-### Joins
-
-A streaming join combines two or more data streams together based on some common field. Whereas a normal database join has finite input and clear semantics for a join, a streaming join has infinite input and unclear semantics for what a join should be.
-
-The join type you need will vary per application. Some applications join all tuples for two streams over a finite window of time, whereas other applications expect exactly one tuple for each side of the join for each join field. Other applications may do the join completely differently. The common pattern among all these join types is partitioning multiple input streams in the same way. This is easily accomplished in Storm by using a fields grouping on the same fields for many input streams to the joiner bolt. For example:
-
-```java
-builder.setBolt("join", new MyJoiner(), parallelism)
-  .fieldsGrouping("1", new Fields("joinfield1", "joinfield2"))
-  .fieldsGrouping("2", new Fields("joinfield1", "joinfield2"))
-  .fieldsGrouping("3", new Fields("joinfield1", "joinfield2"));
-```
-
-The different streams don't have to have the same field names, of course.
+1. Batching
+2. BasicBolt
+3. In-memory caching + fields grouping combo
+4. Streaming top N
+5. TimeCacheMap for efficiently keeping a cache of things that have been recently updated
+6. CoordinatedBolt and KeyedFairBolt for Distributed RPC
 
 
 ### Batching
@@ -70,7 +54,7 @@ builder.setBolt("merge", new MergeObjects())
   .globalGrouping("rank");
 ```
 
-This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/storm/starter/RollingTopWords.java).
+This pattern works because of the fields grouping done by the first bolt which gives the partitioning you need for this to be semantically correct. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/RollingTopWords.java).
 
 If however you have a known skew in the data being processed it can be advantageous to use partialKeyGrouping instead of fieldsGrouping.  This will distribute the load for each key between two downstream bolts instead of a single one.
 
@@ -83,7 +67,7 @@ builder.setBolt("merge", new MergeRanksObjects())
   .globalGrouping("rank");
 ``` 
 
-The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/storm/starter/SkewedRollingTopWords.java).
+The topology needs an extra layer of processing to aggregate the partial counts from the upstream bolts but this only processes aggregated values now so the bolt it is not subject to the load caused by the skewed data. You can see an example of this pattern in storm-starter [here]({{page.git-blob-base}}/examples/storm-starter/src/jvm/org/apache/storm/starter/SkewedRollingTopWords.java).
 
 ### TimeCacheMap for efficiently keeping a cache of things that have been recently updated
 

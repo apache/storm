@@ -70,5 +70,13 @@ public interface EvictionPolicy<T> {
      *
      * @param context
      */
-    void setContext(Object context);
+    void setContext(EvictionContext context);
+
+    /**
+     * Returns the current context that is part of this eviction policy
+     *
+     * @return the eviction context
+     */
+    EvictionContext getContext();
+
 }

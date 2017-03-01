@@ -17,16 +17,16 @@
  */
 package org.apache.storm.security.auth;
 
-import java.util.Map;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.net.InetAddress;
-import com.google.common.annotations.VisibleForTesting;
-
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.Principal;
+import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import javax.security.auth.Subject;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * context request context includes info about:
@@ -40,7 +40,6 @@ public class ReqContext {
     private Subject _subject;
     private InetAddress _remoteAddr;
     private Integer _reqID;
-    private Map _storm_conf;
     private Principal realPrincipal;
 
     @Override
@@ -53,7 +52,7 @@ public class ReqContext {
                 ", ThreadId=" + Thread.currentThread().toString() +
                 '}';
     }
-
+    
     /**
      * @return a request context associated with current thread
      */
@@ -90,7 +89,6 @@ public class ReqContext {
         _subject = sub;
         _reqID = uniqueId.incrementAndGet();
     }
-
 
     /**
      * client address

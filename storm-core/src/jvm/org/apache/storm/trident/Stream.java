@@ -421,6 +421,25 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     }
 
     /**
+     * Returns a stream consisting of the result of applying the given mapping function to the values of this stream.
+     * This method replaces old output fields with new output fields, achieving T -> V conversion.
+     *
+     * @param function a mapping function to be applied to each value in this stream.
+     * @param outputFields new output fields
+     * @return the new stream
+     */
+    public Stream map(MapFunction function, Fields outputFields) {
+        projectionValidation(getOutputFields());
+        return _topology.addSourcedNode(this,
+                                        new ProcessorNode(
+                                                _topology.getUniqueStreamId(),
+                                                _name,
+                                                outputFields,
+                                                outputFields,
+                                                new MapProcessor(getOutputFields(), new MapFunctionExecutor(function))));
+    }
+
+    /**
      * Returns a stream consisting of the results of replacing each value of this stream with the contents
      * produced by applying the provided mapping function to each value. This has the effect of applying
      * a one-to-many transformation to the values of the stream, and then flattening the resulting elements into a new stream.
@@ -436,6 +455,27 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
                                                 _name,
                                                 getOutputFields(),
                                                 getOutputFields(),
+                                                new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
+    }
+
+    /**
+     * Returns a stream consisting of the results of replacing each value of this stream with the contents
+     * produced by applying the provided mapping function to each value. This has the effect of applying
+     * a one-to-many transformation to the values of the stream, and then flattening the resulting elements into a new stream.
+     * This method replaces old output fields with new output fields, achieving T -> V conversion.
+     *
+     * @param function a mapping function to be applied to each value in this stream which produces new values.
+     * @param outputFields new output fields
+     * @return the new stream
+     */
+    public Stream flatMap(FlatMapFunction function, Fields outputFields) {
+        projectionValidation(getOutputFields());
+        return _topology.addSourcedNode(this,
+                                        new ProcessorNode(
+                                                _topology.getUniqueStreamId(),
+                                                _name,
+                                                outputFields,
+                                                outputFields,
                                                 new MapProcessor(getOutputFields(), new FlatMapFunctionExecutor(function))));
     }
 

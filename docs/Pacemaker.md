@@ -10,13 +10,13 @@ Pacemaker is a storm daemon designed to process heartbeats from workers. As Stor
 
 Because heartbeats are of an ephemeral nature, they do not need to be persisted to disk or synced across nodes; an in-memory store will do. This is the role of Pacemaker. Pacemaker functions as a simple in-memory key/value store with ZooKeeper-like, directory-style keys and byte array values.
 
-The corresponding Pacemaker client is a plugin for the `ClusterState` interface, `org.apache.storm.pacemaker.pacemaker_state_factory`. Heartbeat calls are funneled by the `ClusterState` produced by `pacemaker_state_factory` into the Pacemaker daemon, while other set/get operations are forwarded to ZooKeeper.
+The corresponding Pacemaker client is a plugin for the `ClusterState` interface, `org.apache.storm.cluster.PaceMakerStateStorageFactory`. Heartbeat calls are funneled by the `ClusterState` produced by `pacemaker_state_factory` into the Pacemaker daemon, while other set/get operations are forwarded to ZooKeeper.
 
 ------
 
 ### Configuration
 
- - `pacemaker.host` : The host that the Pacemaker daemon is running on
+ - `pacemaker.servers` : The hosts that the Pacemaker daemons are running on
  - `pacemaker.port` : The port that Pacemaker will listen on
  - `pacemaker.max.threads` : Maximum number of threads Pacemaker daemon will use to handle requests.
  - `pacemaker.childopts` : Any JVM parameters that need to go to the Pacemaker. (used by storm-deploy project)
@@ -26,12 +26,14 @@ The corresponding Pacemaker client is a plugin for the `ClusterState` interface,
 
 To get Pacemaker up and running, set the following option in the cluster config on all nodes:
 ```
-storm.cluster.state.store: "org.apache.storm.pacemaker.pacemaker_state_factory"
+storm.cluster.state.store: "org.apache.storm.cluster.PaceMakerStateStorageFactory"
 ```
 
-The Pacemaker host also needs to be set on all nodes:
+The Pacemaker servers also need to be set on all nodes:
 ```
-pacemaker.host: somehost.mycompany.com
+pacemaker.servers:
+    - somehost.mycompany.com
+    - someotherhost.mycompany.com
 ```
 
 And then start all of your daemons
@@ -107,7 +109,4 @@ Compared to ZooKeeper, Pacemaker uses less CPU, less memory, and of course no di
 On Gigabit networking, there is a theoretical limit of about 6000 nodes. However, the real limit is likely around 2000-3000 nodes. These limits have not yet been tested.
 On a 270 supervisor cluster, fully scheduled with topologies, Pacemaker resource utilization was 70% of one core and nearly 1GiB of RAM on a machine with 4 `Intel(R) Xeon(R) CPU E5530 @ 2.40GHz` and 24GiB of RAM.
 
-
-There is an easy route to HA for Pacemaker. Unlike ZooKeeper, Pacemaker should be able to scale horizontally without overhead. By contrast, with ZooKeeper, there are diminishing returns when adding ZK nodes.
-
-In short, a single Pacemaker node should be able to handle many times the load that a ZooKeeper cluster can, and future HA work allowing horizontal scaling will increase that even farther.
+Pacemaker now supports HA. Multiple Pacemaker instances can be used at once in a storm cluster to allow massive scalability. Just include the names of the Pacemaker hosts in the pacemaker.servers config and workers and Nimbus will start communicating with them. They're fault tolerant as well. The system keeps on working as long as there is at least one pacemaker left running - provided it can handle the load.

@@ -31,6 +31,7 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
@@ -73,30 +74,42 @@ public class TridentKafkaState implements State {
 
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
-        for (TridentTuple tuple : tuples) {
-            try {
+        try {
+            List<Future<RecordMetadata>> futures = new ArrayList<>(tuples.size());
+            for (TridentTuple tuple : tuples) {
                 topic = topicSelector.getTopic(tuple);
 
                 if(topic != null) {
                     Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,
                             mapper.getKeyFromTuple(tuple), mapper.getMessageFromTuple(tuple)));
-                    try {
-                        result.get();
-                    } catch (ExecutionException e) {
-                        String errorMsg = "Could not retrieve result for message with key = "
-                                + mapper.getKeyFromTuple(tuple) + " from topic = " + topic;
-                        LOG.error(errorMsg, e);
-                        throw new FailedException(errorMsg, e);
-                    }
+                    futures.add(result);
                 } else {
                     LOG.warn("skipping key = " + mapper.getKeyFromTuple(tuple) + ", topic selector returned null.");
                 }
-            } catch (Exception ex) {
-                String errorMsg = "Could not send message with key = " + mapper.getKeyFromTuple(tuple)
-                        + " to topic = " + topic;
-                LOG.warn(errorMsg, ex);
-                throw new FailedException(errorMsg, ex);
             }
+
+            List<ExecutionException> exceptions = new ArrayList<>(futures.size());
+            for (Future<RecordMetadata> future : futures) {
+                try {
+                    future.get();
+                } catch (ExecutionException e) {
+                    exceptions.add(e);
+                }
+            }
+
+            if(exceptions.size() > 0){
+                String errorMsg = "Could not retrieve result for messages " + tuples + " from topic = " + topic 
+                        + " because of the following exceptions: \n";
+                for (ExecutionException exception : exceptions) {
+                    errorMsg = errorMsg + exception.getMessage() + "\n";
+                }
+                LOG.error(errorMsg);
+                throw new FailedException(errorMsg);
+            }
+        } catch (Exception ex) {
+            String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
+            LOG.warn(errorMsg, ex);
+            throw new FailedException(errorMsg, ex);
         }
     }
 }

@@ -23,7 +23,7 @@
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
-    <groupId>org.apache.storm</groupId>
+
     <artifactId>storm-core</artifactId>
     <packaging>jar</packaging>
     <name>Storm Core</name>
@@ -71,6 +71,10 @@
         <dependency>
             <groupId>hiccup</groupId>
             <artifactId>hiccup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ring</groupId>
+            <artifactId>ring-core</artifactId>
         </dependency>
         <dependency>
             <groupId>ring</groupId>
@@ -140,7 +144,7 @@
           <artifactId>java.jmx</artifactId>
           <version>${java_jmx.version}</version>
         </dependency>
-        
+
         <!--java-->
         <dependency>
             <groupId>commons-cli</groupId>
@@ -159,6 +163,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -280,14 +288,17 @@
             <groupId>metrics-clojure</groupId>
             <artifactId>metrics-clojure</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>test</scope>
-        </dependency>
+        <!-- hamcrest-core dependency is shaded inside the mockito-all and junit depends on newer version of hamcrest-core.
+        To give higher precedence to classes from newer version of hamcrest-core, Junit has been placed above mockito.
+         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -502,6 +513,7 @@
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.apache.commons:commons-exec</include>
                             <include>org.apache.commons:commons-compress</include>
+                            <include>commons-collections:commons-collections</include>
                             <include>org.apache.hadoop:hadoop-auth</include>
                             <include>commons-cli:commons-cli</include>
                             <include>commons-io:commons-io</include>
@@ -670,6 +682,10 @@
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
                           <pattern>org.json.simple</pattern>
                           <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
                         </relocation>
@@ -790,6 +806,13 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>commons-collections:commons-collections</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>commons-io:commons-io</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
@@ -822,6 +845,21 @@
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.sf</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.dsa</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/*.rsa</exclude>
+                                <exclude>META-INF/*.EC</exclude>
+                                <exclude>META-INF/*.ec</exclude>
+                                <exclude>META-INF/MSFTSIG.SF</exclude>
+                                <exclude>META-INF/MSFTSIG.RSA</exclude>
                             </excludes>
                         </filter>
                     </filters>

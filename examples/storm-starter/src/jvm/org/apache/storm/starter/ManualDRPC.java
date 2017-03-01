@@ -19,6 +19,7 @@ package org.apache.storm.starter;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.drpc.DRPCSpout;
 import org.apache.storm.drpc.ReturnResults;
@@ -47,19 +48,21 @@ public class ManualDRPC {
 
     }
 
-    public static void main(String[] args) throws Exception{
+    public static void main(String[] args) throws Exception {
         TopologyBuilder builder = new TopologyBuilder();
-        LocalDRPC drpc = new LocalDRPC();
+        try(LocalDRPC drpc = new LocalDRPC();
+            LocalCluster cluster = new LocalCluster();) {
 
-        DRPCSpout spout = new DRPCSpout("exclamation", drpc);
-        builder.setSpout("drpc", spout);
-        builder.setBolt("exclaim", new ExclamationBolt(), 3).shuffleGrouping("drpc");
-        builder.setBolt("return", new ReturnResults(), 3).shuffleGrouping("exclaim");
+            DRPCSpout spout = new DRPCSpout("exclamation", drpc);
+            builder.setSpout("drpc", spout);
+            builder.setBolt("exclaim", new ExclamationBolt(), 3).shuffleGrouping("drpc");
+            builder.setBolt("return", new ReturnResults(), 3).shuffleGrouping("exclaim");
 
-        LocalCluster cluster = new LocalCluster();
-        Config conf = new Config();
-        cluster.submitTopology("exclaim", conf, builder.createTopology());
-        System.out.println(drpc.execute("exclamation", "aaa"));
-        System.out.println(drpc.execute("exclamation", "bbb"));
+            Config conf = new Config();
+            try (LocalTopology topo = cluster.submitTopology("exclaim", conf, builder.createTopology())) {
+                System.out.println(drpc.execute("exclamation", "aaa"));
+                System.out.println(drpc.execute("exclamation", "bbb"));
+            }
+        }
     }
 }

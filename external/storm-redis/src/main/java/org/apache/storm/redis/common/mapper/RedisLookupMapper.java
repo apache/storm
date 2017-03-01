@@ -24,7 +24,7 @@ import org.apache.storm.tuple.Values;
 import java.util.List;
 
 /**
- * RedisStoreMapper is for defining spec. which is used for querying value from Redis and converting response to tuple.
+ * RedisLookupMapper is for defining spec. which is used for querying value from Redis and converting response to tuple.
  */
 public interface RedisLookupMapper extends TupleMapper, RedisMapper {
     /**

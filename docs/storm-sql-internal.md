@@ -18,9 +18,9 @@ Figure 1 describes the workflow of executing a SQL query in StormSQL. First, use
 <p>Figure 1: Workflow of StormSQL.</p>
 </div>
 
-The next step is to compile the logical execution plan down to a physical execution plan. A physical plan consists of physical operators that describes how to execute the SQL query in *StormSQL*. Physical operators such as `Filter`, `Projection`, and `GroupBy` are directly mapped to operations in Trident topologies. StormSQL also compiles expressions in the SQL statements into Java byte codes and plugs them into the Trident topologies.
+The next step is to compile the logical execution plan down to a physical execution plan. A physical plan consists of physical operators that describes how to execute the SQL query in *StormSQL*. Physical operators such as `Filter`, `Projection`, and `GroupBy` are directly mapped to operations in Trident topologies. StormSQL also compiles expressions in the SQL statements into Java code blocks and plugs them into the Trident functions which will be compiled once and executed in runtime.
 
-Finally, StormSQL packages both the Java byte codes and the topology into a JAR and submits it to the Storm cluster. Storm schedules and executes the JAR in the same way of it executes other Storm topologies.
+Finally, StormSQL submits created Trident topology with empty packaged JAR to the Storm cluster. Storm schedules and executes the Trident topology in the same way of it executes other Storm topologies.
 
 The follow code blocks show an example query that filters and projects results from a Kafka stream.
 
@@ -52,4 +52,8 @@ For more information please refer to http://calcite.apache.org/docs/stream.html.
 
 ## Dependency
 
-StormSQL does not ship the dependency of the external data sources in the packaged JAR. The users have to provide the dependency in the `extlib` directory of the worker node.
+Storm takes care about necessary dependencies of Storm SQL except the data source JAR which is used by `EXTERNAL TABLE`. 
+You can use `--jars` or `--artifacts` option to `storm sql` so that data source JAR can be included to Storm SQL Runner and also Trident Topology runtime classpath.
+(Use `--artifacts` if your data source JARs are available in Maven repository since it handles transitive dependencies.)
+
+Please refer [Storm SQL integration](storm-sql.html) page to how to do it.

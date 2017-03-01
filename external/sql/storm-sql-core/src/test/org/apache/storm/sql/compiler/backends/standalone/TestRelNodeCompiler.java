@@ -22,12 +22,12 @@ import org.apache.calcite.jdbc.JavaTypeFactoryImpl;
 import org.apache.calcite.rel.logical.LogicalFilter;
 import org.apache.calcite.rel.logical.LogicalProject;
 import org.apache.calcite.rel.type.RelDataTypeSystem;
-import org.apache.storm.sql.compiler.TestCompilerUtils;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.util.Collections;
 
 import static org.hamcrest.CoreMatchers.containsString;
 
@@ -45,7 +45,8 @@ public class TestRelNodeCompiler {
          PrintWriter pw = new PrintWriter(sw)
     ) {
       RelNodeCompiler compiler = new RelNodeCompiler(pw, typeFactory);
-      compiler.visitFilter(filter);
+      // standalone mode doesn't use inputstreams argument
+      compiler.visitFilter(filter, Collections.EMPTY_LIST);
       pw.flush();
       Assert.assertThat(sw.toString(), containsString("> 3"));
     }
@@ -54,9 +55,10 @@ public class TestRelNodeCompiler {
          PrintWriter pw = new PrintWriter(sw)
     ) {
       RelNodeCompiler compiler = new RelNodeCompiler(pw, typeFactory);
-      compiler.visitProject(project);
+      // standalone mode doesn't use inputstreams argument
+      compiler.visitProject(project, Collections.EMPTY_LIST);
       pw.flush();
-      Assert.assertThat(sw.toString(), containsString("plus("));
+      Assert.assertThat(sw.toString(), containsString(" + 1"));
     }
   }
 }

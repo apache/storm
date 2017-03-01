@@ -190,7 +190,8 @@ public class Pacemaker implements IServerMessageHandler {
     private HBMessage deletePath(String path) {
         String prefix = path.endsWith("/") ? path : (path + "/");
         for (String key : heartbeats.keySet()) {
-            if (key.indexOf(prefix) == 0)
+            String checkKey = key + "/";
+            if (checkKey.indexOf(prefix) == 0)
                 deletePulseId(key);
         }
         return new HBMessage(HBServerMessageType.DELETE_PATH_RESPONSE, null);

@@ -20,7 +20,6 @@ package org.apache.storm.kafka;
 import org.apache.storm.spout.MultiScheme;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -34,7 +33,7 @@ public class StringMultiSchemeWithTopic
 
     @Override
     public Iterable<List<Object>> deserialize(ByteBuffer bytes) {
-        throw new NotImplementedException();
+        throw new UnsupportedOperationException();
     }
 
     public Iterable<List<Object>> deserializeWithTopic(String topic, ByteBuffer bytes) {

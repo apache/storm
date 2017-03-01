@@ -17,6 +17,7 @@
  */
 package org.apache.storm.blobstore;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
@@ -29,6 +30,8 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.thrift.transport.TTransportException;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.KeeperException.NoNodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,12 +43,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 public class BlobStoreUtils {
     private static final String BLOBSTORE_SUBTREE="/blobstore";
+    private static final String BLOB_DEPENDENCIES_PREFIX = "dep-";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreUtils.class);
 
-    public static CuratorFramework createZKClient(Map conf) {
+    public static CuratorFramework createZKClient(Map<String, Object> conf) {
+        @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
@@ -71,7 +77,15 @@ public class BlobStoreUtils {
 
     // Check for latest sequence number of a key inside zookeeper and return nimbodes containing the latest sequence number
     public static Set<NimbusInfo> getNimbodesWithLatestSequenceNumberOfBlob(CuratorFramework zkClient, String key) throws Exception {
-        List<String> stateInfoList = zkClient.getChildren().forPath("/blobstore/" + key);
+        List<String> stateInfoList;
+        try {
+            stateInfoList = zkClient.getChildren().forPath("/blobstore/" + key);
+        } catch (KeeperException.NoNodeException e) {
+            // there's a race condition with a delete: blobstore
+            // this should be thrown to the caller to indicate that the key is invalid now
+            throw new KeyNotFoundException(key);
+        }
+
         Set<NimbusInfo> nimbusInfoSet = new HashSet<NimbusInfo>();
         int latestSeqNumber = getLatestSequenceNumber(stateInfoList);
         LOG.debug("getNimbodesWithLatestSequenceNumberOfBlob stateInfo {} version {}", stateInfoList, latestSeqNumber);
@@ -103,9 +117,8 @@ public class BlobStoreUtils {
     }
 
     // Download missing blobs from potential nimbodes
-    public static boolean downloadMissingBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
+    public static boolean downloadMissingBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
-        NimbusClient client;
         ReadableBlobMeta rbm;
         ClientBlobStore remoteBlobStore;
         InputStreamWithMeta in;
@@ -115,8 +128,7 @@ public class BlobStoreUtils {
             if(isSuccess) {
                 break;
             }
-            try {
-                client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null);
+            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
@@ -147,15 +159,14 @@ public class BlobStoreUtils {
         }
 
         if (!isSuccess) {
-            LOG.error("Could not download blob with key" + key);
+            LOG.error("Could not download the blob with key: {}", key);
         }
         return isSuccess;
     }
 
     // Download updated blobs from potential nimbodes
-    public static boolean downloadUpdatedBlob(Map conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
+    public static boolean downloadUpdatedBlob(Map<String, Object> conf, BlobStore blobStore, String key, Set<NimbusInfo> nimbusInfos)
             throws TTransportException {
-        NimbusClient client;
         ClientBlobStore remoteBlobStore;
         InputStreamWithMeta in;
         AtomicOutputStream out;
@@ -165,8 +176,7 @@ public class BlobStoreUtils {
             if (isSuccess) {
                 break;
             }
-            try {
-                client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null);
+            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
                 in = remoteBlobStore.getBlob(key);
@@ -212,17 +222,17 @@ public class BlobStoreUtils {
         return keyList;
     }
 
-    public static void createStateInZookeeper(Map conf, String key, NimbusInfo nimbusInfo) throws TTransportException {
+    public static void createStateInZookeeper(Map<String, Object> conf, String key, NimbusInfo nimbusInfo) throws TTransportException {
         ClientBlobStore cb = new NimbusBlobStore();
         cb.setClient(conf, new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null));
         cb.createStateInZookeeper(key);
     }
 
-    public static void updateKeyForBlobStore (Map conf, BlobStore blobStore, CuratorFramework zkClient, String key, NimbusInfo nimbusDetails) {
+    public static void updateKeyForBlobStore (Map<String, Object> conf, BlobStore blobStore, CuratorFramework zkClient, String key, NimbusInfo nimbusDetails) {
         try {
             // Most of clojure tests currently try to access the blobs using getBlob. Since, updateKeyForBlobStore
             // checks for updating the correct version of the blob as a part of nimbus ha before performing any
-            // operation on it, there is a neccessity to stub several test cases to ignore this method. It is a valid
+            // operation on it, there is a necessity to stub several test cases to ignore this method. It is a valid
             // trade off to return if nimbusDetails which include the details of the current nimbus host port data are
             // not initialized as a part of the test. Moreover, this applies to only local blobstore when used along with
             // nimbus ha.
@@ -235,10 +245,11 @@ public class BlobStoreUtils {
                 return;
             }
             stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
+
             LOG.debug("StateInfo for update {}", stateInfo);
             Set<NimbusInfo> nimbusInfoList = getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
 
-            for (NimbusInfo nimbusInfo:nimbusInfoList) {
+            for (NimbusInfo nimbusInfo : nimbusInfoList) {
                 if (nimbusInfo.getHost().equals(nimbusDetails.getHost())) {
                     isListContainsCurrentNimbusInfo = true;
                     break;
@@ -249,9 +260,28 @@ public class BlobStoreUtils {
                 LOG.debug("Updating state inside zookeeper for an update");
                 createStateInZookeeper(conf, key, nimbusDetails);
             }
+        } catch (NoNodeException | KeyNotFoundException e) {
+            //race condition with a delete
+            return;
         } catch (Exception exp) {
             throw new RuntimeException(exp);
         }
     }
+
+    public static String generateDependencyBlobKey(String key) {
+        return BLOB_DEPENDENCIES_PREFIX + key;
+    }
+
+    public static String applyUUIDToFileName(String fileName) {
+        String fileNameWithExt = com.google.common.io.Files.getNameWithoutExtension(fileName);
+        String ext = com.google.common.io.Files.getFileExtension(fileName);
+        if (StringUtils.isEmpty(ext)) {
+            fileName = fileName + "-" + UUID.randomUUID();
+        } else {
+            fileName = fileNameWithExt + "-" + UUID.randomUUID() + "." + ext;
+        }
+        return fileName;
+    }
+
 
 }

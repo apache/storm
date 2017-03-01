@@ -25,6 +25,8 @@ import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.SpoutMsg;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.ShellProcess;
+
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -32,6 +34,7 @@ import java.util.TimerTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
 import clojure.lang.RT;
@@ -42,12 +45,15 @@ import org.slf4j.LoggerFactory;
 
 public class ShellSpout implements ISpout {
     public static final Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
+    private static final long serialVersionUID = 5982357019665454L;
 
     private SpoutOutputCollector _collector;
     private String[] _command;
     private Map<String, String> env = new HashMap<>();
     private ShellProcess _process;
-    
+    private volatile boolean _running = true;
+    private volatile RuntimeException _exception;
+
     private TopologyContext _context;
     
     private SpoutMsg _spoutMsg;
@@ -55,6 +61,8 @@ public class ShellSpout implements ISpout {
     private int workerTimeoutMills;
     private ScheduledExecutorService heartBeatExecutorService;
     private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
+    private AtomicBoolean waitingOnSubprocess = new AtomicBoolean(false);
+    private boolean changeDirectory = true;
 
     public ShellSpout(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -67,6 +75,21 @@ public class ShellSpout implements ISpout {
     public ShellSpout setEnv(Map<String, String> env) {
         this.env = env;
         return this;
+    }
+
+    public boolean shouldChangeChildCWD() {
+        return changeDirectory;
+    }
+
+    /**
+     * Set if the current working directory of the child process should change
+     * to the resources dir from extracted from the jar, or if it should stay
+     * the same as the worker process to access things from the blob store.
+     * @param changeDirectory true change the directory (default) false
+     * leave the directory the same as the worker process.
+     */
+    public void changeChildCWD(boolean changeDirectory) {
+        this.changeDirectory = changeDirectory;
     }
 
     public void open(Map stormConf, TopologyContext context,
@@ -85,7 +108,7 @@ public class ShellSpout implements ISpout {
             _process.setEnv(env);
         }
 
-        Number subpid = _process.launch(stormConf, context);
+        Number subpid = _process.launch(stormConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
@@ -94,34 +117,34 @@ public class ShellSpout implements ISpout {
     public void close() {
         heartBeatExecutorService.shutdownNow();
         _process.destroy();
+        _running = false;
     }
 
     public void nextTuple() {
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("next");
-        _spoutMsg.setId("");
-        querySubprocess();
+        this.sendSyncCommand("next", "");
     }
 
     public void ack(Object msgId) {
+        this.sendSyncCommand("ack", msgId);
+    }
+
+    public void fail(Object msgId) {
+        this.sendSyncCommand("fail", msgId);
+    }
+
+    private void sendSyncCommand(String command, Object msgId) {
+        if (_exception != null) {
+            throw _exception;
+        }
+
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
-        _spoutMsg.setCommand("ack");
+        _spoutMsg.setCommand(command);
         _spoutMsg.setId(msgId);
         querySubprocess();
     }
 
-    public void fail(Object msgId) {
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("fail");
-        _spoutMsg.setId(msgId);
-        querySubprocess();
-    }
     
     private void handleMetrics(ShellMsg shellMsg) {
         //get metric name
@@ -153,6 +176,7 @@ public class ShellSpout implements ISpout {
 
     private void querySubprocess() {
         try {
+            markWaitingSubprocess();
             _process.writeSpoutMsg(_spoutMsg);
 
             while (true) {
@@ -192,8 +216,11 @@ public class ShellSpout implements ISpout {
         } catch (Exception e) {
             String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
             throw new RuntimeException(processInfo, e);
+        } finally {
+            completedWaitingSubprocess();
         }
     }
+
 
     private void handleLog(ShellMsg shellMsg) {
         String msg = shellMsg.getMsg();
@@ -231,11 +258,17 @@ public class ShellSpout implements ISpout {
         LOG.info("Start checking heartbeat...");
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
+        if (heartBeatExecutorService.isShutdown()){
+            //In case deactivate was called before
+            heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        }
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+        this.sendSyncCommand("activate", "");
     }
 
     @Override
     public void deactivate() {
+        this.sendSyncCommand("deactivate", "");
         heartBeatExecutorService.shutdownNow();
     }
 
@@ -247,13 +280,26 @@ public class ShellSpout implements ISpout {
         return lastHeartbeatTimestamp.get();
     }
 
-    private void die(Throwable exception) {
-        heartBeatExecutorService.shutdownNow();
+    private void markWaitingSubprocess() {
+        setHeartbeat();
+        waitingOnSubprocess.compareAndSet(false, true);
+    }
 
-        LOG.error("Halting process: ShellSpout died.", exception);
+    private void completedWaitingSubprocess() {
+        waitingOnSubprocess.compareAndSet(true, false);
+    }
+
+    private void die(Throwable exception) {
+        String processInfo = _process.getProcessInfoString() + _process.getProcessTerminationInfoString();
+        _exception = new RuntimeException(processInfo, exception);
+        String message = String.format("Halting process: ShellSpout died. Command: %s, ProcessInfo %s",
+            Arrays.toString(_command),
+            processInfo);
+        LOG.error(message, exception);
         _collector.reportError(exception);
-        _process.destroy();
-        System.exit(11);
+        if (_running || (exception instanceof Error)) { //don't exit if not running, unless it is an Error
+            System.exit(11);
+        }
     }
 
     private class SpoutHeartbeatTimerTask extends TimerTask {
@@ -265,13 +311,14 @@ public class ShellSpout implements ISpout {
 
         @Override
         public void run() {
-            long currentTimeMillis = System.currentTimeMillis();
             long lastHeartbeat = getLastHeartbeat();
+            long currentTimestamp = System.currentTimeMillis();
+            boolean isWaitingOnSubprocess = waitingOnSubprocess.get();
 
-            LOG.debug("current time : {}, last heartbeat : {}, worker timeout (ms) : {}",
-                    currentTimeMillis, lastHeartbeat, workerTimeoutMills);
+            LOG.debug("last heartbeat : {}, waiting subprocess now : {}, worker timeout (ms) : {}",
+                    lastHeartbeat, isWaitingOnSubprocess, workerTimeoutMills);
 
-            if (currentTimeMillis - lastHeartbeat > workerTimeoutMills) {
+            if (isWaitingOnSubprocess && currentTimestamp - lastHeartbeat > workerTimeoutMills) {
                 spout.die(new RuntimeException("subprocess heartbeat timeout"));
             }
         }

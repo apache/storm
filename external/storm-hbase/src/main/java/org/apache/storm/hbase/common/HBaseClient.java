@@ -26,12 +26,13 @@ import org.apache.storm.hbase.security.HBaseSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
 
-public class HBaseClient {
+public class HBaseClient implements Closeable{
     private static final Logger LOG = LoggerFactory.getLogger(HBaseClient.class);
 
     private HTable table;
@@ -131,5 +132,10 @@ public class HBaseClient {
             LOG.warn("Could not perform HBASE lookup.", e);
             throw e;
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        table.close();
     }
 }

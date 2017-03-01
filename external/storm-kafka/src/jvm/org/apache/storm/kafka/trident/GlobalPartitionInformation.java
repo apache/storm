@@ -49,6 +49,10 @@ public class GlobalPartitionInformation implements Iterable<Partition>, Serializ
         partitionMap.put(partitionId, broker);
     }
 
+    public Boolean getbUseTopicNameForPartitionPathId () {
+        return bUseTopicNameForPartitionPathId;
+    }
+
     @Override
     public String toString() {
         return "GlobalPartitionInformation{" +

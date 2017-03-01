@@ -21,6 +21,7 @@ Table of Contents
     * <a href="#packaging">Create a Storm distribution (packaging)</a>
 * <a href="#best-practices">Best practices</a>
     * <a href="#best-practices-testing">Testing</a>
+    * <a href="#best-practices-versions">Version Changes</a>
 * <a href="#tools">Tools</a>
     * <a href="#code-repositories">Source code repositories (git)</a>
     * <a href="#issue-tracking">Issue tracking (JIRA)</a>
@@ -366,6 +367,19 @@ Storm using tracked topologies.  Here, the key is the `tracked-wait` function: i
 tuples have been emitted by the spouts _and_ the topology is idle (i.e. no tuples have been emitted nor will be emitted
 without further input).  Note that you should not use tracked topologies for topologies that have tick tuples.
 
+<a name="best-practices-versions"></a>
+
+## Version Changes
+
+An easy way to change versions across all pom files, for example from `1.0.0-SNAPSHOT` to `1.0.0`, is with the maven
+versions plugin.
+
+```
+mvn versions:set #This prompts for a new version
+mvn versions:commit
+```
+
+[Plugin Documentation] (http://www.mojohaus.org/versions-maven-plugin/)
 
 <a name="tools"></a>
 

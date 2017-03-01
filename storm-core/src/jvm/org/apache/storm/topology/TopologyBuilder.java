@@ -30,6 +30,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
@@ -87,10 +88,10 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * conf.put(Config.TOPOLOGY_DEBUG, true);
  *
- * LocalCluster cluster = new LocalCluster();
- * cluster.submitTopology("mytopology", conf, builder.createTopology());
- * Utils.sleep(10000);
- * cluster.shutdown();
+ * try (LocalCluster cluster = new LocalCluster();
+ *      LocalTopology topo = cluster.submitTopology("mytopology", conf, builder.createTopology());){
+ *     Utils.sleep(10000);
+ * }
  * ```
  *
  * The pattern for `TopologyBuilder` is to map component ids to components using the setSpout
@@ -568,8 +569,15 @@ public class TopologyBuilder {
     }
     
     private static Map parseJson(String json) {
-        if(json==null) return new HashMap();
-        else return (Map) JSONValue.parse(json);
+        if (json==null) {
+            return new HashMap();
+        } else {
+            try {
+                return (Map) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
     
     private static String mergeIntoJson(Map into, Map newMap) {

@@ -1,9 +1,5 @@
-#Storm Kafka Spout New Consumer API
+#Storm Apache Kafka integration using the kafka-client jar (This includes the new Apache Kafka consumer API)
 
-This patch is still under development and it comes with no warranties at this moment. 
+Spouts and Bolts that write to and read from Kafka through the kafka-client library.
 
-It has not been thoroughly tested, and therefore there may be some bugs and it is not ready for production. 
-
-The documentation will be uploaded soon.
-
-To see how to use the new Kafka Spout, please refer to the example under tests. Thank you! 
+Please see [here](../../docs/storm-kafka-client.md) for details on how to use it.
