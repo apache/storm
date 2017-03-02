@@ -142,7 +142,17 @@ public class KafkaSpout extends BaseRichSpout {
                 }
             } catch (FailedFetchException e) {
                 LOG.warn("Fetch failed", e);
-                _coordinator.refresh();
+                for (int tryCnt = 1; tryCnt <= 3; tryCnt++) {
+                    try {
+                        _coordinator.refresh();
+                        break;
+                    } catch (Exception e) {
+                        if (tryCnt == 3) {
+                            throw e;
+                        }
+                    }
+                    sleep(10000);
+                }
             }
         }
 
