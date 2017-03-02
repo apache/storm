@@ -466,7 +466,9 @@ public class StormCommon {
 
         StormTopology ret = topology.deepCopy();
         addAcker(stormConf, ret);
-        addEventLogger(stormConf, ret);
+        if (hasEventLoggers(stormConf)) {
+            addEventLogger(stormConf, ret);
+        }
         addMetricComponents(stormConf, ret);
         addSystemComponents(stormConf, ret);
         addMetricStreams(ret);
