@@ -205,6 +205,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+* STORM-2386 Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs.
 * STORM-1363: TridentKafkaState should handle null values from TridentTupleToKafkaMapper.getMessageFromTuple()
 * STORM-2381: Add logging of JDBC connection string in storm-jdbc integration for debugging failures.
 
