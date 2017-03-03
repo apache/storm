@@ -18,14 +18,16 @@
 package org.apache.storm.eventhubs.bolt;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
+import com.microsoft.azure.servicebus.ServiceBusException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.EventHubClient;
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.eventhubs.PartitionSender;
+import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.EventHubSender;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -41,7 +43,8 @@ public class EventHubBolt extends BaseRichBolt {
 			.getLogger(EventHubBolt.class);
 
 	protected OutputCollector collector;
-	protected EventHubSender sender;
+	protected PartitionSender sender=null;
+	protected EventHubClient ehClient=null;
 	protected EventHubBoltConfig boltConfig;
 
 	public EventHubBolt(String connectionString, String entityPath) {
@@ -70,10 +73,9 @@ public class EventHubBolt extends BaseRichBolt {
 		logger.info("creating sender: " + boltConfig.getConnectionString()
 				+ ", " + boltConfig.getEntityPath() + ", " + myPartitionId);
 		try {
-			EventHubClient eventHubClient = EventHubClient.create(
-					boltConfig.getConnectionString(),
-					boltConfig.getEntityPath());
-			sender = eventHubClient.createPartitionSender(myPartitionId);
+			ehClient = EventHubClient.createFromConnectionStringSync(boltConfig.getConnectionString());
+			if (boltConfig.getPartitionMode())
+				 sender = ehClient.createPartitionSenderSync(Integer.toString(context.getThisTaskIndex()));
 		} catch (Exception ex) {
 			collector.reportError(ex);
 			throw new RuntimeException(ex);
@@ -84,11 +86,47 @@ public class EventHubBolt extends BaseRichBolt {
 	@Override
 	public void execute(Tuple tuple) {
 		try {
-			sender.send(boltConfig.getEventDataFormat().serialize(tuple));
+			EventData sendEvent = new EventData(boltConfig.getEventDataFormat().serialize(tuple));
+			if(boltConfig.getPartitionMode() && sender!=null)
+				sender.sendSync(sendEvent);
+			else if(boltConfig.getPartitionMode() && sender==null)
+				throw new EventHubException("Sender is null");
+			else if(!boltConfig.getPartitionMode() && ehClient!=null)
+				ehClient.sendSync(sendEvent);
+			else if(!boltConfig.getPartitionMode() && ehClient==null)
+				throw new EventHubException("ehclient is null");
 			collector.ack(tuple);
-		} catch (EventHubException ex) {
+		} catch (EventHubException ex ) {
 			collector.reportError(ex);
 			collector.fail(tuple);
+		}catch (ServiceBusException e){
+			collector.reportError(e);
+			collector.fail(tuple);
+		}
+	}
+
+	@Override
+	public void cleanup() {
+		if(sender != null) {
+			try {
+				sender.close().whenComplete((voidargs,error)->{
+					try{
+						if(error!=null){
+							logger.error("Exception during sender cleanup phase"+error.toString());
+						}
+						ehClient.closeSync();
+					}catch (Exception e){
+						logger.error("Exception during ehclient cleanup phase"+e.toString());
+					}
+				}).get();
+			}catch (InterruptedException e){
+				logger.error("Exception occured during cleanup phase"+e.toString());
+			}catch (ExecutionException e){
+				logger.error("Exception occured during cleanup phase"+e.toString());
+			}
+			logger.info("Eventhub Bolt cleaned up");
+			sender = null;
+			ehClient =  null;
 		}
 	}
 

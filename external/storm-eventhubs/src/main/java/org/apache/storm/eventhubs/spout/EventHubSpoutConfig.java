@@ -20,7 +20,8 @@ package org.apache.storm.eventhubs.spout;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import com.microsoft.eventhubs.client.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.servicebus.ConnectionStringBuilder;
 
 public class EventHubSpoutConfig implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -42,8 +43,7 @@ public class EventHubSpoutConfig implements Serializable {
 	private String connectionString;
 	private String topologyName;
 	private IEventDataScheme scheme = new StringEventDataScheme();
-	private String consumerGroupName = null; // if null then use default
-												// consumer group
+	private String consumerGroupName = EventHubClient.DEFAULT_CONSUMER_GROUP_NAME;
 	private String outputStreamId;
 
 
@@ -52,8 +52,8 @@ public class EventHubSpoutConfig implements Serializable {
 			String namespace, String entityPath, int partitionCount) {
 		this.userName = username;
 		this.password = password;
-		this.connectionString = new ConnectionStringBuilder(username, password,
-				namespace).getConnectionString();
+		this.connectionString = new ConnectionStringBuilder(namespace,entityPath,
+				username,password).toString();
 		this.namespace = namespace;
 		this.entityPath = entityPath;
 		this.partitionCount = partitionCount;
@@ -232,9 +232,12 @@ public class EventHubSpoutConfig implements Serializable {
 		return connectionString;
 	}
 
+	/*Keeping it for backward compatibility*/
 	public void setTargetAddress(String targetFqnAddress) {
-		this.connectionString = new ConnectionStringBuilder(userName, password,
-				namespace, targetFqnAddress).getConnectionString();
+	}
+
+	public void setTargetAddress(){
+
 	}
 
 	public EventHubSpoutConfig withTargetAddress(String targetFqnAddress) {

@@ -26,7 +26,7 @@ import com.microsoft.eventhubs.client.Constants;
 import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
 import com.microsoft.eventhubs.client.EventHubOffsetFilter;
 import com.microsoft.eventhubs.client.IEventHubFilter;
-
+import com.microsoft.azure.eventhubs.EventData;
 /**
  * A simple partition manager that does not re-send failed messages
  */
@@ -65,16 +65,13 @@ public class SimplePartitionManager implements IPartitionManager {
       offset = Constants.DefaultStartingOffset;
     }
 
-    IEventHubFilter filter;
     if (offset.equals(Constants.DefaultStartingOffset)
         && config.getEnqueueTimeFilter() != 0) {
-      filter = new EventHubEnqueueTimeFilter(config.getEnqueueTimeFilter());
-    }
-    else {
-      filter = new EventHubOffsetFilter(offset);
+      offset = Long.toString(config.getEnqueueTimeFilter());
     }
 
-    receiver.open(filter);
+
+    receiver.open(offset);
   }
   
   @Override
@@ -98,12 +95,12 @@ public class SimplePartitionManager implements IPartitionManager {
   }
 
   @Override
-  public EventData receive() {
-    EventData eventData = receiver.receive(5000);
-    if (eventData != null) {
-      lastOffset = eventData.getMessageId().getOffset();
+  public EventDataWrap receive() {
+    EventDataWrap eventDatawrap = receiver.receive();
+    if (eventDatawrap != null) {
+      lastOffset = eventDatawrap.getEventData().getSystemProperties().getOffset();
     }
-    return eventData;
+    return eventDatawrap;
   }
 
   @Override

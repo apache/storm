@@ -17,6 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.qpid.amqp_1_0.client.Message;
 import org.apache.qpid.amqp_1_0.type.Section;
 import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
@@ -38,22 +39,10 @@ import java.util.Map;
 public class BinaryEventDataScheme implements IEventDataScheme {
 
 	@Override
-	public List<Object> deserialize(Message message) {
+	public List<Object> deserialize(EventData eventData) {
 		final List<Object> fieldContents = new ArrayList<Object>();
-
-		Map metaDataMap = new HashMap();
-		byte[] messageData = new byte[0];
-
-		for (Section section : message.getPayload()) {
-			if (section instanceof Data) {
-				Data data = (Data) section;
-				messageData = data.getValue().getArray();
-			} else if (section instanceof ApplicationProperties) {
-				final ApplicationProperties applicationProperties = (ApplicationProperties) section;
-				metaDataMap = applicationProperties.getValue();
-			}
-		}
-
+		byte[] messageData = eventData.getBody();
+		Map metaDataMap = eventData.getProperties();
 		fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);
 		return fieldContents;

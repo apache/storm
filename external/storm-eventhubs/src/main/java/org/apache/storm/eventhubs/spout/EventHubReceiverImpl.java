@@ -17,7 +17,8 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import org.apache.qpid.amqp_1_0.client.Message;
+import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.PartitionReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -27,28 +28,23 @@ import org.apache.storm.metric.api.ReducedMetric;
 
 import com.microsoft.eventhubs.client.Constants;
 import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
-import com.microsoft.eventhubs.client.ResilientEventHubReceiver;
+import com.microsoft.azure.eventhubs.EventData;
 
+import java.util.concurrent.ExecutionException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
 
 public class EventHubReceiverImpl implements IEventHubReceiver {
   private static final Logger logger = LoggerFactory.getLogger(EventHubReceiverImpl.class);
-  private static final Symbol OffsetKey = Symbol.valueOf(Constants.OffsetKey);
-  private static final Symbol SequenceNumberKey = Symbol.valueOf(Constants.SequenceNumberKey);
 
   private final String connectionString;
   private final String entityName;
   private final String partitionId;
-  private final int defaultCredits;
   private final String consumerGroupName;
 
-  private ResilientEventHubReceiver receiver;
+  private PartitionReceiver receiver;
+  private EventHubClient ehClient=null;
   private ReducedMetric receiveApiLatencyMean;
   private CountMetric receiveApiCallCount;
   private CountMetric receiveMessageCount;
@@ -56,7 +52,6 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   public EventHubReceiverImpl(EventHubSpoutConfig config, String partitionId) {
     this.connectionString = config.getConnectionString();
     this.entityName = config.getEntityPath();
-    this.defaultCredits = config.getReceiverCredits();
     this.partitionId = partitionId;
     this.consumerGroupName = config.getConsumerGroupName();
     receiveApiLatencyMean = new ReducedMetric(new MeanReducer());
@@ -65,26 +60,50 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   }
 
   @Override
-  public void open(IEventHubFilter filter) throws EventHubException {
-    logger.info("creating eventhub receiver: partitionId=" + partitionId + 
-    		", filterString=" + filter.getFilterString());
+  public void open(String offset) throws EventHubException {
+    logger.info("creating eventhub receiver: partitionId=" + partitionId +
+            ", offset=" + offset);
     long start = System.currentTimeMillis();
-    receiver = new ResilientEventHubReceiver(connectionString, entityName,
-    		partitionId, consumerGroupName, defaultCredits, filter);
-    receiver.initialize();
-    
+    try {
+      ehClient = EventHubClient.createFromConnectionStringSync(connectionString);
+      receiver = ehClient.createEpochReceiverSync(
+              consumerGroupName,
+              partitionId,
+              offset,
+              false,
+              1);
+    }catch (Exception e){
+      logger.info("Exception in creating EventhubClient"+e.toString());
+    }
     long end = System.currentTimeMillis();
     logger.info("created eventhub receiver, time taken(ms): " + (end-start));
   }
 
   @Override
-  public void close() {
+  public void close(){
     if(receiver != null) {
-      receiver.close();
+      try {
+        receiver.close().whenComplete((voidargs,error)->{
+          try{
+            if(error!=null){
+              logger.error("Exception during receiver close phase"+error.toString());
+            }
+            ehClient.closeSync();
+          }catch (Exception e){
+            logger.error("Exception during ehclient close phase"+e.toString());
+          }
+        }).get();
+      }catch (InterruptedException e){
+        logger.error("Exception occured during close phase"+e.toString());
+      }catch (ExecutionException e){
+        logger.error("Exception occured during close phase"+e.toString());
+      }
       logger.info("closed eventhub receiver: partitionId=" + partitionId );
       receiver = null;
+      ehClient =  null;
     }
   }
+
   
   @Override
   public boolean isOpen() {
@@ -92,50 +111,29 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   }
 
   @Override
-  public EventData receive(long timeoutInMilliseconds) {
+  public EventDataWrap receive() {
     long start = System.currentTimeMillis();
-    Message message = receiver.receive(timeoutInMilliseconds);
+    Iterable<EventData> receivedEvents=null;
+    /*Get one message at a time for backward compatibility behaviour*/
+    try {
+      receivedEvents = receiver.receiveSync(1);
+    }catch (Exception e){
+      logger.error("Exception occured during receive"+e.toString());
+    }
     long end = System.currentTimeMillis();
     long millis = (end - start);
     receiveApiLatencyMean.update(millis);
     receiveApiCallCount.incr();
-    
-    if (message == null) {
-      //Temporary workaround for AMQP/EH bug of failing to receive messages
-      /*if(timeoutInMilliseconds > 100 && millis < timeoutInMilliseconds/2) {
-        throw new RuntimeException(
-            "Restart EventHubSpout due to failure of receiving messages in "
-            + millis + " millisecond");
-      }*/
+    if (receivedEvents == null) {
       return null;
     }
-
     receiveMessageCount.incr();
+    EventData receivedEvent = receivedEvents.iterator().next();
+    MessageId messageId = new MessageId(partitionId,
+            receivedEvent.getSystemProperties().getOffset(),
+            receivedEvent.getSystemProperties().getSequenceNumber());
 
-    MessageId messageId = createMessageId(message);
-    return EventData.create(message, messageId);
-  }
-  
-  private MessageId createMessageId(Message message) {
-    String offset = null;
-    long sequenceNumber = 0;
-
-    for (Section section : message.getPayload()) {
-      if (section instanceof MessageAnnotations) {
-        MessageAnnotations annotations = (MessageAnnotations) section;
-        HashMap annonationMap = (HashMap) annotations.getValue();
-
-        if (annonationMap.containsKey(OffsetKey)) {
-          offset = (String) annonationMap.get(OffsetKey);
-        }
-
-        if (annonationMap.containsKey(SequenceNumberKey)) {
-          sequenceNumber = (Long) annonationMap.get(SequenceNumberKey);
-        }
-      }
-    }
-
-    return MessageId.create(partitionId, offset, sequenceNumber);
+    return EventDataWrap.create(receivedEvent,messageId);
   }
 
   @Override

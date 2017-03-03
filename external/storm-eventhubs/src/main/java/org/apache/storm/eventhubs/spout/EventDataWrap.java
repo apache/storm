@@ -17,38 +17,32 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import org.apache.storm.tuple.Fields;
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.List;
 import com.microsoft.azure.eventhubs.EventData;
 
-/**
- * An Event Data Scheme which deserializes message payload into the Strings.
- * No encoding is assumed. The receiver will need to handle parsing of the 
- * string data in appropriate encoding.
- *
- * Note: Unlike other schemes provided, this scheme does not include any 
- * metadata. 
- * 
- * For metadata please refer to {@link BinaryEventDataScheme}, {@link EventDataScheme} 
- */
-public class StringEventDataScheme implements IEventDataScheme {
+public class EventDataWrap implements Comparable<EventDataWrap> {
+  private final EventData eventData;
+  private final MessageId messageId;
 
-  private static final long serialVersionUID = 1L;
+  public EventDataWrap(EventData eventdata, MessageId messageId) {
+    this.eventData = eventdata;
+    this.messageId = messageId;
+  }
 
-  @Override
-  public List<Object> deserialize(EventData eventData) {
-    final List<Object> fieldContents = new ArrayList<Object>();
-    String messageData = "";
-    messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
-    fieldContents.add(messageData);
-    return fieldContents;
+  public static EventDataWrap create(EventData eventData, MessageId messageId) {
+    return new EventDataWrap(eventData, messageId);
+  }
+
+  public EventData getEventData() {
+    return this.eventData;
+  }
+
+  public MessageId getMessageId() {
+    return this.messageId;
   }
 
   @Override
-  public Fields getOutputFields() {
-    return new Fields(FieldConstants.Message);
+  public int compareTo(EventDataWrap ed) {
+    return messageId.getSequenceNumber().
+        compareTo(ed.getMessageId().getSequenceNumber());
   }
 }

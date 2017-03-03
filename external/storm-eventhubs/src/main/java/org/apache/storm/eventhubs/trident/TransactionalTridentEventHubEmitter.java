@@ -24,7 +24,7 @@ import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.eventhubs.spout.EventData;
+import org.apache.storm.eventhubs.spout.EventDataWrap;
 import org.apache.storm.eventhubs.spout.EventHubReceiverImpl;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.eventhubs.spout.IEventHubReceiver;
@@ -111,15 +111,15 @@ public class TransactionalTridentEventHubEmitter
     int count = Integer.parseInt((String)meta.get("count"));
     logger.info("re-emit for partition " + partition.getId() + ", offset=" + offset + ", count=" + count);
     ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
-    List<EventData> listEvents = pm.receiveBatch(offset, count);
+    List<EventDataWrap> listEvents = pm.receiveBatch(offset, count);
     if(listEvents.size() != count) {
       logger.error("failed to refetch eventhub messages, new count=" + listEvents.size());
       return;
     }
 
-    for(EventData ed: listEvents) {
+    for(EventDataWrap ed: listEvents) {
       List<Object> tuples = 
-          spoutConfig.getEventDataScheme().deserialize(ed.getMessage());
+          spoutConfig.getEventDataScheme().deserialize(ed.getEventData());
       collector.emit(tuples);
     }
   }
@@ -135,13 +135,13 @@ public class TransactionalTridentEventHubEmitter
     //logger.info("emit for partition " + partition.getId() + ", offset=" + offset);
     String nextOffset = offset;
 
-    List<EventData> listEvents = pm.receiveBatch(offset, batchSize);
+    List<EventDataWrap> listEvents = pm.receiveBatch(offset, batchSize);
 
-    for(EventData ed: listEvents) {
+    for(EventDataWrap ed: listEvents) {
       //update nextOffset;
       nextOffset = ed.getMessageId().getOffset();
       List<Object> tuples = 
-          spoutConfig.getEventDataScheme().deserialize(ed.getMessage());
+          spoutConfig.getEventDataScheme().deserialize(ed.getEventData());
       collector.emit(tuples);
     }
     //logger.info("emitted new batches: " + listEvents.size());

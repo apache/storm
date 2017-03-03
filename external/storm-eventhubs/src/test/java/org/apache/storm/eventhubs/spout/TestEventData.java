@@ -37,10 +37,10 @@ public class TestEventData {
   public void testEventDataComparision() {
 
 	MessageId messageId1 = MessageId.create(null, "3", 1);
-	EventData eventData1 = EventData.create(null, messageId1);
+	EventDataWrap eventData1 = EventDataWrap.create(null, messageId1);
 
 	MessageId messageId2 = MessageId.create(null, "13", 2);
-	EventData eventData2 = EventData.create(null, messageId2);
+	EventDataWrap eventData2 = EventDataWrap.create(null, messageId2);
 
 	assertTrue(eventData2.compareTo(eventData1) > 0);
   }
