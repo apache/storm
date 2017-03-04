@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs.
  * STORM-2388: JoinBolt breaks compilation against JDK 7
  * STORM-2374: Storm Kafka Client Test Topologies Must be Serializable
