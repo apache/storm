@@ -205,6 +205,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2391: Move HdfsSpoutTopology from storm-starter to storm-hdfs-examples
  * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs.
  * STORM-1363: TridentKafkaState should handle null values from TridentTupleToKafkaMapper.getMessageFromTuple()
