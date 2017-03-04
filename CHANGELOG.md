@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs
  * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
  * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
