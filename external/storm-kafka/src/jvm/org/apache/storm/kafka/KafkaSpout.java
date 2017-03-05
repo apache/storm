@@ -146,14 +146,14 @@ public class KafkaSpout extends BaseRichSpout {
                     try {
                         _coordinator.refresh();
                         break;
-                    } catch (Exception e) {
+                    } catch (Exception ex) {
                         if (tryCnt == 3) {
-                            throw e;
+                            throw ex;
                         }
                     }
                     try {
                         Thread.sleep(10000);
-                    } catch (InterruptedException e) {
+                    } catch (InterruptedException ex2) {
                     }
                 }
             }
