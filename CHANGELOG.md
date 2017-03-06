@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2385: pacemaker_state_factory.clj does not compile on branch-1.0.x
  * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs
  * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
