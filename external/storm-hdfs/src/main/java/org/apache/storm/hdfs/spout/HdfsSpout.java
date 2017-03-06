@@ -629,13 +629,9 @@ public class HdfsSpout extends BaseRichSpout {
         return null;
       }
       for (Path file : hdfsDirectoryMonitor) {
-        if (Path.getPathWithoutSchemeAndAuthority(file).toString().startsWith(lockDirPath.toString())) {
-          continue;
-        }
-        if (file.getName().endsWith(inprogress_suffix)) {
-          continue;
-        }
-        if (file.getName().endsWith(ignoreSuffix)) {
+        if (Path.getPathWithoutSchemeAndAuthority(file).toString().startsWith(lockDirPath.toString()) ||
+                file.getName().endsWith(inprogress_suffix) ||
+                file.getName().endsWith(ignoreSuffix)) {
           continue;
         }
         lock = FileLock.tryLock(hdfs, file, lockDirPath, spoutId);
