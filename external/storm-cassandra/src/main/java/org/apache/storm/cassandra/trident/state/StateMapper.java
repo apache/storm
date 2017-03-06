@@ -16,25 +16,20 @@
  * specific language governing permissions and limitations
  * under the License.
  */
-package org.apache.storm.cassandra.executor;
+package org.apache.storm.cassandra.trident.state;
 
-import com.datastax.driver.core.Session;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
-/**
- * This class must be used to obtain a single instance of {@link AsyncExecutor} per storm executor.
- */
-public class AsyncExecutorProvider {
+import java.io.Serializable;
+import java.util.List;
 
-    private static final ThreadLocal<AsyncExecutor> localAsyncExecutor = new ThreadLocal<>();
+public interface StateMapper<T> extends Serializable {
 
-    /**
-     * Returns a new {@link AsyncExecutor} per storm executor.
-     */
-    public static <T> AsyncExecutor getLocal(Session session, AsyncResultHandler<T> handler) {
-        AsyncExecutor<T> executor = localAsyncExecutor.<T>get();
-        if( executor == null ) {
-            localAsyncExecutor.set(executor = new AsyncExecutor<>(session, handler));
-        }
-        return executor;
-    }
+    Fields getStateFields();
+
+    Values toValues(T value);
+
+    T fromValues(List<Values> values);
+
 }
