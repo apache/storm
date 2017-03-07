@@ -503,6 +503,35 @@
             </includes>
         </fileSet>
 
+        <fileSet>
+            <directory>${project.basedir}/../../storm-perf/target</directory>
+            <outputDirectory>perf</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../storm-perf/src/main/conf</directory>
+            <outputDirectory>perf/conf</outputDirectory>
+            <includes>
+                <include>*yaml</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../storm-perf/src/main/sampledata</directory>
+            <outputDirectory>perf/resources</outputDirectory>
+            <includes>
+                <include>*</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../storm-perf/</directory>
+            <outputDirectory>perf</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 
     <files>
