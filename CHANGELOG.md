@@ -205,6 +205,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-1772: Adding Perf module with topologies for measuring performance
  * STORM-2391: Move HdfsSpoutTopology from storm-starter to storm-hdfs-examples
  * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs.
