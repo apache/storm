@@ -21,15 +21,9 @@ package org.apache.storm.perf.utils;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
-import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.perf.KafkaHdfsTopo;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 
@@ -52,7 +46,7 @@ public class Helper {
   }
 
 
-    public static LocalCluster runOnLocalCluster(String topoName, StormTopology topology) {
+    public static LocalCluster runOnLocalCluster(String topoName, StormTopology topology) throws Exception {
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology(topoName, new Config(), topology);
         return cluster;
@@ -98,8 +92,12 @@ public class Helper {
   public static void setupShutdownHook(final LocalCluster cluster, final String topoName) {
     Runtime.getRuntime().addShutdownHook(new Thread() {
       public void run() {
-        cluster.killTopology(topoName);
-        System.out.println("Killed Topology");
+          try {
+              cluster.killTopology(topoName);
+              System.out.println("Killed Topology");
+          } catch (Exception e) {
+              System.err.println("Encountered error in killing topology: " + e);
+          }
         cluster.shutdown();
       }
     });
