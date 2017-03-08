@@ -61,16 +61,16 @@ public class StormBoundedExponentialBackoffRetry extends BoundedExponentialBacko
     }
 
     @Override
-    public int getSleepTimeMs(int retryCount, long elapsedTimeMs) {
+    public long getSleepTimeMs(int retryCount, long elapsedTimeMs) {
         if (retryCount < expRetriesThreshold) {
             int exp = 1 << retryCount;
             int jitter = random.nextInt(exp);
-            int sleepTimeMs = super.getBaseSleepTimeMs() + exp + jitter;
+            long sleepTimeMs = super.getBaseSleepTimeMs() + exp + jitter;
             LOG.warn("WILL SLEEP FOR {}ms (NOT MAX)", sleepTimeMs);
             return sleepTimeMs;
         } else {
             int stepJitter = random.nextInt(stepSize);
-            int sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs +
+            long sleepTimeMs = Math.min(super.getMaxSleepTimeMs(), (linearBaseSleepMs +
                     (stepSize * (retryCount - expRetriesThreshold)) + stepJitter));
             LOG.warn("WILL SLEEP FOR {}ms (MAX)", sleepTimeMs);
             return sleepTimeMs;
