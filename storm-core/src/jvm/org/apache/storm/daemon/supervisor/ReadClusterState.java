@@ -155,7 +155,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                         NodeInfo ni = req.get_nodeInfo();
                         if (host.equals(ni.get_node())) {
                             Long port = ni.get_port().iterator().next();
-                            Set<TopoProfileAction> actions = filtered.get(port);
+                            Set<TopoProfileAction> actions = filtered.get(port.intValue());
                             if (actions == null) {
                                 actions = new HashSet<>();
                                 filtered.put(port.intValue(), actions);
