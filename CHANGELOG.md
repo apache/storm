@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2396: setting interrupted status back before throwing a RuntimeException
  * STORM-2395: storm.cmd supervisor calls the wrong class name
  * STORM-2385: pacemaker_state_factory.clj does not compile on branch-1.0.x
  * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
