@@ -337,6 +337,7 @@ public class Utils {
         try {
             Time.sleep(millis);
         } catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
