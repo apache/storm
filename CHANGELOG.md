@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2387: Handle tick tuples properly for Bolts in external modules 
  * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
  * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
  * STORM-2396: setting interrupted status back before throwing a RuntimeException
