@@ -24,6 +24,7 @@ import org.apache.commons.lang.Validate;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,7 +56,7 @@ public class JdbcLookupBolt extends AbstractJdbcBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    protected void process(Tuple tuple) {
         try {
             List<Column> columns = jdbcLookupMapper.getColumns(tuple);
             List<List<Column>> result = jdbcClient.select(this.selectQuery, columns);
