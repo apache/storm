@@ -97,7 +97,7 @@ public class KafkaBoltTest {
     }
 
     @Test
-    public void shouldAcknowledgeTickTuples() throws Exception {
+    public void shouldNotAcknowledgeTickTuples() throws Exception {
         // Given
         Tuple tickTuple = mockTickTuple();
 
@@ -105,7 +105,7 @@ public class KafkaBoltTest {
         bolt.execute(tickTuple);
 
         // Then
-        verify(collector).ack(tickTuple);
+        verify(collector, never()).ack(tickTuple);
     }
 
     @Test
