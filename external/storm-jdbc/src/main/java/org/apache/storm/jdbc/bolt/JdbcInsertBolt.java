@@ -25,6 +25,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.mapper.JdbcMapper;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -81,7 +82,7 @@ public class JdbcInsertBolt extends AbstractJdbcBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    protected void process(Tuple tuple) {
         try {
             List<Column> columns = jdbcMapper.getColumns(tuple);
             List<List<Column>> columnLists = new ArrayList<List<Column>>();

@@ -39,6 +39,7 @@ import org.apache.storm.cassandra.executor.AsyncExecutor;
 import org.apache.storm.cassandra.executor.AsyncExecutorProvider;
 import org.apache.storm.cassandra.executor.AsyncResultHandler;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +49,9 @@ import java.util.Map;
 /**
  * A base cassandra bolt.
  *
- * Default {@link org.apache.storm.topology.base.BaseRichBolt}
+ * Default {@link org.apache.storm.topology.base.BaseTickTupleAwareRichBolt}
  */
-public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
+public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(BaseCassandraBolt.class);
 
@@ -139,25 +140,8 @@ public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
     @Override
     public final void execute(Tuple input) {
         getAsyncHandler().flush(outputCollector);
-        if (TupleUtils.isTick(input)) {
-            onTickTuple();
-            outputCollector.ack(input);
-        } else {
-            process(input);
-        }
+        super.execute(input);
     }
-
-    /**
-     * Process a single tuple of input.
-     *
-     * @param input The input tuple to be processed.
-     */
-    abstract protected void process(Tuple input);
-
-    /**
-     * Calls by an input tick tuple.
-     */
-    abstract protected void onTickTuple();
 
     /**
      * {@inheritDoc}

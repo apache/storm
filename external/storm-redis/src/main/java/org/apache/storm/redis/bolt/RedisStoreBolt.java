@@ -67,7 +67,7 @@ public class RedisStoreBolt extends AbstractRedisBolt {
      * {@inheritDoc}
      */
     @Override
-    public void execute(Tuple input) {
+    public void process(Tuple input) {
         String key = storeMapper.getKeyFromTuple(input);
         String value = storeMapper.getValueFromTuple(input);
 

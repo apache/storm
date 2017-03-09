@@ -21,6 +21,8 @@ import java.util.Map;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.utils.TupleUtils;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.common.annotations.VisibleForTesting;
 import org.slf4j.Logger;
@@ -34,7 +36,7 @@ import org.apache.storm.tuple.Tuple;
 
 import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
-public abstract class AbstractEsBolt extends BaseRichBolt {
+public abstract class AbstractEsBolt extends BaseTickTupleAwareRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEsBolt.class);
 
@@ -61,9 +63,6 @@ public abstract class AbstractEsBolt extends BaseRichBolt {
             LOG.warn("unable to initialize EsBolt ", e);
         }
     }
-
-    @Override
-    public abstract void execute(Tuple tuple);
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {

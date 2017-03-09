@@ -106,7 +106,7 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
      * {@inheritDoc}
      */
     @Override
-    protected void onTickTuple() {
+    protected void onTickTuple(Tuple tuple) {
         prepareAndExecuteStatement();
     }
 
