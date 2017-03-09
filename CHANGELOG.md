@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2296: Kafka spout - no duplicates on leader changes
  * STORM-2387: Handle tick tuples properly for Bolts in external modules 
  * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
  * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
