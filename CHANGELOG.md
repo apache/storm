@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2353: Replace kafka-unit by kafka_2.11 and kafka-clients to test kafka-clients:0.10.1.1
  * STORM-2387: Handle tick tuples properly for Bolts in external modules
  * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
  * STORM-2400: Upgraded Curator to 2.12.0 and made respective API changes
