@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2396: setting interrupted status back before throwing a RuntimeException
  * STORM-1772: Adding Perf module with topologies for measuring performance
  * STORM-2395: storm.cmd supervisor calls the wrong class name
  * STORM-2391: Move HdfsSpoutTopology from storm-starter to storm-hdfs-examples
