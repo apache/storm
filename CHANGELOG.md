@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2400: Upgraded Curator to 2.12.0 and made respective API changes
  * STORM-2396: setting interrupted status back before throwing a RuntimeException
  * STORM-1772: Adding Perf module with topologies for measuring performance
  * STORM-2395: storm.cmd supervisor calls the wrong class name
