@@ -69,11 +69,11 @@ public class StormBoundedExponentialBackoffRetryTest extends TestCase {
     private void validateSleepTimes(int baseSleepMs, int maxSleepMs, int maxRetries) {
         StormBoundedExponentialBackoffRetry retryPolicy = new StormBoundedExponentialBackoffRetry(baseSleepMs, maxSleepMs, maxRetries);
         int retryCount = 0;
-        int prevSleepMs = 0;
+        long prevSleepMs = 0;
         LOG.info("The baseSleepMs [" + baseSleepMs + "] the maxSleepMs [" + maxSleepMs +
                 "] the maxRetries [" + maxRetries + "]");
         while (retryCount <= maxRetries) {
-            int currSleepMs = retryPolicy.getSleepTimeMs(retryCount, 0);
+            long currSleepMs = retryPolicy.getSleepTimeMs(retryCount, 0);
             LOG.info("For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs +
                     "] the currentSleepMs [" + currSleepMs + "]");
             assertTrue("For retryCount [" + retryCount + "] the previousSleepMs [" + prevSleepMs +
@@ -89,7 +89,7 @@ public class StormBoundedExponentialBackoffRetryTest extends TestCase {
             retryCount++;
         }
         int badRetryCount = maxRetries + 10;
-        int currSleepMs = retryPolicy.getSleepTimeMs(badRetryCount, 0);
+        long currSleepMs = retryPolicy.getSleepTimeMs(badRetryCount, 0);
         LOG.info("For badRetryCount [" + badRetryCount + "] the previousSleepMs [" + prevSleepMs +
                 "] the currentSleepMs [" + currSleepMs + "]");
         assertTrue("For the badRetryCount [" + badRetryCount + "] that's greater than maxRetries [" +
