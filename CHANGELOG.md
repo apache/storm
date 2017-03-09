@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
  * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
  * STORM-2396: setting interrupted status back before throwing a RuntimeException
  * STORM-2395: storm.cmd supervisor calls the wrong class name
