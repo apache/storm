@@ -27,7 +27,6 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -111,16 +110,14 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                     tx, coordinatorMeta, collector, this);
 
             if(_savedCoordinatorMeta==null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
-                List<ISpoutPartition> partitions = _emitter.getOrderedPartitions(coordinatorMeta);
                 _partitionStates.clear();
-                List<ISpoutPartition> myPartitions = new ArrayList<>();
-                for(int i=_index; i < partitions.size(); i+=_numTasks) {
-                    ISpoutPartition p = partitions.get(i);
-                    String id = p.getId();
-                    myPartitions.add(p);
-                    _partitionStates.put(id, new EmitterPartitionState(new RotatingTransactionalState(_state, id), p));
+                final List<ISpoutPartition> taskPartitions = _emitter.getPartitionsForTask(_index, _numTasks, coordinatorMeta);
+                for (ISpoutPartition partition : taskPartitions) {
+                    _partitionStates.put(partition.getId(), new EmitterPartitionState(new RotatingTransactionalState(_state, partition.getId()), partition));
                 }
-                _emitter.refreshPartitions(myPartitions);
+
+                // refresh all partitions for backwards compatibility with old spout
+                _emitter.refreshPartitions(_emitter.getOrderedPartitions(coordinatorMeta));
                 _savedCoordinatorMeta = coordinatorMeta;
                 _changedMeta = true;
             }
