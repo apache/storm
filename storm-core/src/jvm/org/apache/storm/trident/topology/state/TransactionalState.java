@@ -37,6 +37,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class that contains the logic to extract the transactional state info from zookeeper. All transactional state
+ * is kept in zookeeper. This class only contains references to Curator, which is used to get all info from zookeeper.
+ */
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
 
