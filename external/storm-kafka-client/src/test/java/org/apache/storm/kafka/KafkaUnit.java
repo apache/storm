@@ -21,7 +21,10 @@ import kafka.admin.AdminUtils;
 import kafka.admin.RackAwareMode;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServer;
-import kafka.utils.*;
+import kafka.utils.MockTime;
+import kafka.utils.TestUtils;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import kafka.zk.EmbeddedZookeeper;
 import org.I0Itec.zkclient.ZkClient;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -65,7 +68,7 @@ public class KafkaUnit {
         brokerProps.setProperty("log.dirs", Files.createTempDirectory("kafka-").toAbsolutePath().toString());
         brokerProps.setProperty("listeners", String.format("PLAINTEXT://%s:%d", KAFKA_HOST, KAFKA_PORT));
         KafkaConfig config = new KafkaConfig(brokerProps);
-        Time mock = new MockTime();
+        MockTime mock = new MockTime();
         kafkaServer = TestUtils.createServer(config, mock);
 
         // setup default Producer
