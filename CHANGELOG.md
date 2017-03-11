@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2240: PMML Bolt - Add Support to Load Models from Blob Store
  * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2333: CGroup memory and CPU metrics
  * STORM-2374: Storm Kafka Client Test Topologies Must be Serializable
