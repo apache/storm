@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
  * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
  * STORM-2296: Kafka spout - no duplicates on leader changes
  * STORM-2387: Handle tick tuples properly for Bolts in external modules 
