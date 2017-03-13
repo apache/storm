@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
  * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
  * STORM-2353: Replace kafka-unit by kafka_2.11 and kafka-clients to test kafka-clients:0.10.1.1
  * STORM-2387: Handle tick tuples properly for Bolts in external modules
