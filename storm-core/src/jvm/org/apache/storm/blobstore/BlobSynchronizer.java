@@ -81,6 +81,7 @@ public class BlobSynchronizer {
             for (String key : keySetToDownload) {
                 try {
                     Set<NimbusInfo> nimbusInfoSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
+                    LOG.debug("syncBlobs, key: {}, nimbusInfoSet: {}", key, nimbusInfoSet);
                     if (BlobStoreUtils.downloadMissingBlob(conf, blobStore, key, nimbusInfoSet)) {
                         BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
                     }
