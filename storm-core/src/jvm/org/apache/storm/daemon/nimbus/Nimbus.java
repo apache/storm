@@ -1296,7 +1296,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                             minReplicationCount, maxWaitTime, confCount, codeCount, jarCount);
                     return;
                 }
-                LOG.info("WAITING... {} <? {} {} {}", minReplicationCount, jarCount, codeCount, confCount);
+                LOG.debug("Checking if I am still the leader");
+                assertIsLeader();
+                LOG.info("WAITING... storm-id {}, {} <? {} {} {}", topoId, minReplicationCount, jarCount, codeCount, confCount);
                 LOG.info("WAITING... {} <? {}", totalWaitTime, maxWaitTime);
                 Time.sleepSecs(1);
                 totalWaitTime++;
