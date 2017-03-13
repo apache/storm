@@ -17,23 +17,20 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.eventhubs.client.EventHubException;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.azure.eventhubs.EventData;
-
-import java.util.concurrent.ExecutionException;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 public class EventHubReceiverImpl implements IEventHubReceiver {
   private static final Logger logger = LoggerFactory.getLogger(EventHubReceiverImpl.class);
@@ -104,7 +101,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
     }
   }
 
-  
+
   @Override
   public boolean isOpen() {
     return (receiver != null);
@@ -117,14 +114,15 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
     /*Get one message at a time for backward compatibility behaviour*/
     try {
       receivedEvents = receiver.receiveSync(1);
-    }catch (Exception e){
+    }catch (ServiceBusException e){
       logger.error("Exception occured during receive"+e.toString());
     }
     long end = System.currentTimeMillis();
     long millis = (end - start);
     receiveApiLatencyMean.update(millis);
     receiveApiCallCount.incr();
-    if (receivedEvents == null) {
+
+    if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
       return null;
     }
     receiveMessageCount.incr();

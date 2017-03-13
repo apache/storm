@@ -18,16 +18,13 @@
 package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
 import org.apache.storm.tuple.Fields;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+
 
 /**
  * An Event Data Scheme which deserializes message payload into the raw bytes.

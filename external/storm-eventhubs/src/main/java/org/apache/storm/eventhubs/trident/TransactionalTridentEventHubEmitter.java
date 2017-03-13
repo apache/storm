@@ -17,24 +17,17 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import com.microsoft.eventhubs.client.Constants;
+import org.apache.storm.eventhubs.spout.*;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.IPartitionedTridentSpout;
+import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.eventhubs.spout.EventDataWrap;
-import org.apache.storm.eventhubs.spout.EventHubReceiverImpl;
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventHubReceiver;
-import org.apache.storm.eventhubs.spout.IEventHubReceiverFactory;
-import com.microsoft.eventhubs.client.Constants;
-
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
-import org.apache.storm.trident.spout.IPartitionedTridentSpout;
-import org.apache.storm.trident.topology.TransactionAttempt;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 
 public class TransactionalTridentEventHubEmitter

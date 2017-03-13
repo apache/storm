@@ -17,18 +17,16 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.microsoft.eventhubs.client.Constants;
+import com.microsoft.eventhubs.client.EventHubException;
 import org.apache.storm.eventhubs.spout.EventDataWrap;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubException;
-
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventHubReceiver;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
   private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);

@@ -17,23 +17,19 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import com.google.common.base.Strings;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
-import com.microsoft.azure.eventhubs.EventData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventHubSpout extends BaseRichSpout {
 
@@ -240,11 +236,7 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    if (Strings.isNullOrEmpty(eventHubConfig.getOutputStreamId())) {
-      declarer.declare(scheme.getOutputFields());
-    } else {
-      declarer.declareStream(eventHubConfig.getOutputStreamId(), scheme.getOutputFields());
-    }
+    declarer.declare(scheme.getOutputFields());
   }
 
   private void checkpointIfNeeded() {

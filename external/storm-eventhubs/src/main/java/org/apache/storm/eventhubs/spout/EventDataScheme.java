@@ -17,13 +17,13 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.nio.charset.Charset;
-import com.microsoft.azure.eventhubs.EventData;
 
 /**
  * An Event Data Scheme which deserializes message payload into the Strings. No
@@ -40,12 +40,12 @@ import com.microsoft.azure.eventhubs.EventData;
 public class EventDataScheme implements IEventDataScheme {
 
 	private static final long serialVersionUID = 1L;
-
 	@Override
 	public List<Object> deserialize(EventData eventData) {
 		final List<Object> fieldContents = new ArrayList<Object>();
 		String messageData = "";
-		messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
+		if(eventData.getBody()!=null)
+			messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
 		Map metaDataMap = eventData.getProperties();
 		fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);

@@ -17,12 +17,12 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
 
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
-import com.microsoft.azure.eventhubs.EventData;
 
 /**
  * An Event Data Scheme which deserializes message payload into the Strings.
@@ -42,7 +42,8 @@ public class StringEventDataScheme implements IEventDataScheme {
   public List<Object> deserialize(EventData eventData) {
     final List<Object> fieldContents = new ArrayList<Object>();
     String messageData = "";
-    messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
+    if(eventData.getBody()!=null)
+      messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
     fieldContents.add(messageData);
     return fieldContents;
   }

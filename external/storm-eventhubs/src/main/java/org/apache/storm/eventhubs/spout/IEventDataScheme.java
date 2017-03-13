@@ -17,10 +17,11 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+
 import java.io.Serializable;
 import java.util.List;
-import com.microsoft.azure.eventhubs.EventData;
 
 public interface IEventDataScheme extends Serializable {
 

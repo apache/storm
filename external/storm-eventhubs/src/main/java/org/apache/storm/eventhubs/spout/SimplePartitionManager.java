@@ -17,16 +17,11 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
-
+import com.microsoft.eventhubs.client.Constants;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
-import com.microsoft.eventhubs.client.EventHubOffsetFilter;
-import com.microsoft.eventhubs.client.IEventHubFilter;
-import com.microsoft.azure.eventhubs.EventData;
+import java.util.Map;
 /**
  * A simple partition manager that does not re-send failed messages
  */

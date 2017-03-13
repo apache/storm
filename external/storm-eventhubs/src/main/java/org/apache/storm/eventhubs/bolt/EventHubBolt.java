@@ -17,22 +17,21 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import java.util.Map;
-import java.util.concurrent.ExecutionException;
-
-import com.microsoft.azure.servicebus.ServiceBusException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.PartitionSender;
 import com.microsoft.azure.eventhubs.EventHubClient;
+import com.microsoft.azure.eventhubs.PartitionSender;
+import com.microsoft.azure.servicebus.ServiceBusException;
 import com.microsoft.eventhubs.client.EventHubException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.Map;
+import java.util.concurrent.ExecutionException;
 
 /**
  * A bolt that writes event message to EventHub.

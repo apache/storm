@@ -17,11 +17,10 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
 import com.microsoft.azure.eventhubs.EventData;
-
-
 import com.microsoft.eventhubs.client.EventHubException;
+
+import java.util.Map;
 
 /**
  * A mock receiver that emits fake data with offset starting from given offset

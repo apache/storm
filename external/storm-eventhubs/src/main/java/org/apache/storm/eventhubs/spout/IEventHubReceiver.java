@@ -17,9 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
-
 import com.microsoft.eventhubs.client.EventHubException;
+
+import java.util.Map;
 
 public interface IEventHubReceiver {
 
