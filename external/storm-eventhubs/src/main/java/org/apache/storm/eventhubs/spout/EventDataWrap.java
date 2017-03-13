@@ -18,35 +18,31 @@
 package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
-import org.apache.storm.tuple.Fields;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+public class EventDataWrap implements Comparable<EventDataWrap> {
+  private final EventData eventData;
+  private final MessageId messageId;
 
+  public EventDataWrap(EventData eventdata, MessageId messageId) {
+    this.eventData = eventdata;
+    this.messageId = messageId;
+  }
 
+  public static EventDataWrap create(EventData eventData, MessageId messageId) {
+    return new EventDataWrap(eventData, messageId);
+  }
 
-/**
- * An Event Data Scheme which deserializes message payload into the raw bytes.
- *
- * The resulting tuple would contain two items, the first being the message
- * bytes, and the second a map of properties that include metadata, which can be
- * used to determine who processes the message, and how it is processed.
- */
-public class BinaryEventDataScheme implements IEventDataScheme {
+  public EventData getEventData() {
+    return this.eventData;
+  }
 
-	@Override
-	public List<Object> deserialize(EventData eventData){
-		final List<Object> fieldContents = new ArrayList<Object>();
-		byte [] messageData = eventData.getBody();
-		Map metaDataMap = eventData.getProperties();
-		fieldContents.add(messageData);
-		fieldContents.add(metaDataMap);
-		return fieldContents;
-	}
+  public MessageId getMessageId() {
+    return this.messageId;
+  }
 
-	@Override
-	public Fields getOutputFields() {
-		return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
-	}
+  @Override
+  public int compareTo(EventDataWrap ed) {
+    return messageId.getSequenceNumber().
+        compareTo(ed.getMessageId().getSequenceNumber());
+  }
 }

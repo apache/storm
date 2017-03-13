@@ -297,6 +297,7 @@
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
+        <azure-eventhubs.version>0.11.0</azure-eventhubs.version>
         <eventhubs.client.version>1.0.1</eventhubs.client.version>
         <jersey.version>2.24.1</jersey.version>
     </properties>

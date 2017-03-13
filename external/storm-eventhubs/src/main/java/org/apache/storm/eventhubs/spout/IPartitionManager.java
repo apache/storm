@@ -25,7 +25,7 @@ public interface IPartitionManager {
 
   void close();
 
-  EventData receive();
+  EventDataWrap receive();
 
   void checkpoint();
 

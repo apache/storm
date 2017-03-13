@@ -96,7 +96,7 @@
         <dependency>
             <groupId>com.microsoft.azure</groupId>
             <artifactId>azure-eventhubs</artifactId>
-            <version>0.10.0</version>
+            <version>${azure-eventhubs.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>

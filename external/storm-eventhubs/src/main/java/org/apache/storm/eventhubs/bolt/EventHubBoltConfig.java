@@ -17,10 +17,10 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import java.io.Serializable;
-
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import com.microsoft.azure.servicebus.ConnectionStringBuilder;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+
+import java.io.Serializable;
 
 /*
  * EventHubs bolt configurations
