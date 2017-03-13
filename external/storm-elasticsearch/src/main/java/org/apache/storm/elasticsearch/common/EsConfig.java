@@ -18,65 +18,117 @@
 package org.apache.storm.elasticsearch.common;
 
 import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
+import java.net.URI;
+import java.net.URISyntaxException;
 
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.settings.Settings;
-
-import static org.elasticsearch.common.base.Preconditions.checkArgument;
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import org.apache.http.Header;
+import org.apache.http.HttpHost;
+import org.elasticsearch.client.RestClient;
+import org.elasticsearch.client.RestClientBuilder.HttpClientConfigCallback;
+import org.elasticsearch.client.RestClientBuilder.RequestConfigCallback;
 
 /**
  * @since 0.11
  */
 public class EsConfig implements Serializable {
 
-    private final String clusterName;
-    private final String[] nodes;
-    private final Map<String, String> additionalConfiguration;
+    private final HttpHost[] httpHosts;
+    private Integer maxRetryTimeoutMillis;
+    private Header[] defaultHeaders;
+    private RestClient.FailureListener failureListener;
+    private HttpClientConfigCallback httpClientConfigCallback;
+    private RequestConfigCallback requestConfigCallback;
+    private String pathPrefix;
+
+    /**
+    * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory.
+    * Connects to Elasticsearch at http://localhost:9200.
+    */
+    public EsConfig() {
+        this("http://localhost:9200");
+    }
 
     /**
      * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory
      *
-     * @param clusterName Elasticsearch cluster name
-     * @param nodes       Elasticsearch addresses in host:port pattern string array
-     * @throws IllegalArgumentException if nodes are empty
+     * @param urls Elasticsearch addresses in scheme://host:port pattern string array
+     * @throws IllegalArgumentException if urls are empty
      * @throws NullPointerException     on any of the fields being null
      */
-    public EsConfig(String clusterName, String[] nodes) {
-        this(clusterName, nodes, Collections.<String, String>emptyMap());
+    public EsConfig(String... urls) {
+        if (urls.length == 0) {
+            throw new IllegalArgumentException("urls is required");
+        }
+        this.httpHosts = new HttpHost[urls.length];
+        for (int i = 0; i < urls.length; i++) {
+            URI uri = toURI(urls[i]);
+            this.httpHosts[i] = new HttpHost(uri.getHost(), uri.getPort(), uri.getScheme());
+        }
     }
 
-    /**
-     * EsConfig Constructor to be used in EsIndexBolt, EsPercolateBolt and EsStateFactory
-     *
-     * @param clusterName             Elasticsearch cluster name
-     * @param nodes                   Elasticsearch addresses in host:port pattern string array
-     * @param additionalConfiguration Additional Elasticsearch configuration
-     * @throws IllegalArgumentException if nodes are empty
-     * @throws NullPointerException     on any of the fields being null
-     */
-    public EsConfig(String clusterName, String[] nodes, Map<String, String> additionalConfiguration) {
-        checkNotNull(clusterName);
-        checkNotNull(nodes);
-        checkNotNull(additionalConfiguration);
-
-        checkArgument(nodes.length != 0, "Nodes cannot be empty");
-        this.clusterName = clusterName;
-        this.nodes = nodes;
-        this.additionalConfiguration = new HashMap<>(additionalConfiguration);
+    static URI toURI(String url) throws IllegalArgumentException {
+        try {
+            return new URI(url);
+        } catch (URISyntaxException e) {
+            throw new IllegalArgumentException("Invalid url " + url);
+        }
+    }
+    
+    public EsConfig withMaxRetryTimeoutMillis(Integer maxRetryTimeoutMillis) {
+        this.maxRetryTimeoutMillis = maxRetryTimeoutMillis;
+        return this;
     }
 
-    TransportAddresses getTransportAddresses() {
-        return new TransportAddresses(nodes);
+    public EsConfig withDefaultHeaders(Header[] defaultHeaders) {
+        this.defaultHeaders = defaultHeaders;
+        return this;
     }
 
-    Settings toBasicSettings() {
-        return ImmutableSettings.settingsBuilder()
-                                .put("cluster.name", clusterName)
-                                .put(additionalConfiguration)
-                                .build();
+    public EsConfig withFailureListener(RestClient.FailureListener failureListener) {
+        this.failureListener = failureListener;
+        return this;
+    }
+
+    public EsConfig withHttpClientConfigCallback(HttpClientConfigCallback httpClientConfigCallback) {
+        this.httpClientConfigCallback = httpClientConfigCallback;
+        return this;
+    }
+
+    public EsConfig withRequestConfigCallback(RequestConfigCallback requestConfigCallback) {
+        this.requestConfigCallback = requestConfigCallback;
+        return this;
+    }
+
+    public EsConfig withPathPrefix(String pathPrefix) {
+        this.pathPrefix = pathPrefix;
+        return this;
+    }
+
+    public HttpHost[] getHttpHosts() {
+        return httpHosts;
+    }
+
+    public Integer getMaxRetryTimeoutMillis() {
+        return maxRetryTimeoutMillis;
+    }
+
+    public Header[] getDefaultHeaders() {
+        return defaultHeaders;
+    }
+
+    public RestClient.FailureListener getFailureListener() {
+        return failureListener;
+    }
+
+    public HttpClientConfigCallback getHttpClientConfigCallback() {
+        return httpClientConfigCallback;
+    }
+
+    public RequestConfigCallback getRequestConfigCallback() {
+        return requestConfigCallback;
+    }
+
+    public String getPathPrefix() {
+        return pathPrefix;
     }
 }

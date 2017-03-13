@@ -23,7 +23,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsConstants;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.trident.Stream;
@@ -46,7 +45,7 @@ public class TridentEsTopology {
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout", spout);
-        EsConfig esConfig = new EsConfig(EsConstants.clusterName, new String[]{"localhost:9300"});
+        EsConfig esConfig = new EsConfig("http://localhost:9300");
         Fields esFields = new Fields("index", "type", "source");
         EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
         StateFactory factory = new EsStateFactory(esConfig, tupleMapper);
