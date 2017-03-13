@@ -17,18 +17,17 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
-import org.apache.storm.testing.IntegrationTest;
-import org.apache.storm.tuple.Tuple;
+import static org.mockito.Mockito.verify;
+
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
-import org.elasticsearch.action.count.CountResponse;
+import org.apache.storm.testing.IntegrationTest;
+import org.apache.storm.tuple.Tuple;
+import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.index.query.TermQueryBuilder;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static org.mockito.Mockito.verify;
 
 @Category(IntegrationTest.class)
 public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> {
@@ -36,8 +35,25 @@ public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> 
     @Test
     public void testEsIndexBolt()
             throws Exception {
-        String index = "index1";
-        String type = "type1";
+        Tuple tuple = createTestTuple(index, type);
+
+        bolt.execute(tuple);
+
+        verify(outputCollector).ack(tuple);
+
+        node.client().admin().indices().prepareRefresh(index).execute().actionGet();
+        SearchResponse resp = node.client().prepareSearch(index)
+                .setQuery(new TermQueryBuilder("_type", type))
+                .setSize(0)
+                .execute().actionGet();
+
+        Assert.assertEquals(1, resp.getHits().getTotalHits());
+    }
+
+    @Test
+    public void indexMissing()
+            throws Exception {
+        String index = "missing";
 
         Tuple tuple = createTestTuple(index, type);
 
@@ -46,23 +62,21 @@ public class EsIndexBoltTest extends AbstractEsBoltIntegrationTest<EsIndexBolt> 
         verify(outputCollector).ack(tuple);
 
         node.client().admin().indices().prepareRefresh(index).execute().actionGet();
-        CountResponse resp = node.client().prepareCount(index)
+        SearchResponse resp = node.client().prepareSearch(index)
                 .setQuery(new TermQueryBuilder("_type", type))
+                .setSize(0)
                 .execute().actionGet();
 
-        Assert.assertEquals(1, resp.getCount());
+        Assert.assertEquals(1, resp.getHits().getTotalHits());
     }
 
     private Tuple createTestTuple(String index, String type) {
-        String source = "{\"user\":\"user1\"}";
-        String id = "docId";
-        return EsTestUtil.generateTestTuple(source, index, type, id);
+        return EsTestUtil.generateTestTuple(source, index, type, documentId);
     }
 
     @Override
     protected EsIndexBolt createBolt(EsConfig esConfig) {
-        EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
-        return new EsIndexBolt(esConfig, tupleMapper);
+        return new EsIndexBolt(esConfig);
     }
 
     @Override

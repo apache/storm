@@ -17,20 +17,29 @@
  */
 package org.apache.storm.elasticsearch.trident;
 
-import org.apache.storm.topology.FailedException;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.util.HashMap;
+import java.util.List;
 
-import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
+import org.apache.http.entity.StringEntity;
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
-import org.elasticsearch.client.Client;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
+import org.apache.storm.elasticsearch.doc.Index;
+import org.apache.storm.elasticsearch.doc.IndexDoc;
+import org.apache.storm.elasticsearch.doc.SourceDoc;
+import org.apache.storm.elasticsearch.response.BulkIndexResponse;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.elasticsearch.client.Response;
+import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.List;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Trident State for storing tuple to ES document.
@@ -38,8 +47,9 @@ import java.util.List;
  */
 class EsState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(EsState.class);
-    private static Client client;
+    private static RestClient client;
     private EsConfig esConfig;
+    private final ObjectMapper objectMapper;
     private EsTupleMapper tupleMapper;
 
     /**
@@ -49,6 +59,7 @@ class EsState implements State {
      */
     public EsState(EsConfig esConfig, EsTupleMapper tupleMapper) {
         this.esConfig = esConfig;
+        this.objectMapper = new ObjectMapper();
         this.tupleMapper = tupleMapper;
     }
 
@@ -88,26 +99,43 @@ class EsState implements State {
         }
     }
 
-    /**
-     * Store current state to ElasticSearch.
-     *
-     * @param tuples list of tuples for storing to ES.
-     *               Each tuple should have relevant fields (source, index, type, id) for EsState's tupleMapper to extract ES document.
-     */
-    public void updateState(List<TridentTuple> tuples) {
-        BulkRequestBuilder bulkRequest = client.prepareBulk();
+    private String buildRequest(List<TridentTuple> tuples) throws JsonProcessingException {
+        StringBuilder bulkRequest = new StringBuilder();
         for (TridentTuple tuple : tuples) {
             String source = tupleMapper.getSource(tuple);
             String index = tupleMapper.getIndex(tuple);
             String type = tupleMapper.getType(tuple);
             String id = tupleMapper.getId(tuple);
 
-            bulkRequest.add(client.prepareIndex(index, type, id).setSource(source));
+            IndexDoc indexDoc = new IndexDoc(new Index(index, type, id));
+            SourceDoc sourceDoc = new SourceDoc(source);
+            bulkRequest.append(objectMapper.writeValueAsString(indexDoc)).append('\n');
+            bulkRequest.append(objectMapper.writeValueAsString(sourceDoc)).append('\n');
+
         }
-        BulkResponse bulkResponse = bulkRequest.execute().actionGet();
-        if (bulkResponse.hasFailures()) {
-            LOG.warn("failed processing bulk index requests " + bulkResponse.buildFailureMessage());
-            throw new FailedException();
+        return bulkRequest.toString();
+    }
+
+    /**
+     * Store current state to ElasticSearch.
+     *
+     * @param tuples list of tuples for storing to ES.
+     *               Each tuple should have relevant fields (source, index, type, id) for EsState's tupleMapper to extract ES document.
+     * @throws IOException
+     * @throws UnsupportedEncodingException
+     */
+    public void updateState(List<TridentTuple> tuples) {
+        try {
+            String bulkRequest = buildRequest(tuples);
+            Response response = client.performRequest("post", "_bulk", new HashMap<>(), new StringEntity(bulkRequest.toString()));
+            BulkIndexResponse bulkResponse = objectMapper.readValue(response.getEntity().getContent(), BulkIndexResponse.class);
+            if (bulkResponse.hasErrors()) {
+                LOG.warn("failed processing bulk index requests: " + bulkResponse.getFirstError() + ": " + bulkResponse.getFirstResult());
+                throw new FailedException();
+            }
+        } catch (IOException e) {
+            LOG.warn("failed processing bulk index requests: " + e.toString());
+            throw new FailedException(e);
         }
     }
 }

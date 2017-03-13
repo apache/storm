@@ -17,22 +17,21 @@
  */
 package org.apache.storm.elasticsearch.common;
 
+import java.util.HashMap;
+
 import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.elasticsearch.cluster.ClusterName;
 import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.settings.ImmutableSettings;
+import org.elasticsearch.common.settings.Settings;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
 import org.elasticsearch.node.Node;
 import org.elasticsearch.node.NodeBuilder;
-
-import java.util.HashMap;
 
 public class EsTestUtil {
     public static Tuple generateTestTuple(String source, String index, String type, String id) {
@@ -53,14 +52,15 @@ public class EsTestUtil {
 
     public static Node startEsNode(){
         Node node = NodeBuilder.nodeBuilder().data(true).settings(
-                ImmutableSettings.builder()
+                Settings.settingsBuilder()
                         .put(ClusterName.SETTING, EsConstants.clusterName)
                         .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
                         .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
                         .put(EsExecutors.PROCESSORS, 1)
-                        .put("http.enabled", false)
+                        .put("http.enabled", true)
                         .put("index.percolator.map_unmapped_fields_as_string", true)
-                        .put("index.store.type", "memory")
+                        .put("index.store.type", "mmapfs")
+                        .put("path.home", "./data")
         ).build();
         node.start();
         return node;
