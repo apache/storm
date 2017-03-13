@@ -17,10 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
-
 import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
+
+import java.util.Map;
 
 public interface IEventHubReceiver {
 
@@ -30,7 +29,7 @@ public interface IEventHubReceiver {
 
   boolean isOpen();
 
-  EventData receive();
+  EventDataWrap receive();
 
   Map getMetricsData();
 }

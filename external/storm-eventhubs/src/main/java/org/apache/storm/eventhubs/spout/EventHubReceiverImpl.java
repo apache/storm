@@ -17,32 +17,20 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.eventhubs.client.EventHubException;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
-import com.microsoft.eventhubs.client.ResilientEventHubReceiver;
-
-import java.nio.charset.Charset;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.Symbol;
-import org.apache.qpid.amqp_1_0.type.messaging.MessageAnnotations;
+import java.util.concurrent.ExecutionException;
 
 public class EventHubReceiverImpl implements IEventHubReceiver {
   private static final Logger logger = LoggerFactory.getLogger(EventHubReceiverImpl.class);
@@ -74,13 +62,13 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
             ", offset=" + offset);
     long start = System.currentTimeMillis();
     try {
-      ehClient = EventHubClient.createFromConnectionString(connectionString).get();
-      receiver = ehClient.createEpochReceiver(
+      ehClient = EventHubClient.createFromConnectionStringSync(connectionString);
+      receiver = ehClient.createEpochReceiverSync(
               consumerGroupName,
               partitionId,
               offset,
               false,
-              1).get();
+              1);
     }catch (Exception e){
       logger.info("Exception in creating EventhubClient"+e.toString());
     }
@@ -92,10 +80,19 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   public void close(){
     if(receiver != null) {
       try {
-        receiver.close().get();
-        if(ehClient!=null)
-          ehClient.close().get();
-      }catch (Exception e){
+        receiver.close().whenComplete((voidargs,error)->{
+          try{
+            if(error!=null){
+              logger.error("Exception during receiver close phase"+error.toString());
+            }
+            ehClient.closeSync();
+          }catch (Exception e){
+            logger.error("Exception during ehclient close phase"+e.toString());
+          }
+        }).get();
+      }catch (InterruptedException e){
+        logger.error("Exception occured during close phase"+e.toString());
+      }catch (ExecutionException e){
         logger.error("Exception occured during close phase"+e.toString());
       }
       logger.info("closed eventhub receiver: partitionId=" + partitionId );
@@ -103,41 +100,38 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
       ehClient =  null;
     }
   }
-  
+
+
   @Override
   public boolean isOpen() {
     return (receiver != null);
   }
 
   @Override
-  public EventData receive() {
+  public EventDataWrap receive() {
     long start = System.currentTimeMillis();
-    Iterable<com.microsoft.azure.eventhubs.EventData> receivedEvents=null;
-        /*Get one message at a time for backward compatibility behaviour*/
+    Iterable<EventData> receivedEvents=null;
+    /*Get one message at a time for backward compatibility behaviour*/
     try {
-      receivedEvents = receiver.receive(1).get();
-    }catch (Exception e){
+      receivedEvents = receiver.receiveSync(1);
+    }catch (ServiceBusException e){
       logger.error("Exception occured during receive"+e.toString());
     }
     long end = System.currentTimeMillis();
     long millis = (end - start);
     receiveApiLatencyMean.update(millis);
     receiveApiCallCount.incr();
-    if (receivedEvents == null) {
+
+    if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
       return null;
     }
     receiveMessageCount.incr();
-    MessageId messageId=null;
-    Message message=null;
-    for (com.microsoft.azure.eventhubs.EventData receivedEvent : receivedEvents) {
-      messageId = new MessageId(partitionId,
-              receivedEvent.getSystemProperties().getOffset(),
-              receivedEvent.getSystemProperties().getSequenceNumber());
-      List<Section> body = new ArrayList<Section>();
-      body.add(new Data(new Binary((new String(receivedEvent.getBody(), Charset.defaultCharset())).getBytes())));
-      message = new Message(body);
-    }
-    return org.apache.storm.eventhubs.spout.EventData.create(message, messageId);
+    EventData receivedEvent = receivedEvents.iterator().next();
+    MessageId messageId = new MessageId(partitionId,
+            receivedEvent.getSystemProperties().getOffset(),
+            receivedEvent.getSystemProperties().getSequenceNumber());
+
+    return EventDataWrap.create(receivedEvent,messageId);
   }
 
   @Override

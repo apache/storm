@@ -17,20 +17,16 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import com.microsoft.eventhubs.client.Constants;
+import com.microsoft.eventhubs.client.EventHubException;
+import org.apache.storm.eventhubs.spout.EventDataWrap;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.eventhubs.client.Constants;
-import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.EventHubOffsetFilter;
-
-import org.apache.storm.eventhubs.spout.EventData;
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventHubReceiver;
+import java.util.ArrayList;
+import java.util.List;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
   private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
@@ -69,8 +65,8 @@ public class TridentPartitionManager implements ITridentPartitionManager {
   }
   
   @Override
-  public List<EventData> receiveBatch(String offset, int count) {
-    List<EventData> batch = new ArrayList<EventData>(count);
+  public List<EventDataWrap> receiveBatch(String offset, int count) {
+    List<EventDataWrap> batch = new ArrayList<EventDataWrap>(count);
     if(!offset.equals(lastOffset) || !receiver.isOpen()) {
       //re-establish connection to eventhub servers using the right offset
       //TBD: might be optimized with cache.
@@ -81,7 +77,7 @@ public class TridentPartitionManager implements ITridentPartitionManager {
     }
     
     for(int i=0; i<count; ++i) {
-      EventData ed = receiver.receive();
+      EventDataWrap ed = receiver.receive();
       if(ed == null) {
         break;
       }

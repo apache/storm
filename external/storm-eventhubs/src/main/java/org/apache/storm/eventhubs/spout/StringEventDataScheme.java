@@ -17,19 +17,12 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
 
+import java.nio.charset.Charset;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
-import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
-import org.apache.storm.tuple.Fields;
 
 /**
  * An Event Data Scheme which deserializes message payload into the Strings.
@@ -46,19 +39,12 @@ public class StringEventDataScheme implements IEventDataScheme {
   private static final long serialVersionUID = 1L;
 
   @Override
-  public List<Object> deserialize(Message message) {
+  public List<Object> deserialize(EventData eventData) {
     final List<Object> fieldContents = new ArrayList<Object>();
-
-    for (Section section : message.getPayload()) {
-      if (section instanceof Data) {
-        Data data = (Data) section;
-        fieldContents.add(new String(data.getValue().getArray()));
-      } else if (section instanceof AmqpValue) {
-        AmqpValue amqpValue = (AmqpValue) section;
-        fieldContents.add(amqpValue.getValue().toString());
-      }
-    }
-    
+    String messageData = "";
+    if(eventData.getBody()!=null)
+      messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
+    fieldContents.add(messageData);
     return fieldContents;
   }
 
