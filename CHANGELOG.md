@@ -207,6 +207,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
  * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
  * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
  * STORM-2353: Replace kafka-unit by kafka_2.11 and kafka-clients to test kafka-clients:0.10.1.1
