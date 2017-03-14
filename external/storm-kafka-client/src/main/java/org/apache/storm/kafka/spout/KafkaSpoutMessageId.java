@@ -22,8 +22,8 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 
 public class KafkaSpoutMessageId {
-    private transient TopicPartition topicPart;
-    private transient long offset;
+    private final transient TopicPartition topicPart;
+    private final transient long offset;
     private transient int numFails = 0;
     /**
      * true if the record was emitted using a form of collector.emit(...). false

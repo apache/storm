@@ -58,15 +58,17 @@ public class KafkaSpoutRebalanceTest {
     private ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture;
 
     private final long offsetCommitPeriodMs = 2_000;
-    private final TopologyContext contextMock = mock(TopologyContext.class);
-    private final SpoutOutputCollector collectorMock = mock(SpoutOutputCollector.class);
     private final Map<String, Object> conf = new HashMap<>();
+    private TopologyContext contextMock;
+    private SpoutOutputCollector collectorMock;
     private KafkaConsumer<String, String> consumerMock;
     private KafkaConsumerFactory<String, String> consumerFactory;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
+        contextMock = mock(TopologyContext.class);
+        collectorMock = mock(SpoutOutputCollector.class);
         consumerMock = mock(KafkaConsumer.class);
         consumerFactory = (kafkaSpoutConfig) -> consumerMock;
     }
@@ -159,9 +161,16 @@ public class KafkaSpoutRebalanceTest {
         TopicPartition partitionThatWillBeRevoked = new TopicPartition(topic, 1);
         TopicPartition assignedPartition = new TopicPartition(topic, 2);
 
+        when(retryServiceMock.getMessageId(anyObject()))
+            .thenReturn(new KafkaSpoutMessageId(partitionThatWillBeRevoked, 0))
+            .thenReturn(new KafkaSpoutMessageId(assignedPartition, 0));
+        
         //Emit a message on each partition and revoke the first partition
         List<KafkaSpoutMessageId> emittedMessageIds = emitOneMessagePerPartitionThenRevokeOnePartition(spout, partitionThatWillBeRevoked, assignedPartition);
 
+        //Check that only two message ids were generated
+        verify(retryServiceMock, times(2)).getMessageId(anyObject());
+        
         //Fail both emitted tuples
         spout.fail(emittedMessageIds.get(0));
         spout.fail(emittedMessageIds.get(1));
