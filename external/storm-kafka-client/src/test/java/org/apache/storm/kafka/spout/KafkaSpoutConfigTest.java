@@ -17,14 +17,14 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
+import org.junit.Test;
 
 import java.util.HashMap;
 
-import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class KafkaSpoutConfigTest {
 
@@ -38,5 +38,14 @@ public class KafkaSpoutConfigTest {
         expected.put("bootstrap.servers", "localhost:1234");
         expected.put("enable.auto.commit", "false");
         assertEquals(expected, conf.getKafkaProps());
+    }
+
+    @Test
+    public void test_setEmitNullTuples_true_true() {
+        final KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+                .setEmitNullTuples(true)
+                .build();
+
+        assertTrue("Failed to set emit null tuples to true", conf.isEmitNullTuples());
     }
 }

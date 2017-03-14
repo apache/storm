@@ -17,12 +17,14 @@
  */
 package org.apache.storm.kafka.spout;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.storm.tuple.Fields;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.tuple.Fields;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.Builder;
 
 /**
  * Translate a {@link org.apache.kafka.clients.consumer.ConsumerRecord} to a tuple.
@@ -34,7 +36,8 @@ public interface RecordTranslator<K, V> extends Serializable, Func<ConsumerRecor
      * Translate the ConsumerRecord into a list of objects that can be emitted
      * @param record the record to translate
      * @return the objects in the tuple.  Return a {@link KafkaTuple}
-     * if you want to route the tuple to a non-default stream
+     * if you want to route the tuple to a non-default stream.
+     * Return null to discard an invalid {@link ConsumerRecord} if {@link Builder#setEmitNullTuples(boolean)} is set to true
      */
     List<Object> apply(ConsumerRecord<K,V> record);
     
