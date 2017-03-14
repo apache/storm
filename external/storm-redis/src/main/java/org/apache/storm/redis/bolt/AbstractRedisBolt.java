@@ -24,6 +24,9 @@ import org.apache.storm.redis.common.config.JedisClusterConfig;
 import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.container.JedisCommandsContainerBuilder;
 import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import redis.clients.jedis.JedisCommands;
 
 import java.util.Map;
@@ -48,7 +51,7 @@ import java.util.Map;
  *
  */
 // TODO: Separate Jedis / JedisCluster to provide full operations for each environment to users
-public abstract class AbstractRedisBolt extends BaseRichBolt {
+public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     protected OutputCollector collector;
 
     private transient JedisCommandsInstanceContainer container;

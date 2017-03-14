@@ -30,6 +30,8 @@ import javax.jms.Session;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.jms.JmsMessageProducer;
 import org.apache.storm.jms.JmsProvider;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -60,7 +62,7 @@ import org.apache.storm.tuple.Tuple;
  * The JmsBolt is typically an endpoint in a topology -- in other words
  * it does not emit any tuples.
  */
-public class JmsBolt extends BaseRichBolt {
+public class JmsBolt extends BaseTickTupleAwareRichBolt {
     private static Logger LOG = LoggerFactory.getLogger(JmsBolt.class);
 
     private boolean autoAck = true;
@@ -147,7 +149,7 @@ public class JmsBolt extends BaseRichBolt {
      * If JMS sending fails, the tuple will be failed.
      */
     @Override
-    public void execute(Tuple input) {
+    protected void process(Tuple input) {
         // write the tuple to a JMS destination...
         LOG.debug("Tuple received. Sending JMS message.");
 

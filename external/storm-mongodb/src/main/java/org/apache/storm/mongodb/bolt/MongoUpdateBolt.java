@@ -22,6 +22,7 @@ import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -50,6 +51,10 @@ public class MongoUpdateBolt extends AbstractMongoBolt {
 
     @Override
     public void execute(Tuple tuple) {
+        if (TupleUtils.isTick(tuple)) {
+            return;
+        }
+
         try{
             //get document
             Document doc = mapper.toDocument(tuple);

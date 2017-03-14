@@ -1,4 +1,18 @@
-## 1.0.4
+﻿## 1.0.4
+ * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
+ * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
+ * STORM-2296: Kafka spout - no duplicates on leader changes
+ * STORM-2387: Handle tick tuples properly for Bolts in external modules 
+ * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
+ * STORM-2104: New Kafka spout crashes if partitions are reassigned while tuples are in-flight
+ * STORM-2396: setting interrupted status back before throwing a RuntimeException
+ * STORM-2395: storm.cmd supervisor calls the wrong class name
+ * STORM-2385: pacemaker_state_factory.clj does not compile on branch-1.0.x
+ * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
+ * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs
+ * STORM-2360: Storm-Hive: Thrift version mismatch with storm-core
+ * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
+ * STORM-2326: Upgrade log4j and slf4j
  * STORM-2350: Storm-HDFS's listFilesByModificationTime is broken
 
 ## 1.0.3

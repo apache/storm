@@ -348,11 +348,18 @@
                           :conf {TOPOLOGY-TASKS 0})]
     (.put_to_bolts topology SYSTEM-COMPONENT-ID system-bolt-spec)))
 
+(defn has-ackers? [storm-conf]
+  (or (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS)) (> (storm-conf TOPOLOGY-ACKER-EXECUTORS) 0)))
+
+(defn has-eventloggers? [storm-conf]
+  (or (nil? (storm-conf TOPOLOGY-EVENTLOGGER-EXECUTORS)) (> (storm-conf TOPOLOGY-EVENTLOGGER-EXECUTORS) 0)))
+
 (defn system-topology! [storm-conf ^StormTopology topology]
   (validate-basic! topology)
   (let [ret (.deepCopy topology)]
     (add-acker! storm-conf ret)
-    (add-eventlogger! storm-conf ret)
+    (if (has-eventloggers? storm-conf)
+      (add-eventlogger! storm-conf ret))
     (add-metric-components! storm-conf ret)
     (add-system-components! storm-conf ret)
     (add-metric-streams! ret)
@@ -360,12 +367,6 @@
     (validate-structure! ret)
     ret
     ))
-
-(defn has-ackers? [storm-conf]
-  (or (nil? (storm-conf TOPOLOGY-ACKER-EXECUTORS)) (> (storm-conf TOPOLOGY-ACKER-EXECUTORS) 0)))
-
-(defn has-eventloggers? [storm-conf]
-  (or (nil? (storm-conf TOPOLOGY-EVENTLOGGER-EXECUTORS)) (> (storm-conf TOPOLOGY-EVENTLOGGER-EXECUTORS) 0)))
 
 (defn num-start-executors [component]
   (thrift/parallelism-hint (.get_common component)))

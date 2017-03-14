@@ -21,6 +21,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
@@ -52,7 +53,7 @@ import java.util.Properties;
  * <p/>
  * It works for sending tuples to older Kafka version (0.8.1).
  */
-public class KafkaBolt<K, V> extends BaseRichBolt {
+public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaBolt.class);
 
@@ -110,11 +111,7 @@ public class KafkaBolt<K, V> extends BaseRichBolt {
     }
 
     @Override
-    public void execute(final Tuple input) {
-        if (TupleUtils.isTick(input)) {
-          collector.ack(input);
-          return; // Do not try to send ticks to Kafka
-        }
+    protected void process(final Tuple input) {
         K key = null;
         V message = null;
         String topic = null;
