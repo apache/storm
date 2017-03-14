@@ -94,7 +94,8 @@
             (if (= (.get_type response) HBServerMessageType/DELETE_PATH_RESPONSE)
               :ok
               (throw (HBExecutionException. "Invalid Response Type"))))))
-      
+
+      ;; aggregating worker heartbeat details
       (get_worker_hb [this path watch?]
         (util/retry-on-exception
          max-retries
