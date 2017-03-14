@@ -157,12 +157,27 @@ public class KafkaSpout extends BaseRichSpout {
         }
     }
 
+    private PartitionManager getManagerForPartition(int partition) {
+        for (PartitionManager partitionManager: _coordinator.getMyManagedPartitions()) {
+            if (partitionManager.getPartition().partition == partition) {
+                return partitionManager;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void ack(Object msgId) {
         KafkaMessageId id = (KafkaMessageId) msgId;
         PartitionManager m = _coordinator.getManager(id.partition);
         if (m != null) {
             m.ack(id.offset);
+        } else {
+            // managers for partitions changed - try to find new manager responsible for that partition
+            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            if (newManager != null) {
+                newManager.ack(id.offset);
+            }
         }
     }
 
@@ -172,6 +187,12 @@ public class KafkaSpout extends BaseRichSpout {
         PartitionManager m = _coordinator.getManager(id.partition);
         if (m != null) {
             m.fail(id.offset);
+        } else {
+            // managers for partitions changed - try to find new manager responsible for that partition
+            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            if (newManager != null) {
+                newManager.fail(id.offset);
+            }
         }
     }
 

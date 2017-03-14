@@ -22,6 +22,7 @@ import java.util.Collection;
 import org.apache.storm.elasticsearch.ElasticsearchGetRequest;
 import org.apache.storm.elasticsearch.EsLookupResultOutput;
 import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.utils.TupleUtils;
 import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 
@@ -51,7 +52,7 @@ public class EsLookupBolt extends AbstractEsBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    public void process(Tuple tuple) {
         try {
             Collection<Values> values = lookupValuesInEs(tuple);
             tryEmitAndAck(values, tuple);
