@@ -23,7 +23,7 @@ import org.apache.kafka.common.TopicPartition;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 /**
  * Represents the logic that manages the retrial of failed tuples.
@@ -77,6 +77,16 @@ public interface KafkaSpoutRetryService extends Serializable {
      * Returns false is this message is not scheduled for retrial
      */
     boolean isScheduled(KafkaSpoutMessageId msgId);
-    
+
+    /**
+     * @return The number of messages that are ready for retry
+     */
     int readyMessageCount();
+
+    /**
+     * Gets the {@link KafkaSpoutMessageId} for the given record.
+     * @param record The record to fetch the id for
+     * @return The id the record was scheduled for retry with, or a new {@link KafkaSpoutMessageId} if the record was not scheduled for retry.
+     */
+    KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record);
 }
