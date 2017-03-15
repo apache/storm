@@ -35,10 +35,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
 
     private final KafkaTridentSpoutManager<K, V> kafkaManager;
-    private KafkaTridentSpoutEmitter<K, V> kafkaTridentSpoutEmitter;
-    private KafkaTridentSpoutOpaqueCoordinator<K, V> coordinator;
 
-    
     public KafkaTridentSpoutOpaque(KafkaSpoutConfig<K, V> conf) {
         this(new KafkaTridentSpoutManager<>(conf));
     }
@@ -73,9 +70,6 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     @Override
     public String toString() {
         return super.toString() +
-                "{kafkaManager=" + kafkaManager +
-                ", kafkaTridentSpoutEmitter=" + kafkaTridentSpoutEmitter +
-                ", coordinator=" + coordinator +
-                '}';
+                "{kafkaManager=" + kafkaManager + '}';
     }
 }
