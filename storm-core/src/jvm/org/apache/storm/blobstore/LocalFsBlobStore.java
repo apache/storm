@@ -129,9 +129,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public AtomicOutputStream updateBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
+        checkPermission(key, who, WRITE);
         try {
             return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX+key, false));
         } catch (IOException e) {
@@ -219,14 +217,47 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public void deleteBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
+
+        if (!_aclHandler.checkForValidUsers(who, WRITE)) {
+            // need to get ACL from meta
+            LOG.debug("Retrieving meta to get ACL info... key: {} subject: {}", key, who);
+
+            try {
+                checkPermission(key, who, WRITE);
+            } catch (KeyNotFoundException e) {
+                LOG.error("Error while retrieving meta from ZK or local... key: {} subject: {}", key, who);
+                throw e;
+            }
+        } else {
+            // able to delete the blob without checking meta's ACL
+            // skip checking everything and continue deleting local files
+            LOG.debug("Given subject is eligible to delete key without checking ACL, skipping... key: {} subject: {}",
+                    key, who);
+        }
+
         try {
-            fbs.deleteKey(DATA_PREFIX+key);
-            fbs.deleteKey(META_PREFIX+key);
+            deleteKeyIgnoringFileNotFound(DATA_PREFIX + key);
+            deleteKeyIgnoringFileNotFound(META_PREFIX + key);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkPermission(String key, Subject who, int mask) throws KeyNotFoundException, AuthorizationException {
+        checkForBlobOrDownload(key);
+        SettableBlobMeta meta = getStoredBlobMeta(key);
+        _aclHandler.hasPermissions(meta.get_acl(), mask, who, key);
+    }
+
+    private void deleteKeyIgnoringFileNotFound(String key) throws IOException {
+        try {
+            fbs.deleteKey(key);
+        } catch (IOException e) {
+            if (e instanceof FileNotFoundException) {
+                LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
+            } else {
+                throw e;
+            }
         }
     }
 
