@@ -17,15 +17,15 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import java.util.List;
-import java.util.Map;
-
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 import org.apache.storm.eventhubs.spout.IEventHubReceiverFactory;
-
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A thin wrapper of TransactionalTridentEventHubEmitter for OpaqueTridentEventHubSpout
@@ -60,6 +60,18 @@ public class OpaqueTridentEventHubEmitter implements IOpaquePartitionedTridentSp
   @Override
   public List<Partition> getOrderedPartitions(Partitions partitions) {
     return transactionalEmitter.getOrderedPartitions(partitions);
+  }
+
+  @Override
+  public List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo) {
+    final List<Partition> orderedPartitions = getOrderedPartitions(allPartitionInfo);
+    final List<Partition> taskPartitions = new ArrayList<>(orderedPartitions == null ? 0 : orderedPartitions.size());
+    if (orderedPartitions != null) {
+      for (int i = taskId; i < orderedPartitions.size(); i += numTasks) {
+        taskPartitions.add(orderedPartitions.get(i));
+      }
+    }
+    return taskPartitions;
   }
 
   @Override

@@ -161,11 +161,6 @@ public class TridentKafkaEmitter {
 
     /**
      * re-emit the batch described by the meta data provided
-     *
-     * @param attempt
-     * @param collector
-     * @param partition
-     * @param meta
      */
     private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map meta) {
         LOG.info("re-emitting batch, attempt " + attempt);
@@ -177,7 +172,7 @@ public class TridentKafkaEmitter {
             ByteBufferMessageSet msgs = null;
             msgs = fetchMessages(consumer, partition, offset);
 
-            if(msgs != null) {
+            if (msgs != null) {
                 for (MessageAndOffset msg : msgs) {
                     if (offset == nextOffset) {
                         break;
@@ -250,6 +245,18 @@ public class TridentKafkaEmitter {
             @Override
             public List<Partition> getOrderedPartitions(List<GlobalPartitionInformation> partitionInformation) {
                 return orderPartitions(partitionInformation);
+            }
+
+            @Override
+            public List<Partition> getPartitionsForTask(int taskId, int numTasks, List<GlobalPartitionInformation> allPartitionInfo) {
+                final List<Partition> orderedPartitions = getOrderedPartitions(allPartitionInfo);
+                final List<Partition> taskPartitions = new ArrayList<>(orderedPartitions == null ? 0 : orderedPartitions.size());
+                if (orderedPartitions != null) {
+                    for (int i = taskId; i < orderedPartitions.size(); i += numTasks) {
+                        taskPartitions.add(orderedPartitions.get(i));
+                    }
+                }
+                return taskPartitions;
             }
 
             @Override
