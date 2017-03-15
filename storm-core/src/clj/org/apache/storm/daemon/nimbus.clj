@@ -505,8 +505,10 @@
                (or (neg? max-replication-wait-time)
                    (< @total-wait-time max-replication-wait-time)))
         (sleep-secs 1)
-        (log-debug "waiting for desired replication to be achieved.
-          min-replication-count = " min-replication-count  " max-replication-wait-time = " max-replication-wait-time
+        (log-debug "Checking if I am still the leader")
+        (is-leader nimbus)
+        (log-debug "waiting for desired replication to be achieved for storm-id = " storm-id
+          " min-replication-count = " min-replication-count  " max-replication-wait-time = " max-replication-wait-time
           (if (not (local-mode? conf))"current-replication-count for jar key = " @current-replication-count-jar)
           "current-replication-count for code key = " @current-replication-count-code
           "current-replication-count for conf key = " @current-replication-count-conf

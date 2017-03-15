@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2412: Nimbus isLeader check while waiting for max replication
  * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
  * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
  * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
