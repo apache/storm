@@ -389,7 +389,15 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
         
         if (!consumerAutoCommitMode) {  // Only need to keep track of acked tuples if commits are not done automatically
-            acked.get(msgId.getTopicPartition()).add(msgId);
+            final MessageId msgId = (MessageId) messageId;
+            TopicPartition partition = msgId.getTopicPartition();
+            OffsetEntry entry = acked.get(partition);
+            if (entry == null) {
+                LOG.warn("Tried to add message with id {} to non-existing partition {}.", msgId, partition);
+                return;
+            }
+            entry.add(msgId);
+            LOG.debug("Added acked message [{}] to list of messages to be committed to Kafka", msgId);
         }
         emitted.remove(msgId);
     }
