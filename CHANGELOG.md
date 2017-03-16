@@ -191,6 +191,9 @@
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
 
+## 1.0.4
+ * STORM-2038: No symlinks for local cluster 
+
 ## 1.0.3
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber
