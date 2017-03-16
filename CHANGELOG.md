@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2240: STORM PMML Bolt - Add Support to Load Models from Blob Store
  * STORM-2412: Nimbus isLeader check while waiting for max replication
  * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
  * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
