@@ -19,6 +19,7 @@ package org.apache.storm.eventhubs.bolt;
 
 import java.util.Map;
 
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,16 +30,15 @@ import com.microsoft.eventhubs.client.EventHubSender;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 
 /**
  * A bolt that writes event message to EventHub.
  */
-public class EventHubBolt extends BaseRichBolt {
-  private static final long serialVersionUID = 1L;
-  private static final Logger logger = LoggerFactory
-      .getLogger(EventHubBolt.class);
+public class EventHubBolt extends BaseTickTupleAwareRichBolt {
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LoggerFactory
+			.getLogger(EventHubBolt.class);
 
   protected OutputCollector collector;
   protected EventHubSender sender;
@@ -82,7 +82,7 @@ public class EventHubBolt extends BaseRichBolt {
   }
 
   @Override
-  public void execute(Tuple tuple) {
+  protected void process(Tuple tuple) {
     try {
       sender.send(boltConfig.getEventDataFormat().serialize(tuple));
       collector.ack(tuple);

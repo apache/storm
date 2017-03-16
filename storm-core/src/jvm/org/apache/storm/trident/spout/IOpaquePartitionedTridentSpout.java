@@ -52,13 +52,26 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
          * This method is called when this task is responsible for a new set of partitions. Should be used
          * to manage things like connections to brokers.
          */        
-        void refreshPartitions(List<Partition> partitionResponsibilities);        
+        void refreshPartitions(List<Partition> partitionResponsibilities);
+
+        /**
+         * @return The oredered list of partitions being processed by all the tasks
+         */
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
+
+        /**
+         * @return The list of partitions that are to be processed by the task with id {@code taskId}
+         */
+        List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo);
+
         void close();
     }
     
-    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);     
-    Coordinator getCoordinator(Map conf, TopologyContext context);     
+    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);
+
+    Coordinator getCoordinator(Map conf, TopologyContext context);
+
     Map<String, Object> getComponentConfiguration();
+
     Fields getOutputFields();
 }

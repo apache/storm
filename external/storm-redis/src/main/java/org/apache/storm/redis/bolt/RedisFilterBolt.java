@@ -87,7 +87,7 @@ public class RedisFilterBolt extends AbstractRedisBolt {
      * {@inheritDoc}
      */
     @Override
-    public void execute(Tuple input) {
+    public void process(Tuple input) {
         String key = filterMapper.getKeyFromTuple(input);
 
         boolean found;

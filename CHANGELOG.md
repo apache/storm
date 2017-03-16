@@ -1,4 +1,17 @@
 ﻿## 1.1.0
+ * STORM-2412: Nimbus isLeader check while waiting for max replication
+ * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
+ * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
+ * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
+ * STORM-2353: Replace kafka-unit by kafka_2.11 and kafka-clients to test kafka-clients:0.10.1.1
+ * STORM-2387: Handle tick tuples properly for Bolts in external modules
+ * STORM-2345: Type mismatch in ReadClusterState's ProfileAction processing Map
+ * STORM-2400: Upgraded Curator to 2.12.0 and made respective API changes
+ * STORM-2396: setting interrupted status back before throwing a RuntimeException
+ * STORM-1772: Adding Perf module with topologies for measuring performance
+ * STORM-2395: storm.cmd supervisor calls the wrong class name
+ * STORM-2391: Move HdfsSpoutTopology from storm-starter to storm-hdfs-examples
+ * STORM-2389: Avoid instantiating Event Logger when topology.eventlogger.executors=0
  * STORM-2386: Fail-back Blob deletion also fails in BlobSynchronizer.syncBlobs.
  * STORM-2388: JoinBolt breaks compilation against JDK 7
  * STORM-2374: Storm Kafka Client Test Topologies Must be Serializable

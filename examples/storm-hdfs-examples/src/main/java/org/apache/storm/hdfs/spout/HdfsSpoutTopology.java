@@ -16,23 +16,27 @@
  * limitations under the License.
  */
 
-package storm.starter;
+package org.apache.storm.hdfs.spout;
 
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
-import org.apache.storm.hdfs.spout.TextFileReader;
+import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.generated.ExecutorSummary;
+import org.apache.storm.generated.SpoutStats;
+import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.metric.LoggingMetricsConsumer;
-import org.apache.storm.starter.FastWordCountTopology;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.hdfs.spout.Configs;
-import org.apache.storm.hdfs.spout.HdfsSpout;
 import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.topology.*;
-import org.apache.storm.tuple.*;
-import org.apache.storm.task.*;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -135,9 +139,54 @@ public class HdfsSpoutTopology {
     // 5 - Print metrics every 30 sec, kill topology after 20 min
     for (int i = 0; i < 40; i++) {
       Thread.sleep(30 * 1000);
-      FastWordCountTopology.printMetrics(client, topologyName);
+      printMetrics(client, topologyName);
     }
-    FastWordCountTopology.kill(client, topologyName);
+    kill(client, topologyName);
   } // main
 
+  private static void kill(Nimbus.Client client, String topologyName) throws Exception {
+    KillOptions opts = new KillOptions();
+    opts.set_wait_secs(0);
+    client.killTopologyWithOpts(topologyName, opts);
+  }
+
+  static void printMetrics(Nimbus.Client client, String name) throws Exception {
+    ClusterSummary summary = client.getClusterInfo();
+    String id = null;
+    for (TopologySummary ts: summary.get_topologies()) {
+      if (name.equals(ts.get_name())) {
+        id = ts.get_id();
+      }
+    }
+    if (id == null) {
+      throw new Exception("Could not find a topology named "+name);
+    }
+    TopologyInfo info = client.getTopologyInfo(id);
+    int uptime = info.get_uptime_secs();
+    long acked = 0;
+    long failed = 0;
+    double weightedAvgTotal = 0.0;
+    for (ExecutorSummary exec: info.get_executors()) {
+      if ("spout".equals(exec.get_component_id())) {
+        SpoutStats stats = exec.get_stats().get_specific().get_spout();
+        Map<String, Long> failedMap = stats.get_failed().get(":all-time");
+        Map<String, Long> ackedMap = stats.get_acked().get(":all-time");
+        Map<String, Double> avgLatMap = stats.get_complete_ms_avg().get(":all-time");
+        for (String key: ackedMap.keySet()) {
+          if (failedMap != null) {
+            Long tmp = failedMap.get(key);
+            if (tmp != null) {
+              failed += tmp;
+            }
+          }
+          long ackVal = ackedMap.get(key);
+          double latVal = avgLatMap.get(key) * ackVal;
+          acked += ackVal;
+          weightedAvgTotal += latVal;
+        }
+      }
+    }
+    double avgLatency = weightedAvgTotal/acked;
+    System.out.println("uptime: "+uptime+" acked: "+acked+" avgLatency: "+avgLatency+" acked/sec: "+(((double)acked)/uptime+" failed: "+failed));
+  }
 }

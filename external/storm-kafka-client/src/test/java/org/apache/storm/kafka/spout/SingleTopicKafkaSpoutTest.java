@@ -19,9 +19,9 @@ package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfig;
 
-import info.batey.kafka.unit.KafkaUnitRule;
-import kafka.producer.KeyedMessage;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.storm.kafka.KafkaUnitRule;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -31,6 +31,8 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
 import java.util.Map;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -54,6 +56,7 @@ import org.junit.Before;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
+
 public class SingleTopicKafkaSpoutTest {
 
     @Rule
@@ -73,7 +76,7 @@ public class SingleTopicKafkaSpoutTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        KafkaSpoutConfig spoutConfig = getKafkaSpoutConfig(kafkaUnitRule.getKafkaPort(), commitOffsetPeriodMs);
+        KafkaSpoutConfig spoutConfig = getKafkaSpoutConfig(kafkaUnitRule.getKafkaUnit().getKafkaPort(), commitOffsetPeriodMs);
         this.consumerSpy = spy(new KafkaConsumerFactoryDefault().createConsumer(spoutConfig));
         this.consumerFactory = new KafkaConsumerFactory<String, String>() {
             @Override
@@ -85,19 +88,18 @@ public class SingleTopicKafkaSpoutTest {
         this.spout = new KafkaSpout<>(spoutConfig, consumerFactory);
     }
 
-    private void populateTopicData(String topicName, int msgCount) {
+    void populateTopicData(String topicName, int msgCount) throws InterruptedException, ExecutionException, TimeoutException {
         kafkaUnitRule.getKafkaUnit().createTopic(topicName);
 
-        for (int i = 0; i < msgCount; i++){
-            KeyedMessage<String, String> keyedMessage = new KeyedMessage<>(
+        for (int i = 0; i < msgCount; i++) {
+            ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
                     topicName, Integer.toString(i),
                     Integer.toString(i));
-
-            kafkaUnitRule.getKafkaUnit().sendMessages(keyedMessage);
-        };
+            kafkaUnitRule.getKafkaUnit().sendMessage(producerRecord);
+        }
     }
 
-    private void initializeSpout(int msgCount) {
+    private void initializeSpout(int msgCount) throws InterruptedException, ExecutionException, TimeoutException {
         populateTopicData(SingleTopicKafkaSpoutConfiguration.TOPIC, msgCount);
         spout.open(conf, topologyContext, collector);
         spout.activate();

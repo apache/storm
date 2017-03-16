@@ -64,9 +64,9 @@ public class TBackoffConnect {
             throw new RuntimeException(ex);
         }
         try {
-            int sleeptime = waitGrabber.getSleepTimeMs(_completedRetries, 0);
+            long sleeptime = waitGrabber.getSleepTimeMs(_completedRetries, 0);
 
-            LOG.debug("Failed to connect. Retrying... (" + Integer.toString( _completedRetries) + ") in " + Integer.toString(sleeptime) + "ms");
+            LOG.debug("Failed to connect. Retrying... (" + Integer.toString( _completedRetries) + ") in " + Long.toString(sleeptime) + "ms");
 
             Thread.sleep(sleeptime);
         } catch (InterruptedException e) {
