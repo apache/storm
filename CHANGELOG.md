@@ -328,6 +328,9 @@
  * STORM-1720: Support GEO in storm-redis
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
+## 1.0.4
+ * STORM-2038: No symlinks for local cluster 
+
 ## 1.0.3
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient
  * STORM-2321: Handle blobstore zk key deletion in KeySequenceNumber.
