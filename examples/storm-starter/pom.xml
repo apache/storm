@@ -31,19 +31,8 @@
 
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <!-- see comment below... This fixes an annoyance with intellij -->
-    <provided.scope>provided</provided.scope>
     <hbase.version>0.98.4-hadoop2</hbase.version>
   </properties>
-
-  <profiles>
-    <profile>
-        <id>intellij</id>
-        <properties>
-            <provided.scope>compile</provided.scope>
-        </properties>
-    </profile>
-  </profiles>
 
   <dependencies>
     <dependency>
