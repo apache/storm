@@ -48,16 +48,23 @@ import java.util.List;
  * Topology that loads a PMML Model and raw input data from a CSV file. The {@link RawInputFromCSVSpout}
  * creates a stream of tuples with raw inputs, and the {@link PMMLPredictorBolt} computes the predicted scores.
  *
- * The location of the PMML Model and CSV files can be specified as CLI argument. If no arguments are given,
+ * The location of the PMML Model and CSV files can be specified as CLI argument. Alternatively, the PMML Model can also
+ * be uploaded to the Blobstore and used in the topology specifying the blobKey. If no arguments are given,
  * it loads the default example as described in the README file
  */
 public class JpmmlRunnerTestTopology {
+    private static final String PMML_MODEL_FILE = "KNIME_PMML_4.1_Examples_single_audit_logreg.xml";
+    private static final String RAW_INPUTS_FILE = "Audit.50.csv";
+
     private static final String RAW_INPUT_FROM_CSV_SPOUT = "rawInputFromCsvSpout";
     private static final String PMML_PREDICTOR_BOLT = "pmmLPredictorBolt";
-    private static final String PRINT_BOLT = "printBolt";
+    private static final String PRINT_BOLT_1 = "printBolt1";
+    private static final String PRINT_BOLT_2 = "printBolt2";
+    private static final String NON_DEFAULT_STREAM_ID = "NON_DEFAULT_STREAM_ID";
 
     private File rawInputs;           // Raw input data to be scored (predicted)
-    private File pmml;                // PMML Model
+    private File pmml;                // PMML Model read from file - null if using Blobstore
+    private String blobKey;           // PMML Model downloaded from Blobstore - null if using File
     private boolean isLocal;
     private String tplgyName;
 
@@ -65,35 +72,64 @@ public class JpmmlRunnerTestTopology {
         try {
             JpmmlRunnerTestTopology testTopology = new JpmmlRunnerTestTopology();
             testTopology.parseArgs(args);
-            System.out.println(String.format("Running topology using PMML model loaded from [%s] and raw input data loaded from [%s]",
-                    testTopology.pmml.getAbsolutePath(), testTopology.rawInputs.getAbsolutePath()));
             testTopology.run();
         } catch (Exception e) {
+            e.printStackTrace();
             printUsage();
-            throw new RuntimeException(e);
         }
     }
 
     private void parseArgs(String[] args) {
         if (matches(args, "-h")) {
             printUsage();
+        } else if (matches(args, "-f") && matches(args, "-b")) {
+            System.out.println("Please specify only one option of [-b, -f]");
+            printUsage();
         } else {
-            if (args.length < 3) {
-                tplgyName = "pmmlPredictorLocal";
+            try {
                 isLocal = true;
-                if (args.length == 0) {     // run local examples
-                    pmml = loadExample(pmml, "KNIME_PMML_4.1_Examples_single_audit_logreg.xml");
-                    rawInputs = loadExample(rawInputs, "Audit.50.csv");
-                } else {
-                    pmml = new File(args[0]);
-                    rawInputs = new File(args[1]);
+                for (int i = 0; i < args.length; ) {
+                    switch (args[i]) {
+                        case "-f":
+                            pmml = new File(args[i + 1]);
+                            i += 2;
+                            break;
+                        case "-b":
+                            blobKey = args[i + 1];
+                            i += 2;
+                            break;
+                        case "-r":
+                            rawInputs = new File(args[i + 1]);
+                            i += 2;
+                            break;
+                        default:
+                            tplgyName = args[i];
+                            isLocal = false;
+                            i++;
+                            break;
+                    }
                 }
-            } else {
-                tplgyName = args[0];
-                pmml = new File(args[1]);
-                rawInputs = new File(args[2]);
-                isLocal = false;
+                setDefaults();
+            } catch (Exception e) {
+                e.printStackTrace();
+                printUsage();
             }
+        }
+    }
+
+    private void setDefaults() {
+        if (blobKey == null) {  // blob key not specified, use file
+            if (pmml == null) {
+                pmml = loadExample(pmml, PMML_MODEL_FILE);
+            }
+        }
+
+        if (rawInputs == null) {
+            rawInputs = loadExample(rawInputs, RAW_INPUTS_FILE);
+        }
+
+        if (tplgyName == null) {
+            tplgyName = "pmmlPredictorLocal";
         }
     }
 
@@ -117,11 +153,15 @@ public class JpmmlRunnerTestTopology {
     }
 
     private static void printUsage() {
-        System.out.println("Usage: java [" + JpmmlRunnerTestTopology.class.getName()
-                + " topology_name] [<PMML model file path> <Raw inputs CSV file path>]");
+        System.out.println("Usage: " + JpmmlRunnerTestTopology.class.getName()
+                + " [[[-f <PMML model file path>] [-b <Blobstore key used to upload PMML Model>]] "
+                + "-r <Raw inputs CSV file path>] [topology_name]");
+        System.exit(1);
     }
 
     private void run() throws Exception {
+        System.out.println(String.format("Running topology using PMML model loaded from [%s] and raw input data loaded from [%s]",
+                blobKey != null ? "Blobstore with blob key [" + blobKey + "]" : pmml.getAbsolutePath(), rawInputs.getAbsolutePath()));
         if (isLocal) {
             submitTopologyLocalCluster(newTopology(), newConfig());
         } else {
@@ -133,7 +173,8 @@ public class JpmmlRunnerTestTopology {
         final TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(RAW_INPUT_FROM_CSV_SPOUT, RawInputFromCSVSpout.newInstance(rawInputs));
         builder.setBolt(PMML_PREDICTOR_BOLT, newBolt()).shuffleGrouping(RAW_INPUT_FROM_CSV_SPOUT);
-        builder.setBolt(PRINT_BOLT, new PrinterBolt()).shuffleGrouping(PMML_PREDICTOR_BOLT);
+        builder.setBolt(PRINT_BOLT_1, new PrinterBolt()).shuffleGrouping(PMML_PREDICTOR_BOLT);
+        builder.setBolt(PRINT_BOLT_2, new PrinterBolt()).shuffleGrouping(PMML_PREDICTOR_BOLT, NON_DEFAULT_STREAM_ID);
         return builder.createTopology();
     }
 
@@ -164,9 +205,14 @@ public class JpmmlRunnerTestTopology {
     }
 
     private IRichBolt newBolt() throws Exception {
-        final List<String> streams = Lists.newArrayList(Utils.DEFAULT_STREAM_ID, "NON_DEFAULT_STREAM_ID");
-        final ModelOutputs outFields = JpmmlModelOutputs.toStreams(pmml, streams);
-        return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerCreator(pmml, outFields), outFields);
+        final List<String> streams = Lists.newArrayList(Utils.DEFAULT_STREAM_ID, NON_DEFAULT_STREAM_ID);
+        if (blobKey != null) {  // Load PMML Model from Blob store
+            final ModelOutputs outFields = JpmmlModelOutputs.toStreams(blobKey, streams);
+            return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerFromBlobStore(blobKey, outFields), outFields);
+        } else {                // Load PMML Model from File
+            final ModelOutputs outFields = JpmmlModelOutputs.toStreams(pmml, streams);
+            return new PMMLPredictorBolt(new JpmmlFactory.ModelRunnerFromFile(pmml, outFields), outFields);
+        }
     }
 
     private static class PrinterBolt extends BaseBasicBolt {
