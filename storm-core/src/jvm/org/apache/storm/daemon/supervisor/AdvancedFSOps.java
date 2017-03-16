@@ -345,7 +345,7 @@ public class AdvancedFSOps {
      */
     public void createSymlink(File link, File target) throws IOException {
         if (_symlinksDisabled) {
-            throw new IOException("Symlinks have been disabled, this hsould not be called");
+            throw new IOException("Symlinks have been disabled, this should not be called");
         }
         Path plink = link.toPath().toAbsolutePath();
         Path ptarget = target.toPath().toAbsolutePath();
