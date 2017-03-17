@@ -45,7 +45,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
-            <scope>${provided.scope</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <!--kafka libraries-->
         <dependency>
