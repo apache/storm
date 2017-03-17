@@ -40,7 +40,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope</scope>
         </dependency>
         <!-- Solr and its dependencies -->
         <dependency>

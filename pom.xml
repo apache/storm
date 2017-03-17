@@ -335,7 +335,7 @@
         <module>examples/storm-mqtt-examples</module>
         <module>examples/storm-pmml-examples</module>
         <module>examples/storm-jms-examples</module>
-        <module>storm-perf</module>
+        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
