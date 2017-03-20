@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2416: Improve Release Packaging to Reduce File Size
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
  * STORM-2038: Disable symlinks with a config option
  * STORM-2240: STORM PMML Bolt - Add Support to Load Models from Blob Store
