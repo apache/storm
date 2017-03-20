@@ -22,6 +22,7 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.tuple.Fields;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -52,13 +53,35 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
          * This method is called when this task is responsible for a new set of partitions. Should be used
          * to manage things like connections to brokers.
          */        
-        void refreshPartitions(List<Partition> partitionResponsibilities);        
+        void refreshPartitions(List<Partition> partitionResponsibilities);
+
+        /**
+         * @return The oredered list of partitions being processed by all the tasks
+         */
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
+
+        /**
+         * @return The list of partitions that are to be processed by the task with id {@code taskId}
+         */
+        default List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo){
+            final List<Partition> orderedPartitions = getOrderedPartitions(allPartitionInfo);
+            final List<Partition> taskPartitions = new ArrayList<>(orderedPartitions == null ? 0 : orderedPartitions.size());
+            if (orderedPartitions != null) {
+                for (int i = taskId; i < orderedPartitions.size(); i += numTasks) {
+                    taskPartitions.add(orderedPartitions.get(i));
+                }
+            }
+            return taskPartitions;
+        }
+
         void close();
     }
     
-    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);     
-    Coordinator getCoordinator(Map conf, TopologyContext context);     
+    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);
+
+    Coordinator getCoordinator(Map conf, TopologyContext context);
+
     Map<String, Object> getComponentConfiguration();
+
     Fields getOutputFields();
 }
