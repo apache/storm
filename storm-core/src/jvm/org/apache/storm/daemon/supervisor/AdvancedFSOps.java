@@ -41,6 +41,8 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static org.apache.storm.utils.Utils.OR;
+
 public class AdvancedFSOps {
     private static final Logger LOG = LoggerFactory.getLogger(AdvancedFSOps.class);
     
@@ -56,13 +58,14 @@ public class AdvancedFSOps {
         if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             return new AdvancedRunAsUserFSOps(conf);
         }
-        return new AdvancedFSOps();
+        return new AdvancedFSOps(conf);
     }
     
     private static class AdvancedRunAsUserFSOps extends AdvancedFSOps {
         private final Map<String, Object> _conf;
         
         public AdvancedRunAsUserFSOps(Map<String, Object> conf) {
+            super(conf);
             if (Utils.isOnWindows()) {
                 throw new UnsupportedOperationException("ERROR: Windows doesn't support running workers as different users yet");
             }
@@ -116,6 +119,7 @@ public class AdvancedFSOps {
     private static class AdvancedWindowsFSOps extends AdvancedFSOps {
 
         public AdvancedWindowsFSOps(Map<String, Object> conf) {
+            super(conf);
             if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
                 throw new RuntimeException("ERROR: Windows doesn't support running workers as different users yet");
             }
@@ -140,10 +144,11 @@ public class AdvancedFSOps {
             return false;
         }
     }
+
+    protected final boolean _symlinksDisabled;
     
-    
-    protected AdvancedFSOps() {
-        //NOOP, but restricted permissions
+    protected AdvancedFSOps(Map<String, Object> conf) {
+        _symlinksDisabled = (boolean)OR(conf.get(Config.DISABLE_SYMLINKS), false);
     }
 
     /**
@@ -341,6 +346,9 @@ public class AdvancedFSOps {
      * @throws IOException on any error.
      */
     public void createSymlink(File link, File target) throws IOException {
+        if (_symlinksDisabled) {
+            throw new IOException("Symlinks have been disabled, this should not be called");
+        }
         Path plink = link.toPath().toAbsolutePath();
         Path ptarget = target.toPath().toAbsolutePath();
         LOG.debug("Creating symlink [{}] to [{}]", plink, ptarget);
