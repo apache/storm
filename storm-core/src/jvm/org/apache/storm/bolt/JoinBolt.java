@@ -191,9 +191,11 @@ public class JoinBolt extends BaseWindowedBolt {
         for (ResultRecord resultRecord : joinResult.getRecords()) {
             ArrayList<Object> outputTuple = resultRecord.getOutputFields();
             if ( outputStreamName==null )
-                collector.emit( outputTuple );
+                // explicit anchoring emits to corresponding input tuples only, as default window anchoring will anchor them to all tuples in window
+                collector.emit( resultRecord.tupleList, outputTuple );
             else
-                collector.emit( outputStreamName, outputTuple );
+                // explicitly anchor emits to corresponding input tuples only, as default window anchoring will anchor them to all tuples in window
+                collector.emit( outputStreamName, resultRecord.tupleList, outputTuple );
         }
     }
 

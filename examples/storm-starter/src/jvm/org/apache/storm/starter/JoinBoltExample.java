@@ -53,7 +53,6 @@ public class JoinBoltExample {
         builder.setBolt("printer", new PrinterBolt() ).shuffleGrouping("joiner");
 
         Config conf = new Config();
-        conf.setDebug(true);
 
         LocalCluster cluster = new LocalCluster();
         cluster.submitTopology("join-example", conf, builder.createTopology());
