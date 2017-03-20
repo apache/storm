@@ -1,4 +1,7 @@
 ﻿## 1.1.0
+ * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
+ * STORM-2038: Disable symlinks with a config option
+ * STORM-2240: STORM PMML Bolt - Add Support to Load Models from Blob Store
  * STORM-2412: Nimbus isLeader check while waiting for max replication
  * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
  * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
@@ -189,6 +192,9 @@
  * STORM-1730: LocalCluster#shutdown() does not terminate all storm threads/thread pools.
  * STORM-1709: Added group by support in storm sql standalone mode
  * STORM-1720: Support GEO in storm-redis
+
+## 1.0.4
+ * STORM-2038: No symlinks for local cluster 
 
 ## 1.0.3
  * STORM-2197: NimbusClient connectins leak due to leakage in ThriftClient

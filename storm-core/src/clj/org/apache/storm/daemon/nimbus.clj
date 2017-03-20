@@ -1653,7 +1653,12 @@
                      topo-conf
                      topology)
           (Utils/validateTopologyBlobStoreMap topo-conf (Sets/newHashSet ^Iterator (.listKeys blob-store)))
-          )
+          (when (.get conf DISABLE-SYMLINKS)
+            (let [blob-map (.get topo-conf TOPOLOGY-BLOBSTORE-MAP)]
+              (when (and (not-nil? blob-map) (not (.isEmpty blob-map)))
+                (throw (InvalidTopologyException. 
+                         (str "symlinks are disabled so blobs are not supported but " TOPOLOGY-BLOBSTORE-MAP
+                              " = " blob-map)))))))
         (swap! (:submitted-count nimbus) inc)
         (let [storm-id (str storm-name "-" @(:submitted-count nimbus) "-" (current-time-secs))
               credentials (.get_creds submitOptions)

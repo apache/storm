@@ -48,6 +48,8 @@ import org.slf4j.LoggerFactory;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
+import static org.apache.storm.utils.Utils.OR;
+
 /**
  * This is a wrapper around the Localizer class that provides the desired
  * async interface to Slot.
@@ -94,6 +96,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     private final Map<String, LocalDownloadedResource> _basicPending;
     private final Map<String, LocalDownloadedResource> _blobPending;
     private final AdvancedFSOps _fsOps;
+    private final boolean _symlinksDisabled;
 
     private class DownloadBaseBlobsDistributed implements Callable<Void> {
         protected final String _topologyId;
@@ -250,24 +253,26 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     }
                     List<LocalizedResource> localizedResources = _localizer.getBlobs(localResourceList, user, topoName, userDir);
                     _fsOps.setupBlobPermissions(userDir, user);
-                    for (LocalizedResource localizedResource : localizedResources) {
-                        String keyName = localizedResource.getKey();
-                        //The sym link we are pointing to
-                        File rsrcFilePath = new File(localizedResource.getCurrentSymlinkPath());
+                    if (!_symlinksDisabled) {
+                        for (LocalizedResource localizedResource : localizedResources) {
+                            String keyName = localizedResource.getKey();
+                            //The sym link we are pointing to
+                            File rsrcFilePath = new File(localizedResource.getCurrentSymlinkPath());
 
-                        String symlinkName = null;
-                        if (blobstoreMap != null) {
-                            Map<String, Object> blobInfo = blobstoreMap.get(keyName);
-                            if (blobInfo != null && blobInfo.containsKey("localname")) {
-                                symlinkName = (String) blobInfo.get("localname");
+                            String symlinkName = null;
+                            if (blobstoreMap != null) {
+                                Map<String, Object> blobInfo = blobstoreMap.get(keyName);
+                                if (blobInfo != null && blobInfo.containsKey("localname")) {
+                                    symlinkName = (String) blobInfo.get("localname");
+                                } else {
+                                    symlinkName = keyName;
+                                }
                             } else {
+                                // all things are from dependencies
                                 symlinkName = keyName;
                             }
-                        } else {
-                            // all things are from dependencies
-                            symlinkName = keyName;
+                            _fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
                         }
-                        _fsOps.createSymlink(new File(stormroot, symlinkName), rsrcFilePath);
                     }
                 }
 
@@ -282,6 +287,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     //Visible for testing
     AsyncLocalizer(Map<String, Object> conf, Localizer localizer, AdvancedFSOps ops) {
         _conf = conf;
+        _symlinksDisabled = (boolean)OR(conf.get(Config.DISABLE_SYMLINKS), false);
         _isLocalMode = ConfigUtils.isLocalMode(conf);
         _localizer = localizer;
         _execService = Executors.newFixedThreadPool(1,  
