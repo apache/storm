@@ -1296,7 +1296,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                             minReplicationCount, maxWaitTime, confCount, codeCount, jarCount);
                     return;
                 }
-                LOG.info("WAITING... {} <? {} {} {}", minReplicationCount, jarCount, codeCount, confCount);
+                LOG.debug("Checking if I am still the leader");
+                assertIsLeader();
+                LOG.info("WAITING... storm-id {}, {} <? {} {} {}", topoId, minReplicationCount, jarCount, codeCount, confCount);
                 LOG.info("WAITING... {} <? {}", totalWaitTime, maxWaitTime);
                 Time.sleepSecs(1);
                 totalWaitTime++;
@@ -2475,6 +2477,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 throw new InvalidTopologyException(ex.getMessage());
             }
             validator.validate(topoName, topoConf, topology);
+            if ((boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
+                @SuppressWarnings("unchecked")
+                Map<String, Object> blobMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+                if (blobMap != null && !blobMap.isEmpty()) {
+                    throw new InvalidTopologyException("symlinks are disabled so blobs are not supported but " +
+                  Config.TOPOLOGY_BLOBSTORE_MAP + " = " + blobMap);
+                }
+            }
+
             Utils.validateTopologyBlobStoreMap(topoConf, Sets.newHashSet(blobStore.listKeys()));
             long uniqueNum = submittedCount.incrementAndGet();
             String topoId = topoName + "-" + uniqueNum + "-" + Time.currentTimeSecs();
