@@ -18,6 +18,11 @@
   -->
 
 <configuration scan="true" scanPeriod="60 seconds">
+    <properties>
+        <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %c{1.} %t [%p] %msg%n</property>
+        <property name="patternMetrics">%d %-8r %m%n</property>
+    </properties>
+
  <appender name="A1" class="ch.qos.logback.core.rolling.RollingFileAppender">
     <file>/var/log/storm/${logfile.name}</file>
     <rollingPolicy class="ch.qos.logback.core.rolling.FixedWindowRollingPolicy">
@@ -31,7 +36,7 @@
     </triggeringPolicy>
 
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c{1} [%p] %m%n</pattern>
+            <pattern>${pattern}</pattern>
     </encoder>
  </appender>
 
@@ -48,7 +53,7 @@
     </triggeringPolicy>
 
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %c{1} [%p] %m%n</pattern>
+            <pattern>${pattern}</pattern>
     </encoder>
   </appender>
 
@@ -65,7 +70,7 @@
     </triggeringPolicy>
 
     <encoder>
-      <pattern>%d %-8r %m%n</pattern>
+            <pattern>${patternMetrics}</pattern>
     </encoder>
   </appender>
 
@@ -73,22 +78,22 @@
     <appender-ref ref="A1"/>
   </root>
   
-  <logger name="backtype.storm.messaging.netty">
+    <logger name="org.apache.storm.messaging.netty">
     <level value="WARN" />
     <appender-ref ref="A1" />
   </logger>
   
-  <logger name="backtype.storm">
+    <logger name="org.apache.storm">
     <level value="DEBUG" />
     <appender-ref ref="A1" />
   </logger>
 
-  <logger name="backtype.storm.security.auth.authorizer" additivity="false">
+    <logger name="org.apache.storm.security.auth.authorizer" additivity="false">
     <level value="INFO" />
     <appender-ref ref="ACCESS" />
   </logger>
 
-  <logger name="backtype.storm.metric.LoggingMetricsConsumer" additivity="false" >
+    <logger name="org.apache.storm.metric.LoggingMetricsConsumer" additivity="false">
     <level value="INFO"/>
     <appender-ref ref="METRICS"/>
   </logger>
