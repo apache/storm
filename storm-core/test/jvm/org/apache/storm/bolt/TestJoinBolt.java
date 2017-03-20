@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Collection;
 
 public class TestJoinBolt {
     String[] userFields = {"userId", "name", "city"};
@@ -328,7 +329,7 @@ public class TestJoinBolt {
         }
 
         @Override
-        public List<Integer> emit(List<Object> tuple) {
+        public List<Integer> emit(Collection<Tuple> anchors, List<Object> tuple) {
             actualResults.add(tuple);
             return null;
         }
