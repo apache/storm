@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2411: Setting topology.eventlogger.executors=0 in defaults.yaml
  * STORM-2422: Reduce the size of a serialized trident topology
  * STORM-2412: Nimbus isLeader check while waiting for max replication
  * STORM-2240: PMML Bolt - Add Support to Load Models from Blob Store
