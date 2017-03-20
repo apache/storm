@@ -15,7 +15,8 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -25,21 +26,25 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <artifactId>storm-mongodb</artifactId>
+    <artifactId>storm-rocketmq</artifactId>
+    <name>storm-rocketmq</name>
+
+    <packaging>jar</packaging>
 
     <developers>
         <developer>
             <id>vesense</id>
             <name>Xin Wang</name>
-            <email>data.xinwang@gmail.com</email>
+            <email>xinwang@apache.org</email>
         </developer>
     </developers>
 
     <properties>
-        <mongodb.version>3.2.0</mongodb.version>
+        <rocketmq.version>4.0.0-incubating</rocketmq.version>
     </properties>
 
     <dependencies>
+        <!--parent module dependency-->
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-client</artifactId>
@@ -47,13 +52,9 @@
             <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
-            <groupId>org.mongodb</groupId>
-            <artifactId>mongo-java-driver</artifactId>
-            <version>${mongodb.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>com.google.guava</groupId>
-            <artifactId>guava</artifactId>
+            <groupId>org.apache.rocketmq</groupId>
+            <artifactId>rocketmq-client</artifactId>
+            <version>${rocketmq.version}</version>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -65,10 +66,6 @@
             <artifactId>junit</artifactId>
             <scope>test</scope>
         </dependency>
-        <dependency>
-            <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
-            <scope>test</scope>
-        </dependency>
     </dependencies>
+
 </project>
