@@ -210,6 +210,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.0
+ * STORM-2407: KafkaTridentSpoutOpaque Doesn't Poll Data From All Topic-Partitions When Parallelism Hint Not a Multiple Total Topic-Partitions.
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
  * STORM-2038: Disable symlinks with a config option
  * STORM-2408: build failed if storm.kafka.client.version = 0.10.2.0
