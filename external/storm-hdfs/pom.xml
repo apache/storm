@@ -47,7 +47,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
             <exclusions>
                 <!--log4j-over-slf4j must be excluded for hadoop-minicluster
                     see: http://stackoverflow.com/q/20469026/3542091 -->
