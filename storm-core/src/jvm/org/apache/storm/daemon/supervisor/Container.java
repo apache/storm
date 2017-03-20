@@ -43,6 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
+import static org.apache.storm.utils.Utils.OR;
+
 /**
  * Represents a container that a worker will run in.
  */
@@ -85,7 +87,8 @@ public abstract class Container implements Killable {
     protected final LocalAssignment _assignment; //Not set if RECOVER_PARTIAL
     protected final AdvancedFSOps _ops;
     protected ContainerType _type;
-    
+    protected final boolean _symlinksDisabled;
+
     /**
      * Create a new Container.
      * @param type the type of container being made.
@@ -105,6 +108,8 @@ public abstract class Container implements Killable {
         assert(type != null);
         assert(conf != null);
         assert(supervisorId != null);
+        
+        _symlinksDisabled = (boolean)OR(conf.get(Config.DISABLE_SYMLINKS), false);
         
         if (ops == null) {
             ops = AdvancedFSOps.make(conf);
@@ -376,11 +381,13 @@ public abstract class Container implements Killable {
      */
     protected void createArtifactsLink() throws IOException {
         _type.assertFull();
-        File workerDir = new File(ConfigUtils.workerRoot(_conf, _workerId));
-        File topoDir = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
-        if (_ops.fileExists(workerDir)) {
-            LOG.debug("Creating symlinks for worker-id: {} topology-id: {} to its port artifacts directory", _workerId, _topologyId);
-            _ops.createSymlink(new File(workerDir, "artifacts"), topoDir);
+        if (!_symlinksDisabled) {
+            File workerDir = new File(ConfigUtils.workerRoot(_conf, _workerId));
+            File topoDir = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
+            if (_ops.fileExists(workerDir)) {
+                LOG.debug("Creating symlinks for worker-id: {} topology-id: {} to its port artifacts directory", _workerId, _topologyId);
+                _ops.createSymlink(new File(workerDir, "artifacts"), topoDir);
+            }
         }
     }
     
@@ -417,15 +424,19 @@ public abstract class Container implements Killable {
         }
         resourceFileNames.addAll(blobFileNames);
 
-        LOG.info("Creating symlinks for worker-id: {} storm-id: {} for files({}): {}", _workerId, _topologyId, resourceFileNames.size(), resourceFileNames);
-        if(targetResourcesDir.exists()) {
-            _ops.createSymlink(new File(workerRoot, ConfigUtils.RESOURCES_SUBDIR),  targetResourcesDir );
-        } else {
-            LOG.info("Topology jar for worker-id: {} storm-id: {} does not contain re sources directory {}." , _workerId, _topologyId, targetResourcesDir.toString() );
-        }
-        for (String fileName : blobFileNames) {
-            _ops.createSymlink(new File(workerRoot, fileName),
-                    new File(stormRoot, fileName));
+        if (!_symlinksDisabled) {
+            LOG.info("Creating symlinks for worker-id: {} storm-id: {} for files({}): {}", _workerId, _topologyId, resourceFileNames.size(), resourceFileNames);
+            if (targetResourcesDir.exists()) {
+                _ops.createSymlink(new File(workerRoot, ConfigUtils.RESOURCES_SUBDIR),  targetResourcesDir );
+            } else {
+                LOG.info("Topology jar for worker-id: {} storm-id: {} does not contain re sources directory {}." , _workerId, _topologyId, targetResourcesDir.toString() );
+            }
+            for (String fileName : blobFileNames) {
+                _ops.createSymlink(new File(workerRoot, fileName),
+                        new File(stormRoot, fileName));
+            }
+        } else if (blobFileNames.size() > 0) {
+            LOG.warn("Symlinks are disabled, no symlinks created for blobs {}", blobFileNames);
         }
     }
     

@@ -2076,6 +2076,16 @@ public class Utils {
     }
 
     /**
+     * a or b the first one that is not null
+     * @param a something
+     * @param b something else
+     * @return a or b the first one that is not null
+     */
+    public static <V> V OR(V a, V b) {
+        return a == null ? b : a;
+    }
+
+    /**
      * Writes a posix shell script file to be executed in its own process.
      * @param dir the directory under which the script is to be written
      * @param command the command the script is to execute
