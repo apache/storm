@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
  * STORM-2038: No symlinks for local cluster 
  * STORM-2403: Fix KafkaBolt test failure: tick tuple should not be acked
  * STORM-2361: Kafka spout - after leader change, it stops committing offsets to ZK
