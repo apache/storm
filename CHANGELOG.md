@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2423: Join Bolt should use explicit instead of default window anchoring for emitted tuples
  * STORM-2411: Setting topology.eventlogger.executors=0 in defaults.yaml
  * STORM-2422: Reduce the size of a serialized trident topology
  * STORM-2412: Nimbus isLeader check while waiting for max replication
