@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
  * STORM-2423: Join Bolt should use explicit instead of default window anchoring for emitted tuples
  * STORM-2416: Improve Release Packaging to Reduce File Size
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
