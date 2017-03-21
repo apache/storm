@@ -122,4 +122,18 @@ is treated as a single stream and joined against `stream2` from `bolt3`.
 2. Duplication of joined records across windows is possible when using Sliding Windows. This is because the tuples continue to exist
    across multiple windows when using Sliding Windows.
 
+3. If message timeouts are enabled, ensure the timeout setting (topology.message.timeout.secs) is large enough to comfortably
+   accommodate the window size, plus the additional processing by other spouts and bolts.
 
+4. Joining a window of two streams with M and N elements each, *in the worst case*, can produce MxN elements with every output tuple
+   anchored to one tuple from each input stream. This can mean a lot of output tuples from JoinBolt and even more ACKs for downstream bolts
+   to emit. This can place a substantial pressure on the messaging system and dramatically slowdown the topology if not careful.
+   To manage the load on the messaging subsystem, it is advisable to:
+   * Increase the worker's heap (topology.worker.max.heap.size.mb).
+   * **If** ACKing is not necessary for your topology, disable ACKers (topology.acker.executors=0).
+   * Disable event logger (topology.eventlogger.executors=0).
+   * Turn of topology debugging (topology.debug=false).
+   * Set topology.max.spout.pending to a value large enough to accommodate an estimated full window worth of tuples plus some more for headroom.
+     This helps mitigate the possibility of spouts emitting excessive tuples when messaging subsystem is experiencing excessive load. This situation
+     can occur when its value is set to null.
+   * Lastly, keep the window size to the minimum value necessary for solving the problem at hand.
