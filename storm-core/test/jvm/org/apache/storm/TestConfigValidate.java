@@ -59,7 +59,7 @@ public class TestConfigValidate {
         conf.put(Config.PACEMAKER_AUTH_METHOD, "invalid");
         ConfigValidation.validateFields(conf);
     }
-    
+
     @Test
     public void validConfigTest() throws InstantiationException, IllegalAccessException, NoSuchFieldException, NoSuchMethodException, InvocationTargetException {
 
@@ -142,6 +142,26 @@ public class TestConfigValidate {
         ConfigValidation.validateFields(conf);
 
         conf.put(Config.ISOLATION_SCHEDULER_MACHINES, 42);
+        try {
+            ConfigValidation.validateFields(conf);
+            Assert.fail("Expected Exception not Thrown");
+        } catch (IllegalArgumentException ex) {
+        }
+    }
+
+    @Test
+    public void testSupervisorSchedulerMetaIsStringMap() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
+        Map<String, Object> conf = new HashMap<String, Object>();
+        Map<String, Object> schedulerMeta = new HashMap<String, Object>();
+        conf.put(Config.SUPERVISOR_SCHEDULER_META, schedulerMeta);
+        ConfigValidation.validateFields(conf);
+
+        schedulerMeta.put("foo", "bar");
+
+        conf.put(Config.SUPERVISOR_SCHEDULER_META, schedulerMeta);
+        ConfigValidation.validateFields(conf);
+
+        schedulerMeta.put("baz", true);
         try {
             ConfigValidation.validateFields(conf);
             Assert.fail("Expected Exception not Thrown");
