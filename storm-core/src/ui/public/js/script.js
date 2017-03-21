@@ -221,7 +221,7 @@ function topologyActionJson(id, encodedId, name, status, msgTimeout, loggersTota
     jsonData["deactivateStatus"] = (status === "ACTIVE") ? "enabled" : "disabled";
     jsonData["rebalanceStatus"] = (status === "ACTIVE" || status === "INACTIVE" ) ? "enabled" : "disabled";
     jsonData["killStatus"] = (status !== "KILLED") ? "enabled" : "disabled";
-    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=null && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
+    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
     jsonData["stopDebugStatus"] = (status === "ACTIVE" && debug) ? "enabled" : "disabled";
     jsonData["loggersDisabled"] = loggersTotal==null || loggersTotal==0;
     jsonData["currentSamplingPct"] = samplingPct;
@@ -233,7 +233,7 @@ function componentActionJson(encodedTopologyId, encodedId, componentName, status
     jsonData["encodedTopologyId"] = encodedTopologyId;
     jsonData["encodedId"] = encodedId;
     jsonData["componentName"] = componentName;
-    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=null && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
+    jsonData["startDebugStatus"] = (status === "ACTIVE" && loggersTotal!=0 && !debug) ? "enabled" : "disabled";
     jsonData["stopDebugStatus"] = (status === "ACTIVE" && debug) ? "enabled" : "disabled";
     jsonData["loggersDisabled"] = loggersTotal==null || loggersTotal==0;
     jsonData["currentSamplingPct"] = samplingPct;
