@@ -19,7 +19,10 @@ package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,19 +36,27 @@ import java.util.Map;
  * The resulting tuple would contain two items: the the message string, and a
  * map of properties that include metadata, which can be used to determine who
  * processes the message, and how it is processed.
- * 
+ *
  * For passing the raw bytes of a messsage to Bolts, refer to
  * {@link BinaryEventDataScheme}.
  */
 public class EventDataScheme implements IEventDataScheme {
 
 	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
 	@Override
 	public List<Object> deserialize(EventData eventData) {
 		final List<Object> fieldContents = new ArrayList<Object>();
 		String messageData = "";
-		if(eventData.getBody()!=null)
-			messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
+		if(eventData.getBytes()!=null)
+			messageData = new String (eventData.getBytes());
+		else if(eventData.getObject()!=null){
+			try{
+				messageData = new String(Serializedeserializeutil.serialize(eventData.getObject()),Charset.defaultCharset());
+			}catch (IOException e){
+				logger.error("Failed to serialize object"+e.toString());
+			}
+		}
 		Map metaDataMap = eventData.getProperties();
 		fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);

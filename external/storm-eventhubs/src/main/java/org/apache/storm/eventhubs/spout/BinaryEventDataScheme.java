@@ -19,11 +19,13 @@ package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-
 
 
 /**
@@ -35,10 +37,20 @@ import java.util.Map;
  */
 public class BinaryEventDataScheme implements IEventDataScheme {
 
+	private static final Logger logger = LoggerFactory.getLogger(BinaryEventDataScheme.class);
 	@Override
 	public List<Object> deserialize(EventData eventData){
 		final List<Object> fieldContents = new ArrayList<Object>();
-		byte [] messageData = eventData.getBody();
+		byte [] messageData = null;
+		if(eventData.getBytes() != null)
+			messageData =  eventData.getBytes();
+		else if(eventData.getObject()!=null) {
+			try {
+				messageData = Serializedeserializeutil.serialize(eventData.getObject());
+			}catch (IOException e){
+				logger.error("Failed to serialize object"+e.toString());
+			}
+		}
 		Map metaDataMap = eventData.getProperties();
 		fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);

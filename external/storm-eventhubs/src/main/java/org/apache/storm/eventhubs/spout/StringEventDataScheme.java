@@ -19,31 +19,43 @@ package org.apache.storm.eventhubs.spout;
 
 import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * An Event Data Scheme which deserializes message payload into the Strings.
- * No encoding is assumed. The receiver will need to handle parsing of the 
+ * No encoding is assumed. The receiver will need to handle parsing of the
  * string data in appropriate encoding.
  *
- * Note: Unlike other schemes provided, this scheme does not include any 
- * metadata. 
- * 
- * For metadata please refer to {@link BinaryEventDataScheme}, {@link EventDataScheme} 
+ * Note: Unlike other schemes provided, this scheme does not include any
+ * metadata.
+ *
+ * For metadata please refer to {@link BinaryEventDataScheme}, {@link EventDataScheme}
  */
 public class StringEventDataScheme implements IEventDataScheme {
 
   private static final long serialVersionUID = 1L;
+  private static final Logger logger = LoggerFactory.getLogger(StringEventDataScheme.class);
 
   @Override
   public List<Object> deserialize(EventData eventData) {
     final List<Object> fieldContents = new ArrayList<Object>();
     String messageData = "";
-    if(eventData.getBody()!=null)
-      messageData = new String (eventData.getBody(),eventData.getBodyOffset(),eventData.getBodyLength(),Charset.defaultCharset());
+    if(eventData.getBytes()!=null)
+      messageData = new String (eventData.getBytes());
+    else if(eventData.getObject()!=null){
+      try{
+        messageData = new String(Serializedeserializeutil.serialize(eventData.getObject()),Charset.defaultCharset());
+      }catch (IOException e){
+        logger.error("Failed to serialize object"+e.toString());
+      }
+    }
+
     fieldContents.add(messageData);
     return fieldContents;
   }
