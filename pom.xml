@@ -280,6 +280,9 @@
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
         <eventhubs.client.version>1.0.1</eventhubs.client.version>
+
+        <!-- see intellij profile below... This fixes an annoyance with intellij -->
+        <provided.scope>provided</provided.scope>
     </properties>
 
     <modules>
@@ -331,7 +334,8 @@
         <module>examples/storm-elasticsearch-examples</module>
         <module>examples/storm-mqtt-examples</module>
         <module>examples/storm-pmml-examples</module>
-        <module>storm-perf</module>
+        <module>examples/storm-jms-examples</module>
+        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
@@ -345,6 +349,17 @@
     </dependencies>
 
     <profiles>
+	<!--
+            Hack to make intellij behave.
+            If you use intellij, enable this profile in your IDE.
+            It should make life easier.
+        -->
+        <profile>
+            <id>intellij</id>
+            <properties>
+                <provided.scope>compile</provided.scope>
+            </properties>
+        </profile>
 	<profile>
             <id>windows</id>
             <modules>
@@ -378,6 +393,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>rat</id>
             <build>

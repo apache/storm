@@ -38,7 +38,6 @@
     <properties>
         <packageTimestamp>${maven.build.timestamp}</packageTimestamp>
         <maven.build.timestamp.format>YYYYMMddHHmm</maven.build.timestamp.format>
-        <final.Name>apache-storm</final.Name>
     </properties>
 
     <dependencies>
@@ -55,7 +54,7 @@
     </dependencies>
 
     <build>
-        <finalName>${final.Name}-${project.version}</finalName>
+        <finalName>apache-storm-${project.version}</finalName>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>

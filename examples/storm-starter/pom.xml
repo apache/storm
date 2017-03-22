@@ -36,15 +36,6 @@
     <hbase.version>1.1.2.2.6.0.2-SNAPSHOT</hbase.version>
   </properties>
 
-  <profiles>
-    <profile>
-        <id>intellij</id>
-        <properties>
-            <provided.scope>compile</provided.scope>
-        </properties>
-    </profile>
-  </profiles>
-
   <dependencies>
     <dependency>
       <groupId>org.hdrhistogram</groupId>

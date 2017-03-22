@@ -23,7 +23,7 @@
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>1.1.0.2.6.0.2-SNAPSHOT</version>
-        <relativePath>..</relativePath>
+        <relativePath>../../pom.xml</relativePath>
     </parent>
 
     <groupId>org.apache.storm</groupId>
@@ -32,20 +32,6 @@
     <name>Storm Perf</name>
     <description>Topologies and tools to measure performance.</description>
 
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <!-- see comment below... This fixes an annoyance with intellij -->
-        <provided.scope>provided</provided.scope>
-    </properties>
-
-    <profiles>
-        <profile>
-            <id>intellij</id>
-            <properties>
-                <provided.scope>compile</provided.scope>
-            </properties>
-        </profile>
-    </profiles>
 
     <build>
         <plugins>
