@@ -65,7 +65,7 @@ import org.apache.storm.generated.StormTopology;
 public abstract class BlobStore implements Shutdownable {
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
     private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$");
-    protected static final String BASE_BLOBS_DIR_NAME = "blobs";
+    protected static final String BASE_BLOBS_DIR_NAME = "nimbus/blobs";
 
     /**
      * Allows us to initialize the blob store
