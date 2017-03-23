@@ -61,6 +61,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     // Bookkeeping
     private final KafkaTridentSpoutManager<K, V> kafkaManager;
+    private Set<TopicPartition> firstPoll = new HashSet<>();        // set of topic-partitions for which first poll has already occurred
 
     // Declare some KafkaTridentSpoutManager references for convenience
     private final long pollTimeoutMs;
@@ -149,7 +150,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     /**
      * Determines the offset of the next fetch. For failed batches lastBatchMeta is not null and contains the fetch
-     * offset of the failed batch. In this scenario the next fetch will take place at the offset of the failed batch.
+     * offset of the failed batch. In this scenario the next fetch will take place at offset of the failed batch + 1.
      * When the previous batch is successful, lastBatchMeta is null, and the offset of the next fetch is either the
      * offset of the last commit to kafka, or if no commit was yet made, the offset dictated by
      * {@link KafkaSpoutConfig.FirstPollOffsetStrategy}
@@ -159,9 +160,10 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
     private long seek(TopicPartition tp, KafkaTridentSpoutBatchMetadata<K, V> lastBatchMeta) {
         if (lastBatchMeta != null) {
             kafkaConsumer.seek(tp, lastBatchMeta.getLastOffset() + 1);  // seek next offset after last offset from previous batch
-            LOG.debug("Seeking fetch offset to next offset after last offset from previous batch");
-        } else {
-            LOG.debug("Seeking fetch offset from firstPollOffsetStrategy and last commit to Kafka");
+            LOG.debug("Seeking fetch offset to next offset after last offset from previous batch for topic-partition [{}]", tp);
+        } else if (isFirstPoll(tp)) {
+            LOG.debug("Seeking fetch offset from firstPollOffsetStrategy and last commit to Kafka for topic-partition [{}]", tp);
+            firstPoll.add(tp);
             final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
             if (committedOffset != null) {             // offset was committed for this TopicPartition
                 if (firstPollOffsetStrategy.equals(EARLIEST)) {
@@ -183,6 +185,10 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
         final long fetchOffset = kafkaConsumer.position(tp);
         LOG.debug("Set [fetchOffset = {}]", fetchOffset);
         return fetchOffset;
+    }
+
+    private boolean isFirstPoll(TopicPartition tp) {
+         return !firstPoll.contains(tp);
     }
 
     // returns paused topic-partitions.
