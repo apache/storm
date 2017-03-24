@@ -412,6 +412,7 @@ public class FluxBuilder {
                 if (invokable) {
                     retval = con;
                     eligibleCount++;
+                    break;
                 }
                 LOG.debug("** invokable --> {}", invokable);
             } else {
