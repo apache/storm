@@ -28,7 +28,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.Random;
 
 /**
  * This spout generates random whole numbers with given {@code maxNumber} value as maximum with the given {@code fields}.
@@ -57,10 +57,11 @@ public class RandomNumberGeneratorSpout implements IBatchSpout {
             values = batches.get(batchId);
         } else {
             values = new ArrayList<>();
+            Random random = new Random();
             for (int i = 0; i < batchSize; i++) {
                 List<Object> numbers = new ArrayList<>();
                 for (int x=0; x<fields.size(); x++) {
-                    numbers.add(ThreadLocalRandom.current().nextInt(0, maxNumber + 1));
+                    numbers.add(random.nextInt(maxNumber + 1));
                 }
                 values.add(numbers);
             }

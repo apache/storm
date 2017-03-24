@@ -239,7 +239,7 @@ public class BlobStoreAPIWordCountTopology {
         BufferedReader br = new BufferedReader(new FileReader(file));
         while ((line = br.readLine()) != null) {
             fileContent.append(line);
-            fileContent.append(System.lineSeparator());
+            fileContent.append(System.getProperty("line.separator"));
         }
         return fileContent;
     }
@@ -268,7 +268,7 @@ public class BlobStoreAPIWordCountTopology {
         Iterator<String> iter = content.iterator();
         while(iter.hasNext()) {
             bw.write(iter.next());
-            bw.write(System.lineSeparator());
+            bw.write(System.getProperty("line.separator"));
         }
         bw.close();
     }

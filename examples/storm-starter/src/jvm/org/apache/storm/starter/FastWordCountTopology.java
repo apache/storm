@@ -37,7 +37,6 @@ import org.apache.storm.utils.Utils;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * WordCount but the spout does not stop, and the bolts are implemented in
@@ -58,7 +57,7 @@ public class FastWordCountTopology {
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
-      _rand = ThreadLocalRandom.current();
+      _rand = new Random();
     }
 
     @Override
