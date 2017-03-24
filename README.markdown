@@ -93,6 +93,7 @@ under the License.
 * Haohui Mai ([@haohui](https://github.com/haohui))
 * Longda Feng ([@longda](https://github.com/longdafeng))
 * Xin Wang ([@vesense](https://github.com/vesense))
+* Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 
 ## Contributors
 
