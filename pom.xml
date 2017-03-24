@@ -201,6 +201,15 @@
             </roles>
             <timezone>+8</timezone>
         </developer>
+        <developer>
+            <id>hmclouro</id>
+            <name>Hugo da Cruz Louro</name>
+            <email>hmclouro@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-8</timezone>
+        </developer>
     </developers>
 
 

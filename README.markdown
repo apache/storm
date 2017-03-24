@@ -99,6 +99,7 @@ under the License.
 * Abhishek Agarwal ([@abhishekagarwal87](https://github.com/abhishekagarwal87))
 * Satish Duggana ([@satishd](https://github.com/satishd))
 * Xin Wang ([@vesense](https://github.com/vesense))
+* Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 
 ## Contributors
 
