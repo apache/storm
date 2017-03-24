@@ -24,9 +24,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.StringTokenizer;
 import org.apache.storm.Config;
+import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ShellUtils;
-import org.apache.storm.utils.TimeCacheMap;
 import org.apache.storm.utils.ShellUtils.ExitCodeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,7 +36,7 @@ public class ShellBasedGroupsMapping implements
                                              IGroupMappingServiceProvider {
 
     public static final Logger LOG = LoggerFactory.getLogger(ShellBasedGroupsMapping.class);
-    public TimeCacheMap<String, Set<String>> cachedGroups;
+    public RotatingMap<String, Set<String>> cachedGroups;
 
     /**
      * Invoked once immediately after construction
@@ -45,7 +45,7 @@ public class ShellBasedGroupsMapping implements
     @Override
     public void prepare(Map storm_conf) {
         int timeout = Utils.getInt(storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS));
-        cachedGroups = new TimeCacheMap<>(timeout);
+        cachedGroups = new RotatingMap<>(timeout);
     }
 
     /**

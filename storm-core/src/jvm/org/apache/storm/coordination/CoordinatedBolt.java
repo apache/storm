@@ -31,7 +31,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TimeCacheMap;
+import org.apache.storm.utils.RotatingMap;
 import org.apache.storm.utils.Utils;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -154,7 +154,7 @@ public class CoordinatedBolt implements IRichBolt {
     private Integer _numSourceReports;
     private List<Integer> _countOutTasks = new ArrayList<>();
     private OutputCollector _collector;
-    private TimeCacheMap<Object, TrackingInfo> _tracked;
+    private RotatingMap<Object, TrackingInfo> _tracked;
 
     public static class TrackingInfo {
         int reportCount = 0;
@@ -209,11 +209,11 @@ public class CoordinatedBolt implements IRichBolt {
     }
     
     public void prepare(Map config, TopologyContext context, OutputCollector collector) {
-        TimeCacheMap.ExpiredCallback<Object, TrackingInfo> callback = null;
+        RotatingMap.ExpiredCallback<Object, TrackingInfo> callback = null;
         if(_delegate instanceof TimeoutCallback) {
             callback = new TimeoutItems();
         }
-        _tracked = new TimeCacheMap<>(context.maxTopologyMessageTimeout(), callback);
+        _tracked = new RotatingMap<>(context.maxTopologyMessageTimeout(), callback);
         _collector = collector;
         _delegate.prepare(config, context, new OutputCollector(new CoordinatedOutputCollector(collector)));
         for(String component: Utils.get(context.getThisTargets(),
@@ -333,7 +333,6 @@ public class CoordinatedBolt implements IRichBolt {
 
     public void cleanup() {
         _delegate.cleanup();
-        _tracked.cleanup();
     }
 
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -352,7 +351,7 @@ public class CoordinatedBolt implements IRichBolt {
         return ret;
     }
     
-    private class TimeoutItems implements TimeCacheMap.ExpiredCallback<Object, TrackingInfo> {
+    private class TimeoutItems implements RotatingMap.ExpiredCallback<Object, TrackingInfo> {
         @Override
         public void expire(Object id, TrackingInfo val) {
             synchronized(_tracked) {
