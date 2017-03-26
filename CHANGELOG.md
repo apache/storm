@@ -1,4 +1,5 @@
 ﻿## 1.1.0
+ * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
  * STORM-2425: Storm Hive Bolt not closing open transactions
  * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
  * STORM-2423: Join Bolt should use explicit instead of default window anchoring for emitted tuples
