@@ -418,6 +418,12 @@
     </fileSets>
 
     <files>
+      <!-- EXAMPLES -->
+        <file>
+            <source>${project.basedir}/../../examples/storm-starter/target/storm-starter-${project.version}.jar</source>
+            <outputDirectory>/examples/storm-starter/</outputDirectory>
+            <destName>storm-starter-topologies-${project.version}.jar</destName>
+        </file>
         <!--
             $STORM_HOME/conf
         -->
