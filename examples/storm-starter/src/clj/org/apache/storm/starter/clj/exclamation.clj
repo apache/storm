@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.starter.clj.exclamation
   (:import [org.apache.storm StormSubmitter LocalCluster]
-           [org.apache.storm.utils Utils]
+    [org.apache.storm.utils Utils]
            [org.apache.storm.testing TestWordSpout])
   (:use [org.apache.storm clojure config])
   (:gen-class))
@@ -32,9 +32,9 @@
     "exclaim2" (bolt-spec {"exclaim1" :shuffle} exclamation-bolt :p 2)}))
 
 (defn run-local! []
-  (with-open [cluster (LocalCluster.)
+      (with-open [cluster (LocalCluster.)
               topo (.submitTopology cluster "exclamation" {TOPOLOGY-DEBUG true} (mk-topology))]
-    (Utils/sleep 10000)))
+                 (Utils/sleep 10000)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopologyWithProgressBar

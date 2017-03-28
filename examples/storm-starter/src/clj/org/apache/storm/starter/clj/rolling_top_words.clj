@@ -18,8 +18,8 @@
             [org.apache.storm.starter.clj.bolts :refer
              [rolling-count-bolt intermediate-rankings-bolt total-rankings-bolt]])
   (:import [org.apache.storm StormSubmitter LocalCluster]
-           [org.apache.storm.utils Utils]
-           [org.apache.storm.testing TestWordSpout])
+    [org.apache.storm.utils Utils]
+    [org.apache.storm.testing TestWordSpout])
   (:gen-class))
 
 (defn mk-topology []
@@ -39,9 +39,9 @@
                                  (total-rankings-bolt 5 2))})))
 
 (defn run-local! []
-  (with-open [cluster (LocalCluster.)
+      (with-open [cluster (LocalCluster.)
               topo (.submitTopology cluster "slidingWindowCounts" {TOPOLOGY-DEBUG true} (mk-topology))]
-    (Utils/sleep 60000)))
+                 (Utils/sleep 60000)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopology

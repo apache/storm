@@ -28,6 +28,7 @@ import org.apache.storm.perf.bolt.DevNullBolt;
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
 
 import java.util.Map;
 import java.util.UUID;
@@ -89,7 +90,7 @@ public class KafkaSpoutNullBoltTopo {
 
 
     public static int getInt(Map map, Object key, int def) {
-        return Utils.getInt(Utils.get(map, key, def));
+        return ObjectReader.getInt(Utils.get(map, key, def));
     }
 
     public static String getStr(Map map, Object key) {

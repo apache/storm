@@ -15,19 +15,17 @@
 ;; limitations under the License.
 (ns integration.org.apache.storm.integration-test
   (:use [clojure test])
-  (:import [org.apache.storm Testing LocalCluster$Builder Config Thrift])
+  (:import [org.apache.storm Testing LocalCluster$Builder Thrift])
   (:import [org.apache.storm.topology TopologyBuilder])
   (:import [org.apache.storm.generated InvalidTopologyException SubmitOptions TopologyInitialStatus RebalanceOptions])
   (:import [org.apache.storm.testing TrackedTopology MockedSources TestWordCounter TestWordSpout TestGlobalCount FeederSpout CompleteTopologyParam
             TestAggregatesCounter TestConfBolt AckFailMapTracker AckTracker TestPlannerSpout])
   (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.tuple Fields])
-  (:import [org.apache.storm.cluster StormClusterStateImpl])
   (:use [org.apache.storm.internal clojure])
   (:use [org.apache.storm config util])
   (:import [org.apache.storm Thrift])
-  (:import [org.apache.storm.utils Utils]) 
-  (:import [org.apache.storm.daemon StormCommon]))
+  (:import [org.apache.storm.utils Utils]))
 
 (deftest test-basic-topology
   (doseq [zmq-on? [true false]]

@@ -20,9 +20,9 @@ package org.apache.storm.kafka.trident;
 
 import org.apache.storm.LocalDRPC;
 import org.apache.storm.generated.DistributedRPC;
-import org.apache.storm.thrift.transport.TTransportException;
-import org.apache.storm.utils.DRPCClient;
+import org.apache.thrift.transport.TTransportException;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.DRPCClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

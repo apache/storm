@@ -19,15 +19,15 @@
   (:use [org.apache.storm.internal clojure])
   (:require [integration.org.apache.storm.integration-test :as it])
   (:require [org.apache.storm.internal.thrift :as thrift])
-  (:import [org.apache.storm Testing Config ILocalCluster]
+  (:import [org.apache.storm Testing Config]
            [org.apache.storm.generated GlobalStreamId])
-  (:import [org.apache.storm.tuple Values Tuple])
-  (:import [org.apache.storm.utils Time Utils])
+  (:import [org.apache.storm.tuple Values])
+  (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.testing MkClusterParam TestJob MockedSources TestWordSpout FeederSpout
             TestWordCounter TestGlobalCount TestAggregatesCounter CompleteTopologyParam
             AckFailMapTracker MkTupleParam])
   (:import [org.apache.storm.utils Utils])
-  (:import [org.apache.storm Thrift]))
+  (:import [org.apache.storm Thrift ILocalCluster]))
 
 (deftest test-with-simulated-time
   (is (= false (Time/isSimulating)))

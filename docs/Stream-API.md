@@ -109,7 +109,7 @@ Stream<Tuple3<String, Integer, Long>> stream = builder.newStream(new TestSpout()
 
 # <a name="streamapis"></a> Stream APIs 
 
-Storm's streaming apis (defined in [Stream](../storm-core/src/jvm/org/apache/storm/streams/Stream.java) and [PairStream](../storm-core/src/jvm/org/apache/storm/streams/PairStream.java)) currently support a wide range of operations such as transformations, filters, windowing, aggregations, branching, joins, stateful, output and debugging operations.
+Storm's streaming apis (defined in [Stream](../storm-client/src/jvm/org/apache/storm/streams/Stream.java) and [PairStream](../storm-client/src/jvm/org/apache/storm/streams/PairStream.java)) currently support a wide range of operations such as transformations, filters, windowing, aggregations, branching, joins, stateful, output and debugging operations.
 
 ## <a name="basictransformations"></a> Basic transformations 
 

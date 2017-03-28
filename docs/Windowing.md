@@ -146,7 +146,7 @@ public BaseWindowedBolt withTimestampField(String fieldName)
 ```
 
 The value for the above `fieldName` will be looked up from the incoming tuple and considered for windowing calculations. 
-If the field is not present in the tuple an exception will be thrown. Alternatively a [TimestampExtractor](../storm-core/src/jvm/org/apache/storm/windowing/TimestampExtractor.java) can be used to
+If the field is not present in the tuple an exception will be thrown. Alternatively a [TimestampExtractor](../storm-client/src/jvm/org/apache/storm/windowing/TimestampExtractor.java) can be used to
 derive a timestamp value from a tuple (e.g. extract timestamp from a nested field within the tuple).
 
 ```java

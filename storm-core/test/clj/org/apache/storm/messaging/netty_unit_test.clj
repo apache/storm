@@ -97,9 +97,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-basic-fn storm-conf)          ;; test with sasl authentication disabled
    (test-basic-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -140,9 +140,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-load-fn storm-conf)          ;; test with sasl authentication disabled
    (test-load-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -178,9 +178,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-large-msg-fn storm-conf)          ;; test with sasl authentication disabled
    (test-large-msg-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -224,9 +224,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-server-delayed-fn storm-conf)          ;; test with sasl authentication disabled
    (test-server-delayed-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -274,9 +274,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-batch-fn storm-conf)          ;; test with sasl authentication disabled
    (test-batch-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 )
@@ -326,8 +326,8 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-server-always-reconnects-fn storm-conf)          ;; test with sasl authentication disabled
    (test-server-always-reconnects-fn storm-conf-sasl)))   ;; test with sasl authentication enabled

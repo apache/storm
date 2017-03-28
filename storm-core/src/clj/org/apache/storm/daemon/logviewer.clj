@@ -23,21 +23,17 @@
   (:import [org.apache.storm StormTimer]
            [org.apache.storm.daemon.supervisor SupervisorUtils]
            [org.apache.storm.metric StormMetricsRegistry])
-  (:import [org.apache.storm.utils Utils Time VersionInfo ConfigUtils])
-  (:import [org.slf4j LoggerFactory])
+  (:import [org.apache.storm.utils Time VersionInfo ConfigUtils Utils ServerUtils ServerConfigUtils])
   (:import [java.util Arrays ArrayList HashSet])
   (:import [java.util.zip GZIPInputStream])
   (:import [org.apache.logging.log4j LogManager])
-  (:import [org.apache.logging.log4j.core Appender LoggerContext])
   (:import [org.apache.logging.log4j.core.appender RollingFileAppender])
   (:import [java.io BufferedInputStream File FileFilter FileInputStream
-            InputStream InputStreamReader]
+            InputStream]
            [java.net URLDecoder])
-  (:import [java.nio.file Files Path Paths DirectoryStream])
+  (:import [java.nio.file Files DirectoryStream])
   (:import [java.nio ByteBuffer])
-  (:import [org.apache.storm.daemon DirectoryCleaner StormCommon])
-  (:import [org.yaml.snakeyaml Yaml]
-           [org.yaml.snakeyaml.constructor SafeConstructor])
+  (:import [org.apache.storm.daemon DirectoryCleaner])
   (:import [org.apache.storm.ui InvalidRequestException UIHelpers IConfigurator FilterConfiguration]
            [org.apache.storm.security.auth AuthUtils])
   (:require [compojure.route :as route]
@@ -119,9 +115,9 @@
 (defn get-topo-port-workerlog
   "Return the path of the worker log with the format of topoId/port/worker.log.*"
   [^File file]
-  (clojure.string/join Utils/FILE_PATH_SEPARATOR
+  (clojure.string/join ServerUtils/FILE_PATH_SEPARATOR
                        (take-last 3
-                                  (split (.getCanonicalPath file) (re-pattern Utils/FILE_PATH_SEPARATOR)))))
+                                  (split (.getCanonicalPath file) (re-pattern ServerUtils/FILE_PATH_SEPARATOR)))))
 
 (defn get-metadata-file-for-log-root-name [root-name root-dir]
   (let [metaFile (clojure.java.io/file root-dir "metadata"
@@ -146,7 +142,7 @@
   (get (clojurify-structure (Utils/readYamlFile metaFile)) "worker-id"))
 
 (defn get-topo-owner-from-metadata-file [metaFile]
-  (get (clojurify-structure (Utils/readYamlFile  metaFile)) TOPOLOGY-SUBMITTER-USER))
+  (get (clojurify-structure (Utils/readYamlFile metaFile)) TOPOLOGY-SUBMITTER-USER))
 
 (defn identify-worker-log-dirs [log-dirs]
   "return the workerid to worker-log-dir map"
@@ -266,7 +262,7 @@
       (log-debug "starting log cleanup thread at interval: " interval-secs)
 
       (let [timer (StormTimer. "logviewer-cleanup"
-                    (reify Thread$UncaughtExceptionHandler
+                               (reify Thread$UncaughtExceptionHandler
                       (^void uncaughtException
                         [this ^Thread t ^Throwable e]
                         (log-error t "Error when doing logs cleanup")
@@ -291,12 +287,12 @@
 (defn page-file
   ([path tail]
     (let [zip-file? (.endsWith path ".gz")
-          flen (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
+          flen (if zip-file? (ServerUtils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
           skip (- flen tail)]
       (page-file path skip tail)))
   ([path start length]
     (let [zip-file? (.endsWith path ".gz")
-          flen (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))]
+          flen (if zip-file? (ServerUtils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))]
       (with-open [input (if zip-file? (GZIPInputStream. (FileInputStream. path)) (FileInputStream. path))
                   output (java.io.ByteArrayOutputStream.)]
         (if (>= start flen)
@@ -313,7 +309,7 @@
         (.toString output))))))
 
 (defn get-log-user-group-whitelist [fname]
-  (let [wl-file (ConfigUtils/getLogMetaDataFile fname)
+  (let [wl-file (ServerConfigUtils/getLogMetaDataFile fname)
         m (clojurify-structure (Utils/readYamlFile wl-file))]
     (if (not-nil? m)
       (do
@@ -427,7 +423,7 @@
       (if (and (.exists file)
                (= (.getCanonicalFile (File. root-dir))
                   (.getParentFile topo-dir)))
-        (let [file-length (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
+        (let [file-length (if zip-file? (ServerUtils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
               log-files (reduce clojure.set/union
                           (sorted-set)
                           (for [^File port-dir (.listFiles topo-dir)]
@@ -474,7 +470,7 @@
     (if (and (= (.getCanonicalFile (File. root-dir))
                 (.getParentFile file))
              (.exists file))
-      (let [file-length (if zip-file? (Utils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
+      (let [file-length (if zip-file? (ServerUtils/zipFileSize (clojure.java.io/file path)) (.length (clojure.java.io/file path)))
             length (if length
                      (min 10485760 length)
                      default-bytes-per-page)
@@ -531,7 +527,7 @@
   [needle fname offset port]
   (let [host (Utils/hostname)
         port (logviewer-port)
-        fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 3 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
+        fname (clojure.string/join ServerUtils/FILE_PATH_SEPARATOR (take-last 3 (split fname (re-pattern ServerUtils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/log")
       {:file fname
        :start (max 0
@@ -544,7 +540,7 @@
   [needle fname offset port]
   (let [host (Utils/hostname)
         port (logviewer-port)
-        fname (clojure.string/join Utils/FILE_PATH_SEPARATOR (take-last 1 (split fname (re-pattern Utils/FILE_PATH_SEPARATOR))))]
+        fname (clojure.string/join ServerUtils/FILE_PATH_SEPARATOR (take-last 1 (split fname (re-pattern ServerUtils/FILE_PATH_SEPARATOR))))]
     (url (str "http://" host ":" port "/daemonlog")
       {:file fname
        :start (max 0
@@ -752,7 +748,7 @@
                                f-input-steam)
         stream ^BufferedInputStream (BufferedInputStream.
                                       gzipped-input-stream)
-        file-len (if zip-file? (Utils/zipFileSize file) (.length file))
+        file-len (if zip-file? (ServerUtils/zipFileSize file) (.length file))
         buf ^ByteBuffer (ByteBuffer/allocate grep-buf-size)
         buf-arr ^bytes (.array buf)
         string nil
@@ -890,9 +886,9 @@
                                 {}))
               file-name (get-topo-port-workerlog (first logs))
               new-matches (conj matches
-                            (merge these-matches
-                              { "fileName" file-name
-                                "port" (first (take-last 2 (split (.getCanonicalPath (first logs)) (re-pattern Utils/FILE_PATH_SEPARATOR))))}))
+                                (merge these-matches
+                                       { "fileName" file-name
+                                "port" (first (take-last 2 (split (.getCanonicalPath (first logs)) (re-pattern ServerUtils/FILE_PATH_SEPARATOR))))}))
               new-count (+ match-count (count (these-matches "matches")))]
           (if (empty? these-matches)
             (recur matches (rest logs) 0 (+ file-offset 1) match-count)
@@ -915,12 +911,12 @@
 (defn deep-search-logs-for-topology
   [topology-id user ^String root-dir search num-matches port file-offset offset search-archived? callback origin]
   (json-response
-    (if (or (not search) (not (.exists (File. (str root-dir Utils/FILE_PATH_SEPARATOR topology-id)))))
+    (if (or (not search) (not (.exists (File. (str root-dir ServerUtils/FILE_PATH_SEPARATOR topology-id)))))
       []
       (let [file-offset (if file-offset (Integer/parseInt file-offset) 0)
             offset (if offset (Integer/parseInt offset) 0)
             num-matches (or (Integer/parseInt num-matches) 1)
-            port-dirs (vec (.listFiles (File. (str root-dir Utils/FILE_PATH_SEPARATOR topology-id))))
+            port-dirs (vec (.listFiles (File. (str root-dir ServerUtils/FILE_PATH_SEPARATOR topology-id))))
             logs-for-port-fn (partial logs-for-port user)]
         (if (or (not port) (= "*" port))
           ;; Check for all ports
@@ -933,7 +929,7 @@
           ;; Check just the one port
           (if (not (contains? (into #{} (map str (*STORM-CONF* SUPERVISOR-SLOTS-PORTS))) port))
             []
-            (let [port-dir (File. (str root-dir Utils/FILE_PATH_SEPARATOR topology-id Utils/FILE_PATH_SEPARATOR port))]
+            (let [port-dir (File. (str root-dir ServerUtils/FILE_PATH_SEPARATOR topology-id ServerUtils/FILE_PATH_SEPARATOR port))]
               (if (or (not (.exists port-dir)) (empty? (logs-for-port user port-dir)))
                 []
                 (let [filtered-logs (logs-for-port user port-dir)]
@@ -986,7 +982,7 @@
                     (if (= (str port) (.getName port-dir))
                       (into [] (DirectoryCleaner/getFilesForDir port-dir))))))))
           (if (nil? port)
-            (let [topo-dir (File. (str log-root Utils/FILE_PATH_SEPARATOR topoId))]
+            (let [topo-dir (File. (str log-root ServerUtils/FILE_PATH_SEPARATOR topoId))]
               (if (.exists topo-dir)
                 (reduce concat
                   (for [port-dir (.listFiles topo-dir)]
@@ -1034,21 +1030,21 @@
      (let [user (.getUserName http-creds-handler servlet-request)
            port (second (split host-port #":"))
            dir (File. (str log-root
-                           Utils/FILE_PATH_SEPARATOR
+                           ServerUtils/FILE_PATH_SEPARATOR
                            topo-id
-                           Utils/FILE_PATH_SEPARATOR
+                           ServerUtils/FILE_PATH_SEPARATOR
                            port))
            file (File. (str log-root
-                            Utils/FILE_PATH_SEPARATOR
+                            ServerUtils/FILE_PATH_SEPARATOR
                             topo-id
-                            Utils/FILE_PATH_SEPARATOR
+                            ServerUtils/FILE_PATH_SEPARATOR
                             port
-                            Utils/FILE_PATH_SEPARATOR
+                            ServerUtils/FILE_PATH_SEPARATOR
                             filename))]
        (if (and (.exists dir) (.exists file))
          (if (or (blank? (*STORM-CONF* UI-FILTER))
                (authorized-log-user? user
-                                     (str topo-id Utils/FILE_PATH_SEPARATOR port Utils/FILE_PATH_SEPARATOR "worker.log")
+                                     (str topo-id ServerUtils/FILE_PATH_SEPARATOR port ServerUtils/FILE_PATH_SEPARATOR "worker.log")
                                      *STORM-CONF*))
            (-> (resp/response file)
                (resp/content-type "application/octet-stream"))
@@ -1060,14 +1056,14 @@
      (let [user (.getUserName http-creds-handler servlet-request)
            port (second (split host-port #":"))
            dir (File. (str log-root
-                           Utils/FILE_PATH_SEPARATOR
+                           ServerUtils/FILE_PATH_SEPARATOR
                            topo-id
-                           Utils/FILE_PATH_SEPARATOR
+                           ServerUtils/FILE_PATH_SEPARATOR
                            port))]
        (if (.exists dir)
          (if (or (blank? (*STORM-CONF* UI-FILTER))
                (authorized-log-user? user
-                                     (str topo-id Utils/FILE_PATH_SEPARATOR port Utils/FILE_PATH_SEPARATOR "worker.log")
+                                     (str topo-id ServerUtils/FILE_PATH_SEPARATOR port ServerUtils/FILE_PATH_SEPARATOR "worker.log")
                                      *STORM-CONF*))
            (html4
              [:head

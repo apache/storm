@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-server</artifactId>
             <version>${project.version}</version>
             <!-- keep storm out of the jar-with-dependencies -->
             <scope>${provided.scope}</scope>
@@ -139,7 +139,7 @@
                 <dependencies>
                     <dependency>
                         <groupId>org.apache.storm</groupId>
-                        <artifactId>storm-core</artifactId>
+                        <artifactId>storm-server</artifactId>
                         <version>${project.version}</version>
                         <type>jar</type>
                     </dependency>

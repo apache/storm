@@ -142,21 +142,21 @@
                                 (.withSimulatedTime)
                                 (.withSupervisors 4)))]
     (let [topology (Thrift/buildTopology
-                    {"1" (Thrift/prepareSpoutDetails
+                     {"1" (Thrift/prepareSpoutDetails
                            (TestWordSpout. true))}
-                    {"2" (Thrift/prepareBoltDetails
-                           {(Utils/getGlobalStreamId "1" nil)
-                            (Thrift/prepareCustomStreamGrouping (NGrouping. (Integer. 2)))}
-                           id-bolt
-                           (Integer. 4))
-                     "3" (Thrift/prepareBoltDetails
-                           {(Utils/getGlobalStreamId "1" nil)
-                            (Thrift/prepareCustomJavaObjectGrouping
-                              (JavaObject. "org.apache.storm.testing.NGrouping"
-                              [(JavaObjectArg/int_arg 3)]))}
-                           id-bolt
-                           (Integer. 6))
-                     })
+                     {"2" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareCustomStreamGrouping (NGrouping. (Integer. 2)))}
+                            id-bolt
+                            (Integer. 4))
+                      "3" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareCustomJavaObjectGrouping
+                               (JavaObject. "org.apache.storm.testing.NGrouping"
+                                            [(JavaObjectArg/int_arg 3)]))}
+                            id-bolt
+                            (Integer. 6))
+                      })
           results (Testing/completeTopology cluster
                                      topology
                                      (doto (CompleteTopologyParam.)

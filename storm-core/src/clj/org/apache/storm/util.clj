@@ -15,37 +15,11 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.util
-  (:import [java.net InetAddress])
-  (:import [java.util Map Map$Entry List ArrayList Collection Iterator HashMap])
-  (:import [java.io FileReader FileNotFoundException])
-  (:import [java.nio.file Paths])
-  (:import [org.apache.storm Config])
- (:import [org.apache.storm.generated ErrorInfo])
-  (:import [org.apache.storm.utils Time ClojureTimerTask Utils
-            MutableObject])
-  (:import [org.apache.storm.security.auth NimbusPrincipal])
-  (:import [javax.security.auth Subject])
-  (:import [java.util UUID Random ArrayList List Collections Set])
-  (:import [java.util.zip ZipFile])
-  (:import [java.util.concurrent.locks ReentrantReadWriteLock])
-  (:import [java.util.concurrent Semaphore])
-  (:import [java.nio.file Files Paths])
-  (:import [java.nio.file.attribute FileAttribute])
-  (:import [java.io File FileOutputStream RandomAccessFile StringWriter
-            PrintWriter BufferedReader InputStreamReader IOException])
-  (:import [java.lang.management ManagementFactory])
-  (:import [org.apache.commons.exec DefaultExecutor CommandLine])
-  (:import [org.apache.commons.io FileUtils])
-  (:import [org.apache.commons.exec ExecuteException])
-  (:import [org.json.simple JSONValue])
-  (:import [org.yaml.snakeyaml Yaml]
-           [org.yaml.snakeyaml.constructor SafeConstructor])
-  (:require [clojure [string :as str]])
-  (:import [clojure.lang RT])
-  (:require [clojure [set :as set]])
-  (:require [clojure.java.io :as io])
+  (:import [java.util Map List HashMap])
+  (:import [org.apache.storm.generated ErrorInfo])
+  (:import [org.apache.storm.utils Utils])
+  (:import [java.util List Set])
   (:use [clojure walk])
-  (:require [ring.util.codec :as codec])
   (:use [org.apache.storm log]))
 
 ;; name-with-attributes by Konrad Hinsen:

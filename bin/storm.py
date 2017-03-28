@@ -80,9 +80,10 @@ else:
 if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
     USER_CONF_DIR = CLUSTER_CONF_DIR
 
+STORM_WORKER_LIB_DIR = os.path.join(STORM_DIR, "lib-worker")
 STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
-STORM_DRPC_LIB_DIR = os.path.join(STORM_DIR, "lib-drpc-server")
 STORM_TOOLS_LIB_DIR = os.path.join(STORM_DIR, "lib-tools")
+STORM_WEBAPP_LIB_DIR = os.path.join(STORM_DIR, "lib-webapp")
 STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
 STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
 STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
@@ -763,7 +764,7 @@ def drpc():
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
-    allextrajars = get_jars_full(STORM_DRPC_LIB_DIR)
+    allextrajars = get_jars_full(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
         "org.apache.storm.daemon.drpc.DRPCServer",

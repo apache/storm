@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 
 public class TopologySpoutLag {
+    // FIXME: This class can be moved to webapp once UI porting is done.
+
     private static final String SPOUT_ID = "spoutId";
     private static final String SPOUT_TYPE= "spoutType";
     private static final String SPOUT_LAG_RESULT = "spoutLagResult";
