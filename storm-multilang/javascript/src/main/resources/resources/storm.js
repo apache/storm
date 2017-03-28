@@ -56,29 +56,28 @@ Storm.prototype.sendToLogging = function(args, logLevel) {
     this.sendMsgToParent({'command': 'log', 'msg': msg, 'level': logLevel});
 };
 
-Storm.prototype.log = function() {
-    this.sendToLogging(arguments, this.logLevels.info);
-};
-
-Storm.prototype.trace = function() {
+Storm.prototype.logTrace = function() {
     this.sendToLogging(arguments, this.logLevels.trace);
 };
 
-Storm.prototype.debug = function() {
+Storm.prototype.logDebug = function() {
     this.sendToLogging(arguments, this.logLevels.debug);
 };
 
-Storm.prototype.info = function() {
+Storm.prototype.logInfo = function() {
     this.sendToLogging(arguments, this.logLevels.info);
 };
 
-Storm.prototype.warn = function() {
+Storm.prototype.logWarn = function() {
     this.sendToLogging(arguments, this.logLevels.warn);
 };
 
-Storm.prototype.error = function() {
+Storm.prototype.logError = function() {
     this.sendToLogging(arguments, this.logLevels.error);
 };
+
+// For backwards compatibility
+Storm.prototype.log = Storm.prototype.logInfo;
 
 Storm.prototype.initSetupInfo = function(setupInfo) {
     var self = this;
