@@ -529,7 +529,7 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
   private static void checkValidReader(String readerType) {
-    if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
+    if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) || readerType.equalsIgnoreCase(Configs.ZIP) )
       return;
     try {
       Class<?> classType = Class.forName(readerType);
