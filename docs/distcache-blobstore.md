@@ -115,12 +115,12 @@ the responsibility of mapping the blob to a local name on the supervisor node.
 
 ## Additional Blobstore Implementation Details
 Blobstore uses a hashing function to create the blobs based on the key. The blobs are generally stored inside the directory specified by
-the blobstore.dir configuration. By default, it is stored under “storm.local.dir/nimbus/blobs” for local file system and a similar path on 
+the blobstore.dir configuration. By default, it is stored under “storm.local.dir/blobs” for local file system and a similar path on 
 hdfs file system.
 
 Once a file is submitted, the blobstore reads the configs and creates a metadata for the blob with all the access control details. The metadata 
 is generally used for authorization while accessing the blobs. The blob key and version contribute to the hash code and there by the directory 
-under “storm.local.dir/nimbus/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
+under “storm.local.dir/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
 
 Once the topology is launched and the relevant blobs have been created, the supervisor downloads blobs related to the storm.conf, storm.ser 
 and storm.code first and all the blobs uploaded by the command line separately using the localizer to uncompress and map them to a local name 
