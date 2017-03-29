@@ -124,7 +124,7 @@ public class Task {
 
     public List<Integer> getOutgoingTasks(String stream, List<Object> values) {
         if (debug) {
-            LOG.info("Emitting: {} {} {}", componentId, stream, values);
+            LOG.info("Emitting Tuple: taskId={} componentId={} stream={} values={}", taskId, componentId, stream, values);
         }
 
         List<Integer> outTasks = new ArrayList<>();

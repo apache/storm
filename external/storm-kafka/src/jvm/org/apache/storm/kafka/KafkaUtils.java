@@ -258,7 +258,8 @@ public class KafkaUtils {
     }
 
 
-    public static List<Partition> calculatePartitionsForTask(List<GlobalPartitionInformation> partitons, int totalTasks, int taskIndex) {
+    public static List<Partition> calculatePartitionsForTask(List<GlobalPartitionInformation> partitons,
+            int totalTasks, int taskIndex, int taskId) {
         Preconditions.checkArgument(taskIndex < totalTasks, "task index must be less that total tasks");
         List<Partition> taskPartitions = new ArrayList<Partition>();
         List<Partition> partitions = new ArrayList<Partition>();
@@ -273,20 +274,20 @@ public class KafkaUtils {
             Partition taskPartition = partitions.get(i);
             taskPartitions.add(taskPartition);
         }
-        logPartitionMapping(totalTasks, taskIndex, taskPartitions);
+        logPartitionMapping(totalTasks, taskIndex, taskPartitions, taskId);
         return taskPartitions;
     }
 
-    private static void logPartitionMapping(int totalTasks, int taskIndex, List<Partition> taskPartitions) {
-        String taskPrefix = taskId(taskIndex, totalTasks);
+    private static void logPartitionMapping(int totalTasks, int taskIndex, List<Partition> taskPartitions, int taskId) {
+        String taskPrefix = taskPrefix(taskIndex, totalTasks, taskId);
         if (taskPartitions.isEmpty()) {
-            LOG.warn(taskPrefix + "no partitions assigned");
+            LOG.warn(taskPrefix + " no partitions assigned");
         } else {
-            LOG.info(taskPrefix + "assigned " + taskPartitions);
+            LOG.info(taskPrefix + " assigned " + taskPartitions);
         }
     }
 
-    public static String taskId(int taskIndex, int totalTasks) {
-        return "Task [" + (taskIndex + 1) + "/" + totalTasks + "] ";
+    public static String taskPrefix(int taskIndex, int totalTasks, int taskId) {
+        return "Task [" + (taskIndex + 1) + "/" + totalTasks + "], Task-ID: " + taskId;
     }
 }

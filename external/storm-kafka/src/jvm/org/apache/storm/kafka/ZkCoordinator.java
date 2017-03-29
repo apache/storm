@@ -23,7 +23,7 @@ import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 
 import java.util.*;
 
-import static org.apache.storm.kafka.KafkaUtils.taskId;
+import static org.apache.storm.kafka.KafkaUtils.taskPrefix;
 
 public class ZkCoordinator implements PartitionCoordinator {
     private static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
@@ -31,6 +31,7 @@ public class ZkCoordinator implements PartitionCoordinator {
     SpoutConfig _spoutConfig;
     int _taskIndex;
     int _totalTasks;
+    int _taskId;
     String _topologyInstanceId;
     Map<Partition, PartitionManager> _managers = new HashMap();
     List<PartitionManager> _cachedList = new ArrayList<PartitionManager>();
@@ -41,15 +42,18 @@ public class ZkCoordinator implements PartitionCoordinator {
     ZkState _state;
     Map _topoConf;
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
-        this(connections, topoConf, spoutConfig, state, taskIndex, totalTasks, topologyInstanceId, buildReader(topoConf, spoutConfig));
+    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state,
+            int taskIndex, int totalTasks, int taskId, String topologyInstanceId) {
+        this(connections, topoConf, spoutConfig, state, taskIndex, totalTasks, taskId, topologyInstanceId, buildReader(topoConf, spoutConfig));
     }
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId, DynamicBrokersReader reader) {
+    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state,
+            int taskIndex, int totalTasks, int taskId, String topologyInstanceId, DynamicBrokersReader reader) {
         _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
         _totalTasks = totalTasks;
+        _taskId = taskId;
         _topologyInstanceId = topologyInstanceId;
         _topoConf = topoConf;
         _state = state;
@@ -75,9 +79,9 @@ public class ZkCoordinator implements PartitionCoordinator {
     @Override
     public void refresh() {
         try {
-            LOG.info(taskId(_taskIndex, _totalTasks) + "Refreshing partition manager connections");
+            LOG.info(taskPrefix(_taskIndex, _totalTasks, _taskId) + " Refreshing partition manager connections");
             List<GlobalPartitionInformation> brokerInfo = _reader.getBrokerInfo();
-            List<Partition> mine = KafkaUtils.calculatePartitionsForTask(brokerInfo, _totalTasks, _taskIndex);
+            List<Partition> mine = KafkaUtils.calculatePartitionsForTask(brokerInfo, _totalTasks, _taskIndex, _taskId);
 
             Set<Partition> curr = _managers.keySet();
             Set<Partition> newPartitions = new HashSet<Partition>(mine);
@@ -86,7 +90,7 @@ public class ZkCoordinator implements PartitionCoordinator {
             Set<Partition> deletedPartitions = new HashSet<Partition>(curr);
             deletedPartitions.removeAll(mine);
 
-            LOG.info(taskId(_taskIndex, _totalTasks) + "Deleted partition managers: " + deletedPartitions.toString());
+            LOG.info(taskPrefix(_taskIndex, _totalTasks, _taskId) + " Deleted partition managers: " + deletedPartitions.toString());
 
             Map<Integer, PartitionManager> deletedManagers = new HashMap<>();
             for (Partition id : deletedPartitions) {
@@ -95,7 +99,7 @@ public class ZkCoordinator implements PartitionCoordinator {
             for (PartitionManager manager : deletedManagers.values()) {
                 if (manager != null) manager.close();
             }
-            LOG.info(taskId(_taskIndex, _totalTasks) + "New partition managers: " + newPartitions.toString());
+            LOG.info(taskPrefix(_taskIndex, _totalTasks, _taskId) + " New partition managers: " + newPartitions.toString());
 
             for (Partition id : newPartitions) {
                 PartitionManager man = new PartitionManager(
@@ -113,7 +117,7 @@ public class ZkCoordinator implements PartitionCoordinator {
             throw new RuntimeException(e);
         }
         _cachedList = new ArrayList<PartitionManager>(_managers.values());
-        LOG.info(taskId(_taskIndex, _totalTasks) + "Finished refreshing");
+        LOG.info(taskPrefix(_taskIndex, _totalTasks, _taskId) + " Finished refreshing");
     }
 
     @Override
