@@ -6,7 +6,7 @@ documentation: true
 
 
 ### Introduction
-IConfigLoader is an interface designed to allow way to dynamically load scheduler resource constraints into scheduler implementations. Currently, the MultiTenant scheduler uses this interface to dynamically load the number of isolated nodes a given user has been guaranteed, and the ResoureAwareScheduler uses the interface to dynamically load per user resource guarantees.
+IConfigLoader is an interface designed to allow dynamic loading of scheduler resource constraints. Currently, the MultiTenant scheduler uses this interface to dynamically load the number of isolated nodes a given user has been guaranteed, and the ResoureAwareScheduler uses the interface to dynamically load per user resource guarantees.
 
 ------
 
