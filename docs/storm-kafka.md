@@ -1,5 +1,5 @@
 ---
-title: Storm Kafka Integration
+title: Storm Kafka Integration (0.8.x)
 layout: documentation
 documentation: true
 ---

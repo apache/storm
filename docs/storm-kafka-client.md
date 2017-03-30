@@ -1,3 +1,8 @@
+---
+title: Storm Kafka Integration (0.10.x+)
+layout: documentation
+documentation: true
+---
 #Storm Apache Kafka integration using the kafka-client jar
 This includes the new Apache Kafka consumer API.
 
