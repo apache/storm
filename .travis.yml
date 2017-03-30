@@ -16,7 +16,7 @@ addons:
 env:
   - MODULES=storm-core
   - MODULES='!storm-core'
-  - MODULES='INTEGRATION-TEST'
+#  - MODULES='INTEGRATION-TEST' # disable this unless there's volunteer to make it stable
 
 language: java
 jdk:
