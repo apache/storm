@@ -58,6 +58,7 @@ storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCo
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"
 storm.health.check.timeout.ms: 5000
+storm.disable.symlinks: false
 
 ### nimbus.* configs are for the master
 nimbus.seeds : ["localhost"]
@@ -225,7 +226,7 @@ topology.enable.message.timeouts: true
 topology.debug: false
 topology.workers: 1
 topology.acker.executors: null
-topology.eventlogger.executors: null
+topology.eventlogger.executors: 0
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
 topology.message.timeout.secs: 30
@@ -307,5 +308,10 @@ storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
 storm.cgroup.memory.limit.tolerance.margin.mb: 128.0
 storm.topology.classpath.beginning.enabled: false
+worker.metrics:
+    "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"
+    "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
+    "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
+    "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
 
 num.stat.buckets: 20

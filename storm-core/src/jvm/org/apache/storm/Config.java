@@ -1412,6 +1412,15 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
 
     /**
+     * On some systems (windows for example) symlinks require special privileges that not everyone wants to
+     * grant a headless user.  You can completely disable the use of symlinks by setting this config to true, but
+     * by doing so you may also lose some features from storm.  For example the blobstore feature
+     * does not currently work without symlinks enabled.
+     */
+    @isBoolean
+    public static final String DISABLE_SYMLINKS = "storm.disable.symlinks";
+
+    /**
      * The jvm opts provided to workers launched by this supervisor.
      * All "%ID%", "%WORKER-ID%", "%TOPOLOGY-ID%",
      * "%WORKER-PORT%" and "%HEAP-MEM%" substrings are replaced with:
@@ -2342,9 +2351,13 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB = "storm.cgroup.memory.limit.tolerance.margin.mb";
 
-	@isInteger
+    /**
+     * The number of Buckets
+     */
+    @isInteger
     @isPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

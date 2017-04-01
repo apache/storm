@@ -23,11 +23,9 @@ import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.internal.MultiCountStatAndMetric;
 import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
-import org.apache.storm.utils.Utils;
 
 @SuppressWarnings("unchecked")
 public abstract class CommonStats {
-    public static final int NUM_STAT_BUCKETS =(int) Utils.readStormConfig().get("num.stat.buckets");
 
     public static final String RATE = "rate";
 
@@ -38,7 +36,7 @@ public abstract class CommonStats {
     protected final int rate;
     protected final Map<String, IMetric> metricMap = new HashMap<>();
 
-    public CommonStats(int rate) {
+    public CommonStats(int rate,int NUM_STAT_BUCKETS) {
         this.rate = rate;
         this.put(EMITTED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
         this.put(TRANSFERRED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));

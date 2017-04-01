@@ -30,8 +30,8 @@ public class SpoutExecutorStats extends CommonStats {
     public static final String FAILED = "failed";
     public static final String COMPLETE_LATENCIES = "complete-latencies";
 
-    public SpoutExecutorStats(int rate) {
-        super(rate);
+    public SpoutExecutorStats(int rate,int NUM_STAT_BUCKETS) {
+        super(rate,NUM_STAT_BUCKETS);
         this.put(ACKED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
         this.put(FAILED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
         this.put(COMPLETE_LATENCIES, new MultiLatencyStatAndMetric(NUM_STAT_BUCKETS));
