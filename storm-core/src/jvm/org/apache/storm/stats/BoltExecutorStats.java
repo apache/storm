@@ -36,8 +36,8 @@ public class BoltExecutorStats extends CommonStats {
     public static final String PROCESS_LATENCIES = "process-latencies";
     public static final String EXECUTE_LATENCIES = "execute-latencies";
 
-    public BoltExecutorStats(int rate) {
-        super(rate);
+    public BoltExecutorStats(int rate,int NUM_STAT_BUCKETS) {
+        super(rate,NUM_STAT_BUCKETS);
 
         this.put(ACKED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
         this.put(FAILED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));

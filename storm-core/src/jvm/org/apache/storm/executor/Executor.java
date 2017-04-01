@@ -146,10 +146,10 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         Map<String, Bolt> bolts = topology.get_bolts();
         if (spouts.containsKey(componentId)) {
             this.type = StatsUtil.SPOUT;
-            this.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(stormConf));
+            this.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(stormConf),Utils.getInt(stormConf.get(Config.NUM_STAT_BUCKETS)));
         } else if (bolts.containsKey(componentId)) {
             this.type = StatsUtil.BOLT;
-            this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(stormConf));
+            this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(stormConf),Utils.getInt(stormConf.get(Config.NUM_STAT_BUCKETS)));
         } else {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
@@ -183,10 +183,10 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         String type = getExecutorType(workerTopologyContext, componentId);
         if (StatsUtil.SPOUT.equals(type)) {
             executor = new SpoutExecutor(workerState, executorId, credentials);
-            executor.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()));
+            executor.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()),Utils.getInt(executor.getStormConf().get(Config.NUM_STAT_BUCKETS)));
         } else {
             executor = new BoltExecutor(workerState, executorId, credentials);
-            executor.stats = new BoltExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()));
+            executor.stats = new BoltExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()),Utils.getInt(executor.getStormConf().get(Config.NUM_STAT_BUCKETS)));
         }
 
         Map<Integer, Task> idToTask = new HashMap<>();
