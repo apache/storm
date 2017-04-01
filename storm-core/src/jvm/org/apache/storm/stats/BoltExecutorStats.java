@@ -36,14 +36,14 @@ public class BoltExecutorStats extends CommonStats {
     public static final String PROCESS_LATENCIES = "process-latencies";
     public static final String EXECUTE_LATENCIES = "execute-latencies";
 
-    public BoltExecutorStats(int rate) {
-        super(rate);
+    public BoltExecutorStats(int rate,int numStatBuckets) {
+        super(rate,numStatBuckets);
 
-        this.put(ACKED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(FAILED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(EXECUTED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(PROCESS_LATENCIES, new MultiLatencyStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(EXECUTE_LATENCIES, new MultiLatencyStatAndMetric(NUM_STAT_BUCKETS));
+        this.put(ACKED, new MultiCountStatAndMetric(numStatBuckets));
+        this.put(FAILED, new MultiCountStatAndMetric(numStatBuckets));
+        this.put(EXECUTED, new MultiCountStatAndMetric(numStatBuckets));
+        this.put(PROCESS_LATENCIES, new MultiLatencyStatAndMetric(numStatBuckets));
+        this.put(EXECUTE_LATENCIES, new MultiLatencyStatAndMetric(numStatBuckets));
     }
 
     public MultiCountStatAndMetric getAcked() {

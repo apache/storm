@@ -313,3 +313,5 @@ worker.metrics:
     "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
     "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
     "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
+
+num.stat.buckets: 20
