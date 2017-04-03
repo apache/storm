@@ -31,6 +31,14 @@ public class MockedSources {
 	 */
     private Map<String, List<FixedTuple>> data = new HashMap<String, List<FixedTuple>>();
     
+    public MockedSources() {
+        //Empty
+    }
+    
+    public MockedSources(Map<String, List<FixedTuple>> data) {
+        this.data = new HashMap<>(data);
+    }
+    
     /**
      * add mock data for the spout.
      * 

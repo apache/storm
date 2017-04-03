@@ -20,7 +20,7 @@ package org.apache.storm.container.cgroup;
 import java.util.Set;
 
 /**
- * A class that describes a cgroup hiearchy
+ * A class that describes a cgroup hierarchy
  */
 public class Hierarchy {
 

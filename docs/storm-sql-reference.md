@@ -1137,20 +1137,7 @@ Not implemented:
 
 ### Aggregate functions
 
-Storm SQL provides its own built-in aggregate functions, rather than supported by Calcite because of limitation of integration aggregate functions on Trident aggregate operation.
-More functions will be added to built-in, and we will try to support aggregate functions supported by Calcite eventually. 
-
-Note that Storm SQL doesn't support `DISTINCT` option on aggregate functions yet since it is normally very hard to consider element distinction while implementing aggregation.
-Storm SQL doesn't support `FILTER` option yet, too.
-
-| Operator syntax | Description
-|:--------------- |:-----------
-| COUNT( value ) | Returns the number of input rows for which *value* is not null (Storm SQL doesn't support composite value)
-| COUNT(*)       | Returns the number of input rows
-| AVG(numeric)   | Returns the average (arithmetic mean) of *numeric* across all input values
-| SUM(numeric)   | Returns the sum of *numeric* across all input values
-| MAX(value)     | Returns the maximum value of *value* across all input values
-| MIN(value)     | Returns the minimum value of *value* across all input values
+Storm SQL doesn't support aggregation yet.
 
 ### Window functions
 
@@ -1162,7 +1149,7 @@ Storm SQL doesn't support grouping functions.
 
 ### User-defined functions
 
-Users can define user defined function (scalar or aggregate) using `CREATE FUNCTION` statement.
+Users can define user defined function (scalar) using `CREATE FUNCTION` statement.
 For example, the following statement defines `MYPLUS` function which uses `org.apache.storm.sql.TestUtils$MyPlus` class.
 
 ```
@@ -1170,8 +1157,7 @@ CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'
 ```
 
 Storm SQL determines whether the function as scalar or aggregate by checking which methods are defined.
-If the class defines `evaluate` method, Storm SQL treats the function as `scalar`,
-and if the class defines `init`, `add`, `result` methods, Storm SQL treats the function as `aggregate`.
+If the class defines `evaluate` method, Storm SQL treats the function as `scalar`.
 
 Example of class for scalar function is here:
 
@@ -1184,26 +1170,7 @@ Example of class for scalar function is here:
 
 ```
 
-and class for aggregate function is here:
-
-```
-  public class MyConcat {
-    public static String init() {
-      return "";
-    }
-    public static String add(String accumulator, String val) {
-      return accumulator + val;
-    }
-    public static String result(String accumulator) {
-      return accumulator;
-    }
-  }
-```
-
-For now users can skip implementing `result` method if it doesn't need transform accumulated value, 
-but this behavior is subject to change so providing `result` is recommended. 
-
-Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs and/or UDAFs are available in classpath.
+Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs are available in classpath. 
 
 ## External Data Sources
 
@@ -1229,6 +1196,8 @@ For example, the following statement specifies a Kafka spout and sink:
 ```
 CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
 ```
+
+Please note that users should use `--jars` or `--artifacts` while running Storm SQL runner to make sure UDFs are available in classpath. 
 
 ### Plugging in External Data Sources
 
@@ -1268,9 +1237,19 @@ Please note that it supports only one letter for delimiter.
 
 | Data Source     | Artifact Name      | Location prefix     | Support Input data source | Support Output data source | Requires properties
 |:--------------- |:------------------ |:------------------- |:------------------------- |:-------------------------- |:-------------------
+| Socket | <built-in> | `socket://host:port` | Yes | Yes | No
 | Kafka | org.apache.storm:storm-sql-kafka | `kafka://zkhost:port/broker_path?topic=topic` | Yes | Yes | Yes
 | Redis | org.apache.storm:storm-sql-redis | `redis://:[password]@host:port/[dbIdx]` | No | Yes | Yes
 | MongoDB | org.apache.stormg:storm-sql-mongodb | `mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]]` | No | Yes | Yes
+| HDFS | org.apache.storm:storm-sql-hdfs | `hdfs://host:port/path-to-file` | No | Yes | Yes
+
+#### Socket
+
+Socket data source is a built-in feature so users don't need to add any artifacts to `--artifacts` options.
+
+Please note that Socket data source is only for testing: it doesn't guarantee exactly-once and at-least-once.
+
+TIP: `netcat` is a convenient tool for Socket: users can use netcat to connect Socket data source for either or both input and output purposes.
 
 #### Kafka
 
@@ -1313,3 +1292,22 @@ You can use below as working reference for `--artifacts` option, and change depe
 `org.apache.storm:storm-sql-mongodb:2.0.0-SNAPSHOT,org.apache.storm:storm-mongodb:2.0.0-SNAPSHOT`
 
 Storing record with preserving fields are not supported for now.
+
+#### HDFS
+
+HDFS data source requires below properties to be set:
+
+* `hdfs.file.path`: HDFS file path
+* `hdfs.file.name`: HDFS file name - please refer to [SimpleFileNameFormat]({{page.git-blob-base}}/external/storm-hdfs/src/main/java/org/apache/storm/hdfs/trident/format/SimpleFileNameFormat.java)
+* `hdfs.rotation.size.kb`: HDFS FileSizeRotationPolicy in KB
+* `hdfs.rotation.time.seconds`: HDFS TimedRotationPolicy in seconds
+
+Please note that `hdfs.rotation.size.kb` and `hdfs.rotation.time.seconds` only one can be used for hdfs rotation.
+
+And note that `storm-sql-hdfs` requires users to provide `storm-hdfs`.
+You can use below as working reference for `--artifacts` option, and change dependencies version if really needed:
+
+`org.apache.storm:storm-sql-hdfs:2.0.0-SNAPSHOT,org.apache.storm:storm-hdfs:2.0.0-SNAPSHOT`
+
+Also, hdfs configuration files should be provided.
+You can put the `core-site.xml` and `hdfs-site.xml` into the `conf` directory which is in Storm installation directory.

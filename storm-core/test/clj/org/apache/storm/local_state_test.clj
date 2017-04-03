@@ -15,15 +15,18 @@
 ;; limitations under the License.
 (ns org.apache.storm.local-state-test
   (:use [clojure test])
-  (:use [org.apache.storm testing])
+  (:import [org.apache.storm.testing TmpPath])
   (:import [org.apache.storm.utils LocalState]
            [org.apache.storm.generated GlobalStreamId]
            [org.apache.commons.io FileUtils]
            [java.io File]))
 
 (deftest test-local-state
-  (with-local-tmp [dir1 dir2]
-    (let [gs-a (GlobalStreamId. "a" "a")
+  (with-open [dir1-tmp (TmpPath.) 
+              dir2-tmp (TmpPath.)]
+    (let [dir1 (.getPath dir1-tmp)
+          dir2 (.getPath dir2-tmp)
+          gs-a (GlobalStreamId. "a" "a")
           gs-b (GlobalStreamId. "b" "b")
           gs-c (GlobalStreamId. "c" "c")
           gs-d (GlobalStreamId. "d" "d")
@@ -45,8 +48,9 @@
       (is (= gs-d (.get ls2 "b"))))))
 
 (deftest empty-state
-  (with-local-tmp [dir]
-    (let [ls (LocalState. dir)
+  (with-open [tmp-dir (TmpPath.)]
+    (let [dir (.getPath tmp-dir)
+          ls (LocalState. dir)
           gs-a (GlobalStreamId. "a" "a")
           data (FileUtils/openOutputStream (File. dir "12345"))
           version (FileUtils/openOutputStream (File. dir "12345.version"))]

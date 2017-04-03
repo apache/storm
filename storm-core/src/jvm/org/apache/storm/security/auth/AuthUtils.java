@@ -30,6 +30,7 @@ import java.security.URIParameter;
 import java.security.MessageDigest;
 
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -153,12 +154,20 @@ public class AuthUtils {
      * @param storm_conf storm configuration
      * @return the plugin
      */
-    public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map storm_conf) {
-        IPrincipalToLocal ptol;
+    public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map<String, Object> storm_conf) {
+        IPrincipalToLocal ptol = null;
         try {
             String ptol_klassName = (String) storm_conf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
-            ptol = Utils.newInstance(ptol_klassName);
-            ptol.prepare(storm_conf);
+            if (ptol_klassName == null) {
+                LOG.warn("No principal to local given {}", Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
+            } else {
+                ptol = Utils.newInstance(ptol_klassName);
+                //TODO this can only ever be null if someone is doing something odd with mocking
+                // We should really fix the mocking and remove this
+                if (ptol != null) {
+                    ptol.prepare(storm_conf);
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -167,15 +176,21 @@ public class AuthUtils {
 
     /**
      * Construct a group mapping service provider plugin
-     * @param storm_conf storm configuration
+     * @param conf daemon configuration
      * @return the plugin
      */
-    public static IGroupMappingServiceProvider GetGroupMappingServiceProviderPlugin(Map storm_conf) {
-        IGroupMappingServiceProvider gmsp;
+    public static IGroupMappingServiceProvider GetGroupMappingServiceProviderPlugin(Map<String, Object> conf) {
+        IGroupMappingServiceProvider gmsp = null;
         try {
-            String gmsp_klassName = (String) storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
-            gmsp = Utils.newInstance(gmsp_klassName);
-            gmsp.prepare(storm_conf);
+            String gmsp_klassName = (String) conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
+            if (gmsp_klassName == null) {
+                LOG.warn("No group mapper given {}", Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN);
+            } else {
+                gmsp = Utils.newInstance(gmsp_klassName);
+                if (gmsp != null) {
+                    gmsp.prepare(conf);
+                }
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -304,11 +319,14 @@ public class AuthUtils {
         }
     }
 
-    private static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map conf,
+    public static IHttpCredentialsPlugin GetHttpCredentialsPlugin(Map<String, Object> conf,
             String klassName) {
         try {
-            IHttpCredentialsPlugin plugin = Utils.newInstance(klassName);
-            plugin.prepare(conf);
+            IHttpCredentialsPlugin plugin = null;
+            if (StringUtils.isNotBlank(klassName)) {
+                plugin = Utils.newInstance(klassName);
+                plugin.prepare(conf);
+            }
             return plugin;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -334,7 +352,7 @@ public class AuthUtils {
      */
     public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map conf) {
         String klassName = (String)conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
-        return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
+        return klassName == null ? null : AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
 
     private static final String USERNAME = "username";

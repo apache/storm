@@ -39,7 +39,8 @@ public class ReportErrorAndDie implements Thread.UncaughtExceptionHandler {
             LOG.error("Error while reporting error to cluster, proceeding with shutdown", ex);
         }
         if (Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e)
-                || Utils.exceptionCauseIsInstanceOf(java.io.InterruptedIOException.class, e)) {
+                || (Utils.exceptionCauseIsInstanceOf(java.io.InterruptedIOException.class, e)
+                    && !Utils.exceptionCauseIsInstanceOf(java.net.SocketTimeoutException.class, e))) {
             LOG.info("Got interrupted exception shutting thread down...");
         } else {
             suicideFn.run();

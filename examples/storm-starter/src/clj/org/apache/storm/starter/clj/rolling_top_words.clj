@@ -39,10 +39,9 @@
                                  (total-rankings-bolt 5 2))})))
 
 (defn run-local! []
-  (let [cluster (LocalCluster.)]
-    (.submitTopology cluster "slidingWindowCounts" {TOPOLOGY-DEBUG true} (mk-topology))
-    (Utils/sleep 60000)
-    (.shutdown cluster)))
+  (with-open [cluster (LocalCluster.)
+              topo (.submitTopology cluster "slidingWindowCounts" {TOPOLOGY-DEBUG true} (mk-topology))]
+    (Utils/sleep 60000)))
 
 (defn submit-topology! [name]
   (StormSubmitter/submitTopology

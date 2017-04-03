@@ -25,7 +25,11 @@ import java.sql.SQLException;
 import java.util.Map;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class HikariCPConnectionProvider implements ConnectionProvider {
+    private static final Logger LOG = LoggerFactory.getLogger(HikariCPConnectionProvider.class);
 
     private Map<String, Object> configMap;
     private transient HikariDataSource dataSource;
@@ -40,6 +44,12 @@ public class HikariCPConnectionProvider implements ConnectionProvider {
             Properties properties = new Properties();
             properties.putAll(configMap);
             HikariConfig config = new HikariConfig(properties);
+            if(properties.containsKey("dataSource.url")) {
+                LOG.info("DataSource Url: " + properties.getProperty("dataSource.url"));
+            }
+            else if (config.getJdbcUrl() != null) {
+                LOG.info("JDBC Url: " + config.getJdbcUrl());
+            }
             this.dataSource = new HikariDataSource(config);
             this.dataSource.setAutoCommit(false);
         }

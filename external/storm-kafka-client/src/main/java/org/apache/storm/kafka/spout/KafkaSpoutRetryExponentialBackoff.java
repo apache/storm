@@ -40,25 +40,26 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpoutRetryExponentialBackoff.class);
     private static final RetryEntryTimeStampComparator RETRY_ENTRY_TIME_STAMP_COMPARATOR = new RetryEntryTimeStampComparator();
 
-    private TimeInterval initialDelay;
-    private TimeInterval delayPeriod;
-    private TimeInterval maxDelay;
-    private int maxRetries;
+    private final TimeInterval initialDelay;
+    private final TimeInterval delayPeriod;
+    private final TimeInterval maxDelay;
+    private final int maxRetries;
 
-    private Set<RetrySchedule> retrySchedules = new TreeSet<>(RETRY_ENTRY_TIME_STAMP_COMPARATOR);
-    private Set<KafkaSpoutMessageId> toRetryMsgs = new HashSet<>();      // Convenience data structure to speedup lookups
+    private final Set<RetrySchedule> retrySchedules = new TreeSet<>(RETRY_ENTRY_TIME_STAMP_COMPARATOR);
+    private final Set<KafkaSpoutMessageId> toRetryMsgs = new HashSet<>();      // Convenience data structure to speedup lookups
 
     /**
      * Comparator ordering by timestamp 
      */
     private static class RetryEntryTimeStampComparator implements Serializable, Comparator<RetrySchedule> {
+        @Override
         public int compare(RetrySchedule entry1, RetrySchedule entry2) {
             return Long.valueOf(entry1.nextRetryTimeNanos()).compareTo(entry2.nextRetryTimeNanos());
         }
     }
 
     private class RetrySchedule {
-        private KafkaSpoutMessageId msgId;
+        private final KafkaSpoutMessageId msgId;
         private long nextRetryTimeNanos;
 
         public RetrySchedule(KafkaSpoutMessageId msgId, long nextRetryTime) {
@@ -94,9 +95,9 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     }
 
     public static class TimeInterval implements Serializable {
-        private long lengthNanos;
-        private long length;
-        private TimeUnit timeUnit;
+        private final long lengthNanos;
+        private final long length;
+        private final TimeUnit timeUnit;
 
         /**
          * @param length length of the time interval in the units specified by {@link TimeUnit}
@@ -144,7 +145,10 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     /**
      * The time stamp of the next retry is scheduled according to the exponential backoff formula ( geometric progression):
      * nextRetry = failCount == 1 ? currentTime + initialDelay : currentTime + delayPeriod^(failCount-1) where failCount = 1, 2, 3, ...
-     * nextRetry = Min(nextRetry, currentTime + maxDelay)
+     * nextRetry = Min(nextRetry, currentTime + maxDelay).
+     * 
+     * By specifying a value for maxRetries lower than Integer.MAX_VALUE, the user decides to sacrifice guarantee of delivery for the previous
+     * polled records in favor of processing more records.
      *
      * @param initialDelay      initial delay of the first retry
      * @param delayPeriod       the time interval that is the ratio of the exponential backoff formula (geometric progression)
@@ -239,9 +243,10 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     }
 
     @Override
-    public void schedule(KafkaSpoutMessageId msgId) {
+    public boolean schedule(KafkaSpoutMessageId msgId) {
         if (msgId.numFails() > maxRetries) {
             LOG.debug("Not scheduling [{}] because reached maximum number of retries [{}].", msgId, maxRetries);
+            return false;
         } else {
             if (toRetryMsgs.contains(msgId)) {
                 for (Iterator<RetrySchedule> iterator = retrySchedules.iterator(); iterator.hasNext(); ) {
@@ -257,6 +262,7 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
             toRetryMsgs.add(msgId);
             LOG.debug("Scheduled. {}", retrySchedule);
             LOG.trace("Current state {}", retrySchedules);
+            return true;
         }
     }
 

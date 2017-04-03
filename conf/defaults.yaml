@@ -40,6 +40,7 @@ storm.exhibitor.poll.uripath: "/exhibitor/v1/cluster/list"
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
+storm.thrift.socket.timeout.ms: 600000
 storm.principal.tolocal: "org.apache.storm.security.auth.DefaultPrincipalToLocal"
 storm.group.mapping.service: "org.apache.storm.security.auth.ShellBasedGroupsMapping"
 storm.group.mapping.service.params: null
@@ -57,6 +58,7 @@ storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCo
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"
 storm.health.check.timeout.ms: 5000
+storm.disable.symlinks: false
 
 ### nimbus.* configs are for the master
 nimbus.seeds : ["localhost"]
@@ -149,7 +151,7 @@ supervisor.worker.start.timeout.secs: 120
 #how long between heartbeats until supervisor considers that worker dead and tries to restart it
 supervisor.worker.timeout.secs: 30
 #how many seconds to sleep for before shutting down threads on worker
-supervisor.worker.shutdown.sleep.secs: 1
+supervisor.worker.shutdown.sleep.secs: 3
 #how frequently the supervisor checks on the status of the processes it's monitoring and restarts if necessary
 supervisor.monitor.frequency.secs: 3
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
@@ -224,7 +226,7 @@ topology.enable.message.timeouts: true
 topology.debug: false
 topology.workers: 1
 topology.acker.executors: null
-topology.eventlogger.executors: null
+topology.eventlogger.executors: 0
 topology.tasks: null
 # maximum amount of time a message has to complete before it's considered failed
 topology.message.timeout.secs: 30
@@ -306,3 +308,8 @@ storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
 storm.cgroup.memory.limit.tolerance.margin.mb: 128.0
 storm.topology.classpath.beginning.enabled: false
+worker.metrics:
+    "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"
+    "CGroupMemoryLimit": "org.apache.storm.metric.cgroup.CGroupMemoryLimit"
+    "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
+    "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"

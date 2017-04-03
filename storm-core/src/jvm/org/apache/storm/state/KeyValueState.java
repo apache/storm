@@ -17,10 +17,13 @@
  */
 package org.apache.storm.state;
 
+import java.util.Iterator;
+import java.util.Map;
+
 /**
  * A state that supports key-value mappings.
  */
-public interface KeyValueState<K, V> extends State {
+public interface KeyValueState<K, V> extends State, Iterable<Map.Entry<K, V>> {
     /**
      * Maps the value with the key
      *

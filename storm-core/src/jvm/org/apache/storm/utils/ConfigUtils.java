@@ -168,8 +168,8 @@ public class ConfigUtils {
         return conf;
     }
 
-    public static Map readYamlConfig(String name, boolean mustExist) {
-        Map conf = Utils.findAndReadConfigFile(name, mustExist);
+    public static Map<String, Object> readYamlConfig(String name, boolean mustExist) {
+        Map<String, Object> conf = Utils.findAndReadConfigFile(name, mustExist);
         ConfigValidation.validateFields(conf);
         return conf;
     }

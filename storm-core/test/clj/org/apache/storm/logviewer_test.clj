@@ -19,8 +19,7 @@
   (:require [conjure.core])
   (:use [clojure test])
   (:use [conjure core])
-  (:use [org.apache.storm testing]
-        [org.apache.storm.ui helpers])
+  (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
            [org.apache.storm.utils Utils Time]
            [org.apache.storm.utils.staticmocking UtilsInstaller]
@@ -381,7 +380,7 @@
 
     (stubbing [logviewer/logviewer-port expected-port]
       (with-open [_ (UtilsInstaller. (proxy [Utils] []
-                                       (localHostnameImpl [] expected-host)))]
+                                       (hostnameImpl [] expected-host)))]
         (testing "Logviewer link centers the match in the page"
           (let [expected-fname "foobar.log"]
             (is (= (str "http://"

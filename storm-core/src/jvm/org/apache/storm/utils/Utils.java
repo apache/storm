@@ -103,6 +103,7 @@ import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.ReadableBlobMeta;
@@ -161,6 +162,7 @@ public class Utils {
 
     private static SerializationDelegate serializationDelegate;
     private static ClassLoader cl = null;
+    private static Map<String, Object> localConf;
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
@@ -170,8 +172,8 @@ public class Utils {
     public static final int SIGTERM = 15;
 
     static {
-        Map<String, Object> conf = readStormConfig();
-        serializationDelegate = getSerializationDelegate(conf);
+        localConf = readStormConfig();
+        serializationDelegate = getSerializationDelegate(localConf);
     }
 
     @SuppressWarnings("unchecked")
@@ -191,6 +193,27 @@ public class Utils {
     public <T> T newInstanceImpl(Class<T> klass) {
         try {
             return klass.newInstance();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+    
+    @SuppressWarnings("unchecked")
+    public static <T> T newInstance(String klass, Map<String, Object> conf) {
+        try {
+            return newInstance((Class<T>)Class.forName(klass), conf);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T newInstance(Class<T> klass, Map<String, Object> conf) {
+        try {
+            try {
+                return klass.getConstructor(Map.class).newInstance(conf);
+            } catch (Exception e) {
+                return klass.newInstance();
+            }
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -333,6 +356,7 @@ public class Utils {
         try {
             Time.sleep(millis);
         } catch(InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw new RuntimeException(e);
         }
     }
@@ -1139,12 +1163,14 @@ public class Utils {
 
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth);
+        LOG.info("Starting Utils Curator...");
         ret.start();
         return ret;
     }
 
     public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, auth);
+        LOG.info("Starting Utils Curator (2)...");
         ret.start();
         return ret;
     }
@@ -1336,6 +1362,25 @@ public class Utils {
         }
     }
 
+    public static void validateTopologyBlobStoreMap(Map<String, ?> stormConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
+        @SuppressWarnings("unchecked")
+        Map<String, Object> blobStoreMap = (Map<String, Object>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        if (blobStoreMap != null) {
+            Set<String> mapKeys = blobStoreMap.keySet();
+            Set<String> missingKeys = new HashSet<>();
+
+            for (String key : mapKeys) {
+                if (!blobStoreKeys.contains(key)) {
+                    missingKeys.add(key);
+                }
+            }
+            if (!missingKeys.isEmpty()) {
+                throw new InvalidTopologyException("The topology blob store map does not " +
+                        "contain the valid keys to launch the topology " + missingKeys);
+            }
+        }
+    }
+    
     /**
      * Given a File input it will unzip the file in a the unzip directory
      * passed as the second parameter
@@ -1665,16 +1710,18 @@ public class Utils {
 
     /**
      * Creates a new map with a string value in the map replaced with an
-     * equivalently-lengthed string of '#'.
+     * equivalently-lengthed string of '#'.  (If the object is not a string
+     * to string will be called on it and replaced) 
      * @param m The map that a value will be redacted from
      * @param key The key pointing to the value to be redacted
      * @return a new map with the value redacted. The original map will not be modified.
      */
-    public static Map<Object, String> redactValue(Map<Object, String> m, Object key) {
-        if(m.containsKey(key)) {
-            HashMap<Object, String> newMap = new HashMap<>(m);
-            String value = newMap.get(key);
-            String redacted = new String(new char[value.length()]).replace("\0", "#");
+    public static Map<String, Object> redactValue(Map<String, Object> m, String key) {
+        if (m.containsKey(key)) {
+            HashMap<String, Object> newMap = new HashMap<>(m);
+            Object value = newMap.get(key);
+            String v = value.toString();
+            String redacted = new String(new char[v.length()]).replace("\0", "#");
             newMap.put(key, redacted);
             return newMap;
         }
@@ -1745,14 +1792,18 @@ public class Utils {
     /**
      * Gets the storm.local.hostname value, or tries to figure out the local hostname
      * if it is not set in the config.
-     * @param conf The storm config to read from
      * @return a string representation of the hostname.
-    */
-    public static String hostname (Map<String, Object> conf) throws UnknownHostException  {
-        if (conf == null) {
+     */
+    public static String hostname() throws UnknownHostException {
+        return _instance.hostnameImpl();
+    }
+
+    // Non-static impl methods exist for mocking purposes.
+    protected String hostnameImpl () throws UnknownHostException  {
+        if (localConf == null) {
             return memoizedLocalHostname();
         }
-        Object hostnameString = conf.get(Config.STORM_LOCAL_HOSTNAME);
+        Object hostnameString = localConf.get(Config.STORM_LOCAL_HOSTNAME);
         if (hostnameString == null || hostnameString.equals("")) {
             return memoizedLocalHostname();
         }
@@ -1928,6 +1979,7 @@ public class Utils {
             public void run() {
                 try {
                     Time.sleepSecs(1);
+                    LOG.warn("Forceing Halt...");
                     Runtime.getRuntime().halt(20);
                 } catch (Exception e) {
                     LOG.warn("Exception in the ShutDownHook", e);
@@ -1962,7 +2014,7 @@ public class Utils {
         return dir + FILE_PATH_SEPARATOR + "launch_container.sh";
     }
 
-    public static Object nullToZero (Object v) {
+    public static double nullToZero (Double v) {
         return (v != null ? v : 0);
     }
 
@@ -2068,6 +2120,16 @@ public class Utils {
     // Non-static impl methods exist for mocking purposes.
     public UptimeComputer makeUptimeComputerImpl() {
         return new UptimeComputer();
+    }
+
+    /**
+     * a or b the first one that is not null
+     * @param a something
+     * @param b something else
+     * @return a or b the first one that is not null
+     */
+    public static <V> V OR(V a, V b) {
+        return a == null ? b : a;
     }
 
     /**

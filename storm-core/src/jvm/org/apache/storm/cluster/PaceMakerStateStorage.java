@@ -210,21 +210,41 @@ public class PaceMakerStateStorage implements IStateStorage {
     @Override
     public void delete_worker_hb(String path) {
         int retry = maxRetries;
+        boolean someSucceeded;
         while (true) {
+            someSucceeded = false;
             try {
                 HBMessage message = new HBMessage(HBServerMessageType.DELETE_PATH, HBMessageData.path(path));
-                HBMessage response = pacemakerClientPool.send(message);
-                if (response.get_type() != HBServerMessageType.DELETE_PATH_RESPONSE) {
-                    throw new HBExecutionException("Invalid Response Type");
+                List<HBMessage> responses = pacemakerClientPool.sendAll(message);
+                boolean allSucceeded = true;
+                for(HBMessage response : responses) {
+                    if (response.get_type() != HBServerMessageType.DELETE_PATH_RESPONSE) {
+                        LOG.debug("Failed to delete heartbeat {}", response);
+                        allSucceeded = false;
+                    }
+                    else {
+                        someSucceeded = true;
+                    }
                 }
-                LOG.debug("Successful get_worker_hb");
-                break;
+                if(allSucceeded) {
+                    break;
+                }
+                else {
+                    throw new HBExecutionException("Failed to delete from all pacemakers.");
+                }
             } catch (Exception e) {
                 if (retry <= 0) {
-                    throw Utils.wrapInRuntime(e);
+                    if(someSucceeded) {
+                        LOG.warn("Unable to delete_worker_hb from every pacemaker.");
+                        break;
+                    }
+                    else {
+                        LOG.error("Unable to delete_worker_hb from any pacemaker.");
+                        throw Utils.wrapInRuntime(e);
+                    }
                 }
                 retry--;
-                LOG.error("{} Failed to delete_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+                LOG.debug("{} Failed to delete_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
             }
         }
     }

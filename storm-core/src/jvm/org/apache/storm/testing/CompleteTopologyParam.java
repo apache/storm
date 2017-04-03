@@ -17,7 +17,10 @@
  */
 package org.apache.storm.testing;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
+import org.apache.storm.Testing;
 
 /**
  * The param class for the `Testing.completeTopology`.
@@ -26,15 +29,15 @@ public class CompleteTopologyParam {
 	/**
 	 * The mocked spout sources
 	 */
-	private MockedSources mockedSources;
+	private MockedSources mockedSources = new MockedSources();
 	/**
 	 * the config for the topology when it was submitted to the cluster
 	 */
-	private Config stormConf;
+	private Map<String, Object> stormConf = new Config();
 	/**
 	 * whether cleanup the state?
 	 */
-	private Boolean cleanupState;
+	private boolean cleanupState = true;
 	/**
 	 * the topology name you want to submit to the cluster
 	 */
@@ -43,29 +46,39 @@ public class CompleteTopologyParam {
 	/**
 	 * the timeout of topology you want to submit to the cluster
 	 */
-	private Integer timeoutMs;
+	private int timeoutMs = Testing.TEST_TIMEOUT_MS;
 
 	public MockedSources getMockedSources() {
 		return mockedSources;
 	}
 
 	public void setMockedSources(MockedSources mockedSources) {
+	    if (mockedSources == null) {
+	        mockedSources = new MockedSources();
+	    }
+	       
 		this.mockedSources = mockedSources;
 	}
 
-	public Config getStormConf() {
+	public Map<String, Object> getStormConf() {
 		return stormConf;
 	}
 
-	public void setStormConf(Config stormConf) {
+	public void setStormConf(Map<String, Object> stormConf) {
+	    if (stormConf == null) {
+	        stormConf = new Config();
+	    }
 		this.stormConf = stormConf;
 	}
 
-	public Boolean getCleanupState() {
+	public boolean getCleanupState() {
 		return cleanupState;
 	}
 
 	public void setCleanupState(Boolean cleanupState) {
+	    if (cleanupState == null) {
+	        cleanupState = true;
+	    }
 		this.cleanupState = cleanupState;
 	}
 
@@ -82,6 +95,9 @@ public class CompleteTopologyParam {
 	}
 
 	public void setTimeoutMs(Integer timeoutMs) {
+	    if (timeoutMs == null) {
+	        timeoutMs = Testing.TEST_TIMEOUT_MS;
+	    }
 		this.timeoutMs = timeoutMs;
 	}
 }

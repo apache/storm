@@ -15,13 +15,12 @@
 ;; limitations under the License.
 (ns org.apache.storm.grouping-test
   (:use [clojure test])
-  (:import [org.apache.storm.testing TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestWordBytesCounter NGrouping]
+  (:import [org.apache.storm.testing CompleteTopologyParam MockedSources TestWordCounter TestWordSpout TestGlobalCount TestAggregatesCounter TestWordBytesCounter NGrouping]
            [org.apache.storm.generated JavaObject JavaObjectArg Grouping NullStruct])
   (:import [org.apache.storm.grouping LoadMapping])
-  (:use [org.apache.storm testing log config])
+  (:use [org.apache.storm log config])
   (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon common])
-  (:import [org.apache.storm Thrift])
+  (:import [org.apache.storm LocalCluster$Builder Testing Thrift])
   (:import [org.apache.storm.utils Utils]
            (org.apache.storm.daemon GrouperFactory)))
 
@@ -79,7 +78,9 @@
     (is (<= load2 max2-prcnt))))
 
 (deftest test-field
-  (with-simulated-time-local-cluster [cluster :supervisors 4]
+  (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                (.withSimulatedTime)
+                                (.withSupervisors 4)))]
     (let [spout-phint 4
           bolt-phint 6
           topology (Thrift/buildTopology
@@ -90,21 +91,24 @@
                             (Thrift/prepareFieldsGrouping ["word"])}
                            (TestWordBytesCounter.) (Integer. spout-phint))
                      })
-          results (complete-topology
+          results (Testing/completeTopology
                     cluster
                     topology
-                    :mock-sources {"1" (->> [[(.getBytes "a")]
+                    (doto (CompleteTopologyParam.)
+                      (.setMockedSources (MockedSources. {"1" (->> [[(.getBytes "a")]
                                              [(.getBytes "b")]]
                                             (repeat (* spout-phint bolt-phint))
-                                            (apply concat))})]
-      (is (ms= (apply concat
+                                            (apply concat))}))))]
+      (is (Testing/multiseteq (apply concat
                       (for [value '("a" "b")
                             sum (range 1 (inc (* spout-phint bolt-phint)))]
-                        [[value sum]]))
-               (read-tuples results "2"))))))
+                        [[value (int sum)]]))
+               (Testing/readTuples results "2"))))))
 
 (deftest test-field
-  (with-simulated-time-local-cluster [cluster :supervisors 4]
+  (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                (.withSimulatedTime)
+                                (.withSupervisors 4)))]
     (let [spout-phint 4
           bolt-phint 6
           topology (Thrift/buildTopology
@@ -115,25 +119,28 @@
                             (Thrift/prepareFieldsGrouping ["word"])}
                            (TestWordBytesCounter.) (Integer. bolt-phint))
                      })
-          results (complete-topology
+          results (Testing/completeTopology
                     cluster
                     topology
-                    :mock-sources {"1" (->> [[(.getBytes "a")]
+                    (doto (CompleteTopologyParam.)
+                      (.setMockedSources (MockedSources. {"1" (->> [[(.getBytes "a")]
                                              [(.getBytes "b")]]
                                             (repeat (* spout-phint bolt-phint))
-                                            (apply concat))})]
-      (is (ms= (apply concat
+                                            (apply concat))}))))]
+      (is (Testing/multiseteq (apply concat
                       (for [value '("a" "b")
                             sum (range 1 (inc (* spout-phint bolt-phint)))]
-                        [[value sum]]))
-               (read-tuples results "2"))))))
+                        [[value (int sum)]]))
+               (Testing/readTuples results "2"))))))
 
 (defbolt id-bolt ["val"] [tuple collector]
   (emit-bolt! collector (.getValues tuple))
   (ack! collector tuple))
 
 (deftest test-custom-groupings
-  (with-simulated-time-local-cluster [cluster]
+  (with-open [cluster (.build (doto (LocalCluster$Builder.)
+                                (.withSimulatedTime)
+                                (.withSupervisors 4)))]
     (let [topology (Thrift/buildTopology
                     {"1" (Thrift/prepareSpoutDetails
                            (TestWordSpout. true))}
@@ -150,14 +157,15 @@
                            id-bolt
                            (Integer. 6))
                      })
-          results (complete-topology cluster
+          results (Testing/completeTopology cluster
                                      topology
-                                     :mock-sources {"1" [["a"]
+                                     (doto (CompleteTopologyParam.)
+                                       (.setMockedSources (MockedSources. {"1" [["a"]
                                                         ["b"]
                                                         ]}
-                                     )]
-      (is (ms= [["a"] ["a"] ["b"] ["b"]]
-               (read-tuples results "2")))
-      (is (ms= [["a"] ["a"] ["a"] ["b"] ["b"] ["b"]]
-               (read-tuples results "3")))
+                                     ))))]
+      (is (Testing/multiseteq [["a"] ["a"] ["b"] ["b"]]
+               (Testing/readTuples results "2")))
+      (is (Testing/multiseteq [["a"] ["a"] ["a"] ["b"] ["b"] ["b"]]
+               (Testing/readTuples results "3")))
       )))

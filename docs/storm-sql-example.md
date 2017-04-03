@@ -21,7 +21,7 @@ If you're using Python 3, you may need to convert some places to be compatible w
 
 ## Creating Topics
 
-In this page, we will use four topics, `apache-logs`, `apache-errorlogs`, `apache-slowlogs`, `apache-slowlogs-aggregated`.
+In this page, we will use four topics, `apache-logs`, `apache-errorlogs`, `apache-slowlogs`.
 Please create topics according to your environment. 
 
 For Apache Kafka 0.10.0 with brew installed,
@@ -30,7 +30,6 @@ For Apache Kafka 0.10.0 with brew installed,
 kafka-topics --create --topic apache-logs --zookeeper localhost:2181 --replication-factor 1 --partitions 5
 kafka-topics --create --topic apache-errorlogs --zookeeper localhost:2181 --replication-factor 1 --partitions 5
 kafka-topics --create --topic apache-slowlogs --zookeeper localhost:2181 --replication-factor 1 --partitions 5
-kafka-topics --create --topic apache-slowlogs-aggregated --zookeeper localhost:2181 --replication-factor 1 --partitions 5
 ```
 
 ## Feeding Data
@@ -163,7 +162,7 @@ Note that Kafka data source requires primary key to be defined. That's why we pu
 Similarly, the second statement specifies the table `APACHE_ERROR_LOGS` which represents the output stream. The `TBLPROPERTIES` clause specifies the configuration of [KafkaProducer](http://kafka.apache.org/documentation.html#producerconfigs) and is required for a Kafka sink table.
  
 The last statement defines the topology. Storm SQL only define the topology and run topology on DML statement. 
-DDL statements define input data source, output data source, and user defined function, and also user defined aggregate function which will be referred by DML statement.
+DDL statements define input data source, output data source, and user defined function which will be referred by DML statement.
 
 Let's look at where statement first. Since we want to filter error logs, we divide status by 100 and compare quotient is equal or greater than 4. (easier representation is `>= 400`)
 Since status in JSON is string format (hence represented as VARCHAR for APACHE_LOGS table), we apply CAST(STATUS AS INT) to convert to integer type before applying division.
@@ -290,83 +289,11 @@ and the output will be similar to:
 
 That's it! Supposing we have UDF which queries geo location via remote ip, we can filter via geo location, or enrich geo location to transformed result.
 
-## Example: slow logs aggregation
-
-In this example we'll aggregate logs from entire logs by request url and method, and filter via aggregated value, and store them to another topics. 
-`project` and `filter`, `aggregation` and `User Defined Aggregate Function (UDAF)` features will be used.
-
-The content of script file is here:
-
-```
-CREATE EXTERNAL TABLE APACHE_LOGS (ID INT PRIMARY KEY, REMOTE_IP VARCHAR, REQUEST_URL VARCHAR, REQUEST_METHOD VARCHAR, STATUS VARCHAR, REQUEST_HEADER_USER_AGENT VARCHAR, TIME_RECEIVED_UTC_ISOFORMAT VARCHAR, time_us DOUBLE) LOCATION 'kafka://localhost:2181/brokers?topic=apache-logs' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
-CREATE EXTERNAL TABLE APACHE_SLOW_LOGS (DUMMY_ID INT PRIMARY KEY, REQUEST_URL VARCHAR, REQUEST_METHOD VARCHAR, CNT INT, TIME_ELAPSED_MS_MIN INT, TIME_ELAPSED_MS_MAX INT, TIME_ELAPSED_MS_AVG INT, TIME_ELAPSED_MS_PERCENTILE_99 BIGINT) LOCATION 'kafka://localhost:2181/brokers?topic=apache-slowlogs-aggregated' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.storm.kafka.ByteBufferSerializer"}}'
-CREATE FUNCTION PERCENTILE_99 AS 'org.apache.storm.sql.runtime.functions.aggregate.Percentile99'
-INSERT INTO APACHE_SLOW_LOGS SELECT MIN(ID), REQUEST_URL, REQUEST_METHOD, COUNT(*) AS CNT, MIN(TIME_US) / 1000 AS TIME_ELAPSED_MS_MIN, MAX(TIME_US) / 1000 AS TIME_ELAPSED_MS_MAX, AVG(TIME_US) / 1000 AS TIME_ELAPSED_MS_AVG, PERCENTILE_99(CAST(TIME_US AS BIGINT)) / 1000.0 AS TIME_ELAPSED_MS_PERCENTILE_99 FROM APACHE_LOGS GROUP BY REQUEST_URL, REQUEST_METHOD HAVING AVG(TIME_US) / 1000 >= 300
-```
-
-Save this file to `apache_log_slow_aggregation.sql`.
-
-In this time we'll only see the UDAF definition since we covered all of others. Definition of UDAF is same as UDF, except its class implementation.
-
-```
-package org.apache.storm.sql.runtime.functions.aggregate;
-
-import org.HdrHistogram.Histogram;
-
-public class Percentile99 {
-    public static Histogram init() {
-        return new Histogram(3600000000000L, 3);
-    }
-
-    public static Histogram add(Histogram accumulator, Long v) {
-        if (v != null) {
-            accumulator.recordValue(v);
-        }
-        return accumulator;
-    }
-
-    public static long result(Histogram accumulator) {
-        return accumulator.getValueAtPercentile(99);
-    }
-}
-```
-
-Note that Percentile99 defines three methods: init(), add(), result(). init() creates accumulator, and add accumulates the value to accumulator, and result converts accumulator to final result.
-
-Since HdrHistogram treats long type, we cast TIME_US as BIGINT before passing TIME_US to PERCENTILE_99.
-
-Same as UDF, this class should be in classpath, so in order to define UDAF, you need to create jar file which contains UADF classes and run `storm sql` with `--jar` option.
-This page assumes that Percentile99 is in classpath, for simplicity.
-
-Let's execute it.
-
-```
-$ $STORM_DIR/bin/storm sql apache_log_slow_filtering.sql apache_log_slow_filtering --artifacts "org.apache.storm:storm-sql-kafka:2.0.0-SNAPSHOT,org.apache.storm:storm-kafka:2.0.0-SNAPSHOT,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12,org.apache.kafka:kafka-clients:0.8.2.2"
-```
-
-You can see the output via console:
-
-```
-$ kafka-console-consumer --zookeeper localhost:2181 --topic apache-slowlogs-aggregated
-```
-
-and the output will be similar to:
-
-```
-{"DUMMY_ID":1741,"REQUEST_URL":"/apps/cart.jsp?appID=2242","REQUEST_METHOD":"POST","CNT":1,"TIME_ELAPSED_MS_MIN":303.08,"TIME_ELAPSED_MS_MAX":303.08,"TIME_ELAPSED_MS_AVG":303.08,"TIME_ELAPSED_MS_PERCENTILE_99":303.103}
-{"DUMMY_ID":1748,"REQUEST_URL":"/app/main/posts","REQUEST_METHOD":"PUT","CNT":7,"TIME_ELAPSED_MS_MIN":107.398,"TIME_ELAPSED_MS_MAX":913.603,"TIME_ELAPSED_MS_AVG":489.1445714285714,"TIME_ELAPSED_MS_PERCENTILE_99":913.919}
-...
-```
-
-That's it! Supposing we have UDF which queries geo location via remote ip, we can filter or group by geo location. 
-And having more UDAFs like stddev, more percentiles will provide better information regarding latency.
-
 ## Summary
 
 We looked through several simple use cases for Storm SQL to learn Storm SQL features. If you haven't looked at [Storm SQL integration](storm-sql.html) and [Storm SQL language](storm-sql-reference.html), you need to read it to see full supported features. 
 
-Note that Storm SQL is running on Trident, which is micro-batch, and also no strong typed. 
-Aggregation (and join, not touched from example) is in place within a batch, and sink doesn't actually check the type.
+Note that Storm SQL is running on Trident, which is micro-batch, and also no strong typed. Sink doesn't actually check the type.
 (You may noticed that the types of some of output fields are different than output table schema.)
 
 Its behavior is subject to change when Storm SQL changes its backend API to core (tuple by tuple, low-level or high-level) one.

@@ -56,12 +56,17 @@ public class ShellBasedGroupsMapping implements
      */
     @Override
     public Set<String> getGroups(String user) throws IOException {
-        if(cachedGroups.containsKey(user)) {
-            return cachedGroups.get(user);
+        synchronized(this) {
+            if (cachedGroups.containsKey(user)) {
+                return cachedGroups.get(user);
+            }
         }
         Set<String> groups = getUnixGroups(user);
-        if(!groups.isEmpty())
-            cachedGroups.put(user,groups);
+        if(!groups.isEmpty()) {
+            synchronized (this) {
+                cachedGroups.put(user,groups);
+            }
+        }
         return groups;
     }
 

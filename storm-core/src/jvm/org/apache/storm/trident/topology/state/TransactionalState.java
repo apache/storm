@@ -37,6 +37,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Class that contains the logic to extract the transactional state info from zookeeper. All transactional state
+ * is kept in zookeeper. This class only contains references to Curator, which is used to get all info from zookeeper.
+ */
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
 
@@ -162,7 +166,9 @@ public class TransactionalState {
         try {
             Object data;
             if(_curator.checkExists().forPath(path)!=null) {
-                data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
+                // intentionally using parse() instead of parseWithException() to handle error cases as null
+                // this have been used from the start of Trident so we could treat it as safer way
+                data = JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
             } else {
                 data = null;
             }

@@ -34,8 +34,8 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutBatchMetadata.class);
 
     private TopicPartition topicPartition;  // topic partition of this batch
-    private long firstOffset;   // first offset of this batch
-    private long lastOffset;    // last offset of this batch
+    private long firstOffset;               // first offset of this batch
+    private long lastOffset;                // last offset of this batch
 
     public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, long firstOffset, long lastOffset) {
         this.topicPartition = topicPartition;
@@ -74,8 +74,8 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
 
     @Override
     public String toString() {
-        return "KafkaTridentSpoutBatchMetadata{" +
-                "topicPartition=" + topicPartition +
+        return super.toString() +
+                "{topicPartition=" + topicPartition +
                 ", firstOffset=" + firstOffset +
                 ", lastOffset=" + lastOffset +
                 '}';

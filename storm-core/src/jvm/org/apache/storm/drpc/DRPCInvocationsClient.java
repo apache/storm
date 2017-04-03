@@ -23,6 +23,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.generated.DistributedRPCInvocations;
 import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.thrift.transport.TTransportException;
@@ -109,5 +110,21 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
 
     public DistributedRPCInvocations.Client getClient() {
         return client.get();
+    }
+
+    @Override
+    public void failRequestV2(String id, DRPCExecutionException ex) throws AuthorizationException, TException {
+        DistributedRPCInvocations.Client c = client.get();
+        try {
+            if (c == null) {
+                throw new TException("Client is not connected...");
+            }
+            c.failRequestV2(id, ex);
+        } catch(AuthorizationException aze) {
+            throw aze;
+        } catch(TException e) {
+            client.compareAndSet(c, null);
+            throw e;
+        }
     }
 }

@@ -20,6 +20,7 @@ package org.apache.storm.kafka;
 import org.junit.Test;
 
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Time.SimulatedTime;
 import org.junit.After;
 import org.junit.Before;
 import static org.junit.Assert.assertEquals;
@@ -34,15 +35,19 @@ public class ExponentialBackoffMsgRetryManagerTest {
     private static final Long TEST_OFFSET2 = 102L;
     private static final Long TEST_OFFSET3 = 105L;
     private static final Long TEST_NEW_OFFSET = 103L;
+    private SimulatedTime st;
 
     @Before
     public void setup() throws Exception {
-        Time.startSimulating();
+        st = new SimulatedTime();
     }
 
     @After
     public void cleanup() throws Exception {
-        Time.stopSimulating();
+        if (st != null) {
+            st.close();
+            st = null;
+        }
     }
 
     @Test

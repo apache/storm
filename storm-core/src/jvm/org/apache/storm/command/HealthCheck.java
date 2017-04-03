@@ -26,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.channels.ClosedByInterruptException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -105,7 +106,7 @@ public class HealthCheck {
                 return SUCCESS;
             }
             return FAILED_WITH_EXIT_CODE;
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | ClosedByInterruptException e) {
             LOG.warn("Script:  {} timed out.", script);
             return TIMEOUT;
         } catch (Exception e) {

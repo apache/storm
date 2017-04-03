@@ -24,7 +24,7 @@ import java.util.*;
 
 public class StaticCoordinator implements PartitionCoordinator {
     Map<Partition, PartitionManager> _managers = new HashMap<Partition, PartitionManager>();
-    List<PartitionManager> _allManagers = new ArrayList();
+    List<PartitionManager> _allManagers = new ArrayList<>();
 
     public StaticCoordinator(DynamicPartitionConnections connections, Map stormConf, SpoutConfig config, ZkState state, int taskIndex, int totalTasks, String topologyInstanceId) {
         StaticHosts hosts = (StaticHosts) config.hosts;
@@ -34,7 +34,7 @@ public class StaticCoordinator implements PartitionCoordinator {
         for (Partition myPartition : myPartitions) {
             _managers.put(myPartition, new PartitionManager(connections, topologyInstanceId, state, stormConf, config, myPartition));
         }
-        _allManagers = new ArrayList(_managers.values());
+        _allManagers = new ArrayList<>(_managers.values());
     }
 
     @Override

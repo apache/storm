@@ -345,6 +345,9 @@ public class Localizer {
         if (lrsrc == null) {
           LOG.warn("blob requested for update doesn't exist: {}", key);
           continue;
+        } else if ((boolean)_conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
+          LOG.warn("symlinks are disabled so blobs cannot be downloaded.");
+          continue;
         } else {
           // update it if either the version isn't the latest or if any local blob files are missing
           if (!isLocalizedResourceUpToDate(lrsrc, blobstore) ||
@@ -400,7 +403,9 @@ public class Localizer {
   public synchronized List<LocalizedResource> getBlobs(List<LocalResource> localResources,
       String user, String topo, File userFileDir)
       throws AuthorizationException, KeyNotFoundException, IOException {
-
+    if ((boolean)_conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
+      throw new KeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
+    }
     LocalizedResourceSet newSet = new LocalizedResourceSet(user);
     LocalizedResourceSet lrsrcSet = _userRsrc.putIfAbsent(user, newSet);
     if (lrsrcSet == null) {

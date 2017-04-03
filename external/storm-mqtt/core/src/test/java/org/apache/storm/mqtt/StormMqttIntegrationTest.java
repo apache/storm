@@ -19,6 +19,7 @@ package org.apache.storm.mqtt;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.topology.TopologyBuilder;
@@ -100,31 +101,31 @@ public class StormMqttIntegrationTest implements Serializable{
         Topic[] topics = {new Topic("/integration-result", QoS.AT_LEAST_ONCE)};
         byte[] qoses = connection.subscribe(topics);
 
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("test", new Config(), buildMqttTopology());
+        try (LocalCluster cluster = new LocalCluster();
+             LocalTopology topo = cluster.submitTopology("test", new Config(), buildMqttTopology());) {
 
-        LOG.info("topology started");
-        while(!spoutActivated) {
-            Thread.sleep(500);
+            LOG.info("topology started");
+            while(!spoutActivated) {
+                Thread.sleep(500);
+            }
+
+            // publish a retained message to the broker
+            MqttOptions options = new MqttOptions();
+            options.setCleanConnection(false);
+            MqttPublisher publisher = new MqttPublisher(options, true);
+            publisher.connectMqtt("MqttPublisher");
+            publisher.publish(new MqttMessage(TEST_TOPIC, "test".getBytes()));
+
+            LOG.info("published message");
+
+            Message message = connection.receive();
+            LOG.info("Message recieved on topic: {}", message.getTopic());
+            LOG.info("Payload: {}", new String(message.getPayload()));
+            message.ack();
+
+            Assert.assertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
+            Assert.assertEquals(message.getTopic(), RESULT_TOPIC);
         }
-
-        // publish a retained message to the broker
-        MqttOptions options = new MqttOptions();
-        options.setCleanConnection(false);
-        MqttPublisher publisher = new MqttPublisher(options, true);
-        publisher.connectMqtt("MqttPublisher");
-        publisher.publish(new MqttMessage(TEST_TOPIC, "test".getBytes()));
-
-        LOG.info("published message");
-
-        Message message = connection.receive();
-        LOG.info("Message recieved on topic: {}", message.getTopic());
-        LOG.info("Payload: {}", new String(message.getPayload()));
-        message.ack();
-
-        Assert.assertArrayEquals(message.getPayload(), RESULT_PAYLOAD.getBytes());
-        Assert.assertEquals(message.getTopic(), RESULT_TOPIC);
-        cluster.shutdown();
     }
 
     public StormTopology buildMqttTopology(){

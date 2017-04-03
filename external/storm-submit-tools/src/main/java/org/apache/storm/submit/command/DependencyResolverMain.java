@@ -20,15 +20,21 @@ package org.apache.storm.submit.command;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.submit.dependency.AetherUtils;
 import org.apache.storm.submit.dependency.DependencyResolver;
 import org.json.simple.JSONValue;
 import org.sonatype.aether.artifact.Artifact;
 import org.sonatype.aether.graph.Dependency;
+import org.sonatype.aether.repository.RemoteRepository;
 import org.sonatype.aether.resolution.ArtifactResult;
 
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -44,10 +50,23 @@ public class DependencyResolverMain {
 
         // DO NOT CHANGE THIS TO SYSOUT
         System.err.println("DependencyResolver input - artifacts: " + artifactsArg);
-
         List<Dependency> dependencies = parseArtifactArgs(artifactsArg);
+
+        List<RemoteRepository> repositories;
+        if (args.length > 1) {
+            String remoteRepositoryArg = args[1];
+
+            // DO NOT CHANGE THIS TO SYSOUT
+            System.err.println("DependencyResolver input - repositories: " + remoteRepositoryArg);
+
+            repositories = parseRemoteRepositoryArgs(remoteRepositoryArg);
+        } else {
+            repositories = Collections.emptyList();
+        }
+
         try {
-            DependencyResolver resolver = new DependencyResolver("local-repo");
+            String localMavenRepoPath = getOrDefaultLocalMavenRepositoryPath("local-repo");
+            DependencyResolver resolver = new DependencyResolver(localMavenRepoPath, repositories);
 
             List<ArtifactResult> artifactResults = resolver.resolve(dependencies);
 
@@ -93,6 +112,20 @@ public class DependencyResolverMain {
         return dependencies;
     }
 
+    private static List<RemoteRepository> parseRemoteRepositoryArgs(String remoteRepositoryArg) {
+        List<String> repositories = Arrays.asList(remoteRepositoryArg.split(","));
+        List<RemoteRepository> remoteRepositories = new ArrayList<>(repositories.size());
+        for (String repositoryOpt : repositories) {
+            if (repositoryOpt.trim().isEmpty()) {
+                continue;
+            }
+
+            remoteRepositories.add(AetherUtils.parseRemoteRepository(repositoryOpt));
+        }
+
+        return remoteRepositories;
+    }
+
     private static Map<String, String> transformArtifactResultToArtifactToPaths(List<ArtifactResult> artifactResults) {
         Map<String, String> artifactToPath = new LinkedHashMap<>();
         for (ArtifactResult artifactResult : artifactResults) {
@@ -102,4 +135,24 @@ public class DependencyResolverMain {
         return artifactToPath;
     }
 
+    private static String getOrDefaultLocalMavenRepositoryPath(String defaultPath) {
+        String localMavenRepoPathStr = getLocalMavenRepositoryPath();
+        if (StringUtils.isNotEmpty(localMavenRepoPathStr)) {
+            Path localMavenRepoPath = new File(localMavenRepoPathStr).toPath();
+            if (Files.exists(localMavenRepoPath) && Files.isDirectory(localMavenRepoPath)) {
+                return localMavenRepoPathStr;
+            }
+        }
+
+        return defaultPath;
+    }
+
+    private static String getLocalMavenRepositoryPath() {
+        String userHome = System.getProperty("user.home");
+        if (StringUtils.isNotEmpty(userHome)) {
+            return userHome + File.separator + ".m2" + File.separator + "repository";
+        }
+
+        return null;
+    }
 }

@@ -19,6 +19,7 @@ package org.apache.storm.redis.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
@@ -89,11 +90,10 @@ public class WordCountTridentRedisCluster {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
         if (flag == 0) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test_wordCounter_for_redis", conf, buildTopology(redisHostPort));
-            Thread.sleep(60 * 1000);
-            cluster.killTopology("test_wordCounter_for_redis");
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("test_wordCounter_for_redis", conf, buildTopology(redisHostPort));) {
+                Thread.sleep(60 * 1000);
+            }
             System.exit(0);
         } else if(flag == 1) {
             conf.setNumWorkers(3);

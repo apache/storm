@@ -79,11 +79,6 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-     <groupId>org.twitter4j</groupId>
-     <artifactId>twitter4j-stream</artifactId>
-     <version>3.0.3</version>
-    </dependency>
-    <dependency>
         <groupId>org.apache.storm</groupId>
         <artifactId>storm-clojure</artifactId>
         <version>${project.version}</version>
@@ -171,6 +166,23 @@
             <artifactId>maven-shade-plugin</artifactId>
             <configuration>
                 <createDependencyReducedPom>true</createDependencyReducedPom>
+                <filters>
+                    <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                            <exclude>META-INF/*.SF</exclude>
+                            <exclude>META-INF/*.sf</exclude>
+                            <exclude>META-INF/*.DSA</exclude>
+                            <exclude>META-INF/*.dsa</exclude>
+                            <exclude>META-INF/*.RSA</exclude>
+                            <exclude>META-INF/*.rsa</exclude>
+                            <exclude>META-INF/*.EC</exclude>
+                            <exclude>META-INF/*.ec</exclude>
+                            <exclude>META-INF/MSFTSIG.SF</exclude>
+                            <exclude>META-INF/MSFTSIG.RSA</exclude>
+                        </excludes>
+                    </filter>
+                </filters>
             </configuration>
             <executions>
                 <execution>

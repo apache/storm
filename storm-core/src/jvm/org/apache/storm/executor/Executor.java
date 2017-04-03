@@ -167,7 +167,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.hasEventLoggers = StormCommon.hasEventLoggers(stormConf);
 
         try {
-            this.hostname = Utils.hostname(stormConf);
+            this.hostname = Utils.hostname();
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
@@ -432,7 +432,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_COUNT);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS);
-        keysToRemove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
         keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER);

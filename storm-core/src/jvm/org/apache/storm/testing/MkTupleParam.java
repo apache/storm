@@ -18,6 +18,7 @@
 package org.apache.storm.testing;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class MkTupleParam {
@@ -42,10 +43,16 @@ public class MkTupleParam {
 	public List<String> getFields() {
 		return fields;
 	}
+	
+	public void setFieldsList(List<String> fields) {
+	    if (fields != null) {
+	        this.fields = new ArrayList<>(fields);
+	    } else {
+	        this.fields = null;
+	    }
+	}
+	
 	public void setFields(String... fields) {
-		this.fields = new ArrayList<String>();
-		for (int i = 0; i < fields.length; i++) {
-			this.fields.add(fields[i]);
-		}
+		this.fields = new ArrayList<>(Arrays.asList(fields));
 	}
 }

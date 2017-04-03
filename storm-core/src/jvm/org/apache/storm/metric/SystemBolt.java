@@ -17,6 +17,15 @@
  */
 package org.apache.storm.metric;
 
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
+import java.lang.management.MemoryMXBean;
+import java.lang.management.MemoryUsage;
+import java.lang.management.RuntimeMXBean;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.task.IBolt;
@@ -24,13 +33,6 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
-import clojure.lang.AFn;
-import clojure.lang.IFn;
-import clojure.lang.RT;
-
-import java.lang.management.*;
-import java.util.HashMap;
-import java.util.Map;
 
 
 // There is one task inside one executor for each worker of the topology.
@@ -40,14 +42,14 @@ public class SystemBolt implements IBolt {
     private static boolean _prepareWasCalled = false;
 
     private static class MemoryUsageMetric implements IMetric {
-        IFn _getUsage;
-        public MemoryUsageMetric(IFn getUsage) {
+        Supplier<MemoryUsage> _getUsage;
+        public MemoryUsageMetric(Supplier<MemoryUsage> getUsage) {
             _getUsage = getUsage;
         }
         @Override
         public Object getValueAndReset() {
-            MemoryUsage memUsage = (MemoryUsage)_getUsage.invoke();
-            HashMap m = new HashMap();
+            MemoryUsage memUsage = _getUsage.get();
+            HashMap<String, Object> m = new HashMap<>();
             m.put("maxBytes", memUsage.getMax());
             m.put("committedBytes", memUsage.getCommitted());
             m.put("initBytes", memUsage.getInit());
@@ -72,9 +74,9 @@ public class SystemBolt implements IBolt {
             Long collectionCountP = _gcBean.getCollectionCount();
             Long collectionTimeP = _gcBean.getCollectionTime();
 
-            Map ret = null;
+            Map<String, Object> ret = null;
             if(_collectionCount!=null && _collectionTime!=null) {
-                ret = new HashMap();
+                ret = new HashMap<>();
                 ret.put("count", collectionCountP - _collectionCount);
                 ret.put("timeMs", collectionTimeP - _collectionTime);
             }
@@ -85,14 +87,15 @@ public class SystemBolt implements IBolt {
         }
     }
 
+    @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void prepare(final Map stormConf, TopologyContext context, OutputCollector collector) {
-        if(_prepareWasCalled && !"local".equals(stormConf.get(Config.STORM_CLUSTER_MODE))) {
+    public void prepare(final Map topoConf, TopologyContext context, OutputCollector collector) {
+        if(_prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }
         _prepareWasCalled = true;
 
-        int bucketSize = RT.intCast(stormConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+        int bucketSize = Utils.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
         final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
 
@@ -124,30 +127,22 @@ public class SystemBolt implements IBolt {
 
         final MemoryMXBean jvmMemRT = ManagementFactory.getMemoryMXBean();
 
-        context.registerMetric("memory/heap", new MemoryUsageMetric(new AFn() {
-            public Object invoke() {
-                return jvmMemRT.getHeapMemoryUsage();
-            }
-        }), bucketSize);
-        context.registerMetric("memory/nonHeap", new MemoryUsageMetric(new AFn() {
-            public Object invoke() {
-                return jvmMemRT.getNonHeapMemoryUsage();
-            }
-        }), bucketSize);
+        context.registerMetric("memory/heap", new MemoryUsageMetric(jvmMemRT::getHeapMemoryUsage), bucketSize);
+        context.registerMetric("memory/nonHeap", new MemoryUsageMetric(jvmMemRT::getNonHeapMemoryUsage), bucketSize);
 
         for(GarbageCollectorMXBean b : ManagementFactory.getGarbageCollectorMXBeans()) {
             context.registerMetric("GC/" + b.getName().replaceAll("\\W", ""), new GarbageCollectorMetric(b), bucketSize);
         }
 
-        registerMetrics(context, (Map<String,String>)stormConf.get(Config.WORKER_METRICS), bucketSize);
-        registerMetrics(context, (Map<String,String>)stormConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize);
+        registerMetrics(context, (Map<String,String>)topoConf.get(Config.WORKER_METRICS), bucketSize, topoConf);
+        registerMetrics(context, (Map<String,String>)topoConf.get(Config.TOPOLOGY_WORKER_METRICS), bucketSize, topoConf);
     }
 
-    private void registerMetrics(TopologyContext context, Map<String, String> metrics, int bucketSize) {
+    private void registerMetrics(TopologyContext context, Map<String, String> metrics, int bucketSize, Map<String, Object> conf) {
         if (metrics == null) return;
         for (Map.Entry<String, String> metric: metrics.entrySet()) {
             try {
-                context.registerMetric(metric.getKey(), (IMetric)Utils.newInstance(metric.getValue()), bucketSize);
+                context.registerMetric(metric.getKey(), (IMetric)Utils.newInstance(metric.getValue(), conf), bucketSize);
             } catch (Exception e) {
                 throw new RuntimeException(e);
             }

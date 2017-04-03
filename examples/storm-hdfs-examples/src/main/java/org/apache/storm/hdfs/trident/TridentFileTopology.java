@@ -19,6 +19,7 @@ package org.apache.storm.hdfs.trident;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
@@ -86,9 +87,10 @@ public class TridentFileTopology {
         conf.put("hdfs.config", yamlConf);
 
         if (args.length == 2) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));
-            Thread.sleep(120 * 1000);
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));) {
+                Thread.sleep(120 * 1000);
+            }
         } else if(args.length == 3) {
             conf.setNumWorkers(3);
             StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0]));

@@ -57,18 +57,17 @@ public class BasicDRPCTopology {
     Config conf = new Config();
 
     if (args == null || args.length == 0) {
-      LocalDRPC drpc = new LocalDRPC();
-      LocalCluster cluster = new LocalCluster();
+      try (LocalDRPC drpc = new LocalDRPC();
+           LocalCluster cluster = new LocalCluster()) {
 
-      cluster.submitTopology("drpc-demo", conf, builder.createLocalTopology(drpc));
+        cluster.submitTopology("drpc-demo", conf, builder.createLocalTopology(drpc));
 
-      for (String word : new String[]{ "hello", "goodbye" }) {
-        System.out.println("Result for \"" + word + "\": " + drpc.execute("exclamation", word));
+        for (String word : new String[]{ "hello", "goodbye" }) {
+          System.out.println("Result for \"" + word + "\": " + drpc.execute("exclamation", word));
+        }
+
+        Thread.sleep(10000);
       }
-
-      Thread.sleep(10000);
-      drpc.shutdown();
-      cluster.shutdown();
     }
     else {
       conf.setNumWorkers(3);

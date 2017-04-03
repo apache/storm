@@ -17,12 +17,24 @@
  */
 package org.apache.storm.cluster;
 
-import org.apache.storm.generated.*;
-import org.apache.storm.nimbus.NimbusInfo;
-
 import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+
+import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.ClusterWorkerHeartbeat;
+import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.ErrorInfo;
+import org.apache.storm.generated.ExecutorInfo;
+import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.NimbusSummary;
+import org.apache.storm.generated.NodeInfo;
+import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.generated.StormBase;
+import org.apache.storm.generated.SupervisorInfo;
+import org.apache.storm.nimbus.NimbusInfo;
 
 public interface IStormClusterState {
     public List<String> assignments(Runnable callback);
@@ -35,12 +47,18 @@ public interface IStormClusterState {
 
     public List<String> blobstoreInfo(String blobKey);
 
-    public List nimbuses();
+    public List<NimbusSummary> nimbuses();
 
     public void addNimbusHost(String nimbusId, NimbusSummary nimbusSummary);
 
     public List<String> activeStorms();
 
+    /**
+     * Get a storm base for a topology
+     * @param stormId the id of the topology
+     * @param callback something to call if the data changes (best effort)
+     * @return the StormBase or null if it is not alive.
+     */
     public StormBase stormBase(String stormId, Runnable callback);
 
     public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
@@ -117,10 +135,64 @@ public interface IStormClusterState {
 
     public ErrorInfo lastError(String stormId, String componentId);
 
-    public void setCredentials(String stormId, Credentials creds, Map topoConf) throws NoSuchAlgorithmException;
+    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException;
 
     public Credentials credentials(String stormId, Runnable callback);
 
     public void disconnect();
+    
+    /**
+     * @return All of the supervisors with the ID as the key
+     */
+    default Map<String, SupervisorInfo> allSupervisorInfo() {
+        return allSupervisorInfo(null);
+    }
 
+    /**
+     * @param callback be alerted if the list of supervisors change
+     * @return All of the supervisors with the ID as the key
+     */
+    default Map<String, SupervisorInfo> allSupervisorInfo(Runnable callback) {
+        Map<String, SupervisorInfo> ret = new HashMap<>();
+        for (String id: supervisors(callback)) {
+            ret.put(id, supervisorInfo(id));
+        }
+        return ret;
+    }
+    
+    /**
+     * Get a topology ID from the name of a topology
+     * @param topologyName the name of the topology to look for
+     * @return the id of the topology or null if it is not alive.
+     */
+    default Optional<String> getTopoId(final String topologyName) {
+        String ret = null;
+        for (String topoId: activeStorms()) {
+            String name = stormBase(topoId, null).get_name();
+            if (topologyName.equals(name)) {
+                ret = topoId;
+                break;
+            }
+        }
+        return Optional.ofNullable(ret);
+    }
+    
+    default Map<String, Assignment> topologyAssignments() {
+        Map<String, Assignment> ret = new HashMap<>();
+        for (String topoId: assignments(null)) {
+            ret.put(topoId, assignmentInfo(topoId, null));
+        }
+        return ret;
+    }
+    
+    default Map<String, StormBase> topologyBases() {
+        Map<String, StormBase> stormBases = new HashMap<>();
+        for (String topologyId : activeStorms()) {
+            StormBase base = stormBase(topologyId, null);
+            if (base != null) { //rece condition with delete
+                stormBases.put(topologyId, base);
+            }
+        }
+        return stormBases;
+    }
 }

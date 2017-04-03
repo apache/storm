@@ -17,11 +17,13 @@
  */
 package org.apache.storm.blobstore;
 
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.nio.channels.ClosedByInterruptException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -78,16 +80,21 @@ public class BlobSynchronizer {
             LOG.debug("Key set Blobstore-> Zookeeper-> DownloadSet {}-> {}-> {}", getBlobStoreKeySet(), getZookeeperKeySet(), keySetToDownload);
 
             for (String key : keySetToDownload) {
-                Set<NimbusInfo> nimbusInfoSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
-                if(BlobStoreUtils.downloadMissingBlob(conf, blobStore, key, nimbusInfoSet)) {
-                    BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
+                try {
+                    Set<NimbusInfo> nimbusInfoSet = BlobStoreUtils.getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
+                    LOG.debug("syncBlobs, key: {}, nimbusInfoSet: {}", key, nimbusInfoSet);
+                    if (BlobStoreUtils.downloadMissingBlob(conf, blobStore, key, nimbusInfoSet)) {
+                        BlobStoreUtils.createStateInZookeeper(conf, key, nimbusInfo);
+                    }
+                } catch (KeyNotFoundException e) {
+                    LOG.debug("Detected deletion for the key {} while downloading - skipping download", key);
                 }
             }
             if (zkClient !=null) {
                 zkClient.close();
             }
-        } catch(InterruptedException exp) {
-            LOG.error("InterruptedException {}", exp);
+        } catch(InterruptedException | ClosedByInterruptException exp) {
+            LOG.error("Interrupt Exception {}", exp);
         } catch(Exception exp) {
             throw new RuntimeException(exp);
         }

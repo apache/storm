@@ -19,6 +19,7 @@ package org.apache.storm.elasticsearch.bolt;
 
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -54,13 +55,10 @@ public class EsIndexTopology {
         EsTestUtil.startEsNode();
         EsTestUtil.waitForSeconds(5);
 
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
-        EsTestUtil.waitForSeconds(20);
-        cluster.killTopology(TOPOLOGY_NAME);
-        System.out.println("cluster begin to shutdown");
-        cluster.shutdown();
-        System.out.println("cluster shutdown");
+        try (LocalCluster cluster = new LocalCluster();
+            LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());) {
+            EsTestUtil.waitForSeconds(20);
+        }
         System.exit(0);
     }
 

@@ -37,6 +37,10 @@ public class FeederSpout extends BaseRichSpout {
     private SpoutOutputCollector _collector;
     private AckFailDelegate _ackFailDelegate;
 
+    public FeederSpout(List<String> outFields) {
+        this(new Fields(outFields));
+    }
+    
     public FeederSpout(Fields outFields) {
         _id = InprocMessaging.acquireNewPort();
         _outFields = outFields;

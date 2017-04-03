@@ -97,7 +97,7 @@ public class KafkaBoltTest {
     }
 
     @Test
-    public void shouldAcknowledgeTickTuples() throws Exception {
+    public void shouldNotAcknowledgeTickTuples() throws Exception {
         // Given
         Tuple tickTuple = mockTickTuple();
 
@@ -105,7 +105,7 @@ public class KafkaBoltTest {
         bolt.execute(tickTuple);
 
         // Then
-        verify(collector).ack(tickTuple);
+        verify(collector, never()).ack(tickTuple);
     }
 
     @Test
@@ -287,7 +287,7 @@ public class KafkaBoltTest {
 
     private Tuple generateTestTuple(Object key, Object message) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("key", "message");
@@ -298,7 +298,7 @@ public class KafkaBoltTest {
 
     private Tuple generateTestTuple(Object message) {
         TopologyBuilder builder = new TopologyBuilder();
-        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+        GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(), new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("message");

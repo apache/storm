@@ -16,10 +16,7 @@ documentation: true
 * [Understanding the parallelism of a Storm topology](Understanding-the-parallelism-of-a-Storm-topology.html)
 * [FAQ](FAQ.html)
 
-### Layers on Top of Storm
-
-* [Flux Data Driven Topology Builder](flux.html)
-* [SQL](storm-sql.html)
+### Layers on top of Storm
 
 #### Trident
 
@@ -30,6 +27,31 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Trident State](Trident-state.html)        -- exactly-once processing and fast, persistent aggregation
 * [Trident spouts](Trident-spouts.html)       -- transactional and non-transactional data intake
 * [Trident RAS API](Trident-RAS-API.html)     -- using the Resource Aware Scheduler with Trident.
+
+#### Streams API
+
+Stream APIs is another alternative interface to Storm. It provides a typed API for expressing streaming computations and supports functional style operations.
+
+NOTE: Streams API is an `experimental` feature, and further works might break backward compatibility.
+We're also notifying it via annotating classes with marker interface `@InterfaceStability.Unstable`. 
+
+* [Streams API](Stream-API.html)
+
+#### SQL
+
+The Storm SQL integration allows users to run SQL queries over streaming data in Storm.  
+
+NOTE: Storm SQL is an `experimental` feature, so the internals of Storm SQL and supported features are subject to change. 
+But small change will not affect the user experience. We will notify the user when breaking UX change is introduced.
+
+* [Storm SQL overview](storm-sql.html)
+* [Storm SQL example](storm-sql-example.html)
+* [Storm SQL reference](storm-sql-reference.html)
+* [Storm SQL internal](storm-sql-internal.html)
+
+#### Flux
+
+* [Flux Data Driven Topology Builder](flux.html)
 
 ### Setup and Deploying
 
@@ -57,6 +79,7 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Metrics](Metrics.html)
 * [State Checkpointing](State-checkpointing.html)
 * [Windowing](Windowing.html)
+* [Joining Streams](Joins.html)
 * [Blobstore(Distcahce)](distcache-blobstore.html)
 
 ### Debugging

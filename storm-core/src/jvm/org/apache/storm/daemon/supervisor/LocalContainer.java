@@ -21,7 +21,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import org.apache.storm.ProcessSimulator;
-import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.worker.Worker;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
@@ -29,9 +28,6 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import clojure.java.api.Clojure;
-import clojure.lang.IFn;
 
 public class LocalContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(LocalContainer.class);
@@ -43,7 +39,17 @@ public class LocalContainer extends Container {
         _sharedContext = sharedContext;
         _workerId = Utils.uuid();
     }
-    
+
+    @Override
+    protected void createArtifactsLink() {
+        //NOOP no need to create links in local mode
+    }
+
+    @Override
+    protected void createBlobstoreLinks() {
+        // NOOP no need to create links in local mode
+    }
+
     @Override
     public void launch() throws IOException {
         Worker worker = new Worker(_conf, _sharedContext, _topologyId, _supervisorId, _port, _workerId);

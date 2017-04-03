@@ -121,7 +121,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         }
 
         @Override
-        public void onActivation(List<T> events, List<T> newEvents, List<T> expired) {
+        public void onActivation(List<T> events, List<T> newEvents, List<T> expired, Long timestamp) {
             LOG.debug("onActivation is invoked with events size: [{}]", events.size());
             // trigger occurred, create an aggregation and keep them in store
             int currentTriggerId = triggerId.incrementAndGet();

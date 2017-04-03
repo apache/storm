@@ -23,6 +23,7 @@ import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
+import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.topology.TopologyBuilder;
 
@@ -58,12 +59,10 @@ public class SampleOpenTsdbBoltTopology {
         } else {
             conf.setMaxTaskParallelism(3);
 
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("word-count", conf, topologyBuilder.createTopology());
-
-            Thread.sleep(30000);
-
-            cluster.shutdown();
+            try (LocalCluster cluster = new LocalCluster();
+                 LocalTopology topo = cluster.submitTopology("word-count", conf, topologyBuilder.createTopology());) {
+                Thread.sleep(30000);
+            }
             System.exit(0);
         }
     }

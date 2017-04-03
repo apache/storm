@@ -22,9 +22,12 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IWindowedBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.TupleFieldTimestampExtractor;
+import org.apache.storm.windowing.TimestampExtractor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -33,11 +36,12 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     private static final Logger LOG = LoggerFactory.getLogger(BaseWindowedBolt.class);
 
     protected final transient Map<String, Object> windowConfiguration;
+    protected TimestampExtractor timestampExtractor;
 
     /**
      * Holds a count value for count based windows and sliding intervals.
      */
-    public static class Count {
+    public static class Count implements Serializable {
         public final int value;
 
         public Count(int value) {
@@ -55,6 +59,22 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
         }
 
         @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Count count = (Count) o;
+
+            return value == count.value;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
+        }
+
+        @Override
         public String toString() {
             return "Count{" +
                     "value=" + value +
@@ -65,7 +85,7 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
     /**
      * Holds a Time duration for time based windows and sliding intervals.
      */
-    public static class Duration {
+    public static class Duration implements Serializable {
         public final int value;
 
         public Duration(int value, TimeUnit timeUnit) {
@@ -120,6 +140,22 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
          */
         public static Duration seconds(int seconds) {
             return new Duration(seconds, TimeUnit.SECONDS);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            Duration duration = (Duration) o;
+
+            return value == duration.value;
+
+        }
+
+        @Override
+        public int hashCode() {
+            return value;
         }
 
         @Override
@@ -250,8 +286,25 @@ public abstract class BaseWindowedBolt implements IWindowedBolt {
      * @param fieldName the name of the field that contains the timestamp
      */
     public BaseWindowedBolt withTimestampField(String fieldName) {
-        windowConfiguration.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME, fieldName);
+        return withTimestampExtractor(TupleFieldTimestampExtractor.of(fieldName));
+    }
+
+    /**
+     * Specify the timestamp extractor implementation.
+     *
+     * @param timestampExtractor the {@link TimestampExtractor} implementation
+     */
+    public BaseWindowedBolt withTimestampExtractor(TimestampExtractor timestampExtractor) {
+        if (this.timestampExtractor != null) {
+            throw new IllegalArgumentException("Window is already configured with a timestamp extractor: " + timestampExtractor);
+        }
+        this.timestampExtractor = timestampExtractor;
         return this;
+    }
+
+    @Override
+    public TimestampExtractor getTimestampExtractor() {
+        return timestampExtractor;
     }
 
     /**

@@ -105,12 +105,15 @@ public class EvenScheduler implements IScheduler {
         int totalSlotsToUse = Math.min(topology.getNumWorkers(), availableSlots.size() + aliveAssigned.size());
 
         List<WorkerSlot> sortedList = sortSlots(availableSlots);
-        if (sortedList == null || sortedList.size() < (totalSlotsToUse - aliveAssigned.size())) {
-            LOG.error("Available slots are not enough for topology: {}", topology.getName());
+        if (sortedList == null) {
+            LOG.error("No available slots for topology: {}", topology.getName());
             return new HashMap<ExecutorDetails, WorkerSlot>();
         }
 
-        List<WorkerSlot> reassignSlots = sortedList.subList(0, totalSlotsToUse - aliveAssigned.size());
+        //allow requesting slots number bigger than available slots
+        int toIndex = (totalSlotsToUse - aliveAssigned.size()) > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
+        List<WorkerSlot> reassignSlots = sortedList.subList(0, toIndex);
+
         Set<ExecutorDetails> aliveExecutors = new HashSet<ExecutorDetails>();
         for (List<ExecutorDetails> list : aliveAssigned.values()) {
             aliveExecutors.addAll(list);
