@@ -162,11 +162,11 @@ Storm.prototype.emit = function(messageDetails, onTaskIds) {
     }
 
     if (!onTaskIds) {
-        throw new Error('You must pass a onTaskIds callback when using emit!')
+        throw new Error('You must pass a onTaskIds callback when using emit!');
     }
 
     this.taskIdsCallbacks.push(onTaskIds);
-    this.__emit(messageDetails);;
+    this.__emit(messageDetails);
 };
 
 
@@ -193,7 +193,7 @@ Storm.prototype.emit = function(messageDetails, onTaskIds) {
  */
 Storm.prototype.emitDirect = function(commandDetails) {
     if (!commandDetails.task) {
-        throw new Error('Emit direct must receive task id!')
+        throw new Error('Emit direct must receive task id!');
     }
     this.__emit(commandDetails);
 };
