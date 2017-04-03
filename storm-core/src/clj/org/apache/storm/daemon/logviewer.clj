@@ -1115,9 +1115,9 @@
   (GET "/download" [:as {:keys [servlet-request servlet-response log-root]} & m]
     (try
       (.mark logviewer:num-download-log-file-http-requests)
-      (set-log-file-permissions file log-root) 
       (let [user (.getUserName http-creds-handler servlet-request)
             file (URLDecoder/decode (:file m))]
+        (set-log-file-permissions file log-root) 
         (download-log-file file servlet-request servlet-response user log-root))
       (catch InvalidRequestException ex
         (log-error ex)
