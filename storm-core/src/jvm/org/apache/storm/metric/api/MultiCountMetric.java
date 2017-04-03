@@ -27,7 +27,7 @@ public class MultiCountMetric implements IMetric {
     public MultiCountMetric() {
     }
     
-    public CountMetric scope(String key) {
+    public synchronized CountMetric scope(String key) {
         CountMetric val = _value.get(key);
         if(val == null) {
             _value.put(key, val = new CountMetric());
@@ -35,7 +35,7 @@ public class MultiCountMetric implements IMetric {
         return val;
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         Map ret = new HashMap();
         for(Map.Entry<String, CountMetric> e : _value.entrySet()) {
             ret.put(e.getKey(), e.getValue().getValueAndReset());

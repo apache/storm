@@ -26,11 +26,11 @@ public class CombinedMetric implements IMetric {
         _value = _combiner.identity();
     }
     
-    public void update(Object value) {
+    public synchronized void update(Object value) {
         _value = _combiner.combine(_value, value);
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         Object ret = _value;
         _value = _combiner.identity();
         return ret;

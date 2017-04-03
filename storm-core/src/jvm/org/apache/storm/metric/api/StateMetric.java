@@ -25,7 +25,7 @@ public class StateMetric implements IMetric {
     }
 
     @Override
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         return _obj.getState();
     }
 }

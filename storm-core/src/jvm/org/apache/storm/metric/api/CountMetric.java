@@ -23,15 +23,15 @@ public class CountMetric implements IMetric {
     public CountMetric() {
     }
     
-    public void incr() {
+    public synchronized void incr() {
         _value++;
     }
 
-    public void incrBy(long incrementBy) {
+    public synchronized void incrBy(long incrementBy) {
         _value += incrementBy;
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         long ret = _value;
         _value = 0;
         return ret;

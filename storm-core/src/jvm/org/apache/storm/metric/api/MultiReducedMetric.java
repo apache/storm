@@ -22,14 +22,14 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class MultiReducedMetric implements IMetric {
-    Map<String, ReducedMetric> _value = new HashMap<>();
-    IReducer _reducer;
+    private Map<String, ReducedMetric> _value = new HashMap<>();
+    private IReducer _reducer;
 
     public MultiReducedMetric(IReducer reducer) {
         _reducer = reducer;
     }
     
-    public ReducedMetric scope(String key) {
+    public synchronized ReducedMetric scope(String key) {
         ReducedMetric val = _value.get(key);
         if(val == null) {
             _value.put(key, val = new ReducedMetric(_reducer));
@@ -37,7 +37,7 @@ public class MultiReducedMetric implements IMetric {
         return val;
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         Map ret = new HashMap();
         for(Map.Entry<String, ReducedMetric> e : _value.entrySet()) {
             Object val = e.getValue().getValueAndReset();

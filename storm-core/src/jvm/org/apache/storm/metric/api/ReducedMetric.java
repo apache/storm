@@ -26,11 +26,11 @@ public class ReducedMetric implements IMetric {
         _accumulator = _reducer.init();
     }
 
-    public void update(Object value) {
+    public synchronized void update(Object value) {
         _accumulator = _reducer.reduce(_accumulator, value);
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         Object ret = _reducer.extractResult(_accumulator);
         _accumulator = _reducer.init();
         return ret;
