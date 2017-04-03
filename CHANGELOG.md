@@ -199,6 +199,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.4
+ * STORM-2450: Write resources into correct local director
  * STORM-2038: No symlinks for local cluster 
 
 ## 1.0.3
