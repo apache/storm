@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2450: Write resources into correct local director
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
  * STORM-2038: Disable symlinks with a config option
  * STORM-2038: No symlinks for local cluster 
