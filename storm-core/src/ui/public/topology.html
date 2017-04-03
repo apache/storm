@@ -293,7 +293,7 @@ $(document).ready(function() {
         var searchForm = $("#search-form")
         var formattedConfig = formatConfigData(response["configuration"]);
         var buttonJsonData = topologyActionJson(response["id"],response["encodedId"],response["name"],response["status"]
-                                                ,response["msgTimeout"],response["debug"],response["samplingPct"]);
+                                                ,response["msgTimeout"],response["configuration"]["topology.eventlogger.executors"],response["debug"],response["samplingPct"]);
         $.ajax ({url: "/templates/topology-page-template.html", success: function(template) {
             toggleChangeLogLevel = function (data) {
               renderLogLevelForm (template, data);

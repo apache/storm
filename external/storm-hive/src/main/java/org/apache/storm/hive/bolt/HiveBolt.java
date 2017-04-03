@@ -119,6 +119,9 @@ public class HiveBolt extends BaseRichBolt {
                 LOG.info("acknowledging tuples after writers flushed ");
                 batchHelper.ack();
             }
+            if (TupleUtils.isTick(tuple)) {
+                retireIdleWriters();
+            }
         } catch(SerializationError se) {
             LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
             this.collector.reportError(se);
@@ -308,30 +311,32 @@ public class HiveBolt extends BaseRichBolt {
         LOG.info("Attempting close idle writers");
         int count = 0;
         long now = System.currentTimeMillis();
-        ArrayList<HiveEndPoint> retirees = new ArrayList<HiveEndPoint>();
 
         //1) Find retirement candidates
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             if(now - entry.getValue().getLastUsed() > options.getIdleTimeout()) {
                 ++count;
-                retirees.add(entry.getKey());
-            }
-        }
-        //2) Retire them
-        for(HiveEndPoint ep : retirees) {
-            try {
-                LOG.info("Closing idle Writer to Hive end point : {}", ep);
-                allWriters.remove(ep).flushAndClose();
-            } catch (IOException e) {
-                LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
-            } catch (InterruptedException e) {
-                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+                retire(entry.getKey());
             }
         }
         return count;
+    }
+
+    private void retire(HiveEndPoint ep) {
+        try {
+            HiveWriter writer = allWriters.remove(ep);
+            if (writer != null) {
+                LOG.info("Closing idle Writer to Hive end point : {}", ep);
+                writer.flushAndClose();
+            }
+        } catch (IOException e) {
+            LOG.warn("Failed to close writer for end point: {}. Error: " + ep, e);
+        } catch (InterruptedException e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+        }
     }
 
 }

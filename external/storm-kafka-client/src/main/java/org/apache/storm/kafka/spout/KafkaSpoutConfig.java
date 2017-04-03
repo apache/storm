@@ -18,6 +18,13 @@
 
 package org.apache.storm.kafka.spout;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.serialization.Deserializer;
+import org.apache.kafka.common.serialization.StringDeserializer;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
+import org.apache.storm.tuple.Fields;
+
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
@@ -25,13 +32,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.regex.Pattern;
-
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.Deserializer;
-import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-import org.apache.storm.tuple.Fields;
 
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics
@@ -106,6 +106,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
+        private boolean emitNullTuples = false;
         
         public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, String ... topics) {
             this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
@@ -402,7 +403,17 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.partitionRefreshPeriodMs = partitionRefreshPeriodMs;
             return this;
         }
-        
+
+        /**
+         * Specifies if the spout should emit null tuples to the component downstream, or rather not emit and directly
+         * ack them. By default this parameter is set to false, which means that null tuples are not emitted.
+         * @param emitNullTuples sets if null tuples should or not be emitted downstream
+         */
+        public Builder<K, V> setEmitNullTuples(boolean emitNullTuples) {
+            this.emitNullTuples = emitNullTuples;
+            return this;
+        }
+
         public KafkaSpoutConfig<K,V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -424,6 +435,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutRetryService retryService;
     private final long partitionRefreshPeriodMs;
+    private final boolean emitNullTuples;
 
     private KafkaSpoutConfig(Builder<K,V> builder) {
         this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
@@ -439,6 +451,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDes = builder.valueDes;
         this.valueDesClazz = builder.valueDesClazz;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
+        this.emitNullTuples = builder.emitNullTuples;
     }
 
     public Map<String, Object> getKafkaProps() {
@@ -506,6 +519,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     
     public long getPartitionRefreshPeriodMs() {
         return partitionRefreshPeriodMs;
+    }
+
+    public boolean isEmitNullTuples() {
+        return emitNullTuples;
     }
 
     @Override

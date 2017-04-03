@@ -20,6 +20,7 @@ package org.apache.storm.eventhubs.samples.bolt;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,6 +67,10 @@ public class GlobalCountBolt extends BaseBasicBolt {
 
   @Override
   public void execute(Tuple tuple, BasicOutputCollector collector) {
+    if (TupleUtils.isTick(tuple)) {
+      return;
+    }
+
     int partial = (Integer)tuple.getValueByField("partial_count");
     globalCount += partial;
     globalCountDiff += partial;

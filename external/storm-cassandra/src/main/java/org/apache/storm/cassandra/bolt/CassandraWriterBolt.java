@@ -59,13 +59,6 @@ public class CassandraWriterBolt extends BaseCassandraBolt<Tuple> {
         if (statements.size() == 1) getAsyncExecutor().execAsync(statements.get(0), input);
         else getAsyncExecutor().execAsync(statements, input);
     }
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    protected void onTickTuple() {
-        /** do nothing **/
-    }
 }
 
 

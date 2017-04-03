@@ -19,7 +19,9 @@
 package org.apache.storm.pmml.runner.jpmml;
 
 import org.apache.storm.pmml.model.ModelOutputs;
+import org.apache.storm.pmml.runner.ModelRunner;
 import org.apache.storm.pmml.runner.ModelRunnerFactory;
+import org.apache.storm.utils.Utils;
 import org.dmg.pmml.IOUtil;
 import org.dmg.pmml.PMML;
 import org.jpmml.evaluator.Evaluator;
@@ -31,6 +33,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Map;
 import java.util.Objects;
 
 import javax.xml.bind.JAXBException;
@@ -57,6 +60,51 @@ public class JpmmlFactory {
     }
 
     /**
+     * Creates a new {@link PMML} object representing the PMML model uploaded to the Blobstore with key specified as argument.
+     * Uses Storm config as returned by {@code Utils.readStormConfig()} to get the Blobstore client
+     */
+    public static PMML newPmml(String blobKey) throws JAXBException, SAXException, IOException {
+        return newPmml(blobKey, Utils.readStormConfig());
+    }
+
+    /**
+     * Creates a new {@link PMML} object representing the PMML model uploaded to the Blobstore with key specified as argument.
+     * Uses the specified configuration to get the Blobstore client
+     */
+    public static PMML newPmml(String blobKey, Map config) throws JAXBException, SAXException, IOException {
+        Objects.requireNonNull(blobKey);
+        Objects.requireNonNull(config);
+        return newPmml(getPmmlModelBlob(blobKey, config));
+    }
+
+    // ==================   Get PMML Model from Blobstore ==================
+
+    /**
+     * Returns PMML model from Blobstore. Uses Storm config as returned by {@code Utils.readStormConfig()}
+     * @param blobKey key of PMML model in Blobstore
+     */
+    public static InputStream getPmmlModelBlob(String blobKey) {
+        return getPmmlModelBlob(blobKey, Utils.readStormConfig());
+    }
+
+    /**
+     * Returns PMML model from Blobstore
+     * @param blobKey key of PMML model in Blobstore
+     * @param config Configuration to use to get Blobstore client
+     */
+    public static InputStream getPmmlModelBlob(String blobKey, Map config) {
+        Objects.requireNonNull(blobKey);
+        Objects.requireNonNull(config);
+        try {
+            return Utils.getClientBlobStore(config).getBlob(blobKey);
+        } catch (Exception e) {
+            throw new RuntimeException("Failed to download PMML Model from Blobstore using blob key [" + blobKey + "]", e);
+        }
+    }
+
+    // ==================   Evaluator   ==================
+
+    /**
      * Creates a new {@link Evaluator} object representing the PMML model defined in the {@link PMML} argument
      */
     public static Evaluator newEvaluator(PMML pmml) {
@@ -81,11 +129,35 @@ public class JpmmlFactory {
         return newEvaluator(newPmml(stream));
     }
 
-    public static class ModelRunnerCreator implements ModelRunnerFactory {
-        private File model;
-        private ModelOutputs outFields;
+    /**
+     * Creates a new {@link Evaluator} object representing the PMML model uploaded to the Blobstore using the blob key specified as argument.
+     * Uses Storm config as returned by {@code Utils.readStormConfig()} to get the Blobstore client
+     */
+    public static Evaluator newEvaluator(String blobKey) throws IOException, JAXBException, SAXException {
+        Objects.requireNonNull(blobKey);
+        return newEvaluator(blobKey, Utils.readStormConfig());
+    }
 
-        public ModelRunnerCreator(File model, ModelOutputs modelOutputs) {
+    /**
+     * Creates a new {@link Evaluator} object representing the PMML model uploaded to the Blobstore using the blob key specified as argument.
+     * Uses the specified configuration to get the Blobstore client
+     */
+    public static Evaluator newEvaluator(String blobKey, Map config) throws IOException, JAXBException, SAXException {
+        Objects.requireNonNull(blobKey);
+        Objects.requireNonNull(config);
+        return newEvaluator(newPmml(blobKey, config));
+    }
+
+    // ============  Factories  ============
+
+    public static class ModelRunnerFromFile implements ModelRunnerFactory {
+        private final File model;
+        private final ModelOutputs outFields;
+
+        public ModelRunnerFromFile(File model, ModelOutputs modelOutputs) {
+            Objects.requireNonNull(model);
+            Objects.requireNonNull(modelOutputs);
+
             this.model = model;
             this.outFields = modelOutputs;
         }
@@ -94,11 +166,52 @@ public class JpmmlFactory {
          * Creates a {@link JPmmlModelRunner} writing to the default stream
          */
         @Override
-        public org.apache.storm.pmml.runner.ModelRunner newModelRunner() {
+        public ModelRunner newModelRunner() {
             try {
                 return new JPmmlModelRunner(JpmmlFactory.newEvaluator(model), outFields);
             } catch (Exception e) {
-                throw new RuntimeException("Could not create ModelRunner from model " + model);
+                throw new RuntimeException("Failed to create ModelRunner from model " + model, e);
+            }
+        }
+    }
+
+    /**
+     * Creates a {@link JPmmlModelRunner} writing to the default stream. PMML Model is downloaded from Blobstore
+     */
+    public static class ModelRunnerFromBlobStore implements ModelRunnerFactory {
+        private final String blobKey;
+        private final ModelOutputs modelOutputs;
+        private final Map<String, Object> config;
+
+        /**
+         * Uses Storm config as returned by {@code Utils.readStormConfig()}
+         * @param blobKey key of PMML model in Blobstore
+         */
+        public ModelRunnerFromBlobStore(String blobKey, ModelOutputs modelOutputs) {
+            this(blobKey, modelOutputs, Utils.readStormConfig());
+        }
+
+        /**
+         * @param blobKey key of PMML model in Blobstore
+         * @param config Configuration to use to get Blobstore client
+         */
+        public ModelRunnerFromBlobStore(String blobKey, ModelOutputs modelOutputs, Map<String, Object> config) {
+            Objects.requireNonNull(blobKey);
+            Objects.requireNonNull(modelOutputs);
+            Objects.requireNonNull(config);
+
+            this.blobKey = blobKey;
+            this.modelOutputs = modelOutputs;
+            this.config = config;
+        }
+
+        @Override
+        public ModelRunner newModelRunner() {
+            try {
+                return new JPmmlModelRunner(JpmmlFactory.newEvaluator(blobKey, config), modelOutputs);
+            } catch (Exception e) {
+                throw new RuntimeException(String.format("Failed to create ModelRunner from model in Blobstore " +
+                        "using blob key [%s] and config [%s]", blobKey, config), e);
             }
         }
     }
