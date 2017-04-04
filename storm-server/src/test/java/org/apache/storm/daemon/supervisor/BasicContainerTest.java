@@ -37,6 +37,7 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.utils.SimpleVersion;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.LocalState;
 import org.junit.Test;
@@ -102,7 +103,7 @@ public class BasicContainerTest {
         }
         
         @Override
-        protected List<String> frameworkClasspath() {
+        protected List<String> frameworkClasspath(SimpleVersion version) {
             //We are not really running anything so make this
             // simple to check for
             return Arrays.asList("FRAMEWORK_CP");

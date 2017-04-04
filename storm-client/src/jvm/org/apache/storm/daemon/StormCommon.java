@@ -17,6 +17,16 @@
  */
 package org.apache.storm.daemon;
 
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -42,22 +52,13 @@ import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
 
 public class StormCommon {
     // A singleton instance allows us to mock delegated static methods in our
@@ -105,32 +106,30 @@ public class StormCommon {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static void validateIds(StormTopology topology) throws InvalidTopologyException {
-        List<String> componentIds = new ArrayList<>();
-
-        for (StormTopology._Fields field : Thrift.getTopologyFields()) {
-            if (!ThriftTopologyUtils.isWorkerHook(field) && !ThriftTopologyUtils.isDependencies(field)) {
-                Object value = topology.getFieldValue(field);
-                Map<String, Object> componentMap = (Map<String, Object>) value;
-                componentIds.addAll(componentMap.keySet());
-
-                for (String id : componentMap.keySet()) {
-                    if (Utils.isSystemId(id)) {
-                        throw new InvalidTopologyException(id + " is not a valid component id.");
-                    }
-                }
-                for (Object componentObj : componentMap.values()) {
-                    ComponentCommon common = getComponentCommon(componentObj);
-                    Set<String> streamIds = common.get_streams().keySet();
-                    for (String id : streamIds) {
-                        if (Utils.isSystemId(id)) {
-                            throw new InvalidTopologyException(id + " is not a valid stream id.");
-                        }
-                    }
+    private static Set<String> validateIds(Map<String, ? extends Object> componentMap) throws InvalidTopologyException {
+        Set<String> keys = componentMap.keySet();
+        for (String id : keys) {
+            if (Utils.isSystemId(id)) {
+                throw new InvalidTopologyException(id + " is not a valid component id.");
+            }
+        }
+        for (Object componentObj : componentMap.values()) {
+            ComponentCommon common = getComponentCommon(componentObj);
+            Set<String> streamIds = common.get_streams().keySet();
+            for (String id : streamIds) {
+                if (Utils.isSystemId(id)) {
+                    throw new InvalidTopologyException(id + " is not a valid stream id.");
                 }
             }
         }
+        return keys;
+    }
+    
+    private static void validateIds(StormTopology topology) throws InvalidTopologyException {
+        List<String> componentIds = new ArrayList<>();
+        componentIds.addAll(validateIds(topology.get_bolts()));
+        componentIds.addAll(validateIds(topology.get_spouts()));
+        componentIds.addAll(validateIds(topology.get_state_spouts()));
 
         List<String> offending = Utils.getRepeat(componentIds);
         if (!offending.isEmpty()) {
@@ -146,15 +145,11 @@ public class StormCommon {
         }
     }
 
-    @SuppressWarnings("unchecked")
     public static Map<String, Object> allComponents(StormTopology topology) {
         Map<String, Object> components = new HashMap<>();
-        List<StormTopology._Fields> topologyFields = Arrays.asList(Thrift.getTopologyFields());
-        for (StormTopology._Fields field : topologyFields) {
-            if (!ThriftTopologyUtils.isWorkerHook(field) && !ThriftTopologyUtils.isDependencies(field)) {
-                components.putAll(((Map) topology.getFieldValue(field)));
-            }
-        }
+        components.putAll(topology.get_bolts());
+        components.putAll(topology.get_spouts());
+        components.putAll(topology.get_state_spouts());
         return components;
     }
 

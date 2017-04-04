@@ -62,6 +62,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   private static final org.apache.thrift.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_workers", org.apache.thrift.protocol.TType.I32, (short)5);
   private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I32, (short)6);
   private static final org.apache.thrift.protocol.TField STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("status", org.apache.thrift.protocol.TType.STRING, (short)7);
+  private static final org.apache.thrift.protocol.TField STORM_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("storm_version", org.apache.thrift.protocol.TType.STRING, (short)8);
   private static final org.apache.thrift.protocol.TField SCHED_STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("sched_status", org.apache.thrift.protocol.TType.STRING, (short)513);
   private static final org.apache.thrift.protocol.TField OWNER_FIELD_DESC = new org.apache.thrift.protocol.TField("owner", org.apache.thrift.protocol.TType.STRING, (short)514);
   private static final org.apache.thrift.protocol.TField REPLICATION_COUNT_FIELD_DESC = new org.apache.thrift.protocol.TField("replication_count", org.apache.thrift.protocol.TType.I32, (short)515);
@@ -85,6 +86,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   private int num_workers; // required
   private int uptime_secs; // required
   private String status; // required
+  private String storm_version; // optional
   private String sched_status; // optional
   private String owner; // optional
   private int replication_count; // optional
@@ -104,6 +106,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     NUM_WORKERS((short)5, "num_workers"),
     UPTIME_SECS((short)6, "uptime_secs"),
     STATUS((short)7, "status"),
+    STORM_VERSION((short)8, "storm_version"),
     SCHED_STATUS((short)513, "sched_status"),
     OWNER((short)514, "owner"),
     REPLICATION_COUNT((short)515, "replication_count"),
@@ -141,6 +144,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
           return UPTIME_SECS;
         case 7: // STATUS
           return STATUS;
+        case 8: // STORM_VERSION
+          return STORM_VERSION;
         case 513: // SCHED_STATUS
           return SCHED_STATUS;
         case 514: // OWNER
@@ -211,7 +216,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   private static final int __ASSIGNED_MEMOFFHEAP_ISSET_ID = 9;
   private static final int __ASSIGNED_CPU_ISSET_ID = 10;
   private short __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.SCHED_STATUS,_Fields.OWNER,_Fields.REPLICATION_COUNT,_Fields.REQUESTED_MEMONHEAP,_Fields.REQUESTED_MEMOFFHEAP,_Fields.REQUESTED_CPU,_Fields.ASSIGNED_MEMONHEAP,_Fields.ASSIGNED_MEMOFFHEAP,_Fields.ASSIGNED_CPU};
+  private static final _Fields optionals[] = {_Fields.STORM_VERSION,_Fields.SCHED_STATUS,_Fields.OWNER,_Fields.REPLICATION_COUNT,_Fields.REQUESTED_MEMONHEAP,_Fields.REQUESTED_MEMOFFHEAP,_Fields.REQUESTED_CPU,_Fields.ASSIGNED_MEMONHEAP,_Fields.ASSIGNED_MEMOFFHEAP,_Fields.ASSIGNED_CPU};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -228,6 +233,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     tmpMap.put(_Fields.UPTIME_SECS, new org.apache.thrift.meta_data.FieldMetaData("uptime_secs", org.apache.thrift.TFieldRequirementType.REQUIRED, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.STATUS, new org.apache.thrift.meta_data.FieldMetaData("status", org.apache.thrift.TFieldRequirementType.REQUIRED, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.STORM_VERSION, new org.apache.thrift.meta_data.FieldMetaData("storm_version", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.SCHED_STATUS, new org.apache.thrift.meta_data.FieldMetaData("sched_status", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
@@ -295,6 +302,9 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     if (other.is_set_status()) {
       this.status = other.status;
     }
+    if (other.is_set_storm_version()) {
+      this.storm_version = other.storm_version;
+    }
     if (other.is_set_sched_status()) {
       this.sched_status = other.sched_status;
     }
@@ -327,6 +337,7 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     set_uptime_secs_isSet(false);
     this.uptime_secs = 0;
     this.status = null;
+    this.storm_version = null;
     this.sched_status = null;
     this.owner = null;
     set_replication_count_isSet(false);
@@ -499,6 +510,29 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
   public void set_status_isSet(boolean value) {
     if (!value) {
       this.status = null;
+    }
+  }
+
+  public String get_storm_version() {
+    return this.storm_version;
+  }
+
+  public void set_storm_version(String storm_version) {
+    this.storm_version = storm_version;
+  }
+
+  public void unset_storm_version() {
+    this.storm_version = null;
+  }
+
+  /** Returns true if field storm_version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_storm_version() {
+    return this.storm_version != null;
+  }
+
+  public void set_storm_version_isSet(boolean value) {
+    if (!value) {
+      this.storm_version = null;
     }
   }
 
@@ -760,6 +794,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       }
       break;
 
+    case STORM_VERSION:
+      if (value == null) {
+        unset_storm_version();
+      } else {
+        set_storm_version((String)value);
+      }
+      break;
+
     case SCHED_STATUS:
       if (value == null) {
         unset_sched_status();
@@ -858,6 +900,9 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     case STATUS:
       return get_status();
 
+    case STORM_VERSION:
+      return get_storm_version();
+
     case SCHED_STATUS:
       return get_sched_status();
 
@@ -910,6 +955,8 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       return is_set_uptime_secs();
     case STATUS:
       return is_set_status();
+    case STORM_VERSION:
+      return is_set_storm_version();
     case SCHED_STATUS:
       return is_set_sched_status();
     case OWNER:
@@ -1005,6 +1052,15 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       if (!(this_present_status && that_present_status))
         return false;
       if (!this.status.equals(that.status))
+        return false;
+    }
+
+    boolean this_present_storm_version = true && this.is_set_storm_version();
+    boolean that_present_storm_version = true && that.is_set_storm_version();
+    if (this_present_storm_version || that_present_storm_version) {
+      if (!(this_present_storm_version && that_present_storm_version))
+        return false;
+      if (!this.storm_version.equals(that.storm_version))
         return false;
     }
 
@@ -1131,6 +1187,11 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     if (present_status)
       list.add(status);
 
+    boolean present_storm_version = true && (is_set_storm_version());
+    list.add(present_storm_version);
+    if (present_storm_version)
+      list.add(storm_version);
+
     boolean present_sched_status = true && (is_set_sched_status());
     list.add(present_sched_status);
     if (present_sched_status)
@@ -1253,6 +1314,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
     }
     if (is_set_status()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.status, other.status);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_storm_version()).compareTo(other.is_set_storm_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_storm_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.storm_version, other.storm_version);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -1406,6 +1477,16 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       sb.append(this.status);
     }
     first = false;
+    if (is_set_storm_version()) {
+      if (!first) sb.append(", ");
+      sb.append("storm_version:");
+      if (this.storm_version == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.storm_version);
+      }
+      first = false;
+    }
     if (is_set_sched_status()) {
       if (!first) sb.append(", ");
       sb.append("sched_status:");
@@ -1597,6 +1678,14 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 8: // STORM_VERSION
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.storm_version = iprot.readString();
+              struct.set_storm_version_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           case 513: // SCHED_STATUS
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
               struct.sched_status = iprot.readString();
@@ -1709,6 +1798,13 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
         oprot.writeString(struct.status);
         oprot.writeFieldEnd();
       }
+      if (struct.storm_version != null) {
+        if (struct.is_set_storm_version()) {
+          oprot.writeFieldBegin(STORM_VERSION_FIELD_DESC);
+          oprot.writeString(struct.storm_version);
+          oprot.writeFieldEnd();
+        }
+      }
       if (struct.sched_status != null) {
         if (struct.is_set_sched_status()) {
           oprot.writeFieldBegin(SCHED_STATUS_FIELD_DESC);
@@ -1783,34 +1879,40 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       oprot.writeI32(struct.uptime_secs);
       oprot.writeString(struct.status);
       BitSet optionals = new BitSet();
-      if (struct.is_set_sched_status()) {
+      if (struct.is_set_storm_version()) {
         optionals.set(0);
       }
-      if (struct.is_set_owner()) {
+      if (struct.is_set_sched_status()) {
         optionals.set(1);
       }
-      if (struct.is_set_replication_count()) {
+      if (struct.is_set_owner()) {
         optionals.set(2);
       }
-      if (struct.is_set_requested_memonheap()) {
+      if (struct.is_set_replication_count()) {
         optionals.set(3);
       }
-      if (struct.is_set_requested_memoffheap()) {
+      if (struct.is_set_requested_memonheap()) {
         optionals.set(4);
       }
-      if (struct.is_set_requested_cpu()) {
+      if (struct.is_set_requested_memoffheap()) {
         optionals.set(5);
       }
-      if (struct.is_set_assigned_memonheap()) {
+      if (struct.is_set_requested_cpu()) {
         optionals.set(6);
       }
-      if (struct.is_set_assigned_memoffheap()) {
+      if (struct.is_set_assigned_memonheap()) {
         optionals.set(7);
       }
-      if (struct.is_set_assigned_cpu()) {
+      if (struct.is_set_assigned_memoffheap()) {
         optionals.set(8);
       }
-      oprot.writeBitSet(optionals, 9);
+      if (struct.is_set_assigned_cpu()) {
+        optionals.set(9);
+      }
+      oprot.writeBitSet(optionals, 10);
+      if (struct.is_set_storm_version()) {
+        oprot.writeString(struct.storm_version);
+      }
       if (struct.is_set_sched_status()) {
         oprot.writeString(struct.sched_status);
       }
@@ -1857,40 +1959,44 @@ public class TopologySummary implements org.apache.thrift.TBase<TopologySummary,
       struct.set_uptime_secs_isSet(true);
       struct.status = iprot.readString();
       struct.set_status_isSet(true);
-      BitSet incoming = iprot.readBitSet(9);
+      BitSet incoming = iprot.readBitSet(10);
       if (incoming.get(0)) {
+        struct.storm_version = iprot.readString();
+        struct.set_storm_version_isSet(true);
+      }
+      if (incoming.get(1)) {
         struct.sched_status = iprot.readString();
         struct.set_sched_status_isSet(true);
       }
-      if (incoming.get(1)) {
+      if (incoming.get(2)) {
         struct.owner = iprot.readString();
         struct.set_owner_isSet(true);
       }
-      if (incoming.get(2)) {
+      if (incoming.get(3)) {
         struct.replication_count = iprot.readI32();
         struct.set_replication_count_isSet(true);
       }
-      if (incoming.get(3)) {
+      if (incoming.get(4)) {
         struct.requested_memonheap = iprot.readDouble();
         struct.set_requested_memonheap_isSet(true);
       }
-      if (incoming.get(4)) {
+      if (incoming.get(5)) {
         struct.requested_memoffheap = iprot.readDouble();
         struct.set_requested_memoffheap_isSet(true);
       }
-      if (incoming.get(5)) {
+      if (incoming.get(6)) {
         struct.requested_cpu = iprot.readDouble();
         struct.set_requested_cpu_isSet(true);
       }
-      if (incoming.get(6)) {
+      if (incoming.get(7)) {
         struct.assigned_memonheap = iprot.readDouble();
         struct.set_assigned_memonheap_isSet(true);
       }
-      if (incoming.get(7)) {
+      if (incoming.get(8)) {
         struct.assigned_memoffheap = iprot.readDouble();
         struct.set_assigned_memoffheap_isSet(true);
       }
-      if (incoming.get(8)) {
+      if (incoming.get(9)) {
         struct.assigned_cpu = iprot.readDouble();
         struct.set_assigned_cpu_isSet(true);
       }

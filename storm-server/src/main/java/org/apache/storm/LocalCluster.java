@@ -531,7 +531,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         if (!Utils.isValidConf(conf)) {
             throw new IllegalArgumentException("Topology conf is not json-serializable");
         }
-        getNimbus().submitTopology(topologyName, null, JSONValue.toJSONString(conf), topology);
+        getNimbus().submitTopology(topologyName, null, JSONValue.toJSONString(conf), Utils.addVersions(topology));
         
         ISubmitterHook hook = (ISubmitterHook) Utils.getConfiguredClass(conf, Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN);
         if (hook != null) {
@@ -551,22 +551,20 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         if (!Utils.isValidConf(conf)) {
             throw new IllegalArgumentException("Topology conf is not json-serializable");
         }
-        getNimbus().submitTopologyWithOpts(topologyName, null, JSONValue.toJSONString(conf), topology, submitOpts);
+        getNimbus().submitTopologyWithOpts(topologyName, null, JSONValue.toJSONString(conf),  Utils.addVersions(topology), submitOpts);
         return new LocalTopology(topologyName, topology);
     }
 
     @Override
     public LocalTopology submitTopology(String topologyName, Map<String, Object> conf, TrackedTopology topology)
             throws TException {
-        submitTopology(topologyName, conf, topology.getTopology());
-        return new LocalTopology(topologyName, topology.getTopology());
+        return submitTopology(topologyName, conf, topology.getTopology());
     }
 
     @Override
     public LocalTopology submitTopologyWithOpts(String topologyName, Map<String, Object> conf, TrackedTopology topology, SubmitOptions submitOpts)
             throws TException {
-            submitTopologyWithOpts(topologyName, conf, topology.getTopology(), submitOpts);
-            return new LocalTopology(topologyName, topology.getTopology());
+            return submitTopologyWithOpts(topologyName, conf, topology.getTopology(), submitOpts);
     }
     
     @Override
@@ -611,24 +609,20 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
     }
 
-
     @Override
     public String getTopologyConf(String id) throws TException {
         return getNimbus().getTopologyConf(id);
     }
-
 
     @Override
     public StormTopology getTopology(String id) throws TException {
         return getNimbus().getTopology(id);
     }
 
-
     @Override
     public ClusterSummary getClusterInfo() throws TException {
         return getNimbus().getClusterInfo();
     }
-
 
     @Override
     public TopologyInfo getTopologyInfo(String id) throws TException {

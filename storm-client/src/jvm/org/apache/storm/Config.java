@@ -1321,6 +1321,51 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_WORKER_LAUNCHER = "supervisor.worker.launcher";
 
     /**
+     * Map a version of storm to a worker classpath that can be used to run it.
+     * This allows the supervisor to select an available version of storm that is compatible with what a
+     * topology was launched with.
+     *
+     * Only the major and minor version numbers are used, although this may change in the
+     * future.  The code will first try to find a version that is the same or higher than the requested version,
+     * but with the same major version number.  If it cannot it will fall back to using one with a lower
+     * minor version, but in some cases this might fail as some features may be missing.
+     * 
+     * Because of how this selection process works please don't include two releases
+     * with the same major and minor versions as it is undefined which will be selected.  Also it is good
+     * practice to just include one release for each major version you want to support unless the
+     * minor versions are truly not compatible with each other. This is to avoid
+     * maintenance and testing overhead.
+     *
+     * This config needs to be set on all supervisors and on nimbus.  In general this can be the output of
+     * calling storm classpath on the version you want and adding in an entry for the config directory for
+     * that release.  You should modify the storm.yaml of each of these versions to match the features
+     * and settings you want on the main version.
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP = "supervisor.worker.version.classpath.map";
+
+    /**
+     * Map a version of storm to a worker's main class.  In most cases storm should have correct defaults and
+     * just setting SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP is enough.
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String SUPERVISOR_WORKER_VERSION_MAIN_MAP = "supervisor.worker.version.main.map";
+    
+    /**
+     * Map a version of storm to a worker's logwriter class. In most cases storm should have correct defaults and
+     * just setting SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP is enough.
+     */
+    @isMapEntryType(keyType = String.class, valueType = String.class)
+    public static final String SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP = "supervisor.worker.version.logwriter.map";
+
+    /**
+     * The version of storm to assume a topology should run as if not version is given by the client when
+     * submitting the topology.
+     */
+    @isString
+    public static final String SUPERVISOR_WORKER_DEFAULT_VERSION = "supervisor.worker.default.version";
+
+    /**
      * A directory on the local filesystem used by Storm for any local
      * filesystem usage it needs. The directory must exist and the Storm daemons must
      * have permission to read/write from this location.

@@ -322,7 +322,7 @@ public class StormSubmitter {
         try {
             String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, client);
             LOG.info("Submitting topology {} in distributed mode with conf {}", name, serConf);
-
+            Utils.addVersions(topology);
             if (opts != null) {
                 client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
             } else {
