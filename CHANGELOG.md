@@ -214,6 +214,9 @@
  * STORM-1521: When using Kerberos login from keytab with multiple bolts/executors ticket is not renewed in hbase bolt.
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
+## 1.1.1
+ * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
+
 ## 1.1.0
  * STORM-2407: KafkaTridentSpoutOpaque Doesn't Poll Data From All Topic-Partitions When Parallelism Hint Not a Multiple Total Topic-Partitions.
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
