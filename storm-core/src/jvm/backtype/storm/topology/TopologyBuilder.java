@@ -112,9 +112,9 @@ public class TopologyBuilder {
             spoutSpecs.put(spoutId, new SpoutSpec(ComponentObject.serialized_java(Utils.javaSerialize(spout)), common));
             
         }
-        return new StormTopology(spoutSpecs,
+        return Utils.addVersions(new StormTopology(spoutSpecs,
                                  boltSpecs,
-                                 new HashMap<String, StateSpoutSpec>());
+                                 new HashMap<String, StateSpoutSpec>()));
     }
 
     /**
