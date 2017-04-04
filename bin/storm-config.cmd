@@ -102,6 +102,16 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 )
 
 @rem
+@rem if we have a dir with relative path, make it absolute
+@rem
+
+if not %STORM_LOG4J2_CONFIGURATION_DIR% == nil (
+  if exist %STORM_HOME%\%STORM_LOG4J2_CONFIGURATION_DIR% (
+    set STORM_LOG4J2_CONFIGURATION_DIR=%STORM_HOME%\%STORM_LOG4J2_CONFIGURATION_DIR%
+  )
+)
+
+@rem
 @rem if STORM_LOG4J2_CONFIGURATION_DIR was defined, also set STORM_LOG4J2_CONFIGURATION_FILE
 @rem
 
