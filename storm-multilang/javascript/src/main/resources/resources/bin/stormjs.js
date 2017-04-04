@@ -29,29 +29,37 @@ const intercept = require('intercept-stdout');
 let preInitMessages = '';
 let initComplete = false;
 
-intercept((inputMsg) => {
-    let msg = inputMsg;
-    if (/^{\s*"pid"\s*:\s*\d+\s*}\nend\n$/.test(msg)) {
-        initComplete = true;
-        if (preInitMessages) {
-            msg += preInitMessages;
-            preInitMessages = undefined;
+const getLogInvalidMessages = (logLevel) => (
+    (inputMsg) => {
+        let msg = inputMsg;
+
+        if (/^{\s*"pid"\s*:\s*\d+\s*}\nend\n$/.test(msg)) {
+            initComplete = true;
+            if (preInitMessages) {
+                msg += preInitMessages;
+                preInitMessages = undefined;
+            }
+        } else if (!/^\{.*\}\nend\n$/.test(msg)) {
+            let m = { command: 'log', msg: msg.trim() };
+            if (logLevel >= 0) m.level = logLevel;
+            msg = `${JSON.stringify(m)}\nend\n`;
         }
-    } else if (!/^\{.*\}\nend\n$/.test(msg)) {
-        let m = {command: 'log', msg: msg};
-        msg = `${JSON.stringify(m)}\nend\n`;
+        if (!initComplete) {
+            /*
+             * Storm multilang protocol expects first message to be a pid message, so anything written
+             * to stdout or stderr before the pid message is cached and sent with the first message
+             * after the PID has been processed.
+             */
+            preInitMessages += msg;
+            msg = '';
+        }
+
+        return msg;
     }
-    if (!initComplete) {
-        /*
-         * Storm multilang protocol expects first message to be a pid message, so anything written
-         * to stdout or stderr before the pid message is cached and sent with the first message
-         * after the PID has been processed.
-         */
-        preInitMessages += msg;
-        msg = '';
-    }
-    return msg;
-});
+);
+
+// Sends stdout with log level INFO and stderr with log level ERROR
+intercept(getLogInvalidMessages(2), getLogInvalidMessages(4));
 
 if (process.argv.length < 3 || !process.argv[2])
     throw new Error('You must specify a js file that exports a valid storm component.');

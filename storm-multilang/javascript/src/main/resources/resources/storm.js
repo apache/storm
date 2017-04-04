@@ -254,8 +254,6 @@ BasicBolt.prototype.constructor = BasicBolt;
  * - task (pass only to emit to specific task)
  */
 BasicBolt.prototype.__emit = function(commandDetails) {
-    var self = this;
-
     var anchors = [];
     if (commandDetails.anchorTupleId instanceof Array) {
         anchors = commandDetails.anchorTupleId;
