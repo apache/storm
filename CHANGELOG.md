@@ -1,4 +1,7 @@
-﻿## 1.1.0
+﻿## 1.1.1
+ * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
+
+## 1.1.0
  * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
  * STORM-2425: Storm Hive Bolt not closing open transactions
  * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
