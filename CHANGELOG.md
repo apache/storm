@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
 
 ## 1.1.0
