@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2453: Move non-connectors into the top directory
  * STORM-2363: Provide configuration to set the number of RollingWindow
  * STORM-2058: Fix Maven warnings about missing reporting.plugins.plugin.version
  * STORM-1369: Add MapState implementation to storm-cassandra
