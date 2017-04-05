@@ -36,10 +36,10 @@ public abstract class CommonStats {
     protected final int rate;
     protected final Map<String, IMetric> metricMap = new HashMap<>();
 
-    public CommonStats(int rate,int NUM_STAT_BUCKETS) {
+    public CommonStats(int rate,int numStatBuckets) {
         this.rate = rate;
-        this.put(EMITTED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
-        this.put(TRANSFERRED, new MultiCountStatAndMetric(NUM_STAT_BUCKETS));
+        this.put(EMITTED, new MultiCountStatAndMetric(numStatBuckets));
+        this.put(TRANSFERRED, new MultiCountStatAndMetric(numStatBuckets));
     }
 
     public int getRate() {

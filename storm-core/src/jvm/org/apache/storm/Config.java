@@ -2356,7 +2356,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     @isPositiveNumber
-    public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
+    public static final String numStatBuckets = "num.stat.buckets";
 
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
