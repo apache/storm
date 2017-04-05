@@ -180,58 +180,6 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-        <!-- Storm SQL -->
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-core/target/app-assembler/repo</directory>
-            <outputDirectory>external/sql/storm-sql-core</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-external/storm-sql-kafka/target</directory>
-            <outputDirectory>external/sql/storm-sql-external/storm-sql-kafka</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-external/storm-sql-redis/target</directory>
-            <outputDirectory>external/sql/storm-sql-external/storm-sql-redis</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-external/storm-sql-mongodb/target</directory>
-            <outputDirectory>external/sql/storm-sql-external/storm-sql-mongodb</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-external/storm-sql-hdfs/target</directory>
-            <outputDirectory>external/sql/storm-sql-external/storm-sql-hdfs</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
-            <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
-            <includes>
-                <include>*jar</include>
-            </includes>
-        </fileSet>
-
-        <fileSet>
-            <directory>${project.basedir}/../../../external/sql</directory>
-            <outputDirectory>external/sql</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
-        <!-- END Storm SQL -->
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-mqtt</directory>
             <outputDirectory>external/storm-mqtt</outputDirectory>
@@ -265,13 +213,6 @@
             <outputDirectory>external/storm-druid</outputDirectory>
             <includes>
                 <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../../external/storm-submit-tools/target</directory>
-            <outputDirectory>external/storm-submit-tools</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -317,11 +258,37 @@
         <!-- $STORM_HOME/toollib -->
         <fileSet>
             <directory>${project.basedir}/../../../external/storm-kafka-monitor/target</directory>
-            <outputDirectory>toollib</outputDirectory>
+            <outputDirectory>lib-tools/storm-kafka-monitor</outputDirectory>
             <includes>
                 <include>storm*jar</include>
             </includes>
         </fileSet>
+
+        <!-- storm-sql -->
+        <fileSet>
+            <directory>${project.basedir}/../../../sql/storm-sql-core/target/app-assembler/repo</directory>
+            <outputDirectory>lib-tools/sql/core</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../sql/storm-sql-runtime/target/app-assembler/repo</directory>
+            <outputDirectory>lib-tools/sql/runtime</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
+
+        <!-- storm-submit-tools -->
+        <fileSet>
+            <directory>${project.basedir}/../../../storm-submit-tools/target</directory>
+            <outputDirectory>lib-tools/submit-tools</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+
     </fileSets>
 
     <files>

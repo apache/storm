@@ -82,6 +82,7 @@ if (not os.path.isfile(os.path.join(USER_CONF_DIR, "storm.yaml"))):
 
 STORM_LIB_DIR = os.path.join(STORM_DIR, "lib")
 STORM_DRPC_LIB_DIR = os.path.join(STORM_DIR, "lib-drpc-server")
+STORM_TOOLS_LIB_DIR = os.path.join(STORM_DIR, "lib-tools")
 STORM_BIN_DIR = os.path.join(STORM_DIR, "bin")
 STORM_LOG4J2_CONF_DIR = os.path.join(STORM_DIR, "log4j2")
 STORM_SUPERVISOR_LOG_FILE = os.getenv('STORM_SUPERVISOR_LOG_FILE', "supervisor.log")
@@ -167,10 +168,8 @@ def resolve_dependencies(artifacts, artifact_repositories):
     print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
     sys.stdout.flush()
 
-    # TODO: should we move some external modules to outer place?
-
     # storm-submit module doesn't rely on storm-core and relevant libs
-    extrajars = get_jars_full(STORM_DIR + "/external/storm-submit-tools")
+    extrajars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "submit-tools"))
     classpath = normclasspath(os.pathsep.join(extrajars))
 
     command = [
@@ -343,8 +342,8 @@ def sql(sql_file, topology_name):
     local_jars = DEP_JARS_OPTS
     artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
 
-    sql_core_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-core")
-    sql_runtime_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime")
+    sql_core_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
+    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
 
     # include storm-sql-runtime jar(s) to local jar list
     local_jars.extend(sql_runtime_jars)
