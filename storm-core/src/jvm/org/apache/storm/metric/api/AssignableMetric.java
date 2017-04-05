@@ -24,11 +24,11 @@ public class AssignableMetric implements IMetric {
         _value = value;
     }
 
-    public void setValue(Object value) {
+    public synchronized void setValue(Object value) {
         _value = value;
     }
 
-    public Object getValueAndReset() {
+    public synchronized Object getValueAndReset() {
         return _value;
     }
 }
