@@ -222,6 +222,7 @@
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
 
 ## 1.1.0
+ * STORM-2416: Release Packaging Improvements
  * STORM-2407: KafkaTridentSpoutOpaque Doesn't Poll Data From All Topic-Partitions When Parallelism Hint Not a Multiple Total Topic-Partitions.
  * STORM-2414: Skip checking meta's ACL when subject has write privileges for any blobs
  * STORM-2038: Disable symlinks with a config option
