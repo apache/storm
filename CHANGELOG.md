@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-1369: Add MapState implementation to storm-cassandra
  * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy 
  * STORM-2427: Fix event logger enable disable UI buttons
  * STORM-2425: Storm Hive Bolt not closing open transactions
