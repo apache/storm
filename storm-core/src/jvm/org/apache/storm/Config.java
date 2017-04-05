@@ -1163,7 +1163,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * the metadata configured on the supervisor
      */
-    @isType(type=Map.class)
+    @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String SUPERVISOR_SCHEDULER_META = "supervisor.scheduler.meta";
 
     /**
@@ -1436,7 +1436,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The default heap memory size in MB per worker, used in the jvm -Xmx opts for launching the worker
-      */
+     */
     @isInteger
     @isPositiveNumber
     public static final String WORKER_HEAP_MEMORY_MB = "worker.heap.memory.mb";
@@ -1964,11 +1964,11 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
-   /**
-    * @deprecated this is no longer supported
-    * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
-    * vs. throughput
-    */
+    /**
+     * @deprecated this is no longer supported
+     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
+     * vs. throughput
+     */
     @Deprecated
     @isString
     public static final String TOPOLOGY_DISRUPTOR_WAIT_STRATEGY="topology.disruptor.wait.strategy";
