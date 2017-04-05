@@ -1162,7 +1162,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * the metadata configured on the supervisor
      */
-    @isType(type=Map.class)
+    @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String SUPERVISOR_SCHEDULER_META = "supervisor.scheduler.meta";
 
     /**
@@ -2284,7 +2284,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
-    
+
     /**
      * The plugin to be used for resource isolation
      */
