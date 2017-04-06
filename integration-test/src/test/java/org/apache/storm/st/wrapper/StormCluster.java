@@ -41,7 +41,7 @@ import java.util.Map;
 
 public class StormCluster {
     private static Logger log = LoggerFactory.getLogger(StormCluster.class);
-    private final Nimbus.Client client;
+    private final Nimbus.Iface client;
 
     public StormCluster() {
         Map conf = getConfig();
@@ -103,7 +103,7 @@ public class StormCluster {
         return client.getTopologyInfo(topologySummary.get_id());
     }
 
-    public Nimbus.Client getNimbusClient() {
+    public Nimbus.Iface getNimbusClient() {
         return client;
     }
 
