@@ -17,14 +17,10 @@
  */
 package org.apache.storm.hbase.trident;
 
+import org.apache.hadoop.hbase.client.Durability;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-import org.apache.hadoop.hbase.client.Durability;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.bolt.mapper.HBaseValueMapper;
 import org.apache.storm.hbase.topology.WordCountValueMapper;
@@ -39,6 +35,8 @@ import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 public class WordCountTrident {
     public static StormTopology buildTopology(String hbaseRoot){
@@ -86,19 +84,16 @@ public class WordCountTrident {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (args.length == 1) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));) {
-                Thread.sleep(60 * 1000);
-            }
-            System.exit(0);
-        }
-        else if(args.length == 2) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[1], conf, buildTopology(args[0]));
-        } else{
+        String topoName = "wordCounter";
+        
+        if (args.length == 2) {
+            topoName = args[1];
+        } else if (args.length > 2) {
             System.out.println("Usage: TridentFileTopology <hdfs url> [topology name]");
+            return;
         }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopology(topoName, conf, buildTopology(args[0]));
     }
 
 }

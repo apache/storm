@@ -18,7 +18,6 @@
 package org.apache.storm.mongodb.topology;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.mongodb.bolt.MongoLookupBolt;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
@@ -64,17 +63,14 @@ public class LookupWordCount {
         builder.setBolt(LOOKUP_BOLT, lookupBolt, 1).shuffleGrouping(WORD_SPOUT);
         builder.setBolt(TOTAL_COUNT_BOLT, totalBolt, 1).fieldsGrouping(LOOKUP_BOLT, new Fields("word"));
 
-        if (args.length == 2) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.createTopology());
-            Thread.sleep(30000);
-            cluster.killTopology("test");
-            cluster.shutdown();
-            System.exit(0);
-        } else if (args.length == 3) {
-            StormSubmitter.submitTopology(args[2], config, builder.createTopology());
-        } else{
+        String topoName = "test";
+        if (args.length == 3) {
+            topoName = args[2];
+        } else if (args.length > 3) {
             System.out.println("Usage: LookupWordCount <mongodb url> <mongodb collection> [topology name]");
+            return;
         }
+        
+        StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 }

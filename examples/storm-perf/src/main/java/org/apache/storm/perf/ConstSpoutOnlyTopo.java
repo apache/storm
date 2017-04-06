@@ -19,11 +19,11 @@
 package org.apache.storm.perf;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.spout.ConstSpout;
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.Utils;
 
 
 /***
@@ -52,23 +52,19 @@ public class ConstSpoutOnlyTopo {
      * ConstSpout only topology  (No bolts)
      */
     public static void main(String[] args) throws Exception {
-        if(args.length <= 0) {
-            // For IDE based profiling ... submit topology to local cluster
-            LocalCluster cluster = Helper.runOnLocalCluster(TOPOLOGY_NAME, getTopology());
-
-            Helper.setupShutdownHook(cluster, TOPOLOGY_NAME);
-            while (true) {//  run indefinitely till Ctrl-C
-                Thread.sleep(20_000_000);
-            }
-        } else {
-            //  Submit topology to storm cluster
-            if (args.length != 1) {
-                System.err.println("args: runDurationSec");
-                return;
-            }
-            Integer durationSec = Integer.parseInt(args[0]);
-
-            Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, new Config(), getTopology());
+        int runTime = -1;
+        Config topoConf = new Config();
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
         }
+        if (args.length > 1) {
+            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
+        }
+        if (args.length > 2) {
+            System.err.println("args: [runDurationSec]  [optionalConfFile]");
+            return;
+        }
+        //  Submit topology to storm cluster
+        Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology());
     }
 }

@@ -16,6 +16,13 @@ DRPCClient client = new DRPCClient("drpc-host", 3772);
 String result = client.execute("reach", "http://twitter.com");
 ```
 
+or if you just want to use a preconfigured client you can call.  The exact host will be selected randomly from the configured set of hosts
+
+```java
+DRPCClient client = DRPCClient.getConfiguredClient(conf);
+String result = client.execute("reach", "http://twitter.com");
+```
+
 The distributed RPC workflow looks like this:
 
 ![Tasks in a topology](images/drpc-workflow.png)
@@ -57,23 +64,9 @@ In this example, `ExclaimBolt` simply appends a "!" to the second field of the t
 
 ### Local mode DRPC
 
-DRPC can be run in local mode. Here's how to run the above example in local mode:
-
-```java
-LocalDRPC drpc = new LocalDRPC();
-LocalCluster cluster = new LocalCluster();
-
-cluster.submitTopology("drpc-demo", conf, builder.createLocalTopology(drpc));
-
-System.out.println("Results for 'hello':" + drpc.execute("exclamation", "hello"));
-
-cluster.shutdown();
-drpc.shutdown();
-```
-
-First you create a `LocalDRPC` object. This object simulates a DRPC server in process, just like how `LocalCluster` simulates a Storm cluster in process. Then you create the `LocalCluster` to run the topology in local mode. `LinearDRPCTopologyBuilder` has separate methods for creating local topologies and remote topologies. In local mode the `LocalDRPC` object does not bind to any ports so the topology needs to know about the object to communicate with it. This is why `createLocalTopology` takes in the `LocalDRPC` object as input.
-
-After launching the topology, you can do DRPC invocations using the `execute` method on `LocalDRPC`.
+In the past to use DRPC in local mode it took creating a special LocalDRPC instance.  This can still be used when writing tests for your code, but in the current version of storm when you run in local mode a LocalDRPC
+instance is also created, and any DRPCClient created will link to it instead of the outside world.  This means that any interaction you want to test needs to be a part of the script that launches the topology, just like
+with LocalDRPC.
 
 ### Remote mode DRPC
 

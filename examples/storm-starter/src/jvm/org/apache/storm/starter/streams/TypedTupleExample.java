@@ -18,7 +18,6 @@
 package org.apache.storm.starter.streams;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.streams.Pair;
@@ -28,15 +27,12 @@ import org.apache.storm.streams.StreamBuilder;
 import org.apache.storm.streams.operations.mappers.TupleValueMappers;
 import org.apache.storm.streams.tuple.Tuple3;
 import org.apache.storm.streams.windowing.TumblingWindows;
-import org.apache.storm.utils.Utils;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
+import org.apache.storm.topology.base.BaseWindowedBolt.Count;
 
 /**
  * An example that illustrates the usage of typed tuples (TupleN<..>) and {@link TupleValueMappers}.
  */
 public class TypedTupleExample {
-    @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
         StreamBuilder builder = new StreamBuilder();
         /**
@@ -49,15 +45,12 @@ public class TypedTupleExample {
 
         pairs.window(TumblingWindows.of(Count.of(10))).groupByKey().print();
 
-        Config config = new Config();
+        String topoName = "test";
         if (args.length > 0) {
-            config.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
-                Utils.sleep(60_000);
-            }
+            topoName = args[0];
         }
+        Config config = new Config();
+        config.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, config, builder.build());
     }
 }

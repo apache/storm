@@ -18,7 +18,6 @@
 
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.LocalDRPC;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.starter.trident.DebugMemoryMapState;
 import org.apache.storm.trident.Stream;
@@ -30,7 +29,6 @@ import org.apache.storm.trident.operation.builtin.Debug;
 import org.apache.storm.trident.operation.builtin.FilterNull;
 import org.apache.storm.trident.operation.builtin.MapGet;
 import org.apache.storm.trident.spout.ITridentDataSource;
-import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.testing.Split;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
@@ -44,22 +42,13 @@ public class TridentKafkaConsumerTopology {
      * See {@link TridentKafkaConsumerTopology#newTopology(LocalDRPC, ITridentDataSource)}
      */
     public static StormTopology newTopology(ITridentDataSource tridentSpout) {
-        return newTopology(null, tridentSpout);
-    }
-
-    /**
-     * @param drpc The DRPC stream to be used in querying the word counts. Can be null in distributed mode
-     * @return a trident topology that consumes sentences from the kafka topic specified using a
-     * {@link TransactionalTridentKafkaSpout} computes the word count and stores it in a {@link MemoryMapState}.
-     */
-    public static StormTopology newTopology(LocalDRPC drpc, ITridentDataSource tridentSpout) {
         final TridentTopology tridentTopology = new TridentTopology();
-        addDRPCStream(tridentTopology, addTridentState(tridentTopology, tridentSpout), drpc);
+        addDRPCStream(tridentTopology, addTridentState(tridentTopology, tridentSpout));
         return tridentTopology.build();
     }
 
-    private static Stream addDRPCStream(TridentTopology tridentTopology, final TridentState state, LocalDRPC drpc) {
-        return tridentTopology.newDRPCStream("words", drpc)
+    private static Stream addDRPCStream(TridentTopology tridentTopology, final TridentState state) {
+        return tridentTopology.newDRPCStream("words")
                 .each(new Fields("args"), new Split(), new Fields("word"))
                 .groupBy(new Fields("word"))
                 .stateQuery(state, new Fields("word"), new MapGet(), new Fields("count"))

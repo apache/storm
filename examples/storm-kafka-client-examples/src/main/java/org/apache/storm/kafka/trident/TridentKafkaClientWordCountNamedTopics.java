@@ -18,6 +18,13 @@
 
 package org.apache.storm.kafka.trident;
 
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
@@ -32,13 +39,6 @@ import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.io.Serializable;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 public class TridentKafkaClientWordCountNamedTopics {
     private static final String TOPIC_1 = "test-trident";
@@ -93,49 +93,19 @@ public class TridentKafkaClientWordCountNamedTopics {
 
             System.out.printf("Running with broker_url: [%s], topics: [%s, %s]\n", brokerUrl, topic1, topic2);
 
-            Config tpConf = LocalSubmitter.defaultConfig(true);
+            Config tpConf = new Config();
+            tpConf.setDebug(true);
+            tpConf.setMaxSpoutPending(5);
 
-            if (args.length == 4) { //Submit Remote
-                // Producers
-                StormSubmitter.submitTopology(topic1 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic1));
-                StormSubmitter.submitTopology(topic2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
-                // Consumer
-                StormSubmitter.submitTopology("topics-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque()));
+            // Producers
+            StormSubmitter.submitTopology(topic1 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic1));
+            StormSubmitter.submitTopology(topic2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
+            // Consumer
+            StormSubmitter.submitTopology("topics-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque()));
 
-                // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
-                Thread.sleep(2000);
-                DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
-
-            } else { //Submit Local
-
-                final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
-                final String topic1Tp = "topic1-producer";
-                final String topic2Tp = "topic2-producer";
-                final String consTpName = "topics-consumer";
-
-                try {
-                    // Producers
-                    localSubmitter.submit(topic1Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic1));
-                    localSubmitter.submit(topic2Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
-                    // Consumer
-                    try {
-                        localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
-                                localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
-                        // print
-                        localSubmitter.printResults(15, 1, TimeUnit.SECONDS);
-                    } catch (Exception e) {
-                        e.printStackTrace();
-                    }
-
-                } finally {
-                    // kill
-                    localSubmitter.kill(topic1Tp);
-                    localSubmitter.kill(topic2Tp);
-                    localSubmitter.kill(consTpName);
-                    // shutdown
-                    localSubmitter.shutdown();
-                }
-            }
+            // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+            Thread.sleep(2000);
+            DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
         }
         System.exit(0);     // Kill all the non daemon threads
     }

@@ -43,7 +43,7 @@ public class KillTopology {
         }
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
           @Override
-          public void run(Nimbus.Client nimbus) throws Exception {
+          public void run(Nimbus.Iface nimbus) throws Exception {
             for (String name: names) {
               nimbus.killTopologyWithOpts(name, opts);
               LOG.info("Killed topology: {}", name);

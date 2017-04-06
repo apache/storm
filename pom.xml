@@ -320,11 +320,13 @@
         <module>storm-buildtools/maven-shade-clojure-transformer</module>
         <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-client</module>
+        <module>storm-client-misc</module>
         <module>storm-server</module>
         <module>storm-core</module>
         <module>storm-webapp</module>
         <module>storm-rename-hack</module>
         <module>storm-clojure</module>
+        <module>storm-clojure-test</module>
         <module>storm-submit-tools</module>
         <module>flux</module>
         <module>sql</module>
@@ -368,7 +370,6 @@
         <module>examples/storm-pmml-examples</module>
         <module>examples/storm-jms-examples</module>
         <module>examples/storm-perf</module>
-        <module>storm-client-misc</module>
     </modules>
 
     <dependencies>

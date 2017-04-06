@@ -78,7 +78,7 @@ public class WordCountTopology extends ConfigurableTopology {
     ConfigurableTopology.start(new WordCountTopology(), args);
   }
 
-  protected int run(String[] args) {
+  protected int run(String[] args) throws Exception {
 
     TopologyBuilder builder = new TopologyBuilder();
 
@@ -91,17 +91,11 @@ public class WordCountTopology extends ConfigurableTopology {
 
     String topologyName = "word-count";
 
-    if (isLocal) {
-      conf.setMaxTaskParallelism(3);
-      ttl = 10;
-    } else {
-      conf.setNumWorkers(3);
-    }
+    conf.setNumWorkers(3);
 
     if (args != null && args.length > 0) {
       topologyName = args[0];
     }
-
     return submit(topologyName, conf, builder);
   }
 }

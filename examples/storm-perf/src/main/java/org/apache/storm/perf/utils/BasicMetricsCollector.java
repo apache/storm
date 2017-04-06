@@ -18,7 +18,6 @@
 
 package org.apache.storm.perf.utils;
 
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.utils.Utils;
 import org.apache.log4j.Logger;
@@ -27,10 +26,7 @@ import java.io.PrintWriter;
 import java.util.*;
 
 
-public class BasicMetricsCollector  {
-
-    private LocalCluster localCluster = null;
-    private Nimbus.Client client = null;
+public class BasicMetricsCollector implements AutoCloseable {
     private PrintWriter dataWriter;
     private long startTime=0;
 
@@ -80,20 +76,8 @@ public class BasicMetricsCollector  {
     private double maxLatency = 0;
 
     boolean first = true;
-
-    public BasicMetricsCollector(Nimbus.Client client, String topoName, Map stormConfig) {
-        this(topoName, stormConfig);
-        this.client = client;
-        this.localCluster = null;
-    }
-
-    public BasicMetricsCollector(LocalCluster localCluster, String topoName, Map stormConfig) {
-        this(topoName, stormConfig);
-        this.client = null;
-        this.localCluster = localCluster;
-    }
-
-    private BasicMetricsCollector(String topoName, Map stormConfig) {
+    
+    public BasicMetricsCollector(String topoName, Map<String, Object> stormConfig) {
         Set<MetricsItem> items = getMetricsToCollect();
         this.config = new MetricsCollectorConfig(topoName, stormConfig);
         collectTopologyStats = collectTopologyStats(items);
@@ -104,14 +88,13 @@ public class BasicMetricsCollector  {
         dataWriter = new PrintWriter(System.err);
     }
 
-
     private Set<MetricsItem>  getMetricsToCollect() {
         Set<MetricsItem> result = new HashSet<>();
         result.add(MetricsItem.ALL);
         return result;
     }
 
-    public void collect(Nimbus.Client client) {
+    public void collect(Nimbus.Iface client) {
         try {
             if (!first) {
                 this.lastSample = this.curSample;
@@ -130,25 +113,7 @@ public class BasicMetricsCollector  {
         }
     }
 
-    public void collect(LocalCluster localCluster) {
-        try {
-            if (!first) {
-                this.lastSample = this.curSample;
-                this.curSample = MetricsSample.factory(localCluster, config.name);
-                updateStats(dataWriter);
-                writeLine(dataWriter);
-            } else {
-                LOG.info("Getting baseline metrics sample.");
-                writeHeader(dataWriter);
-                this.curSample = MetricsSample.factory(localCluster, config.name);
-                first = false;
-                startTime = System.currentTimeMillis();
-            }
-        } catch (Exception e) {
-            LOG.error("storm metrics failed! ", e);
-        }
-    }
-
+    @Override
     public void close() {
         dataWriter.close();
     }
@@ -287,13 +252,13 @@ public class BasicMetricsCollector  {
         private static final Logger LOG = Logger.getLogger(MetricsCollectorConfig.class);
 
         // storm configuration
-        public final Map stormConfig;
+        public final Map<String, Object> stormConfig;
         // storm topology name
         public final String name;
         // benchmark label
         public final String label;
 
-        public MetricsCollectorConfig(String topoName, Map stormConfig) {
+        public MetricsCollectorConfig(String topoName, Map<String, Object> stormConfig) {
             this.stormConfig = stormConfig;
             String labelStr = (String) stormConfig.get("benchmark.label");
             this.name = topoName;

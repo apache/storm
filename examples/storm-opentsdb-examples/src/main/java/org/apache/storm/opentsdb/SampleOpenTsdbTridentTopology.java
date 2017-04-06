@@ -18,22 +18,20 @@
  */
 package org.apache.storm.opentsdb;
 
+import java.util.Collections;
+
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
 import org.apache.storm.opentsdb.trident.OpenTsdbStateFactory;
 import org.apache.storm.opentsdb.trident.OpenTsdbStateUpdater;
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.Consumer;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Collections;
 
 /**
  * Sample trident topology to store time series metrics in to OpenTsdb.
@@ -67,20 +65,12 @@ public class SampleOpenTsdbTridentTopology {
 
         Config conf = new Config();
         conf.setDebug(true);
-
+        String topoName = "word-count";
         if (args.length > 1) {
-            conf.setNumWorkers(3);
-
-            StormSubmitter.submitTopologyWithProgressBar(args[1], conf, tridentTopology.build());
-        } else {
-            conf.setMaxTaskParallelism(3);
-
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("word-count", conf, tridentTopology.build())) {
-                Thread.sleep(30000);
-            }
-            System.exit(0);
+            topoName = args[1];
         }
+        conf.setNumWorkers(3);
 
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, tridentTopology.build());
     }
 }

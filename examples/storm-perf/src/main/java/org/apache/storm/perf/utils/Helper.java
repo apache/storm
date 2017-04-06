@@ -18,39 +18,23 @@
 
 package org.apache.storm.perf.utils;
 
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
+import java.util.Map;
+
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.NimbusClient;
-
-import java.util.Map;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
 
 
 public class Helper {
 
-  public static void kill(Nimbus.Client client, String topoName) throws Exception {
-    KillOptions opts = new KillOptions();
-    opts.set_wait_secs(0);
-    client.killTopologyWithOpts(topoName, opts);
-  }
-
-  public static void killAndShutdownCluster(LocalCluster cluster, String topoName) throws Exception {
-    KillOptions opts = new KillOptions();
-    opts.set_wait_secs(0);
-    cluster.killTopologyWithOpts(topoName, opts);
-    cluster.shutdown();
-  }
-
-
-    public static LocalCluster runOnLocalCluster(String topoName, StormTopology topology) throws Exception {
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(topoName, new Config(), topology);
-        return cluster;
+    public static void kill(Nimbus.Iface client, String topoName) throws Exception {
+        KillOptions opts = new KillOptions();
+        opts.set_wait_secs(0);
+        client.killTopologyWithOpts(topoName, opts);
     }
 
     public static int getInt(Map map, Object key, int def) {
@@ -61,72 +45,52 @@ public class Helper {
         return (String) map.get(key);
     }
 
-    public static void collectMetricsAndKill(String topologyName, Integer pollInterval, Integer duration) throws Exception {
+    public static void collectMetricsAndKill(String topologyName, Integer pollInterval, int duration) throws Exception {
+        Map<String, Object> clusterConf = Utils.readStormConfig();
+        Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        try (BasicMetricsCollector metricsCollector = new BasicMetricsCollector(topologyName, clusterConf)) {
+
+            if (duration > 0) {
+                int times = duration / pollInterval;
+                metricsCollector.collect(client);
+                for (int i = 0; i < times; i++) {
+                    Thread.sleep(pollInterval * 1000);
+                    metricsCollector.collect(client);
+                }
+            } else {
+                while (true) { //until Ctrl-C
+                    metricsCollector.collect(client);
+                    Thread.sleep(pollInterval * 1000);
+                }
+            }
+        } finally {
+            kill(client, topologyName);
+        }
+    }
+
+    /** Kill topo on Ctrl-C */
+    public static void setupShutdownHook(final String topoName) {
         Map clusterConf = Utils.readStormConfig();
-        Nimbus.Client client = NimbusClient.getConfiguredClient(clusterConf).getClient();
-        BasicMetricsCollector metricsCollector = new BasicMetricsCollector(client, topologyName, clusterConf);
-
-        int times = duration / pollInterval;
-        metricsCollector.collect(client);
-        for (int i = 0; i < times; i++) {
-            Thread.sleep(pollInterval * 1000);
-            metricsCollector.collect(client);
-        }
-        metricsCollector.close();
-        kill(client, topologyName);
+        final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            public void run() {
+                try {
+                    Helper.kill(client, topoName);
+                    System.out.println("Killed Topology");
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        });
     }
 
-    public static void collectLocalMetricsAndKill(LocalCluster localCluster, String topologyName, Integer pollInterval, Integer duration, Map clusterConf) throws Exception {
-        BasicMetricsCollector metricsCollector = new BasicMetricsCollector(localCluster, topologyName, clusterConf);
+    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map topoConf, StormTopology topology) throws Exception {
+        // submit topology
+        StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
+        setupShutdownHook(topoName); // handle Ctrl-C
 
-        int times = duration / pollInterval;
-        metricsCollector.collect(localCluster);
-        for (int i = 0; i < times; i++) {
-            Thread.sleep(pollInterval * 1000);
-            metricsCollector.collect(localCluster);
-        }
-        metricsCollector.close();
-        killAndShutdownCluster(localCluster, topologyName);
-    }
-
-    /** Kill topo and Shutdown local cluster on Ctrl-C */
-  public static void setupShutdownHook(final LocalCluster cluster, final String topoName) {
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-          try {
-              cluster.killTopology(topoName);
-              System.out.println("Killed Topology");
-          } catch (Exception e) {
-              System.err.println("Encountered error in killing topology: " + e);
-          }
-        cluster.shutdown();
-      }
-    });
-  }
-
-  /** Kill topo on Ctrl-C */
-  public static void setupShutdownHook(final String topoName) {
-    Map clusterConf = Utils.readStormConfig();
-    final Nimbus.Client client = NimbusClient.getConfiguredClient(clusterConf).getClient();
-    Runtime.getRuntime().addShutdownHook(new Thread() {
-      public void run() {
-        try {
-          Helper.kill(client, topoName);
-          System.out.println("Killed Topology");
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-      }
-    });
-  }
-
-    public static void runOnClusterAndPrintMetrics(Integer durationSec, String topoName, Map topoConf, StormTopology topology) throws Exception {
-      // submit topology
-      StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
-      setupShutdownHook(topoName); // handle Ctrl-C
-
-      // poll metrics every minute, then kill topology after specified duration
-      Integer pollIntervalSec = 60;
-      collectMetricsAndKill(topoName, pollIntervalSec, durationSec);
+        // poll metrics every minute, then kill topology after specified duration
+        Integer pollIntervalSec = 60;
+        collectMetricsAndKill(topoName, pollIntervalSec, durationSec);
     }
 }

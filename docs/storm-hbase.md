@@ -223,18 +223,12 @@ public class PersistentWordCount {
         builder.setBolt(COUNT_BOLT, bolt, 1).shuffleGrouping(WORD_SPOUT);
         builder.setBolt(HBASE_BOLT, hbase, 1).fieldsGrouping(COUNT_BOLT, new Fields("word"));
 
-
-        if (args.length == 0) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", config, builder.createTopology());
-            Thread.sleep(10000);
-            cluster.killTopology("test");
-            cluster.shutdown();
-            System.exit(0);
-        } else {
-            config.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[0], config, builder.createTopology());
+        String topoName = "test";
+        if (args.length > 0) {
+            topoName = args[0];
         }
+        config.setNumWorkers(3);
+        StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 }
 ```

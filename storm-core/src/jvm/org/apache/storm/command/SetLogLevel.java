@@ -60,7 +60,7 @@ public class SetLogLevel {
 
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
-            public void run(Nimbus.Client nimbus) throws Exception {
+            public void run(Nimbus.Iface nimbus) throws Exception {
                 String topologyId = Utils.getTopologyId(topologyName, nimbus);
                 if (null == topologyId) {
                     throw new IllegalArgumentException(topologyName + " is not a running topology");

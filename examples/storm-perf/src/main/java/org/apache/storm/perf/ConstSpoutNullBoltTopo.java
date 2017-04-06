@@ -18,8 +18,9 @@
 
 package org.apache.storm.perf;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.DevNullBolt;
 import org.apache.storm.perf.spout.ConstSpout;
@@ -27,8 +28,6 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
-
-import java.util.Map;
 
 /***
  * This topo helps measure the messaging speed between a spout and a bolt.
@@ -51,7 +50,7 @@ public class ConstSpoutNullBoltTopo {
     public static final String SHUFFLE_GROUPING = "shuffle";
     public static final String DEFAULT_GROUPING = LOCAL_GROPING;
 
-    public static StormTopology getTopology(Map conf) {
+    public static StormTopology getTopology(Map<String, Object> conf) {
 
         // 1 -  Setup Spout   --------
         ConstSpout spout = new ConstSpout("some data").withOutputFields("str");
@@ -78,29 +77,20 @@ public class ConstSpoutNullBoltTopo {
      * ConstSpout -> DevNullBolt with configurable grouping (default localOrShuffle)
      */
     public static void main(String[] args) throws Exception {
-
-        if(args.length <= 0) {
-            // For IDE based profiling ... submit topology to local cluster
-            Config conf = new Config();
-            final LocalCluster cluster = Helper.runOnLocalCluster(TOPOLOGY_NAME, getTopology(conf));
-
-            Helper.setupShutdownHook(cluster, TOPOLOGY_NAME);
-            while (true) {//  run indefinitely till Ctrl-C
-                Thread.sleep(20_000_000);
-            }
-
-        } else {
-            // For measuring perf against a Storm cluster
-            if (args.length > 2) {
-                System.err.println("args: runDurationSec  [optionalConfFile]");
-                return;
-            }
-            Integer durationSec = Integer.parseInt(args[0]);
-            Map topoConf =  (args.length==2) ? Utils.findAndReadConfigFile(args[1])  : new Config();
-
-            //  Submit topology to storm cluster
-            Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        int runTime = -1;
+        Config topoConf = new Config();
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
         }
+        if (args.length > 1) {
+            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
+        }
+        if (args.length > 2) {
+            System.err.println("args: [runDurationSec]  [optionalConfFile]");
+            return;
+        }
+        //  Submit topology to storm cluster
+        Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 
 }

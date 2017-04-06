@@ -31,7 +31,8 @@ public enum ThriftConnectionType {
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
          Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null);
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null),
+    LOCAL_FAKE;
 
     private final String _transConf;
     private final String _portConf;
@@ -39,17 +40,32 @@ public enum ThriftConnectionType {
     private final String _threadsConf;
     private final String _buffConf;
     private final String _socketTimeoutConf;
+    private final boolean _isFake;
 
+    ThriftConnectionType() {
+        this(null, null, null, null, null, null, true);
+    }
+    
     ThriftConnectionType(String transConf, String portConf, String qConf,
-                         String threadsConf, String buffConf, String socketTimeoutConf) {
+            String threadsConf, String buffConf, String socketTimeoutConf) {
+        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false);
+    }
+    
+    ThriftConnectionType(String transConf, String portConf, String qConf,
+                         String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake) {
         _transConf = transConf;
         _portConf = portConf;
         _qConf = qConf;
         _threadsConf = threadsConf;
         _buffConf = buffConf;
         _socketTimeoutConf = socketTimeoutConf;
+        _isFake = isFake;
     }
 
+    public boolean isFake() {
+        return _isFake;
+    }
+    
     public String getTransportPlugin(Map conf) {
         String ret = (String)conf.get(_transConf);
         if (ret == null) {
@@ -59,6 +75,9 @@ public enum ThriftConnectionType {
     }
 
     public int getPort(Map conf) {
+        if (_isFake) {
+            return -1;
+        }
         return ObjectReader.getInt(conf.get(_portConf));
     }
 
@@ -70,10 +89,16 @@ public enum ThriftConnectionType {
     }
 
     public int getNumThreads(Map conf) {
+        if (_isFake) {
+            return 1;
+        }
         return ObjectReader.getInt(conf.get(_threadsConf));
     }
 
     public int getMaxBufferSize(Map conf) {
+        if (_isFake) {
+            return 1;
+        }
         return ObjectReader.getInt(conf.get(_buffConf));
     }
 

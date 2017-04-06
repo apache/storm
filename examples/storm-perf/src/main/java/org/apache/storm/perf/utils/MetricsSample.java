@@ -18,7 +18,9 @@
 
 package org.apache.storm.perf.utils;
 
-import org.apache.storm.LocalCluster;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
@@ -28,9 +30,6 @@ import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.utils.Utils;
-
-import java.util.List;
-import java.util.Map;
 
 public class MetricsSample {
 
@@ -54,7 +53,7 @@ public class MetricsSample {
     private int totalSlots = 0;
     private int usedSlots = 0;
 
-    public static MetricsSample factory(Nimbus.Client client, String topologyName) throws Exception {
+    public static MetricsSample factory(Nimbus.Iface client, String topologyName) throws Exception {
         // "************ Sampling Metrics *****************
 
         ClusterSummary clusterSummary = client.getClusterInfo();
@@ -71,12 +70,6 @@ public class MetricsSample {
         sample.numTasks = topologyTasks;
         return sample;
     }
-
-    public static MetricsSample factory(LocalCluster localCluster, String topologyName) throws Exception {
-        TopologyInfo topologyInfo = localCluster.getTopologyInfo(topologyName);;
-        return getMetricsSample(topologyInfo);
-    }
-
 
     private static MetricsSample getMetricsSample(TopologyInfo topInfo) {
         List<ExecutorSummary> executorSummaries = topInfo.get_executors();

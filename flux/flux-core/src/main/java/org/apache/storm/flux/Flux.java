@@ -17,21 +17,32 @@
  */
 package org.apache.storm.flux;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+
+import org.apache.commons.cli.BasicParser;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.flux.model.BoltDef;
+import org.apache.storm.flux.model.ExecutionContext;
+import org.apache.storm.flux.model.SpoutDef;
+import org.apache.storm.flux.model.StreamDef;
+import org.apache.storm.flux.model.TopologyDef;
+import org.apache.storm.flux.parser.FluxParser;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.TopologyInitialStatus;
-import org.apache.storm.utils.Utils;
-import org.apache.commons.cli.*;
-import org.apache.storm.flux.model.*;
-import org.apache.storm.flux.parser.FluxParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.*;
 
 /**
  * Flux entry point.
@@ -39,10 +50,6 @@ import java.io.*;
  */
 public class Flux {
     private static final Logger LOG = LoggerFactory.getLogger(Flux.class);
-
-    private static final Long DEFAULT_LOCAL_SLEEP_TIME = 60000l;
-
-    private static final Long DEFAULT_ZK_PORT = 2181l;
 
     private static final String OPTION_LOCAL = "local";
     private static final String OPTION_REMOTE = "remote";
@@ -169,45 +176,8 @@ public class Flux {
                 }
                 StormSubmitter.submitTopology(topologyName, conf, topology, submitOptions, null);
             } else {
-                LOG.info("Running in local mode...");
-
-                String sleepStr = cmd.getOptionValue(OPTION_SLEEP);
-                Long sleepTime = DEFAULT_LOCAL_SLEEP_TIME;
-                if (sleepStr != null) {
-                    sleepTime = Long.parseLong(sleepStr);
-                }
-                LOG.debug("Sleep time: {}", sleepTime);
-                LocalCluster cluster = null;
-
-                // in-process or external zookeeper
-                if(cmd.hasOption(OPTION_ZOOKEEPER)){
-                    String zkStr = cmd.getOptionValue(OPTION_ZOOKEEPER);
-                    LOG.info("Using ZooKeeper at '{}' instead of in-process one.", zkStr);
-                    long zkPort = DEFAULT_ZK_PORT;
-                    String zkHost = null;
-                    if(zkStr.contains(":")){
-                        String[] hostPort = zkStr.split(":");
-                        zkHost = hostPort[0];
-                        zkPort = hostPort.length > 1 ? Long.parseLong(hostPort[1]) : DEFAULT_ZK_PORT;
-
-                    } else {
-                        zkHost = zkStr;
-                    }
-                    // the following constructor is only available in 0.9.3 and later
-                    try {
-                        cluster = new LocalCluster(zkHost, zkPort);
-                    } catch (NoSuchMethodError e){
-                        LOG.error("The --zookeeper option can only be used with Apache Storm 0.9.3 and later.");
-                        System.exit(1);
-                    }
-                } else {
-                    cluster = new LocalCluster();
-                }
-                try (LocalTopology topo = cluster.submitTopology(topologyName, conf, topology)) {
-                    Utils.sleep(sleepTime);
-                } finally {
-                    cluster.shutdown();
-                }
+                LOG.error("To run in local mode run with 'storm local' instead of 'storm jar'");
+                return;
             }
         }
     }

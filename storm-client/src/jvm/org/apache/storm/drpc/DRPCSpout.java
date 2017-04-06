@@ -30,6 +30,7 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.DRPCClient;
 import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 import org.apache.storm.utils.ServiceRegistry;
 import java.util.ArrayList;
@@ -59,8 +60,8 @@ public class DRPCSpout extends BaseRichSpout {
     List<DRPCInvocationsClient> _clients = new ArrayList<>();
     transient LinkedList<Future<Void>> _futures = null;
     transient ExecutorService _backround = null;
-    String _function;
-    String _local_drpc_id = null;
+    final String _function;
+    final String _local_drpc_id;
     
     private static class DRPCMessageId {
         String id;
@@ -75,6 +76,11 @@ public class DRPCSpout extends BaseRichSpout {
     
     public DRPCSpout(String function) {
         _function = function;
+        if (DRPCClient.isLocalOverride()) {
+            _local_drpc_id = DRPCClient.getOverrideServiceId();
+        } else {
+            _local_drpc_id = null; 
+        }
     }
 
     public DRPCSpout(String function, ILocalDRPC drpc) {

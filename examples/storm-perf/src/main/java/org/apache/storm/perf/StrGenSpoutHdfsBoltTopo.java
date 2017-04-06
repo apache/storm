@@ -19,7 +19,8 @@
 
 package org.apache.storm.perf;
 
-import org.apache.storm.LocalCluster;
+import java.util.Map;
+
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
@@ -34,8 +35,6 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
-
-import java.util.Map;
 
 /***
  * This topo helps measure speed of writing to Hdfs
@@ -64,7 +63,7 @@ public class StrGenSpoutHdfsBoltTopo {
     public static final String BOLT_ID = "hdfsBolt";
 
 
-    public static StormTopology getTopology(Map topoConf) {
+    public static StormTopology getTopology(Map<String, Object> topoConf) {
         final int hdfsBatch = Helper.getInt(topoConf, HDFS_BATCH, DEFAULT_HDFS_BATCH);
 
         // 1 -  Setup StringGen Spout   --------
@@ -104,30 +103,30 @@ public class StrGenSpoutHdfsBoltTopo {
 
     /** Spout generates random strings and HDFS bolt writes them to a text file */
     public static void main(String[] args) throws Exception {
-        if(args.length <= 0) {
-            // submit to local cluster
-            Map topoConf = Utils.findAndReadConfigFile("conf/HdfsSpoutTopo.yaml");
-            LocalCluster cluster = Helper.runOnLocalCluster(TOPOLOGY_NAME, getTopology(topoConf));
-
-            Helper.setupShutdownHook(cluster, TOPOLOGY_NAME);
-            while (true) {//  run indefinitely till Ctrl-C
-                Thread.sleep(20_000_000);
-            }
-        } else {
-            //  Submit to Storm cluster
-            if (args.length !=2) {
-                System.err.println("args: runDurationSec confFile");
-                return;
-            }
-            Integer durationSec = Integer.parseInt(args[0]);
-            Map topoConf = Utils.findAndReadConfigFile(args[1]);
-
-            Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        String confFile = "conf/HdfsSpoutTopo.yaml";
+        int runTime = -1; //Run until Ctrl-C
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
         }
+
+        if (args.length > 1) {
+            confFile = args[1];
+        }
+
+        //  Submit to Storm cluster
+        if (args.length > 2) {
+            System.err.println("args: [runDurationSec] [confFile]");
+            return;
+        }
+
+        Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
+
+        Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 
 
     public static class LineWriter implements RecordFormat {
+        private static final long serialVersionUID = 7524288317405514146L;
         private String lineDelimiter = System.lineSeparator();
         private String fieldName;
 
