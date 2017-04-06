@@ -18,12 +18,12 @@
 package org.apache.storm.command;
 
 import com.google.common.base.Joiner;
+import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.generated.ClusterWorkerHeartbeat;
 import org.apache.storm.stats.StatsUtil;
-import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
@@ -42,7 +42,7 @@ public class Heartbeats {
         String command = args[0];
         String path = args[1];
 
-        Map<String, Object> conf = ConfigUtils.readStormConfig();
+        Map<String, Object> conf = ServerConfigUtils.readStormConfig();
         IStateStorage cluster = ClusterUtils.mkStateStorage(conf, conf, null, new ClusterStateContext());
 
         LOG.info("Command: [{}]", command);

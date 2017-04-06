@@ -113,6 +113,17 @@ The current version of Flux is available in Maven Central at the following coord
     <artifactId>flux-core</artifactId>
     <version>${storm.version}</version>
 </dependency>
+<dependency>
+    <groupId>org.apache.storm</groupId>
+    <artifactId>storm-server</artifactId>
+    <version>${storm.version}</version>
+    <exclustions>
+        <exclusion>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-client</artifactId>
+        </exclusion>
+    </exclustions>
+</dependency>
 ```
 
 Using shell spouts and bolts requires additional Flux Wrappers library:
@@ -135,6 +146,17 @@ The example below illustrates Flux usage with the Maven shade plugin:
         <groupId>org.apache.storm</groupId>
         <artifactId>flux-core</artifactId>
         <version>${storm.version}</version>
+    </dependency>
+    <dependency>
+        <groupId>org.apache.storm</groupId>
+        <artifactId>storm-server</artifactId>
+        <version>${storm.version}</version>
+        <exclustions>
+            <exclusion>
+                <groupId>org.apache.storm</groupId>
+                <artifactId>storm-client</artifactId>
+            </exclusion>
+        </exclustions>
     </dependency>
     <!-- Flux Wrappers include -->
     <dependency>

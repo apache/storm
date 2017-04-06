@@ -39,7 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.thrift.TException;
+import org.apache.thrift.TException;
 import org.apache.storm.st.topology.window.data.FromJson;
 import org.apache.storm.st.utils.StringDecorator;
 import org.apache.storm.st.utils.TimeUtil;

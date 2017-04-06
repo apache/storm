@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.command.shell-submission
   (:import [org.apache.storm StormSubmitter]
-           [org.apache.storm.utils Utils]
+           [org.apache.storm.utils ServerUtils]
            [org.apache.storm.zookeeper Zookeeper])
   (:use [org.apache.storm util config log])
   (:require [clojure.string :as str])
@@ -33,4 +33,4 @@
         no-op (.close zk-leader-elector)
         jarpath (StormSubmitter/submitJar conf tmpjarpath)
         args (concat args [host port jarpath])]
-    (Utils/execCommand args)))
+    (ServerUtils/execCommand args)))

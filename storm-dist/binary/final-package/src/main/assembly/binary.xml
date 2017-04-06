@@ -35,7 +35,14 @@
 
     <fileSets>
         <fileSet>
-            <directory>${project.basedir}/../storm-drpc-server-bin/target/drpc-server/drpc-server/</directory>
+            <directory>${project.basedir}/../storm-client-bin/target/client/client/</directory>
+            <outputDirectory>./</outputDirectory>
+            <includes>
+                <include>*/**</include>
+            </includes>
+        </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../storm-webapp-bin/target/webapp/webapp/</directory>
             <outputDirectory>./</outputDirectory>
             <includes>
                 <include>*/**</include>

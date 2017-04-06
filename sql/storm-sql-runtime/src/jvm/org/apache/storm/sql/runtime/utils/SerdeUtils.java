@@ -32,7 +32,7 @@ import org.apache.storm.sql.runtime.serde.json.JsonScheme;
 import org.apache.storm.sql.runtime.serde.json.JsonSerializer;
 import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
 import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ReflectionUtils;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -56,7 +56,7 @@ public final class SerdeUtils {
                 Preconditions.checkArgument(isNotEmpty(schemaString), "input.avro.schema can not be empty");
                 scheme = new AvroScheme(schemaString, fieldNames);
             } else {
-                scheme = Utils.newInstance(inputFormatClass);
+                scheme = ReflectionUtils.newInstance(inputFormatClass);
             }
         } else {
             //use JsonScheme as the default scheme
@@ -80,7 +80,7 @@ public final class SerdeUtils {
                 Preconditions.checkArgument(isNotEmpty(schemaString), "output.avro.schema can not be empty");
                 serializer = new AvroSerializer(schemaString, fieldNames);
             } else {
-                serializer = Utils.newInstance(outputFormatClass);
+                serializer = ReflectionUtils.newInstance(outputFormatClass);
             }
         } else {
             //use JsonSerializer as the default serializer

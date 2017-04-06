@@ -21,7 +21,7 @@
   (:use [conjure core])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.daemon DirectoryCleaner]
-           [org.apache.storm.utils Utils Time]
+           [org.apache.storm.utils Time Utils]
            [org.apache.storm.utils.staticmocking UtilsInstaller]
            [org.apache.storm.daemon.supervisor SupervisorUtils]
            [org.apache.storm.testing.staticmocking MockedSupervisorUtils]

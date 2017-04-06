@@ -28,7 +28,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ServerUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -122,7 +122,7 @@ public class Blobstore {
         SettableBlobMeta meta = new SettableBlobMeta(acl);
         meta.set_replication_factor(replicationFactor);
 
-        Utils.validateKeyName(key);
+        ServerUtils.validateKeyName(key);
 
         LOG.info("Creating {} with ACL {}", key, generateAccessControlsInfo(acl));
 

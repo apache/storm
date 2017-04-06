@@ -20,7 +20,6 @@ package org.apache.storm.perf.utils;
 
 import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.Nimbus;
-import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.log4j.Logger;
 

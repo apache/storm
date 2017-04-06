@@ -24,8 +24,9 @@ import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.NimbusClient;
 
 import java.util.Map;
 
@@ -53,7 +54,7 @@ public class Helper {
     }
 
     public static int getInt(Map map, Object key, int def) {
-        return Utils.getInt(Utils.get(map, key, def));
+        return ObjectReader.getInt(Utils.get(map, key, def));
     }
 
     public static String getStr(Map map, Object key) {
