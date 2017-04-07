@@ -1,4 +1,6 @@
 ﻿## 2.0.0
+ * STORM-2454: the default returned value of this method which named "isConsumerAutoCommitMode" in KafkaSpoutConfig.java should be false
+ * STORM-2457: update and modify storm/hbase/README.md and storm-hbase.md
  * STORM-2453: Move non-connectors into the top directory
  * STORM-2363: Provide configuration to set the number of RollingWindow
  * STORM-2058: Fix Maven warnings about missing reporting.plugins.plugin.version
