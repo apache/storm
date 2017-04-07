@@ -497,7 +497,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     public boolean isConsumerAutoCommitMode() {
-        return kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) == null     // default is true
+        return kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG) == null     // default is false
                 || Boolean.valueOf((String)kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG));
     }
 
