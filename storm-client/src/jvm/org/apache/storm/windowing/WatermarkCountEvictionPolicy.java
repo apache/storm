@@ -33,7 +33,7 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
     @Override
     public Action evict(Event<T> event) {
         Action action;
-        if (event.getTimestamp() <= super.getContext().getReferenceTime() && processed < currentCount.get()) {
+        if (event.getTimestamp() <= getContext().getReferenceTime() && processed < currentCount.get()) {
             action = super.evict(event);
             if (action == Action.PROCESS) {
                 ++processed;
