@@ -506,9 +506,9 @@ The following example creates an HDFS spout that reads text files from HDFS path
 // Instantiate spout to read text files
 HdfsSpout textReaderSpout = new HdfsSpout().setReaderType("text")
                                            .withOutputFields(TextFileReader.defaultFields)                                      
-                                           .setHdfsUri("hdfs://localhost:54310")  // reqd
-                                           .setSourceDir("/data/in")              // reqd                                      
-                                           .setArchiveDir("/data/done")           // reqd
+                                           .setHdfsUri("hdfs://localhost:54310")  // required
+                                           .setSourceDir("/data/in")              // required                                      
+                                           .setArchiveDir("/data/done")           // required
                                            .setBadFilesDir("/data/badfiles");     // required                                      
 // If using Kerberos
 HashMap hdfsSettings = new HashMap();
