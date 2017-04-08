@@ -46,17 +46,9 @@ public class SingleTopicKafkaSpoutConfiguration {
 
     public static StormTopology getTopologyKafkaSpout(int port) {
         final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(port)), 1);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfigBuilder(port).build()), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
         return tp.createTopology();
-    }
-
-    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(int port) {
-        return getKafkaSpoutConfig(port, 10_000);
-    }
-
-    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(int port, long offsetCommitPeriodMs) {
-        return getKafkaSpoutConfig(port, offsetCommitPeriodMs, getRetryService());
     }
 
     private static Func<ConsumerRecord<String, String>, List<Object>> TOPIC_KEY_VALUE_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
@@ -66,18 +58,17 @@ public class SingleTopicKafkaSpoutConfiguration {
         }
     };
     
-    static public KafkaSpoutConfig<String,String> getKafkaSpoutConfig(int port, long offsetCommitPeriodMs, KafkaSpoutRetryService retryService) {
+    public static KafkaSpoutConfig.Builder<String,String> getKafkaSpoutConfigBuilder(int port) {
         return KafkaSpoutConfig.builder("127.0.0.1:" + port, TOPIC)
                 .setRecordTranslator(TOPIC_KEY_VALUE_FUNC,
                         new Fields("topic", "key", "value"), STREAM)
                 .setGroupId("kafkaSpoutTestGroup")
                 .setMaxPollRecords(5)
-                .setRetry(retryService)
-                .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
+                .setRetry(getRetryService())
+                .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
                 .setMaxUncommittedOffsets(250)
-                .setPollTimeoutMs(1000)
-                .build();
+                .setPollTimeoutMs(1000);
     }
         
     protected static KafkaSpoutRetryService getRetryService() {
