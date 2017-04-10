@@ -18,7 +18,6 @@
 
 package org.apache.storm.utils;
 
-import clojure.lang.RT;
 import org.apache.storm.Config;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -862,15 +861,6 @@ public class Utils {
 
     public static Map<String, Object> findAndReadConfigFile(String name) {
         return findAndReadConfigFile(name, true);
-    }
-
-    public static synchronized clojure.lang.IFn loadClojureFn(String namespace, String name) {
-        try {
-            clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
-        } catch (Exception e) {
-            //if playing from the repl and defining functions, file won't exist
-        }
-        return (clojure.lang.IFn) RT.var(namespace, name).deref();
     }
 
     /**

@@ -30,7 +30,7 @@
   (:import [org.apache.storm Thrift])
   (:import [org.mockito ArgumentCaptor Mockito Matchers])
   (:use [org.apache.storm config])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [conjure core]))
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]

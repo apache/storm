@@ -124,17 +124,6 @@
             <artifactId>snakeyaml</artifactId>
         </dependency>
 
-        <!-- clojure -->
-        <dependency>
-            <groupId>org.clojure</groupId>
-            <artifactId>clojure</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.twitter</groupId>
-            <artifactId>carbonite</artifactId>
-            <scope>compile</scope>
-        </dependency>
-
         <!-- netty -->
         <dependency>
             <groupId>io.netty</groupId>

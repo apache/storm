@@ -47,7 +47,7 @@
   (:import [org.json.simple JSONValue])
   (:import [org.apache.storm.daemon StormCommon])
   (:import [org.apache.storm.cluster IStormClusterState StormClusterStateImpl ClusterStateContext ClusterUtils])
-  (:use [org.apache.storm util config log])
+  (:use [org.apache.storm util daemon-config config log])
   (:require [conjure.core])
 
   (:use [conjure core]))

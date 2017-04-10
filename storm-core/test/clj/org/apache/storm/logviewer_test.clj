@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.logviewer-test
-  (:use [org.apache.storm config util])
+  (:use [org.apache.storm daemon-config config util])
   (:require [org.apache.storm.daemon [logviewer :as logviewer]])
   (:require [conjure.core])
   (:use [clojure test])

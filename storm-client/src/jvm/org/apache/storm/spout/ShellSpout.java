@@ -24,6 +24,7 @@ import org.apache.storm.metric.api.rpc.IShellMetric;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.SpoutMsg;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellProcess;
 
 import java.util.Arrays;
@@ -37,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -98,9 +98,9 @@ public class ShellSpout implements ISpout {
         _context = context;
 
         if (stormConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
         } else {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
         }
 
         _process = new ShellProcess(_command);

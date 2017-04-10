@@ -115,7 +115,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
         BoltAckInfo boltAckInfo = new BoltAckInfo(input, taskId, delta);
         boltAckInfo.applyOn(taskData.getUserContext());
-        if (delta != 0) {
+        if (delta >= 0) {
             ((BoltExecutorStats) executor.getStats()).boltAckedTuple(
                     input.getSourceComponent(), input.getSourceStreamId(), delta);
         }
@@ -134,7 +134,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
         BoltFailInfo boltFailInfo = new BoltFailInfo(input, taskId, delta);
         boltFailInfo.applyOn(taskData.getUserContext());
-        if (delta != 0) {
+        if (delta >= 0) {
             ((BoltExecutorStats) executor.getStats()).boltFailedTuple(
                     input.getSourceComponent(), input.getSourceStreamId(), delta);
         }
@@ -156,9 +156,10 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
 
     private long tupleTimeDelta(TupleImpl tuple) {
         Long ms = tuple.getProcessSampleStartTime();
-        if (ms != null)
+        if (ms != null) {
             return Time.deltaMs(ms);
-        return 0;
+        }
+        return -1;
     }
 
     private void putXor(Map<Long, Long> pending, Long key, Long id) {

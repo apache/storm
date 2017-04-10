@@ -19,7 +19,7 @@
            [org.apache.storm.generated JavaObject JavaObjectArg Grouping NullStruct])
   (:import [org.apache.storm.grouping LoadMapping])
   (:use [org.apache.storm log config])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:import [org.apache.storm LocalCluster$Builder Testing Thrift])
   (:import [org.apache.storm.utils Utils]
            (org.apache.storm.daemon GrouperFactory)))

@@ -38,6 +38,12 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
+            <artifactId>storm-clojure</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.storm</groupId>
             <artifactId>storm-server</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -282,9 +288,6 @@
             <groupId>metrics-clojure</groupId>
             <artifactId>metrics-clojure</artifactId>
         </dependency>
-        <!-- hamcrest-core dependency is shaded inside the mockito-all and junit depends on newer version of hamcrest-core.
-        To give higher precedence to classes from newer version of hamcrest-core, Junit has been placed above mockito.
-         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -448,7 +451,7 @@
                         </goals>
                         <configuration>
                             <junitOutput>true</junitOutput>
-                            <testScript>test/resources/test_runner.clj</testScript>
+                            <testScript>../storm-clojure/test/resources/test_runner.clj</testScript>
                             <!-- argLine is set by JaCoCo for code coverage -->
                             <vmargs>-Xmx1536m ${argLine} ${test.extra.args}</vmargs>
                             <!-- Run clojure unit tests or all tests (including integration tests) depending on the profile enabled -->
@@ -475,188 +478,6 @@
                 <configuration>
                     <reportsDirectory>${project.build.directory}/test-reports</reportsDirectory>
                 </configuration>
-            </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <keepDependenciesWithProvidedScope>false</keepDependenciesWithProvidedScope>
-                    <promoteTransitiveDependencies>false</promoteTransitiveDependencies>
-                    <createDependencyReducedPom>true</createDependencyReducedPom>
-                    <minimizeJar>false</minimizeJar>
-                    <artifactSet>
-                        <includes>
-                            <include>ns-tracker:ns-tracker</include>
-                            <include>hiccup:hiccup</include>
-                            <include>ring:*</include>
-                            <include>compojure:compojure</include>
-                            <include>clj-time:clj-time</include>
-                            <include>org.clojure:math.numeric-tower</include>
-                            <include>org.clojure:tools.cli</include>
-                            <include>org.clojure:tools.logging</include>
-                            <include>org.clojure:tools.macro</include>
-                            <include>org.clojure:java.jmx</include>
-                            <include>clout:clout</include>
-                            <include>org.clojure:tools.namespace</include>
-                            <include>cheshire:cheshire</include>
-                            <include>org.clojure:core.incubator</include>
-                            <include>metrics-clojure:*</include>
-                        </includes>
-                    </artifactSet>
-                    <relocations>
-                        <relocation>
-                            <pattern>cheshire</pattern>
-                            <shadedPattern>org.apache.storm.shade.cheshire</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clojure.tools.logging</pattern>
-                            <shadedPattern>org.apache.storm.shade.clojure.tools.logging</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clojure.core.incubator</pattern>
-                            <shadedPattern>org.apache.storm.shade.clojure.core.incubator</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clojure.tools.namespace</pattern>
-                            <shadedPattern>org.apache.storm.shade.clojure.tools.namespace</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clout</pattern>
-                            <shadedPattern>org.apache.storm.shade.clout</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>compojure</pattern>
-                            <shadedPattern>org.apache.storm.shade.compojure</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>ns_tracker</pattern>
-                            <shadedPattern>org.apache.storm.shade.ns_tracker</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>ns-tracker</pattern>
-                            <shadedPattern>org.apache.storm.shade.ns-tracker</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>hiccup</pattern>
-                            <shadedPattern>org.apache.storm.shade.hiccup</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>ring</pattern>
-                            <shadedPattern>org.apache.storm.shade.ring</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clj_time</pattern>
-                            <shadedPattern>org.apache.storm.shade.clj_time</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>clj-time</pattern>
-                            <shadedPattern>org.apache.storm.shade.clj-time</shadedPattern>
-                        </relocation>
-                        <relocation>
-                          <pattern>clojure.math</pattern>
-                          <shadedPattern>org.apache.storm.shade.clojure.math</shadedPattern>
-                        </relocation>
-                        <relocation>
-                          <pattern>clojure.tools.cli</pattern>
-                          <shadedPattern>org.apache.storm.shade.clojure.tools.cli</shadedPattern>
-                        </relocation>
-                        <relocation>
-                          <pattern>cljs.tools.cli</pattern>
-                          <shadedPattern>org.apache.storm.shade.cljs.tools.cli</shadedPattern>
-                        </relocation>
-                        <relocation>
-                          <pattern>clojure.tools.macro</pattern>
-                          <shadedPattern>org.apache.storm.shade.clojure.tools.macro</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.core</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.core</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.counters</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.counters</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.gauges</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.gauges</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.histograms</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.histograms</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.meters</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.meters</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.reporters</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.reporters</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.timers</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.timers</shadedPattern>
-                        </relocation>
-                        <relocation>
-                            <pattern>metrics.utils</pattern>
-                            <shadedPattern>org.apache.storm.shade.metrics.utils</shadedPattern>
-                        </relocation>
-                    </relocations>
-                    <transformers>
-                        <transformer implementation="org.apache.storm.maven.shade.clojure.ClojureTransformer" />
-                    </transformers>
-                    <filters>
-                        <!-- Several of these filters remove the .clj files from the shaded dependencies, even though only .clj files are in these jars.
-                             The reason for this is a bit complex, but intentional.  During the build process all of the dependency .clj files are
-                             compiled down into .class files, and included in storm-core.jar.  The regular shade transformer handles these in 
-                             the majority of cases correctly.  However, the Clojure-Transformer does not shade everything correctly all the
-                             time.  Instead of spending a lot of time to get the Clojure-Transformer to parse Clojure correctly we opted to remove
-                             the .clj files from the uber jar. -->
-                        <filter><artifact>metrics-clojure:*</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:core.incubator</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>cheshire:cheshire</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:tools.logging</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:tools.namespace</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:math.numeric-tower</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:tools.macro</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>org.clojure:tools.cli</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>ns-tracker:ns-tracker</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>clout:clout</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>hiccup:hiccup</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>clj-time:clj-time</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>ring:*</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter><artifact>compojure:compojure</artifact><excludes><exclude>**/*.clj</exclude></excludes></filter>
-                        <filter>
-                            <artifact>*:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/*.SF</exclude>
-                                <exclude>META-INF/*.sf</exclude>
-                                <exclude>META-INF/*.DSA</exclude>
-                                <exclude>META-INF/*.dsa</exclude>
-                                <exclude>META-INF/*.RSA</exclude>
-                                <exclude>META-INF/*.rsa</exclude>
-                                <exclude>META-INF/*.EC</exclude>
-                                <exclude>META-INF/*.ec</exclude>
-                                <exclude>META-INF/MSFTSIG.SF</exclude>
-                                <exclude>META-INF/MSFTSIG.RSA</exclude>
-                            </excludes>
-                        </filter>
-                    </filters>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.storm</groupId>
-                        <artifactId>maven-shade-clojure-transformer</artifactId>
-                        <version>${project.version}</version>
-                    </dependency>
-                </dependencies>
             </plugin>
             <plugin>
                <groupId>org.apache.storm</groupId>

@@ -22,7 +22,7 @@
             TestAggregatesCounter TestConfBolt AckFailMapTracker AckTracker TestPlannerSpout])
   (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.tuple Fields])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [org.apache.storm config util])
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.utils Utils]))

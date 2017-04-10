@@ -27,9 +27,9 @@ import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.topology.ReportedFailedException;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellBoltMessageQueue;
 import org.apache.storm.utils.ShellProcess;
-import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,9 +140,9 @@ public class ShellBolt implements IBolt {
         _context = context;
 
         if (stormConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
         } else {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
         }
 
         _process = new ShellProcess(_command);

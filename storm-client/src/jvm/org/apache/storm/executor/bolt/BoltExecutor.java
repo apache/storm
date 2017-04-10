@@ -115,7 +115,7 @@ public class BoltExecutor extends Executor {
             IBolt boltObject = (IBolt) idToTask.get(taskId).getTaskObject();
             boolean isSampled = sampler.call();
             boolean isExecuteSampler = executeSampler.call();
-            Long now = (isSampled || isExecuteSampler) ? System.currentTimeMillis() : null;
+            Long now = (isSampled || isExecuteSampler) ? Time.currentTimeMillis() : null;
             if (isSampled) {
                 tuple.setProcessSampleStartTime(now);
             }
@@ -130,7 +130,7 @@ public class BoltExecutor extends Executor {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
             new BoltExecuteInfo(tuple, taskId, delta).applyOn(idToTask.get(taskId).getUserContext());
-            if (delta != 0) {
+            if (delta >= 0) {
                 ((BoltExecutorStats) stats).boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }
         }

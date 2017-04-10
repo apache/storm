@@ -20,10 +20,12 @@
             [org.apache.storm.starter.clj.bolts :refer
              [rolling-count-bolt intermediate-rankings-bolt total-rankings-bolt]]
             [org.apache.storm [testing :refer :all]])
-  (:import [org.apache.storm Constants]
+  (:import [org.apache.storm Constants Testing]
+           [org.apache.storm.testing MkTupleParam]
            [org.apache.storm.task OutputCollector IOutputCollector]
            [org.apache.storm.starter.tools Rankable]
-           [org.apache.storm.tuple Tuple]))
+           [org.apache.storm.tuple Tuple]
+           [java.util ArrayList]))
 
 (defn execute-tuples [bolt tuples]
   (let [out (atom [])]
@@ -40,21 +42,11 @@
 
 (defn- mock-tuple [m & {component :component stream-id :stream-id
                         :or {component "1" stream-id "1"}}]
-  (reify
-    Tuple
-    (getSourceComponent [_]
-      component)
-    (getSourceStreamId [_]
-      stream-id)
-    (getString [this i]
-      (nth (vals m) 0))
-    (getValues [_]
-      (vals m))
-    clojure.lang.IPersistentMap
-    (valAt [_ key]
-      (get m key))
-    (seq [_]
-      (seq m))))
+  (let [param (MkTupleParam.)]
+    (.setStream param stream-id)
+    (.setComponent param component)
+    (.setFieldsList param (ArrayList. (.keySet m)))
+    (Testing/testTuple (ArrayList. (.values m)) param)))
 
 (def ^{:private true} tick-tuple
   (mock-tuple {}

@@ -503,12 +503,6 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.set_data(path, Utils.serialize(stormBase), acls);
     }
 
-    /**
-     * To update this function due to APersistentMap/APersistentSet is clojure's structure
-     * 
-     * @param stormId
-     * @param newElems
-     */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
 
