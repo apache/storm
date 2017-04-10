@@ -18,9 +18,13 @@
 package org.apache.storm.security.auth;
 
 import java.io.IOException;
+
+import static org.junit.Assert.assertEquals;
+
 import java.io.File;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.security.Principal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -236,5 +240,22 @@ public class AuthUtilsTest {
         Subject s = new Subject();
         AuthUtils.updateSubject(s, autos, null);
         Mockito.verify(mock, Mockito.times(1)).updateSubject(s, null);
+    }
+    
+    @Test
+    public void testRegexKerberosPrincipalToLocal() {
+    	RegexKerberosPrincipalToLocal mapper = new RegexKerberosPrincipalToLocal();
+    	Map storm_conf = new HashMap<>();
+    	storm_conf.put("storm.principal.mapper.regex", "^");
+    	storm_conf.put("storm.principal.mapper.replacement", "A");
+		mapper.prepare(storm_conf);
+		String output = mapper.toLocal(new Principal() {
+			
+			@Override
+			public String getName() {
+				return "0001@storm.apache.org";
+			}
+		});
+		assertEquals("A0001", output);
     }
 }
