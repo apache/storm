@@ -323,6 +323,7 @@ public class PartitionManager {
                 // state for the offset should be cleaned up
                 LOG.warn("Will not retry failed kafka offset {} further", offset);
                 _messageIneligibleForRetryCount.incr();
+                this._failedMsgRetryManager.cleanOffsetAfterRetries(_partition, offset);
                 _pending.remove(offset);
                 this._failedMsgRetryManager.acked(offset);
             }
