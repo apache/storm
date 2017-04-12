@@ -24,8 +24,8 @@ import org.apache.storm.daemon.drpc.DRPCThrift;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
-import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServiceRegistry;
+import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 
 /**
@@ -41,7 +41,7 @@ public class LocalDRPC implements ILocalDRPC {
     private final String serviceId;
 
     public LocalDRPC() {
-        Map<String, Object> conf = ServerConfigUtils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         drpc = new DRPC(conf);
         serviceId = ServiceRegistry.registerService(new DRPCThrift(drpc));
     }

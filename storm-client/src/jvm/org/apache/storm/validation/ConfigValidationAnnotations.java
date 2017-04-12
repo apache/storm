@@ -55,17 +55,17 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isType {
-        Class validatorClass() default ConfigValidation.SimpleTypeValidator.class;
+        Class<?> validatorClass() default ConfigValidation.SimpleTypeValidator.class;
 
-        Class type();
+        Class<?> type();
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isStringList {
-        Class validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
+        Class<?> validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
 
-        Class type() default String.class;
+        Class<?> type() default String.class;
     }
 
     /**
@@ -74,9 +74,9 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isListEntryType {
-        Class validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
+        Class<?> validatorClass() default ConfigValidation.ListEntryTypeValidator.class;
 
-        Class type();
+        Class<?> type();
     }
 
     /**
@@ -85,26 +85,26 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isString {
-        Class validatorClass() default ConfigValidation.StringValidator.class;
+        Class<?> validatorClass() default ConfigValidation.StringValidator.class;
         String[] acceptedValues() default "";
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isNumber {
-        Class validatorClass() default ConfigValidation.NumberValidator.class;
+        Class<?> validatorClass() default ConfigValidation.NumberValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isBoolean {
-        Class validatorClass() default ConfigValidation.BooleanValidator.class;
+        Class<?> validatorClass() default ConfigValidation.BooleanValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isInteger {
-        Class validatorClass() default ConfigValidation.IntegerValidator.class;
+        Class<?> validatorClass() default ConfigValidation.IntegerValidator.class;
     }
 
     /**
@@ -113,7 +113,7 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface NotNull {
-        Class validatorClass() default ConfigValidation.NotNullValidator.class;
+        Class<?> validatorClass() default ConfigValidation.NotNullValidator.class;
     }
 
     /**
@@ -122,7 +122,7 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isNoDuplicateInList {
-        Class validatorClass() default ConfigValidation.NoDuplicateInListValidator.class;
+        Class<?> validatorClass() default ConfigValidation.NoDuplicateInListValidator.class;
     }
 
     /**
@@ -132,9 +132,9 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isListEntryCustom {
-        Class validatorClass() default ConfigValidation.ListEntryCustomValidator.class;
+        Class<?> validatorClass() default ConfigValidation.ListEntryCustomValidator.class;
 
-        Class[] entryValidatorClasses();
+        Class<?>[] entryValidatorClasses();
     }
 
     /**
@@ -144,11 +144,11 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isMapEntryType {
-        Class validatorClass() default ConfigValidation.MapEntryTypeValidator.class;
+        Class<?> validatorClass() default ConfigValidation.MapEntryTypeValidator.class;
 
-        Class keyType();
+        Class<?> keyType();
 
-        Class valueType();
+        Class<?> valueType();
     }
 
     /**
@@ -158,11 +158,11 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isMapEntryCustom {
-        Class validatorClass() default ConfigValidation.MapEntryCustomValidator.class;
+        Class<?> validatorClass() default ConfigValidation.MapEntryCustomValidator.class;
 
-        Class[] keyValidatorClasses();
+        Class<?>[] keyValidatorClasses();
 
-        Class[] valueValidatorClasses();
+        Class<?>[] valueValidatorClasses();
     }
 
     /**
@@ -172,7 +172,7 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isPositiveNumber {
-        Class validatorClass() default ConfigValidation.PositiveNumberValidator.class;
+        Class<?> validatorClass() default ConfigValidation.PositiveNumberValidator.class;
 
         boolean includeZero() default false;
     }
@@ -180,9 +180,9 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isImplementationOfClass {
-        Class validatorClass() default ConfigValidation.ImplementsClassValidator.class;
+        Class<?> validatorClass() default ConfigValidation.ImplementsClassValidator.class;
 
-        Class implementsClass();
+        Class<?> implementsClass();
     }
 
     /**
@@ -191,19 +191,19 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isStringOrStringList {
-        Class validatorClass() default ConfigValidation.StringOrStringListValidator.class;
+        Class<?> validatorClass() default ConfigValidation.StringOrStringListValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isKryoReg {
-        Class validatorClass() default ConfigValidation.KryoRegValidator.class;
+        Class<?> validatorClass() default ConfigValidation.KryoRegValidator.class;
     }
 
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface isPowerOf2 {
-        Class validatorClass() default ConfigValidation.PowerOf2Validator.class;
+        Class<?> validatorClass() default ConfigValidation.PowerOf2Validator.class;
     }
 
     /**
@@ -212,7 +212,7 @@ public class ConfigValidationAnnotations {
     @Retention(RetentionPolicy.RUNTIME)
     @Target(ElementType.FIELD)
     public @interface CustomValidator {
-        Class validatorClass();
+        Class<?> validatorClass();
     }
 }
 

@@ -45,7 +45,7 @@ public class TestDaemonConfigValidate {
 
         schedulerMeta.put("baz", true);
         try {
-            ConfigValidation.validateFields(conf, DaemonConfig.class);
+            ConfigValidation.validateFields(conf);
             Assert.fail("Expected Exception not Thrown");
         } catch (IllegalArgumentException ex) {
         }
@@ -56,17 +56,17 @@ public class TestDaemonConfigValidate {
         Map<String, Object> conf = new HashMap<String, Object>();
         Map<String, Integer> isolationMap = new HashMap<String, Integer>();
         conf.put(DaemonConfig.ISOLATION_SCHEDULER_MACHINES, isolationMap);
-        ConfigValidation.validateFields(conf, DaemonConfig.class);
+        ConfigValidation.validateFields(conf);
 
         isolationMap.put("host0", 1);
         isolationMap.put("host1", 2);
 
         conf.put(DaemonConfig.ISOLATION_SCHEDULER_MACHINES, isolationMap);
-        ConfigValidation.validateFields(conf, DaemonConfig.class);
+        ConfigValidation.validateFields(conf);
 
         conf.put(DaemonConfig.ISOLATION_SCHEDULER_MACHINES, 42);
         try {
-            ConfigValidation.validateFields(conf, DaemonConfig.class);
+            ConfigValidation.validateFields(conf);
             Assert.fail("Expected Exception not Thrown");
         } catch (IllegalArgumentException ex) {
         }
@@ -94,13 +94,13 @@ public class TestDaemonConfigValidate {
 
         for (Object value : passCases) {
             conf.put(DaemonConfig.SUPERVISOR_SLOTS_PORTS, value);
-            ConfigValidation.validateFields(conf, DaemonConfig.class);
+            ConfigValidation.validateFields(conf);
         }
 
         for (Object value : failCases) {
             try {
                 conf.put(DaemonConfig.SUPERVISOR_SLOTS_PORTS, value);
-                ConfigValidation.validateFields(conf, DaemonConfig.class);
+                ConfigValidation.validateFields(conf);
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }

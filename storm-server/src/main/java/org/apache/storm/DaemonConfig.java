@@ -23,6 +23,7 @@ import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.Validated;
 
 import java.util.ArrayList;
 import java.util.Map;
@@ -37,7 +38,7 @@ import static org.apache.storm.validation.ConfigValidationAnnotations.*;
  *
  * This class extends {@link org.apache.storm.Config} for supporting Storm Daemons.
  */
-public class DaemonConfig extends Config {
+public class DaemonConfig implements Validated {
 
     /**
      * We check with this interval that whether the Netty channel is writable and try to write pending messages

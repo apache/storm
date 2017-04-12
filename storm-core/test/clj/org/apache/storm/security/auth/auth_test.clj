@@ -345,7 +345,7 @@
                   "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                               {STORM-THRIFT-TRANSPORT-PLUGIN         "org.apache.storm.security.auth.SimpleTransportPlugin"
-                               DaemonConfig/NIMBUS_THRIFT_PORT       a-port
+                               Config/NIMBUS_THRIFT_PORT       a-port
                                DaemonConfig/NIMBUS_TASK_TIMEOUT_SECS nimbus-timeout})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
@@ -414,7 +414,7 @@
 
 (deftest test-GetTransportPlugin-throws-RuntimeException
   (let [conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                    {DaemonConfig/STORM_THRIFT_TRANSPORT_PLUGIN "null.invalid"})]
+                    {Config/STORM_THRIFT_TRANSPORT_PLUGIN "null.invalid"})]
     (is (thrown-cause? RuntimeException (AuthUtils/GetTransportPlugin conf nil nil)))))
 
 (defn mk-impersonating-req-context [impersonating-user user-being-impersonated remote-address]
@@ -433,7 +433,7 @@
         _ (.prepare groups (clojurify-structure (ConfigUtils/readStormConfig)))
         groups (.getGroups groups user-being-impersonated)
         cluster-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                       {DaemonConfig/NIMBUS_IMPERSONATION_ACL {impersonating-user {"hosts" [ (.getHostName (InetAddress/getLocalHost))]
+                       {Config/NIMBUS_IMPERSONATION_ACL {impersonating-user {"hosts" [ (.getHostName (InetAddress/getLocalHost))]
                                                                             "groups" groups}}})
         authorizer (ImpersonationAuthorizer. )
         unauthorized-host (com.google.common.net.InetAddresses/forString "10.10.10.10")

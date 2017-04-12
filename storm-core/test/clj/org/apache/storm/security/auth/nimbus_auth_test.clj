@@ -18,7 +18,7 @@
   (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
-  (:import [org.apache.storm LocalCluster$Builder DaemonConfig])
+  (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
   (:import [org.apache.storm.blobstore BlobStore])
   (:import [org.apache.storm.utils NimbusClient])
   (:import [org.apache.storm.generated NotAliveException StormBase])
@@ -106,7 +106,7 @@
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                               {STORM-THRIFT-TRANSPORT-PLUGIN   "org.apache.storm.security.auth.SimpleTransportPlugin"
-                               DaemonConfig/NIMBUS_THRIFT_PORT port
+                               Config/NIMBUS_THRIFT_PORT port
                                STORM-NIMBUS-RETRY-TIMES        0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)
@@ -142,7 +142,7 @@
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                               DaemonConfig/NIMBUS_THRIFT_PORT port
+                               Config/NIMBUS_THRIFT_PORT port
                                STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)]
@@ -172,7 +172,7 @@
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                               DaemonConfig/NIMBUS_THRIFT_PORT port
+                               Config/NIMBUS_THRIFT_PORT port
                                STORM-NIMBUS-RETRY-TIMES 0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)

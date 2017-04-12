@@ -401,7 +401,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         Map<Object, Object> failCase1 = new HashMap<Object, Object>();
@@ -418,7 +418,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -439,7 +439,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_2, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         Map<Object, Object> failCase1 = new HashMap<Object, Object>();
@@ -466,7 +466,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_2, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -485,7 +485,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_3, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         Object[] failCase1 = {1, 5.0, -0.01, 0, "aaa"};
@@ -498,7 +498,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_3, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -517,7 +517,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_4, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         Object[] failCase1 = {1, 5.0, -0.01, 3.0};
@@ -536,7 +536,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_4, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -550,14 +550,14 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_5, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         String[] failCases = {"aa", "bb", "cc", "abc", "a", "b", "c", ""};
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_5, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -581,7 +581,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_6, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
 
         Map<String, Map<String, List<String>>> failCase1 = new HashMap<String, Map<String, List<String>>>();
@@ -605,7 +605,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_6, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -630,7 +630,7 @@ public class TestConfigValidate {
         passCase1.get("derek").put("memory", 60148);
 
         config.put(TestConfig.TEST_MAP_CONFIG_7, (Object) passCase1);
-        ConfigValidation.validateFields(config, TestConfig.class);
+        ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
 
         Map<String, Map<String, Integer>> failCase1 = new HashMap<String, Map<String, Integer>>();
         failCase1.put("jerry", new HashMap<String, Integer>());
@@ -660,7 +660,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_7, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
@@ -677,7 +677,7 @@ public class TestConfigValidate {
 
         for (Object value : passCases) {
             config.put(TestConfig.TEST_MAP_CONFIG_8, value);
-            ConfigValidation.validateFields(config, TestConfig.class);
+            ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
         }
         //will fail since org.apache.storm.nimbus.NimbusInfo doesn't implement or extend org.apache.storm.networktopography.DNSToSwitchMapping
         failCases.add("org.apache.storm.nimbus.NimbusInfo");
@@ -685,7 +685,7 @@ public class TestConfigValidate {
         for (Object value : failCases) {
             try {
                 config.put(TestConfig.TEST_MAP_CONFIG_8, value);
-                ConfigValidation.validateFields(config, TestConfig.class);
+                ConfigValidation.validateFields(config, Arrays.asList(TestConfig.class));
                 Assert.fail("Expected Exception not Thrown for value: " + value);
             } catch (IllegalArgumentException Ex) {
             }
