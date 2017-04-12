@@ -117,7 +117,7 @@ public class DRPCTest {
     
     @Test
     public void testDequeueAfterTimeout() throws Exception {
-        long timeout = 2000;
+        long timeout = 1000;
         try (DRPC server = new DRPC(null, timeout)) {
             long start = Time.currentTimeMillis();
             try {
