@@ -33,8 +33,11 @@ import java.util.Map;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.data.ACL;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionalState {
+    public static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
     CuratorFramework _curator;
     KryoValuesSerializer _ser;
     KryoValuesDeserializer _des;
@@ -82,11 +85,17 @@ public class TransactionalState {
         }
     }
 
-    protected static String forPath(PathAndBytesable<String> builder, 
+    protected static void forPath(PathAndBytesable<String> builder,
             String path, byte[] data) throws Exception {
-        return (data == null) 
-            ? builder.forPath(path) 
-            : builder.forPath(path, data);
+        try {
+            if (data == null) {
+                builder.forPath(path);
+            } else {
+                builder.forPath(path, data);
+            }
+        } catch (KeeperException.NodeExistsException e){
+            LOG.info("Path {} already exists.", path);
+        }
     }
 
     protected static void createNode(CuratorFramework curator, String path,
@@ -116,15 +125,20 @@ public class TransactionalState {
                 TransactionalState.createNode(_curator, path, ser, _zkAcls,
                         CreateMode.PERSISTENT);
             }
-        } catch(Exception e) {
+        } catch (KeeperException.NodeExistsException nee) {
+            LOG.warn("Path {} already exists.", path);
+        } catch (Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
     
     public void delete(String path) {
         path = "/" + path;
         try {
             _curator.delete().forPath(path);
+        } catch (KeeperException.NoNodeException nne){
+            // node was already deleted
+            LOG.info("Path {} has already been deleted.", path);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
