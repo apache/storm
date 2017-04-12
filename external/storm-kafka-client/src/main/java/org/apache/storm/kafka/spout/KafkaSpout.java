@@ -51,6 +51,7 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -119,6 +120,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         acked = new HashMap<>();
         emitted = new HashSet<>();
         waitingToEmit = Collections.emptyListIterator();
+
+        //prepare for kerberos
+        String pathToJaas = (String)conf.get(Config.KAFKASPOUT_JAASCONF_PATH);
+        KafkaSpoutSecurity.PrepareKerberos(pathToJaas);
 
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
     }

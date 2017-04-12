@@ -1481,6 +1481,12 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
 
+    /**
+     * The path to KafkaClient's jaas.conf when use storm-kakfa-client in Security mode.
+     */
+    @isString
+    public static final String KAFKASPOUT_JAASCONF_PATH = "kafkaspout.jaasconf.path";
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }
