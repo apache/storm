@@ -1,4 +1,10 @@
-﻿## 1.1.0
+﻿## 1.1.1
+ * STORM-2429: Properly validate supervisor.scheduler.meta
+ * STORM-2194: Stop ignoring socket timeout error from executor
+ * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
+
+## 1.1.0
+ * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
  * STORM-2425: Storm Hive Bolt not closing open transactions
  * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
  * STORM-2423: Join Bolt should use explicit instead of default window anchoring for emitted tuples
@@ -198,6 +204,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.4
+ * STORM-2450: Write resources into correct local director
  * STORM-2038: No symlinks for local cluster 
 
 ## 1.0.3
