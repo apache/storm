@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2447: add in storm local to avoid having server on worker classpath
  * STORM-2458: Kafka Spout should allow hooking up custom logic when retries have exhanusted
  * STORM-2461: modify storm-hdfs's READEME.md and update storm-hdfs.md
  * STORM-2454: the default returned value of this method which named "isConsumerAutoCommitMode" in KafkaSpoutConfig.java should be false
