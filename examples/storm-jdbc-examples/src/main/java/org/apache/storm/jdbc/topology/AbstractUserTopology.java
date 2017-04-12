@@ -17,27 +17,26 @@
  */
 package org.apache.storm.jdbc.topology;
 
+import java.sql.Types;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
 import org.apache.storm.jdbc.common.Column;
 import org.apache.storm.jdbc.common.ConnectionProvider;
 import org.apache.storm.jdbc.common.HikariCPConnectionProvider;
 import org.apache.storm.jdbc.common.JdbcClient;
-import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.JdbcLookupMapper;
-import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
+import org.apache.storm.jdbc.mapper.JdbcMapper;
 import org.apache.storm.jdbc.mapper.SimpleJdbcLookupMapper;
+import org.apache.storm.jdbc.mapper.SimpleJdbcMapper;
 import org.apache.storm.jdbc.spout.UserSpout;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
+import org.apache.storm.tuple.Fields;
 
-import java.sql.Types;
-import java.util.List;
-import java.util.Map;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public abstract class AbstractUserTopology {
     private static final List<String> setupSqls = Lists.newArrayList(
@@ -99,15 +98,11 @@ public abstract class AbstractUserTopology {
         List<Column> queryParamColumns = Lists.newArrayList(new Column("user_id", Types.INTEGER));
         this.jdbcLookupMapper = new SimpleJdbcLookupMapper(outputFields, queryParamColumns);
         this.connectionProvider = new HikariCPConnectionProvider(map);
-        if (args.length == 4) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("test", config, getTopology());) {
-                Thread.sleep(30000);
-            }
-            System.exit(0);
-        } else {
-            StormSubmitter.submitTopology(args[4], config, getTopology());
+        String topoName = "test";
+        if (args.length > 4) {
+            topoName = args[4];
         }
+        StormSubmitter.submitTopology(topoName, config, getTopology());
     }
 
     public abstract StormTopology getTopology();

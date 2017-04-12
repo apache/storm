@@ -40,7 +40,7 @@ public class GetErrors {
 
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
-            public void run(Nimbus.Client client) throws Exception {
+            public void run(Nimbus.Iface client) throws Exception {
                 GetInfoOptions opts = new GetInfoOptions();
                 opts.set_num_err_choice(NumErrorsChoice.ONE);
                 String topologyId = Utils.getTopologyId(name, client);

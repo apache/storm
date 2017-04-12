@@ -377,7 +377,7 @@
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
-         <testSourceDirectory>test/jvm</testSourceDirectory>
+        <testSourceDirectory>test/jvm</testSourceDirectory>
         <resources>
             <resource>
                 <directory>../</directory>

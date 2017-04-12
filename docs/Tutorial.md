@@ -206,36 +206,9 @@ public static class ExclamationBolt extends BaseRichBolt {
 
 Let's see how to run the `ExclamationTopology` in local mode and see that it's working.
 
-Storm has two modes of operation: local mode and distributed mode. In local mode, Storm executes completely in process by simulating worker nodes with threads. Local mode is useful for testing and development of topologies. When you run the topologies in storm-starter, they'll run in local mode and you'll be able to see what messages each component is emitting. You can read more about running topologies in local mode on [Local mode](Local-mode.html).
+Storm has two modes of operation: local mode and distributed mode. In local mode, Storm executes completely in process by simulating worker nodes with threads. Local mode is useful for testing and development of topologies. You can read more about running topologies in local mode on [Local mode](Local-mode.html).
 
-In distributed mode, Storm operates as a cluster of machines. When you submit a topology to the master, you also submit all the code necessary to run the topology. The master will take care of distributing your code and allocating workers to run your topology. If workers go down, the master will reassign them somewhere else. You can read more about running topologies on a cluster on [Running topologies on a production cluster](Running-topologies-on-a-production-cluster.html)]. 
-
-Here's the code that runs `ExclamationTopology` in local mode:
-
-```java
-Config conf = new Config();
-conf.setDebug(true);
-conf.setNumWorkers(2);
-
-LocalCluster cluster = new LocalCluster();
-cluster.submitTopology("test", conf, builder.createTopology());
-Utils.sleep(10000);
-cluster.killTopology("test");
-cluster.shutdown();
-```
-
-First, the code defines an in-process cluster by creating a `LocalCluster` object. Submitting topologies to this virtual cluster is identical to submitting topologies to distributed clusters. It submits a topology to the `LocalCluster` by calling `submitTopology`, which takes as arguments a name for the running topology, a configuration for the topology, and then the topology itself.
-
-The name is used to identify the topology so that you can kill it later on. A topology will run indefinitely until you kill it.
-
-The configuration is used to tune various aspects of the running topology. The two configurations specified here are very common:
-
-1. **TOPOLOGY_WORKERS** (set with `setNumWorkers`) specifies how many _processes_ you want allocated around the cluster to execute the topology. Each component in the topology will execute as many _threads_. The number of threads allocated to a given component is configured through the `setBolt` and `setSpout` methods. Those _threads_ exist within worker _processes_. Each worker _process_ contains within it some number of _threads_ for some number of components. For instance, you may have 300 threads specified across all your components and 50 worker processes specified in your config. Each worker process will execute 6 threads, each of which of could belong to a different component. You tune the performance of Storm topologies by tweaking the parallelism for each component and the number of worker processes those threads should run within.
-2. **TOPOLOGY_DEBUG** (set with `setDebug`), when set to true, tells Storm to log every message every emitted by a component. This is useful in local mode when testing topologies, but you probably want to keep this turned off when running topologies on the cluster.
-
-There's many other configurations you can set for the topology. The various configurations are detailed on [the Javadoc for Config](javadocs/org/apache/storm/Config.html).
-
-To learn about how to set up your development environment so that you can run topologies in local mode (such as in Eclipse), see [Creating a new Storm project](Creating-a-new-Storm-project.html).
+To run a topology in local mode run the command `storm local` instead of `storm jar`.
 
 ## Stream groupings
 

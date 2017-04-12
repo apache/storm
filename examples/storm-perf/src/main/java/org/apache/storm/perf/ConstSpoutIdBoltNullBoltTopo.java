@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.DevNullBolt;
 import org.apache.storm.perf.bolt.IdBolt;
@@ -49,7 +48,7 @@ public class ConstSpoutIdBoltNullBoltTopo {
     public static final String BOLT2_COUNT = "bolt2.count";
     public static final String SPOUT_COUNT = "spout.count";
 
-    public static StormTopology getTopology(Map conf) {
+    public static StormTopology getTopology(Map<String, Object> conf) {
 
         // 1 -  Setup Spout   --------
         ConstSpout spout = new ConstSpout("some data").withOutputFields("str");
@@ -75,27 +74,19 @@ public class ConstSpoutIdBoltNullBoltTopo {
 
 
     public static void main(String[] args) throws Exception {
-
-        if (args.length <= 0) {
-            // submit to local cluster
-            Config conf = new Config();
-            LocalCluster cluster = Helper.runOnLocalCluster(TOPOLOGY_NAME, getTopology(conf));
-
-            Helper.setupShutdownHook(cluster, TOPOLOGY_NAME);
-            while (true) {//  run indefinitely till Ctrl-C
-                Thread.sleep(20_000_000);
-            }
-        } else {
-            // submit to real cluster
-            if (args.length >2) {
-                System.err.println("args: runDurationSec  [optionalConfFile]");
-                return;
-            }
-            Integer durationSec = Integer.parseInt(args[0]);
-            Map topoConf =  (args.length==2) ? Utils.findAndReadConfigFile(args[1])  : new Config();
-
-            //  Submit topology to storm cluster
-            Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
+        int runTime = -1;
+        Config topoConf = new Config();
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
         }
+        if (args.length > 1) {
+            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
+        }
+        if (args.length > 2) {
+            System.err.println("args: [runDurationSec]  [optionalConfFile]");
+            return;
+        }
+        //  Submit topology to storm cluster
+        Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 }

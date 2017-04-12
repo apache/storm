@@ -18,7 +18,6 @@
 package org.apache.storm.starter.streams;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.streams.Pair;
@@ -27,7 +26,6 @@ import org.apache.storm.streams.operations.CombinerAggregator;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
 import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.topology.base.BaseWindowedBolt;
-import org.apache.storm.utils.Utils;
 
 /**
  * An example that illustrates the global aggregate
@@ -48,15 +46,12 @@ public class AggregateExample {
                 .print();
 
         Config config = new Config();
+        String topoName = "AGG_EXAMPLE";
         if (args.length > 0) {
-            config.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
-                Utils.sleep(60_000);
-            }
+            topoName = args[0];
         }
+        config.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, config, builder.build());
     }
 
     private static class Avg implements CombinerAggregator<Integer, Pair<Integer, Integer>, Double> {

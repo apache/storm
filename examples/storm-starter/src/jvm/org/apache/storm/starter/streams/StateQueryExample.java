@@ -17,8 +17,9 @@
  */
 package org.apache.storm.starter.streams;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.streams.Pair;
@@ -33,8 +34,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-
-import java.util.Map;
 
 /**
  * An example that uses {@link Stream#stateQuery(StreamState)} to query the state
@@ -79,16 +78,12 @@ public class StateQueryExample {
         Config config = new Config();
         // use redis based state store for persistence
         config.put(Config.TOPOLOGY_STATE_PROVIDER, "org.apache.storm.redis.state.RedisKeyValueStateProvider");
-
+        String topoName = "test";
         if (args.length > 0) {
-            config.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
-                Utils.sleep(60_000);
-            }
+            topoName = args[0];
         }
+        config.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, config, builder.build());
     }
 
     private static class QuerySpout extends BaseRichSpout {

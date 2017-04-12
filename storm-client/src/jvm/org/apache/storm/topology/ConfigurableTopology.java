@@ -31,15 +31,12 @@ import java.util.Map;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.utils.Utils;
 import org.yaml.snakeyaml.Yaml;
 
 /**
- * Extensions of this class use command line arguments to determine whether the
- * topology should run locally or remote, with a time to live and takes a
+ * Extensions of this class takes a
  * reference to one or more configuration files. The main() method should call
  * ConfigurableTopology.start() and it must instantiate a TopologyBuilder in the
  * run() method.
@@ -66,19 +63,21 @@ import org.yaml.snakeyaml.Yaml;
 public abstract class ConfigurableTopology {
 
     protected Config conf = new Config();
-    protected boolean isLocal = false;
-    protected int ttl = -1;
 
     public static void start(ConfigurableTopology topology, String args[]) {
         String[] remainingArgs = topology.parse(args);
-        topology.run(remainingArgs);
+        try {
+            topology.run(remainingArgs);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     protected Config getConf() {
         return conf;
     }
 
-    protected abstract int run(String args[]);
+    protected abstract int run(String args[]) throws Exception;
 
     /** Submits the topology with the name taken from the configuration **/
     protected int submit(Config conf, TopologyBuilder builder) {
@@ -91,29 +90,12 @@ public abstract class ConfigurableTopology {
 
     /** Submits the topology under a specific name **/
     protected int submit(String name, Config conf, TopologyBuilder builder) {
-
-        if (isLocal) {
-            try (LocalCluster cluster = new LocalCluster();
-                    LocalTopology topo = cluster.submitTopology(name, conf,
-                            builder.createTopology());) {
-                if (ttl != -1) {
-                    Utils.sleep(ttl * 1000);
-                    cluster.shutdown();
-                }
-            } catch (Exception e) {
-                e.printStackTrace();
-                return -1;
-            }
-        }
-
-        else {
-            try {
-                StormSubmitter.submitTopology(name, conf,
-                        builder.createTopology());
-            } catch (Exception e) {
-                e.printStackTrace();
-                return -1;
-            }
+        try {
+            StormSubmitter.submitTopology(name, conf,
+                    builder.createTopology());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return -1;
         }
         return 0;
     }
@@ -138,21 +120,6 @@ public abstract class ConfigurableTopology {
                     throw new RuntimeException("File not found : " + resource);
                 }
                 iter.remove();
-            } else if (param.equals("-local")) {
-                isLocal = true;
-                iter.remove();
-            } else if (param.equals("-ttl")) {
-                if (!iter.hasNext()) {
-                    throw new RuntimeException("ttl value not specified");
-                }
-                iter.remove();
-                String ttlValue = iter.next();
-                try {
-                    ttl = Integer.parseInt(ttlValue);
-                } catch (NumberFormatException nfe) {
-                    throw new RuntimeException("ttl value incorrect");
-                }
-                iter.remove();
             }
         }
 
@@ -162,10 +129,10 @@ public abstract class ConfigurableTopology {
     public static Config loadConf(String resource, Config conf)
             throws FileNotFoundException {
         Yaml yaml = new Yaml();
-        Map ret = (Map) yaml.load(new InputStreamReader(
+        Map<String, Object> ret = (Map<String, Object>) yaml.load(new InputStreamReader(
                 new FileInputStream(resource), Charset.defaultCharset()));
         if (ret == null) {
-            ret = new HashMap();
+            ret = new HashMap<>();
         }
         // If the config consists of a single key 'config', its values are used
         // instead. This means that the same config files can be used with Flux
@@ -174,7 +141,7 @@ public abstract class ConfigurableTopology {
             if (ret.size() == 1) {
                 Object confNode = ret.get("config");
                 if (confNode != null && confNode instanceof Map) {
-                    ret = (Map) ret;
+                    ret = (Map<String, Object>) ret;
                 }
             }
         }

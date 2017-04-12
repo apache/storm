@@ -17,8 +17,11 @@
  */
 package org.apache.storm.starter.streams;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.streams.PairStream;
@@ -34,10 +37,6 @@ import org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
 
 /**
  * An example that shows the usage of {@link PairStream#groupByKeyAndWindow(Window)}
@@ -72,15 +71,12 @@ public class GroupByKeyAndWindowExample {
                 .print();
 
         Config config = new Config();
+        String topoName = GroupByKeyAndWindowExample.class.getName();
         if (args.length > 0) {
-            config.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
-                Utils.sleep(60_000);
-            }
+            topoName = args[0];
         }
+        config.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, config, builder.build());
     }
 
     private static class StockQuotes extends BaseRichSpout {

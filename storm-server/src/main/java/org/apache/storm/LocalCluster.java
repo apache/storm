@@ -17,6 +17,8 @@
  */
 package org.apache.storm;
 
+import java.lang.reflect.Method;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,6 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -44,16 +47,34 @@ import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.executor.LocalExecutor;
+import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.BeginDownloadResult;
 import org.apache.storm.generated.ClusterSummary;
+import org.apache.storm.generated.ComponentPageInfo;
 import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.GetInfoOptions;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.KeyAlreadyExistsException;
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.KillOptions;
+import org.apache.storm.generated.ListBlobsResult;
+import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.Nimbus.Iface;
 import org.apache.storm.generated.Nimbus.Processor;
 import org.apache.storm.generated.NimbusSummary;
+import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.generated.ProfileAction;
+import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.RebalanceOptions;
+import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.generated.SupervisorPageInfo;
+import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -68,6 +89,8 @@ import org.apache.storm.testing.NonRichBoltTracker;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.testing.TrackedTopology;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.DRPCClient;
+import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RegisteredGlobalState;
@@ -76,6 +99,7 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,7 +116,7 @@ import org.slf4j.LoggerFactory;
  * }
  * // The cluster has been shut down.
  */
-public class LocalCluster implements ILocalClusterTrackedTopologyAware {
+public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private static final Logger LOG = LoggerFactory.getLogger(LocalCluster.class);
     
     private static ThriftServer startNimbusDaemon(Map<String, Object> conf, Nimbus nimbus) {
@@ -830,5 +854,275 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware {
     @Override
     public String getTrackedId() {
         return trackId;
+    }
+
+    //Nimbus Compatibility
+    
+    @Override
+    public void submitTopology(String name, String uploadedJarLocation, String jsonConf, StormTopology topology)
+            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
+            submitTopology(name, conf, topology);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void submitTopologyWithOpts(String name, String uploadedJarLocation, String jsonConf, StormTopology topology,
+            SubmitOptions options)
+            throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, TException {
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> conf = (Map<String, Object>) JSONValue.parseWithException(jsonConf);
+            submitTopologyWithOpts(name, conf, topology, options);
+        } catch (ParseException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void setLogConfig(String name, LogConfig config) throws TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public LogConfig getLogConfig(String name) throws TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public void debug(String name, String component, boolean enable, double samplingPercentage)
+            throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public void setWorkerProfiler(String id, ProfileRequest profileRequest) throws TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public List<ProfileRequest> getComponentPendingProfileActions(String id, String component_id, ProfileAction action)
+            throws TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public String beginCreateBlob(String key, SettableBlobMeta meta)
+            throws AuthorizationException, KeyAlreadyExistsException, TException {
+        throw new RuntimeException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public String beginUpdateBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void uploadBlobChunk(String session, ByteBuffer chunk) throws AuthorizationException, TException {
+        throw new RuntimeException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void finishBlobUpload(String session) throws AuthorizationException, TException {
+        throw new RuntimeException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void cancelBlobUpload(String session) throws AuthorizationException, TException {
+        throw new RuntimeException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public ReadableBlobMeta getBlobMeta(String key) throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void setBlobMeta(String key, SettableBlobMeta meta)
+            throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public BeginDownloadResult beginBlobDownload(String key)
+            throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public ByteBuffer downloadBlobChunk(String session) throws AuthorizationException, TException {
+        throw new RuntimeException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void deleteBlob(String key) throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public ListBlobsResult listBlobs(String session) throws TException {
+        //Blobs are not supported in local mode.  Return nothing
+        ListBlobsResult ret = new ListBlobsResult();
+        ret.set_keys(new ArrayList<>());
+        return ret;
+    }
+
+    @Override
+    public int getBlobReplication(String key) throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public int updateBlobReplication(String key, int replication)
+            throws AuthorizationException, KeyNotFoundException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public void createStateInZookeeper(String key) throws TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public String beginFileUpload() throws AuthorizationException, TException {
+        //Just ignore these for now.  We are going to throw it away anyways
+        return Utils.uuid();
+    }
+
+    @Override
+    public void uploadChunk(String location, ByteBuffer chunk) throws AuthorizationException, TException {
+        //Just throw it away in local mode
+    }
+
+    @Override
+    public void finishFileUpload(String location) throws AuthorizationException, TException {
+        //Just throw it away in local mode
+    }
+
+    @Override
+    public String beginFileDownload(String file) throws AuthorizationException, TException {
+        throw new AuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public ByteBuffer downloadChunk(String id) throws AuthorizationException, TException {
+        throw new AuthorizationException("FILE DOWNLOAD NOT SUPPORTED IN LOCAL MODE");
+    }
+
+    @Override
+    public String getNimbusConf() throws AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public NimbusSummary getLeader() throws AuthorizationException, TException {
+        return nimbus.getLeader();
+    }
+
+    @Override
+    public boolean isTopologyNameAllowed(String name) throws AuthorizationException, TException {
+        return nimbus.isTopologyNameAllowed(name);
+    }
+
+    @Override
+    public TopologyInfo getTopologyInfoWithOpts(String id, GetInfoOptions options)
+            throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public TopologyPageInfo getTopologyPageInfo(String id, String window, boolean is_include_sys)
+            throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public SupervisorPageInfo getSupervisorPageInfo(String id, String host, boolean is_include_sys)
+            throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public ComponentPageInfo getComponentPageInfo(String topology_id, String component_id, String window,
+            boolean is_include_sys) throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public StormTopology getUserTopology(String id) throws NotAliveException, AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+
+    @Override
+    public TopologyHistoryInfo getTopologyHistory(String user) throws AuthorizationException, TException {
+        // TODO Auto-generated method stub
+        throw new RuntimeException("NOT IMPLMENETED YET");
+    }
+    
+    /**
+     * Run c with a local mode cluster overriding the NimbusClient and DRPCClient calls.
+     * @param c the callable to run in this mode
+     * @param ttlSec the number of seconds to let the cluster run after c has completed
+     * @return the result of calling C
+     * @throws Exception on any Exception.
+     */
+    public static <T> T withLocalModeOverride(Callable<T> c, long ttlSec) throws Exception {
+        LOG.info("\n\n\t\tSTARTING LOCAL MODE CLUSTER\n\n");
+        try (LocalCluster local = new LocalCluster();
+                NimbusClient.LocalOverride nimbusOverride = new NimbusClient.LocalOverride(local);
+                LocalDRPC drpc = new LocalDRPC();
+                DRPCClient.LocalOverride drpcOverride = new DRPCClient.LocalOverride(drpc)) {
+
+            T ret = c.call();
+            LOG.info("\n\n\t\tRUNNING LOCAL CLUSTER for {} seconds.\n\n", ttlSec);
+            Thread.sleep(ttlSec * 1000);
+            
+            LOG.info("\n\n\t\tSTOPPING LOCAL MODE CLUSTER\n\n");
+            return ret;
+        }
+    }
+    
+    public static void main(final String [] args) throws Exception {
+        if (args.length < 1) {
+            throw new IllegalArgumentException("No class was specified to run");
+        }
+        
+        long ttl = 20;
+        String ttlString = System.getProperty("storm.local.sleeptime", "20");
+        try {
+            ttl = Long.valueOf(ttlString);
+        } catch (NumberFormatException e) {
+            LOG.warn("could not parse the sleep time defaulting to {} seconds", ttl);
+        }
+        
+        withLocalModeOverride(() -> {
+            String klass = args[0];
+            String [] newArgs = Arrays.copyOfRange(args, 1, args.length); 
+            Class<?> c = Class.forName(klass);
+            Method main = c.getDeclaredMethod("main", String[].class);
+            
+            LOG.info("\n\n\t\tRUNNING {} with args {}\n\n", main, Arrays.toString(newArgs));
+            main.invoke(null, (Object)newArgs);
+            return (Void)null;
+        }, ttl);
+        
+        //Sometimes external things used with testing don't shut down all the way
+        System.exit(0);
     }
 }

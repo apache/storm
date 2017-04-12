@@ -18,8 +18,9 @@
 package org.apache.storm.perf;
 
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.CountBolt;
 import org.apache.storm.perf.bolt.SplitSentenceBolt;
@@ -28,9 +29,6 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-
-
-import java.util.Map;
 
 /***
  * This topo helps measure speed of word count.
@@ -54,7 +52,7 @@ public class FileReadWordCountTopo {
     public static final int DEFAULT_COUNT_BOLT_NUM = 2;
 
 
-    public static StormTopology getTopology(Map config) {
+    public static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int spBoltNum = Helper.getInt(config, SPLIT_NUM, DEFAULT_SPLIT_BOLT_NUM);
@@ -70,27 +68,19 @@ public class FileReadWordCountTopo {
     }
 
     public static void main(String[] args) throws Exception {
-        if(args.length <= 0) {
-            // For IDE based profiling ... submit topology to local cluster
-            Config conf = new Config();
-            conf.put(INPUT_FILE, "resources/randomwords.txt");
-            LocalCluster cluster = Helper.runOnLocalCluster(TOPOLOGY_NAME, getTopology(conf));
-
-            Helper.setupShutdownHook(cluster, TOPOLOGY_NAME);
-            while (true) {//  run indefinitely till Ctrl-C
-                Thread.sleep(20_000_000);
-            }
-        } else {
-            //  Submit to Storm cluster
-            if (args.length !=2) {
-                System.err.println("args: runDurationSec  confFile");
-                return;
-            }
-            Integer durationSec = Integer.parseInt(args[0]);
-            Map topoConf = Utils.findAndReadConfigFile(args[1]);
-
-            Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
-
+        int runTime = -1;
+        Config topoConf = new Config();
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
         }
+        if (args.length > 1) {
+            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
+        }
+        if (args.length > 2) {
+            System.err.println("args: [runDurationSec]  [optionalConfFile]");
+            return;
+        }
+        //  Submit topology to storm cluster
+        Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 }

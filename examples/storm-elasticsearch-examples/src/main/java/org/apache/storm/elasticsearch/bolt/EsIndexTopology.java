@@ -17,9 +17,16 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsConstants;
+import org.apache.storm.elasticsearch.common.EsTestUtil;
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -27,14 +34,6 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsConstants;
-import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
-
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class EsIndexTopology {
 
@@ -54,12 +53,7 @@ public class EsIndexTopology {
 
         EsTestUtil.startEsNode();
         EsTestUtil.waitForSeconds(5);
-
-        try (LocalCluster cluster = new LocalCluster();
-            LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());) {
-            EsTestUtil.waitForSeconds(20);
-        }
-        System.exit(0);
+        StormSubmitter.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
     }
 
     public static class UserDataSpout extends BaseRichSpout {

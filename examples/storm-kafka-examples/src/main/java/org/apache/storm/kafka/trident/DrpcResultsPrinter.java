@@ -18,16 +18,15 @@
 
 package org.apache.storm.kafka.trident;
 
-import org.apache.storm.LocalDRPC;
-import org.apache.storm.generated.DistributedRPC;
-import org.apache.thrift.transport.TTransportException;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.DRPCClient;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+
+import org.apache.storm.generated.DistributedRPC;
+import org.apache.storm.utils.DRPCClient;
+import org.apache.storm.utils.Utils;
+import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DrpcResultsPrinter {
     private static final Logger LOG = LoggerFactory.getLogger(DrpcResultsPrinter.class);
@@ -36,13 +35,6 @@ public class DrpcResultsPrinter {
 
     public DrpcResultsPrinter(DistributedRPC.Iface drpcClient) {
         this.drpcClient = drpcClient;
-    }
-
-    /**
-     * @return local DRPC client running on the same JVML
-     */
-    public static DrpcResultsPrinter localClient() {
-        return new DrpcResultsPrinter(new LocalDRPC());
     }
 
     /**

@@ -17,9 +17,9 @@
  */
 package org.apache.storm.starter;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -32,9 +32,6 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-
-import java.util.Map;
 
 public class ResourceAwareExampleTopology {
   public static class ExclamationBolt extends BaseRichBolt {
@@ -90,17 +87,12 @@ public class ResourceAwareExampleTopology {
     // Set strategy to schedule topology. If not specified, default to org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy
     conf.setTopologyStrategy(org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class);
 
+    String topoName = "test";
     if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
-
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
+        topoName = args[0];
     }
-    else {
+    conf.setNumWorkers(3);
 
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-        Utils.sleep(10000);
-      }
-    }
+    StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
   }
 }

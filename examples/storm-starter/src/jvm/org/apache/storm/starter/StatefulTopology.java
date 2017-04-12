@@ -17,9 +17,9 @@
  */
 package org.apache.storm.starter;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.state.KeyValueState;
@@ -33,11 +33,8 @@ import org.apache.storm.topology.base.BaseStatefulBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 /**
  * An example topology that demonstrates the use of {@link org.apache.storm.topology.IStatefulBolt}
@@ -129,15 +126,11 @@ public class StatefulTopology {
         builder.setBolt("total", new StatefulSumBolt("total"), 1).shuffleGrouping("printer");
         Config conf = new Config();
         conf.setDebug(false);
-
+        String topoName = "test";
         if (args != null && args.length > 0) {
-            conf.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topology = cluster.submitTopology("test", conf, builder.createTopology());) {
-                Utils.sleep(40000);
-            }
+            topoName = args[0];
         }
+        conf.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
     }
 }

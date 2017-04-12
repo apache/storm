@@ -17,26 +17,26 @@
  */
 package org.apache.storm.hdfs.trident;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.hdfs.common.rotation.MoveFileAction;
-import org.apache.storm.hdfs.trident.format.*;
+import org.apache.storm.hdfs.trident.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.trident.format.DefaultSequenceFormat;
+import org.apache.storm.hdfs.trident.format.FileNameFormat;
 import org.apache.storm.hdfs.trident.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.trident.rotation.FileSizeRotationPolicy;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 import org.yaml.snakeyaml.Yaml;
-
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.Map;
 
 public class TridentSequenceTopology {
 
@@ -82,17 +82,15 @@ public class TridentSequenceTopology {
         Map<String, Object> yamlConf = (Map<String, Object>) yaml.load(in);
         in.close();
         conf.put("hdfs.config", yamlConf);
-
-        if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));) {
-                Thread.sleep(120 * 1000);
-            }
-        } else if(args.length == 3) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0]));
-        } else{
-            System.out.println("Usage: TridentSequenceTopology [hdfs url] [hdfs yaml config file] <topology name>");
+        String topoName = "wordCounter";
+        if (args.length == 3) {
+            topoName = args[2];
+        } else if (args.length > 3) {
+            System.out.println("Usage: TridentSequenceTopology <hdfs_config_yaml> [<topology name>]");
+            return;
         }
+
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopology(topoName, conf, buildTopology(args[0]));
     }
 }

@@ -117,7 +117,7 @@ public class FastWordCountTopology {
     }
   }
 
-  public static void printMetrics(Nimbus.Client client, String name) throws Exception {
+  public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
     ClusterSummary summary = client.getClusterInfo();
     String id = null;
     for (TopologySummary ts: summary.get_topologies()) {
@@ -157,7 +157,7 @@ public class FastWordCountTopology {
     System.out.println("uptime: "+uptime+" acked: "+acked+" avgLatency: "+avgLatency+" acked/sec: "+(((double)acked)/uptime+" failed: "+failed));
   } 
 
-  public static void kill(Nimbus.Client client, String name) throws Exception {
+  public static void kill(Nimbus.Iface client, String name) throws Exception {
     KillOptions opts = new KillOptions();
     opts.set_wait_secs(0);
     client.killTopologyWithOpts(name, opts);
@@ -185,7 +185,7 @@ public class FastWordCountTopology {
 
     Map clusterConf = Utils.readStormConfig();
     clusterConf.putAll(Utils.readCommandLineOpts());
-    Nimbus.Client client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+    Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 
     //Sleep for 5 mins
     for (int i = 0; i < 10; i++) {

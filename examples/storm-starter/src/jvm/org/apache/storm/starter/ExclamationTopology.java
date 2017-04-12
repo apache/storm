@@ -71,11 +71,7 @@ public class ExclamationTopology extends ConfigurableTopology {
 
     String topologyName = "test";
 
-    if (isLocal) {
-      ttl = 10;
-    } else {
-      conf.setNumWorkers(3);
-    }
+    conf.setNumWorkers(3);
 
     if (args != null && args.length > 0) {
       topologyName = args[0];

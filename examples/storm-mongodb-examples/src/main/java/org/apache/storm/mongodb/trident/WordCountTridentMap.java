@@ -18,14 +18,13 @@
 package org.apache.storm.mongodb.trident;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.SimpleQueryFilterCreator;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.mongodb.common.mapper.SimpleMongoMapper;
-import org.apache.storm.mongodb.trident.state.*;
+import org.apache.storm.mongodb.trident.state.MongoMapState;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
@@ -76,20 +75,15 @@ public class WordCountTridentMap {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (args.length == 2) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(args[0], args[1]));
-            Thread.sleep(60 * 1000);
-            cluster.killTopology("wordCounter");
-            cluster.shutdown();
-            System.exit(0);
-        }
-        else if(args.length == 3) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[2], conf, buildTopology(args[0], args[1]));
-        } else{
+        String topoName = "wordCounter";
+        if (args.length == 3) {
+            topoName = args[2];
+        } else if (args.length > 3 || args.length < 2) {
             System.out.println("Usage: WordCountTrident <mongodb url> <mongodb collection> [topology name]");
+            return;
         }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopology(topoName, conf, buildTopology(args[0], args[1]));
     }
 
 }

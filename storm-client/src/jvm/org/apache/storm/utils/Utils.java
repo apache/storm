@@ -982,7 +982,7 @@ public class Utils {
         }
     }
 
-    public static String getTopologyId(String name, Nimbus.Client client) {
+    public static String getTopologyId(String name, Nimbus.Iface client) {
         try {
             ClusterSummary summary = client.getClusterInfo();
             for(TopologySummary s : summary.get_topologies()) {

@@ -29,15 +29,41 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class NimbusClient extends ThriftClient {
-    private Nimbus.Client _client;
+    private static volatile Nimbus.Iface _localOverrideClient = null;
+
+    public static final class LocalOverride implements AutoCloseable {
+        public LocalOverride(Nimbus.Iface client) {
+            _localOverrideClient = client;
+        }
+        
+        @Override
+        public void close() throws Exception {
+            _localOverrideClient = null;
+        }
+    }
+    
+    /**
+     * @return true of new clients will be overridden to connect to a local cluster
+     * and not the configured remote cluster.
+     */
+    public static boolean isLocalOverride() {
+        return _localOverrideClient != null;
+    }
+    
+    private Nimbus.Iface _client;
+    /**
+     * Indicates if this is a special client that is overwritten for local mode.
+     */
+    public final boolean _isLocal;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusClient.class);
 
     public interface WithNimbus {
-        public void run(Nimbus.Client client) throws Exception;
+        public void run(Nimbus.Iface client) throws Exception;
     }
 
     public static void withConfiguredClient(WithNimbus cb) throws Exception {
@@ -58,6 +84,10 @@ public class NimbusClient extends ThriftClient {
     }
 
     public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
+        Nimbus.Iface override = _localOverrideClient;
+        if (override != null) {
+            return new NimbusClient(override);
+        }
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {
             if (asUser != null && !asUser.isEmpty()) {
                 LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence."
@@ -121,19 +151,28 @@ public class NimbusClient extends ThriftClient {
     public NimbusClient(Map conf, String host, int port, Integer timeout) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
         _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
     }
 
     public NimbusClient(Map conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
         _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
     }
 
     public NimbusClient(Map conf, String host) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
         _client = new Nimbus.Client(_protocol);
+        _isLocal = false;
+    }
+    
+    private NimbusClient(Nimbus.Iface client) {
+        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null);
+        _client = client;
+        _isLocal = true;
     }
 
-    public Nimbus.Client getClient() {
+    public Nimbus.Iface getClient() {
         return _client;
     }
 }

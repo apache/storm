@@ -19,30 +19,26 @@
 package org.apache.storm.hive.trident;
 
 
-import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
-import org.apache.storm.hive.common.HiveOptions;
-
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.hooks.SubmitterHookException;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.spout.IBatchSpout;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
+import org.apache.storm.hive.common.HiveOptions;
+import org.apache.storm.hooks.SubmitterHookException;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.IBatchSpout;
 import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,31 +92,27 @@ public class TridentHiveTopology {
         String tblName = args[2];
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if(args.length == 3) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("tridentHiveTopology", conf, buildTopology(metaStoreURI, dbName, tblName,null,null));) {
-                LOG.info("waiting for 60 seconds");
-                waitForSeconds(60);
-            }
-            System.exit(0);
-        } else if(args.length == 4) {
-            try {
-                StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
-            } catch(SubmitterHookException e) {
-                LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
-            } catch (Exception e) {
-                LOG.warn("Failed to submit topology ", e);
-            }
-        } else if (args.length == 6) {
-            try {
-                StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,args[4],args[5]));
-            } catch(SubmitterHookException e) {
-                LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
-            } catch (Exception e) {
-                LOG.warn("Failed to submit topology ", e);
-            }
-        } else {
-            LOG.info("Usage: TridentHiveTopology metastoreURI dbName tableName [topologyNamey]");
+        String topoName = "tridentHiveTopology";
+        String keytab = null;
+        String principal = null;
+        
+        if (args.length > 3) {
+            topoName = args[3];
+        }
+        if (args.length == 6) {
+            keytab = args[4];
+            principal = args[5];
+        } else if (args.length != 3 && args.length != 4) {
+            LOG.info("Usage: TridentHiveTopology metastoreURI dbName tableName [topologyName] [keytab principal]");
+            return;
+        }
+        
+        try {
+            StormSubmitter.submitTopology(args[3], conf, buildTopology(metaStoreURI, dbName, tblName,null,null));
+        } catch(SubmitterHookException e) {
+            LOG.warn("Topology is submitted but invoking ISubmitterHook failed", e);
+        } catch (Exception e) {
+            LOG.warn("Failed to submit topology ", e);
         }
     }
 

@@ -96,7 +96,7 @@ public class Monitor {
         }
     }
 
-    private HashSet<String> getComponents(Nimbus.Client client, String topology) throws Exception{
+    private HashSet<String> getComponents(Nimbus.Iface client, String topology) throws Exception{
         HashSet<String> components = new HashSet<>();
         ClusterSummary clusterSummary = client.getClusterInfo();
         TopologySummary topologySummary = null;
@@ -120,7 +120,7 @@ public class Monitor {
         return components;
     }
 
-    public void metrics(Nimbus.Client client) throws Exception {
+    public void metrics(Nimbus.Iface client) throws Exception {
         if (_interval <= 0) {
             throw new IllegalArgumentException("poll interval must be positive");
         }
@@ -166,7 +166,7 @@ public class Monitor {
         } while (true);
     }
 
-    public void metrics(Nimbus.Client client, long now, MetricsState state) throws Exception {
+    public void metrics(Nimbus.Iface client, long now, MetricsState state) throws Exception {
         long totalStatted = 0;
 
         int componentParallelism = 0;

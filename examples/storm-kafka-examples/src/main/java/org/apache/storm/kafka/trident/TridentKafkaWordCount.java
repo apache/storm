@@ -77,40 +77,24 @@ public class TridentKafkaWordCount implements Serializable {
     public static void main(String[] args) throws Exception {
         final String[] zkBrokerUrl = parseUrl(args);
         final String topicName = "test";
-        Config tpConf = LocalSubmitter.defaultConfig();
+        Config tpConf = new Config();
+        tpConf.setMaxSpoutPending(20);
+        String prodTpName = "kafkaBolt";
+        String consTpName = "wordCounter";
 
-        if (args.length == 3)  { //Submit Remote
-            // Producer
-            StormSubmitter.submitTopology(args[2] + "-producer", tpConf, KafkaProducerTopology.newTopology(zkBrokerUrl[1], topicName));
-            // Consumer
-            StormSubmitter.submitTopology(args[2] + "-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(
-                    new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
-
-            // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
-            Thread.sleep(2000);
-            DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
-        } else { //Submit Local
-            final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
-            final String prodTpName = "kafkaBolt";
-            final String consTpName = "wordCounter";
-
-            try {
-                // Producer
-                localSubmitter.submit(prodTpName, tpConf, KafkaProducerTopology.newTopology(zkBrokerUrl[1], topicName));
-                // Consumer
-                localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(localSubmitter.getDrpc(),
-                        new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
-
-                // print
-                new DrpcResultsPrinter(localSubmitter.getDrpc()).printResults(60, 1, TimeUnit.SECONDS);
-            } finally {
-                // kill
-                localSubmitter.kill(prodTpName);
-                localSubmitter.kill(consTpName);
-                // shutdown
-                localSubmitter.shutdown();
-            }
+        if (args.length == 3)  {
+            prodTpName = args[2] + "-producer";
+            consTpName = args[2] + "-consumer";
         }
+        // Producer
+        StormSubmitter.submitTopology(prodTpName, tpConf, KafkaProducerTopology.newTopology(zkBrokerUrl[1], topicName));
+        // Consumer
+        StormSubmitter.submitTopology(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
+                new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
+
+        // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+        Thread.sleep(2000);
+        DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
     }
 
     private static String[] parseUrl(String[] args) {

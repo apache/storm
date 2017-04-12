@@ -57,7 +57,7 @@ public class Rebalance {
 
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
-            public void run(Nimbus.Client nimbus) throws Exception {
+            public void run(Nimbus.Iface nimbus) throws Exception {
                 nimbus.rebalance(name, rebalanceOptions);
                 LOG.info("Topology {} is rebalancing", name);
             }

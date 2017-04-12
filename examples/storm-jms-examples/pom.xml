@@ -60,7 +60,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-server</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <!-- keep storm out of the jar-with-dependencies -->
             <scope>${provided.scope}</scope>
@@ -111,39 +111,6 @@
                     </execution>
                 </executions>
 
-            </plugin>
-
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>exec-maven-plugin</artifactId>
-                <version>1.2.1</version>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>exec</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <executable>java</executable>
-                    <includeProjectDependencies>true</includeProjectDependencies>
-                    <includePluginDependencies>true</includePluginDependencies>
-                    <mainClass>org.apache.storm.jms.example.ExampleJmsTopology</mainClass>
-                    <systemProperties>
-                        <systemProperty>
-                            <key>log4j.configuration</key>
-                            <value>file:./src/main/resources/log4j.properties</value>
-                        </systemProperty>
-                    </systemProperties>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.apache.storm</groupId>
-                        <artifactId>storm-server</artifactId>
-                        <version>${project.version}</version>
-                        <type>jar</type>
-                    </dependency>
-                </dependencies>
             </plugin>
         </plugins>
     </build>

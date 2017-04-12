@@ -134,7 +134,7 @@ public class HdfsSpoutTopology {
     // 4 - submit topology, wait for a few min and terminate it
     Map clusterConf = Utils.readStormConfig();
     StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, builder.createTopology());
-    Nimbus.Client client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+    Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 
     // 5 - Print metrics every 30 sec, kill topology after 20 min
     for (int i = 0; i < 40; i++) {
@@ -144,13 +144,13 @@ public class HdfsSpoutTopology {
     kill(client, topologyName);
   } // main
 
-  private static void kill(Nimbus.Client client, String topologyName) throws Exception {
+  private static void kill(Nimbus.Iface client, String topologyName) throws Exception {
     KillOptions opts = new KillOptions();
     opts.set_wait_secs(0);
     client.killTopologyWithOpts(topologyName, opts);
   }
 
-  static void printMetrics(Nimbus.Client client, String name) throws Exception {
+  static void printMetrics(Nimbus.Iface client, String name) throws Exception {
     ClusterSummary summary = client.getClusterInfo();
     String id = null;
     for (TopologySummary ts: summary.get_topologies()) {

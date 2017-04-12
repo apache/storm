@@ -44,16 +44,9 @@
     </modules>
 
     <dependencies>
-        <!--
-        Since Flux uses LocalCluster to provide the feature: running topology locally...
-        User should notice that configured topology will be run with 'storm-client' dependencies
-        when adding Flux into topology dependency.
-        If user want to run topology with 'storm-server' dependencies, user can just include
-        'storm-server' as 'compile' scope, and exclude 'storm-client' from 'storm-server'.
-        -->
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-server</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <scope>${provided.scope}</scope>
         </dependency>

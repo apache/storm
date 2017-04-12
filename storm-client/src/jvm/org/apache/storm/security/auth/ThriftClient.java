@@ -56,7 +56,7 @@ public class ThriftClient implements AutoCloseable {
             port = type.getPort(storm_conf);
         }
 
-        if (port<=0) {
+        if (port<=0 && !type.isFake()) {
             throw new IllegalArgumentException("invalid port: "+port);
         }          
 
@@ -66,7 +66,9 @@ public class ThriftClient implements AutoCloseable {
         _conf = storm_conf;
         _type = type;
         _asUser = asUser;
-        reconnect();
+        if (!type.isFake()) {
+            reconnect();
+        }
     }
 
     public synchronized TTransport transport() {
