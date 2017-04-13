@@ -125,16 +125,19 @@ public class TransactionalState {
                 TransactionalState.createNode(_curator, path, ser, _zkAcls,
                         CreateMode.PERSISTENT);
             }
-            LOG.debug("Set [path = {}] => [data = {}]", path, asString(ser));
+        } catch (KeeperException.NodeExistsException nne){
+            LOG.warn("Node {} already created.", path);
         } catch(Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
     
     public void delete(String path) {
         path = "/" + path;
         try {
             _curator.delete().forPath(path);
+        } catch (KeeperException.NoNodeException nne){
+           LOG.warn("Path {} already deleted.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
