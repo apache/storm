@@ -123,6 +123,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         emitted = new HashSet<>();
         waitingToEmit = Collections.emptyListIterator();
 
+        //prepare for kerberos
+        String pathToJaas = (String) kafkaSpoutConfig.getKafkaProps().get(KafkaSpoutConfig.Consumer.KAFKASPOUT_JAASCONF_PATH);
+        KafkaSpoutSecurity.PrepareKerberos(pathToJaas);
+
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
     }
 
