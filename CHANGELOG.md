@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2450: Write resources into correct local director
