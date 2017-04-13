@@ -62,7 +62,7 @@ class WindowedProcessorBolt extends BaseWindowedBolt implements StreamBolt {
     public void execute(TupleWindow inputWindow) {
         LOG.trace("Window triggered at {}, inputWindow {}", new Date(), inputWindow);
         if (delegate.isEventTimestamp()) {
-            delegate.setEventTimestamp(inputWindow.getTimestamp());
+            delegate.setEventTimestamp(inputWindow.getEndTimestamp());
         }
         for (Tuple tuple : inputWindow.get()) {
             Pair<Object, String> valueAndStream = delegate.getValueAndStream(tuple);

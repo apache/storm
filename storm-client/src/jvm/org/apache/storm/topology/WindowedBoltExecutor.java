@@ -71,6 +71,7 @@ public class WindowedBoltExecutor implements IRichBolt {
     private transient String lateTupleStream;
     private transient TriggerPolicy<Tuple> triggerPolicy;
     private transient EvictionPolicy<Tuple> evictionPolicy;
+    private transient Duration windowLengthDuration;
     // package level for unit tests
     transient WaterMarkEventGenerator<Tuple> waterMarkEventGenerator;
 
@@ -146,7 +147,6 @@ public class WindowedBoltExecutor implements IRichBolt {
     private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener, Map stormConf,
                                                    TopologyContext context) {
         WindowManager<Tuple> manager = new WindowManager<>(lifecycleListener);
-        Duration windowLengthDuration = null;
         Count windowLengthCount = null;
         Duration slidingIntervalDuration = null;
         Count slidingIntervalCount = null;
@@ -329,7 +329,15 @@ public class WindowedBoltExecutor implements IRichBolt {
             @Override
             public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
                 windowedOutputCollector.setContext(tuples);
-                bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, timestamp));
+                bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+            }
+
+            private Long getWindowStartTs(Long endTs) {
+                Long res = null;
+                if (endTs != null && windowLengthDuration != null) {
+                    res = endTs - windowLengthDuration.value;
+                }
+                return res;
             }
         };
     }

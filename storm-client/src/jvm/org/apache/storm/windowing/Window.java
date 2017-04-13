@@ -47,9 +47,17 @@ public interface Window<T> {
     List<T> getExpired();
 
     /**
-     * If processing based on event time, returns the watermark time otherwise the current timestamp.
+     * If processing based on event time, returns the window end time based on watermark otherwise
+     * returns the window end time based on processing time.
      *
-     * @return the window timestamp
+     * @return the window end timestamp
      */
-    Long getTimestamp();
+    Long getEndTimestamp();
+
+    /**
+     * Returns the window start timestamp. Will return null if the window length is not based on time duration.
+     *
+     * @return the window start timestamp or null if the window length is not time based
+     */
+    Long getStartTimestamp();
 }
