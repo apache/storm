@@ -25,21 +25,20 @@ use it as a maven dependency:
 
 ### For normal Bolt
 
-Storm-redis provides basic Bolt implementations, ```RedisLookupBolt``` and ```RedisStoreBolt```, and ```RedisFilterBolt```.
+Storm-redis provides basic Bolt implementations, `RedisLookupBolt` and `RedisStoreBolt`, and `RedisFilterBolt`.
 
-As name represents its usage, ```RedisLookupBolt``` retrieves value from Redis using key, and ```RedisStoreBolt``` stores key / value to Redis, and ```RedisFilterBolt``` filters out tuple which key or field doesn't exist on Redis.
+As name represents its usage, `RedisLookupBolt` retrieves value from Redis using key, and `RedisStoreBolt` stores key / value to Redis, and `RedisFilterBolt` filters out tuple which key or field doesn't exist on Redis.
 
-One tuple will be matched to one key / value pair, and you can define match pattern to ```TupleMapper```.
+One tuple will be matched to one key / value pair, and you can define match pattern to `TupleMapper`.
 
-You can also choose data type from ```RedisDataTypeDescription``` to use. Please refer ```RedisDataTypeDescription.RedisDataType``` to see what data types are supported. In some data types (hash and sorted set, and set if only RedisFilterBolt), it requires additional key and converted key from tuple becomes element.
+You can also choose data type from `RedisDataTypeDescription` to use. Please refer `RedisDataTypeDescription.RedisDataType` to see what data types are supported. In some data types (hash and sorted set, and set if only RedisFilterBolt), it requires additional key and converted key from tuple becomes element.
 
-These interfaces are combined with ```RedisLookupMapper``` and ```RedisStoreMapper``` and ```RedisFilterMapper``` which fit ```RedisLookupBolt``` and ```RedisStoreBolt```, and ```RedisFilterBolt``` respectively.
+These interfaces are combined with `RedisLookupMapper` and `RedisStoreMapper` and `RedisFilterMapper` which fit `RedisLookupBolt` and `RedisStoreBolt`, and `RedisFilterBolt` respectively.
 (When you want to implement RedisFilterMapper, be sure to set declareOutputFields() to declare same fields to input stream, since FilterBolt forwards input tuples when they exist on Redis.)   
 
 #### RedisLookupBolt example
 
 ```java
-
 class WordCountRedisLookupMapper implements RedisLookupMapper {
     private RedisDataTypeDescription description;
     private final String hashKey = "wordCount";
@@ -77,11 +76,9 @@ class WordCountRedisLookupMapper implements RedisLookupMapper {
         return null;
     }
 }
-
 ```
 
 ```java
-
 JedisPoolConfig poolConfig = new JedisPoolConfig.Builder()
         .setHost(host).setPort(port).build();
 RedisLookupMapper lookupMapper = new WordCountRedisLookupMapper();
@@ -91,7 +88,6 @@ RedisLookupBolt lookupBolt = new RedisLookupBolt(poolConfig, lookupMapper);
 #### RedisFilterBolt example
 
 ```java
-
 class BlacklistWordFilterMapper implements RedisFilterMapper {
     private RedisDataTypeDescription description;
     private final String setKey = "blacklist";
@@ -121,11 +117,9 @@ class BlacklistWordFilterMapper implements RedisFilterMapper {
         return null;
     }
 }
-
 ```
 
 ```java
-
 JedisPoolConfig poolConfig = new JedisPoolConfig.Builder()
         .setHost(host).setPort(port).build();
 RedisFilterMapper filterMapper = new BlacklistWordFilterMapper();
@@ -135,7 +129,6 @@ RedisFilterBolt filterBolt = new RedisFilterBolt(poolConfig, filterMapper);
 #### RedisStoreBolt example
 
 ```java
-
 class WordCountStoreMapper implements RedisStoreMapper {
     private RedisDataTypeDescription description;
     private final String hashKey = "wordCount";
@@ -163,7 +156,6 @@ class WordCountStoreMapper implements RedisStoreMapper {
 ```
 
 ```java
-
 JedisPoolConfig poolConfig = new JedisPoolConfig.Builder()
                 .setHost(host).setPort(port).build();
 RedisStoreMapper storeMapper = new WordCountStoreMapper();
@@ -175,7 +167,6 @@ RedisStoreBolt storeBolt = new RedisStoreBolt(poolConfig, storeMapper);
 If your scenario doesn't fit ```RedisStoreBolt``` and ```RedisLookupBolt``` and ```RedisFilterBolt```, storm-redis also provides ```AbstractRedisBolt``` to let you extend and apply your business logic.
 
 ```java
-
     public static class LookupWordTotalCountBolt extends AbstractRedisBolt {
         private static final Logger LOG = LoggerFactory.getLogger(LookupWordTotalCountBolt.class);
         private static final Random RANDOM = new Random();
@@ -221,7 +212,6 @@ If your scenario doesn't fit ```RedisStoreBolt``` and ```RedisLookupBolt``` and 
             declarer.declare(new Fields("wordName", "count"));
         }
     }
-
 ```
 
 ### Trident State usage
@@ -231,6 +221,7 @@ If your scenario doesn't fit ```RedisStoreBolt``` and ```RedisLookupBolt``` and 
 2. RedisClusterState and RedisClusterMapState, which provide JedisCluster interface, just for redis cluster.
 
 RedisState
+
 ```java
         JedisPoolConfig poolConfig = new JedisPoolConfig.Builder()
                                         .setHost(redisHost).setPort(redisPort)
@@ -254,6 +245,7 @@ RedisState
 ```
 
 RedisClusterState
+
 ```java
         Set<InetSocketAddress> nodes = new HashSet<InetSocketAddress>();
         for (String hostPort : redisHostPort.split(",")) {
