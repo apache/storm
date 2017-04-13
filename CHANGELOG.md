@@ -1,5 +1,4 @@
 ﻿## 2.0.0
- * STORM-2471: add new metric for thread count per worker
  * STORM-2463: fix DRPCTest.testDequeueAfterTimeout test failure 
  * STORM-2447: add in storm local to avoid having server on worker classpath
  * STORM-2458: Kafka Spout should allow hooking up custom logic when retries have exhanusted
