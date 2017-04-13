@@ -22,6 +22,7 @@ import java.lang.management.ManagementFactory;
 import java.lang.management.MemoryMXBean;
 import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
+import java.lang.management.ThreadMXBean;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -99,20 +100,11 @@ public class SystemBolt implements IBolt {
         int bucketSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
         final RuntimeMXBean jvmRT = ManagementFactory.getRuntimeMXBean();
+        context.registerMetric("uptimeSecs", () -> jvmRT.getUptime()/1000.0, bucketSize);
+        context.registerMetric("startTimeSecs", () -> jvmRT.getStartTime()/1000.0, bucketSize);
 
-        context.registerMetric("uptimeSecs", new IMetric() {
-            @Override
-            public Object getValueAndReset() {
-                return jvmRT.getUptime()/1000.0;
-            }
-        }, bucketSize);
-
-        context.registerMetric("startTimeSecs", new IMetric() {
-            @Override
-            public Object getValueAndReset() {
-                return jvmRT.getStartTime()/1000.0;
-            }
-        }, bucketSize);
+        final ThreadMXBean threadBean = ManagementFactory.getThreadMXBean();
+        context.registerMetric("threadCount", threadBean::getThreadCount, bucketSize);
 
         context.registerMetric("newWorkerEvent", new IMetric() {
             boolean doEvent = true;
