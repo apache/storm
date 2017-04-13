@@ -1,4 +1,5 @@
-## 0.10.3
+﻿## 0.10.3
+ * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
 
 ## 0.10.2
