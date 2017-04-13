@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2471: Add metric for thread count
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2469: fix integration-test dependencies issue
  * STORM-2455: Expose the window start and end timestamp in TupleWindow
