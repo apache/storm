@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2455: Expose the window start and end timestamp in TupleWindow
  * STORM-2435: Logging levels and consistency with console.log etc
  * STORM-2465: modify storm-redis's READEME.md and update storm-redis.md
  * STORM-2464: update storm-mongodb.md
