@@ -40,6 +40,7 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.ObjectReader;
 
 import java.util.List;
 import java.util.Map;
@@ -58,7 +59,7 @@ import static org.apache.storm.rocketmq.RocketMQUtils.getInteger;
 public class RocketMQSpout implements IRichSpout {
     // TODO add metrics
 
-    private MQPushConsumer consumer;
+    private static MQPushConsumer consumer;
     private SpoutOutputCollector collector;
     private BlockingQueue<MessageSet> queue;
 
@@ -74,42 +75,48 @@ public class RocketMQSpout implements IRichSpout {
         Validate.notEmpty(properties, "Consumer properties can not be empty");
         boolean ordered = getBoolean(properties, RocketMQConfig.CONSUMER_MESSAGES_ORDERLY, false);
 
-        int queueSize = getInteger(properties, SpoutConfig.QUEUE_SIZE, Integer.parseInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING).toString()));
+        int queueSize = getInteger(properties, SpoutConfig.QUEUE_SIZE, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING)));
         queue = new LinkedBlockingQueue<>(queueSize);
 
-        consumer = new DefaultMQPushConsumer();
-        RocketMQConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer, context);
+        // Since RocketMQ Consumer is thread-safe, RocketMQSpout uses a single
+        // consumer instance across threads to improve the performance.
+        synchronized (RocketMQSpout.class) {
+            if (consumer == null) {
+                consumer = new DefaultMQPushConsumer();
+                RocketMQConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
 
-        if (ordered) {
-            consumer.registerMessageListener(new MessageListenerOrderly() {
-                @Override
-                public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs,
-                                                           ConsumeOrderlyContext context) {
-                    if (process(msgs)) {
-                        return ConsumeOrderlyStatus.SUCCESS;
-                    } else {
-                        return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
-                    }
+                if (ordered) {
+                    consumer.registerMessageListener(new MessageListenerOrderly() {
+                        @Override
+                        public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs,
+                                                                   ConsumeOrderlyContext context) {
+                            if (process(msgs)) {
+                                return ConsumeOrderlyStatus.SUCCESS;
+                            } else {
+                                return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+                            }
+                        }
+                    });
+                } else {
+                    consumer.registerMessageListener(new MessageListenerConcurrently() {
+                        @Override
+                        public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+                                                                        ConsumeConcurrentlyContext context) {
+                            if (process(msgs)) {
+                                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                            } else {
+                                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                            }
+                        }
+                    });
                 }
-            });
-        } else {
-            consumer.registerMessageListener(new MessageListenerConcurrently() {
-                @Override
-                public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                                                                ConsumeConcurrentlyContext context) {
-                    if (process(msgs)) {
-                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                    } else {
-                        return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                    }
-                }
-            });
-        }
 
-        try {
-            consumer.start();
-        } catch (MQClientException e) {
-            throw new RuntimeException(e);
+                try {
+                    consumer.start();
+                } catch (MQClientException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         int maxRetry = getInteger(properties, SpoutConfig.MESSAGES_MAX_RETRY, SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY);
@@ -162,7 +169,12 @@ public class RocketMQSpout implements IRichSpout {
 
     @Override
     public void close() {
-        consumer.shutdown();
+        synchronized (RocketMQSpout.class) {
+            if (consumer != null) {
+                consumer.shutdown();
+                consumer = null;
+            }
+        }
     }
 
     @Override

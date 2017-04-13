@@ -41,7 +41,7 @@ import java.util.Properties;
 public class RocketMQBolt implements IRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(RocketMQBolt.class);
 
-    private MQProducer producer;
+    private static MQProducer producer;
     private OutputCollector collector;
     private boolean async = true;
     private TopicSelector selector;
@@ -52,14 +52,21 @@ public class RocketMQBolt implements IRichBolt {
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         Validate.notEmpty(properties, "Producer properties can not be empty");
 
-        producer = new DefaultMQProducer();
-        RocketMQConfig.buildProducerConfigs(properties, (DefaultMQProducer)producer, context);
+        // Since RocketMQ Producer is thread-safe, RocketMQBolt uses a single
+        // producer instance across threads to improve the performance.
+        synchronized (RocketMQBolt.class) {
+            if (producer == null) {
+                producer = new DefaultMQProducer();
+                RocketMQConfig.buildProducerConfigs(properties, (DefaultMQProducer)producer);
 
-        try {
-            producer.start();
-        } catch (MQClientException e) {
-            throw new RuntimeException(e);
+                try {
+                    producer.start();
+                } catch (MQClientException e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
+
         this.collector = collector;
 
         Validate.notNull(selector, "TopicSelector can not be null");
@@ -143,6 +150,11 @@ public class RocketMQBolt implements IRichBolt {
 
     @Override
     public void cleanup() {
-        producer.shutdown();
+        synchronized (RocketMQBolt.class) {
+            if (producer != null) {
+                producer.shutdown();
+                producer = null;
+            }
+        }
     }
 }

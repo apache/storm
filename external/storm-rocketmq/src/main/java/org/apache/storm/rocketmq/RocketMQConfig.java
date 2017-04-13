@@ -24,7 +24,6 @@ import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
-import org.apache.storm.task.TopologyContext;
 
 import java.util.Properties;
 import java.util.UUID;
@@ -88,17 +87,12 @@ public class RocketMQConfig {
     public static final int DEFAULT_CONSUMER_MAX_THREADS = 64;
 
 
-    public static void buildProducerConfigs(Properties props, DefaultMQProducer producer, TopologyContext context) {
-        buildCommonConfigs(props, producer, context);
+    public static void buildProducerConfigs(Properties props, DefaultMQProducer producer) {
+        buildCommonConfigs(props, producer);
 
         // According to the RocketMQ official docs, "only one instance is allowed per producer group"
-        // So, we use taskID/UUID as the producer group by default
-        String defaultGroup;
-        if (context != null) {
-            defaultGroup = String.valueOf(context.getThisTaskId());
-        } else {
-            defaultGroup = UUID.randomUUID().toString();
-        }
+        // So, we use UUID as the producer group by default, to allow many producer instances for one topic
+        String defaultGroup = UUID.randomUUID().toString();
         producer.setProducerGroup(props.getProperty(PRODUCER_GROUP, defaultGroup));
 
         producer.setRetryTimesWhenSendFailed(getInteger(props,
@@ -109,8 +103,8 @@ public class RocketMQConfig {
                 PRODUCER_TIMEOUT, DEFAULT_PRODUCER_TIMEOUT));
     }
 
-    public static void buildConsumerConfigs(Properties props, DefaultMQPushConsumer consumer, TopologyContext context) {
-        buildCommonConfigs(props, consumer, context);
+    public static void buildConsumerConfigs(Properties props, DefaultMQPushConsumer consumer) {
+        buildCommonConfigs(props, consumer);
 
         String group = props.getProperty(CONSUMER_GROUP);
         Validate.notEmpty(group);
@@ -147,19 +141,15 @@ public class RocketMQConfig {
         }
     }
 
-    public static void buildCommonConfigs(Properties props, ClientConfig client, TopologyContext context) {
+    public static void buildCommonConfigs(Properties props, ClientConfig client) {
         String namesvr = props.getProperty(NAME_SERVER_ADDR);
         Validate.notEmpty(namesvr);
         client.setNamesrvAddr(namesvr);
 
         client.setClientIP(props.getProperty(CLIENT_IP, DEFAULT_CLIENT_IP));
-        // use taskID/UUID for client name by default
-        String defaultClientName;
-        if (context != null) {
-            defaultClientName = String.valueOf(context.getThisTaskId());
-        } else {
-            defaultClientName = UUID.randomUUID().toString();
-        }
+        // According to the RocketMQ official docs, "only one instance is allowed per machine"
+        // So, we use UUID as the client name by default, to allow RocketMQ spout/bolt instances in one machine.
+        String defaultClientName = UUID.randomUUID().toString();
         client.setInstanceName(props.getProperty(CLIENT_NAME, defaultClientName));
 
         client.setClientCallbackExecutorThreads(getInteger(props,

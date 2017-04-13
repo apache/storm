@@ -73,7 +73,7 @@ public class RocketMQState implements State {
         Validate.notEmpty(options.properties, "Producer properties can not be empty");
 
         producer = new DefaultMQProducer();
-        RocketMQConfig.buildProducerConfigs(options.properties, (DefaultMQProducer)producer, null);
+        RocketMQConfig.buildProducerConfigs(options.properties, (DefaultMQProducer)producer);
 
         try {
             producer.start();
