@@ -31,6 +31,7 @@ describe in detail the two key components of the Storm Solr integration, the `So
 ```
 
 ## Trident Topology With Fields Mapper
+
 ```java
     new SolrStateFactory(solrConfig, solrMapper);
     
@@ -73,7 +74,8 @@ be a String with the contents in JSON format, or a Java object that will be seri
  
 Code snippet illustrating how to create a `SolrJsonMapper` object to update the `gettingstarted` Solr collection with JSON content 
 declared in the tuple field with name "JSON"
-``` java
+
+```java
     SolrMapper solrMapper = new SolrJsonMapper.Builder("gettingstarted", "JSON").build();
 ```
 
@@ -96,7 +98,7 @@ Code snippet illustrating how to create a `SolrFieldsMapper` object to update th
 field separates each value with the token % instead of the default | . To use the default token you can ommit the call to the method
 `setMultiValueFieldToken`.
 
-``` java
+```java
     new SolrFieldsMapper.Builder(
             new RestJsonSchemaBuilder("localhost", "8983", "gettingstarted"), "gettingstarted")
                 .setMultiValueFieldToken("%").build();
@@ -115,8 +117,8 @@ and then generate an uber jar with all the dependencies.
 
  Add the following to `REPO_HOME/storm/external/storm-solr/pom.xml`
  
- ```
- <plugin>
+```xml
+<plugin>
      <groupId>org.apache.maven.plugins</groupId>
      <artifactId>maven-shade-plugin</artifactId>
      <version>2.4.1</version>
@@ -140,11 +142,15 @@ and then generate an uber jar with all the dependencies.
 
 create the uber jar by running the commmand:
 
-`mvn package -f REPO_HOME/storm/external/storm-solr/pom.xml`
+```
+mvn package -f REPO_HOME/storm/external/storm-solr/pom.xml
+```
 
 This will create the uber jar file with the name and location matching the following pattern:
  
-`REPO_HOME/storm/external/storm/target/storm-solr-0.11.0-SNAPSHOT.jar`
+```
+REPO_HOME/storm/external/storm/target/storm-solr-0.11.0-SNAPSHOT.jar
+```
 
 ## Run Examples
 Copy the file `REPO_HOME/storm/external/storm-solr/target/storm-solr-0.11.0-SNAPSHOT.jar` to `STORM_HOME/extlib`
