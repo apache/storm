@@ -17,38 +17,41 @@
  */
 package org.apache.storm.nimbus;
 
+import java.io.Serializable;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.Map;
-
 public class NimbusInfo implements Serializable {
     private static final long serialVersionUID = 2161446155116099333L;
     private static final Logger LOG = LoggerFactory.getLogger(NimbusInfo.class);
-    private static final String DELIM = ":";
 
     private String host;
     private int port;
     private boolean isLeader;
 
     public NimbusInfo(String host, int port, boolean isLeader) {
+        if (host == null) throw new NullPointerException("Host cannot be null");
+        if (port <= 0) throw new IllegalArgumentException("Port must be positive");
         this.host = host;
         this.port = port;
         this.isLeader = isLeader;
     }
 
+    private static final Pattern HOST_PORT_PATTERN = Pattern.compile("^(.*):([0-9]+)$");
     public static NimbusInfo parse(String nimbusInfo) {
-        String[] hostAndPort = nimbusInfo.split(DELIM);
-        if(hostAndPort != null && hostAndPort.length == 2) {
-            return new NimbusInfo(hostAndPort[0], Integer.parseInt(hostAndPort[1]), false);
-        } else {
+        Matcher m = HOST_PORT_PATTERN.matcher(nimbusInfo);
+        if (!m.matches()) {
             throw new RuntimeException("nimbusInfo should have format of host:port, invalid string " + nimbusInfo);
         }
+        return new NimbusInfo(m.group(1), Integer.valueOf(m.group(2)), false);
     }
 
     public static NimbusInfo fromConf(Map<String, Object> conf) {
@@ -70,7 +73,7 @@ public class NimbusInfo implements Serializable {
     }
 
     public String toHostPortString() {
-        return String.format("%s%s%s",host,DELIM,port);
+        return String.format("%s:%s",host,port);
     }
 
     public boolean isLeader() {
