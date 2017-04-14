@@ -233,6 +233,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2315: New kafka spout can't commit offset when ack is disabled
  * STORM-2467: Use explicit charset when decoding from array backed buffer
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
