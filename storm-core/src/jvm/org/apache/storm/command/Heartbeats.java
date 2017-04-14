@@ -17,8 +17,8 @@
  */
 package org.apache.storm.command;
 
-import com.google.common.base.Joiner;
-import org.apache.storm.utils.ServerConfigUtils;
+import java.util.Map;
+
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.IStateStorage;
@@ -29,7 +29,7 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+import com.google.common.base.Joiner;
 
 public class Heartbeats {
     private static final Logger LOG = LoggerFactory.getLogger(Heartbeats.class);
@@ -42,7 +42,7 @@ public class Heartbeats {
         String command = args[0];
         String path = args[1];
 
-        Map<String, Object> conf = ServerConfigUtils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         IStateStorage cluster = ClusterUtils.mkStateStorage(conf, conf, null, new ClusterStateContext());
 
         LOG.info("Command: [{}]", command);

@@ -17,15 +17,15 @@
  */
 package org.apache.storm.command;
 
-import org.apache.storm.healthcheck.HealthChecker;
-import org.apache.storm.utils.ServerConfigUtils;
-
 import java.util.Map;
+
+import org.apache.storm.healthcheck.HealthChecker;
+import org.apache.storm.utils.Utils;
 
 public class HealthCheck {
 
     public static void main(String[] args) {
-        Map conf = ServerConfigUtils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         System.exit(HealthChecker.healthCheck(conf));
     }
 

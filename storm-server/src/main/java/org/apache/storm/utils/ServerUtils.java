@@ -25,6 +25,7 @@ import org.apache.commons.exec.DefaultExecutor;
 import org.apache.commons.exec.ExecuteException;
 import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
+import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
@@ -143,7 +144,7 @@ public class ServerUtils {
         BlobStore store = (BlobStore) ReflectionUtils.newInstance(type);
         HashMap nconf = new HashMap(conf);
         // only enable cleanup of blobstore on nimbus
-        nconf.put(DaemonConfig.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE);
+        nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE);
 
         if(store != null) {
             // store can be null during testing when mocking utils.

@@ -35,7 +35,6 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -117,7 +116,7 @@ public class FileBlobStoreImpl {
         LOG.info("Creating new blob store based in {}", path);
         fullPath = path;
         fullPath.mkdirs();
-        Object shouldCleanup = conf.get(DaemonConfig.BLOBSTORE_CLEANUP_ENABLE);
+        Object shouldCleanup = conf.get(Config.BLOBSTORE_CLEANUP_ENABLE);
         if (ObjectReader.getBoolean(shouldCleanup, false)) {
             LOG.debug("Starting File blobstore cleaner");
             cleanup = new TimerTask() {

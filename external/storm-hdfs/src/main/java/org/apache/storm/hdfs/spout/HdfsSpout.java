@@ -364,7 +364,8 @@ public class HdfsSpout extends BaseRichSpout {
     inflight.put(id, tuple);
   }
 
-  public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+  @SuppressWarnings("deprecation")
+public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
     LOG.info("Opening HDFS Spout");
     this.conf = conf;
     this.commitTimer = new Timer();
@@ -528,12 +529,16 @@ public class HdfsSpout extends BaseRichSpout {
     return sourceDirPath.toString() + Path.SEPARATOR + Configs.DEFAULT_LOCK_DIR;
   }
 
-  private static void checkValidReader(String readerType) {
+  static void checkValidReader(String readerType) {
     if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
       return;
     try {
       Class<?> classType = Class.forName(readerType);
       classType.getConstructor(FileSystem.class, Path.class, Map.class);
+      if (!FileReader.class.isAssignableFrom(classType)) {
+          LOG.error(readerType + " not a FileReader");
+          throw new IllegalArgumentException(readerType + " not a FileReader."); 
+      }
       return;
     } catch (ClassNotFoundException e) {
       LOG.error(readerType + " not found in classpath.", e);

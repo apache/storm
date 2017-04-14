@@ -17,10 +17,15 @@
  */
 package org.apache.storm.command;
 
-import com.google.common.collect.Sets;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
-import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.KeyFilter;
 import org.apache.storm.blobstore.LocalFsBlobStore;
@@ -39,14 +44,14 @@ import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import com.google.common.collect.Sets;
 
 public class AdminCommands {
 
     private static final Logger LOG = LoggerFactory.getLogger(AdminCommands.class);
     private static BlobStore nimbusBlobStore;
     private static IStormClusterState stormClusterState;
-    private static Map conf;
+    private static Map<String, Object> conf;
 
     public static void main(String [] args) throws Exception {
 
@@ -54,7 +59,7 @@ public class AdminCommands {
             throw new IllegalArgumentException("Missing command. Supported command is remove_corrupt_topologies");
         }
         String command = args[0];
-        String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
+        //String[] newArgs = Arrays.copyOfRange(args, 1, args.length);
         switch (command) {
             case "remove_corrupt_topologies":
                 initialize();
@@ -68,7 +73,7 @@ public class AdminCommands {
     }
 
     private static void initialize() {
-        conf = ServerConfigUtils.readStormConfig();
+        conf = Utils.readStormConfig();
         nimbusBlobStore = ServerUtils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);

@@ -46,7 +46,7 @@
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [org.apache.storm.security.auth AuthUtils])
   (:import [org.apache.storm.utils VersionInfo ConfigUtils Utils WebAppUtils])
-  (:import [org.apache.storm Config DaemonConfig])
+  (:import [org.apache.storm Config])
   (:import [java.io File])
   (:import [java.net URLEncoder URLDecoder])
   (:import [org.json.simple JSONValue])
@@ -390,8 +390,8 @@
            resourceSummary (if (> (.size sups) 0)
                              (reduce #(map + %1 %2)
                                (for [^SupervisorSummary s sups
-                                     :let [sup-total-mem (get (.get_total_resources s) DaemonConfig/SUPERVISOR_MEMORY_CAPACITY_MB)
-                                           sup-total-cpu (get (.get_total_resources s) DaemonConfig/SUPERVISOR_CPU_CAPACITY)
+                                     :let [sup-total-mem (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+                                           sup-total-cpu (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
                                            sup-avail-mem (max (- sup-total-mem (.get_used_mem s)) 0.0)
                                            sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)]]
                                  [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu]))
@@ -477,8 +477,8 @@
   (let [slotsTotal (.get_num_workers summary)
         slotsUsed (.get_num_used_workers summary)
         slotsFree (max (- slotsTotal slotsUsed) 0)
-        totalMem (get (.get_total_resources summary) DaemonConfig/SUPERVISOR_MEMORY_CAPACITY_MB)
-        totalCpu (get (.get_total_resources summary) DaemonConfig/SUPERVISOR_CPU_CAPACITY)
+        totalMem (get (.get_total_resources summary) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+        totalCpu (get (.get_total_resources summary) Config/SUPERVISOR_CPU_CAPACITY)
         usedMem (.get_used_mem summary)
         usedCpu (.get_used_cpu summary)
         availMem (max (- totalMem usedMem) 0)
@@ -616,9 +616,9 @@
    "transferred" (.get_transferred common-stats)
    "acked" (.get_acked common-stats)
    "failed" (.get_failed common-stats)
-   "requestedMemOnHeap" (.get (.get_resources_map common-stats) DaemonConfig/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
-   "requestedMemOffHeap" (.get (.get_resources_map common-stats) DaemonConfig/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
-   "requestedCpu" (.get (.get_resources_map common-stats) DaemonConfig/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)})
+   "requestedMemOnHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+   "requestedMemOffHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+   "requestedCpu" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)})
 
 (defmulti comp-agg-stats-json
   "Returns a JSON representation of aggregated statistics."
@@ -1049,9 +1049,9 @@
        "name" (.get_topology_name comp-page-info)
        "executors" (.get_num_executors comp-page-info)
        "tasks" (.get_num_tasks comp-page-info)
-       "requestedMemOnHeap" (.get (.get_resources_map comp-page-info) DaemonConfig/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
-       "requestedMemOffHeap" (.get (.get_resources_map comp-page-info) DaemonConfig/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
-       "requestedCpu" (.get (.get_resources_map comp-page-info) DaemonConfig/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)
+       "requestedMemOnHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+       "requestedMemOffHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+       "requestedCpu" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)
        "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)
        "topologyId" topology-id
        "topologyStatus" (.get_topology_status comp-page-info)

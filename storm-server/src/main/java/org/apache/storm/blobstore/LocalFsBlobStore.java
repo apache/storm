@@ -18,7 +18,6 @@
 package org.apache.storm.blobstore;
 
 import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
@@ -84,7 +83,7 @@ public class LocalFsBlobStore extends BlobStore {
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf);
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(DaemonConfig.BLOBSTORE_DIR);
+            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
             if (overrideBase == null) {
                 overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR);
             }

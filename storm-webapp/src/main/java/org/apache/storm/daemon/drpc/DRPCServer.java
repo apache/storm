@@ -23,7 +23,6 @@ import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
 import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
 import org.apache.storm.generated.DistributedRPC;
@@ -35,8 +34,8 @@ import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.ui.FilterConfiguration;
 import org.apache.storm.ui.UIHelpers;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.FilterHolder;
 import org.eclipse.jetty.servlet.FilterMapping;
@@ -172,7 +171,7 @@ public class DRPCServer implements AutoCloseable {
     
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
-        Map<String, Object> conf = ServerConfigUtils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         try (DRPCServer server = new DRPCServer(conf)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             StormMetricsRegistry.startMetricsReporters(conf);

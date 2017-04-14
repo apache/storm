@@ -18,26 +18,31 @@
 
 package org.apache.storm.validation;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.Config;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides functionality for validating configuration fields.
  */
 public class ConfigValidation {
-
-    private static final Class CONFIG_CLASS = org.apache.storm.Config.class;
-
     private static final Logger LOG = LoggerFactory.getLogger(ConfigValidation.class);
 
     public static abstract class Validator {
@@ -69,10 +74,10 @@ public class ConfigValidation {
      */
     public static class SimpleTypeValidator extends Validator {
 
-        private Class type;
+        private Class<?> type;
 
         public SimpleTypeValidator(Map<String, Object> params) {
-            this.type = (Class) params.get(ConfigValidationAnnotations.ValidatorParams.TYPE);
+            this.type = (Class<?>) params.get(ConfigValidationAnnotations.ValidatorParams.TYPE);
         }
 
         @Override
@@ -80,7 +85,7 @@ public class ConfigValidation {
             validateField(name, this.type, o);
         }
 
-        public static void validateField(String name, Class type, Object o) {
+        public static void validateField(String name, Class<?> type, Object o) {
             if (o == null) {
                 return;
             }
@@ -179,6 +184,7 @@ public class ConfigValidation {
             ConfigValidationUtils.NestableFieldValidator validator = ConfigValidationUtils.mapFv(ConfigValidationUtils.fv(String.class, false),
                     ConfigValidationUtils.listFv(String.class, false), false);
             validator.validateField(name, o);
+            @SuppressWarnings("unchecked")
             Map<String, List<String>> mapObject = (Map<String, List<String>>) o;
             if (!mapObject.containsKey("hosts")) {
                 throw new IllegalArgumentException(name + " should contain Map entry with key: hosts");
@@ -202,7 +208,7 @@ public class ConfigValidation {
             //check if iterable
             SimpleTypeValidator.validateField(name, Iterable.class, field);
             HashSet<Object> objectSet = new HashSet<Object>();
-            for (Object o : (Iterable) field) {
+            for (Object o : (Iterable<?>) field) {
                 if (objectSet.contains(o)) {
                     throw new IllegalArgumentException(name + " should contain no duplicate elements. Duplicated element: " + o);
                 }
@@ -234,13 +240,14 @@ public class ConfigValidation {
      */
     public static class KryoRegValidator extends Validator {
 
+        @SuppressWarnings("unchecked")
         @Override
         public void validateField(String name, Object o) {
             if (o == null) {
                 return;
             }
             if (o instanceof Iterable) {
-                for (Object e : (Iterable) o) {
+                for (Object e : (Iterable<?>) o) {
                     if (e instanceof Map) {
                         for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) e).entrySet()) {
                             if (!(entry.getKey() instanceof String) ||
@@ -288,10 +295,10 @@ public class ConfigValidation {
      */
     public static class ListEntryTypeValidator extends Validator {
 
-        private Class type;
+        private Class<?> type;
 
         public ListEntryTypeValidator(Map<String, Object> params) {
-            this.type = (Class) params.get(ConfigValidationAnnotations.ValidatorParams.TYPE);
+            this.type = (Class<?>) params.get(ConfigValidationAnnotations.ValidatorParams.TYPE);
         }
 
         @Override
@@ -299,7 +306,7 @@ public class ConfigValidation {
             validateField(name, this.type, o);
         }
 
-        public static void validateField(String name, Class type, Object o) {
+        public static void validateField(String name, Class<?> type, Object o) {
             ConfigValidationUtils.NestableFieldValidator validator = ConfigValidationUtils.listFv(type, false);
             validator.validateField(name, o);
         }
@@ -311,10 +318,10 @@ public class ConfigValidation {
      */
     public static class ListEntryCustomValidator extends Validator{
 
-        private Class[] entryValidators;
+        private Class<?>[] entryValidators;
 
         public ListEntryCustomValidator(Map<String, Object> params) {
-            this.entryValidators = (Class[]) params.get(ConfigValidationAnnotations.ValidatorParams.ENTRY_VALIDATOR_CLASSES);
+            this.entryValidators = (Class<?>[]) params.get(ConfigValidationAnnotations.ValidatorParams.ENTRY_VALIDATOR_CLASSES);
         }
 
         @Override
@@ -326,14 +333,14 @@ public class ConfigValidation {
             }
         }
 
-        public static void validateField(String name, Class[] validators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        public static void validateField(String name, Class<?>[] validators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
             if (o == null) {
                 return;
             }
             //check if iterable
             SimpleTypeValidator.validateField(name, Iterable.class, o);
-            for (Object entry : (Iterable) o) {
-                for (Class validator : validators) {
+            for (Object entry : (Iterable<?>) o) {
+                for (Class<?> validator : validators) {
                     Object v = validator.getConstructor().newInstance();
                     if (v instanceof Validator) {
                         ((Validator) v).validateField(name + " list entry", entry);
@@ -350,12 +357,12 @@ public class ConfigValidation {
      */
     public static class MapEntryTypeValidator extends Validator{
 
-        private Class keyType;
-        private Class valueType;
+        private Class<?> keyType;
+        private Class<?> valueType;
 
         public MapEntryTypeValidator(Map<String, Object> params) {
-            this.keyType = (Class) params.get(ConfigValidationAnnotations.ValidatorParams.KEY_TYPE);
-            this.valueType = (Class) params.get(ConfigValidationAnnotations.ValidatorParams.VALUE_TYPE);
+            this.keyType = (Class<?>) params.get(ConfigValidationAnnotations.ValidatorParams.KEY_TYPE);
+            this.valueType = (Class<?>) params.get(ConfigValidationAnnotations.ValidatorParams.VALUE_TYPE);
         }
 
         @Override
@@ -363,7 +370,7 @@ public class ConfigValidation {
             validateField(name, this.keyType, this.valueType, o);
         }
 
-        public static void validateField(String name, Class keyType, Class valueType, Object o) {
+        public static void validateField(String name, Class<?> keyType, Class<?> valueType, Object o) {
             ConfigValidationUtils.NestableFieldValidator validator = ConfigValidationUtils.mapFv(keyType, valueType, false);
             validator.validateField(name, o);
         }
@@ -374,12 +381,12 @@ public class ConfigValidation {
      */
     public static class MapEntryCustomValidator extends Validator{
 
-        private Class[] keyValidators;
-        private Class[] valueValidators;
+        private Class<?>[] keyValidators;
+        private Class<?>[] valueValidators;
 
         public MapEntryCustomValidator(Map<String, Object> params) {
-            this.keyValidators = (Class []) params.get(ConfigValidationAnnotations.ValidatorParams.KEY_VALIDATOR_CLASSES);
-            this.valueValidators = (Class []) params.get(ConfigValidationAnnotations.ValidatorParams.VALUE_VALIDATOR_CLASSES);
+            this.keyValidators = (Class<?>[]) params.get(ConfigValidationAnnotations.ValidatorParams.KEY_VALIDATOR_CLASSES);
+            this.valueValidators = (Class<?>[]) params.get(ConfigValidationAnnotations.ValidatorParams.VALUE_VALIDATOR_CLASSES);
         }
 
         @Override
@@ -391,14 +398,15 @@ public class ConfigValidation {
             }
         }
 
-        public static void validateField(String name, Class[] keyValidators, Class[] valueValidators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        @SuppressWarnings("unchecked")
+        public static void validateField(String name, Class<?>[] keyValidators, Class<?>[] valueValidators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
             if (o == null) {
                 return;
             }
             //check if Map
             SimpleTypeValidator.validateField(name, Map.class, o);
             for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) o).entrySet()) {
-                for (Class kv : keyValidators) {
+                for (Class<?> kv : keyValidators) {
                     Object keyValidator = kv.getConstructor().newInstance();
                     if (keyValidator instanceof Validator) {
                         ((Validator) keyValidator).validateField(name + " Map key", entry.getKey());
@@ -406,7 +414,7 @@ public class ConfigValidation {
                         LOG.warn("validator: {} cannot be used in MapEntryCustomValidator to validate keys.  Individual entry validators must a instance of Validator class", kv.getName());
                     }
                 }
-                for (Class vv : valueValidators) {
+                for (Class<?> vv : valueValidators) {
                     Object valueValidator = vv.getConstructor().newInstance();
                     if (valueValidator instanceof Validator) {
                         ((Validator) valueValidator).validateField(name + " Map value", entry.getValue());
@@ -465,11 +473,11 @@ public class ConfigValidation {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if (!((Map) o).containsKey("class")) {
+            if (!((Map<?, ?>) o).containsKey("class")) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
             }
 
-            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
+            SimpleTypeValidator.validateField(name, String.class, ((Map<?, ?>) o).get("class"));
         }
     }
 
@@ -481,15 +489,15 @@ public class ConfigValidation {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if(!((Map) o).containsKey("class") ) {
+            if(!((Map<?, ?>) o).containsKey("class") ) {
                 throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
             }
-            if(!((Map) o).containsKey("parallelism.hint") ) {
+            if(!((Map<?, ?>) o).containsKey("parallelism.hint") ) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: parallelism.hint");
             }
 
-            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
-            new IntegerValidator().validateField(name, ((Map) o).get("parallelism.hint"));
+            SimpleTypeValidator.validateField(name, String.class, ((Map<?, ?>) o).get("class"));
+            new IntegerValidator().validateField(name, ((Map<?, ?>) o).get("parallelism.hint"));
         }
     }
 
@@ -527,24 +535,25 @@ public class ConfigValidation {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if (!((Map) o).containsKey("cpu")) {
+            Map<?, ?> m = (Map<?, ?>) o;
+            if (!m.containsKey("cpu")) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: cpu");
             }
-            if (!((Map) o).containsKey("memory")) {
+            if (!m.containsKey("memory")) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: memory");
             }
 
-            SimpleTypeValidator.validateField(name, Number.class, ((Map) o).get("cpu"));
-            SimpleTypeValidator.validateField(name, Number.class, ((Map) o).get("memory"));
+            SimpleTypeValidator.validateField(name, Number.class, m.get("cpu"));
+            SimpleTypeValidator.validateField(name, Number.class, m.get("memory"));
         }
     }
 
     public static class ImplementsClassValidator extends Validator {
 
-        Class classImplements;
+        Class<?> classImplements;
 
         public ImplementsClassValidator(Map<String, Object> params) {
-            this.classImplements = (Class) params.get(ConfigValidationAnnotations.ValidatorParams.IMPLEMENTS_CLASS);
+            this.classImplements = (Class<?>) params.get(ConfigValidationAnnotations.ValidatorParams.IMPLEMENTS_CLASS);
         }
 
         @Override
@@ -554,7 +563,7 @@ public class ConfigValidation {
             }
             SimpleTypeValidator.validateField(name, String.class, o);
             try {
-                Class objectClass = Class.forName((String) o);
+                Class<?> objectClass = Class.forName((String) o);
                 if (!this.classImplements.isAssignableFrom(objectClass)) {
                     throw new IllegalArgumentException("Field " + name + " with value " + o
                             + " does not implement " + this.classImplements.getName());
@@ -575,8 +584,45 @@ public class ConfigValidation {
      * @param fieldName provided as a string
      * @param conf      map of confs
      */
-    public static void validateField(String fieldName, Map conf) {
-        validateField(fieldName, conf, CONFIG_CLASS);
+    public static void validateField(String fieldName, Map<String, Object> conf)  {
+        validateField(fieldName, conf, getConfigClasses());
+    }
+
+    private static List<Class<?>> configClasses = null;
+    //We follow the model of service loaders (Even though it is not a service).
+    private static final String CONFIG_CLASSES_NAME = "META-INF/services/"+Validated.class.getName();
+    
+    private synchronized static List<Class<?>> getConfigClasses() {
+        if (configClasses == null) {
+            List<Class<?>> ret = new ArrayList<>();
+            Set<String> classesToScan = new HashSet<>();
+            classesToScan.add(Config.class.getName());
+            for (URL url: Utils.findResources(CONFIG_CLASSES_NAME)) {
+                try {
+                    try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
+                        String line;
+                        while((line = in.readLine()) != null) {
+                            line = line.replaceAll("#.*$", "").trim();
+                            if (!line.isEmpty()) {
+                                classesToScan.add(line);
+                            }
+                        }
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException("Error trying to read " + url, e);
+                }
+            }
+            for (String clazz: classesToScan) {
+                try {
+                    ret.add(Class.forName(clazz));
+                } catch (ClassNotFoundException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+            LOG.debug("Will use {} for validation", ret);
+            configClasses = ret;
+        }
+        return configClasses;
     }
 
     /**
@@ -584,14 +630,19 @@ public class ConfigValidation {
      *
      * @param fieldName   provided as a string
      * @param conf        map of confs
-     * @param configClass config class
+     * @param configs config class
      */
-    public static void validateField(String fieldName, Map conf, Class configClass) {
+    public static void validateField(String fieldName, Map<String, Object> conf, List<Class<?>> configs) {
         Field field = null;
-        try {
-            field = configClass.getField(fieldName);
-        } catch (NoSuchFieldException e) {
-            throw new RuntimeException(e);
+        for (Class<?> clazz: configs) {
+            try {
+                field = clazz.getField(fieldName);
+            } catch (NoSuchFieldException e) {
+                //Ignored
+            }
+        }
+        if (field == null) {
+            throw new RuntimeException("Could not find " + fieldName + " in any of " + configs);
         }
         validateField(field, conf);
     }
@@ -603,18 +654,23 @@ public class ConfigValidation {
      * @param field field that needs to be validated
      * @param conf  map of confs
      */
-    public static void validateField(Field field, Map conf) {
+    public static void validateField(Field field, Map<String, Object> conf) {
         Annotation[] annotations = field.getAnnotations();
         if (annotations.length == 0) {
             LOG.warn("Field {} does not have validator annotation", field);
         }
         try {
             for (Annotation annotation : annotations) {
+                if (annotation.annotationType().equals(Deprecated.class)) {
+                    LOG.warn("{} is a deprecated config please see {}.{} for more information.", 
+                            field.get(null), field.getDeclaringClass(), field.getName());
+                    continue;
+                }
                 String type = annotation.annotationType().getName();
-                Class validatorClass = null;
+                Class<?> validatorClass = null;
                 Class<?>[] classes = ConfigValidationAnnotations.class.getDeclaredClasses();
                 //check if annotation is one of our
-                for (Class clazz : classes) {
+                for (Class<?> clazz : classes) {
                     if (clazz.getName().equals(type)) {
                         validatorClass = clazz;
                         break;
@@ -623,7 +679,8 @@ public class ConfigValidation {
                 if (validatorClass != null) {
                     Object v = validatorClass.cast(annotation);
                     String key = (String) field.get(null);
-                    Class clazz = (Class) validatorClass
+                    @SuppressWarnings("unchecked")
+                    Class<Validator> clazz = (Class<Validator>) validatorClass
                             .getMethod(ConfigValidationAnnotations.ValidatorParams.VALIDATOR_CLASS).invoke(v);
                     Validator o = null;
                     Map<String, Object> params = getParamsFromAnnotation(validatorClass, v);
@@ -631,11 +688,11 @@ public class ConfigValidation {
                     //One constructor takes input a Map of arguments, the other doesn't take any arguments (default constructor)
                     //If validator has a constructor that takes a Map as an argument call that constructor
                     if (hasConstructor(clazz, Map.class)) {
-                        o = (Validator) clazz.getConstructor(Map.class).newInstance(params);
+                        o = clazz.getConstructor(Map.class).newInstance(params);
                     }
                     //If not call default constructor
                     else {
-                        o = (((Class<Validator>) clazz).newInstance());
+                        o = clazz.newInstance();
                     }
                     o.validateField(field.getName(), conf.get(key));
                 }
@@ -644,41 +701,60 @@ public class ConfigValidation {
             throw new RuntimeException(e);
         }
     }
-
+    
     /**
      * Validate all confs in map
      *
      * @param conf map of configs
      */
-    public static void validateFields(Map conf) {
-        validateFields(conf, CONFIG_CLASS);
+    public static void validateFields(Map<String, Object> conf) {
+        validateFields(conf, getConfigClasses());
     }
 
+    //The following come from the JVm Specification table 4.4
+    // https://docs.oracle.com/javase/specs/jvms/se7/html/jvms-4.html#jvms-4.5
+    private static final int ACC_PUBLIC = 0x0001;
+    private static final int ACC_STATIC = 0x0008;
+    private static final int ACC_FINAL  = 0x0010;
+    private static final int DESIRED_FIELD_ACC = ACC_PUBLIC | ACC_STATIC | ACC_FINAL;
+    public static boolean isFieldAllowed(Field field) {
+        return field.getAnnotation(NotConf.class) == null &&
+                String.class.equals(field.getType()) &&
+                ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) &&
+                !field.isSynthetic();
+    }
+    
     /**
      * Validate all confs in map
      *
      * @param conf        map of configs
-     * @param configClass config class
+     * @param classes config class
      */
-    public static void validateFields(Map conf, Class configClass) {
-        for (Field field : configClass.getFields()) {
-            Object keyObj = null;
-            try {
-                keyObj = field.get(null);
-            } catch (IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-            //make sure that defined key is string in case wrong stuff got put into Config.java
-            if (keyObj instanceof String) {
-                String confKey = (String) keyObj;
-                if (conf.containsKey(confKey)) {
-                    validateField(field, conf);
+    public static void validateFields(Map<String, Object> conf, List<Class<?>> classes) {
+        for (Class<?> clazz: classes) {
+            for (Field field : clazz.getDeclaredFields()) {
+                if (!isFieldAllowed(field)) {
+                    continue;
+                }
+                Object keyObj = null;
+                try {
+                    keyObj = field.get(null);
+                } catch (IllegalAccessException e) {
+                    //This should not happen because we checked for PUBLIC in isFieldAllowed
+                    throw new RuntimeException(e);
+                }
+                //make sure that defined key is string in case wrong stuff got put into Config.java
+                if (keyObj instanceof String) {
+                    String confKey = (String) keyObj;
+                    if (conf.containsKey(confKey)) {
+                        validateField(field, conf);
+                    }
                 }
             }
         }
     }
 
-    private static Map<String,Object> getParamsFromAnnotation(Class validatorClass, Object v) throws InvocationTargetException, IllegalAccessException {
+    private static Map<String,Object> getParamsFromAnnotation(Class<?> validatorClass, Object v) throws InvocationTargetException, IllegalAccessException {
         Map<String, Object> params = new HashMap<String, Object>();
         for(Method method : validatorClass.getDeclaredMethods()) {
 
@@ -695,20 +771,11 @@ public class ConfigValidation {
         return params;
     }
 
-    private static boolean hasConstructor(Class clazz, Class paramClass) {
-        Class[] classes = {paramClass};
+    private static boolean hasConstructor(Class<?> clazz, Class<?> paramClass) {
+        Class<?>[] classes = {paramClass};
         try {
             clazz.getConstructor(classes);
         } catch (NoSuchMethodException e) {
-            return false;
-        }
-        return true;
-    }
-
-    private static boolean hasMethod(Class clazz, String method) {
-        try {
-            clazz.getMethod(method);
-        } catch (NoSuchMethodException ex) {
             return false;
         }
         return true;
