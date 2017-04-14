@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-832: Allow config validation to be used by plugins/etc.
  * STORM-2471: Add metric for thread count
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2469: fix integration-test dependencies issue
