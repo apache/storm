@@ -336,18 +336,17 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                             collector.emit(tuple);
                         }
                     } else {
-                        if (tuple instanceof KafkaTuple) {
-                            collector.emit(((KafkaTuple) tuple).getStream(), tuple, msgId);
-                        } else {
-                            collector.emit(tuple, msgId);
-                        }
-
                         emitted.add(msgId);
-
                         if (isScheduled) {  // Was scheduled for retry and re-emitted, so remove from schedule.
                             retryService.remove(msgId);
                         } else {            //New tuple, hence increment the uncommitted offset counter
                             numUncommittedOffsets++;
+                        }
+
+                        if (tuple instanceof KafkaTuple) {
+                            collector.emit(((KafkaTuple) tuple).getStream(), tuple, msgId);
+                        } else {
+                            collector.emit(tuple, msgId);
                         }
                     }
                     LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
