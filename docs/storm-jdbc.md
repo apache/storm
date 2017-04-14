@@ -63,7 +63,7 @@ You can optionally specify a query timeout seconds param that specifies max seco
 The default is set to value of topology.message.timeout.secs and a value of -1 will indicate not to set any query timeout.
 You should set the query timeout value to be <= topology.message.timeout.secs.
 
- ```java
+```java
 Map hikariConfigMap = Maps.newHashMap();
 hikariConfigMap.put("dataSourceClassName","com.mysql.jdbc.jdbc2.optional.MysqlDataSource");
 hikariConfigMap.put("dataSource.url", "jdbc:mysql://localhost/test");
@@ -81,7 +81,7 @@ JdbcInsertBolt userPersistanceBolt = new JdbcInsertBolt(connectionProvider, simp
 JdbcInsertBolt userPersistanceBolt = new JdbcInsertBolt(connectionProvider, simpleJdbcMapper)
                                     .withInsertQuery("insert into user values (?,?)")
                                     .withQueryTimeoutSecs(30);                                    
- ```
+```
 
 ### SimpleJdbcMapper
 `storm-jdbc` includes a general purpose `JdbcMapper` implementation called `SimpleJdbcMapper` that can map Storm
@@ -112,6 +112,7 @@ method will return the columns in the order in which Jdbc connection instance's 
 
 **If you specified your own insert query to `JdbcInsertBolt` you must initialize `SimpleJdbcMapper` with explicit columnschema such that the schema has columns in the same order as your insert queries.**
 For example if your insert query is `Insert into user (user_id, user_name) values (?,?)` then your `SimpleJdbcMapper` should be initialized with the following statements:
+
 ```java
 List<Column> columnSchema = Lists.newArrayList(
     new Column("user_id", java.sql.Types.INTEGER),
@@ -224,6 +225,7 @@ A runnable example can be found in the `src/test/java/topology` directory.
 * Ensure you have included JDBC implementation dependency for your chosen database as part of your build configuration.
 * The test topologies executes the following queries so your intended DB must support these queries for test topologies
 to work. 
+
 ```SQL
 create table if not exists user (user_id integer, user_name varchar(100), dept_name varchar(100), create_date date);
 create table if not exists department (dept_id integer, dept_name varchar(100));
@@ -272,6 +274,7 @@ You can generate a single jar with dependencies using mvn assembly plugin. To us
 ```
 
 Mysql Example:
+
 ```
 storm jar ~/repo/incubator-storm/external/storm-jdbc/target/storm-jdbc-0.10.0-SNAPSHOT-jar-with-dependencies.jar org.apache.storm.jdbc.topology.UserPersistanceTopology  com.mysql.jdbc.jdbc2.optional.MysqlDataSource jdbc:mysql://localhost/test root password UserPersistenceTopology
 ```

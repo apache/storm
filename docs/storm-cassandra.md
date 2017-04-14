@@ -29,14 +29,14 @@ The following properties may be passed to storm configuration.
 ### CassandraWriterBolt
 
 ####Static import
+
 ```java
-
 import static org.apache.storm.cassandra.DynamicStatementBuilder.*
-
 ```
 
 #### Insert Query Builder
 ##### Insert query including only the specified tuple fields.
+
 ```java
 
     new CassandraWriterBolt(
@@ -50,6 +50,7 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert query including all tuple fields.
+
 ```java
 
     new CassandraWriterBolt(
@@ -61,8 +62,8 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert multiple queries from one input tuple.
-```java
 
+```java
     new CassandraWriterBolt(
         async(
             simpleQuery("INSERT INTO titles_per_album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all())),
@@ -72,8 +73,8 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert query using QueryBuilder
-```java
 
+```java
     new CassandraWriterBolt(
         async(
             simpleQuery("INSERT INTO album (title,year,perfomer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
@@ -83,8 +84,8 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert query with static bound query
-```java
 
+```java
     new CassandraWriterBolt(
          async(
             boundQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);")
@@ -94,8 +95,8 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert query with static bound query using named setters and aliases
-```java
 
+```java
     new CassandraWriterBolt(
          async(
             boundQuery("INSERT INTO album (title,year,performer,genre,tracks) VALUES (:ti, :ye, :pe, :ge, :tr);")
@@ -111,24 +112,24 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
 ```
 
 ##### Insert query with bound statement load from storm configuration
-```java
 
+```java
     new CassandraWriterBolt(
          boundQuery(named("insertIntoAlbum"))
             .bind(all());
 ```
 
 ##### Insert query with bound statement load from tuple field
-```java
 
+```java
     new CassandraWriterBolt(
          boundQuery(namedByField("cql"))
             .bind(all());
 ```
 
 ##### Insert query with batch statement
-```java
 
+```java
     // Logged
     new CassandraWriterBolt(loggedBatch(
             simpleQuery("INSERT INTO titles_per_album (title,year,performer,genre,tracks) VALUES (?, ?, ?, ?, ?);").with(all())),
@@ -205,6 +206,7 @@ builder.setBolt("BOLT_WRITER", bolt, 4)
 
 ### Trident API support
 storm-cassandra support Trident `state` API for `inserting` data into Cassandra. 
+
 ```java
         CassandraState.Options options = new CassandraState.Options(new CassandraContext());
         CQLStatementTupleMapper insertTemperatureValues = boundQuery(
@@ -219,6 +221,7 @@ storm-cassandra support Trident `state` API for `inserting` data into Cassandra.
 ```
 
 Below `state` API for `querying` data from Cassandra.
+
 ```java
         CassandraState.Options options = new CassandraState.Options(new CassandraContext());
         CQLStatementTupleMapper insertTemperatureValues = boundQuery("SELECT name FROM weather.station WHERE id = ?")
