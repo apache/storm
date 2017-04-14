@@ -20,10 +20,8 @@ package org.apache.storm.kafka.bolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
@@ -59,7 +57,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     public static final String TOPIC = "topic";
 
-    private KafkaProducer<K, V> producer;
+    private static KafkaProducer producer;
     private OutputCollector collector;
     private TupleToKafkaMapper<K,V> mapper;
     private KafkaTopicSelector topicSelector;
@@ -119,7 +117,12 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
             }
         }
 
-        producer = mkProducer(boltSpecifiedProperties);
+        synchronized (KafkaBolt.class) {
+            if (producer == null) {
+                producer = mkProducer(boltSpecifiedProperties);
+            }
+        }
+
         this.collector = collector;
     }
     
@@ -186,7 +189,12 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
     @Override
     public void cleanup() {
-        producer.close();
+        synchronized (KafkaBolt.class) {
+            if (producer != null) {
+                producer.close();
+                producer = null;
+            }
+        }
     }
 
     /**
