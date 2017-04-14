@@ -161,6 +161,7 @@ mystream.flatMap(new Split(), new Fields("word"))
  This could be useful for debugging to see the tuples as they flow past a certain point in a pipeline.
 
 For example, the below code would print the result of converting the words to uppercase before they are passed to `groupBy`
+
 ```java
  mystream.flatMap(new Split()).map(new UpperCase())
          .peek(new Consumer() {
@@ -206,14 +207,14 @@ Partition 2:
 [74,  37]
 [51,  49]
 [37,  98]
-
 ```
 
 `minBy` operation can be applied on the above stream of tuples like below which results in emitting tuples with minimum values of `count` field in each partition.
 
-``` java
+```java
   mystream.minBy(new Fields("count"))
 ```
+
 Result of the above code on mentioned partitions is:
  
 ```
@@ -227,7 +228,6 @@ Partition 1:
 
 Partition 2:
 [82,  23]
-
 ```
 
 You can look at other `min` and `minBy` operations on Stream

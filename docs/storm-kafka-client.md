@@ -30,11 +30,13 @@ These should be specified while constructing an instance of FieldNameBasedTupleT
 
 ###KafkaTopicSelector and trident KafkaTopicSelector
 This interface has only one method
+
 ```java
 public interface KafkaTopicSelector {
     String getTopics(Tuple/TridentTuple tuple);
 }
 ```
+
 The implementation of this interface should return the topic to which the tuple's key/message mapping needs to be published
 You can return a null and the message will be ignored. If you have one static topic name then you can use
 DefaultTopicSelector.java and set the name of the topic in the constructor.
@@ -50,6 +52,7 @@ These are also defined in `org.apache.kafka.clients.producer.ProducerConfig`
 
 ###Using wildcard kafka topic match
 You can do a wildcard topic match by adding the following config
+
 ```
      Config config = new Config();
      config.put("kafka.topic.wildcard.match",true);
@@ -62,6 +65,7 @@ After this you can specify a wildcard topic for matching e.g. clickstream.*.log.
 ###Putting it all together
 
 For the bolt :
+
 ```java
         TopologyBuilder builder = new TopologyBuilder();
 
@@ -167,28 +171,29 @@ streams based on the topic, storm provides `ByTopicRecordTranslator`.  See below
 
 #### Create a Simple Insecure Spout
 The following will consume all events published to "topic" and send them to MyBolt with the fields "topic", "partition", "offset", "key", "value".
+
 ```java
 
 final TopologyBuilder tp = new TopologyBuilder();
 tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, "topic").build()), 1);
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
 ...
-
 ```
 
 #### Wildcard Topics
 Wildcard topics will consume from all topics that exist in the specified brokers list and match the pattern.  So in the following example
 "topic", "topic_foo" and "topic_bar" will all match the pattern "topic.*", but "not_my_topic" would not match. 
+
 ```java
 
 final TopologyBuilder tp = new TopologyBuilder();
 tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()), 1);
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout");
 ...
-
 ```
 
 #### Multiple Streams
+
 ```java
 
 final TopologyBuilder tp = new TopologyBuilder();
@@ -204,7 +209,6 @@ tp.setSpout("kafka_spout", new KafkaSpout<>(KafkaSpoutConfig.builder("127.0.0.1:
 tp.setBolt("bolt", new myBolt()).shuffleGrouping("kafka_spout", "STREAM_1");
 tp.setBolt("another", new myOtherBolt()).shuffleGrouping("kafka_spout", "STREAM_2");
 ...
-
 ```
 
 #### Trident
@@ -215,7 +219,6 @@ final Stream spoutStream = tridentTopology.newStream("kafkaSpout",
     new KafkaTridentSpoutOpaque<>(KafkaSpoutConfig.builder("127.0.0.1:" + port, Pattern.compile("topic.*")).build()))
       .parallelismHint(1)
 ...
-
 ```
 
 Trident does not support multiple streams and will ignore any streams set for output.  If however the Fields are not identical for each
@@ -231,6 +234,7 @@ specific stream.  To do this you will need to return an instance of `org.apache.
 specific stream the tuple should go to.
 
 For Example:
+
 ```java
 return new KafkaTuple(1, 2, 3, 4).routedTo("bar");
 ```
@@ -253,6 +257,7 @@ please be careful when using these or implementing your own.
 ## Use the Maven Shade Plugin to Build the Uber Jar
 
 Add the following to `REPO_HOME/storm/external/storm-kafka-client/pom.xml`
+
 ```xml
 <plugin>
     <groupId>org.apache.maven.plugins</groupId>
@@ -355,6 +360,7 @@ To enable it, you need to:
 * enable *AutoCommitMode* in Kafka consumer configuration; 
 
 Here's one example to set AutoCommitMode in KafkaSpout:
+
 ```java
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
 		.builder(String bootstrapServers, String ... topics)

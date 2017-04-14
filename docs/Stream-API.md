@@ -279,6 +279,7 @@ PairStream<String, Iterable<Integer>> userScores =  scores.window(...).groupByKe
  
 ###  <a name="countbykey"></a> countByKey
 `countByKey` counts the values for each key of this stream.
+
 ```java
 Stream<String> words = ...                                              // a windowed stream of words
 Stream<String, Long> wordCounts = words.mapToPair(w -> Pair.of(w,1)     // convert to a stream of (word, 1) pairs
@@ -373,6 +374,7 @@ Stream<T>[] streams  = stream.branch(Predicate<T>... predicates)
 The predicates are applied in the given order to the values of the stream and the result is forwarded to the corresponding (index based) result stream based on the first predicate that matches. If none of the predicates match a value, that value is dropped.
 
 For example,
+
 ```java
 Stream<Integer>[] streams = builder.newStream(new RandomIntegerSpout(), new ValueMapper<Integer>(0))
                                    .branch(x -> (x % 2) == 0, 
@@ -391,7 +393,6 @@ PairStream<Long, Long> cubes = … // (1, 1), (2, 8), (3, 27) ...
 
 // join the sqaures and cubes stream to produce (1, [1, 1]), (2, [4, 8]), (3, [9, 27]) ...
 PairStream<Long, Pair<Long, Long>> joined = squares.window(TumblingWindows.of(Duration.seconds(5))).join(cubes);
-
 ```
 
 Joins are typically invoked on a windowed stream, joining the key-values that arrived on each stream in the current window. The parallelism of the stream on which the join is invoked is carried forward to the joined stream. An optional `ValueJoiner` can be passed as an argument to join to specify how to join the two values for each matching key (the default behavior is to return a `Pair` of the value from both streams).
