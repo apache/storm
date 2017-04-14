@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2315: New kafka spout can't commit offset when ack is disabled
  * STORM-2467: Use explicit charset when decoding from array backed buffer
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2429: Properly validate supervisor.scheduler.meta
