@@ -76,7 +76,7 @@ public class DRPC implements AutoCloseable {
             ThriftAccessLogger.logAccessFunction(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation, function);
         }
         if (auth != null) {
-            Map<String, String> map = new HashMap<>();
+            Map<String, Object> map = new HashMap<>();
             map.put(DRPCAuthorizerBase.FUNCTION_NAME, function);
             if (!auth.permit(reqContext, operation, map)) {
                 Principal principal = reqContext.principal();

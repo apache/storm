@@ -2377,11 +2377,11 @@ public class StatsUtil {
         return map.get(key);
     }
 
-    public static Map getMapByKey(Map map, String key) {
+    public static <K, V> Map<K,V> getMapByKey(Map map, String key) {
         if (map == null) {
             return null;
         }
-        return (Map) map.get(key);
+        return (Map<K,V>) map.get(key);
     }
 
     private static <K, V extends Number> long sumValues(Map<K, V> m) {

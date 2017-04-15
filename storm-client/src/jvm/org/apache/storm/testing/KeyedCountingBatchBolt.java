@@ -29,7 +29,7 @@ import org.apache.storm.utils.Utils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KeyedCountingBatchBolt extends BaseBatchBolt {
+public class KeyedCountingBatchBolt extends BaseBatchBolt<Object> {
     BatchOutputCollector _collector;
     Object _id;
     Map<Object, Integer> _counts = new HashMap<Object, Integer>();

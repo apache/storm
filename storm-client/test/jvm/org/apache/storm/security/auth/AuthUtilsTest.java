@@ -23,6 +23,7 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -93,40 +94,36 @@ public class AuthUtilsTest {
         Assert.assertNull(AuthUtils.pullConfig(null, "foo"));
         Assert.assertNull(AuthUtils.get(null, "foo", "bar"));
 
-        Map emptyMap = new HashMap<String, String>();
-        Assert.assertNull(AuthUtils.GetConfiguration(emptyMap));
+        Assert.assertNull(AuthUtils.GetConfiguration(Collections.emptyMap()));
     }
 
     @Test
     public void getAutoCredentialsTest() {
-        Map emptyMap = new HashMap<String, String>();
-        Map<String, Collection<String>> map = new HashMap<String, Collection<String>>();
+        Map<String, Object> map = new HashMap<>();
         map.put(Config.TOPOLOGY_AUTO_CREDENTIALS, 
                 Arrays.asList(new String[]{"org.apache.storm.security.auth.AuthUtilsTestMock"}));
 
-        Assert.assertTrue(AuthUtils.GetAutoCredentials(emptyMap).isEmpty());
+        Assert.assertTrue(AuthUtils.GetAutoCredentials(Collections.emptyMap()).isEmpty());
         Assert.assertEquals(AuthUtils.GetAutoCredentials(map).size(), 1);
     }
 
     @Test
     public void getNimbusAutoCredPluginTest() {
-        Map emptyMap = new HashMap<String, String>();
-        Map<String, Collection<String>> map = new HashMap<String, Collection<String>>();
+        Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_AUTO_CRED_PLUGINS, 
                 Arrays.asList(new String[]{"org.apache.storm.security.auth.AuthUtilsTestMock"}));
 
-        Assert.assertTrue(AuthUtils.getNimbusAutoCredPlugins(emptyMap).isEmpty());
+        Assert.assertTrue(AuthUtils.getNimbusAutoCredPlugins(Collections.emptyMap()).isEmpty());
         Assert.assertEquals(AuthUtils.getNimbusAutoCredPlugins(map).size(), 1);
     }
 
     @Test
     public void GetCredentialRenewersTest() {
-        Map emptyMap = new HashMap<String, String>();
-        Map<String, Collection<String>> map = new HashMap<String, Collection<String>>();
+        Map<String, Object> map = new HashMap<>();
         map.put(Config.NIMBUS_CREDENTIAL_RENEWERS, 
                 Arrays.asList(new String[]{"org.apache.storm.security.auth.AuthUtilsTestMock"}));
 
-        Assert.assertTrue(AuthUtils.GetCredentialRenewers(emptyMap).isEmpty());
+        Assert.assertTrue(AuthUtils.GetCredentialRenewers(Collections.emptyMap()).isEmpty());
         Assert.assertEquals(AuthUtils.GetCredentialRenewers(map).size(), 1);
     }
 
@@ -175,7 +172,7 @@ public class AuthUtilsTest {
 
     @Test(expected = RuntimeException.class)
     public void invalidConfigResultsInIOException() throws RuntimeException {
-        HashMap<String, String> conf = new HashMap<String, String>();
+        HashMap<String, Object> conf = new HashMap<>();
         conf.put("java.security.auth.login.config", "__FAKE_FILE__");
         Assert.assertNotNull(AuthUtils.GetConfiguration(conf));
     }
@@ -188,14 +185,14 @@ public class AuthUtilsTest {
     @Test
     public void validConfigResultsInNotNullConfigurationTest() throws IOException {
         File file1 = folder.newFile("mockfile.txt");
-        HashMap<String, String> conf = new HashMap<String, String>();
+        HashMap<String, Object> conf = new HashMap<>();
         conf.put("java.security.auth.login.config", file1.getAbsolutePath());
         Assert.assertNotNull(AuthUtils.GetConfiguration(conf));
     }
 
     @Test
     public void uiHttpCredentialsPluginTest(){
-        Map conf = new HashMap<String, String>();
+        Map<String, Object> conf = new HashMap<>();
         conf.put(
             Config.UI_HTTP_CREDS_PLUGIN, 
             "org.apache.storm.security.auth.AuthUtilsTestMock");

@@ -83,7 +83,7 @@ public class TransactionalGlobalCount {
     public static Map<String, Value> DATABASE = new HashMap<String, Value>();
     public static final String GLOBAL_COUNT_KEY = "GLOBAL-COUNT";
 
-    public static class BatchCount extends BaseBatchBolt {
+    public static class BatchCount extends BaseBatchBolt<Object> {
         Object _id;
         BatchOutputCollector _collector;
 

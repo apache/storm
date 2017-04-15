@@ -28,7 +28,7 @@ import org.apache.storm.utils.Utils;
 import java.util.HashMap;
 import java.util.Map;
 
-public class KeyedSummingBatchBolt extends BaseBatchBolt {
+public class KeyedSummingBatchBolt extends BaseBatchBolt<Object> {
     BatchOutputCollector _collector;
     Object _id;
     Map<Object, Number> _sums = new HashMap<Object, Number>();

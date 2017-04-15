@@ -31,7 +31,7 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.util.TridentUtils;
 
-public class RichSpoutBatchExecutor implements ITridentSpout {
+public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
     public static final String MAX_BATCH_SIZE_CONF = "topology.spout.max.batch.size";
 
     IRichSpout _spout;
@@ -52,12 +52,12 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
     }
 
     @Override
-    public BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Object> getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return new RichSpoutCoordinator();
     }
 
     @Override
-    public Emitter getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter<Object> getEmitter(String txStateId, Map conf, TopologyContext context) {
         return new RichSpoutEmitter(conf, context);
     }
     
@@ -146,7 +146,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout {
         
     }
     
-    private static class RichSpoutCoordinator implements ITridentSpout.BatchCoordinator {
+    private static class RichSpoutCoordinator implements ITridentSpout.BatchCoordinator<Object> {
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
             return null;

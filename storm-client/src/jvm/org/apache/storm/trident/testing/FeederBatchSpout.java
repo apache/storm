@@ -32,7 +32,7 @@ import org.apache.storm.trident.spout.ITridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.apache.storm.trident.topology.TridentTopologyBuilder;
 
-public class FeederBatchSpout implements ITridentSpout, IFeeder {
+public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Object>>>>, IFeeder {
 
     String _id;
     String _semaphoreId;
@@ -167,7 +167,7 @@ public class FeederBatchSpout implements ITridentSpout, IFeeder {
     }
 
     @Override
-    public BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map conf, TopologyContext context) {
         int numTasks = context.getComponentTasks(
                             TridentTopologyBuilder.spoutIdFromCoordinatorId(
                                 context.getThisComponentId()))
@@ -176,7 +176,7 @@ public class FeederBatchSpout implements ITridentSpout, IFeeder {
     }
 
     @Override
-    public Emitter getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter<Map<Integer, List<List<Object>>>> getEmitter(String txStateId, Map conf, TopologyContext context) {
         return new FeederEmitter(context.getThisTaskIndex());
     }
     

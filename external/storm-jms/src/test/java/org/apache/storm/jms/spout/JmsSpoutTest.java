@@ -51,7 +51,7 @@ public class JmsSpoutTest {
         spout.setJmsTupleProducer(new MockTupleProducer());
         spout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
         spout.setRecoveryPeriod(10); // Rapid recovery for testing.
-        spout.open(new HashMap<String,String>(), null, collector);
+        spout.open(new HashMap<>(), null, collector);
         Message msg = this.sendMessage(mockProvider.connectionFactory(), mockProvider.destination());
         Thread.sleep(100);
         spout.nextTuple(); // Pretend to be storm.
