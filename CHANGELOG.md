@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2475: Fix parsing of host:port to deal with IPv6 addresses
  * STORM-832: Allow config validation to be used by plugins/etc.
  * STORM-2471: Add metric for thread count
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
