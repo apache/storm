@@ -55,6 +55,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     protected Map storm_conf;
     protected Configuration login_conf;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
+    private int port;
 
     @Override
     public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
@@ -65,8 +66,9 @@ public class SimpleTransportPlugin implements ITransportPlugin {
 
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
-        int port = type.getPort(storm_conf);
-        TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(port);
+        int configuredPort = type.getPort(storm_conf);
+        TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(configuredPort);
+        this.port = serverTransport.getPort();
         int numWorkerThreads = type.getNumThreads(storm_conf);
         int maxBufferSize = type.getMaxBufferSize(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
@@ -111,6 +113,11 @@ public class SimpleTransportPlugin implements ITransportPlugin {
      */  
     protected Subject getDefaultSubject() {
         return null;
+    }
+
+    @Override
+    public int getPort() {
+        return port;
     }
 
     /**                                                                                                                                                                             

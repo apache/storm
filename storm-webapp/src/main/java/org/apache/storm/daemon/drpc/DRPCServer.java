@@ -61,7 +61,7 @@ public class DRPCServer implements AutoCloseable {
  
     private static ThriftServer mkHandlerServer(final DistributedRPC.Iface service, Integer port, Map<String, Object> conf) {
         ThriftServer ret = null;
-        if (port != null && port > 0) {
+        if (port != null && port >= 0) {
             ret = new ThriftServer(conf, new DistributedRPC.Processor<>(service),
                     ThriftConnectionType.DRPC);
         }
@@ -76,7 +76,7 @@ public class DRPCServer implements AutoCloseable {
     private static Server mkHttpServer(Map<String, Object> conf, DRPC drpc) {
         Integer drpcHttpPort = (Integer) conf.get(DaemonConfig.DRPC_HTTP_PORT);
         Server ret = null;
-        if (drpcHttpPort != null && drpcHttpPort > 0) {
+        if (drpcHttpPort != null && drpcHttpPort >= 0) {
             LOG.info("Starting RPC HTTP servers...");
             String filterClass = (String) (conf.get(DaemonConfig.DRPC_HTTP_FILTER));
             @SuppressWarnings("unchecked")
@@ -119,6 +119,7 @@ public class DRPCServer implements AutoCloseable {
     private final ThriftServer _handlerServer;
     private final ThriftServer _invokeServer;
     private final Server _httpServer;
+    private Thread _handlerServerThread;
     private boolean _closed = false;
 
     public DRPCServer(Map<String, Object> conf) {
@@ -133,13 +134,21 @@ public class DRPCServer implements AutoCloseable {
     void start() throws Exception {
         LOG.info("Starting Distributed RPC servers...");
         new Thread(() -> _invokeServer.serve()).start();
-
+        
         if (_httpServer != null) {
             _httpServer.start();
         }
         
         if (_handlerServer != null) {
-            _handlerServer.serve();
+            _handlerServerThread = new Thread(_handlerServer::serve);
+            _handlerServerThread.start();
+        }
+    }
+    
+    @VisibleForTesting
+    void awaitTermination() throws InterruptedException {
+        if(_handlerServerThread != null) {
+            _handlerServerThread.join();
         } else {
             _httpServer.join();
         }
@@ -169,6 +178,29 @@ public class DRPCServer implements AutoCloseable {
         }
     }
     
+    /**
+     * @return The port the DRPC handler server is listening on
+     */
+    public int getDRPCPort() {
+        return _handlerServer.getPort();
+    }
+    
+    /**
+     * @return The port the DRPC invoke server is listening on
+     */
+    public int getDRPCInvokePort() {
+        return _invokeServer.getPort();
+    }
+    
+    /**
+     * @return The port the HTTP server is listening on. Not available until {@link #start() } has run.
+     */
+    public int getHttpServerPort() {
+        assert _httpServer.getConnectors().length == 1;
+        
+        return _httpServer.getConnectors()[0].getLocalPort();
+    }
+    
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
@@ -176,6 +208,7 @@ public class DRPCServer implements AutoCloseable {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             StormMetricsRegistry.startMetricsReporters(conf);
             server.start();
+            server.awaitTermination();
         }
     }
 }

@@ -53,6 +53,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
     protected ThriftConnectionType type;
     protected Map storm_conf;
     protected Configuration login_conf;
+    private int port;
 
     @Override
     public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
@@ -63,15 +64,16 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
 
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
-        int port = type.getPort(storm_conf);
+        int configuredPort = type.getPort(storm_conf);
         Integer socketTimeout = type.getSocketTimeOut(storm_conf);
         TTransportFactory serverTransportFactory = getServerTransportFactory();
         TServerSocket serverTransport = null;
         if (socketTimeout != null) {
-            serverTransport = new TServerSocket(port, socketTimeout);
+            serverTransport = new TServerSocket(configuredPort, socketTimeout);
         } else {
-            serverTransport = new TServerSocket(port);
+            serverTransport = new TServerSocket(configuredPort);
         }
+        this.port = serverTransport.getServerSocket().getLocalPort();
         int numWorkerThreads = type.getNumThreads(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
 
@@ -100,6 +102,11 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
      * @throws IOException
      */
     protected abstract TTransportFactory getServerTransportFactory() throws IOException;
+    
+    @Override
+    public int getPort() {
+        return this.port;
+    }
 
 
     /**

@@ -38,7 +38,6 @@ import org.apache.storm.generated.DRPCExecutionException;
 import org.apache.storm.generated.DRPCRequest;
 import org.apache.storm.security.auth.SimpleTransportPlugin;
 import org.apache.storm.utils.DRPCClient;
-import org.apache.storm.utils.Utils;
 import org.junit.AfterClass;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -87,16 +86,11 @@ public class DRPCServerTest {
     
     @Test
     public void testGoodThrift() throws Exception {
-        int drpcPort = Utils.getAvailablePort();
-        int invocationsPort = Utils.getAvailablePort(drpcPort + 1);
-        Map<String, Object> conf = getConf(drpcPort, invocationsPort, null);
+        Map<String, Object> conf = getConf(0, 0, null);
         try (DRPCServer server = new DRPCServer(conf)) {
-            exec.submit(() -> {
-                server.start();
-                return null;
-            });
-            try (DRPCClient client = new DRPCClient(conf, "localhost", drpcPort);
-                 DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", invocationsPort)) {
+            server.start();
+            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDRPCPort());
+                 DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
                 Future<String> found = exec.submit(() -> client.getClient().execute("testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
@@ -111,16 +105,11 @@ public class DRPCServerTest {
     
     @Test
     public void testFailedThrift() throws Exception {
-        int drpcPort = Utils.getAvailablePort();
-        int invocationsPort = Utils.getAvailablePort(drpcPort + 1);
-        Map<String, Object> conf = getConf(drpcPort, invocationsPort, null);
+        Map<String, Object> conf = getConf(0, 0, null);
         try (DRPCServer server = new DRPCServer(conf)) {
-            exec.submit(() -> {
-                server.start();
-                return null;
-            });
-            try (DRPCClient client = new DRPCClient(conf, "localhost", drpcPort);
-                    DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", invocationsPort)) {
+            server.start();
+            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDRPCPort());
+                    DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
                 Future<String> found = exec.submit(() -> client.getClient().execute("testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
@@ -155,19 +144,13 @@ public class DRPCServerTest {
     @Test
     public void testGoodHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET TEST...");
-        int drpcPort = Utils.getAvailablePort();
-        int invocationsPort = Utils.getAvailablePort(drpcPort + 1);
-        int httpPort = Utils.getAvailablePort(invocationsPort + 1);
-        Map<String, Object> conf = getConf(drpcPort, invocationsPort, httpPort);
+        Map<String, Object> conf = getConf(0, 0, 0);
         try (DRPCServer server = new DRPCServer(conf)) {
-            exec.submit(() -> {
-                server.start();
-                return null;
-            });
+            server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
-            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", invocationsPort)) {
-                Future<String> found = exec.submit(() -> GET(httpPort, "testing", "test"));
+            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+                Future<String> found = exec.submit(() -> GET(server.getHttpServerPort(), "testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
                 assertEquals("test", request.get_func_args());
@@ -182,19 +165,13 @@ public class DRPCServerTest {
     @Test
     public void testFailedHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET (FAIL) TEST...");
-        int drpcPort = Utils.getAvailablePort();
-        int invocationsPort = Utils.getAvailablePort(drpcPort + 1);
-        int httpPort = Utils.getAvailablePort(invocationsPort + 1);
-        Map<String, Object> conf = getConf(drpcPort, invocationsPort, httpPort);
+        Map<String, Object> conf = getConf(0, 0, 0);
         try (DRPCServer server = new DRPCServer(conf)) {
-            exec.submit(() -> {
-                server.start();
-                return null;
-            });
+            server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
-            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", invocationsPort)) {
-                Future<String> found = exec.submit(() -> GET(httpPort, "testing", "test"));
+            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+                Future<String> found = exec.submit(() -> GET(server.getHttpServerPort(), "testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
                 assertEquals("test", request.get_func_args());
