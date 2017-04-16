@@ -53,6 +53,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.spy;
 
+import java.nio.file.Files;
+
 public class BlobStoreTest {
   private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
   URI base;
@@ -170,14 +172,18 @@ public class BlobStoreTest {
 
   @Test
   public void testDeleteAfterFailedCreate() throws Exception{
+    //Check that a blob can be deleted when a temporary file exists in the blob directory
     LocalFsBlobStore store = initLocalFs();
 
+    String key = "test";
     SettableBlobMeta metadata = new SettableBlobMeta(BlobStoreAclHandler
             .WORLD_EVERYTHING);
-    AtomicOutputStream out = store.createBlob("test", metadata, null);
-      out.write(1);
-
-
+    try(AtomicOutputStream out = store.createBlob(key, metadata, null)) {
+        out.write(1);
+        File blobDir = store.getKeyDataDir(key);
+        Files.createFile(blobDir.toPath().resolve("tempFile.tmp"));
+    }
+    
     store.deleteBlob("test",null);
 
   }

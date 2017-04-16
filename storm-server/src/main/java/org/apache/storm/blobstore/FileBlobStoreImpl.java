@@ -17,6 +17,7 @@
  */
 package org.apache.storm.blobstore;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -182,7 +183,8 @@ public class FileBlobStoreImpl {
         delete(keyDir);
     }
 
-    private File getKeyDir(String key) {
+    @VisibleForTesting
+    File getKeyDir(String key) {
         String hash = String.valueOf(Math.abs((long)key.hashCode()) % BUCKETS);
         File ret = new File(new File(fullPath, hash), key);
         LOG.debug("{} Looking for {} in {}", new Object[]{fullPath, key, hash});
@@ -240,7 +242,7 @@ public class FileBlobStoreImpl {
     }
 
     protected void delete(File path) throws IOException {
-        if (Files.exists(path.toPath())){
+        if (Files.exists(path.toPath())) {
 
             Files.walkFileTree(path.toPath(), new SimpleFileVisitor<Path>() {
 
