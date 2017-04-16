@@ -22,7 +22,7 @@
            [java.io File]))
 
 (deftest test-local-state
-  (with-open [dir1-tmp (TmpPath.)
+  (with-open [dir1-tmp (TmpPath.) 
               dir2-tmp (TmpPath.)]
     (let [dir1 (.getPath dir1-tmp)
           dir2 (.getPath dir2-tmp)
