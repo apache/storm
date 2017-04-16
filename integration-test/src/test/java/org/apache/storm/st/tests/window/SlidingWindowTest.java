@@ -20,7 +20,7 @@ package org.apache.storm.st.tests.window;
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.wrapper.LogData;
 import org.apache.storm.st.wrapper.TopoWrap;
-import org.apache.storm.thrift.TException;
+import org.apache.thrift.TException;
 import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;

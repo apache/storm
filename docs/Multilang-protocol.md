@@ -140,7 +140,7 @@ What happens next depends on the type of component:
 
 Shell spouts are synchronous. The rest happens in a while(true) loop:
 
-* STDIN: Either a next, ack, or fail command.
+* STDIN: Either a next, ack, activate, deactivate or fail command.
 
 "next" is the equivalent of ISpout's `nextTuple`. It looks like:
 
@@ -152,6 +152,16 @@ Shell spouts are synchronous. The rest happens in a while(true) loop:
 
 ```
 {"command": "ack", "id": "1231231"}
+```
+
+"activate" is the equivalent of ISpout's `activate`:
+```
+{"command": "activate"}
+```
+
+"deactivate" is the equivalent of ISpout's `deactivate`:
+```
+{"command": "deactivate"}
 ```
 
 "fail" looks like:

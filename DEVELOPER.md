@@ -272,7 +272,7 @@ If you wish to skip the unit tests you can do this by adding `-DskipTests` to th
 In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
 
 ```sh
-cd storm-core/src
+cd storm-client/src
 sh genthrift.sh
 ```
 

@@ -31,24 +31,10 @@
     <relativePath>../../pom.xml</relativePath>
   </parent>
 
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <provided.scope>provided</provided.scope>
-  </properties>
-
-  <profiles>
-    <profile>
-      <id>intellij</id>
-      <properties>
-        <provided.scope>compile</provided.scope>
-      </properties>
-    </profile>
-  </profiles>
-
   <dependencies>
    <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-core</artifactId>
+      <artifactId>storm-client</artifactId>
       <version>${project.version}</version>
       <scope>${provided.scope}</scope>
     </dependency>
@@ -102,6 +88,23 @@
         <version>1.4</version>
         <configuration>
           <createDependencyReducedPom>true</createDependencyReducedPom>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.sf</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.dsa</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/*.rsa</exclude>
+                <exclude>META-INF/*.EC</exclude>
+                <exclude>META-INF/*.ec</exclude>
+                <exclude>META-INF/MSFTSIG.SF</exclude>
+                <exclude>META-INF/MSFTSIG.RSA</exclude>
+              </excludes>
+            </filter>
+        </filters>
         </configuration>
         <executions>
           <execution>

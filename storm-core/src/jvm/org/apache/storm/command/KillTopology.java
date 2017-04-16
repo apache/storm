@@ -17,6 +17,7 @@
  */
 package org.apache.storm.command;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.storm.generated.KillOptions;
@@ -31,9 +32,9 @@ public class KillTopology {
 
     public static void main(String [] args) throws Exception {
         Map<String, Object> cl = CLI.opt("w", "wait", null, CLI.AS_INT)
-                                    .arg("TOPO", CLI.FIRST_WINS)
+                                    .arg("TOPO", CLI.INTO_LIST)
                                     .parse(args);
-        final String name = (String)cl.get("TOPO");
+        final List<String> names = (List<String>)cl.get("TOPO");
         Integer wait = (Integer)cl.get("w");
 
         final KillOptions opts = new KillOptions();
@@ -42,9 +43,11 @@ public class KillTopology {
         }
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
           @Override
-          public void run(Nimbus.Client nimbus) throws Exception {
-            nimbus.killTopologyWithOpts(name, opts);
-            LOG.info("Killed topology: {}", name);
+          public void run(Nimbus.Iface nimbus) throws Exception {
+            for (String name: names) {
+              nimbus.killTopologyWithOpts(name, opts);
+              LOG.info("Killed topology: {}", name);
+            }
           }
         });
     }

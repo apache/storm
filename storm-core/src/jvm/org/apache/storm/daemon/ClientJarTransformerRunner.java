@@ -18,7 +18,7 @@
 
 package org.apache.storm.daemon;
 
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ReflectionUtils;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -31,11 +31,19 @@ import java.io.InputStream;
  */
 public class ClientJarTransformerRunner {
     public static void main(String [] args) throws IOException {
-        JarTransformer transformer = Utils.jarTransformer(args[0]);
+        JarTransformer transformer = newJarTransformerInstance(args[0]);
         InputStream in = new FileInputStream(args[1]);
         OutputStream out = new FileOutputStream(args[2]);
         transformer.transform(in, out);
         in.close();
         out.close();
+    }
+
+    private static JarTransformer newJarTransformerInstance(String klass) {
+        JarTransformer ret = null;
+        if (klass != null) {
+            ret = (JarTransformer) ReflectionUtils.newInstance(klass);
+        }
+        return ret;
     }
 }

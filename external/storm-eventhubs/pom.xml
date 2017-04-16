@@ -17,57 +17,37 @@
 -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
+    
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
-
+    
     <artifactId>storm-eventhubs</artifactId>
-    <version>2.0.0-SNAPSHOT</version>
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
-
+    
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
-                        </transformer>
-                    </transformers>
-                    <outputFile>target/${project.artifactId}-${project.version}-jar-with-dependencies.jar</outputFile>
-                </configuration>
-            </plugin>
-            <plugin>
-                <artifactId>maven-antrun-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <phase>package</phase>
-                        <configuration>
-                            <tasks>
-                                <copy file="src/main/resources/config.properties" tofile="target/eventhubs-config.properties" />
-                            </tasks>
-                        </configuration>
-                        <goals>
-                            <goal>run</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
+             <plugin>
+		        <artifactId>maven-antrun-plugin</artifactId>
+		        <executions>
+		          <execution>
+		            <phase>package</phase>
+		            <configuration>
+		              <tasks>
+		                <copy file="src/main/resources/config.properties" tofile="target/eventhubs-config.properties" />
+                    </tasks>
+		            </configuration>
+		            <goals>
+		              <goal>run</goal>
+		            </goals>
+		          </execution>
+		        </executions>
+	        </plugin>
         </plugins>
     </build>
     <dependencies>
@@ -78,11 +58,11 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <!-- keep storm out of the jar-with-dependencies -->
             <type>jar</type>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -114,5 +94,11 @@
             <artifactId>qpid-amqp-1-0-common</artifactId>
             <version>${qpid.version}</version>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.11</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies> 
 </project>

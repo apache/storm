@@ -19,17 +19,21 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>storm-integration-test</name>
-    <groupId>org.apache.storm</groupId>
+    <parent>
+        <artifactId>storm</artifactId>
+        <groupId>org.apache.storm</groupId>
+        <version>2.0.0-SNAPSHOT</version>
+        <relativePath>..</relativePath>
+    </parent>
+
+    <name>Storm Integration Test</name>
     <artifactId>storm-integration-test</artifactId>
-    <version>0.3</version>
     <packaging>jar</packaging>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <!-- see comment below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
-        <storm.version>1.0.1.2.5.0.0-781</storm.version>
         <redirectTestOutputToFile>true</redirectTestOutputToFile>
         <regression.downloadWorkerLogs>false</regression.downloadWorkerLogs>
         <storm.conf.dir>/etc/storm/conf</storm.conf.dir>
@@ -48,33 +52,6 @@
         </profile>
     </profiles>
 
-    <repositories>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>central</id>
-            <url>http://repo1.maven.org/maven2/</url>
-        </repository>
-        <repository>
-            <releases>
-                <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-            <id>clojars</id>
-            <url>https://clojars.org/repo/</url>
-        </repository>
-        <repository>
-            <id>hortonworks</id>
-            <url>http://nexus-private.hortonworks.com/nexus/content/groups/public/</url>
-        </repository>
-    </repositories>
-
     <dependencies>
         <dependency>
             <groupId>org.testng</groupId>
@@ -85,40 +62,28 @@
         <dependency>
             <groupId>joda-time</groupId>
             <artifactId>joda-time</artifactId>
-            <version>2.3</version>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-firefox-driver</artifactId>
-            <version>2.45.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-support</artifactId>
-            <version>2.45.0</version>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
-            <version>${storm.version}</version>
-            <scope>provided</scope>
+            <artifactId>storm-client</artifactId>
+            <version>${project.version}</version>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-solr</artifactId>
-            <version>${storm.version}</version>
+            <artifactId>storm-server</artifactId>
+            <version>${project.version}</version>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-starter</artifactId>
-            <version>${storm.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.3.1</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-hdfs</artifactId>
-            <version>${storm.version}</version>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
         </dependency>
     </dependencies>
 
@@ -174,7 +139,6 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-                    <forkCount>1C</forkCount>
                     <argLine>-Xmx1024m</argLine>
                     <properties>
                         <property>
@@ -189,12 +153,6 @@
                         <!-- Hack to get the dir in CP through CLI and idea -->
                         <additionalClasspathElement>${storm.conf.dir}</additionalClasspathElement>
                         <additionalClasspathElement>${hadoop.conf.dir}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.1}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.2}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.3}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.4}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.5}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.6}</additionalClasspathElement>
                     </additionalClasspathElements>
                 </configuration>
             </plugin>

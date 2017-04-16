@@ -15,14 +15,23 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.config
-  (:import [org.apache.storm Config]))
+  (:import [org.apache.storm DaemonConfig Config])
+  (:import [org.apache.storm.validation ConfigValidation]))
 
 (defn- clojure-config-name [name]
   (.replace (.toUpperCase name) "_" "-"))
 
 ; define clojure constants for every configuration parameter
-(doseq [f (seq (.getFields Config))]
-  (let [name (.getName f)
-        new-name (clojure-config-name name)]
-    (eval
-      `(def ~(symbol new-name) (. Config ~(symbol name))))))
+(doseq [f (seq (.getDeclaredFields DaemonConfig))]
+  (when (ConfigValidation/isFieldAllowed f)
+    (let [name (.getName f)
+          new-name (clojure-config-name name)]
+      (eval
+        `(def ~(symbol new-name) (. DaemonConfig ~(symbol name)))))))
+
+(doseq [f (seq (.getDeclaredFields Config))]
+  (when (ConfigValidation/isFieldAllowed f)
+    (let [name (.getName f)
+          new-name (clojure-config-name name)]
+      (eval
+        `(def ~(symbol new-name) (. Config ~(symbol name)))))))

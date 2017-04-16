@@ -17,7 +17,6 @@
   (:use [clojure test])
   (:import [org.apache.thrift TException]
            [org.json.simple JSONValue]
-           [org.apache.storm.utils Utils]
            [org.apache.storm.security.auth.authorizer ImpersonationAuthorizer]
            [java.net Inet4Address])
   (:import [org.apache.storm.blobstore BlobStore])
@@ -31,10 +30,10 @@
   (:import [java.security Principal AccessController])
   (:import [javax.security.auth Subject])
   (:import [java.net InetAddress])
-  (:import [org.apache.storm Config Testing Testing$Condition])
+  (:import [org.apache.storm Config Testing Testing$Condition DaemonConfig])
   (:import [org.apache.storm.generated AuthorizationException])
   (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
-  (:import [org.apache.storm.utils NimbusClient ConfigUtils Time])
+  (:import [org.apache.storm.utils NimbusClient Time])
   (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
@@ -43,7 +42,7 @@
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
             KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]
            (org.json.simple JSONValue))
-  (:import [org.apache.storm.utils Utils]))
+  (:import [org.apache.storm.utils ConfigUtils Utils]))
 
 (defn mk-principal [name]
   (reify Principal
@@ -345,9 +344,9 @@
                   "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
                   "org.apache.storm.security.auth.SimpleTransportPlugin" nil]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
-                               Config/NIMBUS_THRIFT_PORT a-port
-                               Config/NIMBUS_TASK_TIMEOUT_SECS nimbus-timeout})
+                              {STORM-THRIFT-TRANSPORT-PLUGIN         "org.apache.storm.security.auth.SimpleTransportPlugin"
+                               Config/NIMBUS_THRIFT_PORT       a-port
+                               DaemonConfig/NIMBUS_TASK_TIMEOUT_SECS nimbus-timeout})
             client (NimbusClient. storm-conf "localhost" a-port nimbus-timeout)
             nimbus_client (.getClient client)]
         (testing "(Negative authorization) Authorization plugin should reject client request"

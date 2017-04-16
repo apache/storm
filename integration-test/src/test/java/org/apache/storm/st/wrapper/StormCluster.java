@@ -26,7 +26,7 @@ import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.st.utils.AssertUtil;
 import org.apache.commons.lang.exception.ExceptionUtils;
-import org.apache.storm.thrift.TException;
+import org.apache.thrift.TException;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -41,7 +41,7 @@ import java.util.Map;
 
 public class StormCluster {
     private static Logger log = LoggerFactory.getLogger(StormCluster.class);
-    private final Nimbus.Client client;
+    private final Nimbus.Iface client;
 
     public StormCluster() {
         Map conf = getConfig();
@@ -103,7 +103,7 @@ public class StormCluster {
         return client.getTopologyInfo(topologySummary.get_id());
     }
 
-    public Nimbus.Client getNimbusClient() {
+    public Nimbus.Iface getNimbusClient() {
         return client;
     }
 

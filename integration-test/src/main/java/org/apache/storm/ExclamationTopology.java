@@ -18,7 +18,6 @@
 package org.apache.storm;
 
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.testing.TestWordSpout;
@@ -59,8 +58,6 @@ public class ExclamationTopology {
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
       declarer.declare(new Fields("word"));
     }
-
-
   }
 
   public static void main(String[] args) throws Exception {
@@ -68,19 +65,13 @@ public class ExclamationTopology {
 
     Config conf = new Config();
     conf.setDebug(true);
-
-    if (args != null && args.length > 0) {
-      conf.setNumWorkers(3);
-
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, topology);
+    String topoName = "test";
+    if (args.length > 0) {
+        topoName = args[0];
     }
-    else {
 
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopolgoy topo = cluster.submitTopology("test", conf, topology);) {
-        Utils.sleep(10000);
-      }
-    }
+    conf.setNumWorkers(3);
+    StormSubmitter.submitTopologyWithProgressBar(topoName, conf, topology);
   }
 
   public static StormTopology getStormTopology() {

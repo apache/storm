@@ -111,6 +111,11 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     }
 
     @Override
+    public void cleanOffsetAfterRetries(Partition partition, Long offset) {
+        //Do nothing..
+    }
+
+    @Override
     public Set<Long> clearOffsetsBefore(Long kafkaOffset) {
         Set<Long> invalidOffsets = new HashSet<Long>(); 
         for(Long offset : records.keySet()){

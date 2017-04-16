@@ -20,38 +20,7 @@ order to change configuration.
 
 ## About
 Flux is a framework and set of utilities that make defining and deploying Apache Storm topologies less painful and
-deveoper-intensive.
-
-Have you ever found yourself repeating this pattern?:
-
-```java
-
-public static void main(String[] args) throws Exception {
-    // logic to determine if we're running locally or not...
-    // create necessary config options...
-    boolean runLocal = shouldRunLocal();
-    if(runLocal){
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(name, conf, topology);
-    } else {
-        StormSubmitter.submitTopology(name, conf, topology);
-    }
-}
-```
-
-Wouldn't something like this be easier:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --local config.yaml
-```
-
-or:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --remote config.yaml
-```
-
-Another pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
+deveoper-intensive. One of the pain points often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
 and that any changes require recompilation and repackaging of the topology jar file. Flux aims to alleviate that
 pain by allowing you to package all your Storm components in a single jar, and use an external text file to define
 the layout and configuration of your topologies.
@@ -430,7 +399,7 @@ JavaBean-like setter methods and fields declared as `public`:
 ```
 
 In the example above, the `properties` declaration will cause Flux to look for a public method in the `SpoutConfig` with
-the signature `setForceFromStart(boolean b)` and attempt to invoke it. If a setter method is not found, Flux will then
+the signature `setIgnoreZkOffsets(boolean b)` and attempt to invoke it. If a setter method is not found, Flux will then
 look for a public instance variable with the name `ignoreZkOffsets` and attempt to set its value.
 
 References may also be used as property values.

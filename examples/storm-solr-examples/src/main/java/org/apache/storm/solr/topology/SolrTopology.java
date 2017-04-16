@@ -18,17 +18,15 @@
 
 package org.apache.storm.solr.topology;
 
+import java.io.IOException;
+
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.solr.config.SolrCommitStrategy;
 import org.apache.storm.solr.config.SolrConfig;
-
-import java.io.IOException;
 
 public abstract class SolrTopology {
     protected static String COLLECTION = "gettingstarted";
@@ -37,26 +35,17 @@ public abstract class SolrTopology {
         final StormTopology topology = getTopology();
         final Config config = getConfig();
 
-        if (args.length == 0) {
-            submitTopologyLocalCluster(topology, config);
-        } else {
-            submitTopologyRemoteCluster(args[0], topology, config);
+        String topoName = "test";
+        if (args.length > 0) {
+            topoName = args[0];
         }
+        submitTopologyRemoteCluster(topoName, topology, config);
     }
 
     protected abstract StormTopology getTopology() throws IOException;
 
     protected void submitTopologyRemoteCluster(String arg, StormTopology topology, Config config) throws Exception {
         StormSubmitter.submitTopology(arg, config, topology);
-    }
-
-    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws Exception {
-        try (LocalCluster cluster = new LocalCluster();
-             LocalTopology topo = cluster.submitTopology("test", config, topology);) {
-            Thread.sleep(10000);
-            System.out.println("Killing topology per client's request");
-        }
-        System.exit(0);
     }
 
     protected Config getConfig() {

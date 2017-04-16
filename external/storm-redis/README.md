@@ -14,7 +14,7 @@ use it as a maven dependency:
 <dependency>
     <groupId>org.apache.storm</groupId>
     <artifactId>storm-redis</artifactId>
-    <version>{storm.version}</version>
+    <version>${storm.version}</version>
     <type>jar</type>
 </dependency>
 ```

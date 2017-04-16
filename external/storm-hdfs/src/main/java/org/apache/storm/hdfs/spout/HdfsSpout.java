@@ -73,6 +73,8 @@ public class HdfsSpout extends BaseRichSpout {
   private String inprogress_suffix = ".inprogress"; // not configurable to prevent change between topology restarts
   private String ignoreSuffix = ".ignore";
 
+  private String outputStreamName= null;
+
   // other members
   private static final Logger LOG = LoggerFactory.getLogger(HdfsSpout.class);
 
@@ -177,6 +179,14 @@ public class HdfsSpout extends BaseRichSpout {
    * default key name is 'hdfs.config' */
   public HdfsSpout withConfigKey(String configKey) {
     this.configKey = configKey;
+    return this;
+  }
+
+  /**
+   * Set output stream name
+   */
+  public HdfsSpout withOutputStream(String streamName) {
+    this.outputStreamName = streamName;
     return this;
   }
 
@@ -345,11 +355,17 @@ public class HdfsSpout extends BaseRichSpout {
 
   protected void emitData(List<Object> tuple, MessageId id) {
     LOG.trace("Emitting - {}", id);
-    this.collector.emit(tuple, id);
+
+    if ( outputStreamName==null )
+      collector.emit( tuple, id );
+    else
+      collector.emit( outputStreamName, tuple, id );
+
     inflight.put(id, tuple);
   }
 
-  public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+  @SuppressWarnings("deprecation")
+public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
     LOG.info("Opening HDFS Spout");
     this.conf = conf;
     this.commitTimer = new Timer();
@@ -513,12 +529,16 @@ public class HdfsSpout extends BaseRichSpout {
     return sourceDirPath.toString() + Path.SEPARATOR + Configs.DEFAULT_LOCK_DIR;
   }
 
-  private static void checkValidReader(String readerType) {
+  static void checkValidReader(String readerType) {
     if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
       return;
     try {
       Class<?> classType = Class.forName(readerType);
       classType.getConstructor(FileSystem.class, Path.class, Map.class);
+      if (!FileReader.class.isAssignableFrom(classType)) {
+          LOG.error(readerType + " not a FileReader");
+          throw new IllegalArgumentException(readerType + " not a FileReader."); 
+      }
       return;
     } catch (ClassNotFoundException e) {
       LOG.error(readerType + " not found in classpath.", e);
@@ -772,8 +792,13 @@ public class HdfsSpout extends BaseRichSpout {
     return newFile;
   }
 
+  @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(outputFields);
+    if (outputStreamName!=null) {
+      declarer.declareStream(outputStreamName, outputFields);
+    } else {
+      declarer.declare(outputFields);
+    }
   }
 
   static class MessageId implements  Comparable<MessageId> {

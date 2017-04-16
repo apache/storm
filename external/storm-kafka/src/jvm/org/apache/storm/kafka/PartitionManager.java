@@ -66,7 +66,29 @@ public class PartitionManager {
     ZkState _state;
     Map _stormConf;
     long numberFailed, numberAcked;
-    public PartitionManager(DynamicPartitionConnections connections, String topologyInstanceId, ZkState state, Map stormConf, SpoutConfig spoutConfig, Partition id) {
+
+    public PartitionManager(
+            DynamicPartitionConnections connections,
+            String topologyInstanceId,
+            ZkState state,
+            Map stormConf,
+            SpoutConfig spoutConfig,
+            Partition id)
+    {
+        this(connections, topologyInstanceId, state, stormConf, spoutConfig, id, null);
+    }
+
+    /**
+     * @param previousManager previous partition manager if manager for partition is being recreated
+     */
+    public PartitionManager(
+            DynamicPartitionConnections connections,
+            String topologyInstanceId,
+            ZkState state,
+            Map stormConf,
+            SpoutConfig spoutConfig,
+            Partition id,
+            PartitionManager previousManager) {
         _partition = id;
         _connections = connections;
         _spoutConfig = spoutConfig;
@@ -76,53 +98,64 @@ public class PartitionManager {
         _stormConf = stormConf;
         numberAcked = numberFailed = 0;
 
-        try {
-            _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
-            _failedMsgRetryManager.prepare(spoutConfig, _stormConf);
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
-            throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
-                                                             FailedMsgRetryManager.class,
-                                                             spoutConfig.failedMsgRetryManagerClass), e);
-        }
-
-        String jsonTopologyId = null;
-        Long jsonOffset = null;
-        String path = committedPath();
-        try {
-            Map<Object, Object> json = _state.readJSON(path);
-            LOG.info("Read partition information from: " + path +  "  --> " + json );
-            if (json != null) {
-                jsonTopologyId = (String) ((Map<Object, Object>) json.get("topology")).get("id");
-                jsonOffset = (Long) json.get("offset");
-            }
-        } catch (Throwable e) {
-            LOG.warn("Error reading and/or parsing at ZkNode: " + path, e);
-        }
-
-        String topic = _partition.topic;
-        Long currentOffset = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig);
-
-        if (jsonTopologyId == null || jsonOffset == null) { // failed to parse JSON?
-            _committedTo = currentOffset;
-            LOG.info("No partition information found, using configuration to determine offset");
-        } else if (!topologyInstanceId.equals(jsonTopologyId) && spoutConfig.ignoreZkOffsets) {
-            _committedTo = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig.startOffsetTime);
-            LOG.info("Topology change detected and ignore zookeeper offsets set to true, using configuration to determine offset");
+        if (previousManager != null) {
+            _failedMsgRetryManager = previousManager._failedMsgRetryManager;
+            _committedTo = previousManager._committedTo;
+            _emittedToOffset = previousManager._emittedToOffset;
+            _waitingToEmit = previousManager._waitingToEmit;
+            _pending = previousManager._pending;
+            LOG.info("Recreating PartitionManager based on previous manager, _waitingToEmit size: {}, _pending size: {}",
+                    _waitingToEmit.size(),
+                    _pending.size());
         } else {
-            _committedTo = jsonOffset;
-            LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId );
-        }
+            try {
+                _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
+                _failedMsgRetryManager.prepare(spoutConfig, _stormConf);
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
+                        FailedMsgRetryManager.class,
+                        spoutConfig.failedMsgRetryManagerClass), e);
+            }
 
-        if (currentOffset - _committedTo > spoutConfig.maxOffsetBehind || _committedTo <= 0) {
-            LOG.info("Last commit offset from zookeeper: " + _committedTo);
-            Long lastCommittedOffset = _committedTo;
-            _committedTo = currentOffset;
-            LOG.info("Commit offset " + lastCommittedOffset + " is more than " +
-                    spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
-        }
+            String jsonTopologyId = null;
+            Long jsonOffset = null;
+            String path = committedPath();
+            try {
+                Map<Object, Object> json = _state.readJSON(path);
+                LOG.info("Read partition information from: " + path + "  --> " + json);
+                if (json != null) {
+                    jsonTopologyId = (String) ((Map<Object, Object>) json.get("topology")).get("id");
+                    jsonOffset = (Long) json.get("offset");
+                }
+            } catch (Throwable e) {
+                LOG.warn("Error reading and/or parsing at ZkNode: " + path, e);
+            }
 
-        LOG.info("Starting Kafka " + _consumer.host() + " " + id + " from offset " + _committedTo);
-        _emittedToOffset = _committedTo;
+            String topic = _partition.topic;
+            Long currentOffset = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig);
+
+            if (jsonTopologyId == null || jsonOffset == null) { // failed to parse JSON?
+                _committedTo = currentOffset;
+                LOG.info("No partition information found, using configuration to determine offset");
+            } else if (!topologyInstanceId.equals(jsonTopologyId) && spoutConfig.ignoreZkOffsets) {
+                _committedTo = KafkaUtils.getOffset(_consumer, topic, id.partition, spoutConfig.startOffsetTime);
+                LOG.info("Topology change detected and ignore zookeeper offsets set to true, using configuration to determine offset");
+            } else {
+                _committedTo = jsonOffset;
+                LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId);
+            }
+
+            if (currentOffset - _committedTo > spoutConfig.maxOffsetBehind || _committedTo <= 0) {
+                LOG.info("Last commit offset from zookeeper: " + _committedTo);
+                Long lastCommittedOffset = _committedTo;
+                _committedTo = currentOffset;
+                LOG.info("Commit offset " + lastCommittedOffset + " is more than " +
+                        spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
+            }
+
+            LOG.info("Starting Kafka " + _consumer.host() + " " + id + " from offset " + _committedTo);
+            _emittedToOffset = _committedTo;
+        }
 
         _fetchAPILatencyMax = new CombinedMetric(new MaxMetric());
         _fetchAPILatencyMean = new ReducedMetric(new MeanReducer());
@@ -133,7 +166,7 @@ public class PartitionManager {
     }
 
     public Map getMetricsDataMap() {
-        Map ret = new HashMap();
+        Map<String, Object> ret = new HashMap<>();
         ret.put(_partition + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
         ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
         ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
@@ -160,7 +193,7 @@ public class PartitionManager {
             } else {
                 tups = KafkaUtils.generateTuples(_spoutConfig, toEmit.message(), _partition.topic);
             }
-            
+
             if ((tups != null) && tups.iterator().hasNext()) {
                if (!Strings.isNullOrEmpty(_spoutConfig.outputStreamId)) {
                     for (List<Object> tup : tups) {
@@ -201,7 +234,7 @@ public class PartitionManager {
         } catch (TopicOffsetOutOfRangeException e) {
             offset = KafkaUtils.getOffset(_consumer, _partition.topic, _partition.partition, kafka.api.OffsetRequest.EarliestTime());
             // fetch failed, so don't update the fetch metrics
-            
+
             //fix bug [STORM-643] : remove outdated failed offsets
             if (!processingNewTuples) {
                 // For the case of EarliestTime it would be better to discard
@@ -214,7 +247,7 @@ public class PartitionManager {
                 if (null != omitted) {
                     _lostMessageCount.incrBy(omitted.size());
                 }
-                
+
                 LOG.warn("Removing the failed offsets for {} that are out of range: {}", _partition, omitted);
             }
 
@@ -223,7 +256,7 @@ public class PartitionManager {
                 _emittedToOffset = offset;
                 LOG.warn("{} Using new offset: {}", _partition, _emittedToOffset);
             }
-            
+
             return;
         }
         long millis = System.currentTimeMillis() - start;
@@ -290,6 +323,7 @@ public class PartitionManager {
                 // state for the offset should be cleaned up
                 LOG.warn("Will not retry failed kafka offset {} further", offset);
                 _messageIneligibleForRetryCount.incr();
+                this._failedMsgRetryManager.cleanOffsetAfterRetries(_partition, offset);
                 _pending.remove(offset);
                 this._failedMsgRetryManager.acked(offset);
             }

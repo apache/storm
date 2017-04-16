@@ -14,7 +14,7 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.starter.clj.word-count
-  (:import [org.apache.storm StormSubmitter LocalCluster]
+  (:import [org.apache.storm StormSubmitter]
            [org.apache.storm.utils Utils])
   (:use [org.apache.storm clojure config])
   (:gen-class))
@@ -74,11 +74,6 @@
                    word-count
                    :p 6)}))
 
-(defn run-local! []
-  (with-open [cluster (LocalCluster.)
-              topo (.submitTopology cluster "word-count" {TOPOLOGY-DEBUG true} (mk-topology))]
-    (Thread/sleep 10000)))
-
 (defn submit-topology! [name]
   (StormSubmitter/submitTopology
    name
@@ -88,7 +83,7 @@
 
 (defn -main
   ([]
-   (run-local!))
+   (submit-topology! "test"))
   ([name]
    (submit-topology! name)))
 

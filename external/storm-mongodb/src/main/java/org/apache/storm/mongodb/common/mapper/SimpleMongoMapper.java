@@ -17,12 +17,19 @@
  */
 package org.apache.storm.mongodb.common.mapper;
 
+import org.apache.storm.mongodb.common.MongoUtils;
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;
+
+import java.util.List;
 
 public class SimpleMongoMapper implements MongoMapper {
 
     private String[] fields;
+
+    public SimpleMongoMapper(String... fields) {
+        this.fields = fields;
+    }
 
     @Override
     public Document toDocument(ITuple tuple) {
@@ -30,6 +37,13 @@ public class SimpleMongoMapper implements MongoMapper {
         for(String field : fields){
             document.append(field, tuple.getValueByField(field));
         }
+        return document;
+    }
+
+    @Override
+    public Document toDocumentByKeys(List<Object> keys) {
+        Document document = new Document();
+        document.append("_id", MongoUtils.getID(keys));
         return document;
     }
 

@@ -17,9 +17,9 @@
  */
 package org.apache.storm.starter;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -30,13 +30,8 @@ import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
-import java.util.Map;
 
 /**
  * This is a basic example of a Storm topology.
@@ -91,15 +86,11 @@ public class MultipleLoggerTopology {
 
     Config conf = new Config();
     conf.setDebug(true);
-
+    String topoName = MultipleLoggerTopology.class.getName();
     if (args != null && args.length > 0) {
-      conf.setNumWorkers(2);
-      StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-    } else {
-      try (LocalCluster cluster = new LocalCluster();
-           LocalTopology topo = cluster.submitTopology("test", conf, builder.createTopology());) {
-          Utils.sleep(10000);
-      }
+      topoName = args[0];
     }
+    conf.setNumWorkers(2);
+    StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
   }
 }

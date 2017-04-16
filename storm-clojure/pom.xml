@@ -30,16 +30,13 @@
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
-            <version>${project.version}</version>
-            <type>test-jar</type>
-            <scope>test</scope>
+            <groupId>org.clojure</groupId>
+            <artifactId>tools.logging</artifactId>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
@@ -48,7 +45,7 @@
         </dependency>
     </dependencies>
 
-    <build>
+    <build> 
         <plugins>
             <plugin>
                 <groupId>com.theoryinpractise</groupId>

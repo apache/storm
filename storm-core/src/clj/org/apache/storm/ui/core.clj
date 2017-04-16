@@ -1,18 +1,20 @@
-;; Licensed to the Apache Software Foundation (ASF) under one
-;; or more contributor license agreements.  See the NOTICE file
-;; distributed with this work for additional information
-;; regarding copyright ownership.  The ASF licenses this file
-;; to you under the Apache License, Version 2.0 (the
-;; "License"); you may not use this file except in compliance
-;; with the License.  You may obtain a copy of the License at
-;;
-;; http://www.apache.org/licenses/LICENSE-2.0
-;;
-;; Unless required by applicable law or agreed to in writing, software
-;; distributed under the License is distributed on an "AS IS" BASIS,
-;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-;; See the License for the specific language governing permissions and
-;; limitations under the License.
+;
+; Licensed to the Apache Software Foundation (ASF) under one
+; or more contributor license agreements.  See the NOTICE file
+; distributed with this work for additional information
+; regarding copyright ownership.  The ASF licenses this file
+; to you under the Apache License, Version 2.0 (the
+; "License"); you may not use this file except in compliance
+; with the License.  You may obtain a copy of the License at
+;
+; http://www.apache.org/licenses/LICENSE-2.0
+;
+; Unless required by applicable law or agreed to in writing, software
+; distributed under the License is distributed on an "AS IS" BASIS,
+; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+; See the License for the specific language governing permissions and
+; limitations under the License.
+;
 
 (ns org.apache.storm.ui.core
   (:use compojure.core)
@@ -29,7 +31,7 @@
            [org.apache.storm.stats StatsUtil]
            [org.apache.storm.ui UIHelpers IConfigurator FilterConfiguration]
            [org.apache.storm.metric StormMetricsRegistry])
-  (:import [org.apache.storm.utils Utils TopologySpoutLag])
+  (:import [org.apache.storm.utils TopologySpoutLag])
   (:use [clojure.string :only [blank? lower-case trim split]])
   (:import [org.apache.storm.generated ExecutorSpecificStats
             ExecutorStats ExecutorSummary ExecutorInfo TopologyInfo SpoutStats BoltStats
@@ -43,7 +45,7 @@
   (:import [org.apache.storm.security.auth AuthUtils ReqContext])
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [org.apache.storm.security.auth AuthUtils])
-  (:import [org.apache.storm.utils Utils VersionInfo ConfigUtils])
+  (:import [org.apache.storm.utils VersionInfo ConfigUtils Utils WebAppUtils])
   (:import [org.apache.storm Config])
   (:import [java.io File])
   (:import [java.net URLEncoder URLDecoder])
@@ -145,12 +147,12 @@
 
 (defn event-log-link
   [topology-id component-id host port secure?]
-  (logviewer-link host (Utils/eventLogsFilename topology-id (str port)) secure?))
+  (logviewer-link host (WebAppUtils/eventLogsFilename topology-id (str port)) secure?))
 
 (defn worker-log-link [host port topology-id secure?]
   (if (or (empty? host) (let [port_str (str port "")] (or (empty? port_str) (= "0" port_str))))
     ""
-    (let [fname (Utils/logsFilename topology-id (str port))]
+    (let [fname (WebAppUtils/logsFilename topology-id (str port))]
       (logviewer-link host fname secure?))))
 
 (defn nimbus-log-link [host]
@@ -337,12 +339,12 @@
   (let [tplg-main-class (if (not-nil? tplg-config) (trim (tplg-config "topologyMainClass")))
         tplg-main-class-args (if (not-nil? tplg-config) (tplg-config "topologyMainClassArgs"))
         storm-home (System/getProperty "storm.home")
-        storm-conf-dir (str storm-home Utils/FILE_PATH_SEPARATOR "conf")
+        storm-conf-dir (str storm-home WebAppUtils/FILE_PATH_SEPARATOR "conf")
         storm-log-dir (if (not-nil? (*STORM-CONF* "storm.log.dir")) (*STORM-CONF* "storm.log.dir")
-                          (str storm-home Utils/FILE_PATH_SEPARATOR "logs"))
-        storm-libs (str storm-home Utils/FILE_PATH_SEPARATOR "lib" Utils/FILE_PATH_SEPARATOR "*")
-        java-cmd (str (System/getProperty "java.home") Utils/FILE_PATH_SEPARATOR "bin" Utils/FILE_PATH_SEPARATOR "java")
-        storm-cmd (str storm-home Utils/FILE_PATH_SEPARATOR "bin" Utils/FILE_PATH_SEPARATOR "storm")
+                                                                    (str storm-home WebAppUtils/FILE_PATH_SEPARATOR "logs"))
+        storm-libs (str storm-home WebAppUtils/FILE_PATH_SEPARATOR "lib" WebAppUtils/FILE_PATH_SEPARATOR "*")
+        java-cmd (str (System/getProperty "java.home") WebAppUtils/FILE_PATH_SEPARATOR "bin" WebAppUtils/FILE_PATH_SEPARATOR "java")
+        storm-cmd (str storm-home WebAppUtils/FILE_PATH_SEPARATOR "bin" WebAppUtils/FILE_PATH_SEPARATOR "storm")
         tplg-cmd-response (apply sh
                             (flatten
                               [storm-cmd "jar" tplg-jar-file tplg-main-class
@@ -407,7 +409,7 @@
         "slotsFree" free-slots
         "executorsTotal" total-executors
         "tasksTotal" total-tasks
-        "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+        "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)
         "totalMem" total-mem
         "totalCpu" total-cpu
         "availMem" avail-mem
@@ -509,7 +511,7 @@
     ;; access on a per-topology basis (i.e. components)
     (let [supervisors-json (map supervisor-summary-to-json (.get_supervisor_summaries supervisor-page-info))]
       {"supervisors" supervisors-json
-       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+       "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)
        "workers" (into [] (for [^WorkerSummary worker-summary (.get_worker_summaries supervisor-page-info)]
                             (worker-summary-to-json secure? worker-summary)))})))
 
@@ -521,7 +523,7 @@
   ([summs]
    {"supervisors" (for [^SupervisorSummary s summs]
                     (supervisor-summary-to-json s))
-    "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
+    "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)}))
 
 (defn all-topologies-summary
   ([]
@@ -553,7 +555,7 @@
        "assignedMemOffHeap" (.get_assigned_memoffheap t)
        "assignedTotalMem" (+ (.get_assigned_memonheap t) (.get_assigned_memoffheap t))
        "assignedCpu" (.get_assigned_cpu t)})
-    "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
+    "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)}))
 
 (defn topology-stats [window stats]
   (let [times (stats-times (:emitted stats))
@@ -724,7 +726,7 @@
         "msgTimeout" msg-timeout
         "configuration" topology-conf
         "visualizationTable" []
-        "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))))
+        "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)}))))
 
 (defn- sum
   [vals]
@@ -1050,7 +1052,7 @@
        "requestedMemOnHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
        "requestedMemOffHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
        "requestedCpu" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)
-       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+       "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)
        "topologyId" topology-id
        "topologyStatus" (.get_topology_status comp-page-info)
        "encodedTopologyId" (URLEncoder/encode topology-id)

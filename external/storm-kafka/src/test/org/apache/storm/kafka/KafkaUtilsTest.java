@@ -33,6 +33,7 @@ import kafka.message.MessageAndOffset;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.utils.Utils;
 
 import com.google.common.collect.ImmutableMap;
 public class KafkaUtilsTest {

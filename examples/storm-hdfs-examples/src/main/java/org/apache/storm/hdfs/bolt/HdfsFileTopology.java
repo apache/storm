@@ -17,10 +17,24 @@
  */
 package org.apache.storm.hdfs.bolt;
 
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
+import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
+import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
+import org.apache.storm.hdfs.bolt.format.FileNameFormat;
+import org.apache.storm.hdfs.bolt.format.RecordFormat;
+import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
+import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
+import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.common.rotation.MoveFileAction;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -31,25 +45,7 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
-import org.apache.storm.hdfs.bolt.format.DelimitedRecordFormat;
-import org.apache.storm.hdfs.bolt.format.FileNameFormat;
-import org.apache.storm.hdfs.bolt.format.RecordFormat;
-import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
-import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
-import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy.Units;
-import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
-import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
-import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.apache.storm.hdfs.common.rotation.MoveFileAction;
 import org.yaml.snakeyaml.Yaml;
-
-import java.io.FileInputStream;
-import java.io.InputStream;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class HdfsFileTopology {
     static final String SENTENCE_SPOUT_ID = "sentence-spout";
@@ -97,18 +93,14 @@ public class HdfsFileTopology {
         // SentenceSpout --> MyBolt
         builder.setBolt(BOLT_ID, bolt, 4)
                 .shuffleGrouping(SENTENCE_SPOUT_ID);
-
-        if (args.length == 2) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());) {
-                waitForSeconds(120);
-            }
-            System.exit(0);
-        } else if (args.length == 3) {
-            StormSubmitter.submitTopology(args[2], config, builder.createTopology());
-        } else{
+        String topoName = TOPOLOGY_NAME;
+        if (args.length == 3) {
+            topoName = args[2];
+        } else if (args.length > 3) {
             System.out.println("Usage: HdfsFileTopology [hdfs url] [hdfs yaml config file] <topology name>");
+            return;
         }
+        StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 
     public static void waitForSeconds(int seconds) {

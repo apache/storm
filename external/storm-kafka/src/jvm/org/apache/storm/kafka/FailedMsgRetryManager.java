@@ -67,6 +67,13 @@ public interface FailedMsgRetryManager extends Serializable {
     boolean retryFurther(Long offset);
 
     /**
+     * Spout will call this method after retryFurther returns false.
+     * This gives a chance for hooking up custom logic before all clean up.
+     * @param partition,offset
+     */
+    void cleanOffsetAfterRetries(Partition partition, Long offset);
+
+    /**
      * Clear any offsets before kafkaOffset. These offsets are no longer available in kafka.
      * @param kafkaOffset
      * @return Set of offsets removed.

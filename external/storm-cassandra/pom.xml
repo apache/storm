@@ -37,7 +37,8 @@
         <junit.version>4.11</junit.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
-        <cassandra.driver.core.version>2.1.7.1</cassandra.driver.core.version>
+        <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
+        <cassandra.version>2.1.7</cassandra.version>
     </properties>
 
     <developers>
@@ -70,10 +71,24 @@
         </dependency>
 
         <dependency>
+            <groupId>org.apache.cassandra</groupId>
+            <artifactId>cassandra-all</artifactId>
+            <version>${cassandra.version}</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-server</artifactId>
+            <version>${project.version}</version>
+            <scope>test</scope>
         </dependency>
 
         <dependency>
@@ -100,5 +115,6 @@
             <version>1.10.19</version>
             <scope>test</scope>
         </dependency>
+
     </dependencies>
 </project>

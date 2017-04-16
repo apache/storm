@@ -18,21 +18,6 @@
 
 package org.apache.storm.hive.bolt;
 
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseRichSpout;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-
-import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
-import org.apache.storm.hive.common.HiveOptions;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
@@ -41,6 +26,18 @@ import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
+import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
+import org.apache.storm.hive.common.HiveOptions;
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 
 public class BucketTestHiveTopology {
@@ -94,22 +91,11 @@ public class BucketTestHiveTopology {
         // SentenceSpout --> MyBolt
         builder.setBolt(BOLT_ID, hiveBolt, 14)
                 .shuffleGrouping(USER_SPOUT_ID);
-        if (args.length == 6) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());) {
-                waitForSeconds(20);
-            }
-            System.exit(0);
-        } else {
-            StormSubmitter.submitTopology(args[7], config, builder.createTopology());
+        String topoName = TOPOLOGY_NAME;
+        if (args.length > 6) {
+            topoName = args[7];
         }
-    }
-
-    public static void waitForSeconds(int seconds) {
-        try {
-            Thread.sleep(seconds * 1000);
-        } catch (InterruptedException e) {
-        }
+        StormSubmitter.submitTopology(args[7], config, builder.createTopology());
     }
 
     public static class UserDataSpout extends BaseRichSpout {

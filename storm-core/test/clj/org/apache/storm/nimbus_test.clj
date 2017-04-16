@@ -40,8 +40,8 @@
   (:import [java.util HashMap HashSet Optional])
   (:import [java.io File])
   (:import [javax.security.auth Subject])
-  (:import [org.apache.storm.utils Time Time$SimulatedTime Utils Utils$UptimeComputer ConfigUtils IPredicate StormCommonInstaller]
-           [org.apache.storm.utils.staticmocking ConfigUtilsInstaller UtilsInstaller])
+  (:import [org.apache.storm.utils Time Time$SimulatedTime IPredicate StormCommonInstaller Utils$UptimeComputer ReflectionUtils Utils ConfigUtils ServerConfigUtils]
+           [org.apache.storm.utils.staticmocking ServerConfigUtilsInstaller ReflectionUtilsInstaller UtilsInstaller])
   (:import [org.apache.storm.zookeeper Zookeeper])
   (:import [org.apache.commons.io FileUtils])
   (:import [org.json.simple JSONValue])
@@ -51,6 +51,8 @@
   (:require [conjure.core])
 
   (:use [conjure core]))
+
+(def ^:dynamic *STORM-CONF* (clojurify-structure (ConfigUtils/readStormConfig)))
 
 (defn- mk-nimbus
   [conf inimbus blob-store leader-elector group-mapper cluster-state]
@@ -158,7 +160,7 @@
                 (HashMap.))]
     (log-warn "curr-beat:" (prn-str curr-beat) ",stats:" (prn-str stats))
     (log-warn "stats type:" (type stats))
-    (.put stats (StatsUtil/convertExecutor executor) (.renderStats (BoltExecutorStats. 20)))
+    (.put stats (StatsUtil/convertExecutor executor) (.renderStats (BoltExecutorStats. 20 (*STORM-CONF* NUM-STAT-BUCKETS))))
     (log-warn "merged:" stats)
 
     (.workerHeartbeat state storm-id node port
@@ -167,7 +169,7 @@
 (defn slot-assignments [cluster storm-id]
   (let [state (.getClusterState cluster)
         assignment (.assignmentInfo state storm-id nil)]
-        (clojurify-structure (Utils/reverseMap (.get_executor_node_port assignment)))))
+    (clojurify-structure (Utils/reverseMap (.get_executor_node_port assignment)))))
 
 (defn task-ids [cluster storm-id]
   (let [nimbus (.getNimbus cluster)]
@@ -1524,16 +1526,18 @@
                      NIMBUS-THRIFT-PORT 6666})
           expected-acls Nimbus/ZK_ACLS
           fake-inimbus (reify INimbus (getForcedScheduler [this] nil) (prepare [this conf dir] nil))
-          fake-cu (proxy [ConfigUtils] []
+          fake-cu (proxy [ServerConfigUtils] []
                     (nimbusTopoHistoryStateImpl [conf] nil))
+          fake-ru (proxy [ReflectionUtils] []
+                    (newInstanceImpl [_]))
           fake-utils (proxy [Utils] []
-                       (newInstanceImpl [_])
                        (makeUptimeComputer [] (proxy [Utils$UptimeComputer] []
                                                 (upTime [] 0))))
           cluster-utils (Mockito/mock ClusterUtils)
 	  fake-common (proxy [StormCommon] []
                              (mkAuthorizationHandler [_] nil))]
-      (with-open [_ (ConfigUtilsInstaller. fake-cu)
+      (with-open [_ (ServerConfigUtilsInstaller. fake-cu)
+                  _ (ReflectionUtilsInstaller. fake-ru)
                   _ (UtilsInstaller. fake-utils)
                   - (StormCommonInstaller. fake-common)
                   zk-le (MockedZookeeper. (proxy [Zookeeper] []

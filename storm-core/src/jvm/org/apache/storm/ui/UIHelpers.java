@@ -19,9 +19,10 @@ package org.apache.storm.ui;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
+
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
@@ -160,36 +161,48 @@ public class UIHelpers {
     }
 
     public static void configFilter(Server server, Servlet servlet, List<FilterConfiguration> filtersConfs) {
+        configFilter(server, servlet, filtersConfs, null);
+    }
+    
+    public static void configFilter(Server server, Servlet servlet, List<FilterConfiguration> filtersConfs, Map<String, String> params) {
         if (filtersConfs != null) {
             ServletHolder servletHolder = new ServletHolder(servlet);
+            servletHolder.setInitOrder(0);
+            if (params != null) {
+                servletHolder.setInitParameters(params);
+            }
             ServletContextHandler context = new ServletContextHandler(server, "/");
             context.addServlet(servletHolder, "/");
-            context.addFilter(corsFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
-            for (FilterConfiguration filterConf : filtersConfs) {
-                String filterName = filterConf.getFilterName();
-                String filterClass = filterConf.getFilterClass();
-                Map filterParams = filterConf.getFilterParams();
-                if (filterClass != null) {
-                    FilterHolder filterHolder = new FilterHolder();
-                    filterHolder.setClassName(filterClass);
-                    if (filterName != null) {
-                        filterHolder.setName(filterName);
-                    } else {
-                        filterHolder.setName(filterClass);
-                    }
-                    if (filterParams != null) {
-                        filterHolder.setInitParameters(filterParams);
-                    } else {
-                        filterHolder.setInitParameters(new HashMap<String, String>());
-                    }
-                    context.addFilter(filterHolder, "/*", FilterMapping.ALL);
-                }
-            }
-            context.addFilter(mkAccessLoggingFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
+            configFilters(context, filtersConfs);
             server.setHandler(context);
         }
     }
-
+    
+    public static void configFilters(ServletContextHandler context, List<FilterConfiguration> filtersConfs) {
+        context.addFilter(corsFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
+        for (FilterConfiguration filterConf : filtersConfs) {
+            String filterName = filterConf.getFilterName();
+            String filterClass = filterConf.getFilterClass();
+            Map filterParams = filterConf.getFilterParams();
+            if (filterClass != null) {
+                FilterHolder filterHolder = new FilterHolder();
+                filterHolder.setClassName(filterClass);
+                if (filterName != null) {
+                    filterHolder.setName(filterName);
+                } else {
+                    filterHolder.setName(filterClass);
+                }
+                if (filterParams != null) {
+                    filterHolder.setInitParameters(filterParams);
+                } else {
+                    filterHolder.setInitParameters(new HashMap<String, String>());
+                }
+                context.addFilter(filterHolder, "/*", FilterMapping.ALL);
+            }
+        }
+        context.addFilter(mkAccessLoggingFilterHandle(), "/*", EnumSet.allOf(DispatcherType.class));
+    }
+    
     private static Server removeNonSslConnector(Server server) {
         for (Connector c : server.getConnectors()) {
             if (c != null && !(c instanceof SslSocketConnector)) {
@@ -202,9 +215,9 @@ public class UIHelpers {
     /**
      * Construct a Jetty Server instance.
      */
-    private static Server jettyCreateServer(Integer port, String host, Integer httpsPort) {
+    public static Server jettyCreateServer(Integer port, String host, Integer httpsPort) {
         SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(Utils.getInt(port, 80));
+        connector.setPort(ObjectReader.getInt(port, 80));
         connector.setHost(host);
         connector.setMaxIdleTime(200000);
 

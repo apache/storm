@@ -4,10 +4,10 @@ layout: documentation
 documentation: true
 ---
 
-Storm now has 4 kinds of built-in schedulers: [DefaultScheduler]({{page.git-blob-base}}/storm-core/src/jvm/org/apache/storm/scheduler/DefaultScheduler.java), [IsolationScheduler]({{page.git-blob-base}}/storm-core/src/jvm/org/apache/storm/scheduler/IsolationScheduler.java), [MultitenantScheduler]({{page.git-blob-base}}/storm-core/src/jvm/org/apache/storm/scheduler/multitenant/MultitenantScheduler.java), [ResourceAwareScheduler](Resource_Aware_Scheduler_overview.html). 
+Storm now has 4 kinds of built-in schedulers: [DefaultScheduler]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/scheduler/DefaultScheduler.java), [IsolationScheduler]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/scheduler/IsolationScheduler.java), [MultitenantScheduler]({{page.git-blob-base}}/storm-server/src/main/java/org/apache/storm/scheduler/multitenant/MultitenantScheduler.java), [ResourceAwareScheduler](Resource_Aware_Scheduler_overview.html). 
 
 ## Pluggable scheduler
-You can implement your own scheduler to replace the default scheduler to assign executors to workers. You configure the class to use the "storm.scheduler" config in your storm.yaml, and your scheduler must implement the [IScheduler]({{page.git-blob-base}}/storm-core/src/jvm/org/apache/storm/scheduler/IScheduler.java) interface.
+You can implement your own scheduler to replace the default scheduler to assign executors to workers. You configure the class to use the "storm.scheduler" config in your storm.yaml, and your scheduler must implement the [IScheduler]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/storm/scheduler/IScheduler.java) interface.
 
 ## Isolation Scheduler
 The isolation scheduler makes it easy and safe to share a cluster among many topologies. The isolation scheduler lets you specify which topologies should be "isolated", meaning that they run on a dedicated set of machines within the cluster where no other topologies will be running. These isolated topologies are given priority on the cluster, so resources will be allocated to isolated topologies if there's competition with non-isolated topologies, and resources will be taken away from non-isolated topologies if necessary to get resources for an isolated topology. Once all isolated topologies are allocated, the remaining machines on the cluster are shared among all non-isolated topologies.

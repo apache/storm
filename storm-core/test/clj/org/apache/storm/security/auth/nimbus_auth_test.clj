@@ -18,15 +18,15 @@
   (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
-  (:import [org.apache.storm Config LocalCluster$Builder])
+  (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
   (:import [org.apache.storm.blobstore BlobStore])
-  (:import [org.apache.storm.utils NimbusClient ConfigUtils])
+  (:import [org.apache.storm.utils NimbusClient])
   (:import [org.apache.storm.generated NotAliveException StormBase])
-  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient 
+  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils ConfigUtils Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
   (:import [org.mockito Mockito Matchers])
   (:use [org.apache.storm util config log])
@@ -105,9 +105,9 @@
                                 NIMBUS-THRIFT-PORT port
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                              {STORM-THRIFT-TRANSPORT-PLUGIN   "org.apache.storm.security.auth.SimpleTransportPlugin"
                                Config/NIMBUS_THRIFT_PORT port
-                               STORM-NIMBUS-RETRY-TIMES 0})
+                               STORM-NIMBUS-RETRY-TIMES        0})
             client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
             nimbus_client (.getClient client)
             topologyInitialStatus (TopologyInitialStatus/findByValue 2)

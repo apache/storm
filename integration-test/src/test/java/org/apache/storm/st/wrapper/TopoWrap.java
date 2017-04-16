@@ -39,7 +39,7 @@ import org.apache.commons.io.IOUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.exception.ExceptionUtils;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.thrift.TException;
+import org.apache.thrift.TException;
 import org.apache.storm.st.topology.window.data.FromJson;
 import org.apache.storm.st.utils.StringDecorator;
 import org.apache.storm.st.utils.TimeUtil;
@@ -256,7 +256,7 @@ public class TopoWrap {
         public ExecutorURL(String componentId, String host, int logViewerPort, int executorPort, String topoId) throws MalformedURLException {
             String sep = "%2F"; //hex of "/"
             String viewUrlStr = String.format("http://%s:%s/log?file=", host, logViewerPort);
-            String downloadUrlStr = String.format("http://%s:%s/download", host, logViewerPort);
+            String downloadUrlStr = String.format("http://%s:%s/download?file=%%2F", host, logViewerPort);
             viewUrl = new URL(String.format("%s/%s%s%d%sworker.log", viewUrlStr, topoId, sep, executorPort, sep));
             downloadUrl = new URL(String.format("%s/%s%s%d%sworker.log", downloadUrlStr, topoId, sep, executorPort, sep));
             this.componentId = componentId;
