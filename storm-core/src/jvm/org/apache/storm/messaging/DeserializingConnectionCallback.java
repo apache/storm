@@ -22,6 +22,7 @@ import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.serialization.KryoTupleDeserializer;
 
 import clojure.lang.IFn;
+import org.apache.storm.tuple.Tuple;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +54,10 @@ public class DeserializingConnectionCallback implements IConnectionCallback {
         KryoTupleDeserializer des = _des.get();
         ArrayList<AddressedTuple> ret = new ArrayList<>(batch.size());
         for (TaskMessage message: batch) {
-            ret.add(new AddressedTuple(message.task(), des.deserialize(message.message())));
+            Tuple tuple = des.deserialize(message.message());
+            if (tuple != null) {
+                ret.add(new AddressedTuple(message.task(), tuple));
+            }
         }
         _cb.invoke(ret);
     }

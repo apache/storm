@@ -22,11 +22,15 @@ import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import com.esotericsoftware.kryo.io.Input;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
 public class KryoTupleDeserializer implements ITupleDeserializer {
+    private static final Logger LOG = LoggerFactory.getLogger(KryoTupleDeserializer.class);
     GeneralTopologyContext _context;
     KryoValuesDeserializer _kryo;
     SerializationFactory.IdDictionary _ids;
@@ -50,7 +54,8 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             List<Object> values = _kryo.deserializeFrom(_kryoInput);
             return new TupleImpl(_context, values, taskId, streamName, id);
         } catch(IOException e) {
-            throw new RuntimeException(e);
+            LOG.error("Failed to deserialize tuple.", e);
+            return null;
         }
     }
 }
