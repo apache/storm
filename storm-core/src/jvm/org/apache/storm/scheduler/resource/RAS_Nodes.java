@@ -109,8 +109,8 @@ public class RAS_Nodes {
     }
 
     /**
-     *
-     * @param workerSlots
+     * Frees a collection of worker slots from nodes
+     * @param workerSlots collection of workerslots to be freed
      */
     public void freeSlots(Collection<WorkerSlot> workerSlots) {
         for (RAS_Node node : nodeMap.values()) {
