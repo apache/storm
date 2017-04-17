@@ -23,6 +23,9 @@ env:
 language: java
 jdk:
   - oraclejdk8
+cache:
+  directories:
+  - $HOME/.m2/repository
 before_install:
   - rvm use 2.1.5 --install
   - nvm install 0.12.2
