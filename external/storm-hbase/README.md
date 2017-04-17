@@ -42,7 +42,7 @@ provided for the storm-hbase connector. Specifically, the Config object passed i
 Config config = new Config();
 ...
 config.put("storm.keytab.file", "$keytab");
-config.put("storm.kerberos.principal", "$principle");
+config.put("storm.kerberos.principal", "$principal");
 StormSubmitter.submitTopology("$topologyName", config, builder.createTopology());
 ```
 
