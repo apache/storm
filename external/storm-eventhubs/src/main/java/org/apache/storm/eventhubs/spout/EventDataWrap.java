@@ -17,17 +17,32 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
+import com.microsoft.azure.eventhubs.EventData;
 
-public interface IEventHubReceiver {
+public class EventDataWrap implements Comparable<EventDataWrap> {
+  private final EventData eventData;
+  private final MessageId messageId;
 
-  void open(IEventFilter filter) throws EventHubException;
+  public EventDataWrap(EventData eventdata, MessageId messageId) {
+    this.eventData = eventdata;
+    this.messageId = messageId;
+  }
 
-  void close();
+  public static EventDataWrap create(EventData eventData, MessageId messageId) {
+    return new EventDataWrap(eventData, messageId);
+  }
 
-  boolean isOpen();
+  public EventData getEventData() {
+    return this.eventData;
+  }
 
-  EventDataWrap receive();
+  public MessageId getMessageId() {
+    return this.messageId;
+  }
 
-  Map getMetricsData();
+  @Override
+  public int compareTo(EventDataWrap ed) {
+    return messageId.getSequenceNumber().
+        compareTo(ed.getMessageId().getSequenceNumber());
+  }
 }

@@ -15,19 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
+public class EventHubException extends Exception {
 
-public interface IEventHubReceiver {
+    private static final long serialVersionUID = 1L;
 
-  void open(IEventFilter filter) throws EventHubException;
+    public EventHubException() {
+        super();
+    }
 
-  void close();
+    public EventHubException(String message) {
+        super(message);
+    }
 
-  boolean isOpen();
+    public EventHubException(Throwable cause) {
+        super(cause);
+    }
 
-  EventDataWrap receive();
+    public EventHubException(String message, Throwable cause) {
+        super(message, cause);
+    }
 
-  Map getMetricsData();
 }

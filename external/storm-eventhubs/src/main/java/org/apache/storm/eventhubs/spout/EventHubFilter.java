@@ -17,17 +17,30 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.Map;
+import java.time.Instant;
 
-public interface IEventHubReceiver {
+public class EventHubFilter implements IEventFilter{
 
-  void open(IEventFilter filter) throws EventHubException;
+    String offset = null;
+    Instant time = null;
 
-  void close();
+    public EventHubFilter(String offset){
+        this.offset = offset;
+        this.time = null;
+    }
 
-  boolean isOpen();
+    public EventHubFilter(Instant time){
+        this.time = time;
+        this.offset = null;
+    }
 
-  EventDataWrap receive();
+    @Override
+    public String getOffset(){
+        return offset;
+    }
 
-  Map getMetricsData();
+    @Override
+    public Instant getTime(){
+        return time;
+    }
 }
