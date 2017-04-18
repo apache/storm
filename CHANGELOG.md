@@ -238,6 +238,7 @@
  * STORM-2467: Use explicit charset when decoding from array backed buffer
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
+ * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.1.0
  * STORM-2416: Release Packaging Improvements
