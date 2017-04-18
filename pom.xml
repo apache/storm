@@ -332,6 +332,7 @@
         <module>sql</module>
 
         <!-- externals -->
+        <module>external/storm-autocreds</module>
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
