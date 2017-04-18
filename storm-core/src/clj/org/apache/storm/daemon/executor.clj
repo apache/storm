@@ -379,8 +379,8 @@
         disruptor-handler (mk-disruptor-backpressure-handler executor-data)
         _ (.registerBackpressureCallback (:receive-queue executor-data) disruptor-handler)
         _ (-> (.setHighWaterMark (:receive-queue executor-data) ((:storm-conf executor-data) BACKPRESSURE-DISRUPTOR-HIGH-WATERMARK))
-              (.setLowWaterMark ((:storm-conf executor-data) BACKPRESSURE-DISRUPTOR-LOW-WATERMARK))
-              (.setEnableBackpressure ((:storm-conf executor-data) TOPOLOGY-BACKPRESSURE-ENABLE)))
+              (.setLowWaterMark (:receive-queue executor-data) ((:storm-conf executor-data) BACKPRESSURE-DISRUPTOR-LOW-WATERMARK))
+              (.setEnableBackpressure (:receive-queue executor-data) ((:storm-conf executor-data) TOPOLOGY-BACKPRESSURE-ENABLE)))
 
         ;; starting the batch-transfer->worker ensures that anything publishing to that queue 
         ;; doesn't block (because it's a single threaded queue and the caching/consumer started
