@@ -68,7 +68,7 @@ public class HiveWriter {
             this.ugi = ugi;
             this.connection = newConnection(ugi);
             this.txnsPerBatch = txnsPerBatch;
-            this.recordWriter = mapper.createRecordWriter(endPoint);
+            this.recordWriter = mapper.createRecordWriter(endPoint, ugi);
             this.txnBatch = nextTxnBatch(recordWriter);
             this.closed = false;
             this.lastUsed = System.currentTimeMillis();

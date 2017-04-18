@@ -28,7 +28,9 @@ import org.apache.hive.hcatalog.streaming.HiveEndPoint;
 import org.apache.hive.hcatalog.streaming.RecordWriter;
 import org.apache.hive.hcatalog.streaming.StreamingException;
 import org.apache.hive.hcatalog.streaming.TransactionBatch;
+import org.apache.hadoop.security.UserGroupInformation;
 
+import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
@@ -73,9 +75,18 @@ public class DelimitedRecordHiveMapper implements HiveMapper {
     }
 
     @Override
-    public RecordWriter createRecordWriter(HiveEndPoint endPoint)
-        throws StreamingException, IOException, ClassNotFoundException {
-        return new DelimitedInputWriter(columnNames, fieldDelimiter,endPoint);
+    public RecordWriter createRecordWriter(final HiveEndPoint endPoint, final UserGroupInformation ugi)
+        throws StreamingException, IOException, ClassNotFoundException, InterruptedException {
+        if (ugi != null) {
+            return ugi.doAs(new PrivilegedExceptionAction<DelimitedInputWriter>() {
+                 @Override
+                 public DelimitedInputWriter run() throws Exception {
+                     return new DelimitedInputWriter(columnNames, fieldDelimiter,endPoint);
+                 }
+                });
+        } else {
+            return new DelimitedInputWriter(columnNames, fieldDelimiter,endPoint);
+        }
     }
 
     @Override
