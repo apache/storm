@@ -15,15 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
 package org.apache.storm.hive.trident;
 
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.tuple.TridentTuple;
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.topology.FailedException;
+import storm.trident.operation.TridentCollector;
+import storm.trident.state.State;
+import storm.trident.tuple.TridentTuple;
+import backtype.storm.task.IMetricsContext;
+import backtype.storm.topology.FailedException;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.hive.hcatalog.streaming.*;
@@ -245,6 +243,7 @@ public class HiveState implements State {
         } catch (Exception e) {
             LOG.warn("Interrupted when attempting to close writer for end point: " + eldest, e);
         }
+
     }
 
     /**
