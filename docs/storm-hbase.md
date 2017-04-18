@@ -56,22 +56,43 @@ The approach described above requires that all potential worker hosts have "stor
 multiple topologies on a cluster , each with different hbase user, you will have to create multiple keytabs and distribute
 it to all workers. Instead of doing that you could use the following approach:
 
-Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user.
-The nimbus need to start with following configurations:
+Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user. The nimbus should be started with following configurations:
 
+```
 nimbus.autocredential.plugins.classes : ["org.apache.storm.hbase.security.AutoHBase"] 
 nimbus.credential.renewers.classes : ["org.apache.storm.hbase.security.AutoHBase"] 
 hbase.keytab.file: "/path/to/keytab/on/nimbus" (This is the keytab of hbase super user that can impersonate other users.)
 hbase.kerberos.principal: "superuser@EXAMPLE.com"
-nimbus.credential.renewers.freq.secs : 518400 (6 days, hbase tokens by default expire every 7 days and can not be renewed, 
-if you have custom settings for hbase.auth.token.max.lifetime in hbase-site.xml than you should ensure this value is 
-atleast 1 hour less then that.)
+nimbus.credential.renewers.freq.secs : 518400 (6 days, hbase tokens by default expire every 7 days and can not be renewed,  if you have custom settings for hbase.auth.token.max.lifetime in hbase-site.xml than you should ensure this value is atleast 1 hour less then that.)
+```
 
 Your topology configuration should have:
-topology.auto-credentials :["org.apache.storm.hbase.security.AutoHBase"] 
+
+```
+topology.auto-credentials :["org.apache.storm.hbase.security.AutoHBase"]
+```
 
 If nimbus did not have the above configuration you need to add it and then restart it. Ensure the hbase configuration 
-files(core-site.xml,hdfs-site.xml and hbase-site.xml) and the storm-hbase jar with all the dependencies is present in nimbus's classpath. 
+files(core-site.xml, hdfs-site.xml and hbase-site.xml) and the storm-hbase jar with all the dependencies is present in nimbus's classpath.
+
+As an alternative to adding the configuration files (core-site.xml, hdfs-site.xml and hbase-site.xml) to the classpath, you could specify the configurations as a part of the topology configuration. E.g. in you custom storm.yaml (or -c option while submitting the topology),
+
+```
+hbaseCredentialsConfigKeys : ["cluster1", "cluster2"] (the hbase clusters you want to fetch the tokens from)
+cluster1: [{"config1": "value1", "config2": "value2", ... }] (A map of config key-values specific to cluster1)
+cluster2: [{"config1": "value1", "hbase.keytab.file": "/path/to/keytab/for/cluster2/on/nimubs", "hbase.kerberos.principal": "cluster2user@EXAMPLE.com"}] (here along with other configs, we have custom keytab and principal for "cluster2" which will override the keytab/principal specified at topology level)
+```
+
+Instead of specifying key values you may also directly specify the resource files for e.g.,
+
+```
+cluster1: [{"resources": ["/path/to/core-site1.xml", "/path/to/hbase-site1.xml"]}]
+cluster2: [{"resources": ["/path/to/core-site2.xml", "/path/to/hbase-site2.xml"]}]
+```
+
+Storm will download the tokens separately for each of the clusters and populate it into the subject and also renew the tokens periodically. 
+This way it would be possible to run multiple bolts connecting to separate HBase cluster within the same topology.
+
 Nimbus will use the keytab and principal specified in the config to authenticate with HBase. From then on for every
 topology submission, nimbus will impersonate the topology submitter user and acquire delegation tokens on behalf of the
 topology submitter user. If topology was started with topology.auto-credentials set to AutoHBase, nimbus will push the

@@ -316,6 +316,14 @@
                 <include>storm*jar</include>
             </includes>
         </fileSet>
+       <!-- Autocred plugins -->
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-autocreds/target/app-assembler/repo</directory>
+            <outputDirectory>external/storm-autocreds</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
     <files>
