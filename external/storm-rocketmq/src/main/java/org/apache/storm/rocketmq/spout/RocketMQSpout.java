@@ -29,17 +29,17 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.storm.Config;
+import org.apache.storm.rocketmq.ConsumerMessage;
 import org.apache.storm.rocketmq.DefaultMessageRetryManager;
 import org.apache.storm.rocketmq.MessageRetryManager;
-import org.apache.storm.rocketmq.MessageSet;
 import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMQUtils;
 import org.apache.storm.rocketmq.SpoutConfig;
+import org.apache.storm.spout.Scheme;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ObjectReader;
 
 import java.util.List;
@@ -61,88 +61,117 @@ public class RocketMQSpout implements IRichSpout {
 
     private static MQPushConsumer consumer;
     private SpoutOutputCollector collector;
-    private BlockingQueue<MessageSet> queue;
+    private BlockingQueue<ConsumerMessage> queue;
+    private BlockingQueue<ConsumerMessage> pending;
 
     private Properties properties;
     private MessageRetryManager messageRetryManager;
+    private Scheme scheme;
 
     public RocketMQSpout(Properties properties) {
+        Validate.notEmpty(properties, "Consumer properties can not be empty");
         this.properties = properties;
+        scheme = RocketMQUtils.createScheme(properties);
     }
 
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        Validate.notEmpty(properties, "Consumer properties can not be empty");
-        boolean ordered = getBoolean(properties, RocketMQConfig.CONSUMER_MESSAGES_ORDERLY, false);
-
-        int queueSize = getInteger(properties, SpoutConfig.QUEUE_SIZE, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING)));
-        queue = new LinkedBlockingQueue<>(queueSize);
-
         // Since RocketMQ Consumer is thread-safe, RocketMQSpout uses a single
         // consumer instance across threads to improve the performance.
         synchronized (RocketMQSpout.class) {
             if (consumer == null) {
-                consumer = new DefaultMQPushConsumer();
-                RocketMQConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
-
-                if (ordered) {
-                    consumer.registerMessageListener(new MessageListenerOrderly() {
-                        @Override
-                        public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs,
-                                                                   ConsumeOrderlyContext context) {
-                            if (process(msgs)) {
-                                return ConsumeOrderlyStatus.SUCCESS;
-                            } else {
-                                return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
-                            }
-                        }
-                    });
-                } else {
-                    consumer.registerMessageListener(new MessageListenerConcurrently() {
-                        @Override
-                        public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
-                                                                        ConsumeConcurrentlyContext context) {
-                            if (process(msgs)) {
-                                return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
-                            } else {
-                                return ConsumeConcurrentlyStatus.RECONSUME_LATER;
-                            }
-                        }
-                    });
-                }
-
-                try {
-                    consumer.start();
-                } catch (MQClientException e) {
-                    throw new RuntimeException(e);
-                }
+                buildAndStartConsumer();
             }
         }
 
+        int queueSize = getInteger(properties, SpoutConfig.QUEUE_SIZE, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING)));
+        queue = new LinkedBlockingQueue<>(queueSize);
+        pending = new LinkedBlockingQueue<>(queueSize);
         int maxRetry = getInteger(properties, SpoutConfig.MESSAGES_MAX_RETRY, SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY);
         int ttl = getInteger(properties, SpoutConfig.MESSAGES_TTL, SpoutConfig.DEFAULT_MESSAGES_TTL);
+
         this.messageRetryManager = new DefaultMessageRetryManager(queue, maxRetry, ttl);
         this.collector = collector;
     }
 
-    public boolean process(List<MessageExt> msgs) {
+    protected void buildAndStartConsumer() {
+        consumer = new DefaultMQPushConsumer();
+        RocketMQConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
+
+        boolean ordered = getBoolean(properties, RocketMQConfig.CONSUMER_MESSAGES_ORDERLY, false);
+        if (ordered) {
+            consumer.registerMessageListener(new MessageListenerOrderly() {
+                @Override
+                public ConsumeOrderlyStatus consumeMessage(List<MessageExt> msgs,
+                                                           ConsumeOrderlyContext context) {
+                    if (process(msgs)) {
+                        return ConsumeOrderlyStatus.SUCCESS;
+                    } else {
+                        return ConsumeOrderlyStatus.SUSPEND_CURRENT_QUEUE_A_MOMENT;
+                    }
+                }
+            });
+        } else {
+            consumer.registerMessageListener(new MessageListenerConcurrently() {
+                @Override
+                public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs,
+                                                                ConsumeConcurrentlyContext context) {
+                    if (process(msgs)) {
+                        return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;
+                    } else {
+                        return ConsumeConcurrentlyStatus.RECONSUME_LATER;
+                    }
+                }
+            });
+        }
+
+        try {
+            consumer.start();
+        } catch (MQClientException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * process pushed messages
+     * @param msgs
+     * @return
+     */
+    protected boolean process(List<MessageExt> msgs) {
         if (msgs.isEmpty()) {
             return true;
         }
-        MessageSet messageSet = new MessageSet(msgs);
-        // returning true upon success and false if this queue is full.
-        return queue.offer(messageSet);
+
+        boolean notFull = true;
+        for (MessageExt msg : msgs) {
+            ConsumerMessage message = new ConsumerMessage(msg);
+            // returning true upon success and false if this queue is full.
+            if(!queue.offer(message)){
+                notFull = false;
+                pending.offer(message);
+            }
+        }
+        return notFull;
     }
 
     @Override
     public void nextTuple() {
-        MessageSet messageSet = queue.poll();
-        if (messageSet == null) {
+        ConsumerMessage message;
+        if (!pending.isEmpty()) {
+            message = pending.poll();
+        } else {
+            message = queue.poll();
+        }
+
+        if (message == null) {
             return;
         }
 
-        messageRetryManager.mark(messageSet);
-        collector.emit(new Values(messageSet.getData()), messageSet.getId());
+        messageRetryManager.mark(message);
+        List<Object> tup = RocketMQUtils.generateTuples(message.getData(), scheme);
+        if (tup != null) {
+            collector.emit(tup, message.getId());
+        }
     }
 
     @Override
@@ -159,7 +188,7 @@ public class RocketMQSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        declarer.declare(new Fields(properties.getProperty(SpoutConfig.DECLARE_FIELDS, SpoutConfig.DEFAULT_DECLARE_FIELDS)));
+        declarer.declare(scheme.getOutputFields());
     }
 
     @Override

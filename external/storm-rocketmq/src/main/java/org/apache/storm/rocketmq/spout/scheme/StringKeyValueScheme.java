@@ -15,20 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.rocketmq;
+package org.apache.storm.rocketmq.spout.scheme;
 
-import org.apache.storm.rocketmq.spout.scheme.StringScheme;
+import com.google.common.collect.ImmutableMap;
+import org.apache.storm.tuple.Values;
 
-public class SpoutConfig extends RocketMQConfig {
-    public static final String QUEUE_SIZE = "spout.queue.size";
+import java.nio.ByteBuffer;
+import java.util.List;
 
-    public static final String MESSAGES_MAX_RETRY = "spout.messages.max.retry";
-    public static final int DEFAULT_MESSAGES_MAX_RETRY = 3;
+public class StringKeyValueScheme extends StringScheme implements KeyValueScheme {
 
-    public static final String MESSAGES_TTL = "spout.messages.ttl";
-    public static final int DEFAULT_MESSAGES_TTL = 300000;  // 5min
-
-    public static final String SCHEME = "spout.scheme";
-    public static final String DEFAULT_SCHEME = StringScheme.class.getName();
+    @Override
+    public List<Object> deserializeKeyAndValue(ByteBuffer key, ByteBuffer value) {
+        if ( key == null ) {
+            return deserialize(value);
+        }
+        String keyString = StringScheme.deserializeString(key);
+        String valueString = StringScheme.deserializeString(value);
+        return new Values(ImmutableMap.of(keyString, valueString));
+    }
 
 }

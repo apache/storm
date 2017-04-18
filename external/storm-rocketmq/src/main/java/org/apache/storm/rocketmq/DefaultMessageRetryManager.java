@@ -27,12 +27,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * An implementation of MessageRetryManager
  */
 public class DefaultMessageRetryManager implements MessageRetryManager{
-    private Map<String,MessageSet> cache = new ConcurrentHashMap<>(500);
-    private BlockingQueue<MessageSet> queue;
+    private Map<String,ConsumerMessage> cache = new ConcurrentHashMap<>(500);
+    private BlockingQueue<ConsumerMessage> queue;
     private int maxRetry;
     private int ttl;
 
-    public DefaultMessageRetryManager(BlockingQueue<MessageSet> queue, int maxRetry, int ttl) {
+    public DefaultMessageRetryManager(BlockingQueue<ConsumerMessage> queue, int maxRetry, int ttl) {
         this.queue = queue;
         this.maxRetry = maxRetry;
         this.ttl = ttl;
@@ -42,10 +42,10 @@ public class DefaultMessageRetryManager implements MessageRetryManager{
             @Override
             public void run() {
                 long now = System.currentTimeMillis();
-                for (Map.Entry<String, MessageSet> entry : cache.entrySet()) {
+                for (Map.Entry<String, ConsumerMessage> entry : cache.entrySet()) {
                     String id = entry.getKey();
-                    MessageSet messageSet = entry.getValue();
-                    if (now - messageSet.getTimestamp() >= ttl) { // no ack/fail received in ttl
+                    ConsumerMessage message = entry.getValue();
+                    if (now - message.getTimestamp() >= ttl) { // no ack/fail received in ttl
                         fail(id);
                     }
                 }
@@ -58,29 +58,35 @@ public class DefaultMessageRetryManager implements MessageRetryManager{
     }
 
     public void fail(String id) {
-        MessageSet messageSet = cache.remove(id);
-        if (messageSet == null) {
+        ConsumerMessage message = cache.remove(id);
+        if (message == null) {
             return;
         }
 
-        if (needRetry(messageSet)) {
-            messageSet.setRetries(messageSet.getRetries() + 1);
-            messageSet.setTimestamp(0);
-            queue.offer(messageSet);
+        if (needRetry(message)) {
+            message.setRetries(message.getRetries() + 1);
+            message.setTimestamp(0);
+            queue.offer(message);
         }
     }
 
-    public void mark(MessageSet messageSet) {
-        messageSet.setTimestamp(System.currentTimeMillis());
-        cache.put(messageSet.getId(), messageSet);
+    public void mark(ConsumerMessage message) {
+        message.setTimestamp(System.currentTimeMillis());
+        cache.put(message.getId(), message);
     }
 
-    public boolean needRetry(MessageSet messageSet) {
-        return messageSet.getRetries() < maxRetry;
+    /**
+     * Whether the message need retry.
+     * @param message
+     * @return
+     */
+    public boolean needRetry(ConsumerMessage message) {
+        return message.getRetries() < maxRetry;
     }
 
     // just for testing
-    public void setCache(Map<String,MessageSet> cache) {
+    public void setCache(Map<String,ConsumerMessage> cache) {
         this.cache = cache;
     }
+
 }

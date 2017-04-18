@@ -17,11 +17,11 @@
  */
 package org.apache.storm.rocketmq;
 
+import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.storm.utils.Utils;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
@@ -33,8 +33,8 @@ import static org.junit.Assert.assertTrue;
 
 public class TestMessageRetryManager {
     MessageRetryManager messageRetryManager;
-    Map<String,MessageSet> cache;
-    BlockingQueue<MessageSet> queue;
+    Map<String, ConsumerMessage> cache;
+    BlockingQueue<ConsumerMessage> queue;
 
     @Before
     public void prepare() {
@@ -49,58 +49,58 @@ public class TestMessageRetryManager {
     @Test
     public void testRetryLogics() {
         //ack
-        MessageSet messageSet = new MessageSet(new ArrayList<>());
-        messageRetryManager.mark(messageSet);
+        ConsumerMessage message = new ConsumerMessage("id", new MessageExt());
+        messageRetryManager.mark(message);
         assertEquals(1, cache.size());
-        assertTrue(cache.containsKey(messageSet.getId()));
+        assertTrue(cache.containsKey(message.getId()));
 
-        messageRetryManager.ack(messageSet.getId());
+        messageRetryManager.ack(message.getId());
         assertEquals(0, cache.size());
-        assertFalse(cache.containsKey(messageSet.getId()));
+        assertFalse(cache.containsKey(message.getId()));
 
 
         //fail need retry: retries < maxRetry
-        messageSet = new MessageSet(new ArrayList<>());
-        messageRetryManager.mark(messageSet);
+        message = new ConsumerMessage("id", new MessageExt());
+        messageRetryManager.mark(message);
         assertEquals(1, cache.size());
-        assertTrue(cache.containsKey(messageSet.getId()));
+        assertTrue(cache.containsKey(message.getId()));
 
-        messageRetryManager.fail(messageSet.getId());
+        messageRetryManager.fail(message.getId());
         assertEquals(0, cache.size());
-        assertFalse(cache.containsKey(messageSet.getId()));
-        assertEquals(1, messageSet.getRetries());
+        assertFalse(cache.containsKey(message.getId()));
+        assertEquals(1, message.getRetries());
         assertEquals(1, queue.size());
-        assertEquals(messageSet, queue.poll());
+        assertEquals(message, queue.poll());
 
 
         //fail need not retry: retries >= maxRetry
-        messageSet = new MessageSet(new ArrayList<>());
-        messageRetryManager.mark(messageSet);
-        messageRetryManager.fail(messageSet.getId());
+        message = new ConsumerMessage("id", new MessageExt());
+        messageRetryManager.mark(message);
+        messageRetryManager.fail(message.getId());
         assertEquals(0, cache.size());
-        assertFalse(cache.containsKey(messageSet.getId()));
+        assertFalse(cache.containsKey(message.getId()));
 
-        messageRetryManager.mark(messageSet);
-        messageRetryManager.fail(messageSet.getId());
-        assertEquals(2, messageSet.getRetries());
-        messageRetryManager.mark(messageSet);
-        messageRetryManager.fail(messageSet.getId());
-        assertEquals(3, messageSet.getRetries());
+        messageRetryManager.mark(message);
+        messageRetryManager.fail(message.getId());
+        assertEquals(2, message.getRetries());
+        messageRetryManager.mark(message);
+        messageRetryManager.fail(message.getId());
+        assertEquals(3, message.getRetries());
 
-        assertFalse(messageRetryManager.needRetry(messageSet));
-        messageRetryManager.mark(messageSet);
-        messageRetryManager.fail(messageSet.getId());
+        assertFalse(messageRetryManager.needRetry(message));
+        messageRetryManager.mark(message);
+        messageRetryManager.fail(message.getId());
         assertEquals(0, cache.size());
         assertEquals(3, queue.size());
-        assertEquals(messageSet, queue.poll());
+        assertEquals(message, queue.poll());
 
 
         //fail: no ack/fail received in ttl
-        messageSet = new MessageSet(new ArrayList<>());
-        messageRetryManager.mark(messageSet);
+        message = new ConsumerMessage("id", new MessageExt());
+        messageRetryManager.mark(message);
         Utils.sleep(10000);
         assertEquals(0, cache.size());
-        assertFalse(cache.containsKey(messageSet.getId()));
+        assertFalse(cache.containsKey(message.getId()));
 
     }
 }

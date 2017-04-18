@@ -19,32 +19,26 @@ package org.apache.storm.rocketmq;
 
 import org.apache.rocketmq.common.message.MessageExt;
 
-import java.util.List;
-import java.util.UUID;
-
-/**
- * A message collection.
- */
-public class MessageSet {
+public class ConsumerMessage {
     private String id;
-    private List<MessageExt> data;
+    private MessageExt data;
     private long timestamp;
     private int retries;
 
-    public MessageSet(String id, List<MessageExt> data) {
+    public ConsumerMessage(String id, MessageExt data) {
         this.id = id;
         this.data = data;
     }
 
-    public MessageSet(List<MessageExt> data) {
-        this(UUID.randomUUID().toString(), data);
+    public ConsumerMessage(MessageExt data) {
+        this(data.getMsgId(), data);
     }
 
     public String getId() {
         return id;
     }
 
-    public List<MessageExt> getData() {
+    public MessageExt getData() {
         return data;
     }
 

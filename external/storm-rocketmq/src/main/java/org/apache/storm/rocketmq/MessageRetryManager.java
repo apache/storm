@@ -35,16 +35,16 @@ public interface MessageRetryManager {
     void fail(String id);
 
     /**
-     * Mark messageSet in the cache.
-     * @param messageSet
+     * Mark message in the cache.
+     * @param message
      */
-    void mark(MessageSet messageSet);
+    void mark(ConsumerMessage message);
 
     /**
-     * Whether the messageSet need retry.
-     * @param messageSet
+     * Whether the message need retry.
+     * @param message
      * @return
      */
-    boolean needRetry(MessageSet messageSet);
+    boolean needRetry(ConsumerMessage message);
 
 }

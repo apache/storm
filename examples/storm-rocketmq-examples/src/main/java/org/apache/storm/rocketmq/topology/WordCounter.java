@@ -17,8 +17,6 @@
  */
 package org.apache.storm.rocketmq.topology;
 
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.storm.rocketmq.RocketMQUtils;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.IBasicBolt;
@@ -28,7 +26,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public class WordCounter implements IBasicBolt {
@@ -39,21 +36,18 @@ public class WordCounter implements IBasicBolt {
     }
 
     public void execute(Tuple input, BasicOutputCollector collector) {
-        List<MessageExt> list = (List<MessageExt>)input.getValueByField("msgs");
-        for (MessageExt messageExt : list) {
-            String word = RocketMQUtils.getUtf8StringBody(messageExt);
+        String word = input.getStringByField("str");
 
-            int count;
-            if (wordCounter.containsKey(word)) {
-                count = wordCounter.get(word) + 1;
-                wordCounter.put(word, wordCounter.get(word) + 1);
-            } else {
-                count = 1;
-            }
-
-            wordCounter.put(word, count);
-            collector.emit(new Values(word, count));
+        int count;
+        if (wordCounter.containsKey(word)) {
+            count = wordCounter.get(word) + 1;
+            wordCounter.put(word, wordCounter.get(word) + 1);
+        } else {
+            count = 1;
         }
+
+        wordCounter.put(word, count);
+        collector.emit(new Values(word, count));
     }
 
     public void cleanup() {
