@@ -18,11 +18,12 @@
 
 package org.apache.storm.submit.dependency;
 
-import org.apache.maven.repository.internal.MavenRepositorySystemSession;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.repository.LocalRepository;
-import org.sonatype.aether.repository.RemoteRepository;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.DefaultRepositorySystemSession;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.repository.LocalRepository;
+import org.eclipse.aether.repository.RemoteRepository;
 
 import java.io.File;
 
@@ -36,21 +37,21 @@ public class Booter {
 
     public static RepositorySystemSession newRepositorySystemSession(
         RepositorySystem system, String localRepoPath) {
-        MavenRepositorySystemSession session = new MavenRepositorySystemSession();
+        DefaultRepositorySystemSession session = MavenRepositorySystemUtils.newSession();
 
         LocalRepository localRepo =
                 new LocalRepository(new File(localRepoPath).getAbsolutePath());
-        session.setLocalRepositoryManager(system.newLocalRepositoryManager(localRepo));
+        session.setLocalRepositoryManager(system.newLocalRepositoryManager(session, localRepo));
 
         return session;
     }
 
     public static RemoteRepository newCentralRepository() {
-        return new RemoteRepository("central", "default", "http://repo1.maven.org/maven2/");
+        return new RemoteRepository.Builder("central", "default", "http://repo1.maven.org/maven2/").build();
     }
 
     public static RemoteRepository newLocalRepository() {
-        return new RemoteRepository("local",
-                "default", "file://" + System.getProperty("user.home") + "/.m2/repository");
+        return new RemoteRepository.Builder("local",
+                "default", "file://" + System.getProperty("user.home") + "/.m2/repository").build();
     }
 }

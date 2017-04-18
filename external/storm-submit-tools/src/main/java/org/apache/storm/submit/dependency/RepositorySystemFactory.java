@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,50 +18,33 @@
 
 package org.apache.storm.submit.dependency;
 
-import org.apache.maven.repository.internal.DefaultServiceLocator;
-import org.apache.maven.wagon.Wagon;
-import org.apache.maven.wagon.providers.http.HttpWagon;
-import org.apache.maven.wagon.providers.http.LightweightHttpWagon;
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.connector.file.FileRepositoryConnectorFactory;
-import org.sonatype.aether.connector.wagon.WagonProvider;
-import org.sonatype.aether.connector.wagon.WagonRepositoryConnectorFactory;
-import org.sonatype.aether.spi.connector.RepositoryConnectorFactory;
+import org.eclipse.aether.connector.basic.BasicRepositoryConnectorFactory;
+import org.eclipse.aether.impl.DefaultServiceLocator;
+import org.apache.maven.repository.internal.MavenRepositorySystemUtils;
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.spi.connector.transport.TransporterFactory;
+import org.eclipse.aether.transport.file.FileTransporterFactory;
+import org.eclipse.aether.transport.http.HttpTransporterFactory;
+import org.eclipse.aether.spi.connector.RepositoryConnectorFactory;
 
 /**
  * Get maven repository instance.
  */
 public class RepositorySystemFactory {
-  public static RepositorySystem newRepositorySystem() {
-    DefaultServiceLocator locator = new DefaultServiceLocator();
-    locator.addService(RepositoryConnectorFactory.class, FileRepositoryConnectorFactory.class);
-    locator.addService(RepositoryConnectorFactory.class, WagonRepositoryConnectorFactory.class);
-    locator.setServices(WagonProvider.class, new ManualWagonProvider());
+    public static RepositorySystem newRepositorySystem() {
+        DefaultServiceLocator locator = MavenRepositorySystemUtils.newServiceLocator();
+        locator.addService(RepositoryConnectorFactory.class, BasicRepositoryConnectorFactory.class);
+        locator.addService(TransporterFactory.class, FileTransporterFactory.class);
+        locator.addService(TransporterFactory.class, HttpTransporterFactory.class);
 
-    return locator.getService(RepositorySystem.class);
-  }
+        locator.setErrorHandler(new DefaultServiceLocator.ErrorHandler() {
+            @Override
+            public void serviceCreationFailed(Class<?> type, Class<?> impl, Throwable exception) {
+                exception.printStackTrace();
+            }
+        });
 
-  /**
-   * ManualWagonProvider
-   */
-  public static class ManualWagonProvider implements WagonProvider {
-
-    @Override
-    public Wagon lookup(String roleHint) throws Exception {
-      if ("http".equals(roleHint)) {
-        return new LightweightHttpWagon();
-      }
-
-      if ("https".equals(roleHint)) {
-        return new HttpWagon();
-      }
-
-      return null;
+        return locator.getService(RepositorySystem.class);
     }
 
-    @Override
-    public void release(Wagon arg0) {
-
-    }
-  }
 }
