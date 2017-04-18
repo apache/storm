@@ -44,118 +44,86 @@
 
         <!-- Aether :: maven dependency resolution -->
         <dependency>
-            <groupId>org.apache.maven</groupId>
-            <artifactId>maven-plugin-api</artifactId>
-            <version>3.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-utils</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.sonatype.sisu</groupId>
-                    <artifactId>sisu-inject-plexus</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.maven</groupId>
-                    <artifactId>maven-model</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.sonatype.aether</groupId>
+            <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-api</artifactId>
-            <version>1.12</version>
+            <version>${aetherVersion}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.sonatype.aether</groupId>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-spi</artifactId>
+            <version>${aetherVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-util</artifactId>
-            <version>1.12</version>
+            <version>${aetherVersion}</version>
         </dependency>
 
         <dependency>
-            <groupId>org.sonatype.aether</groupId>
+            <groupId>org.eclipse.aether</groupId>
             <artifactId>aether-impl</artifactId>
-            <version>1.12</version>
+            <version>${aetherVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-connector-basic</artifactId>
+            <version>${aetherVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-transport-file</artifactId>
+            <version>${aetherVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.aether</groupId>
+            <artifactId>aether-transport-http</artifactId>
+            <version>${aetherVersion}</version>
         </dependency>
 
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-aether-provider</artifactId>
-            <version>3.0.3</version>
+            <version>${mavenVersion}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.codehaus.plexus</groupId>
+            <artifactId>plexus-utils</artifactId>
+            <version>2.1</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.eclipse.sisu</groupId>
+            <artifactId>org.eclipse.sisu.plexus</artifactId>
+            <version>0.1.1</version>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
-                    <groupId>org.sonatype.aether</groupId>
-                    <artifactId>aether-api</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.sonatype.aether</groupId>
-                    <artifactId>aether-spi</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.sonatype.aether</groupId>
-                    <artifactId>aether-util</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.sonatype.aether</groupId>
-                    <artifactId>aether-impl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-utils</artifactId>
+                    <groupId>javax.enterprise</groupId>
+                    <artifactId>cdi-api</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
-
         <dependency>
-            <groupId>org.sonatype.aether</groupId>
-            <artifactId>aether-connector-file</artifactId>
-            <version>1.12</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.sonatype.aether</groupId>
-            <artifactId>aether-connector-wagon</artifactId>
-            <version>1.12</version>
+            <groupId>org.sonatype.sisu</groupId>
+            <artifactId>sisu-guice</artifactId>
+            <version>3.1.6</version>
+            <classifier>no_aop</classifier>
+            <optional>true</optional>
             <exclusions>
                 <exclusion>
-                    <groupId>org.apache.maven.wagon</groupId>
-                    <artifactId>wagon-provider-api</artifactId>
+                    <groupId>aopalliance</groupId>
+                    <artifactId>aopalliance</artifactId>
                 </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-provider-api</artifactId>
-            <version>1.0</version>
-            <exclusions>
                 <exclusion>
-                    <groupId>org.codehaus.plexus</groupId>
-                    <artifactId>plexus-utils</artifactId>
+                    <groupId>com.google.code.findbugs</groupId>
+                    <artifactId>jsr305</artifactId>
                 </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-http-lightweight</artifactId>
-            <version>1.0</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>org.apache.maven.wagon</groupId>
-                    <artifactId>wagon-http-shared</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.maven.wagon</groupId>
-            <artifactId>wagon-http</artifactId>
-            <version>1.0</version>
-            <exclusions>
             </exclusions>
         </dependency>
 
@@ -164,6 +132,12 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <version>2.5</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

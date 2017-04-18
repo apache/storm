@@ -284,7 +284,7 @@
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
 
-        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
