@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
  * STORM-2435: Logging in storm.js inconsistent to console.log and does not support log levels
  * STORM-2315: New kafka spout can't commit offset when ack is disabled
  * STORM-2467: Use explicit charset when decoding from array backed buffer
