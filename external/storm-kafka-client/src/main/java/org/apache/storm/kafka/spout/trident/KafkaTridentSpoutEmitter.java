@@ -150,7 +150,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     /**
      * Determines the offset of the next fetch. For failed batches lastBatchMeta is not null and contains the fetch
-     * offset of the failed batch. In this scenario the next fetch will take place at the offset of the failed batch + 1.
+     * offset of the failed batch. In this scenario the next fetch will take place at offset of the failed batch + 1.
      * When the previous batch is successful, lastBatchMeta is null, and the offset of the next fetch is either the
      * offset of the last commit to kafka, or if no commit was yet made, the offset dictated by
      * {@link KafkaSpoutConfig.FirstPollOffsetStrategy}

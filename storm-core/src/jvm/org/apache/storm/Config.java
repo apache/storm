@@ -951,7 +951,7 @@ public class Config extends HashMap<String, Object> {
     @Deprecated
     @isString
     public static final String PACEMAKER_HOST = "pacemaker.host";
-    
+
     /**
      * The port Pacemaker should run on. Clients should
      * connect to this port to submit or read heartbeats.
@@ -1178,7 +1178,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * the metadata configured on the supervisor
      */
-    @isType(type=Map.class)
+    @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String SUPERVISOR_SCHEDULER_META = "supervisor.scheduler.meta";
 
     /**
@@ -1451,7 +1451,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The default heap memory size in MB per worker, used in the jvm -Xmx opts for launching the worker
-      */
+     */
     @isInteger
     @isPositiveNumber
     public static final String WORKER_HEAP_MEMORY_MB = "worker.heap.memory.mb";
@@ -1994,11 +1994,11 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
-   /**
-    * @deprecated this is no longer supported
-    * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
-    * vs. throughput
-    */
+    /**
+     * @deprecated this is no longer supported
+     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
+     * vs. throughput
+     */
     @Deprecated
     @isString
     public static final String TOPOLOGY_DISRUPTOR_WAIT_STRATEGY="topology.disruptor.wait.strategy";
@@ -2315,7 +2315,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
-    
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

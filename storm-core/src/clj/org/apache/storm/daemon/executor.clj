@@ -268,8 +268,10 @@
                                (catch Exception e
                                  (log-message "Error while reporting error to cluster, proceeding with shutdown")))
                              (if (or
-                                    (exception-cause? InterruptedException error)
-                                    (exception-cause? java.io.InterruptedIOException error))
+                                   (exception-cause? InterruptedException error)
+                                   (and
+                                     (exception-cause? java.io.InterruptedIOException error)
+                                     (not (exception-cause? java.net.SocketTimeoutException error))))
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)

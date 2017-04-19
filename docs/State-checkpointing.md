@@ -22,31 +22,30 @@ For example a word count bolt could use the key value state abstraction for the 
 last committed by the framework during the previous run.
 3. In the execute method, update the word count.
 
- ```java
- public class WordCountBolt extends BaseStatefulBolt<KeyValueState<String, Long>> {
- private KeyValueState<String, Long> wordCounts;
- private OutputCollector collector;
- ...
-     @Override
-     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-       this.collector = collector;
-     }
-     @Override
-     public void initState(KeyValueState<String, Long> state) {
-       wordCounts = state;
-     }
-     @Override
-     public void execute(Tuple tuple) {
-       String word = tuple.getString(0);
-       Integer count = wordCounts.get(word, 0);
-       count++;
-       wordCounts.put(word, count);
-       collector.emit(tuple, new Values(word, count));
-       collector.ack(tuple);
-     }
- ...
- }
- ```
+    public class WordCountBolt extends BaseStatefulBolt<KeyValueState<String, Long>> {
+    private KeyValueState<String, Long> wordCounts;
+    private OutputCollector collector;
+    ...
+        @Override
+        public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+          this.collector = collector;
+        }
+        @Override
+        public void initState(KeyValueState<String, Long> state) {
+          wordCounts = state;
+        }
+        @Override
+        public void execute(Tuple tuple) {
+          String word = tuple.getString(0);
+          Integer count = wordCounts.get(word, 0);
+          count++;
+          wordCounts.put(word, count);
+          collector.emit(tuple, new Values(word, count));
+          collector.ack(tuple);
+        }
+    ...
+    }
+
 4. The framework periodically checkpoints the state of the bolt (default every second). The frequency
 can be changed by setting the storm config `topology.state.checkpoint.interval.ms`
 5. For state persistence, use a state provider that supports persistence by setting the `topology.state.provider` in the
@@ -56,21 +55,21 @@ in the extlib directory.
 6. The state provider properties can be overridden by setting `topology.state.provider.config`. For Redis state this is a
 json config with the following properties.
 
- ```
- {
-   "keyClass": "Optional fully qualified class name of the Key type.",
-   "valueClass": "Optional fully qualified class name of the Value type.",
-   "keySerializerClass": "Optional Key serializer implementation class.",
-   "valueSerializerClass": "Optional Value Serializer implementation class.",
-   "jedisPoolConfig": {
-     "host": "localhost",
-     "port": 6379,
-     "timeout": 2000,
-     "database": 0,
-     "password": "xyz"
-     }
- }
- ```
+```
+{
+  "keyClass": "Optional fully qualified class name of the Key type.",
+  "valueClass": "Optional fully qualified class name of the Value type.",
+  "keySerializerClass": "Optional Key serializer implementation class.",
+  "valueSerializerClass": "Optional Value Serializer implementation class.",
+  "jedisPoolConfig": {
+    "host": "localhost",
+    "port": 6379,
+    "timeout": 2000,
+    "database": 0,
+    "password": "xyz"
+    }
+}
+```
 
 ## Checkpoint mechanism
 Checkpoint is triggered by an internal checkpoint spout at the specified `topology.state.checkpoint.interval.ms`. If there is
@@ -123,6 +122,7 @@ In order to provide the at-least once guarantee, all bolts in a stateful topolog
 
 ### IStateful bolt hooks
 IStateful bolt interface provides hook methods where in the stateful bolts could implement some custom actions.
+
 ```java
     /**
      * This is a hook for the component to perform some actions just before the
@@ -142,6 +142,7 @@ IStateful bolt interface provides hook methods where in the stateful bolts could
      */
     void preRollback();
 ```
+
 This is optional and stateful bolts are not expected to provide any implementation. This is provided so that other
 system level components can be built on top of the stateful abstractions where we might want to take some actions before the
 stateful bolt's state is prepared, committed or rolled back.
