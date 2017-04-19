@@ -30,6 +30,7 @@ public class LocalStateTest {
             Assert.assertTrue(ls1.snapshot().containsValue(globalStreamId_b));
             Assert.assertEquals(globalStreamId_a, ls1.get("a"));
             Assert.assertEquals(null, ls1.get("c"));
+            Assert.assertEquals(ls1.snapshot(), new LocalState(dir1_tmp.getPath()).snapshot());
             Assert.assertEquals(globalStreamId_b, ls1.get("b"));
             Assert.assertTrue(ls2.snapshot().isEmpty());
 
