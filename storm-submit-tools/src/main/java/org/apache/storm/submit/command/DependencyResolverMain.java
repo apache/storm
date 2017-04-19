@@ -24,10 +24,10 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.storm.submit.dependency.AetherUtils;
 import org.apache.storm.submit.dependency.DependencyResolver;
 import org.json.simple.JSONValue;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactResult;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactResult;
 
 import java.io.File;
 import java.nio.file.Files;
@@ -66,6 +66,10 @@ public class DependencyResolverMain {
 
         try {
             String localMavenRepoPath = getOrDefaultLocalMavenRepositoryPath("local-repo");
+
+            // create root directory if not exist
+            Files.createDirectories(new File(localMavenRepoPath).toPath());
+
             DependencyResolver resolver = new DependencyResolver(localMavenRepoPath, repositories);
 
             List<ArtifactResult> artifactResults = resolver.resolve(dependencies);

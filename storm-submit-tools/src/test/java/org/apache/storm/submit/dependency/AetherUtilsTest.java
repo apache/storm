@@ -19,11 +19,11 @@ package org.apache.storm.submit.dependency;
 
 import com.google.common.collect.Lists;
 import org.junit.Test;
-import org.sonatype.aether.artifact.Artifact;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.graph.Exclusion;
-import org.sonatype.aether.util.artifact.DefaultArtifact;
-import org.sonatype.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.artifact.Artifact;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.Exclusion;
+import org.eclipse.aether.artifact.DefaultArtifact;
+import org.eclipse.aether.util.artifact.JavaScopes;
 
 import java.util.List;
 
