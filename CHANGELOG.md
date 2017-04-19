@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
  * STORM-2480: principle should be modified to principal
  * STORM-2371: Replace existing AMQP eventhub client with the lastest one from Microsoft eventhubs
  * STORM-2475: Fix parsing of host:port to deal with IPv6 addresses
