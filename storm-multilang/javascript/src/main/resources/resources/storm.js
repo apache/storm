@@ -378,3 +378,4 @@ Spout.prototype.__emit = function(commandDetails) {
 
 module.exports.BasicBolt = BasicBolt;
 module.exports.Spout = Spout;
+module.exports.Tuple = Tuple;
