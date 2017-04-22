@@ -1,11 +1,14 @@
 package org.apache.storm;
 
+import org.apache.commons.io.FileUtils;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.LocalState;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 public class LocalStateTest {
@@ -40,5 +43,19 @@ public class LocalStateTest {
             ls2.put("b", globalStreamId_d);
             Assert.assertEquals(globalStreamId_d, ls2.get("b"));
         }
+    }
+
+    @Test
+    public void testEmptyState() throws IOException {
+        TmpPath tmp_dir = new TmpPath();
+        String dir = tmp_dir.getPath();
+        LocalState ls = new LocalState(dir);
+        GlobalStreamId gs_a = new GlobalStreamId("a", "a");
+        FileOutputStream data = FileUtils.openOutputStream(new File(dir,"12345"));
+        FileOutputStream version =FileUtils.openOutputStream(new File(dir,"12345.version"));
+        Assert.assertNull(ls.get("c"));
+        ls.put("a", gs_a);
+        Assert.assertEquals(gs_a, ls.get("a"));
+
     }
 }
