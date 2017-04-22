@@ -23,7 +23,9 @@ import org.apache.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class UtilsTest {
@@ -64,28 +66,61 @@ public class UtilsTest {
     private Map emptyMockMap() {
         return new HashMap<String, Object>();
     }
-
+    
+    private void doParseJvmHeapMemByChildOptsTest(String message, String opt, double expected) {
+        doParseJvmHeapMemByChildOptsTest(message, Arrays.asList(opt), expected);
+    }
+    
+    private void doParseJvmHeapMemByChildOptsTest(String message, List<String> opts, double expected) {
+        Assert.assertEquals(
+                message,
+                Utils.parseJvmHeapMemByChildOpts(opts, 123.0).doubleValue(), expected, 0);
+    }
+    
     @Test
-    public void parseJvmHeapMemByChildOptsTest() {
-        Assert.assertEquals(
-                "1024K results in 1 MB",
-                Utils.parseJvmHeapMemByChildOpts("Xmx1024K", 0.0).doubleValue(), 1.0, 0);
-
-        Assert.assertEquals(
-                "100M results in 100 MB",
-                Utils.parseJvmHeapMemByChildOpts("Xmx100M", 0.0).doubleValue(), 100.0, 0);
-
-        Assert.assertEquals(
-                "1G results in 1024 MB",
-                Utils.parseJvmHeapMemByChildOpts("Xmx1G", 0.0).doubleValue(), 1024.0, 0);
-
-        Assert.assertEquals(
-                "Unmatched value results in default",
-                Utils.parseJvmHeapMemByChildOpts("Xmx1T", 123.0).doubleValue(), 123.0, 0);
-
-        Assert.assertEquals(
-                "Null value results in default",
-                Utils.parseJvmHeapMemByChildOpts(null, 123.0).doubleValue(), 123.0, 0);
+    public void parseJvmHeapMemByChildOptsTestK() {
+        doParseJvmHeapMemByChildOptsTest("Xmx1024k results in 1 MB", "Xmx1024k", 1.0);
+        doParseJvmHeapMemByChildOptsTest("Xmx1024K results in 1 MB", "Xmx1024K", 1.0);
+        doParseJvmHeapMemByChildOptsTest("-Xmx1024k results in 1 MB", "-Xmx1024k", 1.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestM() {
+        doParseJvmHeapMemByChildOptsTest("Xmx100M results in 100 MB", "Xmx100m", 100.0);
+        doParseJvmHeapMemByChildOptsTest("Xmx100m results in 100 MB", "Xmx100M", 100.0);
+        doParseJvmHeapMemByChildOptsTest("-Xmx100M results in 100 MB", "-Xmx100m", 100.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestG() {
+        doParseJvmHeapMemByChildOptsTest("Xmx1g results in 1024 MB", "Xmx1g", 1024.0);
+        doParseJvmHeapMemByChildOptsTest("Xmx1G results in 1024 MB", "Xmx1G", 1024.0);
+        doParseJvmHeapMemByChildOptsTest("-Xmx1g results in 1024 MB", "-Xmx1g", 1024.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestNoMatch() {
+        doParseJvmHeapMemByChildOptsTest("Unmatched unit results in default", "Xmx1t", 123.0);
+        doParseJvmHeapMemByChildOptsTest("Unmatched option results in default", "Xms1g", 123.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestNulls() {
+        doParseJvmHeapMemByChildOptsTest("Null value results in default", (String) null, 123.0);
+        doParseJvmHeapMemByChildOptsTest("Null list results in default", (List<String>) null, 123.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestExtraChars() {
+        doParseJvmHeapMemByChildOptsTest("Leading characters are ignored", "---Xmx1g", 1024.0);
+        doParseJvmHeapMemByChildOptsTest("Trailing characters are ignored", "Xmx1ggggg", 1024.0);
+    }
+    
+    @Test
+    public void parseJvmHeapMemByChildOptsTestFirstMatch() {
+        doParseJvmHeapMemByChildOptsTest("First valid match is used", 
+                Arrays.asList(null, "Xmx1t", "Xmx1g", "Xms1024k Xmx1024k", "Xmx100m"), 
+                1024.0);
     }
 
     public void getConfiguredClientThrowsRuntimeExceptionOnBadArgsTest () throws TTransportException {

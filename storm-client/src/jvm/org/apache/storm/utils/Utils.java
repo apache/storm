@@ -903,32 +903,36 @@ public class Utils {
      * @param defaultValue
      * @return the value of the JVM heap memory setting (in MB) in a java command.
      */
-    public static Double parseJvmHeapMemByChildOpts(String input, Double defaultValue) {
-        if (input != null) {
-            Pattern optsPattern = Pattern.compile("Xmx[0-9]+[mkgMKG]");
-            Matcher m = optsPattern.matcher(input);
-            String memoryOpts = null;
-            while (m.find()) {
-                memoryOpts = m.group();
-            }
-            if (memoryOpts != null) {
-                int unit = 1;
-                memoryOpts = memoryOpts.toLowerCase();
-
-                if (memoryOpts.endsWith("k")) {
-                    unit = 1024;
-                } else if (memoryOpts.endsWith("m")) {
-                    unit = 1024 * 1024;
-                } else if (memoryOpts.endsWith("g")) {
-                    unit = 1024 * 1024 * 1024;
+    public static Double parseJvmHeapMemByChildOpts(List<String> options, Double defaultValue) {
+        if (options != null) {
+            Pattern optsPattern = Pattern.compile("Xmx([0-9]+)([mkgMKG])");
+            for (String option : options) {
+                if (option == null) {
+                    continue;
                 }
-
-                memoryOpts = memoryOpts.replaceAll("[a-zA-Z]", "");
-                Double result =  Double.parseDouble(memoryOpts) * unit / 1024.0 / 1024.0;
-                return (result < 1.0) ? 1.0 : result;
-            } else {
-                return defaultValue;
+                Matcher m = optsPattern.matcher(option);
+                while (m.find()) {
+                    int value = Integer.parseInt(m.group(1));
+                    char unitChar = m.group(2).toLowerCase().charAt(0);
+                    int unit;
+                    switch (unitChar) {
+                    case 'k':
+                        unit = 1024;
+                        break;
+                    case 'm':
+                        unit = 1024 * 1024;
+                        break;
+                    case 'g':
+                        unit = 1024 * 1024 * 1024;
+                        break;
+                    default:
+                        unit = 1;
+                    }
+                    Double result =  value * unit / 1024.0 / 1024.0;
+                    return (result < 1.0) ? 1.0 : result;
+                }
             }
+            return defaultValue;
         } else {
             return defaultValue;
         }
