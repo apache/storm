@@ -245,6 +245,13 @@
                 <include>README.md</include>
             </includes>
         </fileSet>
+        <fileSet>
+            <directory>${project.basedir}/../../../external/storm-rocketmq</directory>
+            <outputDirectory>external/storm-rocketmq</outputDirectory>
+            <includes>
+                <include>README.*</include>
+            </includes>
+        </fileSet>
 
         <!-- $STORM_HOME/extlib -->
         <fileSet>

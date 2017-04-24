@@ -352,6 +352,7 @@
         <module>external/storm-druid</module>
         <module>external/storm-jms</module>
         <module>external/storm-pmml</module>
+        <module>external/storm-rocketmq</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
@@ -369,6 +370,7 @@
         <module>examples/storm-mqtt-examples</module>
         <module>examples/storm-pmml-examples</module>
         <module>examples/storm-jms-examples</module>
+        <module>examples/storm-rocketmq-examples</module>
         <module>examples/storm-perf</module>
     </modules>
 
