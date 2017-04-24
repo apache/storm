@@ -102,6 +102,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
             session = client.connect();
         } catch (NoHostAvailableException e) {
             outputCollector.reportError(e);
+            throw e;
         }
     }
 
