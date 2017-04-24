@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2349: Add one RocketMQ plugin for the Apache Storm
  * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
  * STORM-2480: principle should be modified to principal
  * STORM-2371: Replace existing AMQP eventhub client with the lastest one from Microsoft eventhubs
