@@ -275,7 +275,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         this.listener = newWindowLifecycleListener();
         this.windowManager = initWindowManager(listener, stormConf, context);
         start();
-        LOG.debug("Initialized window manager {} ", this.windowManager);
+        LOG.info("Initialized window manager {} ", windowManager);
     }
 
     @Override
