@@ -17,12 +17,18 @@
  */
 package org.apache.storm.windowing;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Eviction policy that evicts events based on time duration.
  */
 public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
+    private static final Logger LOG = LoggerFactory.getLogger(TimeEvictionPolicy.class);
+
     private final int windowLength;
     protected EvictionContext evictionContext;
+    private long delta;
 
     /**
      * Constructs a TimeEvictionPolicy that evicts events older
@@ -41,8 +47,10 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
     public Action evict(Event<T> event) {      
         long now = evictionContext == null ? System.currentTimeMillis() : evictionContext.getReferenceTime();
         long diff = now - event.getTimestamp();
-        if (diff >= windowLength) {
+        if (diff >= (windowLength + delta)) {
             return Action.EXPIRE;
+        } else if (diff < 0) { // do not process events beyond current ts
+            return Action.KEEP;
         }
         return Action.PROCESS;
     }
@@ -54,7 +62,22 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
 
     @Override
     public void setContext(EvictionContext context) {
-        this.evictionContext = context;
+        EvictionContext prevContext = evictionContext;
+        evictionContext = context;
+        // compute window length adjustment (delta) to account for time drift
+        if (context.getSlidingInterval() != null) {
+            if (prevContext == null) {
+                delta = Integer.MAX_VALUE; // consider all events for the initial window
+            } else {
+                delta = context.getReferenceTime() - prevContext.getReferenceTime() - context.getSlidingInterval();
+                if (Math.abs(delta) > 100) {
+                    LOG.warn("Possible clock drift or long running computation in window; " +
+                                    "Previous eviction time: {}, current eviction time: {}",
+                            prevContext.getReferenceTime(),
+                            context.getReferenceTime());
+                }
+            }
+        }
     }
 
     @Override
