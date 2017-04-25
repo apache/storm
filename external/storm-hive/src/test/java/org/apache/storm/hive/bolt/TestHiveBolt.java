@@ -132,11 +132,11 @@ public class TestHiveBolt {
         // 1) Basic
         HiveEndPoint endPt = new HiveEndPoint(metaStoreURI, dbName, tblName
                                               , Arrays.asList(partitionVals.split(",")));
-        StreamingConnection connection = endPt.newConnection(false, null); //shouldn't throw
+        StreamingConnection connection = endPt.newConnection(false, (HiveConf)null); //shouldn't throw
         connection.close();
         // 2) Leave partition unspecified
         endPt = new HiveEndPoint(metaStoreURI, dbName, tblName, null);
-        endPt.newConnection(false, null).close(); // should not throw
+        endPt.newConnection(false, (HiveConf)null).close(); // should not throw
     }
 
     @Test
