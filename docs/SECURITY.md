@@ -74,6 +74,7 @@ ui.filter.params:
    "kerberos.name.rules": "RULE:[2:$1@$0]([jt]t@.*EXAMPLE.COM)s/.*/$MAPRED_USER/ RULE:[2:$1@$0]([nd]n@.*EXAMPLE.COM)s/.*/$HDFS_USER/DEFAULT"
 ```
 make sure to create a principal 'HTTP/{hostname}' (here hostname should be the one where UI daemon runs
+Be aware that the UI user *MUST* be HTTP.
 
 Once configured users needs to do kinit before accessing UI.
 Ex:
