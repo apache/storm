@@ -141,7 +141,7 @@
             <artifactId>netty</artifactId>
         </dependency>
 
-        <!-- kyro -->
+        <!-- kryo -->
         <dependency>
             <groupId>com.esotericsoftware</groupId>
             <artifactId>kryo</artifactId>
