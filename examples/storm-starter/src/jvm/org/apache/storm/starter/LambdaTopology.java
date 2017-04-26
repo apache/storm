@@ -44,12 +44,13 @@ public class LambdaTopology extends ConfigurableTopology {
         // (or it will cause not serializable exception).
         Prefix prefix = new Prefix("Hello lambda:");
         String suffix = ":so cool!";
+        int tag = 999;
 
         builder.setSpout("spout1", () -> UUID.randomUUID().toString());
         builder.setBolt("bolt1", (tuple, collector) -> {
             String[] parts = tuple.getStringByField("lambda").split("\\-");
-            collector.emit(new Values(prefix + parts[0] + suffix));
-        }).shuffleGrouping("spout1");
+            collector.emit(new Values(prefix + parts[0] + suffix, tag));
+        }, "strValue", "intValue").shuffleGrouping("spout1");
         builder.setBolt("bolt2", tuple -> System.out.println(tuple)).shuffleGrouping("bolt1");
 
         Config conf = new Config();
