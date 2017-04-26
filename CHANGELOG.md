@@ -238,6 +238,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2488: The UI user Must be HTTP
  * STORM-2315: New kafka spout can't commit offset when ack is disabled
  * STORM-2467: Use explicit charset when decoding from array backed buffer
  * STORM-2429: Properly validate supervisor.scheduler.meta
