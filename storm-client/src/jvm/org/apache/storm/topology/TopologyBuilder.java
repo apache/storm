@@ -328,7 +328,7 @@ public class TopologyBuilder {
      * achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
-     * @param biConsumer lambda expression which is the instance of functional interface BiConsumer
+     * @param biConsumer lambda expression that implements tuple processing for this bolt
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
@@ -343,7 +343,7 @@ public class TopologyBuilder {
      * achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
-     * @param biConsumer lambda expression which is the instance of functional interface BiConsumer
+     * @param biConsumer lambda expression that implements tuple processing for this bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -359,7 +359,7 @@ public class TopologyBuilder {
      * achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
-     * @param consumer lambda expression which is the instance of functional interface Consumer
+     * @param consumer lambda expression that implements tuple processing for this bolt
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
@@ -374,7 +374,7 @@ public class TopologyBuilder {
      * achieve proper reliability in the topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
-     * @param consumer lambda expression which is the instance of functional interface Consumer
+     * @param consumer lambda expression that implements tuple processing for this bolt
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
@@ -424,7 +424,7 @@ public class TopologyBuilder {
      * Define a new spout in this topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
-     * @param supplier lambda expression which is the instance of functional interface Supplier
+     * @param supplier lambda expression that implements tuple generating for this spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, SerializableSupplier<Object> supplier) throws IllegalArgumentException {
@@ -438,7 +438,7 @@ public class TopologyBuilder {
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
      * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somewhere around the cluster.
-     * @param supplier lambda expression which is the instance of functional interface Supplier
+     * @param supplier lambda expression that implements tuple generating for this spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
     public SpoutDeclarer setSpout(String id, SerializableSupplier<Object> supplier, Number parallelism_hint) throws IllegalArgumentException {
