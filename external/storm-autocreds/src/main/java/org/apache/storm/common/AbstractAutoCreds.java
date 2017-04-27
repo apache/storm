@@ -74,7 +74,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     @Override
     public void populateCredentials(Map<String, String> credentials, Map conf) {
         try {
-            if (configKeys != null) {
+            if (!configKeys.isEmpty()) {
                 Map<String, Object> updatedConf = updateConfigs(conf);
                 for (String configKey : configKeys) {
                     credentials.put(getCredentialKey(configKey),
@@ -92,11 +92,9 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     private Map<String, Object> updateConfigs(Map topologyConf) {
         Map<String, Object> res = new HashMap<>(topologyConf);
-        if (configKeys != null) {
-            for (String configKey : configKeys) {
-                if (!res.containsKey(configKey) && configMap.containsKey(configKey)) {
-                    res.put(configKey, configMap.get(configKey));
-                }
+        for (String configKey : configKeys) {
+            if (!res.containsKey(configKey) && configMap.containsKey(configKey)) {
+                res.put(configKey, configMap.get(configKey));
             }
         }
         return res;
@@ -134,7 +132,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     protected Set<Pair<String, Credentials>> getCredentials(Map<String, String> credentials) {
         Set<Pair<String, Credentials>> res = new HashSet<>();
-        if (configKeys != null) {
+        if (!configKeys.isEmpty()) {
             for (String configKey : configKeys) {
                 Credentials cred = doGetCredentials(credentials, configKey);
                 if (cred != null) {

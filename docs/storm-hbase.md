@@ -98,7 +98,7 @@ topology submission, nimbus will impersonate the topology submitter user and acq
 topology submitter user. If topology was started with topology.auto-credentials set to AutoHBase, nimbus will push the
 delegation tokens to all the workers for your topology and the hbase bolt/state will authenticate with these tokens.
 
-As nimbus is impersonating topology submitter user, you need to ensure the user specified in storm.kerberos.principal 
+As nimbus is impersonating topology submitter user, you need to ensure the user specified in hbase.kerberos.principal 
 has permissions to acquire tokens on behalf of other users. To achieve this you need to follow configuration directions 
 listed on this link
 
