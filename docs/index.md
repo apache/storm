@@ -71,7 +71,7 @@ But small change will not affect the user experience. We will notify the user wh
 
 * [Serialization](Serialization.html)
 * [Common patterns](Common-patterns.html)
-* [Clojure DSL](Clojure-DSL.html)
+* [DSLs and multilang adapters](DSLs-and-multilang-adapters.html)
 * [Using non-JVM languages with Storm](Using-non-JVM-languages-with-Storm.html)
 * [Distributed RPC](Distributed-RPC.html)
 * [Transactional topologies](Transactional-topologies.html)
@@ -95,16 +95,18 @@ But small change will not affect the user experience. We will notify the user wh
 * [Apache Hive Integration](storm-hive.html)
 * [Apache Solr Integration](storm-solr.html)
 * [Apache Cassandra Integration](storm-cassandra.html)
+* [Apache RocketMQ Integration](storm-rocketmq.html)
 * [JDBC Integration](storm-jdbc.html)
 * [JMS Integration](storm-jms.html)
+* [MQTT Integration](storm-mqtt.html)
 * [Redis Integration](storm-redis.html)
 * [Event Hubs Intergration](storm-eventhubs.html)
 * [Elasticsearch Integration](storm-elasticsearch.html)
-* [MQTT Integration](storm-mqtt.html)
 * [Mongodb Integration](storm-mongodb.html)
 * [OpenTSDB Integration](storm-opentsdb.html)
 * [Kinesis Integration](storm-kinesis.html)
 * [Druid Integration](storm-druid.html)
+* [PMML Integration](storm-pmml.html)
 * [Kestrel Integration](Kestrel-and-Storm.html)
 
 #### Container, Resource Management System Integration
