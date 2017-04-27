@@ -27,10 +27,10 @@ import org.apache.storm.tuple.Values;
 import java.util.Map;
 
 public class LambdaSpout extends BaseRichSpout {
-    private SerializableSupplier<Object> supplier;
+    private SerializableSupplier<?> supplier;
     private SpoutOutputCollector collector;
 
-    public LambdaSpout(SerializableSupplier<Object> supplier) {
+    public LambdaSpout(SerializableSupplier<?> supplier) {
         this.supplier = supplier;
     }
 

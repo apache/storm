@@ -18,9 +18,11 @@
 package org.apache.storm.lambda;
 
 import org.apache.storm.topology.BasicOutputCollector;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseBasicBolt;
 import org.apache.storm.tuple.Tuple;
 
-public class LambdaConsumerBolt extends AbstractLambdaBolt {
+public class LambdaConsumerBolt extends BaseBasicBolt {
 
     private SerializableConsumer<Tuple> consumer;
 
@@ -33,4 +35,8 @@ public class LambdaConsumerBolt extends AbstractLambdaBolt {
         consumer.accept(input);
     }
 
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        // this bolt dosen't emit to downstream bolts
+    }
 }

@@ -18,14 +18,20 @@
 package org.apache.storm.lambda;
 
 import org.apache.storm.topology.BasicOutputCollector;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseBasicBolt;
+import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 
-public class LambdaBiConsumerBolt extends AbstractLambdaBolt {
+public class LambdaBiConsumerBolt extends BaseBasicBolt {
 
     private SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer;
 
-    public LambdaBiConsumerBolt(SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer) {
+    private String[] fields;
+
+    public LambdaBiConsumerBolt(SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, String[] fields) {
         this.biConsumer = biConsumer;
+        this.fields = fields;
     }
 
     @Override
@@ -33,4 +39,8 @@ public class LambdaBiConsumerBolt extends AbstractLambdaBolt {
         biConsumer.accept(input, collector);
     }
 
+    @Override
+    public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        declarer.declare(new Fields(fields));
+    }
 }

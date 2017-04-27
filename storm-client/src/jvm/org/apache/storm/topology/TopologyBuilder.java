@@ -329,11 +329,12 @@ public class TopologyBuilder {
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param biConsumer lambda expression that implements tuple processing for this bolt
+     * @param fields fields for tuple that should be emitted to downstream bolts
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer) throws IllegalArgumentException {
-        return setBolt(id, biConsumer, null);
+    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, String... fields) throws IllegalArgumentException {
+        return setBolt(id, biConsumer, null, fields);
     }
 
     /**
@@ -344,12 +345,13 @@ public class TopologyBuilder {
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
      * @param biConsumer lambda expression that implements tuple processing for this bolt
+     * @param fields fields for tuple that should be emitted to downstream bolts
      * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
      * @return use the returned object to declare the inputs to this component
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, Number parallelism_hint) throws IllegalArgumentException {
-        return setBolt(id, new LambdaBiConsumerBolt(biConsumer), parallelism_hint);
+    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, Number parallelism_hint, String... fields) throws IllegalArgumentException {
+        return setBolt(id, new LambdaBiConsumerBolt(biConsumer, fields), parallelism_hint);
     }
 
     /**
@@ -427,7 +429,7 @@ public class TopologyBuilder {
      * @param supplier lambda expression that implements tuple generating for this spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public SpoutDeclarer setSpout(String id, SerializableSupplier<Object> supplier) throws IllegalArgumentException {
+    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier) throws IllegalArgumentException {
         return setSpout(id, supplier, null);
     }
 
@@ -441,7 +443,7 @@ public class TopologyBuilder {
      * @param supplier lambda expression that implements tuple generating for this spout
      * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
      */
-    public SpoutDeclarer setSpout(String id, SerializableSupplier<Object> supplier, Number parallelism_hint) throws IllegalArgumentException {
+    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier, Number parallelism_hint) throws IllegalArgumentException {
         return setSpout(id, new LambdaSpout(supplier), parallelism_hint);
     }
 
