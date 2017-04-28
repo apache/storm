@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2194: Stop ignoring socket timeout error from executor
