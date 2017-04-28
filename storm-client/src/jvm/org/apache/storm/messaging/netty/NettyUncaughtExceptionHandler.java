@@ -26,10 +26,17 @@ public class NettyUncaughtExceptionHandler implements Thread.UncaughtExceptionHa
     @Override
     public void uncaughtException(Thread t, Throwable e) {
         try {
-            Utils.handleUncaughtException(e);
-        } catch (Error error) {
-            LOG.info("Received error in netty thread.. terminating server...");
-            Runtime.getRuntime().exit(1);
+            LOG.error("Uncaught exception in netty " + e.getCause());
+        } catch (Throwable err) {
+            // Doing nothing (probably due to an oom issue) and hoping Utils.handleUncaughtException will handle it
         }
+
+        try {
+            Utils.handleUncaughtException(e);
+        } catch (Throwable throwable) {
+            LOG.error("Exception thrown while handling uncaught exception " + throwable.getCause());
+        }
+        LOG.info("Received error in netty thread.. terminating server...");
+        Runtime.getRuntime().exit(1);
     }
 }
