@@ -20,6 +20,7 @@ package org.apache.storm.daemon.supervisor;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -329,21 +330,13 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Returns a collection of jar file names found under the given directory.
-     * @param dir the directory to search
-     * @return the jar file names
+     * Returns a path with a wildcard as the final element, so that the JVM will expand
+     * that to all JARs in the directory.
+     * @param dir the directory to which a wildcard will be appended
+     * @return the path with wildcard ("*") suffix
      */
-    protected List<String> getFullJars(File dir) {
-        File[] files = dir.listFiles(jarFilter);
-
-        if (files == null) {
-            return Collections.emptyList();
-        }
-        ArrayList<String> ret = new ArrayList<>(files.length);
-        for (File f: files) {
-            ret.add(f.getAbsolutePath());
-        }
-        return ret;
+    protected String getWildcardDir(File dir) {
+        return Paths.get(dir.toString(), "*").toString();
     }
     
     protected List<String> frameworkClasspath() {
@@ -355,8 +348,8 @@ public class BasicContainer extends Container {
         File stormExtlibDir = new File(_stormHome, "extlib");
         String extcp = System.getenv("STORM_EXT_CLASSPATH");
         List<String> pathElements = new LinkedList<>();
-        pathElements.addAll(getFullJars(stormLibDir));
-        pathElements.addAll(getFullJars(stormExtlibDir));
+        pathElements.add(getWildcardDir(stormLibDir));
+        pathElements.add(getWildcardDir(stormExtlibDir));
         pathElements.add(extcp);
         pathElements.add(stormConfDir);
 
