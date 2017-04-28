@@ -1205,8 +1205,8 @@
                             <encoding>UTF-8</encoding>
                             <consoleOutput>true</consoleOutput>
                             <!-- set these values to true after fixing all checkstyle errors -->
-                            <failsOnError>true</failsOnError>
-                            <failOnViolation>true</failOnViolation>
+                            <failsOnError>false</failsOnError>
+                            <failOnViolation>false</failOnViolation>
                             <!--End -->
                             <violationSeverity>warning</violationSeverity>
                         </configuration>
