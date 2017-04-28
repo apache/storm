@@ -1,4 +1,5 @@
 ﻿## 0.10.3
+ * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
  * STORM-2158: Fix OutOfMemoryError in Nimbus' SimpleTransportPlugin
 
