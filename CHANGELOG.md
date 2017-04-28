@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2468: Remove clojure from storm-client
  * STORM-2490: Lambda support
  * STORM-2349: Add one RocketMQ plugin for the Apache Storm
  * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
