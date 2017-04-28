@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2468: Remove clojure from storm-client
  * STORM-2490: Lambda support
  * STORM-2349: Add one RocketMQ plugin for the Apache Storm
