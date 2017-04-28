@@ -29,7 +29,7 @@
   (:import [org.apache.storm.utils ConfigUtils Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
   (:import [org.mockito Mockito Matchers])
-  (:use [org.apache.storm util config log])
+  (:use [org.apache.storm util config daemon-config log])
   (:require [conjure.core])
   (:use [conjure core]))
 

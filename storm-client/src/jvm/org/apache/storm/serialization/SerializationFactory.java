@@ -29,7 +29,6 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.ReflectionUtils;
-import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.BigIntegerSerializer;
@@ -40,12 +39,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SerializationFactory {
     public static final Logger LOG = LoggerFactory.getLogger(SerializationFactory.class);
+    public static final ServiceLoader<SerializationRegister> loader = ServiceLoader.load(SerializationRegister.class);
 
     public static Kryo getKryo(Map conf) {
         IKryoFactory kryoFactory = (IKryoFactory) ReflectionUtils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
@@ -71,11 +72,15 @@ public class SerializationFactory {
         k.register(org.apache.storm.metric.api.IMetricsConsumer.DataPoint.class);
         k.register(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo.class);
         k.register(ConsList.class);
-        try {
-            JavaBridge.registerPrimitives(k);
-            JavaBridge.registerCollections(k);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
+        
+        synchronized (loader) {
+            for (SerializationRegister sr: loader) {
+                try {
+                    sr.register(k);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         Map<String, String> registrations = normalizeKryoRegister(conf);

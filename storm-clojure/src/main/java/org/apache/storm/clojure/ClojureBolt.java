@@ -17,59 +17,61 @@
  */
 package org.apache.storm.clojure;
 
-import org.apache.storm.generated.StreamInfo;
-import org.apache.storm.spout.ISpout;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.IRichSpout;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
-import clojure.lang.IFn;
-import clojure.lang.PersistentArrayMap;
-import clojure.lang.Keyword;
-import clojure.lang.Symbol;
-import clojure.lang.RT;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class ClojureSpout implements IRichSpout {
+import org.apache.storm.coordination.CoordinatedBolt.FinishedCallback;
+import org.apache.storm.generated.StreamInfo;
+import org.apache.storm.task.IBolt;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+
+import clojure.lang.IFn;
+import clojure.lang.Keyword;
+import clojure.lang.PersistentArrayMap;
+import clojure.lang.RT;
+import clojure.lang.Symbol;
+
+public class ClojureBolt implements IRichBolt, FinishedCallback {
     Map<String, StreamInfo> _fields;
     List<String> _fnSpec;
     List<String> _confSpec;
     List<Object> _params;
-    
-    ISpout _spout;
-    
-    public ClojureSpout(List fnSpec, List confSpec, List<Object> params, Map<String, StreamInfo> fields) {
+
+    IBolt _bolt;
+
+    public ClojureBolt(List fnSpec, List confSpec, List<Object> params, Map<String, StreamInfo> fields) {
         _fnSpec = fnSpec;
         _confSpec = confSpec;
         _params = params;
         _fields = fields;
     }
-    
 
     @Override
-    public void open(final Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
-        IFn hof = Utils.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
+    public void prepare(final Map stormConf, final TopologyContext context, final OutputCollector collector) {
+        IFn hof = ClojureUtil.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
         try {
             IFn preparer = (IFn) hof.applyTo(RT.seq(_params));
             final Map<Keyword,Object> collectorMap = new PersistentArrayMap( new Object[] {
-                Keyword.intern(Symbol.create("output-collector")), collector,
-                Keyword.intern(Symbol.create("context")), context});
+                    Keyword.intern(Symbol.create("output-collector")), collector,
+                    Keyword.intern(Symbol.create("context")), context});
             List<Object> args = new ArrayList<Object>() {{
-                add(conf);
+                add(stormConf);
                 add(context);
                 add(collectorMap);
             }};
-            
-            _spout = (ISpout) preparer.applyTo(RT.seq(args));
+
+            _bolt = (IBolt) preparer.applyTo(RT.seq(args));
             //this is kind of unnecessary for clojure
             try {
-                _spout.open(conf, context, collector);
+                _bolt.prepare(stormConf, context, collector);
             } catch(AbstractMethodError ame) {
-                
+
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -77,42 +79,17 @@ public class ClojureSpout implements IRichSpout {
     }
 
     @Override
-    public void close() {
-        try {
-            _spout.close();
-        } catch(AbstractMethodError ame) {
-                
-        }
+    public void execute(Tuple input) {
+        _bolt.execute(new ClojureTuple(input));
     }
 
     @Override
-    public void nextTuple() {
+    public void cleanup() {
         try {
-            _spout.nextTuple();
+            _bolt.cleanup();
         } catch(AbstractMethodError ame) {
-                
+
         }
-
-    }
-
-    @Override
-    public void ack(Object msgId) {
-        try {
-            _spout.ack(msgId);
-        } catch(AbstractMethodError ame) {
-                
-        }
-
-    }
-
-    @Override
-    public void fail(Object msgId) {
-        try {
-            _spout.fail(msgId);
-        } catch(AbstractMethodError ame) {
-                
-        }
-
     }
 
     @Override
@@ -122,32 +99,21 @@ public class ClojureSpout implements IRichSpout {
             declarer.declareStream(stream, info.is_direct(), new Fields(info.get_output_fields()));
         }
     }
-    
+
+    @Override
+    public void finishedId(Object id) {
+        if(_bolt instanceof FinishedCallback) {
+            ((FinishedCallback) _bolt).finishedId(id);
+        }
+    }
+
     @Override
     public Map<String, Object> getComponentConfiguration() {
-        IFn hof = Utils.loadClojureFn(_confSpec.get(0), _confSpec.get(1));
+        IFn hof = ClojureUtil.loadClojureFn(_confSpec.get(0), _confSpec.get(1));
         try {
             return (Map) hof.applyTo(RT.seq(_params));
         } catch (Exception e) {
             throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void activate() {
-        try {
-            _spout.activate();
-        } catch(AbstractMethodError ame) {
-                
-        }
-    }
-
-    @Override
-    public void deactivate() {
-        try {
-            _spout.deactivate();
-        } catch(AbstractMethodError ame) {
-                
         }
     }
 }

@@ -14,21 +14,17 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 
-(ns org.apache.storm.log
-  (:require [clojure.tools.logging :as log]))
+(ns org.apache.storm.daemon-config
+  (:import [org.apache.storm DaemonConfig])
+  (:import [org.apache.storm.validation ConfigValidation]))
 
-(defmacro log-message
-  [& args]
-  `(log/info (str ~@args)))
+(defn- clojure-config-name [name]
+  (.replace (.toUpperCase name) "_" "-"))
 
-(defmacro log-error
-  [e & args]
-  `(log/log :error ~e (str ~@args)))
-
-(defmacro log-debug
-  [& args]
-  `(log/debug (str ~@args)))
-
-(defmacro log-warn
-  [& args]
-  `(log/warn (str ~@args)))
+; define clojure constants for every configuration parameter
+(doseq [f (seq (.getDeclaredFields DaemonConfig))]
+  (when (ConfigValidation/isFieldAllowed f)
+    (let [name (.getName f)
+          new-name (clojure-config-name name)]
+      (eval
+        `(def ~(symbol new-name) (. DaemonConfig ~(symbol name)))))))

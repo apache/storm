@@ -18,7 +18,6 @@
 package org.apache.storm.cluster;
 
 import java.util.List;
-import java.util.Map;
 
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.ZKStateChangedCallback;

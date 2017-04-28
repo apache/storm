@@ -18,7 +18,7 @@
   (:use [clojure.set :only [difference intersection]])
   (:use [clojure.string :only [blank? split]])
   (:use [hiccup core page-helpers form-helpers])
-  (:use [org.apache.storm config util log])
+  (:use [org.apache.storm config daemon-config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm StormTimer]
            [org.apache.storm.daemon.supervisor SupervisorUtils]

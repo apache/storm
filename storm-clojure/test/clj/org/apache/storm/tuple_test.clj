@@ -17,10 +17,11 @@
   (:use [clojure test])
   (:import [org.apache.storm Testing])
   (:import [org.apache.storm.testing MkTupleParam])
-  (:import [org.apache.storm.tuple Tuple]))
+  (:import [org.apache.storm.tuple Tuple])
+  (:import [org.apache.storm.clojure ClojureTuple]))
 
 (deftest test-lookup
-  (let [ tuple (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"]))) ]
+  (let [ tuple (ClojureTuple. (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"])))) ]
     (is (= 12 (tuple "foo")))
     (is (= 12 (tuple :foo)))
     (is (= 12 (:foo tuple)))
@@ -30,16 +31,16 @@
     (is (= :notfound (tuple "404" :notfound)))))
 
 (deftest test-indexed
-  (let [ tuple (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"]))) ]
+  (let [ tuple (ClojureTuple. (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"])))) ]
     (is (= 12 (nth tuple 0)))
     (is (= "hello" (nth tuple 1)))))
 
 (deftest test-seq
-  (let [ tuple (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"]))) ]
+  (let [ tuple (ClojureTuple. (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"])))) ]
     (is (= [["foo" 12] ["bar" "hello"]] (seq tuple)))))
 
 (deftest test-map
-    (let [tuple (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"]))) ]
+    (let [tuple (ClojureTuple. (Testing/testTuple [12 "hello"] (doto (MkTupleParam. ) (.setFieldsList ["foo" "bar"])))) ]
       (is (= {"foo" 42 "bar" "hello"} (.getMap (assoc tuple "foo" 42))))
       (is (= {"foo" 42 "bar" "hello"} (.getMap (assoc tuple :foo 42))))
 

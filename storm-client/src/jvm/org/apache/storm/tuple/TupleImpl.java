@@ -17,33 +17,38 @@
  */
 package org.apache.storm.tuple;
 
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.task.GeneralTopologyContext;
-import org.apache.storm.utils.IndifferentAccessMap;
-import clojure.lang.ASeq;
-import clojure.lang.Counted;
-import clojure.lang.IMeta;
-import clojure.lang.IPersistentMap;
-import clojure.lang.ISeq;
-import clojure.lang.Indexed;
-import clojure.lang.Keyword;
-import clojure.lang.MapEntry;
-import clojure.lang.Obj;
-import clojure.lang.PersistentArrayMap;
-import clojure.lang.Seqable;
-import clojure.lang.Symbol;
+import java.util.Collections;
 import java.util.List;
 
-public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed, IMeta, Tuple {
-    private List<Object> values;
-    private int taskId;
-    private String streamId;
-    private GeneralTopologyContext context;
-    private MessageId id;
-    private IPersistentMap _meta;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.task.GeneralTopologyContext;
+
+public class TupleImpl implements Tuple {
+    private final List<Object> values;
+    private final int taskId;
+    private final String streamId;
+    private final GeneralTopologyContext context;
+    private final MessageId id;
+    private Long _processSampleStartTime;
+    private Long _executeSampleStartTime;
+    private long _outAckVal = 0;
     
+    public TupleImpl(Tuple t) {
+        this.values = t.getValues();
+        this.taskId = t.getSourceTask();
+        this.streamId = t.getSourceStreamId();
+        this.id = t.getMessageId();
+        this.context = t.getContext();
+        if (t instanceof TupleImpl) {
+            TupleImpl ti = (TupleImpl) t;
+            this._processSampleStartTime = ti._processSampleStartTime;
+            this._executeSampleStartTime = ti._executeSampleStartTime;
+            this._outAckVal = ti._outAckVal;
+        }
+    }
+
     public TupleImpl(GeneralTopologyContext context, List<Object> values, int taskId, String streamId, MessageId id) {
-        this.values = values;
+        this.values = Collections.unmodifiableList(values);
         this.taskId = taskId;
         this.streamId = streamId;
         this.id = id;
@@ -61,10 +66,7 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
 
     public TupleImpl(GeneralTopologyContext context, List<Object> values, int taskId, String streamId) {
         this(context, values, taskId, streamId, MessageId.makeUnanchored());
-    }    
-    
-    Long _processSampleStartTime;
-    Long _executeSampleStartTime;
+    }
     
     public void setProcessSampleStartTime(long ms) {
         _processSampleStartTime = ms;
@@ -82,8 +84,6 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
         return _executeSampleStartTime;
     }
     
-    long _outAckVal = 0;
-    
     public void updateAckVal(long val) {
         _outAckVal = _outAckVal ^ val;
     }
@@ -91,140 +91,176 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     public long getAckVal() {
         return _outAckVal;
     }
-
+    
+    /** Tuple APIs*/
+    @Override
     public int size() {
         return values.size();
     }
-    
+
+    @Override
     public int fieldIndex(String field) {
         return getFields().fieldIndex(field);
     }
     
+    @Override
     public boolean contains(String field) {
         return getFields().contains(field);
     }
     
+    @Override
     public Object getValue(int i) {
         return values.get(i);
     }
 
+    @Override
     public String getString(int i) {
         return (String) values.get(i);
     }
 
+    @Override
     public Integer getInteger(int i) {
         return (Integer) values.get(i);
     }
 
+    @Override
     public Long getLong(int i) {
         return (Long) values.get(i);
     }
 
+    @Override
     public Boolean getBoolean(int i) {
         return (Boolean) values.get(i);
     }
 
+    @Override
     public Short getShort(int i) {
         return (Short) values.get(i);
     }
 
+    @Override
     public Byte getByte(int i) {
         return (Byte) values.get(i);
     }
 
+    @Override
     public Double getDouble(int i) {
         return (Double) values.get(i);
     }
 
+    @Override
     public Float getFloat(int i) {
         return (Float) values.get(i);
     }
 
+    @Override
     public byte[] getBinary(int i) {
         return (byte[]) values.get(i);
     }
-    
-    
+
+    @Override
     public Object getValueByField(String field) {
         return values.get(fieldIndex(field));
     }
 
+    @Override
     public String getStringByField(String field) {
         return (String) values.get(fieldIndex(field));
     }
 
+    @Override
     public Integer getIntegerByField(String field) {
         return (Integer) values.get(fieldIndex(field));
     }
 
+    @Override
     public Long getLongByField(String field) {
         return (Long) values.get(fieldIndex(field));
     }
 
+    @Override
     public Boolean getBooleanByField(String field) {
         return (Boolean) values.get(fieldIndex(field));
     }
 
+    @Override
     public Short getShortByField(String field) {
         return (Short) values.get(fieldIndex(field));
     }
 
+    @Override
     public Byte getByteByField(String field) {
         return (Byte) values.get(fieldIndex(field));
     }
 
+    @Override
     public Double getDoubleByField(String field) {
         return (Double) values.get(fieldIndex(field));
     }
 
+    @Override
     public Float getFloatByField(String field) {
         return (Float) values.get(fieldIndex(field));
     }
 
+    @Override
     public byte[] getBinaryByField(String field) {
         return (byte[]) values.get(fieldIndex(field));
     }
-    
+
+    @Override
     public List<Object> getValues() {
         return values;
     }
-    
+
+    @Override    
     public Fields getFields() {
         return context.getComponentOutputFields(getSourceComponent(), getSourceStreamId());
     }
 
+    @Override
     public List<Object> select(Fields selector) {
         return getFields().select(selector, values);
     }
     
-    @Deprecated
+    @Override
     public GlobalStreamId getSourceGlobalStreamid() {
         return getSourceGlobalStreamId();
     }
-    
+
+    @Override
     public GlobalStreamId getSourceGlobalStreamId() {
         return new GlobalStreamId(getSourceComponent(), streamId);
     }
-    
+
+    @Override
     public String getSourceComponent() {
         return context.getComponentId(taskId);
     }
-    
+
+    @Override
     public int getSourceTask() {
         return taskId;
     }
-    
+
+    @Override
     public String getSourceStreamId() {
         return streamId;
     }
-    
+
+    @Override
     public MessageId getMessageId() {
         return id;
     }
     
     @Override
+    public GeneralTopologyContext getContext() {
+        return context;
+    }
+    
+    @Override
     public String toString() {
-        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: "+ id.toString() + ", " + values.toString();
+        return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: "+ id.toString() + ", " + values.toString() + " PROC_START_TIME(sampled): " + _processSampleStartTime + " EXEC_START_TIME(sampled): " + _executeSampleStartTime;
     }
     
     @Override
@@ -236,121 +272,4 @@ public class TupleImpl extends IndifferentAccessMap implements Seqable, Indexed,
     public int hashCode() {
         return System.identityHashCode(this);
     }
-
-    private Keyword makeKeyword(String name) {
-        return Keyword.intern(Symbol.create(name));
-    }    
-
-    /* ILookup */
-    @Override
-    public Object valAt(Object o) {
-        try {
-            if(o instanceof Keyword) {
-                return getValueByField(((Keyword) o).getName());
-            } else if(o instanceof String) {
-                return getValueByField((String) o);
-            }
-        } catch(IllegalArgumentException ignored) {
-        }
-        return null;
-    }
-
-    /* Seqable */
-    public ISeq seq() {
-        if(values.size() > 0) {
-            return new Seq(getFields().toList(), values, 0);
-        }
-        return null;
-    }
-
-    static class Seq extends ASeq implements Counted {
-        final List<String> fields;
-        final List<Object> values;
-        final int i;
-
-        Seq(List<String> fields, List<Object> values, int i) {
-            this.fields = fields;
-            this.values = values;
-            assert i >= 0;
-            this.i = i;
-        }
-
-        public Seq(IPersistentMap meta, List<String> fields, List<Object> values, int i) {
-            super(meta);
-            this.fields= fields;
-            this.values = values;
-            assert i >= 0;
-            this.i = i;
-        }
-
-        public Object first() {
-            return new MapEntry(fields.get(i), values.get(i));
-        }
-
-        public ISeq next() {
-            if(i+1 < fields.size()) {
-                return new Seq(fields, values, i+1);
-            }
-            return null;
-        }
-
-        public int count() {
-            assert fields.size() -i >= 0 : "index out of bounds";
-            // i being the position in the fields of this seq, the remainder of the seq is the size
-            return fields.size() -i;
-        }
-
-        public Obj withMeta(IPersistentMap meta) {
-            return new Seq(meta, fields, values, i);
-        }
-    }
-
-    /* Indexed */
-    public Object nth(int i) {
-        if(i < values.size()) {
-            return values.get(i);
-        } else {
-            return null;
-        }
-    }
-
-    public Object nth(int i, Object notfound) {
-        Object ret = nth(i);
-        if(ret==null) ret = notfound;
-        return ret;
-    }
-
-    /* Counted */
-    public int count() {
-        return values.size();
-    }
-    
-    /* IMeta */
-    public IPersistentMap meta() {
-        if(_meta==null) {
-            _meta = new PersistentArrayMap( new Object[] {
-            makeKeyword("stream"), getSourceStreamId(), 
-            makeKeyword("component"), getSourceComponent(), 
-            makeKeyword("task"), getSourceTask()});
-        }
-        return _meta;
-    }
-
-    private PersistentArrayMap toMap() {
-        Object array[] = new Object[values.size()*2];
-        List<String> fields = getFields().toList();
-        for(int i=0; i < values.size(); i++) {
-            array[i*2] = fields.get(i);
-            array[(i*2)+1] = values.get(i);
-        }
-        return new PersistentArrayMap(array);
-    }
-
-    public IPersistentMap getMap() {
-        if(_map==null) {
-            setMap(toMap());
-        }
-        return _map;
-    }    
-    
 }

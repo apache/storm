@@ -39,7 +39,13 @@ public interface IMetricsConsumer {
         public String srcComponentId; 
         public int srcTaskId; 
         public long timestamp;
-        public int updateIntervalSecs; 
+        public int updateIntervalSecs;
+
+        @Override
+        public String toString() {
+            return "TASK_INFO: { host: " + srcWorkerHost + ":" + srcWorkerPort +
+                    " comp: " + srcComponentId + "["+ srcTaskId + "]}";
+        }
     }
 
     // We can't move this to outside without breaking backward compatibility.

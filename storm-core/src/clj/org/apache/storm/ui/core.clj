@@ -24,7 +24,7 @@
         ring.middleware.multipart-params.temp-file)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [org.apache.storm config util log])
+  (:use [org.apache.storm config daemon-config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]

@@ -38,7 +38,7 @@
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
   (:import [org.apache.storm.daemon StormCommon])
-  (:use [org.apache.storm util config])
+  (:use [org.apache.storm util daemon-config config])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Iface StormTopology SubmitOptions
             KillOptions RebalanceOptions ClusterSummary TopologyInfo Nimbus$Processor]
            (org.json.simple JSONValue))

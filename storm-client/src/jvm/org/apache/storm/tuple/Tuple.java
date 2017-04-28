@@ -18,6 +18,7 @@
 package org.apache.storm.tuple;
 
 import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.task.GeneralTopologyContext;
 
 /**
  * The tuple is the main data structure in Storm. A tuple is a named list of values, 
@@ -65,4 +66,9 @@ public interface Tuple extends ITuple{
      * Gets the message id that associated with this tuple.
      */
     public MessageId getMessageId();
+
+    /**
+     * Gets the topology context associated with the tuple
+     */
+    public GeneralTopologyContext getContext();
 }

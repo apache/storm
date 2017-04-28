@@ -17,7 +17,8 @@
  */
 package org.apache.storm.trident.operation.builtin;
 
-import clojure.lang.Numbers;
+import java.math.BigDecimal;
+
 import org.apache.storm.trident.operation.CombinerAggregator;
 import org.apache.storm.trident.tuple.TridentTuple;
 
@@ -31,12 +32,29 @@ public class Sum implements CombinerAggregator<Number> {
 
     @Override
     public Number combine(Number val1, Number val2) {
-        return Numbers.add(val1, val2);
+        if (val1 instanceof BigDecimal || val2 instanceof BigDecimal) {
+            BigDecimal v1 = asBigDecimal(val1);
+            BigDecimal v2 = asBigDecimal(val2);
+            return (v1).add(v2);
+        }
+        if (val1 instanceof Double || val2 instanceof Double) {
+            return val1.doubleValue() + val2.doubleValue();
+        }
+        return val1.longValue() + val2.longValue();
+    }
+
+    private static BigDecimal asBigDecimal(Number val) {
+        BigDecimal ret;
+        if (val instanceof BigDecimal) {
+            ret = (BigDecimal) val;
+        } else {
+            ret = new BigDecimal(val.doubleValue());
+        }
+        return ret;
     }
 
     @Override
     public Number zero() {
         return 0;
     }
-    
 }

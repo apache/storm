@@ -26,7 +26,7 @@
   (:import [org.apache.storm Testing Testing$Condition LocalCluster$Builder])
   
   (:use [org.apache.storm config])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [org.apache.storm.util])
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.utils Utils]
