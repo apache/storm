@@ -115,34 +115,29 @@ if not os.path.exists(STORM_LIB_DIR):
     print("******************************************")
     sys.exit(1)
 
-def get_jars_full(adir):
-    files = []
-    if os.path.isdir(adir):
-        files = os.listdir(adir)
-    elif os.path.exists(adir):
-        files = [adir]
-
-    ret = []
-    for f in files:
-        if f.endswith(".jar"):
-            ret.append(os.path.join(adir, f))
+# If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
+def get_wildcard_dir(path):
+    if os.path.isdir(path):
+        ret = [(os.path.join(path, "*"))]
+    elif os.path.exists(path):
+        ret = [path]
     return ret
 
 def get_classpath(extrajars, daemon=True, client=False):
-    ret = get_jars_full(STORM_DIR)
+    ret = get_wildcard_dir(STORM_DIR)
     if client:
-        ret.extend(get_jars_full(STORM_WORKER_LIB_DIR))
+        ret.extend(get_wildcard_dir(STORM_WORKER_LIB_DIR))
     else :
-        ret.extend(get_jars_full(STORM_LIB_DIR))
-    ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib")))
+        ret.extend(get_wildcard_dir(STORM_LIB_DIR))
+    ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib")))
     if daemon:
-        ret.extend(get_jars_full(os.path.join(STORM_DIR, "extlib-daemon")))
+        ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib-daemon")))
     if STORM_EXT_CLASSPATH != None:
         for path in STORM_EXT_CLASSPATH.split(os.pathsep):
-            ret.extend(get_jars_full(path))
+            ret.extend(get_wildcard_dir(path))
     if daemon and STORM_EXT_CLASSPATH_DAEMON != None:
         for path in STORM_EXT_CLASSPATH_DAEMON.split(os.pathsep):
-            ret.extend(get_jars_full(path))
+            ret.extend(get_wildcard_dir(path))
     ret.extend(extrajars)
     return normclasspath(os.pathsep.join(ret))
 
@@ -173,7 +168,7 @@ def resolve_dependencies(artifacts, artifact_repositories):
     sys.stdout.flush()
 
     # storm-submit module doesn't rely on storm-core and relevant libs
-    extrajars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "submit-tools"))
+    extrajars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "submit-tools"))
     classpath = normclasspath(os.pathsep.join(extrajars))
 
     command = [
@@ -377,8 +372,8 @@ def sql(sql_file, topology_name):
     local_jars = DEP_JARS_OPTS
     artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
 
-    sql_core_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
-    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
+    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
+    sql_runtime_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
 
     # include storm-sql-runtime jar(s) to local jar list
     local_jars.extend(sql_runtime_jars)
@@ -798,7 +793,7 @@ def drpc():
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
-    allextrajars = get_jars_full(STORM_WEBAPP_LIB_DIR)
+    allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
         "org.apache.storm.daemon.drpc.DRPCServer",
