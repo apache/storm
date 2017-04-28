@@ -17,6 +17,9 @@
 # limitations under the License.
 #
 
+# STORM-2486: Prevent `cd` from printing the target directory.
+unset CDPATH
+
 # Resolve links - $0 may be a softlink
 PRG="${0}"
 
