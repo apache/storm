@@ -197,8 +197,7 @@
                 </execution>
             </executions>
         </plugin>
-
-      <plugin>
+        <plugin>
         <groupId>com.theoryinpractise</groupId>
         <artifactId>clojure-maven-plugin</artifactId>
         <extensions>true</extensions>
@@ -227,8 +226,7 @@
           </execution>
         </executions>
       </plugin>
-
-      <plugin>
+        <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>
         <version>1.2.1</version>
@@ -248,6 +246,14 @@
           <mainClass>${storm.topology}</mainClass>
         </configuration>
       </plugin>
+        <plugin>
+            <groupId>org.apache.maven.plugins</groupId>
+            <artifactId>maven-checkstyle-plugin</artifactId>
+            <!--Note - the version would be inherited-->
+            <configuration>
+                <maxAllowedViolations>2106</maxAllowedViolations>
+            </configuration>
+        </plugin>
     </plugins>
   </build>
 </project>

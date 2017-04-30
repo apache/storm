@@ -101,6 +101,14 @@
           </execution>
         </executions>
       </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--Note - the version would be inherited-->
+        <configuration>
+          <maxAllowedViolations>41</maxAllowedViolations>
+        </configuration>
+      </plugin>
     </plugins>
   </build>
 </project>

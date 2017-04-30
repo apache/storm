@@ -57,7 +57,6 @@
                 </executions>
 
             </plugin>
-
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
@@ -75,6 +74,14 @@
                     <includePluginDependencies>false</includePluginDependencies>
                     <classpathScope>compile</classpathScope>
                     <mainClass>${storm.topology}</mainClass>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>656</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>
