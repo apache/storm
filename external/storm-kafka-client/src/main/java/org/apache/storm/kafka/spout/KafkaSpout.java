@@ -31,6 +31,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -79,7 +80,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient Map<TopicPartition, OffsetManager> acked;         // Tuples that were successfully acked. These tuples will be committed periodically when the commit timer expires, or after a consumer rebalance, or during close/deactivate
     private transient Set<KafkaSpoutMessageId> emitted;                 // Tuples that have been emitted but that are "on the wire", i.e. pending being acked or failed. Not used if it's AutoCommitMode
     private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;     // Records that have been polled and are queued to be emitted in the nextTuple() call. One record is emitted per nextTuple()
-    private transient long numUncommittedOffsets;                       // Number of offsets that have been polled and emitted but not yet been committed. Not used if it's AutoCommitMode
+    private transient long numUncommittedOffsets;                       // Number of offsets that have been polled and emitted but not yet been committed. Not used if auto commit mode is enabled.
     private transient Timer refreshSubscriptionTimer;                   // Triggers when a subscription should be refreshed
     private transient TopologyContext context;
 
@@ -250,9 +251,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private boolean poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
-        final boolean poll = !waitingToEmit()
-                && (numUncommittedOffsets < maxUncommittedOffsets || consumerAutoCommitMode);
-
+        final int readyMessageCount = retryService.readyMessageCount();
+        final boolean poll = !waitingToEmit() &&
+            //Check that the number of uncommitted, nonretriable tuples is less than the maxUncommittedOffsets limit
+            //Accounting for retriable tuples this way still guarantees that the limit is followed on a per partition basis, and prevents locking up the spout when there are too many retriable tuples
+            (numUncommittedOffsets - readyMessageCount < maxUncommittedOffsets ||
+            consumerAutoCommitMode);
+        
         if (!poll) {
             if (waitingToEmit()) {
                 LOG.debug("Not polling. Tuples waiting to be emitted. [{}] uncommitted offsets across all topic partitions", numUncommittedOffsets);
@@ -290,15 +295,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     private void doSeekRetriableTopicPartitions() {
-        final Set<TopicPartition> retriableTopicPartitions = retryService.retriableTopicPartitions();
+        final Map<TopicPartition, Long> retriableTopicPartitions = retryService.earliestRetriableOffsets();
 
-        for (TopicPartition rtp : retriableTopicPartitions) {
-            final OffsetAndMetadata offsetAndMeta = acked.get(rtp).findNextCommitOffset();
-            if (offsetAndMeta != null) {
-                kafkaConsumer.seek(rtp, offsetAndMeta.offset() + 1);  // seek to the next offset that is ready to commit in next commit cycle
-            } else {
-                kafkaConsumer.seek(rtp, acked.get(rtp).getCommittedOffset() + 1);    // Seek to last committed offset
-            }
+        for (Entry<TopicPartition, Long> retriableTopicPartitionAndOffset : retriableTopicPartitions.entrySet()) {
+            //Seek directly to the earliest retriable message for each retriable topic partition
+            kafkaConsumer.seek(retriableTopicPartitionAndOffset.getKey(), retriableTopicPartitionAndOffset.getValue());
         }
     }
 
@@ -318,7 +319,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private boolean emitTupleIfNotEmitted(ConsumerRecord<K, V> record) {
         final TopicPartition tp = new TopicPartition(record.topic(), record.partition());
         final KafkaSpoutMessageId msgId = new KafkaSpoutMessageId(record);
-
         if (acked.containsKey(tp) && acked.get(tp).contains(msgId)) {   // has been acked
             LOG.trace("Tuple for record [{}] has already been acked. Skipping", record);
         } else if (emitted.contains(msgId)) {   // has been emitted and it's pending ack or fail
