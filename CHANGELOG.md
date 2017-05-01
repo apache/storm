@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2488: The UI user Must be HTTP.
  * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
