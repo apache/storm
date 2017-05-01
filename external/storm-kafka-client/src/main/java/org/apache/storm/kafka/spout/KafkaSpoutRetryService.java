@@ -22,6 +22,7 @@ import org.apache.kafka.common.TopicPartition;
 
 import java.io.Serializable;
 import java.util.Collection;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -54,10 +55,11 @@ public interface KafkaSpoutRetryService extends Serializable {
     boolean retainAll(Collection<TopicPartition> topicPartitions);
 
     /**
-     * @return set of topic partitions that have offsets that are ready to be retried, i.e.,
-     * for which a tuple has failed and has retry time less than current time
+     * @return The earliest retriable offset for each TopicPartition that has
+     * offsets ready to be retried, i.e. for which a tuple has failed
+     * and has retry time less than current time
      */
-    Set<TopicPartition> retriableTopicPartitions();
+    Map<TopicPartition, Long> earliestRetriableOffsets();
 
     /**
      * Checks if a specific failed {@link KafkaSpoutMessageId} is ready to be retried,
@@ -75,4 +77,6 @@ public interface KafkaSpoutRetryService extends Serializable {
      * Returns false is this message is not scheduled for retrial
      */
     boolean isScheduled(KafkaSpoutMessageId msgId);
+    
+    int readyMessageCount();
 }

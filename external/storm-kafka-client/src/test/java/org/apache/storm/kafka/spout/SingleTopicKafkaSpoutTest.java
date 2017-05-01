@@ -17,7 +17,8 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfig;
+
+import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.ProducerRecord;
@@ -37,6 +38,7 @@ import java.util.concurrent.TimeoutException;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
@@ -46,6 +48,9 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
@@ -76,7 +81,9 @@ public class SingleTopicKafkaSpoutTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        KafkaSpoutConfig spoutConfig = getKafkaSpoutConfig(kafkaUnitRule.getKafkaUnit().getKafkaPort(), commitOffsetPeriodMs);
+        KafkaSpoutConfig spoutConfig = getKafkaSpoutConfigBuilder(kafkaUnitRule.getKafkaUnit().getKafkaPort())
+            .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
+            .build();
         this.consumerSpy = spy(new KafkaConsumerFactoryDefault().createConsumer(spoutConfig));
         this.consumerFactory = new KafkaConsumerFactory<String, String>() {
             @Override
@@ -274,5 +281,39 @@ public class SingleTopicKafkaSpoutTest {
 
             verifyAllMessagesCommitted(messageCount);
         }
+    }
+    
+    @Test
+    public void shouldReplayAllFailedTuplesWhenFailedOutOfOrder() throws Exception {
+        //The spout must reemit retriable tuples, even if they fail out of order.
+        //The spout should be able to skip tuples it has already emitted when retrying messages, even if those tuples are also retries.
+        int messageCount = 10;
+        initializeSpout(messageCount);
+
+        //play all tuples
+        for (int i = 0; i < messageCount; i++) {
+            spout.nextTuple();
+        }
+        ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        verify(collector, times(messageCount)).emit(anyString(), anyList(), messageIds.capture());
+        reset(collector);
+        //Fail tuple 5 and 3, call nextTuple, then fail tuple 2
+        List<KafkaSpoutMessageId> capturedMessageIds = messageIds.getAllValues();
+        spout.fail(capturedMessageIds.get(5));
+        spout.fail(capturedMessageIds.get(3));
+        spout.nextTuple();
+        spout.fail(capturedMessageIds.get(2));
+
+        //Check that the spout will reemit all 3 failed tuples and no other tuples
+        ArgumentCaptor<KafkaSpoutMessageId> reemittedMessageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        for (int i = 0; i < messageCount; i++) {
+            spout.nextTuple();
+        }
+        verify(collector, times(3)).emit(anyString(), anyList(), reemittedMessageIds.capture());
+        Set<KafkaSpoutMessageId> expectedReemitIds = new HashSet<>();
+        expectedReemitIds.add(capturedMessageIds.get(5));
+        expectedReemitIds.add(capturedMessageIds.get(3));
+        expectedReemitIds.add(capturedMessageIds.get(2));
+        assertThat("Expected reemits to be the 3 failed tuples", new HashSet<>(reemittedMessageIds.getAllValues()), is(expectedReemitIds));
     }
 }
