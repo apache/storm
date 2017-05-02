@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.hdfs.common.security;
+package org.apache.storm.hdfs.security;
 
 import org.apache.storm.security.auth.kerberos.AutoTGT;
 
@@ -39,6 +39,8 @@ import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
 public class HdfsSecurityUtil {
     public static final String STORM_KEYTAB_FILE_KEY = "hdfs.keytab.file";
     public static final String STORM_USER_NAME_KEY = "hdfs.kerberos.principal";
+    public static final String HDFS_CREDENTIALS_CONFIG_KEYS = "hdfsCredentialsConfigKeys";
+
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsSecurityUtil.class);
     private static AtomicBoolean isLoggedIn = new AtomicBoolean();
