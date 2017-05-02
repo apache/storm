@@ -51,6 +51,15 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     }
     
     @Override
+    public int hashCode() {
+        final int prime = 31;
+        int result = 1;
+        result = prime * result + ((topologyId == null) ? 0 : topologyId.hashCode());
+        result = prime * result + ((executorToSlot == null) ? 0 : executorToSlot.hashCode());
+        return result;
+    }
+    
+    @Override
     public boolean equals(Object other) {
         if (other == this) return true;
         if (other instanceof SchedulerAssignmentImpl) {
