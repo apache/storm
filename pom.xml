@@ -1095,6 +1095,7 @@
                             <id>validate</id>
                             <phase>validate</phase>
                             <configuration>
+                                <configLocation>google_checks.xml</configLocation>
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation></failOnViolation>
                                 <logViolationsToConsole>false</logViolationsToConsole>
