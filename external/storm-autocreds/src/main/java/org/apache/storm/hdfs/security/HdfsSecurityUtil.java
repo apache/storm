@@ -17,11 +17,10 @@
  */
 package org.apache.storm.hdfs.security;
 
-import org.apache.storm.security.auth.kerberos.AutoTGT;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.storm.security.auth.kerberos.AutoTGT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
