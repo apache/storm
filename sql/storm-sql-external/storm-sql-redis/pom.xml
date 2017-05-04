@@ -72,5 +72,15 @@
                 <directory>${basedir}/src/resources</directory>
             </resource>
         </resources>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>92</maxAllowedViolations>
+                </configuration>
+            </plugin>
+        </plugins>
     </build>
 </project>

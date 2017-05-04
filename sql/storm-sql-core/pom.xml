@@ -166,6 +166,14 @@
                 </executions>
             </plugin>
             <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>1217</maxAllowedViolations>
+                </configuration>
+            </plugin>
+            <plugin>
                 <!-- Extract parser grammar template from calcite-core.jar and put
                      it under ${project.build.directory} where all freemarker templates are. -->
                 <groupId>org.apache.maven.plugins</groupId>

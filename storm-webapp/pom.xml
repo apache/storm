@@ -97,7 +97,7 @@
     </dependencies>
     <build>
         <plugins>
-           <plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
                 <configuration>
@@ -113,7 +113,15 @@
                     <reportsDirectory>${project.build.directory}/test-reports</reportsDirectory>
                 </configuration>
             </plugin>
-           <plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>290</maxAllowedViolations>
+                </configuration>
+            </plugin>
+            <plugin>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <version>2.8</version>
                 <executions>
