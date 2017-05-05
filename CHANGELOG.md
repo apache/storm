@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2191: shorten classpaths by using wildcards
  * STORM-2495: Integrate checkstyle check during build
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2468: Remove clojure from storm-client
