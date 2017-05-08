@@ -269,12 +269,9 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         
         /**
          * The maximum number of records a poll will return.
-         * Will only work with Kafka 0.10.0 and above.
          */
         public Builder<K,V> setMaxPollRecords(int records) {
-            //to avoid issues with 0.9 versions that technically still work
-            // with this we do not use ConsumerConfig.MAX_POLL_RECORDS_CONFIG
-            return setProp("max.poll.records", records);
+            return setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, records);
         }
         
         //Security Related Configs
@@ -330,11 +327,12 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.offsetCommitPeriodMs = offsetCommitPeriodMs;
             return this;
         }
-        
+
         /**
          * Defines the max number of polled offsets (records) that can be pending commit, before another poll can take place.
          * Once this limit is reached, no more offsets (records) can be polled until the next successful commit(s) sets the number
-         * of pending offsets bellow the threshold. The default is {@link #DEFAULT_MAX_UNCOMMITTED_OFFSETS}.
+         * of pending offsets below the threshold. The default is {@link #DEFAULT_MAX_UNCOMMITTED_OFFSETS}.
+         * Note that this limit can in some cases be exceeded, but no partition will exceed this limit by more than maxPollRecords - 1.
          * @param maxUncommittedOffsets max number of records that can be be pending commit
          */
         public Builder<K,V> setMaxUncommittedOffsets(int maxUncommittedOffsets) {
