@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2498: Fix Download Full File link
  * STORM-2191: shorten classpaths by using wildcards
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable	
  * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
