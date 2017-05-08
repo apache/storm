@@ -19,6 +19,8 @@
 package org.apache.storm.hbase.security;
 
 import org.apache.storm.Config;
+import org.apache.storm.common.AbstractAutoCreds;
+import org.apache.storm.hdfs.security.HdfsSecurityUtil;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.security.auth.ICredentialsRenewer;
@@ -47,7 +49,7 @@ import java.util.Set;
  * Automatically get hbase delegation tokens and push it to user's topology. The class
  * assumes that hadoop/hbase configuration files are in your class path.
  */
-public class AutoHBase implements IAutoCredentials, ICredentialsRenewer, INimbusCredentialPlugin {
+public class AutoHBase extends AbstractAutoCreds {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHBase.class);
 
     public static final String HBASE_CREDENTIALS = "HBASE_CREDENTIALS";
@@ -58,7 +60,7 @@ public class AutoHBase implements IAutoCredentials, ICredentialsRenewer, INimbus
     public String hbasePrincipal;
 
     @Override
-    public void prepare(Map conf) {
+    public void doPrepare(Map conf) {
         if(conf.containsKey(HBASE_KEYTAB_FILE_KEY) && conf.containsKey(HBASE_PRINCIPAL_KEY)) {
             hbaseKeytab = (String) conf.get(HBASE_KEYTAB_FILE_KEY);
             hbasePrincipal = (String) conf.get(HBASE_PRINCIPAL_KEY);
@@ -66,117 +68,50 @@ public class AutoHBase implements IAutoCredentials, ICredentialsRenewer, INimbus
     }
 
     @Override
+    protected String getConfigKeyString() {
+        return HBaseSecurityUtil.HBASE_CREDENTIALS_CONFIG_KEYS;
+    }
+
+
+    @Override
     public void shutdown() {
         //no op.
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map conf) {
-        try {
-            credentials.put(getCredentialKey(), DatatypeConverter.printBase64Binary(getHadoopCredentials(conf)));
-        } catch (Exception e) {
-            LOG.error("Could not populate HBase credentials.", e);
-        }
+    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+        Configuration configuration = getHadoopConfiguration(conf, configKey);
+        return getHadoopCredentials(conf, configuration);
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials) {
-        credentials.put(HBASE_CREDENTIALS, DatatypeConverter.printBase64Binary("dummy place holder".getBytes()));
-    }
-
-    /*
- *
- * @param credentials map with creds.
- * @return instance of org.apache.hadoop.security.Credentials.
- * this class's populateCredentials must have been called before.
- */
-    @SuppressWarnings("unchecked")
-    protected Object getCredentials(Map<String, String> credentials) {
-        Credentials credential = null;
-        if (credentials != null && credentials.containsKey(getCredentialKey())) {
-            try {
-                byte[] credBytes = DatatypeConverter.parseBase64Binary(credentials.get(getCredentialKey()));
-                ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(credBytes));
-
-                credential = new Credentials();
-                credential.readFields(in);
-                LOG.info("Got hbase credentials from credentials Map.");
-            } catch (Exception e) {
-                LOG.error("Could not obtain credentials from credentials map.", e);
-            }
-        }
-        return credential;
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void updateSubject(Subject subject, Map<String, String> credentials) {
-        addCredentialToSubject(subject, credentials);
-        addTokensToUGI(subject);
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void populateSubject(Subject subject, Map<String, String> credentials) {
-        addCredentialToSubject(subject, credentials);
-        addTokensToUGI(subject);
-    }
-
-    @SuppressWarnings("unchecked")
-    private void addCredentialToSubject(Subject subject, Map<String, String> credentials) {
-        try {
-            Object credential = getCredentials(credentials);
-            if (credential != null) {
-                subject.getPrivateCredentials().add(credential);
-                LOG.info("Hbase credentials added to subject.");
-            } else {
-                LOG.info("No credential found in credentials map.");
-            }
-        } catch (Exception e) {
-            LOG.error("Failed to initialize and get UserGroupInformation.", e);
-        }
-    }
-
-    public void addTokensToUGI(Subject subject) {
-        if(subject != null) {
-            Set<Credentials> privateCredentials = subject.getPrivateCredentials(Credentials.class);
-            if (privateCredentials != null) {
-                for (Credentials cred : privateCredentials) {
-                    Collection<Token<? extends TokenIdentifier>> allTokens = cred.getAllTokens();
-                    if (allTokens != null) {
-                        for (Token<? extends TokenIdentifier> token : allTokens) {
-                            try {
-                                UserGroupInformation.getCurrentUser().addToken(token);
-                                LOG.info("Added delegation tokens to UGI.");
-                            } catch (IOException e) {
-                                LOG.error("Exception while trying to add tokens to ugi", e);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    @SuppressWarnings("unchecked")
     protected byte[] getHadoopCredentials(Map conf) {
+        return getHadoopCredentials(conf, HBaseConfiguration.create());
+    }
+
+    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+        Configuration configuration = HBaseConfiguration.create();
+        fillHadoopConfiguration(topoConf, configKey, configuration);
+        return configuration;
+    }
+
+    @SuppressWarnings("unchecked")
+    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf) {
         try {
-            final Configuration hbaseConf = HBaseConfiguration.create();
             if(UserGroupInformation.isSecurityEnabled()) {
                 final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
 
                 UserProvider provider = UserProvider.instantiate(hbaseConf);
 
-                hbaseConf.set(HBASE_KEYTAB_FILE_KEY, hbaseKeytab);
-                hbaseConf.set(HBASE_PRINCIPAL_KEY, hbasePrincipal);
+                if (hbaseConf.get(HBASE_KEYTAB_FILE_KEY) == null) {
+                    hbaseConf.set(HBASE_KEYTAB_FILE_KEY, hbaseKeytab);
+                }
+                if (hbaseConf.get(HBASE_PRINCIPAL_KEY) == null) {
+                    hbaseConf.set(HBASE_PRINCIPAL_KEY, hbasePrincipal);
+                }
                 provider.login(HBASE_KEYTAB_FILE_KEY, HBASE_PRINCIPAL_KEY, InetAddress.getLocalHost().getCanonicalHostName());
 
                 LOG.info("Logged into Hbase as principal = " + conf.get(HBASE_PRINCIPAL_KEY));
-                UserGroupInformation.setConfiguration(hbaseConf);
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
@@ -208,13 +143,14 @@ public class AutoHBase implements IAutoCredentials, ICredentialsRenewer, INimbus
     }
 
     @Override
-    public void renew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map topologyConf) {
         //HBASE tokens are not renewable so we always have to get new ones.
         populateCredentials(credentials, topologyConf);
     }
 
-    protected String getCredentialKey() {
-        return HBASE_CREDENTIALS;
+    @Override
+    protected String getCredentialKey(String configKey) {
+        return HBASE_CREDENTIALS + configKey;
     }
 
 
