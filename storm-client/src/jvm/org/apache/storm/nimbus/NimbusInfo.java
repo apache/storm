@@ -39,7 +39,7 @@ public class NimbusInfo implements Serializable {
 
     public NimbusInfo(String host, int port, boolean isLeader) {
         if (host == null) throw new NullPointerException("Host cannot be null");
-        if (port <= 0) throw new IllegalArgumentException("Port must be positive");
+        if (port < 0) throw new IllegalArgumentException("Port cannot be negative");
         this.host = host;
         this.port = port;
         this.isLeader = isLeader;

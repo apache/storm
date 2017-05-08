@@ -54,4 +54,9 @@ public interface ITransportPlugin {
      *               Only applicable when using secure storm cluster. A null/blank value here will just indicate to use the logged in user.
      */
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws IOException, TTransportException;
+    
+    /**
+     * @return The port this transport is using. This is not known until {@link #getServer(org.apache.thrift.TProcessor)} has been called.
+     */
+    public int getPort();
 }
