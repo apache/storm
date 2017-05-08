@@ -243,6 +243,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2482: Refactor the Storm auto credential plugins to be more usable
  * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2488: The UI user Must be HTTP
  * STORM-2315: New kafka spout can't commit offset when ack is disabled
