@@ -19,8 +19,10 @@ package org.apache.storm.dependency;
 
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.blobstore.AtomicOutputStream;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.generated.AccessControl;
+import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -145,9 +147,14 @@ public class DependencyUploader {
             // as a workaround, we call getBlobMeta() for all keys
             getBlobStore().getBlobMeta(key);
         } catch (KeyNotFoundException e) {
-            // TODO: do we want to add ACL here?
-            AtomicOutputStream blob = getBlobStore()
-                    .createBlob(key, new SettableBlobMeta(new ArrayList<AccessControl>()));
+            // set acl to below so that it can be shared by other users as well, but allows only read
+            List<AccessControl> acls = new ArrayList<>();
+            acls.add(new AccessControl(AccessControlType.USER,
+                    BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN));
+            acls.add(new AccessControl(AccessControlType.OTHER,
+                    BlobStoreAclHandler.READ));
+
+            AtomicOutputStream blob = getBlobStore().createBlob(key, new SettableBlobMeta(acls));
             Files.copy(dependency.toPath(), blob);
             blob.close();
 
