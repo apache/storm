@@ -70,6 +70,7 @@ But small change will not affect the user experience. We will notify the user wh
 * [Resource Aware Scheduler](Resource_Aware_Scheduler_overview.html)
 * [Daemon Metrics/Monitoring](storm-metrics-profiling-internal-actions.html)
 * [Windows users guide](windows-users-guide.html)
+* [Classpath handling](Classpath-handling.html)
 
 ### Intermediate
 
