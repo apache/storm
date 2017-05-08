@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2479: Fix port assignment race condition in storm-webapp tests
  * STORM-2191: shorten classpaths by using wildcards
  * STORM-2495: Integrate checkstyle check during build
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
