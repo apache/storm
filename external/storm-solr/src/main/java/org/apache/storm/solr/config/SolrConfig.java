@@ -19,6 +19,8 @@
 package org.apache.storm.solr.config;
 
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.storm.solr.client.DefaultSolrClientFactory;
+import org.apache.storm.solr.client.SolrClientFactory;
 
 import java.io.Serializable;
 
@@ -27,8 +29,13 @@ import java.io.Serializable;
  * the bolts should be put in this class.
  */
 public class SolrConfig implements Serializable {
-    private final String zkHostString;
+
     private final int tickTupleInterval;
+
+    private final SolrClientFactory solrClientFactory;
+
+    private final CommitCallback commitCallback;
+
 
     /**
      * @param zkHostString Zookeeper host string as defined in the {@link CloudSolrClient} constructor
@@ -42,16 +49,35 @@ public class SolrConfig implements Serializable {
      * @param tickTupleInterval interval for tick tuples
      * */
     public SolrConfig(String zkHostString, int tickTupleInterval) {
-        this.zkHostString = zkHostString;
-        this.tickTupleInterval = tickTupleInterval;
+        this(new DefaultSolrClientFactory(zkHostString), tickTupleInterval);
     }
 
-    public String getZkHostString() {
-        return zkHostString;
+    /**
+     * @param solrClientFactory factory that provide solrClient
+     * @param tickTupleInterval interval for tick tuples
+     * */
+    public SolrConfig(SolrClientFactory solrClientFactory, int tickTupleInterval) {
+        this(solrClientFactory, tickTupleInterval, new DefaultCommitCallback());
+    }
+
+    public SolrConfig(SolrClientFactory solrClientFactory,
+                      int tickTupleInterval,
+                      CommitCallback commitCallback) {
+        this.solrClientFactory = solrClientFactory;
+        this.tickTupleInterval = tickTupleInterval;
+        this.commitCallback = commitCallback;
+    }
+
+    public SolrClientFactory getSolrClientFactory() {
+        return solrClientFactory;
     }
 
     public int getTickTupleInterval() {
         return tickTupleInterval;
+    }
+
+    public CommitCallback getCommitCallback() {
+        return commitCallback;
     }
 
 }

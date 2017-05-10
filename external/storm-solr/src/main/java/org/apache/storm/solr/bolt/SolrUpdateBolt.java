@@ -18,21 +18,21 @@
 
 package org.apache.storm.solr.bolt;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
-import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.storm.solr.config.CommitCallback;
 import org.apache.storm.solr.config.CountBasedCommit;
 import org.apache.storm.solr.config.SolrCommitStrategy;
 import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrMapper;
+import org.apache.storm.solr.mapper.SolrMapperException;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,6 +56,7 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     private SolrClient solrClient;
     private OutputCollector collector;
     private List<Tuple> toCommitTuples;
+    private CommitCallback commitCallback;
     private int tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
     public SolrUpdateBolt(SolrConfig solrConfig, SolrMapper solrMapper) {
@@ -66,6 +67,7 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
         this.solrConfig = solrConfig;
         this.solrMapper = solrMapper;
         this.commitStgy = commitStgy;
+        this.commitCallback = solrConfig.getCommitCallback();
         LOG.debug("Created {} with the following configuration: " +
                     "[SolrConfig = {}], [SolrMapper = {}], [CommitStgy = {}]",
                     this.getClass().getSimpleName(), solrConfig, solrMapper, commitStgy);
@@ -74,7 +76,7 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        this.solrClient = new CloudSolrClient(solrConfig.getZkHostString());
+        this.solrClient = solrConfig.getSolrClientFactory().getSolrClient();
         this.toCommitTuples = new ArrayList<>(capacity());
     }
 
@@ -96,17 +98,24 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
         }
     }
 
-    private void ack(Tuple tuple) throws SolrServerException, IOException {
+    @Override
+    protected void onTickTuple(final Tuple tuple) {
+        try {
+            // commit ignore strategy when tick
+            ackCommittedTuples();
+        } catch (Exception e) {
+            fail(tuple, e);
+        }
+    }
+
+    private void ack(Tuple tuple) throws SolrServerException, IOException, SolrMapperException {
         if (commitStgy == null) {
             collector.ack(tuple);
         } else {
-            final boolean isTickTuple = TupleUtils.isTick(tuple);
-            if (!isTickTuple) {    // Don't ack tick tuples
-                toCommitTuples.add(tuple);
-                commitStgy.update();
-            }
-            if (isTickTuple || commitStgy.commit()) {
-                solrClient.commit(solrMapper.getCollection());
+            toCommitTuples.add(tuple);
+            commitStgy.update();
+            if (commitStgy.commit()) {
+                commitCallback.process(solrClient, solrMapper.getCollection());
                 ackCommittedTuples();
             }
         }

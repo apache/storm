@@ -18,16 +18,15 @@
 
 package org.apache.storm.solr.trident;
 
-import org.apache.storm.topology.FailedException;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
-import org.apache.solr.client.solrj.impl.CloudSolrClient;
 import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.storm.topology.FailedException;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -44,7 +43,7 @@ public class SolrState implements State {
     }
 
     protected void prepare() {
-        solrClient = new CloudSolrClient(solrConfig.getZkHostString());
+        solrClient = solrConfig.getSolrClientFactory().getSolrClient();
     }
 
     @Override
