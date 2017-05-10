@@ -17,47 +17,51 @@
  */
 package org.apache.storm.daemon.drpc.webapp;
 
+import com.codahale.metrics.Meter;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
-
 import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.thrift.TException;
 
-import com.codahale.metrics.Meter;
-
 @Path("/drpc/")
 public class DRPCResource {
-    private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
-    private final DRPC _drpc;
-    public DRPCResource(DRPC drpc) {
-        _drpc = drpc;
-    }
-    
-    //TODO put in some better exception mapping...
-    //TODO move populateContext to a filter...
-    @POST
-    @Path("/{func}") 
-    public String post(@PathParam("func") String func, String args, @Context HttpServletRequest request) throws TException {
-        meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, args);
-    }
-    
-    @GET
-    @Path("/{func}/{args}") 
-    public String get(@PathParam("func") String func, @PathParam("args") String args, @Context HttpServletRequest request) throws TException {
-        meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, args);
-    }
-    
-    @GET
-    @Path("/{func}") 
-    public String get(@PathParam("func") String func, @Context HttpServletRequest request) throws TException {
-        meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, "");
-    }
+
+  private static final Meter meterHttpRequests = StormMetricsRegistry
+      .registerMeter("drpc:num-execute-http-requests");
+  private final DRPC _drpc;
+
+  public DRPCResource(DRPC drpc) {
+    _drpc = drpc;
+  }
+
+  //TODO put in some better exception mapping...
+  //TODO move populateContext to a filter...
+  @POST
+  @Path("/{func}")
+  public String post(@PathParam("func") String func, String args,
+      @Context HttpServletRequest request) throws TException {
+    meterHttpRequests.mark();
+    return _drpc.executeBlocking(func, args);
+  }
+
+  @GET
+  @Path("/{func}/{args}")
+  public String get(@PathParam("func") String func, @PathParam("args") String args,
+      @Context HttpServletRequest request) throws TException {
+    meterHttpRequests.mark();
+    return _drpc.executeBlocking(func, args);
+  }
+
+  @GET
+  @Path("/{func}")
+  public String get(@PathParam("func") String func, @Context HttpServletRequest request)
+      throws TException {
+    meterHttpRequests.mark();
+    return _drpc.executeBlocking(func, "");
+  }
 }

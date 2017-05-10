@@ -16,8 +16,8 @@
  * limitations under the License.
  */
 package org.apache.storm.daemon.drpc.webapp;
-import java.io.IOException;
 
+import java.io.IOException;
 import javax.servlet.Filter;
 import javax.servlet.FilterChain;
 import javax.servlet.FilterConfig;
@@ -26,44 +26,48 @@ import javax.servlet.ServletRequest;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.security.auth.ReqContext;
 
 public class ReqContextFilter implements Filter {
-    private final IHttpCredentialsPlugin _httpCredsHandler;
 
-    public ReqContextFilter(IHttpCredentialsPlugin httpCredsHandler) {
-        _httpCredsHandler = httpCredsHandler;
-    }
-    
-    /**
-     * Populate the Storm RequestContext from an servlet request. This should be called in each handler
-     * @param request the request to populate
-     */
-    public void populateContext(HttpServletRequest request) {
-        if (_httpCredsHandler != null) {
-            _httpCredsHandler.populateContext(ReqContext.context(), request);
-        }
-    }
-    
-    public void init(FilterConfig config) throws ServletException {
-        //NOOP
-        //We could add in configs through the web.xml if we wanted something stand alone here...
-    }
+  private final IHttpCredentialsPlugin _httpCredsHandler;
 
-    public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-        handle((HttpServletRequest)request, (HttpServletResponse)response, chain);
-    }
+  public ReqContextFilter(IHttpCredentialsPlugin httpCredsHandler) {
+    _httpCredsHandler = httpCredsHandler;
+  }
 
-    public void handle(HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException{
-        if (request != null) {
-            populateContext(request);
-        }
-        chain.doFilter(request, response);
+  /**
+   * Populate the Storm RequestContext from an servlet request. This should be called in each
+   * handler
+   *
+   * @param request the request to populate
+   */
+  public void populateContext(HttpServletRequest request) {
+    if (_httpCredsHandler != null) {
+      _httpCredsHandler.populateContext(ReqContext.context(), request);
     }
+  }
 
-    public void destroy() {
-        //NOOP
+  public void init(FilterConfig config) throws ServletException {
+    //NOOP
+    //We could add in configs through the web.xml if we wanted something stand alone here...
+  }
+
+  public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    handle((HttpServletRequest) request, (HttpServletResponse) response, chain);
+  }
+
+  public void handle(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
+      throws IOException, ServletException {
+    if (request != null) {
+      populateContext(request);
     }
+    chain.doFilter(request, response);
+  }
+
+  public void destroy() {
+    //NOOP
+  }
 }
