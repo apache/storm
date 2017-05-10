@@ -17,31 +17,30 @@
  */
 package org.apache.storm.daemon.drpc.webapp;
 
-import org.apache.storm.daemon.drpc.DRPC;
-
 import java.util.HashSet;
 import java.util.Set;
-
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
+import org.apache.storm.daemon.drpc.DRPC;
 
 @ApplicationPath("")
 public class DRPCApplication extends Application {
-    private static DRPC _drpc;
-    private final Set<Object> singletons = new HashSet<Object>();
-    
-    public DRPCApplication() {
-        singletons.add(new DRPCResource(_drpc));
-        singletons.add(new DRPCExceptionMapper());
-        singletons.add(new AuthorizationExceptionMapper());
-    }
-    
-    @Override
-    public Set<Object> getSingletons() {
-        return singletons;
-    }
 
-    public static void setup(DRPC drpc) {
-        _drpc = drpc;
-    }
+  private static DRPC _drpc;
+  private final Set<Object> singletons = new HashSet<Object>();
+
+  public DRPCApplication() {
+    singletons.add(new DRPCResource(_drpc));
+    singletons.add(new DRPCExceptionMapper());
+    singletons.add(new AuthorizationExceptionMapper());
+  }
+
+  public static void setup(DRPC drpc) {
+    _drpc = drpc;
+  }
+
+  @Override
+  public Set<Object> getSingletons() {
+    return singletons;
+  }
 }

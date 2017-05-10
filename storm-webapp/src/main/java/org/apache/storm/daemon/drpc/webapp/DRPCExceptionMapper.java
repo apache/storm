@@ -19,43 +19,41 @@ package org.apache.storm.daemon.drpc.webapp;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.ws.rs.ext.ExceptionMapper;
 import javax.ws.rs.ext.Provider;
-
 import org.apache.storm.generated.DRPCExecutionException;
 import org.json.simple.JSONValue;
 
 @Provider
 public class DRPCExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
 
-    @Override
-    public Response toResponse(DRPCExecutionException ex) {
-        ResponseBuilder builder = Response.status(500);
-        switch (ex.get_type()) {
-            case FAILED_REQUEST:
-                builder.status(400);
-                break;
-            case SERVER_SHUTDOWN:
-                builder.status(503); //Not available
-                break;
-            case SERVER_TIMEOUT:
-                builder.status(504); //proxy timeout
-                break;
-            case INTERNAL_ERROR:
-                //fall throw on purpose
-            default:
-                //Empty (Still 500)
-                break;
-            
-        }
-        Map<String, String> body = new HashMap<>();
-        //TODO I would love to standardize this...
-        body.put("error", ex.is_set_type() ? ex.get_type().toString() : "Internal Error");
-        body.put("errorMessage", ex.get_msg());
-        return builder.entity(JSONValue.toJSONString(body)).type("application/json").build();
+  @Override
+  public Response toResponse(DRPCExecutionException ex) {
+    ResponseBuilder builder = Response.status(500);
+    switch (ex.get_type()) {
+      case FAILED_REQUEST:
+        builder.status(400);
+        break;
+      case SERVER_SHUTDOWN:
+        builder.status(503); //Not available
+        break;
+      case SERVER_TIMEOUT:
+        builder.status(504); //proxy timeout
+        break;
+      case INTERNAL_ERROR:
+        //fall throw on purpose
+      default:
+        //Empty (Still 500)
+        break;
+
     }
+    Map<String, String> body = new HashMap<>();
+    //TODO I would love to standardize this...
+    body.put("error", ex.is_set_type() ? ex.get_type().toString() : "Internal Error");
+    body.put("errorMessage", ex.get_msg());
+    return builder.entity(JSONValue.toJSONString(body)).type("application/json").build();
+  }
 
 }
