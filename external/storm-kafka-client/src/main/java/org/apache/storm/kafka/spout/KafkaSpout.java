@@ -304,6 +304,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             boolean isScheduled = retryService.isScheduled(msgId);
             if (!isScheduled || retryService.isReady(msgId)) {   // not scheduled <=> never failed (i.e. never emitted) or ready to be retried
                 final List<Object> tuple = tuplesBuilder.buildTuple(record);
+                emittingTuple(msgId, tuple, record);
                 kafkaSpoutStreams.emit(collector, tuple, msgId);
                 emitted.add(msgId);
                 numUncommittedOffsets++;
@@ -313,6 +314,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 LOG.trace("Emitted tuple [{}] for record [{}]", tuple, record);
             }
         }
+    }
+
+    // Allows for custom processing in sub-classes
+    protected void emittingTuple(KafkaSpoutMessageId msgId, List<Object> tuple, ConsumerRecord<K, V> record) {
+        // Yet empty
     }
 
     private void commitOffsetsForAckedTuples() {
