@@ -396,7 +396,7 @@
                         "Next" :enabled (> next-start start))])]]))
 
 (defn- download-link [fname]
-  [[:p (link-to (url-format "/download?file=%s" (to-array [fname])) "Download Full File")]])
+  [[:p (link-to (url-format "/download?file=%s" fname) "Download Full File")]])
 
 (defn- daemon-download-link [fname]
   [[:p (link-to (url-format "/daemondownload/%s" fname) "Download Full File")]])
