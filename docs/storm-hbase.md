@@ -79,15 +79,15 @@ As an alternative to adding the configuration files (core-site.xml, hdfs-site.xm
 
 ```
 hbaseCredentialsConfigKeys : ["cluster1", "cluster2"] (the hbase clusters you want to fetch the tokens from)
-cluster1: [{"config1": "value1", "config2": "value2", ... }] (A map of config key-values specific to cluster1)
-cluster2: [{"config1": "value1", "hbase.keytab.file": "/path/to/keytab/for/cluster2/on/nimubs", "hbase.kerberos.principal": "cluster2user@EXAMPLE.com"}] (here along with other configs, we have custom keytab and principal for "cluster2" which will override the keytab/principal specified at topology level)
+"cluster1": {"config1": "value1", "config2": "value2", ... } (A map of config key-values specific to cluster1)
+"cluster2": {"config1": "value1", "hbase.keytab.file": "/path/to/keytab/for/cluster2/on/nimubs", "hbase.kerberos.principal": "cluster2user@EXAMPLE.com"} (here along with other configs, we have custom keytab and principal for "cluster2" which will override the keytab/principal specified at topology level)
 ```
 
 Instead of specifying key values you may also directly specify the resource files for e.g.,
 
 ```
-cluster1: [{"resources": ["/path/to/core-site1.xml", "/path/to/hbase-site1.xml"]}]
-cluster2: [{"resources": ["/path/to/core-site2.xml", "/path/to/hbase-site2.xml"]}]
+"cluster1": {"resources": ["/path/to/core-site1.xml", "/path/to/hbase-site1.xml"]}
+"cluster2": {"resources": ["/path/to/core-site2.xml", "/path/to/hbase-site2.xml"]}
 ```
 
 Storm will download the tokens separately for each of the clusters and populate it into the subject and also renew the tokens periodically. 
