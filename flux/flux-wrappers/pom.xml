@@ -55,7 +55,7 @@
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
                 <configuration>
-                    <maxAllowedViolations>479</maxAllowedViolations>
+                    <maxAllowedViolations>38</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>

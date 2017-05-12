@@ -4,6 +4,18 @@
           "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
 
 <!--
+    The original file came from here:
+      https://raw.githubusercontent.com/checkstyle/checkstyle/checkstyle-7.7/src/main/resources/google_checks.xml
+    It has been slightly modified for use in Apache Storm, as follows:
+      * 4 space indents instead of 2
+      * line-length limit is 120 instead of 100
+    Once checkstyle has the ability to override selected configuration elements from within the Maven
+    pom.xml file, then we can remove this file in favor of overriding the provided google_checks.xml file.
+    See this issue to track that functionality:
+      https://github.com/checkstyle/checkstyle/issues/2873
+ -->
+
+<!--
     Checkstyle configuration that checks the Google coding conventions from Google Java Style
     that can be found at https://google.github.io/styleguide/javaguide.html.
 
@@ -40,7 +52,7 @@
             <property name="allowNonPrintableEscapes" value="true"/>
         </module>
         <module name="LineLength">
-            <property name="max" value="100"/>
+            <property name="max" value="120"/>
             <property name="ignorePattern" value="^package.*|^import.*|a href|href|http://|https://|ftp://"/>
         </module>
         <module name="AvoidStarImport"/>
@@ -52,7 +64,7 @@
         </module>
         <module name="NeedBraces"/>
         <module name="LeftCurly">
-            <property name="maxLineLength" value="100"/>
+            <property name="maxLineLength" value="120"/>
         </module>
         <module name="RightCurly">
             <property name="id" value="RightCurlySame"/>
@@ -155,12 +167,12 @@
              value="GenericWhitespace ''{0}'' is not preceded with whitespace."/>
         </module>
         <module name="Indentation">
-            <property name="basicOffset" value="2"/>
+            <property name="basicOffset" value="4"/>
             <property name="braceAdjustment" value="0"/>
-            <property name="caseIndent" value="2"/>
+            <property name="caseIndent" value="4"/>
             <property name="throwsIndent" value="4"/>
             <property name="lineWrappingIndentation" value="4"/>
-            <property name="arrayInitIndent" value="2"/>
+            <property name="arrayInitIndent" value="4"/>
         </module>
         <module name="AbbreviationAsWordInName">
             <property name="ignoreFinal" value="false"/>

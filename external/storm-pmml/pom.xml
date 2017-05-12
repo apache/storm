@@ -85,7 +85,7 @@
                 <!--Note - the version would be inherited-->
                 <configuration>
 
-                    <maxAllowedViolations>373</maxAllowedViolations>
+                    <maxAllowedViolations>73</maxAllowedViolations>
                 </configuration>
             </plugin>
         </plugins>
