@@ -252,6 +252,9 @@
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
  * STORM-2379: ElasticSearch connector changes to use new APIs.
+ * STORM-2505: Spout to support topic compaction
+
+
 
 ## 1.1.0
  * STORM-2416: Release Packaging Improvements
