@@ -39,6 +39,23 @@
             Tasks
           </span>
         </th>
+        {{#schedulerDisplayResource}}
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="The amount on heap memory in megabytes requested to run a single executor of this component.">
+            Requested On-heap Memory
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="The amount off heap memory in megabytes requested to run a single executor of this component.">
+            Requested Off-heap Memory
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="above" title="The amount of CPU resources requested to run a single executor of this component. Every 100 means 1 core.">
+            Requested CPU
+          </span>
+        </th>
+        {{/schedulerDisplayResource}}
         <th>
           <span data-toggle="tooltip" data-placement="top" title="Click on the link below to open the logviewer and view the events emitted by this component.">
             Debug
@@ -52,6 +69,11 @@
         <td><a href="/topology.html?id={{encodedTopologyId}}">{{name}}</a></td>
         <td>{{executors}}</td>
         <td>{{tasks}}</td>
+        {{#schedulerDisplayResource}}
+        <td>{{requestedMemOnHeap}}</td>
+        <td>{{requestedMemOffHeap}}</td>
+        <td>{{requestedCpu}}</td>
+        {{/schedulerDisplayResource}}
         <td><a href="{{eventLogLink}}">events</a></td>
     </tbody>
   </table>
@@ -557,7 +579,13 @@
 <script id="component-actions-template" type="text/html">
   <h2>Component actions</h2>
   <p id="component-actions">
-    <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    {{#loggersDisabled}}
+    <span style="display:inline-block;" data-toggle="tooltip" title="" data-original-title="To debug, set topology.eventlogger.executors to a value > 0">
+    {{/loggersDisabled}}
+      <input {{startDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/enable', true, {{currentSamplingPct}}, 'sampling percentage', 'debug')" type="button" value="Debug" class="btn btn-default">
+    {{#loggersDisabled}}
+    </span>
+    {{/loggersDisabled}}
     <input {{stopDebugStatus}} onclick="confirmComponentAction('{{encodedTopologyId}}', '{{encodedId}}', '{{componentName}}', 'debug/disable', false, 0, 'sampling percentage', 'stop debugging')" type="button" value="Stop Debug" class="btn btn-default">
   </p>
 </script>

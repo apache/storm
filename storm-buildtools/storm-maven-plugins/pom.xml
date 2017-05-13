@@ -25,7 +25,7 @@
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
   </parent>
-  <groupId>org.apache.storm</groupId>
+
   <artifactId>storm-maven-plugins</artifactId>
   <packaging>maven-plugin</packaging>
   <name>storm-maven-plugins</name>
@@ -75,6 +75,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--Note - the version would be inherited-->
+        <configuration>
+          <maxAllowedViolations>78</maxAllowedViolations>
+        </configuration>
       </plugin>
     </plugins>
   </build>

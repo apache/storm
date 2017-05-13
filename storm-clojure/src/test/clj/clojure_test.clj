@@ -14,14 +14,14 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.clojure-test
-  (:use [clojure test])
-  (:import [org.apache.storm.testing TestWordSpout TestPlannerSpout]
+    (:use [clojure test])
+    (:import [org.apache.storm.testing TestWordSpout TestPlannerSpout]
            [org.apache.storm.tuple Fields])
-  (:use [org.apache.storm testing clojure config])
-  (:use [org.apache.storm.daemon common])
-  (:require [org.apache.storm [thrift :as thrift]])
-  (:import [org.apache.storm Thrift])
-  (:import [org.apache.storm.utils Utils]))
+    (:use [org.apache.storm testing clojure config])
+    (:use [org.apache.storm.daemon common])
+    (:require [org.apache.storm [thrift :as thrift]])
+    (:import [org.apache.storm Thrift])
+    (:import [org.apache.storm.utils Utils]))
 
 (defbolt lalala-bolt1 ["word"] [[val :as tuple] collector]
   (let [ret (str val "lalala")]
@@ -58,19 +58,19 @@
   (with-simulated-time-local-cluster [cluster :supervisors 4]
     (let [nimbus (:nimbus cluster)
           topology (Thrift/buildTopology
-                      {"1" (Thrift/prepareSpoutDetails (TestWordSpout. false))}
-                      {"2" (Thrift/prepareBoltDetails
-                             {(Utils/getGlobalStreamId "1" nil)
-                              (Thrift/prepareShuffleGrouping)}
-                             lalala-bolt1)
-                       "3" (Thrift/prepareBoltDetails
-                             {(Utils/getGlobalStreamId "1" nil)
-                              (Thrift/prepareLocalOrShuffleGrouping)}
-                             lalala-bolt2)
-                       "4" (Thrift/prepareBoltDetails
-                             {(Utils/getGlobalStreamId "1" nil)
-                              (Thrift/prepareShuffleGrouping)}
-                             (lalala-bolt3 "_nathan_"))}
+                     {"1" (Thrift/prepareSpoutDetails (TestWordSpout. false))}
+                     {"2" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareShuffleGrouping)}
+                            lalala-bolt1)
+                      "3" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareLocalOrShuffleGrouping)}
+                            lalala-bolt2)
+                      "4" (Thrift/prepareBoltDetails
+                            {(Utils/getGlobalStreamId "1" nil)
+                             (Thrift/prepareShuffleGrouping)}
+                            (lalala-bolt3 "_nathan_"))}
                      )
           results (complete-topology cluster
                                      topology

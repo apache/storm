@@ -20,38 +20,7 @@ order to change configuration.
 
 ## About
 Flux is a framework and set of utilities that make defining and deploying Apache Storm topologies less painful and
-deveoper-intensive.
-
-Have you ever found yourself repeating this pattern?:
-
-```java
-
-public static void main(String[] args) throws Exception {
-    // logic to determine if we're running locally or not...
-    // create necessary config options...
-    boolean runLocal = shouldRunLocal();
-    if(runLocal){
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology(name, conf, topology);
-    } else {
-        StormSubmitter.submitTopology(name, conf, topology);
-    }
-}
-```
-
-Wouldn't something like this be easier:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --local config.yaml
-```
-
-or:
-
-```bash
-storm jar mytopology.jar org.apache.storm.flux.Flux --remote config.yaml
-```
-
-Another pain point often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
+deveoper-intensive. One of the pain points often mentioned is the fact that the wiring for a Topology graph is often tied up in Java code,
 and that any changes require recompilation and repackaging of the topology jar file. Flux aims to alleviate that
 pain by allowing you to package all your Storm components in a single jar, and use an external text file to define
 the layout and configuration of your topologies.
@@ -120,6 +89,15 @@ The current version of Flux is available in Maven Central at the following coord
 </dependency>
 ```
 
+Using shell spouts and bolts requires additional Flux Wrappers library:
+```xml
+<dependency>
+    <groupId>org.apache.storm</groupId>
+    <artifactId>flux-wrappers</artifactId>
+    <version>${storm.version}</version>
+</dependency>
+```
+
 #### Creating a Flux-Enabled Topology JAR
 The example below illustrates Flux usage with the Maven shade plugin:
 
@@ -130,6 +108,12 @@ The example below illustrates Flux usage with the Maven shade plugin:
     <dependency>
         <groupId>org.apache.storm</groupId>
         <artifactId>flux-core</artifactId>
+        <version>${storm.version}</version>
+    </dependency>
+    <!-- Flux Wrappers include -->
+    <dependency>
+        <groupId>org.apache.storm</groupId>
+        <artifactId>flux-wrappers</artifactId>
         <version>${storm.version}</version>
     </dependency>
 
@@ -237,9 +221,9 @@ Parsing file: /Users/hsimpson/Projects/donut_domination/storm/shell_test.yaml
 ---------- TOPOLOGY DETAILS ----------
 Name: shell-topology
 --------------- SPOUTS ---------------
-sentence-spout[1](org.apache.storm.flux.spouts.GenericShellSpout)
+sentence-spout[1](org.apache.storm.flux.wrappers.spouts.FluxShellSpout)
 ---------------- BOLTS ---------------
-splitsentence[1](org.apache.storm.flux.bolts.GenericShellBolt)
+splitsentence[1](org.apache.storm.flux.wrappers.bolts.FluxShellBolt)
 log[1](org.apache.storm.flux.wrappers.bolts.LogInfoBolt)
 count[1](org.apache.storm.testing.TestWordCounter)
 --------------- STREAMS ---------------
@@ -408,15 +392,15 @@ JavaBean-like setter methods and fields declared as `public`:
       # id
       - "myId"
     properties:
-      - name: "forceFromStart"
+      - name: "ignoreZkOffsets"
         value: true
       - name: "scheme"
         ref: "stringMultiScheme"
 ```
 
 In the example above, the `properties` declaration will cause Flux to look for a public method in the `SpoutConfig` with
-the signature `setForceFromStart(boolean b)` and attempt to invoke it. If a setter method is not found, Flux will then
-look for a public instance variable with the name `forceFromStart` and attempt to set its value.
+the signature `setIgnoreZkOffsets(boolean b)` and attempt to invoke it. If a setter method is not found, Flux will then
+look for a public instance variable with the name `ignoreZkOffsets` and attempt to set its value.
 
 References may also be used as property values.
 
@@ -554,7 +538,7 @@ Shell spout example:
 ```yaml
 spouts:
   - id: "sentence-spout"
-    className: "org.apache.storm.flux.spouts.GenericShellSpout"
+    className: "org.apache.storm.flux.wrappers.spouts.FluxShellSpout"
     # shell spout constructor takes 2 arguments: String[], String[]
     constructorArgs:
       # command line
@@ -604,7 +588,7 @@ components:
       # id
       - "myId"
     properties:
-      - name: "forceFromStart"
+      - name: "ignoreZkOffsets"
         value: true
       - name: "scheme"
         ref: "stringMultiScheme"
@@ -627,7 +611,7 @@ Bolt Examples:
 # bolt definitions
 bolts:
   - id: "splitsentence"
-    className: "org.apache.storm.flux.bolts.GenericShellBolt"
+    className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
       - ["python", "splitsentence.py"]
@@ -762,7 +746,7 @@ config:
 # spout definitions
 spouts:
   - id: "sentence-spout"
-    className: "org.apache.storm.flux.spouts.GenericShellSpout"
+    className: "org.apache.storm.flux.wrappers.spouts.FluxShellSpout"
     # shell spout constructor takes 2 arguments: String[], String[]
     constructorArgs:
       # command line
@@ -774,7 +758,7 @@ spouts:
 # bolt definitions
 bolts:
   - id: "splitsentence"
-    className: "org.apache.storm.flux.bolts.GenericShellBolt"
+    className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
     constructorArgs:
       # command line
       - ["python", "splitsentence.py"]

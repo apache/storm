@@ -38,7 +38,7 @@ public class StringScheme implements Scheme {
     public static String deserializeString(ByteBuffer string) {
         if (string.hasArray()) {
             int base = string.arrayOffset();
-            return new String(string.array(), base + string.position(), string.remaining());
+            return new String(string.array(), base + string.position(), string.remaining(), UTF8_CHARSET);
         } else {
             return new String(Utils.toByteArray(string), UTF8_CHARSET);
         }

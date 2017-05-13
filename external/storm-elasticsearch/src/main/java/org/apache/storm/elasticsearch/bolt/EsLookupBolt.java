@@ -17,41 +17,55 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static java.util.Objects.requireNonNull;
+
+import java.io.IOException;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
-import org.apache.storm.elasticsearch.ElasticsearchGetRequest;
+import org.apache.storm.elasticsearch.DefaultEsLookupResultOutput;
 import org.apache.storm.elasticsearch.EsLookupResultOutput;
+import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
-
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import org.elasticsearch.client.Response;
 
 /**
  * @since 0.11
  */
 public class EsLookupBolt extends AbstractEsBolt {
 
-    private final ElasticsearchGetRequest getRequest;
+    private final EsTupleMapper tupleMapper;
     private final EsLookupResultOutput output;
 
     /**
+     * EsLookupBolt constructor.
+     * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
      * @throws NullPointerException if any of the parameters is null
      */
-    public EsLookupBolt(EsConfig esConfig, ElasticsearchGetRequest getRequest, EsLookupResultOutput output) {
+    public EsLookupBolt(EsConfig esConfig) {
+        this(esConfig, new DefaultEsTupleMapper(), new DefaultEsLookupResultOutput(objectMapper));
+    }
+
+    /**
+     * EsLookupBolt constructor.
+     * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
+     * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
+     * @param output ES response to Values mapper {@link EsLookupResultOutput}
+     * @throws NullPointerException if any of the parameters is null
+     */
+    public EsLookupBolt(EsConfig esConfig, EsTupleMapper tupleMapper, EsLookupResultOutput output) {
         super(esConfig);
-        checkNotNull(getRequest);
-        checkNotNull(output);
-        this.getRequest = getRequest;
-        this.output = output;
+        this.tupleMapper = requireNonNull(tupleMapper);
+        this.output = requireNonNull(output);
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    public void process(Tuple tuple) {
         try {
             Collection<Values> values = lookupValuesInEs(tuple);
             tryEmitAndAck(values, tuple);
@@ -61,9 +75,13 @@ public class EsLookupBolt extends AbstractEsBolt {
         }
     }
 
-    private Collection<Values> lookupValuesInEs(Tuple tuple) {
-        GetRequest request = getRequest.extractFrom(tuple);
-        GetResponse response = client.get(request).actionGet();
+    private Collection<Values> lookupValuesInEs(Tuple tuple) throws IOException {
+    	String index = tupleMapper.getIndex(tuple);
+    	String type = tupleMapper.getType(tuple);
+    	String id = tupleMapper.getId(tuple);
+    	Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
+
+    	Response response = client.performRequest("get", getEndpoint(index, type, id), params);
         return output.toValues(response);
     }
 

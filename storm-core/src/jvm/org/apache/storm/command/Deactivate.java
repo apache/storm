@@ -31,7 +31,7 @@ public class Deactivate {
 
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
           @Override
-          public void run(Nimbus.Client nimbus) throws Exception {
+          public void run(Nimbus.Iface nimbus) throws Exception {
             nimbus.deactivate(name);
             LOG.info("Deactivated topology: {}", name);
           }

@@ -40,13 +40,13 @@
   <dependencies>
     <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-core</artifactId>
+      <artifactId>storm-client</artifactId>
       <version>${project.version}</version>
-      <scope>provided</scope>
+      <scope>${provided.scope}</scope>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-core</artifactId>
+      <artifactId>storm-client</artifactId>
       <version>${project.version}</version>
       <type>test-jar</type>
       <scope>test</scope>
@@ -136,12 +136,6 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.11</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
       <groupId>org.mockito</groupId>
       <artifactId>mockito-all</artifactId>
       <version>1.9.0</version>
@@ -150,7 +144,7 @@
     <dependency>
       <groupId>org.apache.thrift</groupId>
       <artifactId>libthrift</artifactId>
-      <version>0.9.0</version>
+      <version>0.9.3</version>
       <scope>compile</scope>
     </dependency>
   </dependencies>
@@ -188,6 +182,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--Note - the version would be inherited-->
+        <configuration>
+          <maxAllowedViolations>1350</maxAllowedViolations>
+        </configuration>
       </plugin>
     </plugins>
   </build>

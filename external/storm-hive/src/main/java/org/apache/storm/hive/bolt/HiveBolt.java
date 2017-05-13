@@ -23,10 +23,13 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.utils.BatchHelper;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.Config;
 import org.apache.storm.hive.common.HiveWriter;
+
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
+
 import org.apache.hive.hcatalog.streaming.*;
 import org.apache.storm.hive.common.HiveOptions;
 import org.apache.storm.hive.common.HiveUtils;
@@ -34,7 +37,6 @@ import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -49,7 +51,7 @@ import java.util.List;
 import java.util.LinkedList;
 import java.io.IOException;
 
-public class HiveBolt extends  BaseRichBolt {
+public class HiveBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(HiveBolt.class);
     private OutputCollector collector;
     private HiveOptions options;
@@ -59,11 +61,10 @@ public class HiveBolt extends  BaseRichBolt {
     private AtomicBoolean sendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
     private Map<HiveEndPoint, HiveWriter> allWriters;
-    private List<Tuple> tupleBatch;
+    private BatchHelper batchHelper;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
-        tupleBatch = new LinkedList<Tuple>();
     }
 
     @Override
@@ -87,6 +88,7 @@ public class HiveBolt extends  BaseRichBolt {
                 }
             }
             this.collector = collector;
+            this.batchHelper = new BatchHelper(options.getBatchSize(), collector);
             allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
             String timeoutName = "hive-bolt-%d";
             this.callTimeoutPool = Executors.newFixedThreadPool(1,
@@ -104,39 +106,28 @@ public class HiveBolt extends  BaseRichBolt {
     @Override
     public void execute(Tuple tuple) {
         try {
-            boolean forceFlush = false;
-            if (TupleUtils.isTick(tuple)) {
-                LOG.debug("TICK received! current batch status [{}/{}]", tupleBatch.size(), options.getBatchSize());
-                forceFlush = true;
-            } else {
+            if (batchHelper.shouldHandle(tuple)) {
                 List<String> partitionVals = options.getMapper().mapPartitions(tuple);
                 HiveEndPoint endPoint = HiveUtils.makeEndPoint(partitionVals, options);
                 HiveWriter writer = getOrCreateWriter(endPoint);
                 writer.write(options.getMapper().mapRecord(tuple));
-                tupleBatch.add(tuple);
-                if (tupleBatch.size() >= options.getBatchSize())
-                    forceFlush = true;
+                batchHelper.addBatch(tuple);
             }
 
-            if(forceFlush && !tupleBatch.isEmpty()) {
+            if(batchHelper.shouldFlush()) {
                 flushAllWriters(true);
                 LOG.info("acknowledging tuples after writers flushed ");
-                for(Tuple t : tupleBatch) {
-                    collector.ack(t);
-                }
-                tupleBatch.clear();
+                batchHelper.ack();
+            }
+            if (TupleUtils.isTick(tuple)) {
+                retireIdleWriters();
             }
         } catch(SerializationError se) {
             LOG.info("Serialization exception occurred, tuple is acknowledged but not written to Hive.", tuple);
             this.collector.reportError(se);
             collector.ack(tuple);
         } catch(Exception e) {
-            this.collector.reportError(e);
-            collector.fail(tuple);
-            for (Tuple t : tupleBatch) {
-                collector.fail(t);
-            }
-            tupleBatch.clear();
+            batchHelper.fail(e);
             abortAndCloseWriters();
         }
     }
@@ -320,30 +311,32 @@ public class HiveBolt extends  BaseRichBolt {
         LOG.info("Attempting close idle writers");
         int count = 0;
         long now = System.currentTimeMillis();
-        ArrayList<HiveEndPoint> retirees = new ArrayList<HiveEndPoint>();
 
         //1) Find retirement candidates
         for (Entry<HiveEndPoint,HiveWriter> entry : allWriters.entrySet()) {
             if(now - entry.getValue().getLastUsed() > options.getIdleTimeout()) {
                 ++count;
-                retirees.add(entry.getKey());
-            }
-        }
-        //2) Retire them
-        for(HiveEndPoint ep : retirees) {
-            try {
-                LOG.info("Closing idle Writer to Hive end point : {}", ep);
-                allWriters.remove(ep).flushAndClose();
-            } catch (IOException e) {
-                LOG.warn("Failed to close writer for end point: {}. Error: "+ ep, e);
-            } catch (InterruptedException e) {
-                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
-                Thread.currentThread().interrupt();
-            } catch (Exception e) {
-                LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+                retire(entry.getKey());
             }
         }
         return count;
+    }
+
+    private void retire(HiveEndPoint ep) {
+        try {
+            HiveWriter writer = allWriters.remove(ep);
+            if (writer != null) {
+                LOG.info("Closing idle Writer to Hive end point : {}", ep);
+                writer.flushAndClose();
+            }
+        } catch (IOException e) {
+            LOG.warn("Failed to close writer for end point: {}. Error: " + ep, e);
+        } catch (InterruptedException e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+            Thread.currentThread().interrupt();
+        } catch (Exception e) {
+            LOG.warn("Interrupted when attempting to close writer for end point: " + ep, e);
+        }
     }
 
 }

@@ -24,10 +24,9 @@
     <relativePath>../pom.xml</relativePath>
   </parent>
 
-  <groupId>org.apache.storm</groupId>
+
   <artifactId>storm-rename-hack</artifactId>
   <packaging>jar</packaging>
-
   <name>storm-rename-hack</name>
 
   <properties>
@@ -83,6 +82,23 @@
               <shadedPattern>org.apache.storm.hack.shade.org.objectweb.asm</shadedPattern>
             </relocation>
           </relocations>
+          <filters>
+            <filter>
+              <artifact>*:*</artifact>
+              <excludes>
+                <exclude>META-INF/*.SF</exclude>
+                <exclude>META-INF/*.sf</exclude>
+                <exclude>META-INF/*.DSA</exclude>
+                <exclude>META-INF/*.dsa</exclude>
+                <exclude>META-INF/*.RSA</exclude>
+                <exclude>META-INF/*.rsa</exclude>
+                <exclude>META-INF/*.EC</exclude>
+                <exclude>META-INF/*.ec</exclude>
+                <exclude>META-INF/MSFTSIG.SF</exclude>
+                <exclude>META-INF/MSFTSIG.RSA</exclude>
+              </excludes>
+            </filter>
+          </filters>
         </configuration>
         <executions>
           <execution>
@@ -101,6 +117,14 @@
             </configuration>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--Note - the version would be inherited-->
+        <configuration>
+          <maxAllowedViolations>565</maxAllowedViolations>
+        </configuration>
       </plugin>
     </plugins>
   </build>

@@ -17,9 +17,10 @@
  */
 package org.apache.storm.starter.trident;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalDRPC;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.trident.TridentState;
@@ -38,9 +39,7 @@ import org.apache.storm.trident.testing.MemoryMapState;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.apache.storm.utils.DRPCClient;
 
 /**
  * A simple example that demonstrates the usage of {@link org.apache.storm.trident.Stream#map(MapFunction)} and
@@ -73,7 +72,7 @@ public class TridentMapExample {
         }
     };
 
-    public static StormTopology buildTopology(LocalDRPC drpc) {
+    public static StormTopology buildTopology() {
         FixedBatchSpout spout = new FixedBatchSpout(
                 new Fields("word"), 3, new Values("the cow jumped over the moon"),
                 new Values("the man went to the store and bought some candy"), new Values("four score and seven years ago"),
@@ -83,7 +82,7 @@ public class TridentMapExample {
         TridentTopology topology = new TridentTopology();
         TridentState wordCounts = topology.newStream("spout1", spout).parallelismHint(16)
                 .flatMap(split)
-                .map(toUpper)
+                .map(toUpper, new Fields("uppercased"))
                 .filter(theFilter)
                 .peek(new Consumer() {
                     @Override
@@ -91,14 +90,14 @@ public class TridentMapExample {
                         System.out.println(input.getString(0));
                     }
                 })
-                .groupBy(new Fields("word"))
+                .groupBy(new Fields("uppercased"))
                 .persistentAggregate(new MemoryMapState.Factory(), new Count(), new Fields("count"))
                 .parallelismHint(16);
 
-        topology.newDRPCStream("words", drpc)
-                .flatMap(split)
-                .groupBy(new Fields("args"))
-                .stateQuery(wordCounts, new Fields("args"), new MapGet(), new Fields("count"))
+        topology.newDRPCStream("words")
+                .flatMap(split, new Fields("word"))
+                .groupBy(new Fields("word"))
+                .stateQuery(wordCounts, new Fields("word"), new MapGet(), new Fields("count"))
                 .filter(new FilterNull())
                 .aggregate(new Fields("count"), new Sum(), new Fields("sum"));
         return topology.build();
@@ -107,17 +106,17 @@ public class TridentMapExample {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
-        if (args.length == 0) {
-            LocalDRPC drpc = new LocalDRPC();
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(drpc));
-            for (int i = 0; i < 100; i++) {
+        String topoName = "wordCounter";
+        if (args.length > 0) {
+            topoName = args[0];
+        }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, buildTopology());
+        try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
+            for (int i = 0; i < 10; i++) {
                 System.out.println("DRPC RESULT: " + drpc.execute("words", "CAT THE DOG JUMPED"));
                 Thread.sleep(1000);
             }
-        } else {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, buildTopology(null));
         }
     }
 }

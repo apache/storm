@@ -17,39 +17,64 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import java.util.Map;
 
+/**
+ * An Event Data Scheme which deserializes message payload into the Strings. No
+ * encoding is assumed. The receiver will need to handle parsing of the string
+ * data in appropriate encoding.
+ *
+ * The resulting tuple would contain two items: the the message string, and a
+ * map of properties that include metadata, which can be used to determine who
+ * processes the message, and how it is processed.
+ * 
+ * For passing the raw bytes of a messsage to Bolts, refer to
+ * {@link BinaryEventDataScheme}.
+ */
 public class EventDataScheme implements IEventDataScheme {
 
-  private static final long serialVersionUID = 1L;
+	private static final long serialVersionUID = 1L;
+	private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
+	@Override
+	public List<Object> deserialize(EventData eventData) {
+		final List<Object> fieldContents = new ArrayList<Object>();
+		String messageData = "";
+		if (eventData.getBytes()!=null) {
+			messageData = new String(eventData.getBytes());
+		}
+		/*Will only serialize AMQPValue type*/
+		else if (eventData.getObject()!=null) {
+			try {
+				if (!(eventData.getObject() instanceof List)) {
+					messageData = eventData.getObject().toString();
+				} else {
+					throw new RuntimeException("Cannot serialize the given AMQP type");
+				}
+			} catch (RuntimeException e) {
+				logger.error("Failed to serialize EventData payload class"
+						+ eventData.getObject().getClass());
+				logger.error("Exception encountered while serializing EventData payload is"
+						+ e.toString());
+				throw e;
+			}
+		}
+		Map metaDataMap = eventData.getProperties().size() > 0 ? eventData.getProperties() : null;
+		fieldContents.add(messageData);
+		if ( metaDataMap != null ) {
+			fieldContents.add(metaDataMap);
+		}
+		return fieldContents;
+	}
 
-  @Override
-  public List<Object> deserialize(Message message) {
-    List<Object> fieldContents = new ArrayList<Object>();
-
-    for (Section section : message.getPayload()) {
-      if (section instanceof Data) {
-        Data data = (Data) section;
-        fieldContents.add(new String(data.getValue().getArray()));
-        return fieldContents;
-      } else if (section instanceof AmqpValue) {
-        AmqpValue amqpValue = (AmqpValue) section;
-        fieldContents.add(amqpValue.getValue().toString());
-        return fieldContents;
-      }
-    }
-
-    return null;
-  }
-
-  @Override
-  public Fields getOutputFields() {
-    return new Fields(FieldConstants.Message);
-  }
+	@Override
+	public Fields getOutputFields() {
+		return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
+	}
 }

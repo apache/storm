@@ -15,9 +15,9 @@
 ;; limitations under the License.
 (ns org.apache.storm.scheduler-test
   (:use [clojure test])
-  (:use [org.apache.storm util config testing])
+  (:use [org.apache.storm util config])
   (:import [org.apache.storm.scheduler EvenScheduler])
-  (:require [org.apache.storm.daemon [nimbus :as nimbus]])
+  (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
   (:import [org.apache.storm.generated StormTopology])
   (:import [org.apache.storm.scheduler Cluster SupervisorDetails WorkerSlot ExecutorDetails
             SchedulerAssignmentImpl Topologies TopologyDetails]))
@@ -127,7 +127,7 @@
         assignment1 (SchedulerAssignmentImpl. "topology1" executor->slot1)
         assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2)
         assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3)
-        cluster (Cluster. (nimbus/standalone-nimbus)
+        cluster (Cluster. (Nimbus$StandaloneINimbus.)
                           {"supervisor1" supervisor1 "supervisor2" supervisor2}
                           {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
                   nil)]

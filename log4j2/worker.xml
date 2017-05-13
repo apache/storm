@@ -16,9 +16,9 @@
  limitations under the License.
 -->
 
-<configuration monitorInterval="60">
+<configuration monitorInterval="60" shutdownHook="disable">
 <properties>
-    <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %c{1.} [%p] %msg%n</property>
+    <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %c{1.} %t [%p] %msg%n</property>
     <property name="patternNoTime">%msg%n</property>
     <property name="patternMetrics">%d %-8r %m%n</property>
 </properties>
@@ -77,7 +77,7 @@
         <appender-ref ref="A1"/>
         <appender-ref ref="syslog"/>
     </root>
-    <Logger name="backtype.storm.metric.LoggingMetricsConsumer" level="info" additivity="false">
+    <Logger name="org.apache.storm.metric.LoggingMetricsConsumer" level="info" additivity="false">
         <appender-ref ref="METRICS"/>
     </Logger>
     <Logger name="STDERR" level="INFO">

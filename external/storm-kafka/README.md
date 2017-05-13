@@ -3,15 +3,15 @@ Storm Kafka
 
 Provides core Storm and Trident spout implementations for consuming data from Apache Kafka 0.8.x.
 
-##Spouts
+## Spouts
 We support both Trident and core Storm spouts. For both spout implementations, we use a BrokerHost interface that
 tracks Kafka broker host to partition mapping and kafkaConfig that controls some Kafka related parameters.
 
-###BrokerHosts
+### BrokerHosts
 In order to initialize your Kafka spout/emitter you need to construct an instance of the marker interface BrokerHosts.
 Currently, we support the following two implementations:
 
-####ZkHosts
+#### ZkHosts
 ZkHosts is what you should use if you want to dynamically track Kafka broker to partition mapping. This class uses
 Kafka's ZooKeeper entries to track brokerHost -> partition mapping. You can instantiate an object by calling
 ```java
@@ -24,7 +24,7 @@ partition information is stored. By default this is /brokers which is what the d
 By default, the broker-partition mapping is refreshed every 60 seconds from ZooKeeper. If you want to change it, you
 should set host.refreshFreqSecs to your chosen value.
 
-####StaticHosts
+#### StaticHosts
 This is an alternative implementation where broker -> partition information is static. In order to construct an instance
 of this class, you need to first construct an instance of GlobalPartitionInformation.
 
@@ -39,7 +39,7 @@ of this class, you need to first construct an instance of GlobalPartitionInforma
     StaticHosts hosts = new StaticHosts(partitionInfo);
 ```
 
-###KafkaConfig
+### KafkaConfig
 The second thing needed for constructing a kafkaSpout is an instance of KafkaConfig.
 ```java
     public KafkaConfig(BrokerHosts hosts, String topic)
@@ -62,13 +62,19 @@ In addition to these parameters, SpoutConfig contains the following fields that 
     // setting for how often to save the current Kafka offset to ZooKeeper
     public long stateUpdateIntervalMs = 2000;
 
-    // Exponential back-off retry settings.  These are used when retrying messages after a bolt
-    // calls OutputCollector.fail().
-    // Note: be sure to set org.apache.storm.Config.MESSAGE_TIMEOUT_SECS appropriately to prevent
-    // resubmitting the message while still retrying.
+    // Retry strategy for failed messages
+    public String failedMsgRetryManagerClass = ExponentialBackoffMsgRetryManager.class.getName();
+
+    // Exponential back-off retry settings.  These are used by ExponentialBackoffMsgRetryManager for retrying messages after a bolt
+    // calls OutputCollector.fail(). These come into effect only if ExponentialBackoffMsgRetryManager is being used.
+    // Initial delay between successive retries
     public long retryInitialDelayMs = 0;
     public double retryDelayMultiplier = 1.0;
+    
+    // Maximum delay between successive retries    
     public long retryDelayMaxMs = 60 * 1000;
+    // Failed message will be retried infinitely if retryLimit is less than zero. 
+    public int retryLimit = -1;     
 
 ```
 Core KafkaSpout only accepts an instance of SpoutConfig.
@@ -91,7 +97,7 @@ The KafkaConfig class also has bunch of public variables that controls your appl
 ```
 
 Most of them are self explanatory except MultiScheme.
-###MultiScheme
+### MultiScheme
 MultiScheme is an interface that dictates how the ByteBuffer consumed from Kafka gets transformed into a storm tuple. It
 also controls the naming of your output field.
 
@@ -111,6 +117,54 @@ public Iterable<List<Object>> deserializeMessageWithMetadata(ByteBuffer message,
 ```
 
 This is useful for auditing/replaying messages from arbitrary points on a Kafka topic, saving the partition and offset of each message of a discrete stream instead of persisting the entire message.
+
+### Failed message retry
+FailedMsgRetryManager is an interface which defines the retry strategy for a failed message. Default implementation is ExponentialBackoffMsgRetryManager which retries with exponential delays
+between consecutive retries. To use a custom implementation, set SpoutConfig.failedMsgRetryManagerClass to the full classname
+of implementation. Here is the interface 
+
+```java
+    // Spout initialization can go here. This can be called multiple times during lifecycle of a worker. 
+    void prepare(SpoutConfig spoutConfig, Map stormConf);
+
+    // Message corresponding to offset has failed. This method is called only if retryFurther returns true for offset.
+    void failed(Long offset);
+
+    // Message corresponding to offset has been acked.  
+    void acked(Long offset);
+
+    // Message corresponding to the offset, has been re-emitted and under transit.
+    void retryStarted(Long offset);
+
+    /**
+     * The offset of message, which is to be re-emitted. Spout will fetch messages starting from this offset
+     * and resend them, except completed messages.
+     */
+    Long nextFailedMessageToRetry();
+
+    /**
+     * @return True if the message corresponding to the offset should be emitted NOW. False otherwise.
+     */
+    boolean shouldReEmitMsg(Long offset);
+
+    /**
+     * Spout will clean up the state for this offset if false is returned. If retryFurther is set to true,
+     * spout will called failed(offset) in next call and acked(offset) otherwise 
+     */
+    boolean retryFurther(Long offset);
+    
+    /**
+     * Spout will call this method after retryFurther returns false.
+     * This gives a chance for hooking up custom logic before all clean up.
+     * @param partition,offset
+     */
+    void cleanOffsetAfterRetries(Partition partition, Long offset);
+
+    /**
+     * Clear any offsets before kafkaOffset. These offsets are no longer available in kafka.
+     */
+    Set<Long> clearOffsetsBefore(Long kafkaOffset);
+``` 
 
 #### Version incompatibility
 In Storm versions prior to 1.0, the MultiScheme methods accepted a `byte[]` instead of `ByteBuffer`. The `MultScheme` and the related
@@ -167,10 +221,10 @@ set the parameter `KafkaConfig.ignoreZkOffsets` to `true`.  If `true`, the spout
 offset defined by `KafkaConfig.startOffsetTime` as described above.
 
 
-## Using storm-kafka with different versions of Scala
+## Using storm-kafka with different versions of kafka
 
 Storm-kafka's Kafka dependency is defined as `provided` scope in maven, meaning it will not be pulled in
-as a transitive dependency. This allows you to use a version of Kafka built against a specific Scala version.
+as a transitive dependency. This allows you to use a version of Kafka dependency compatible with your kafka cluster.
 
 When building a project with storm-kafka, you must explicitly add the Kafka dependency. For example, to
 use Kafka 0.8.1.1 built against Scala 2.10, you would use the following dependency in your `pom.xml`:
@@ -195,14 +249,24 @@ use Kafka 0.8.1.1 built against Scala 2.10, you would use the following dependen
 
 Note that the ZooKeeper and log4j dependencies are excluded to prevent version conflicts with Storm's dependencies.
 
-##Writing to Kafka as part of your topology
+You can also override the kafka dependency version while building from maven, with parameter `kafka.version` and `kafka.artifact.id`
+e.g. `mvn clean install -Dkafka.artifact.id=kafka_2.11 -Dkafka.version=0.9.0.1`
+
+When selecting a kafka dependency version, you should ensure - 
+ 1. kafka api is compatible with storm-kafka. Currently, only 0.9.x and 0.8.x client API is supported by storm-kafka 
+ module. If you want to use a higher version, storm-kafka-client module should be used instead.
+ 2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with 
+ 0.8.x broker. 
+
+
+## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
 are using trident you can use org.apache.storm.kafka.trident.TridentState, org.apache.storm.kafka.trident.TridentStateFactory and
 org.apache.storm.kafka.trident.TridentKafkaUpdater.
 
 You need to provide implementation of following 2 interfaces
 
-###TupleToKafkaMapper and TridentTupleToKafkaMapper
+### TupleToKafkaMapper and TridentTupleToKafkaMapper
 These interfaces have 2 methods defined:
 
 ```java
@@ -218,7 +282,7 @@ reasons. Alternatively you could also specify a different key and message field 
 In the TridentKafkaState you must specify what is the field name for key and message as there is no default constructor.
 These should be specified while constructing and instance of FieldNameBasedTupleToKafkaMapper.
 
-###KafkaTopicSelector and trident KafkaTopicSelector
+### KafkaTopicSelector and trident KafkaTopicSelector
 This interface has only one method
 ```java
 public interface KafkaTopicSelector {
@@ -228,12 +292,16 @@ public interface KafkaTopicSelector {
 The implementation of this interface should return the topic to which the tuple's key/message mapping needs to be published
 You can return a null and the message will be ignored. If you have one static topic name then you can use
 DefaultTopicSelector.java and set the name of the topic in the constructor.
+`FieldNameTopicSelector` and `FieldIndexTopicSelector` use to support decided which topic should to push message from tuple.
+User could specify the field name or field index in tuple ,selector will use this value as topic name which to publish message.
+When the topic name not found , `KafkaBolt` will write messages into default topic .
+Please make sure the default topic have created .
 
 ### Specifying Kafka producer properties
 You can provide all the produce properties in your Storm topology by calling `KafkaBolt.withProducerProperties()` and `TridentKafkaStateFactory.withProducerProperties()`. Please see  http://kafka.apache.org/documentation.html#newproducerconfigs
 Section "Important configuration properties for the producer" for more details.
 
-###Using wildcard kafka topic match
+### Using wildcard kafka topic match
 You can do a wildcard topic match by adding the following config
 ```
      Config config = new Config();
@@ -244,7 +312,7 @@ You can do a wildcard topic match by adding the following config
 After this you can specify a wildcard topic for matching e.g. clickstream.*.log.  This will match all streams matching clickstream.my.log, clickstream.cart.log etc
 
 
-###Putting it all together
+### Putting it all together
 
 For the bolt :
 ```java

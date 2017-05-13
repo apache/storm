@@ -15,19 +15,19 @@
 ;; limitations under the License.
 (ns integration.org.apache.storm.testing4j-test
   (:use [clojure.test])
-  (:use [org.apache.storm config testing util])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm daemon-config config util])
+  (:use [org.apache.storm clojure])
   (:require [integration.org.apache.storm.integration-test :as it])
   (:require [org.apache.storm.internal.thrift :as thrift])
-  (:import [org.apache.storm Testing Config ILocalCluster]
+  (:import [org.apache.storm Testing Config]
            [org.apache.storm.generated GlobalStreamId])
-  (:import [org.apache.storm.tuple Values Tuple])
-  (:import [org.apache.storm.utils Time Utils])
-  (:import [org.apache.storm.testing MkClusterParam TestJob MockedSources TestWordSpout
+  (:import [org.apache.storm.tuple Values])
+  (:import [org.apache.storm.utils Time])
+  (:import [org.apache.storm.testing MkClusterParam TestJob MockedSources TestWordSpout FeederSpout
             TestWordCounter TestGlobalCount TestAggregatesCounter CompleteTopologyParam
             AckFailMapTracker MkTupleParam])
   (:import [org.apache.storm.utils Utils])
-  (:import [org.apache.storm Thrift]))
+  (:import [org.apache.storm Thrift ILocalCluster]))
 
 (deftest test-with-simulated-time
   (is (= false (Time/isSimulating)))
@@ -45,8 +45,7 @@
     (Testing/withLocalCluster mk-cluster-param (reify TestJob
                                                  (^void run [this ^ILocalCluster cluster]
                                                    (is (not (nil? cluster)))
-                                                   (is (not (nil? (.getState cluster))))
-                                                   (is (not (nil? (:nimbus (.getState cluster))))))))))
+                                                   (is (not (nil? (.getNimbus cluster)))))))))
 
 (deftest test-with-simulated-time-local-cluster
   (let [mk-cluster-param (doto (MkClusterParam.)
@@ -58,20 +57,12 @@
     (Testing/withSimulatedTimeLocalCluster mk-cluster-param (reify TestJob
                                                               (^void run [this ^ILocalCluster cluster]
                                                                 (is (not (nil? cluster)))
-                                                                (is (not (nil? (.getState cluster))))
-                                                                (is (not (nil? (:nimbus (.getState cluster)))))
+                                                                (is (not (nil? (.getNimbus cluster))))
                                                                 (is (Time/isSimulating)))))
     (is (not (Time/isSimulating)))))
 
-(deftest test-complete-topology
-  (doseq [zmq-on? [true false]
-          :let [daemon-conf (doto (Config.)
-                              (.put STORM-LOCAL-MODE-ZMQ zmq-on?))
-                mk-cluster-param (doto (MkClusterParam.)
-                                   (.setSupervisors (int 4))
-                                   (.setDaemonConf daemon-conf))]]
-    (Testing/withSimulatedTimeLocalCluster
-     (reify TestJob
+(def complete-topology-testjob
+  (reify TestJob
        (^void run [this ^ILocalCluster cluster]
          (let [topology (Thrift/buildTopology
                          {"1" (Thrift/prepareSpoutDetails (TestWordSpout. true) (Integer. 3))}
@@ -103,13 +94,25 @@
                                                  complete-topology-param)]
            (is (Testing/multiseteq [["nathan"] ["bob"] ["joey"] ["nathan"]]
                            (Testing/readTuples results "1")))
-           (is (Testing/multiseteq [["nathan" 1] ["nathan" 2] ["bob" 1] ["joey" 1]]
-                           (read-tuples results "2")))
+           (is (Testing/multiseteq [["nathan" (int 1)] ["nathan" (int 2)] ["bob" (int 1)] ["joey" (int 1)]]
+                           (Testing/readTuples results "2")))
            (is (= [[1] [2] [3] [4]]
                   (Testing/readTuples results "3")))
            (is (= [[1] [2] [3] [4]]
                   (Testing/readTuples results "4")))
-           ))))))
+           ))))
+
+(deftest test-complete-topology
+  (doseq [zmq-on? [true false]
+          :let [daemon-conf (doto (Config.)
+                              (.put STORM-LOCAL-MODE-ZMQ zmq-on?))
+                mk-cluster-param (doto (MkClusterParam.)
+                                   (.setSupervisors (int 4))
+                                   (.setDaemonConf daemon-conf))]]
+    (Testing/withSimulatedTimeLocalCluster
+      mk-cluster-param complete-topology-testjob )
+    (Testing/withLocalCluster
+      mk-cluster-param complete-topology-testjob)))
 
 (deftest test-with-tracked-cluster
   (Testing/withTrackedCluster
@@ -138,7 +141,7 @@
                           "test-acking2"
                           (Config.)
                           (.getTopology tracked))
-         (advance-cluster-time (.getState cluster) 11)
+         (.advanceClusterTime cluster (int 11))
          (.feed feeder [1])
          (Testing/trackedWait tracked (int 1))
          (checker 0)
@@ -156,7 +159,7 @@
      mk-cluster-param
      (reify TestJob
        (^void run [this ^ILocalCluster cluster]
-         (let [feeder (feeder-spout ["field1"])
+         (let [feeder (FeederSpout. ["field1"])
                tracker (AckFailMapTracker.)
                _ (.setAckFailDelegate feeder tracker)
                topology (Thrift/buildTopology
@@ -190,7 +193,7 @@
       mk-cluster-param
       (reify TestJob
         (^void run [this ^ILocalCluster cluster]
-          (let [feeder (feeder-spout ["field1"])
+          (let [feeder (FeederSpout. ["field1"])
                 tracker (AckFailMapTracker.)
                 _ (.setAckFailDelegate feeder tracker)
                 topology (Thrift/buildTopology

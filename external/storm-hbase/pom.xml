@@ -36,16 +36,16 @@
     </developers>
 
     <properties>
-        <hbase.version>1.1.0</hbase.version>
         <hdfs.version>${hadoop.version}</hdfs.version>
+        <caffeine.version>2.3.5</caffeine.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.hbase</groupId>
@@ -88,5 +88,27 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+            <version>${caffeine.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-autocreds</artifactId>
+            <version>${project.version}</version>
+        </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>1572</maxAllowedViolations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

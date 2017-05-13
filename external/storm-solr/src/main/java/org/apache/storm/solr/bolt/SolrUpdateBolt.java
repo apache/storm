@@ -18,14 +18,13 @@
 
 package org.apache.storm.solr.bolt;
 
-import org.apache.storm.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
@@ -42,8 +41,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SolrUpdateBolt extends BaseRichBolt {
+public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SolrUpdateBolt.class);
+
+    /**
+     * Half of the default Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS
+     */
+    private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
 
     private final SolrConfig solrConfig;
     private final SolrMapper solrMapper;
@@ -52,7 +56,7 @@ public class SolrUpdateBolt extends BaseRichBolt {
     private SolrClient solrClient;
     private OutputCollector collector;
     private List<Tuple> toCommitTuples;
-    private int tickTupleInterval;
+    private int tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
 
     public SolrUpdateBolt(SolrConfig solrConfig, SolrMapper solrMapper) {
         this(solrConfig, solrMapper, null);
@@ -72,17 +76,6 @@ public class SolrUpdateBolt extends BaseRichBolt {
         this.collector = collector;
         this.solrClient = new CloudSolrClient(solrConfig.getZkHostString());
         this.toCommitTuples = new ArrayList<>(capacity());
-
-        setTickTupleInterval(stormConf);   
-    }
-
-    private void setTickTupleInterval(Map stormConf) {
-        this.tickTupleInterval = solrConfig.getTickTupleInterval();
-        if(stormConf.containsKey(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)  && tickTupleInterval == 0) {
-            Integer topologyTimeout = Utils.getInt(stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
-            tickTupleInterval = (int)(Math.floor(topologyTimeout / 2));
-            LOG.debug("Setting tick tuple interval to [{}] based on topology timeout", tickTupleInterval);
-        }
     }
 
     private int capacity() {
@@ -93,12 +86,10 @@ public class SolrUpdateBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    protected void process(Tuple tuple) {
         try {
-            if (!TupleUtils.isTick(tuple)) {    // Don't add tick tuples to the SolrRequest
-                SolrRequest request = solrMapper.toSolrRequest(tuple);
-                solrClient.request(request, solrMapper.getCollection());
-            }
+            SolrRequest request = solrMapper.toSolrRequest(tuple);
+            solrClient.request(request, solrMapper.getCollection());
             ack(tuple);
         } catch (Exception e) {
             fail(tuple, e);
@@ -153,6 +144,9 @@ public class SolrUpdateBolt extends BaseRichBolt {
 
     @Override
     public Map<String, Object> getComponentConfiguration() {
+        if (solrConfig.getTickTupleInterval() > 0) {
+            this.tickTupleInterval = solrConfig.getTickTupleInterval();
+        }
         return TupleUtils.putTickFrequencyIntoComponentConfig(super.getComponentConfiguration(), tickTupleInterval);
     }
 

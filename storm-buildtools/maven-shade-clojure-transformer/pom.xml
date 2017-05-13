@@ -25,7 +25,6 @@
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
-    <groupId>org.apache.storm</groupId>
     <artifactId>maven-shade-clojure-transformer</artifactId>
 
     <dependencies>
@@ -36,4 +35,16 @@
             <scope>provided</scope>
         </dependency>
     </dependencies>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>44</maxAllowedViolations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>

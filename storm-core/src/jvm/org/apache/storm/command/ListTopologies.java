@@ -33,7 +33,7 @@ public class ListTopologies {
     public static void main(String [] args) throws Exception {
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
           @Override
-          public void run(Nimbus.Client nimbus) throws Exception {
+          public void run(Nimbus.Iface nimbus) throws Exception {
               List<TopologySummary> topologies = nimbus.getClusterInfo().get_topologies();
               if (topologies == null || topologies.isEmpty()) {
                   System.out.println("No topologies running.");

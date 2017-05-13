@@ -15,21 +15,10 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.internal.thrift
-  (:import [java.util HashMap]
-           [java.io Serializable]
-           [org.apache.storm.generated NodeInfo Assignment])
-  (:import [org.apache.storm.generated JavaObject Grouping Nimbus StormTopology
-            StormTopology$_Fields Bolt Nimbus$Client Nimbus$Iface
-            ComponentCommon Grouping$_Fields SpoutSpec NullStruct StreamInfo
-            GlobalStreamId ComponentObject ComponentObject$_Fields
-            ShellComponent SupervisorInfo])
-  (:import [org.apache.storm.utils Utils NimbusClient ConfigUtils])
-  (:import [org.apache.storm Constants])
+  (:import [org.apache.storm.generated Grouping
+            Grouping$_Fields StreamInfo])
+  (:import [org.apache.storm.utils NimbusClient Utils ConfigUtils])
   (:import [org.apache.storm.security.auth ReqContext])
-  (:import [org.apache.storm.grouping CustomStreamGrouping])
-  (:import [org.apache.storm.topology TopologyBuilder])
-  (:import [org.apache.storm.clojure RichShellBolt RichShellSpout])
-  (:import [org.apache.thrift.transport TTransport])
   (:use [org.apache.storm util config log]))
 
 ;; Leaving this definition as core.clj is using them as a nested keyword argument
@@ -49,24 +38,6 @@
 (defn grouping-type
   [^Grouping grouping]
   (grouping-constants (.getSetField grouping)))
-
-(defn nimbus-client-and-conn
-  ([host port]
-    (nimbus-client-and-conn host port nil))
-  ([host port as-user]
-  (log-message "Connecting to Nimbus at " host ":" port " as user: " as-user)
-  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
-        nimbusClient (NimbusClient. conf host port nil as-user)
-        client (.getClient nimbusClient)
-        transport (.transport nimbusClient)]
-        [client transport] )))
-
-(defmacro with-nimbus-connection
-  [[client-sym host port] & body]
-  `(let [[^Nimbus$Client ~client-sym ^TTransport conn#] (nimbus-client-and-conn ~host ~port)]
-    (try
-      ~@body
-    (finally (.close conn#)))))
 
 (defmacro with-configured-nimbus-connection
   [client-sym & body]

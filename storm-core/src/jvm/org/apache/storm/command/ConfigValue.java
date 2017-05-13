@@ -19,12 +19,12 @@ package org.apache.storm.command;
 
 import java.util.Map;
 
-import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
 
 public class ConfigValue {
     public static void main(String [] args) {
         String name = args[0];
-        Map<String, Object> conf = ConfigUtils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         System.out.println("VALUE: " + conf.get(name));
     }
 }

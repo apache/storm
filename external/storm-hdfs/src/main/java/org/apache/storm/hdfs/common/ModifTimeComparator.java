@@ -27,6 +27,6 @@ public class ModifTimeComparator
         implements Comparator<FileStatus> {
    @Override
     public int compare(FileStatus o1, FileStatus o2) {
-      return new Long(o1.getModificationTime()).compareTo( o1.getModificationTime() );
+      return new Long(o1.getModificationTime()).compareTo( o2.getModificationTime() );
     }
 }

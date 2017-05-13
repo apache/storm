@@ -30,7 +30,7 @@ import java.util.Set;
 
 public class DynamicPartitionConnections {
 
-    public static final Logger LOG = LoggerFactory.getLogger(DynamicPartitionConnections.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DynamicPartitionConnections.class);
 
     static class ConnectionInfo {
         SimpleConsumer consumer;
@@ -41,7 +41,7 @@ public class DynamicPartitionConnections {
         }
     }
 
-    Map<Broker, ConnectionInfo> _connections = new HashMap();
+    Map<Broker, ConnectionInfo> _connections = new HashMap<>();
     KafkaConfig _config;
     IBrokerReader _reader;
 

@@ -35,13 +35,14 @@ code.
 storm-starter contains a variety of examples of using Storm.  If this is your first time working with Storm, check out
 these topologies first:
 
-1. [ExclamationTopology](src/jvm/storm/starter/ExclamationTopology.java):  Basic topology written in all Java
-2. [WordCountTopology](src/jvm/storm/starter/WordCountTopology.java):  Basic topology that makes use of multilang by
+1. [ExclamationTopology](src/jvm/org/apache/storm/starter/ExclamationTopology.java):  Basic topology written in all Java
+2. [WordCountTopology](src/jvm/org/apache/storm/starter/WordCountTopology.java):  Basic topology that makes use of multilang by
    implementing one bolt in Python
-3. [ReachTopology](src/jvm/storm/starter/ReachTopology.java): Example of complex DRPC on top of Storm
+3. [ReachTopology](src/jvm/org/apache/storm/starter/ReachTopology.java): Example of complex DRPC on top of Storm
+4. [LambdaTopology](src/jvm/org/apache/storm/starter/LambdaTopology.java): Example of writing spout/bolt using Java8 lambda expression
 
 After you have familiarized yourself with these topologies, take a look at the other topopologies in
-[src/jvm/storm/starter/](src/jvm/storm/starter/) such as [RollingTopWords](src/jvm/storm/starter/RollingTopWords.java)
+[src/jvm/org/apache/storm/starter/](src/jvm/org/apache/storm/starter/) such as [RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java)
 for more advanced implementations.
 
 If you want to learn more about how Storm works, please head over to the
@@ -88,21 +89,21 @@ Example filename of the uberjar:
 You can submit (run) a topology contained in this uberjar to Storm via the `storm` CLI tool:
 
     # Example 1: Run the ExclamationTopology in local mode (LocalCluster)
-    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.ExclamationTopology
+    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.ExclamationTopology -local
 
     # Example 2: Run the RollingTopWords in remote/cluster mode,
     #            under the name "production-topology"
-    $ storm jar storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology remote
+    $ storm jar target/storm-starter-*.jar org.apache.storm.starter.RollingTopWords production-topology
 
 With submitting you can run topologies which use multilang, for example, `WordCountTopology`.
 
 _Submitting a topology in local vs. remote mode:_
 It depends on the actual code of a topology how you can or even must tell Storm whether to run the topology locally (in
-an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of
-[RollingTopWords](src/jvm/storm/starter/RollingTopWords.java), for instance, this can be done by passing command line
-arguments.
-Topologies other than `RollingTopWords` -- such as [ExclamationTopology](src/jvm/storm/starter/ExclamationTopology.java)
--- may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
+an in-memory LocalCluster instance of Storm) or remotely (in a "real" Storm cluster).  In the case of topologies extending
+[ConfigurableTopology](https://github.com/apache/storm/tree/master/storm-server/src/jvm/org/apache/storm/topology/ConfigurableTopology.java),
+such as [RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java) or [ExclamationTopology](src/jvm/org/apache/storm/starter/ExclamationTopology.java), 
+this is done by specifying `-local` in the command line arguments.
+Other topologies may behave differently, e.g. by always submitting to a remote cluster (i.e. hardcoded in a way that you, as a user,
 cannot change without modifying the topology code), or by requiring a customized configuration file that the topology
 code will parse prior submitting the topology to Storm.  Similarly, further options such as the name of the topology may
 be user-configurable or be hardcoded into the topology code.  So make sure you understand how the topology of your

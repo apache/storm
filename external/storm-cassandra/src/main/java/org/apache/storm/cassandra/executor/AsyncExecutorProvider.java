@@ -31,7 +31,7 @@ public class AsyncExecutorProvider {
      * Returns a new {@link AsyncExecutor} per storm executor.
      */
     public static <T> AsyncExecutor getLocal(Session session, AsyncResultHandler<T> handler) {
-        AsyncExecutor<T> executor = localAsyncExecutor.get();
+        AsyncExecutor<T> executor = localAsyncExecutor.<T>get();
         if( executor == null ) {
             localAsyncExecutor.set(executor = new AsyncExecutor<>(session, handler));
         }

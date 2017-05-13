@@ -90,7 +90,7 @@ if not defined CMD_TEMP_FILE (
   set CMD_TEMP_FILE=tmpfile
 )
 
-"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value storm.log4j2.conf.dir > %CMD_TEMP_FILE%
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.ConfigValue storm.log4j2.conf.dir > %CMD_TEMP_FILE%
 
 FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 	FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -99,6 +99,16 @@ FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
 			del /F %CMD_TEMP_FILE%)
 		)
 	)
+)
+
+@rem
+@rem if we have a dir with relative path, make it absolute
+@rem
+
+if not %STORM_LOG4J2_CONFIGURATION_DIR% == nil (
+  if exist %STORM_HOME%\%STORM_LOG4J2_CONFIGURATION_DIR% (
+    set STORM_LOG4J2_CONFIGURATION_DIR=%STORM_HOME%\%STORM_LOG4J2_CONFIGURATION_DIR%
+  )
 )
 
 @rem
@@ -117,7 +127,7 @@ if not defined STORM_LOG4J2_CONFIGURATION_FILE (
   set STORM_LOG4J2_CONFIGURATION_FILE="file:///%STORM_HOME%\log4j2\cluster.xml"
 )
 
-"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value java.library.path > %CMD_TEMP_FILE%
+"%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.ConfigValue java.library.path > %CMD_TEMP_FILE%
 
 FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
     FOR /F "tokens=1,* delims= " %%a in ("%%i") do (

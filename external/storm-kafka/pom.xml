@@ -29,6 +29,7 @@
     <artifactId>storm-kafka</artifactId>
     <name>storm-kafka</name>
     <description>Storm Spouts for Apache Kafka</description>
+
     <build>
         <plugins>
             <plugin>
@@ -51,6 +52,14 @@
                     </execution>
                 </executions>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+                    <maxAllowedViolations>2727</maxAllowedViolations>
+                </configuration>
+            </plugin>
         </plugins>
         <sourceDirectory>src/jvm</sourceDirectory>
         <testSourceDirectory>src/test</testSourceDirectory>
@@ -65,12 +74,6 @@
             <groupId>org.mockito</groupId>
             <artifactId>mockito-all</artifactId>
             <version>1.9.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
-            <version>4.11</version>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -118,18 +121,20 @@
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
-            <artifactId>${kafka.artifact.id}</artifactId>
+            <artifactId>${storm.kafka.artifact.id}</artifactId>
+            <version>${storm.kafka.version}</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
+            <version>${storm.kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>

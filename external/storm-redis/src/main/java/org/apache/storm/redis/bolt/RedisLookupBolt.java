@@ -31,7 +31,7 @@ import java.util.List;
 /**
  * Basic bolt for querying from Redis and emits response as tuple.
  * <p/>
- * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG
+ * Various data types are supported: STRING, LIST, HASH, SET, SORTED_SET, HYPER_LOG_LOG, GEO
  */
 public class RedisLookupBolt extends AbstractRedisBolt {
     private final RedisLookupMapper lookupMapper;
@@ -72,7 +72,7 @@ public class RedisLookupBolt extends AbstractRedisBolt {
      * {@inheritDoc}
      */
     @Override
-    public void execute(Tuple input) {
+    public void process(Tuple input) {
         String key = lookupMapper.getKeyFromTuple(input);
         Object lookupValue;
 
@@ -103,6 +103,10 @@ public class RedisLookupBolt extends AbstractRedisBolt {
 
                 case HYPER_LOG_LOG:
                     lookupValue = jedisCommand.pfcount(key);
+                    break;
+
+                case GEO:
+                    lookupValue = jedisCommand.geopos(additionalKey, key);
                     break;
 
                 default:

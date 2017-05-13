@@ -55,7 +55,7 @@ The main stages can be depicted as follows
 Blobs in the blobstore can be created through command line using the following command.
 
 ```
-storm blobstore create --file README.txt --acl o::rwa --repl-fctr 4 key1
+storm blobstore create --file README.txt --acl o::rwa --replication-factor 4 key1
 ```
 
 The above command creates a blob with a key name “key1” corresponding to the file README.txt. 
@@ -115,12 +115,12 @@ the responsibility of mapping the blob to a local name on the supervisor node.
 
 ## Additional Blobstore Implementation Details
 Blobstore uses a hashing function to create the blobs based on the key. The blobs are generally stored inside the directory specified by
-the blobstore.dir configuration. By default, it is stored under “storm.local.dir/nimbus/blobs” for local file system and a similar path on 
+the blobstore.dir configuration. By default, it is stored under “storm.local.dir/blobs” for local file system and a similar path on 
 hdfs file system.
 
 Once a file is submitted, the blobstore reads the configs and creates a metadata for the blob with all the access control details. The metadata 
 is generally used for authorization while accessing the blobs. The blob key and version contribute to the hash code and there by the directory 
-under “storm.local.dir/nimbus/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
+under “storm.local.dir/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
 
 Once the topology is launched and the relevant blobs have been created, the supervisor downloads blobs related to the storm.conf, storm.ser 
 and storm.code first and all the blobs uploaded by the command line separately using the localizer to uncompress and map them to a local name 
@@ -324,7 +324,7 @@ that need to be cached and bind them to key strings. To achieve this, the user
 uses the "blobstore create" command of the storm executable, as follows:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore create [-f|--file FILE] [-a|--acl ACL1,ACL2,...] [--repl-fctr NUMBER] [keyname]
+storm blobstore create [-f|--file FILE] [-a|--acl ACL1,ACL2,...] [--replication-factor NUMBER] [keyname]
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The contents come from a FILE, if provided by -f or --file option, otherwise
@@ -346,7 +346,7 @@ where:
 * a = admin access  
 * _ = ignored  
 
-The replication factor can be set to a value greater than 1 using --repl-fctr.
+The replication factor can be set to a value greater than 1 using --replication-factor.
 
 Note: The replication right now is configurable for a hdfs blobstore but for a
 local blobstore the replication always stays at 1. For a hdfs blobstore
@@ -355,7 +355,7 @@ the default replication is set to 3.
 ###### Example:  
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore create --file README.txt --acl o::rwa --repl-fctr 4 key1
+storm blobstore create --file README.txt --acl o::rwa --replication-factor 4 key1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 In the above example, the *README.txt* file is added to the distributed cache.
@@ -475,7 +475,7 @@ ACL is in the form [uo]:[username]:[r-][w-][a-] can be comma  separated list
 ### Update the replication factor for a blob
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm blobstore replication --update --repl-fctr 5 key1
+storm blobstore replication --update --replication-factor 5 key1
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### Read the replication factor of a blob

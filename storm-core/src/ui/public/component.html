@@ -22,7 +22,7 @@
 <link href="/css/bootstrap-3.3.1.min.css" rel="stylesheet" type="text/css">
 <link href="/css/jquery.dataTables.1.10.4.min.css" rel="stylesheet" type="text/css">
 <link href="/css/dataTables.bootstrap.css" rel="stylesheet" type="text/css">
-<link href="/css/style.css" rel="stylesheet" type="text/css">
+<link href="/css/style.css?_ts=${packageTimestamp}" rel="stylesheet" type="text/css">
 <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
 <script src="/js/jquery.dataTables.1.10.4.min.js" type="text/javascript"></script>
 <script src="/js/jquery.cookies.2.2.0.min.js" type="text/javascript"></script>
@@ -32,7 +32,7 @@
 <script src="/js/jquery.blockUI.min.js" type="text/javascript"></script>
 <script src="/js/moment.min.js" type="text/javascript"></script>
 <script src="/js/dataTables.bootstrap.min.js" type="text/javascript"></script>
-<script src="/js/script.js" type="text/javascript"></script>
+<script src="/js/script.js?_ts=${packageTimestamp}" type="text/javascript"></script>
 </head>
 <body>
 <div class="container-fluid">
@@ -83,7 +83,7 @@ function jsError(other) {
     try {
       other();
     } catch (err) {
-      $.get("/templates/json-error-template.html", function(template) {
+      getStatic("/templates/json-error-template.html", function(template) {
         $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
       });
     }
@@ -156,11 +156,17 @@ $(document).ready(function() {
     $.ajaxSetup({
         "error":function(jqXHR,textStatus,response) {
             var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            $.get("/templates/json-error-template.html", function(template) {
+            getStatic("/templates/json-error-template.html", function(template) {
                 $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
             });
         }
     });
+
+    function renderSupervisorPageLink(data, type, row, meta) {
+        return type === 'display' ? 
+                   ("<a href='/supervisor.html?host=" + data + "'>" + data + "</a>") :
+                   data; 
+    }
 
     function renderActionCheckbox(data, type, row, meta) {
       var host_port = row[2]+':'+$(row[3])[0].text;
@@ -187,22 +193,38 @@ $(document).ready(function() {
 
     $.getJSON(url,function(response,status,jqXHR) {
         var uiUser = $("#ui-user");
-        $.get("/templates/user-template.html", function(template) {
+        getStatic("/templates/user-template.html", function(template) {
             uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
             $('#ui-user [data-toggle="tooltip"]').tooltip()
         });
 
+        var topologyUrl = "/api/v1/topology/"+topologyId;
+
+        var eventLoggers = (function() {
+              $.ajaxSetup({
+                  async: false
+              });
+              var eventLoggers;
+              $.getJSON(topologyUrl, function(response, status, jqXHR) {
+                  eventLoggers = response["configuration"]["topology.eventlogger.executors"];
+               });
+               $.ajaxSetup({
+                  async: true
+              })
+              return eventLoggers;
+         })();
+
         var componentSummary = $("#component-summary");
         var componentActions = $("#component-actions");
         var buttonJsonData = componentActionJson(response["encodedTopologyId"], response["encodedId"], response["id"],
-                                                 response["topologyStatus"], response["debug"], response["samplingPct"]);
+                                                 response["topologyStatus"], eventLoggers, response["debug"], response["samplingPct"]);
         var componentStatsDetail = $("#component-stats-detail")
         var inputStats = $("#component-input-stats");
         var outputStats = $("#component-output-stats");
         var profilerControl = $("#profiler-control");
         var executorStats = $("#component-executor-stats");
         var componentErrors = $("#component-errors");
-        $.get("/templates/component-page-template.html", function(template) {
+        getStatic("/templates/component-page-template.html", function(template) {
             response["profilerActive"] = $.map(response["profilerActive"], function(active_map) {
                 var date = new Date();
                 var millis = date.getTime() + parseInt(active_map["timestamp"]);
@@ -252,6 +274,7 @@ $(document).ready(function() {
                 //id, uptime, host, port, actions, emitted, transferred, complete latency, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
+                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
                     {type: "num", targets: [5, 6, 7, 8, 9]},
                     {type: "time-str", targets: [1]},
@@ -287,6 +310,7 @@ $(document).ready(function() {
                 //id, uptime, host, port, actions, emitted, transferred, capacity, execute latency, executed, process latency, acked, failed
                 dtAutoPage("#executor-stats-table", {
                   columnDefs: [
+                    {render: renderSupervisorPageLink, searchable: true, targets: [2]},
                     {render: renderActionCheckbox, searchable: false, targets: [4]},
                     {type: "num", targets: [5, 6, 7, 8, 9, 10, 11, 12]},
                     {type: "time-str", targets: [1]},
@@ -343,7 +367,7 @@ function start_profiling() {
         var url = "/api/v1/topology/"+topologyId+"/profiling/start/" + id + "/" + timeout;
         $.get(url, function(response,status,jqXHR) {
             jsError(function() {
-                $.get("/templates/component-page-template.html", function(template) {
+                getStatic("/templates/component-page-template.html", function(template) {
                     var host_port_split = id.split(":");
                     var host = host_port_split[0];
                     var port = host_port_split[1];
@@ -418,8 +442,7 @@ function dump_jstacks() {
         $("#dump_jstack_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_jstack_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url)
-        .fail(function(response) {
+        $.get(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {
@@ -461,8 +484,7 @@ function restart_worker_jvms() {
         $("#restart_worker_jvm_" + id).prop('disabled', true);
         setTimeout(function(){ $("#restart_worker_jvm_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url)
-        .fail(function(response) {
+        $.get(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {
@@ -489,8 +511,7 @@ function dump_heaps() {
         $("#dump_heap_" + id).prop('disabled', true);
         setTimeout(function(){ $("#dump_heap_" + id).prop('disabled', false); }, 5000);
 
-        $.get(url)
-        .fail(function(response) {
+        $.get(url).fail(function(response) {
             failed[id] = response;
         });
         if (!(id in failed)) {

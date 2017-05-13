@@ -15,21 +15,18 @@
 ;; limitations under the License.
 (ns org.apache.storm.trident.state-test
   (:use [clojure test])
-  (:require [org.apache.storm [testing :as t]])
   (:import [org.apache.storm.trident.operation.builtin Count])
   (:import [org.apache.storm.trident.state OpaqueValue])
-  (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm.trident.state CombinerValueUpdater])
   (:import [org.apache.storm.trident.topology.state TransactionalState TestTransactionalState])
   (:import [org.apache.storm.trident.state.map TransactionalMap OpaqueMap])
   (:import [org.apache.storm.trident.testing MemoryBackingMap MemoryMapState])
-  (:import [org.apache.storm.utils ZookeeperAuthInfo])
+  (:import [org.apache.storm.utils ZookeeperAuthInfo Utils])
   (:import [org.apache.curator.framework CuratorFramework])
   (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable])
   (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
   (:import [org.mockito Matchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:use [org.apache.storm.trident testing])
   (:use [org.apache.storm config]))
 
 (defn single-remove [map key]

@@ -17,19 +17,16 @@
  */
 package org.apache.storm.starter;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.topology.base.BaseWindowedBolt;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.starter.bolt.PrinterBolt;
 import org.apache.storm.starter.bolt.SlidingWindowSumBolt;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
-
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.topology.base.BaseWindowedBolt;
+import org.apache.storm.topology.base.BaseWindowedBolt.Duration;
 
 /**
  * Windowing based on tuple timestamp (e.g. the time when tuple is generated
@@ -47,16 +44,13 @@ public class SlidingTupleTsTopology {
         builder.setBolt("printer", new PrinterBolt(), 1).shuffleGrouping("slidingsum");
         Config conf = new Config();
         conf.setDebug(true);
-
+        String topoName = "test";
+        
         if (args != null && args.length > 0) {
-            conf.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createTopology());
-        } else {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("test", conf, builder.createTopology());
-            Utils.sleep(40000);
-            cluster.killTopology("test");
-            cluster.shutdown();
+            topoName = args[0];
         }
+        
+        conf.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createTopology());
     }
 }

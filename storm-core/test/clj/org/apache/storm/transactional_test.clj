@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.transactional-test
   (:use [clojure test])
-  (:import [org.apache.storm Constants])
+  (:import [org.apache.storm Constants LocalCluster$Builder Testing])
   (:import [org.apache.storm.topology TopologyBuilder])
   (:import [org.apache.storm.transactional TransactionalSpoutCoordinator ITransactionalSpout ITransactionalSpout$Coordinator TransactionAttempt
             TransactionalTopologyBuilder])
@@ -26,7 +26,7 @@
   (:import [org.apache.storm.coordination BatchBoltExecutor])
   (:import [org.apache.storm.utils RegisteredGlobalState])
   (:import [org.apache.storm.tuple Fields])
-  (:import [org.apache.storm.testing CountingBatchBolt MemoryTransactionalSpout
+  (:import [org.apache.storm.testing InProcessZookeeper CountingBatchBolt MemoryTransactionalSpout
             KeyedCountingBatchBolt KeyedCountingCommitterBolt KeyedSummingBatchBolt
             IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout])
   (:import [org.apache.storm.utils ZookeeperAuthInfo Utils])
@@ -36,9 +36,8 @@
   (:import [org.mockito Matchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [java.util HashMap Collections ArrayList])
-  (:use [org.apache.storm testing util config])
-  (:use [org.apache.storm.internal clojure])
-  (:use [org.apache.storm.daemon common]))
+  (:use [org.apache.storm util config log])
+  (:use [org.apache.storm clojure]))
 
 ;; Testing TODO:
 ;; * Test that it repeats the meta for a partitioned state (test partitioned emitter on its own)
@@ -116,7 +115,7 @@
 (deftest test-coordinator
   (let [coordinator-state (atom nil)
         emit-capture (atom nil)]
-    (with-inprocess-zookeeper zk-port
+    (with-open [zk (InProcessZookeeper. )]
       (letlocals
         (bind coordinator
               (mk-coordinator-state-changer coordinator-state))
@@ -124,7 +123,7 @@
                (merge (clojurify-structure (Utils/readDefaultConfig))
                        {TOPOLOGY-MAX-SPOUT-PENDING 4
                        TOPOLOGY-TRANSACTIONAL-ID "abc"
-                       STORM-ZOOKEEPER-PORT zk-port
+                       STORM-ZOOKEEPER-PORT (.getPort zk)
                        STORM-ZOOKEEPER-SERVERS ["localhost"]
                        })
                nil
@@ -238,11 +237,11 @@
 
     ;; test that transactions are independent
     
-    (.execute bolt (test-tuple [attempt1-1]))
-    (.execute bolt (test-tuple [attempt1-1]))
-    (.execute bolt (test-tuple [attempt1-2]))
-    (.execute bolt (test-tuple [attempt2-1]))
-    (.execute bolt (test-tuple [attempt1-1]))
+    (.execute bolt (Testing/testTuple [attempt1-1]))
+    (.execute bolt (Testing/testTuple [attempt1-1]))
+    (.execute bolt (Testing/testTuple [attempt1-2]))
+    (.execute bolt (Testing/testTuple [attempt2-1]))
+    (.execute bolt (Testing/testTuple [attempt1-1]))
     
     (finish! bolt attempt1-1)
 
@@ -251,7 +250,7 @@
                              "default" [[attempt1-1 3]]}
                             capture-atom)
 
-    (.execute bolt (test-tuple [attempt1-2]))
+    (.execute bolt (Testing/testTuple [attempt1-2]))
     (finish! bolt attempt2-1)
     (verify-bolt-and-reset! {:ack [[attempt1-2]]
                              "default" [[attempt2-1 1]]}
@@ -283,9 +282,9 @@
 
 (deftest test-rotating-transactional-state
   ;; test strict ordered vs not strict ordered
-  (with-inprocess-zookeeper zk-port
+  (with-open [zk (InProcessZookeeper. )]
     (let [conf (merge (clojurify-structure (Utils/readDefaultConfig))
-                      {STORM-ZOOKEEPER-PORT zk-port
+                      {STORM-ZOOKEEPER-PORT (.getPort zk)
                        STORM-ZOOKEEPER-SERVERS ["localhost"]
                        })
           state (TransactionalState/newUserState conf "id1" {})
@@ -331,12 +330,6 @@
     (-> source (.get p) (.addAll data))
     ))
 
-(defn tracked-captured-topology [cluster topology]
-  (let [{captured :capturer topology :topology} (capture-topology topology)
-        tracked (mk-tracked-topology cluster topology)]
-    (assoc tracked :capturer captured)
-    ))
-
 ;; puts its collector and tuples into the global state to be used externally
 (defbolt controller-bolt {} {:prepare true :params [state-id]}
   [conf context collector]
@@ -365,7 +358,7 @@
 
 
 (deftest test-transactional-topology
-  (with-tracked-cluster [cluster]
+  (with-open [cluster (.build (.withSimulatedTime (.withTracked (LocalCluster$Builder. ))))]
     (with-controller-bolt [controller collector tuples]
       (letlocals
        (bind data (mk-transactional-source))
@@ -424,14 +417,15 @@
                                    ["mango" 2]
                                    ["zebra" 1]]})
        
-       (bind topo-info (tracked-captured-topology
+       (bind topo-info (Testing/trackAndCaptureTopology
                         cluster
                         (.createTopology builder)))
-       (submit-local-topology (:nimbus cluster)
-                              "transactional-test"
-                              {TOPOLOGY-MAX-SPOUT-PENDING 2}
-                              (:topology topo-info))
-       (advance-cluster-time cluster 11)
+       (log-message "TOPO INFO \n" (pr-str topo-info))
+       (.submitTopology cluster
+                        "transactional-test"
+                        {TOPOLOGY-MAX-SPOUT-PENDING 2}
+                        (.topology topo-info))
+       (.advanceClusterTime cluster 11)
        (bind ack-tx! (fn [txid]
                        (let [[to-ack not-to-ack] (separate
                                                   #(-> %
@@ -456,42 +450,45 @@
 
        ;; only check default streams
        (bind verify! (fn [expected]
-                       (let [results (-> topo-info :capturer .getResults)]
+                       (let [results (-> topo-info .capturer .getResults)]
                          (doseq [[component tuples] expected
-                                 :let [emitted (->> (read-tuples results
+                                 :let [emitted (->> (Testing/readTuples results
                                                                  component
                                                                  "default")
                                                     (map normalize-tx-tuple))]]
-                           (is (ms= tuples emitted)))
+                           (log-message "\t\t!!!!! " component)
+                           (is (Testing/multiseteq tuples emitted)))
                          (.clear results)
                          )))
 
-       (tracked-wait topo-info 2)
-       (verify! {"sum" [[1 "dog" 3]
-                        [1 "cat" 5]
-                        [1 "mango" 6]
-                        [1 "happy" 11]
-                        [2 "apple" 1]
-                        [2 "dog" 3]
-                        [2 "zebra" 1]]
+       (Testing/trackedWait topo-info (int 2))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 1\n\n")
+       (verify! {"sum" [[(int 1) "dog" 3]
+                        [(int 1) "cat" 5]
+                        [(int 1) "mango" 6]
+                        [(int 1) "happy" 11]
+                        [(int 2) "apple" 1]
+                        [(int 2) "dog" 3]
+                        [(int 2) "zebra" 1]]
                  "count" []
                  "count2" []
-                 "global" [[1 6]
-                           [2 3]]
+                 "global" [[(int 1) (int 6)]
+                           [(int 2) (int 3)]]
                  "gcommit" []})
        (ack-tx! 1)
-       (tracked-wait topo-info 1)
+       (Testing/trackedWait topo-info (int 1))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 2\n\n")
        (verify! {"sum" []
-                 "count" [[1 "dog" 1]
-                          [1 "cat" 2]
-                          [1 "mango" 2]
-                          [1 "happy" 1]]
-                 "count2" [[1 "dog" 2]
-                           [1 "cat" 2]
-                           [1 "mango" 2]
-                           [1 "happy" 2]]
+                 "count" [[(int 1) "dog" (int 1)]
+                          [(int 1) "cat" (int 2)]
+                          [(int 1) "mango" (int 2)]
+                          [(int 1) "happy" (int 1)]]
+                 "count2" [[(int 1) "dog" (int 2)]
+                           [(int 1) "cat" (int 2)]
+                           [(int 1) "mango" (int 2)]
+                           [(int 1) "happy" (int 2)]]
                  "global" []
-                 "gcommit" [[1 6]]})
+                 "gcommit" [[(int 1) (int 6)]]})
 
        (add-transactional-data data
                                {0 [["a" 1]
@@ -505,151 +502,106 @@
                                 3 [["a" 2]]})
        
        (ack-tx! 1)
-       (tracked-wait topo-info 1)
-       (verify! {"sum" [[3 "a" 5]
-                        [3 "b" 2]
-                        [3 "d" 4]
-                        [3 "c" 1]
-                        [3 "e" 7]]
+       (Testing/trackedWait topo-info (int 1))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 3\n\n")
+       (verify! {"sum" [[(int 3) "a" 5]
+                        [(int 3) "b" 2]
+                        [(int 3) "d" 4]
+                        [(int 3) "c" 1]
+                        [(int 3) "e" 7]]
                  "count" []
                  "count2" []
-                 "global" [[3 7]]
+                 "global" [[(int 3) (int 7)]]
                  "gcommit" []})
        (ack-tx! 3)
        (ack-tx! 2)
-       (tracked-wait topo-info 1)
+       (Testing/trackedWait topo-info (int 1))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 4\n\n")
        (verify! {"sum" []
-                 "count" [[2 "apple" 1]
-                          [2 "dog" 1]
-                          [2 "zebra" 1]]
-                 "count2" [[2 "apple" 2]
-                           [2 "dog" 2]
-                           [2 "zebra" 2]]
+                 "count" [[(int 2) "apple" (int 1)]
+                          [(int 2) "dog" (int 1)]
+                          [(int 2) "zebra" (int 1)]]
+                 "count2" [[(int 2) "apple" (int 2)]
+                           [(int 2) "dog" (int 2)]
+                           [(int 2) "zebra" (int 2)]]
                  "global" []
-                 "gcommit" [[2 3]]})
+                 "gcommit" [[(int 2) (int 3)]]})
 
        (fail-tx! 2)
-       (tracked-wait topo-info 2)
+       (Testing/trackedWait topo-info (int 2))
 
-       (verify! {"sum" [[2 "apple" 1]
-                        [2 "dog" 3]
-                        [2 "zebra" 1]
-                        [3 "a" 5]
-                        [3 "b" 2]
-                        [3 "d" 4]
-                        [3 "c" 1]
-                        [3 "e" 7]]
+       (log-message "\n\n\t\t!!!!!!!!!!!! 5\n\n")
+       (verify! {"sum" [[(int 2) "apple" 1]
+                        [(int 2) "dog" 3]
+                        [(int 2) "zebra" 1]
+                        [(int 3) "a" 5]
+                        [(int 3) "b" 2]
+                        [(int 3) "d" 4]
+                        [(int 3) "c" 1]
+                        [(int 3) "e" 7]]
                  "count" []
                  "count2" []
-                 "global" [[2 3]
-                           [3 7]]
+                 "global" [[(int 2) (int 3)]
+                           [(int 3) (int 7)]]
                  "gcommit" []})
        (ack-tx! 2)
-       (tracked-wait topo-info 1)
+       (Testing/trackedWait topo-info (int 1))
        
+       (log-message "\n\n\t\t!!!!!!!!!!!! 6\n\n")
        (verify! {"sum" []
-                 "count" [[2 "apple" 1]
-                          [2 "dog" 1]
-                          [2 "zebra" 1]]
-                 "count2" [[2 "apple" 2]
-                           [2 "dog" 2]
-                           [2 "zebra" 2]]
+                 "count" [[(int 2) "apple" (int 1)]
+                          [(int 2) "dog" (int 1)]
+                          [(int 2) "zebra" (int 1)]]
+                 "count2" [[(int 2) "apple" (int 2)]
+                           [(int 2) "dog" (int 2)]
+                           [(int 2) "zebra" (int 2)]]
                  "global" []
-                 "gcommit" [[2 3]]})
+                 "gcommit" [[(int 2) (int 3)]]})
        
        (ack-tx! 2)
        (ack-tx! 3)
        
-       (tracked-wait topo-info 2)
-       (verify! {"sum" [[4 "c" 14]]
-                 "count" [[3 "a" 3]
-                          [3 "b" 1]
-                          [3 "d" 1]
-                          [3 "c" 1]
-                          [3 "e" 1]]
-                 "count2" [[3 "a" 2]
-                           [3 "b" 2]
-                           [3 "d" 2]
-                           [3 "c" 2]
-                           [3 "e" 2]]
-                 "global" [[4 2]]
-                 "gcommit" [[3 7]]})
+       (Testing/trackedWait topo-info (int 2))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 7\n\n")
+       (verify! {"sum" [[(int 4) "c" 14]]
+                 "count" [[(int 3) "a" (int 3)]
+                          [(int 3) "b" (int 1)]
+                          [(int 3) "d" (int 1)]
+                          [(int 3) "c" (int 1)]
+                          [(int 3) "e" (int 1)]]
+                 "count2" [[(int 3) "a" (int 2)]
+                           [(int 3) "b" (int 2)]
+                           [(int 3) "d" (int 2)]
+                           [(int 3) "c" (int 2)]
+                           [(int 3) "e" (int 2)]]
+                 "global" [[(int 4) (int 2)]]
+                 "gcommit" [[(int 3) (int 7)]]})
        
        (ack-tx! 4)
        (ack-tx! 3)
-       (tracked-wait topo-info 2)
+       (Testing/trackedWait topo-info (int 2))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 8\n\n")
        (verify! {"sum" []
-                 "count" [[4 "c" 2]]
-                 "count2" [[4 "c" 2]]
-                 "global" [[5 0]]
-                 "gcommit" [[4 2]]})
+                 "count" [[(int 4) "c" (int 2)]]
+                 "count2" [[(int 4) "c" (int 2)]]
+                 "global" [[(int 5) (int 0)]]
+                 "gcommit" [[(int 4) (int 2)]]})
        
        (ack-tx! 5)
        (ack-tx! 4)
-       (tracked-wait topo-info 2)
+       (Testing/trackedWait topo-info (int 2))
+       (log-message "\n\n\t\t!!!!!!!!!!!! 9\n\n")
        (verify! {"sum" []
                  "count" []
                  "count2" []
-                 "global" [[6 0]]
-                 "gcommit" [[5 0]]})
+                 "global" [[(int 6) (int 0)]]
+                 "gcommit" [[(int 5) (int 0)]]})
        
-       (-> topo-info :capturer .getAndClearResults)
+       (-> topo-info .capturer .getAndClearResults)
        ))))
 
-(deftest test-transactional-topology-restart
-  (with-simulated-time-local-cluster [cluster]
-    (letlocals
-     (bind data (mk-transactional-source))
-     (bind builder (TransactionalTopologyBuilder.
-                    "id"
-                    "spout"
-                    (MemoryTransactionalSpout. data
-                                               (Fields. ["word"])
-                                               3)
-                    2))
-
-     (-> builder
-         (.setBolt "count" (CountingCommitBolt.) 2)
-         (.globalGrouping "spout"))
-
-     (add-transactional-data data
-                             {0 [["a"]
-                                 ["b"]
-                                 ["c"]
-                                 ["d"]]
-                              1 [["d"]
-                                 ["c"]]
-                              })
-     
-     (bind results (complete-topology cluster
-                                      (.buildTopology builder)
-                                      :storm-conf {TOPOLOGY-DEBUG true
-                                                   TOPOLOGY-MESSAGE-TIMEOUT-SECS 300} ;;simulated time can take a while for things to calm down
-                                      :cleanup-state false))
-
-     (is (ms= [[5] [0] [1] [0]] (->> (read-tuples results "count")
-                                     (take 4)
-                                     (map (partial drop 1))
-                                     )))
-
-     (add-transactional-data data
-                             {0 [["a"]
-                                 ["b"]]
-                              })
-     
-     (bind results (complete-topology cluster (.buildTopology builder)
-                                      :storm-conf {TOPOLOGY-DEBUG true
-                                                   TOPOLOGY-MESSAGE-TIMEOUT-SECS 300}))
-
-     ;; need to do it this way (check for nothing transaction) because there is one transaction already saved up before that emits nothing (because of how memorytransctionalspout detects partition completion)
-     (is (ms= [[0] [0] [2] [0]] (->> (read-tuples results "count")
-                             (take 4)
-                             (map (partial drop 1))
-                             )))
-     )))
-
 (deftest test-opaque-transactional-topology
-  (with-tracked-cluster [cluster]
+  (with-open [cluster (.build (.withSimulatedTime (.withTracked (LocalCluster$Builder. ))))]
     (with-controller-bolt [controller collector tuples]
       (letlocals
        (bind data (mk-transactional-source))
@@ -678,15 +630,14 @@
                                    ["apple"]
                                    ["dog"]]})
        
-       (bind topo-info (tracked-captured-topology
+       (bind topo-info (Testing/trackAndCaptureTopology
                         cluster
                         (.createTopology builder)))
-       (submit-local-topology (:nimbus cluster)
-                              "transactional-test"
-                              {TOPOLOGY-MAX-SPOUT-PENDING 2
-                               }
-                              (:topology topo-info))
-       (advance-cluster-time cluster 11)
+       (.submitTopology cluster
+                        "transactional-test"
+                        {TOPOLOGY-MAX-SPOUT-PENDING 2}
+                        (.topology topo-info))
+       (.advanceClusterTime cluster 11)
        (bind ack-tx! (fn [txid]
                        (let [[to-ack not-to-ack] (separate
                                                   #(-> %
@@ -711,29 +662,29 @@
 
        ;; only check default streams
        (bind verify! (fn [expected]
-                       (let [results (-> topo-info :capturer .getResults)]
+                       (let [results (-> topo-info .capturer .getResults)]
                          (doseq [[component tuples] expected
-                                 :let [emitted (->> (read-tuples results
+                                 :let [emitted (->> (Testing/readTuples results
                                                                  component
                                                                  "default")
                                                     (map normalize-tx-tuple))]]
-                           (is (ms= tuples emitted)))
+                           (is (Testing/multiseteq tuples emitted)))
                          (.clear results)
                          )))
 
-       (tracked-wait topo-info 2)
+       (Testing/trackedWait topo-info (int 2))
        (verify! {"count" []})
        (ack-tx! 1)
-       (tracked-wait topo-info 1)
+       (Testing/trackedWait topo-info (int 1))
 
-       (verify! {"count" [[1 "dog" 1]
-                          [1 "cat" 1]]})       
+       (verify! {"count" [[(int 1) "dog" (int 1)]
+                          [(int 1) "cat" (int 1)]]})       
        (ack-tx! 2)
        (ack-tx! 1)
-       (tracked-wait topo-info 2)
+       (Testing/trackedWait topo-info (int 2))
 
-       (verify! {"count" [[2 "apple" 1]
-                          [2 "dog" 1]]})
+       (verify! {"count" [[(int 2) "apple" (int 1)]
+                          [(int 2) "dog" (int 1)]]})
 
        ))))
 

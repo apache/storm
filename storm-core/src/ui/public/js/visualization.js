@@ -309,7 +309,7 @@ function gather_stream_count(stats, stream, time) {
     var transferred = 0;
     if(stats)
         for(var i = 0; i < stats.length; i++) {
-            if(stats[i][":transferred"] != null)
+            if(stats[i][":transferred"] != null && stats[i][":transferred"][time] != undefined)
             {
                 var stream_trans = stats[i][":transferred"][time][stream];
                 if(stream_trans != null)
@@ -379,7 +379,7 @@ function jsError(other) {
   try {
     other();
   } catch (err) {
-    $.get("/templates/json-error-template.html", function(template) {
+    getStatic("/templates/json-error-template.html", function(template) {
       $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
     });
   }
@@ -388,15 +388,17 @@ function jsError(other) {
 var should_update;
 function show_visualization(sys) {
     $.getJSON("/api/v1/topology/"+$.url("?id")+"/visualization-init",function(response,status,jqXHR) {
-        $.get("/templates/topology-page-template.html", function(template) {
+        getStatic("/templates/topology-page-template.html", function(template) {
             jsError(function() {
                 var topologyVisualization = $("#visualization-container");
-                topologyVisualization.append(
-                    Mustache.render($(template)
-                        .filter("#topology-visualization-container-template")
-                        .html(),
-                        response));
-                });
+                if (topologyVisualization.find("canvas").length == 0) {
+                    topologyVisualization.append(
+                        Mustache.render($(template)
+                            .filter("#topology-visualization-container-template")
+                            .html(),
+                            response));
+                }
+            });
 
             if(sys == null)
             {

@@ -17,9 +17,10 @@
   (:use [clojure test])
   (:import [org.apache.storm.messaging TransportFactory IConnection TaskMessage IConnectionCallback])
   (:import [org.apache.storm.utils Utils])
-  (:use [org.apache.storm testing util config log])
-  (:use [org.apache.storm.daemon.worker :only [is-connection-ready]])
-  (:import [java.util ArrayList]))
+  (:import [org.apache.storm Testing Testing$Condition])
+  (:use [org.apache.storm util config log])
+  (:import [java.util ArrayList]
+           (org.apache.storm.daemon.worker WorkerState)))
 
 (def port (Utils/getAvailablePort))
 (def task 1)
@@ -37,7 +38,7 @@
    (loop [connections connections waited-ms waited-ms]
      (let [interval-ms 10
            max-wait-ms 5000]
-       (if-not (every? is-connection-ready connections)
+       (if-not (every? (fn [connection] (WorkerState/isConnectionReady connection))  connections)
          (if (<= waited-ms max-wait-ms)
            (do
              (Thread/sleep interval-ms)
@@ -60,7 +61,9 @@
 
 (defn- wait-for-not-nil
   [atm]
-  (while-timeout TEST-TIMEOUT-MS (nil? @atm) (Thread/sleep 10)))
+  (Testing/whileTimeout Testing/TEST_TIMEOUT_MS
+    (reify Testing$Condition (exec [this] (nil? @atm)))
+    (fn [] (Thread/sleep 10))))
 
 (defn- test-basic-fn [storm-conf]
   (log-message "1. Should send and receive a basic message")
@@ -94,9 +97,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-basic-fn storm-conf)          ;; test with sasl authentication disabled
    (test-basic-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -112,7 +115,7 @@
         _ (wait-until-ready [server client])
         _ (.send client task (.getBytes req_msg))
         _ (.sendLoadMetrics server {(int 1) 0.0 (int 2) 1.0})
-        _ (while-timeout 5000 (empty? (.getLoad client [(int 1) (int 2)])) (Thread/sleep 10))
+        _ (Testing/whileTimeout Testing/TEST_TIMEOUT_MS (reify Testing$Condition (exec [this] (empty? (.getLoad client [(int 1) (int 2)])))) (fn [] (Thread/sleep 10)))
         load (.getLoad client [(int 1) (int 2)])]
     (is (= 0.0 (.getBoltLoad (.get load (int 1)))))
     (is (= 1.0 (.getBoltLoad (.get load (int 2)))))
@@ -137,9 +140,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-load-fn storm-conf)          ;; test with sasl authentication disabled
    (test-load-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -175,9 +178,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-large-msg-fn storm-conf)          ;; test with sasl authentication disabled
    (test-large-msg-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -193,16 +196,17 @@
                  (fn []
                    (Thread/sleep 100)
                    (let [server (.bind context nil port)]
-                     (register-callback (fn [message] (reset! resp message)) server))))]
+                     (register-callback (fn [message] (reset! resp message)) server)
+                     (wait-until-ready [server client]))))]
     (.start server)
-    (wait-until-ready [server client])
+    (.join server)
     (.send client task (.getBytes req_msg))
 
     (wait-for-not-nil resp)
     (is (= task (.task @resp)))
     (is (= req_msg (String. (.message @resp))))
 
-    (.join server)
+
     (.close client)
     (.term context)))
 
@@ -220,9 +224,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-server-delayed-fn storm-conf)          ;; test with sasl authentication disabled
    (test-server-delayed-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 
@@ -243,7 +247,9 @@
       (let [req_msg (str num)]
         (.send client task (.getBytes req_msg))))
 
-    (while-timeout TEST-TIMEOUT-MS (< (.size resp) (- num-messages 1)) (log-message (.size resp) " " num-messages) (Thread/sleep 10))
+    (Testing/whileTimeout Testing/TEST_TIMEOUT_MS
+      (reify Testing$Condition (exec [this] (< (.size resp) (- num-messages 1))))
+      (fn [] (log-message (.size resp) " " num-messages) (Thread/sleep 10)))
 
     (doseq [num  (range 1 num-messages)]
       (let [req_msg (str num)
@@ -268,9 +274,9 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-batch-fn storm-conf)          ;; test with sasl authentication disabled
    (test-batch-fn storm-conf-sasl)))   ;; test with sasl authentication enabled
 )
@@ -320,8 +326,8 @@
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
                     TOPOLOGY-SKIP-MISSING-KRYO-REGISTRATIONS false}
         storm-conf-sasl (assoc storm-conf
-                                    STORM-MESSAGING-NETTY-AUTHENTICATION true
-                                    TOPOLOGY-NAME "topo1-netty-sasl"
-                                    STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
+                          STORM-MESSAGING-NETTY-AUTHENTICATION true
+                          TOPOLOGY-NAME "topo1-netty-sasl"
+                          STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD (str (Utils/secureRandomLong) ":" (Utils/secureRandomLong)))]
    (test-server-always-reconnects-fn storm-conf)          ;; test with sasl authentication disabled
    (test-server-always-reconnects-fn storm-conf-sasl)))   ;; test with sasl authentication enabled

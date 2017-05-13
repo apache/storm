@@ -15,7 +15,7 @@
 ;; limitations under the License.
 (ns org.apache.storm.submitter-test
   (:use [clojure test])
-  (:use [org.apache.storm config testing])
+  (:use [org.apache.storm config])
   (:import [org.apache.storm StormSubmitter])
   )
 

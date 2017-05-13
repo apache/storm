@@ -17,20 +17,23 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static java.util.Objects.requireNonNull;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.http.entity.StringEntity;
+import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.elasticsearch.response.PercolateResponse;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
-import org.elasticsearch.action.percolate.PercolateResponse;
-import org.elasticsearch.action.percolate.PercolateSourceBuilder;
-
-import java.util.Map;
-
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import org.elasticsearch.client.Response;
 
 /**
  * Basic bolt for retrieve matched percolate queries.
@@ -41,12 +44,20 @@ public class EsPercolateBolt extends AbstractEsBolt {
 
     /**
      * EsPercolateBolt constructor
+     * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
+     */
+    public EsPercolateBolt(EsConfig esConfig) {
+        this(esConfig, new DefaultEsTupleMapper());
+    }
+
+    /**
+     * EsPercolateBolt constructor
      * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
     public EsPercolateBolt(EsConfig esConfig, EsTupleMapper tupleMapper) {
         super(esConfig);
-        this.tupleMapper = checkNotNull(tupleMapper);
+        this.tupleMapper = requireNonNull(tupleMapper);
     }
 
     @Override
@@ -61,16 +72,19 @@ public class EsPercolateBolt extends AbstractEsBolt {
      * and Percolate.Match for each Percolate.Match in PercolateResponse.
      */
     @Override
-    public void execute(Tuple tuple) {
+    public void process(Tuple tuple) {
         try {
             String source = tupleMapper.getSource(tuple);
             String index = tupleMapper.getIndex(tuple);
             String type = tupleMapper.getType(tuple);
 
-            PercolateResponse response = client.preparePercolate().setIndices(index).setDocumentType(type)
-                    .setPercolateDoc(PercolateSourceBuilder.docBuilder().setDoc(source)).execute().actionGet();
-            if (response.getCount() > 0) {
-                for (PercolateResponse.Match match : response) {
+            Map<String, String> indexParams = new HashMap<>();
+            indexParams.put(type, null);
+            String percolateDoc = "{\"doc\": " + source + "}";
+            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"), new HashMap<>(), new StringEntity(percolateDoc));
+            PercolateResponse percolateResponse = objectMapper.readValue(response.getEntity().getContent(), PercolateResponse.class);
+            if (!percolateResponse.getMatches().isEmpty()) {
+                for (PercolateResponse.Match match : percolateResponse.getMatches()) {
                     collector.emit(new Values(source, match));
                 }
             }

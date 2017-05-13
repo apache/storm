@@ -18,8 +18,9 @@
  */
 package org.apache.storm.starter.trident;
 
+import java.util.HashMap;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hbase.trident.windowing.HBaseWindowsStoreFactory;
@@ -34,11 +35,8 @@ import org.apache.storm.trident.windowing.WindowsStoreFactory;
 import org.apache.storm.trident.windowing.config.TumblingCountWindow;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.HashMap;
 
 /**
  * Sample application of trident windowing which uses {@link HBaseWindowsStoreFactory}'s store for storing tuples in window.
@@ -75,19 +73,12 @@ public class TridentHBaseWindowingStoreTopology {
 
         // window-state table should already be created with cf:tuples column
         HBaseWindowsStoreFactory windowStoreFactory = new HBaseWindowsStoreFactory(new HashMap<String, Object>(), "window-state", "cf".getBytes("UTF-8"), "tuples".getBytes("UTF-8"));
-
-        if (args.length == 0) {
-            LocalCluster cluster = new LocalCluster();
-            String topologyName = "wordCounterWithWindowing";
-            cluster.submitTopology(topologyName, conf, buildTopology(windowStoreFactory));
-            Utils.sleep(120 * 1000);
-            cluster.killTopology(topologyName);
-            cluster.shutdown();
-            System.exit(0);
-        } else {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], conf, buildTopology(windowStoreFactory));
+        String topoName = "wordCounterWithWindowing";
+        if (args.length > 0) {
+            topoName = args[0];
         }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, buildTopology(windowStoreFactory));
     }
 
 }

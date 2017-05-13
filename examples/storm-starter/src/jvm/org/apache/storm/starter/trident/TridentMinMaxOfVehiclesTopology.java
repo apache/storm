@@ -17,8 +17,12 @@
  */
 package org.apache.storm.starter.trident;
 
+import java.io.Serializable;
+import java.util.Comparator;
+import java.util.List;
+import java.util.concurrent.ThreadLocalRandom;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.trident.Stream;
@@ -28,12 +32,6 @@ import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-
-import java.io.Serializable;
-import java.util.Comparator;
-import java.util.List;
-import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * This class demonstrates different usages of
@@ -93,16 +91,8 @@ public class TridentMinMaxOfVehiclesTopology {
         StormTopology topology = buildVehiclesTopology();
         Config conf = new Config();
         conf.setMaxSpoutPending(20);
-        if (args.length == 0) {
-            LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("vehicles-topology", conf, topology);
-            Utils.sleep(60 * 1000);
-            cluster.shutdown();
-            System.exit(0);
-        } else {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopologyWithProgressBar("vehicles-topology", conf, topology);
-        }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopologyWithProgressBar("vehicles-topology", conf, topology);
     }
 
     static class SpeedComparator implements Comparator<TridentTuple>, Serializable {

@@ -21,7 +21,7 @@ package org.apache.storm.solr.config;
 import java.io.Serializable;
 
 /**
- * Strategy definining when the Solr Bolt should commit the request to Solr.
+ * Strategy defining when the Solr Bolt should commit the request to Solr.
  */
 public interface SolrCommitStrategy extends Serializable {
     boolean commit();

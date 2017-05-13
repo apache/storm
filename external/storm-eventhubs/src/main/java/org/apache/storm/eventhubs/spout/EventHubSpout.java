@@ -17,21 +17,20 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.google.common.base.Strings;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class EventHubSpout extends BaseRichSpout {
 
@@ -121,8 +120,8 @@ public class EventHubSpout extends BaseRichSpout {
         zkEndpointAddress = sb.toString();
       }
       stateStore = new ZookeeperStateStore(zkEndpointAddress,
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES),
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL));
+          Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES).toString()),
+          Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL).toString()));
     }
     stateStore.open();
 
@@ -137,7 +136,7 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void open(Map config, TopologyContext context, SpoutOutputCollector collector) {
-    logger.info("begin: open()");
+    logger.info("begin:start open()");
     String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
     eventHubConfig.setTopologyName(topologyName);
 
@@ -152,7 +151,7 @@ public class EventHubSpout extends BaseRichSpout {
     try {
       preparePartitions(config, totalTasks, taskIndex, collector);
     } catch (Exception e) {
-      logger.error(e.getMessage());
+	  collector.reportError(e);
       throw new RuntimeException(e);
     }
     
@@ -167,13 +166,13 @@ public class EventHubSpout extends BaseRichSpout {
           }
           return concatMetricsDataMaps;
       }
-    }, (Integer)config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+    }, Integer.parseInt(config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS).toString()));
     logger.info("end open()");
   }
 
   @Override
   public void nextTuple() {
-    EventData eventData = null;
+    EventDataWrap eventDatawrap = null;
 
     List<IPartitionManager> partitionManagers = partitionCoordinator.getMyPartitionManagers();
     for (int i = 0; i < partitionManagers.size(); i++) {
@@ -184,20 +183,16 @@ public class EventHubSpout extends BaseRichSpout {
         throw new RuntimeException("partitionManager doesn't exist.");
       }
 
-      eventData = partitionManager.receive();
+      eventDatawrap = partitionManager.receive();
 
-      if (eventData != null) {
+      if (eventDatawrap != null) {
         break;
       }
     }
 
-
-    if (eventData != null) {
-      MessageId messageId = eventData.getMessageId();
-      Message message = eventData.getMessage();
-
-      List<Object> tuples = scheme.deserialize(message);
-
+    if (eventDatawrap != null) {
+      MessageId messageId = eventDatawrap.getMessageId();
+      List<Object> tuples = scheme.deserialize(eventDatawrap.getEventData());
       if (tuples != null) {
         collector.emit(tuples, messageId);
       }
@@ -242,7 +237,11 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(scheme.getOutputFields());
+    if (Strings.isNullOrEmpty(eventHubConfig.getOutputStreamId())) {
+      declarer.declare(scheme.getOutputFields());
+    } else {
+      declarer.declareStream(eventHubConfig.getOutputStreamId(), scheme.getOutputFields());
+    }
   }
 
   private void checkpointIfNeeded() {

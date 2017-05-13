@@ -51,7 +51,7 @@
 
   call :make_command_arguments %*
 
-  set shellcommands=classpath help version
+  set shellcommands=classpath help
   for %%i in ( %shellcommands% ) do (
     if %storm-command% == %%i set shellcommand=true
   )
@@ -60,7 +60,7 @@
     goto :eof
   )
 
-  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui
+  set corecommands=activate deactivate dev-zookeeper drpc kill list nimbus logviewer rebalance remoteconfvalue repl shell supervisor ui version admin
   for %%i in ( %corecommands% ) do (
     if %storm-command% == %%i set corecommand=true  
   )
@@ -126,6 +126,11 @@
 
 :activate
   set CLASS=org.apache.storm.command.Activate
+  set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS%
+  goto :eof
+
+:admin
+  set CLASS=org.apache.storm.command.AdminCommands
   set STORM_OPTS=%STORM_CLIENT_OPTS% %STORM_OPTS%
   goto :eof
 
@@ -214,7 +219,7 @@
   goto :eof
   
 :supervisor
-  set CLASS=org.apache.storm.daemon.supervisor
+  set CLASS=org.apache.storm.daemon.supervisor.Supervisor
   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.ConfigValue supervisor.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -296,6 +301,7 @@
   @echo   supervisor           launches the supervisor daemon
   @echo   ui                   launches the UI daemon
   @echo   version              print the version
+  @echo   admin                run admin commands
   @echo.
   @echo  or
   @echo   CLASSNAME            run the class named CLASSNAME

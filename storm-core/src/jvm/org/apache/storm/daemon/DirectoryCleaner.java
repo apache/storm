@@ -19,10 +19,7 @@ package org.apache.storm.daemon;
 
 import java.io.IOException;
 import java.io.File;
-import java.io.FileInputStream;
-import java.nio.file.FileSystems;
 import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.nio.file.Path;
 import java.nio.file.DirectoryStream;
 import java.util.Stack;
@@ -138,7 +135,7 @@ public class DirectoryCleaner {
             while (!stack.isEmpty() && toDeleteSize > 0) {
                 File file = stack.pop();
                 toDeleteSize -= file.length();
-                LOG.info("Delete file: {}, size: {}, lastModified: {}", file.getName(), file.length(), file.lastModified());
+                LOG.info("Delete file: {}, size: {}, lastModified: {}", file.getCanonicalPath(), file.length(), file.lastModified());
                 file.delete();
                 deletedFiles++;
             }

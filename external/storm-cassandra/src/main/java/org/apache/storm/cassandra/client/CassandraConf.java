@@ -19,6 +19,7 @@
 package org.apache.storm.cassandra.client;
 
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
@@ -106,14 +107,14 @@ public class CassandraConf implements Serializable {
      */
     public CassandraConf(Map<String, Object> conf) {
 
-        this.username = (String)Utils.get(conf, CASSANDRA_USERNAME, null);
-        this.password = (String)Utils.get(conf, CASSANDRA_PASSWORD, null);
+        this.username = (String) Utils.get(conf, CASSANDRA_USERNAME, null);
+        this.password = (String) Utils.get(conf, CASSANDRA_PASSWORD, null);
         this.keyspace = get(conf, CASSANDRA_KEYSPACE);
-        this.consistencyLevel = ConsistencyLevel.valueOf((String)Utils.get(conf, CASSANDRA_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
-        this.nodes    = ((String)Utils.get(conf, CASSANDRA_NODES, "localhost")).split(",");
-        this.batchSizeRows = Utils.getInt(conf.get(CASSANDRA_BATCH_SIZE_ROWS), 100);
-        this.port = Utils.getInt(conf.get(CASSANDRA_PORT), 9042);
-        this.retryPolicyName = (String)Utils.get(conf, CASSANDRA_RETRY_POLICY, DefaultRetryPolicy.class.getSimpleName());
+        this.consistencyLevel = ConsistencyLevel.valueOf((String) Utils.get(conf, CASSANDRA_CONSISTENCY_LEVEL, ConsistencyLevel.ONE.name()));
+        this.nodes    = ((String) Utils.get(conf, CASSANDRA_NODES, "localhost")).split(",");
+        this.batchSizeRows = ObjectReader.getInt(conf.get(CASSANDRA_BATCH_SIZE_ROWS), 100);
+        this.port = ObjectReader.getInt(conf.get(CASSANDRA_PORT), 9042);
+        this.retryPolicyName = (String) Utils.get(conf, CASSANDRA_RETRY_POLICY, DefaultRetryPolicy.class.getSimpleName());
         this.reconnectionPolicyBaseMs = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_BASE_MS), 100L);
         this.reconnectionPolicyMaxMs  = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_MAX_MS), TimeUnit.MINUTES.toMillis(1));
     }
