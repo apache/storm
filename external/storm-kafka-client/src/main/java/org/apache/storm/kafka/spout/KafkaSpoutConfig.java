@@ -107,7 +107,11 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
-        
+
+        public Builder(String bootstrapServers, String ... topics) {
+            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new NamedSubscription(topics));
+        }
+
         public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, String ... topics) {
             this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
         }
@@ -435,7 +439,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final long partitionRefreshPeriodMs;
     private final boolean emitNullTuples;
 
-    private KafkaSpoutConfig(Builder<K,V> builder) {
+    public KafkaSpoutConfig(Builder<K,V> builder) {
         this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
         this.subscription = builder.subscription;
         this.translator = builder.translator;
