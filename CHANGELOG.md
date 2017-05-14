@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2512: Make constructor public and add one more builder constructor
  * STORM-2505: Spout to support topic compaction
  * STORM-2498: Fix Download Full File link
  * STORM-2191: shorten classpaths by using wildcards
