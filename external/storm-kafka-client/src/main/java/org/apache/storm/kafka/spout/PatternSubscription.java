@@ -15,10 +15,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.regex.Pattern;
-
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.storm.task.TopologyContext;
@@ -26,7 +26,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Subscribe to all topics that match a given pattern
+ * Subscribe to all topics that match a given pattern.
  */
 public class PatternSubscription extends Subscription {
     private static final Logger LOG = LoggerFactory.getLogger(PatternSubscription.class);

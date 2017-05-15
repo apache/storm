@@ -18,12 +18,11 @@
 
 package org.apache.storm.kafka.spout.trident;
 
-import org.apache.kafka.common.TopicPartition;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Set;
+import org.apache.kafka.common.TopicPartition;
 
 public enum KafkaTridentSpoutTopicPartitionRegistry {
     INSTANCE;

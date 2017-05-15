@@ -18,12 +18,10 @@
 
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.common.TopicPartition;
-
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
-import java.util.Set;
+import org.apache.kafka.common.TopicPartition;
 
 /**
  * Represents the logic that manages the retrial of failed tuples.
@@ -39,7 +37,7 @@ public interface KafkaSpoutRetryService extends Serializable {
     boolean schedule(KafkaSpoutMessageId msgId);
 
     /**
-     * Removes a message from the list of messages scheduled for retrial
+     * Removes a message from the list of messages scheduled for retrial.
      * @param msgId message to remove from retrial
      * @return true if the message was scheduled for retrial, false otherwise
      */
@@ -56,8 +54,8 @@ public interface KafkaSpoutRetryService extends Serializable {
 
     /**
      * @return The earliest retriable offset for each TopicPartition that has
-     * offsets ready to be retried, i.e. for which a tuple has failed
-     * and has retry time less than current time
+     *     offsets ready to be retried, i.e. for which a tuple has failed
+     *     and has retry time less than current time.
      */
     Map<TopicPartition, Long> earliestRetriableOffsets();
 
@@ -74,7 +72,7 @@ public interface KafkaSpoutRetryService extends Serializable {
      * The message may or may not be ready to be retried yet.
      * @param msgId message to check for scheduling status
      * @return true if the message is scheduled to be retried, regardless of being or not ready to be retried.
-     * Returns false is this message is not scheduled for retrial
+     *     Returns false is this message is not scheduled for retrial
      */
     boolean isScheduled(KafkaSpoutMessageId msgId);
     

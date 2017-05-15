@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kafka.bolt.mapper;
 
-import org.apache.storm.tuple.Tuple;
-
 import java.io.Serializable;
+import org.apache.storm.tuple.Tuple;
 
 /**
  * Interface defining a mapping from storm tuple to kafka key and message.
@@ -27,6 +27,8 @@ import java.io.Serializable;
  * @param <V> type of value.
  */
 public interface TupleToKafkaMapper<K,V> extends Serializable {
+    
     K getKeyFromTuple(Tuple tuple);
+    
     V getMessageFromTuple(Tuple tuple);
 }

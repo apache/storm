@@ -18,12 +18,11 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.util.Map;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.trident.spout.ISpoutPartition;
 import org.apache.storm.tuple.Fields;
-
-import java.util.Map;
 
 // TODO
 public class KafkaTridentSpoutTransactional<Ps, P extends ISpoutPartition, T> implements IPartitionedTridentSpout<Ps, P, T> {

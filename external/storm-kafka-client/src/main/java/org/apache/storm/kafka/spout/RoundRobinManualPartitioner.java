@@ -15,13 +15,13 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 
@@ -30,7 +30,7 @@ import org.apache.storm.task.TopologyContext;
  * not just the ones that are alive. Because the parallelism of 
  * the spouts does not typically change while running this makes
  * the assignments more stable in the face of crashing spouts.
- * 
+ * <p/>
  * Round Robin means that first spout of N spouts will get the first
  * partition, and the N+1th partition... The second spout will get the second partition and
  * N+2th partition etc.
@@ -41,7 +41,7 @@ public class RoundRobinManualPartitioner implements ManualPartitioner {
     public List<TopicPartition> partition(List<TopicPartition> allPartitions, TopologyContext context) {
         int thisTaskIndex = context.getThisTaskIndex();
         int totalTaskCount = context.getComponentTasks(context.getThisComponentId()).size();
-        Set<TopicPartition> myPartitions = new HashSet<>(allPartitions.size()/totalTaskCount+1);
+        Set<TopicPartition> myPartitions = new HashSet<>(allPartitions.size() / totalTaskCount + 1);
         for (int i = thisTaskIndex; i < allPartitions.size(); i += totalTaskCount) {
             myPartitions.add(allPartitions.get(i));
         }

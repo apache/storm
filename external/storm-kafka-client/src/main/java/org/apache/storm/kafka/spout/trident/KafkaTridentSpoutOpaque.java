@@ -18,6 +18,8 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.util.List;
+import java.util.Map;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.task.TopologyContext;
@@ -26,10 +28,8 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
-
-public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> {
+public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<TopicPartition>,
+        KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> {
     private static final long serialVersionUID = -8003272486566259640L;
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
@@ -69,7 +69,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public String toString() {
-        return super.toString() +
-                "{kafkaManager=" + kafkaManager + '}';
+        return super.toString()
+                + "{kafkaManager=" + kafkaManager + '}';
     }
 }

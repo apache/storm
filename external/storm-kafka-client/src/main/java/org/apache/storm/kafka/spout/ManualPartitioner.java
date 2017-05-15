@@ -15,10 +15,10 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.List;
-
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 

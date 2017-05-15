@@ -18,16 +18,16 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartitionedTridentSpout.Coordinator<List<TopicPartition>>, Serializable {
+public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartitionedTridentSpout.Coordinator<List<TopicPartition>>,
+        Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaqueCoordinator.class);
 
     private KafkaTridentSpoutManager<K,V> kafkaManager;
@@ -57,8 +57,8 @@ public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartition
 
     @Override
     public String toString() {
-        return super.toString() +
-                "{kafkaManager=" + kafkaManager +
-                '}';
+        return super.toString()
+                + "{kafkaManager=" + kafkaManager
+                + '}';
     }
 }

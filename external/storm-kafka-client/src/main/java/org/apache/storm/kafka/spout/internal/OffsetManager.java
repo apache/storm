@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kafka.spout.internal;
 
 import java.util.Comparator;
@@ -44,6 +45,11 @@ public class OffsetManager {
     // Acked messages sorted by ascending order of offset
     private final NavigableSet<KafkaSpoutMessageId> ackedMsgs = new TreeSet<>(OFFSET_COMPARATOR);
 
+    /**
+     * Creates a new OffsetManager.
+     * @param tp The TopicPartition 
+     * @param initialFetchOffset The initial fetch offset for the given TopicPartition
+     */
     public OffsetManager(TopicPartition tp, long initialFetchOffset) {
         this.tp = tp;
         this.initialFetchOffset = initialFetchOffset;
@@ -65,7 +71,7 @@ public class OffsetManager {
      * have been delivered.
      *
      * @return the next OffsetAndMetadata to commit, or null if no offset is
-     * ready to commit.
+     *     ready to commit.
      */
     public OffsetAndMetadata findNextCommitOffset() {
         boolean found = false;
@@ -81,7 +87,8 @@ public class OffsetManager {
                 nextCommitOffset = currOffset;
             } else if (currOffset > nextCommitOffset + 1) {
                 if (emittedOffsets.contains(nextCommitOffset + 1)) {
-                    LOG.debug("topic-partition [{}] has non-continuous offset [{}]. It will be processed in a subsequent batch.", tp, currOffset);
+                    LOG.debug("topic-partition [{}] has non-continuous offset [{}]."
+                        + " It will be processed in a subsequent batch.", tp, currOffset);
                     break;
                 } else {
                     /*
@@ -91,14 +98,17 @@ public class OffsetManager {
                         the next logical point in the topic. Next logical offset should be the
                         first element after committedOffset in the ascending ordered emitted set.
                      */
-                    LOG.debug("Processed non contiguous offset. (committedOffset+1) is no longer part of the topic. Committed: [{}], Processed: [{}]", committedOffset, currOffset);
+                    LOG.debug("Processed non contiguous offset."
+                        + " (committedOffset+1) is no longer part of the topic."
+                        + " Committed: [{}], Processed: [{}]", committedOffset, currOffset);
                     final Long nextEmittedOffset = emittedOffsets.ceiling(nextCommitOffset);
                     if (nextEmittedOffset != null && currOffset == nextEmittedOffset) {
                         found = true;
                         nextCommitMsg = currAckedMsg;
                         nextCommitOffset = currOffset;
                     } else {
-                        LOG.debug("topic-partition [{}] has non-continuous offset [{}]. Next Offset to commit should be [{}]", tp, currOffset, nextEmittedOffset);
+                        LOG.debug("topic-partition [{}] has non-continuous offset [{}]."
+                            + " Next Offset to commit should be [{}]", tp, currOffset, nextEmittedOffset);
                         break;
                     }
                 }
@@ -112,7 +122,8 @@ public class OffsetManager {
         OffsetAndMetadata nextCommitOffsetAndMetadata = null;
         if (found) {
             nextCommitOffsetAndMetadata = new OffsetAndMetadata(nextCommitOffset, nextCommitMsg.getMetadata(Thread.currentThread()));
-            LOG.debug("topic-partition [{}] has offsets [{}-{}] ready to be committed", tp, committedOffset + 1, nextCommitOffsetAndMetadata.offset());
+            LOG.debug("topic-partition [{}] has offsets [{}-{}] ready to be committed",
+                tp, committedOffset + 1, nextCommitOffsetAndMetadata.offset());
         } else {
             LOG.debug("topic-partition [{}] has NO offsets ready to be committed", tp);
         }
@@ -130,8 +141,8 @@ public class OffsetManager {
      * @return Number of offsets committed in this commit
      */
     public long commit(OffsetAndMetadata committedOffset) {
-        long preCommitCommittedOffsets = this.committedOffset;
-        long numCommittedOffsets = committedOffset.offset() - this.committedOffset;
+        final long preCommitCommittedOffsets = this.committedOffset;
+        final long numCommittedOffsets = committedOffset.offset() - this.committedOffset;
         this.committedOffset = committedOffset.offset();
         for (Iterator<KafkaSpoutMessageId> iterator = ackedMsgs.iterator(); iterator.hasNext();) {
             if (iterator.next().offset() <= committedOffset.offset()) {

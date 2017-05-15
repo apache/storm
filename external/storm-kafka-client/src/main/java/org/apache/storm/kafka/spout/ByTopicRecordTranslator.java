@@ -15,19 +15,19 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 
 /**
  * Based off of a given Kafka topic a ConsumerRecord came from it will be translated to a Storm tuple
- * and emitted to a given stream
+ * and emitted to a given stream.
  * @param <K> the key of the incoming Records
  * @param <V> the value of the incoming Records
  */
@@ -62,7 +62,7 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
     
     /**
      * @param defaultTranslator a translator that will be used for all topics not explicitly set
-     * elsewhere.
+     *     elsewhere.
      */
     public ByTopicRecordTranslator(RecordTranslator<K,V> defaultTranslator) {
         this.defaultTranslator = defaultTranslator;
@@ -77,7 +77,8 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
      * @param fields the names of the fields extracted
      * @return this to be able to chain configuration
      * @throws IllegalStateException if the topic is already registered to another translator
-     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match any already configured Fields for the same stream
+     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match
+     *     any already configured Fields for the same stream
      */
     public ByTopicRecordTranslator<K, V> forTopic(String topic, Func<ConsumerRecord<K, V>, List<Object>> func, Fields fields) {
         return forTopic(topic, new SimpleRecordTranslator<>(func, fields));
@@ -91,19 +92,22 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
      * @param stream the stream to emit the tuples to.
      * @return this to be able to chain configuration
      * @throws IllegalStateException if the topic is already registered to another translator
-     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match any already configured Fields for the same stream
+     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match
+     *     any already configured Fields for the same stream
      */
-    public ByTopicRecordTranslator<K, V> forTopic(String topic, Func<ConsumerRecord<K, V>, List<Object>> func, Fields fields, String stream) {
+    public ByTopicRecordTranslator<K, V> forTopic(String topic, Func<ConsumerRecord<K, V>,
+        List<Object>> func, Fields fields, String stream) {
         return forTopic(topic, new SimpleRecordTranslator<>(func, fields, stream));
     }
     
     /**
-     * Configure a translator for a given kafka topic
+     * Configure a translator for a given kafka topic.
      * @param topic the topic this translator should handle
      * @param translator the translator itself
      * @return this to be able to chain configuration
      * @throws IllegalStateException if the topic is already registered to another translator
-     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match any already configured Fields for the same stream
+     * @throws IllegalArgumentException if the Fields for the stream this emits to do not match
+     *     any already configured Fields for the same stream
      */
     public ByTopicRecordTranslator<K, V> forTopic(String topic, RecordTranslator<K,V> translator) {
         if (topicToTranslator.containsKey(topic)) {
@@ -119,7 +123,8 @@ public class ByTopicRecordTranslator<K, V> implements RecordTranslator<K, V> {
             Fields fromTrans = translator.getFieldsFor(stream);
             Fields cached = streamToFields.get(stream);
             if (cached != null && !fromTrans.equals(cached)) {
-                throw new IllegalArgumentException("Stream " + stream + " currently has Fields of " + cached + " which is not the same as those being added in " + fromTrans);
+                throw new IllegalArgumentException("Stream " + stream + " currently has Fields of " 
+                    + cached + " which is not the same as those being added in " + fromTrans);
             }
             
             if (cached == null) {
