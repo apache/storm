@@ -51,6 +51,10 @@ spouts:
   - id: "spout-1"
     className: "org.apache.storm.testing.TestWordSpout"
     parallelism: 1
+    numTasks: 5
+    onHeapMemoryLoad: 100
+    offHeapMemoryLoad: 100
+    cpuLoad: 100
     # ...
 
 # bolt definitions
@@ -58,6 +62,10 @@ bolts:
   - id: "bolt-1"
     className: "org.apache.storm.testing.TestWordCounter"
     parallelism: 1
+    numTasks: 100
+    onHeapMemoryLoad: 100
+    offHeapMemoryLoad: 100
+    cpuLoad: 100
     # ...
 
   - id: "bolt-2"
