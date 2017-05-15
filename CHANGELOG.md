@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2510: update checkstyle configuration to lower violations
  * STORM-2479: Fix port assignment race condition in storm-webapp tests
  * STORM-2191: shorten classpaths by using wildcards
  * STORM-2495: Integrate checkstyle check during build
