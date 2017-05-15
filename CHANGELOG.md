@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2498: Fix Download Full File link
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-1114: Race condition in trident zookeeper zk-node create/delete
