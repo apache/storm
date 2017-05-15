@@ -245,6 +245,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2512: Make constructor public and add one more builder constructor
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
  * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
