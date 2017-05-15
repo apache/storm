@@ -1092,14 +1092,23 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-checkstyle-plugin</artifactId>
                     <version>2.17</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <!-- If you change this, you should also update the storm_checkstyle.xml file to be
+                                 based on the google_checks.xml from the version of checkstyle you are choosing. -->
+                            <version>7.7</version>
+                        </dependency>
+                    </dependencies>
                     <executions>
                         <execution>
                             <id>validate</id>
                             <phase>validate</phase>
                             <configuration>
-                                <configLocation>google_checks.xml</configLocation>
+                                <configLocation>storm-buildtools/storm_checkstyle.xml</configLocation>
                                 <encoding>UTF-8</encoding>
-                                <failOnViolation></failOnViolation>
+                                <failOnViolation>true</failOnViolation>
                                 <logViolationsToConsole>false</logViolationsToConsole>
                                 <outputFile></outputFile>
                                 <violationSeverity>warning</violationSeverity>
