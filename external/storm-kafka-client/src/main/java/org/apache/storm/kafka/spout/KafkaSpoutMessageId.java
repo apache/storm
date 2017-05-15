@@ -96,9 +96,9 @@ public class KafkaSpoutMessageId {
         return "{"
                 + "topic-partition=" + topicPart
                 + ", offset=" + offset
-                + "topic-partition=" + topicPart + ", numFails=" + numFails
+                + ", numFails=" + numFails
                 + ", thread='" + currThread.getName() + "'"
-                + "topic-partition=" + topicPart + '}';
+                + '}';
     }
 
     @Override

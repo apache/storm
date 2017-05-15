@@ -74,7 +74,6 @@ public class OffsetManager {
      *     ready to commit.
      */
     public OffsetAndMetadata findNextCommitOffset() {
-        boolean found = false;
         long currOffset;
         long nextCommitOffset = committedOffset;
         KafkaSpoutMessageId nextCommitMsg = null;     // this is a convenience variable to make it faster to create OffsetAndMetadata
@@ -82,7 +81,6 @@ public class OffsetManager {
         for (KafkaSpoutMessageId currAckedMsg : ackedMsgs) {  // complexity is that of a linear scan on a TreeMap
             currOffset = currAckedMsg.offset();
             if (currOffset == nextCommitOffset + 1) {            // found the next offset to commit
-                found = true;
                 nextCommitMsg = currAckedMsg;
                 nextCommitOffset = currOffset;
             } else if (currOffset > nextCommitOffset + 1) {
@@ -103,7 +101,6 @@ public class OffsetManager {
                         + " Committed: [{}], Processed: [{}]", committedOffset, currOffset);
                     final Long nextEmittedOffset = emittedOffsets.ceiling(nextCommitOffset);
                     if (nextEmittedOffset != null && currOffset == nextEmittedOffset) {
-                        found = true;
                         nextCommitMsg = currAckedMsg;
                         nextCommitOffset = currOffset;
                     } else {
@@ -120,7 +117,7 @@ public class OffsetManager {
         }
 
         OffsetAndMetadata nextCommitOffsetAndMetadata = null;
-        if (found) {
+        if (nextCommitMsg != null) {
             nextCommitOffsetAndMetadata = new OffsetAndMetadata(nextCommitOffset, nextCommitMsg.getMetadata(Thread.currentThread()));
             LOG.debug("topic-partition [{}] has offsets [{}-{}] ready to be committed",
                 tp, committedOffset + 1, nextCommitOffsetAndMetadata.offset());
