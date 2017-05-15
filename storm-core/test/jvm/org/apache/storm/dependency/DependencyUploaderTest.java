@@ -20,14 +20,17 @@ package org.apache.storm.dependency;
 import com.google.common.collect.Lists;
 import com.google.common.io.Files;
 import org.apache.storm.blobstore.AtomicOutputStream;
-import org.apache.storm.blobstore.BlobStoreUtils;
+import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.generated.AccessControl;
+import org.apache.storm.generated.AccessControlType;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 
@@ -171,6 +174,16 @@ public class DependencyUploaderTest {
 
         assertTrue(counter.get() > 0);
         verify(mockOutputStream).close();
+
+        ArgumentCaptor<SettableBlobMeta> blobMetaArgumentCaptor = ArgumentCaptor.forClass(SettableBlobMeta.class);
+        verify(mockBlobStore).createBlob(anyString(), blobMetaArgumentCaptor.capture());
+
+        SettableBlobMeta actualBlobMeta = blobMetaArgumentCaptor.getValue();
+        List<AccessControl> actualAcls = actualBlobMeta.get_acl();
+        assertTrue(actualAcls.contains(new AccessControl(AccessControlType.USER,
+                BlobStoreAclHandler.READ | BlobStoreAclHandler.WRITE | BlobStoreAclHandler.ADMIN)));
+        assertTrue(actualAcls.contains(new AccessControl(AccessControlType.OTHER,
+                BlobStoreAclHandler.READ)));
     }
 
     @Test(expected = FileNotAvailableException.class)
