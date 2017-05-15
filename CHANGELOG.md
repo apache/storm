@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2512: Make constructor public and add one more builder constructor
  * STORM-2505: Spout to support topic compaction
