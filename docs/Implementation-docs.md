@@ -8,6 +8,7 @@ This section of the wiki is dedicated to explaining how Storm is implemented. Yo
 - [Structure of the codebase](Structure-of-the-codebase.html)
 - [Lifecycle of a topology](Lifecycle-of-a-topology.html)
 - [Message passing implementation](Message-passing-implementation.html)
+- [Acking framework implementation](Acking-framework-implementation.html)
 - [Metrics](Metrics.html)
 - [Nimbus HA](nimbus-ha-design.html)
 - [Storm SQL](storm-sql-internal.html)
