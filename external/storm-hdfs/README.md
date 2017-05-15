@@ -411,23 +411,44 @@ If your topology is going to interact with secure HDFS, your bolts/states needs 
 currently have 2 options to support this:
 
 ### Using HDFS delegation tokens 
-Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user.
-The nimbus need to start with following configurations:
+Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user. The nimbus should be started with following configurations:
 
-nimbus.autocredential.plugins.classes : ["org.apache.storm.hdfs.common.security.AutoHDFS"] 
-nimbus.credential.renewers.classes : ["org.apache.storm.hdfs.common.security.AutoHDFS"] 
+```
+nimbus.autocredential.plugins.classes : ["org.apache.storm.hdfs.security.AutoHDFS"]
+nimbus.credential.renewers.classes : ["org.apache.storm.hdfs.security.AutoHDFS"]
 hdfs.keytab.file: "/path/to/keytab/on/nimbus" (This is the keytab of hdfs super user that can impersonate other users.)
 hdfs.kerberos.principal: "superuser@EXAMPLE.com" 
-nimbus.credential.renewers.freq.secs : 82800 (23 hours, hdfs tokens needs to be renewed every 24 hours so this value should be
-less then 24 hours.)
-topology.hdfs.uri:"hdfs://host:port" (This is an optional config, by default we will use value of "fs.defaultFS" property
-specified in hadoop's core-site.xml)
+nimbus.credential.renewers.freq.secs : 82800 (23 hours, hdfs tokens needs to be renewed every 24 hours so this value should be less then 24 hours.)
+topology.hdfs.uri:"hdfs://host:port" (This is an optional config, by default we will use value of "fs.defaultFS" property specified in hadoop's core-site.xml)
+```
 
 Your topology configuration should have:
-topology.auto-credentials :["org.apache.storm.hdfs.common.security.AutoHDFS"] 
 
-If nimbus did not have the above configuration you need to add it and then restart it. Ensure the hadoop configuration 
-files(core-site.xml and hdfs-site.xml) and the storm-hdfs jar with all the dependencies is present in nimbus's classpath. 
+```
+topology.auto-credentials :["org.apache.storm.hdfs.common.security.AutoHDFS"]
+```
+
+If nimbus did not have the above configuration you need to add and then restart it. Ensure the hadoop configuration 
+files (core-site.xml and hdfs-site.xml) and the storm-hdfs jar with all the dependencies is present in nimbus's classpath.
+
+As an alternative to adding the configuration files (core-site.xml and hdfs-site.xml) to the classpath, you could specify the configurations
+as a part of the topology configuration. E.g. in you custom storm.yaml (or -c option while submitting the topology),
+
+```
+hdfsCredentialsConfigKeys : ["cluster1", "cluster2"] (the hdfs clusters you want to fetch the tokens from)
+"cluster1": {"config1": "value1", "config2": "value2", ... } (A map of config key-values specific to cluster1)
+"cluster2": {"config1": "value1", "hdfs.keytab.file": "/path/to/keytab/for/cluster2/on/nimubs", "hdfs.kerberos.principal": "cluster2user@EXAMPLE.com"} (here along with other configs, we have custom keytab and principal for "cluster2" which will override the keytab/principal specified at topology level)
+```
+
+Instead of specifying key values you may also directly specify the resource files for e.g.,
+
+```
+"cluster1": {"resources": ["/path/to/core-site1.xml", "/path/to/hdfs-site1.xml"]}
+"cluster2": {"resources": ["/path/to/core-site2.xml", "/path/to/hdfs-site2.xml"]}
+```
+
+Storm will download the tokens separately for each of the clusters and populate it into the subject and also renew the tokens periodically. This way it would be possible to run multiple bolts connecting to separate HDFS cluster within the same topology.
+
 Nimbus will use the keytab and principal specified in the config to authenticate with Namenode. From then on for every
 topology submission, nimbus will impersonate the topology submitter user and acquire delegation tokens on behalf of the
 topology submitter user. If topology was started with topology.auto-credentials set to AutoHDFS, nimbus will push the
