@@ -28,7 +28,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Time;
 import org.apache.storm.windowing.TupleWindow;
 import org.junit.Before;
 import org.junit.Test;
@@ -52,7 +51,7 @@ import static org.junit.Assert.fail;
  * Unit tests for {@link WindowedBoltExecutor}
  */
 public class WindowedBoltExecutorTest {
-
+    
     private WindowedBoltExecutor executor;
     private TestWindowedBolt testWindowedBolt;
 
@@ -124,8 +123,8 @@ public class WindowedBoltExecutorTest {
 
     @Test
     public void testExecuteWithTs() throws Exception {
-        long[] timstamps = {603, 605, 607, 618, 626, 636};
-        for (long ts : timstamps) {
+        long[] timestamps = {603, 605, 607, 618, 626, 636};
+        for (long ts : timestamps) {
             executor.execute(getTuple("s1", new Fields("ts"), new Values(ts)));
         }
         //Thread.sleep(120);
@@ -172,7 +171,7 @@ public class WindowedBoltExecutorTest {
 
 
     @Test
-    public void testPrepareLateTUpleStreamWithoutBuilder() throws Exception {
+    public void testPrepareLateTupleStreamWithoutBuilder() throws Exception {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 100000);
         conf.put(Config.TOPOLOGY_BOLTS_WINDOW_LENGTH_DURATION_MS, 20);
@@ -209,20 +208,21 @@ public class WindowedBoltExecutorTest {
         conf.put(Config.TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS, 10);
         conf.put(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM, "$late");
         conf.put(Config.TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_MAX_LAG_MS, 5);
-        conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 10);
+        //Trigger manually to avoid timing issues
+        conf.put(Config.TOPOLOGY_BOLTS_WATERMARK_EVENT_INTERVAL_MS, 1_000_000);
         executor.prepare(conf, context, outputCollector);
 
-        long[] timstamps = {603, 605, 607, 618, 626, 636, 600};
-        List<Tuple> tuples = new ArrayList<>(timstamps.length);
+        long[] timestamps = {603, 605, 607, 618, 626, 636, 600};
+        List<Tuple> tuples = new ArrayList<>(timestamps.length);
 
-        executor.waterMarkEventGenerator.run();
-        for (long ts : timstamps) {
+        for (long ts : timestamps) {
             Tuple tuple = getTuple("s1", new Fields("ts"), new Values(ts));
             tuples.add(tuple);
             executor.execute(tuple);
-            Time.sleep(10);
-        }
-
+            
+            //Update the watermark to this timestamp
+            executor.waterMarkEventGenerator.run();
+        } 
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
         Mockito.verify(outputCollector).emit("$late", Arrays.asList(tuple), new Values(tuple));
