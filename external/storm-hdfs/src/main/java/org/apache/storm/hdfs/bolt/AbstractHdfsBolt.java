@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.Map;
@@ -107,7 +108,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             throw new IllegalStateException("File system URL must be specified.");
         }
 
-        writers = new WritersMap(this.maxOpenFiles);
+        writers = new LinkedHashMap<>(this.maxOpenFiles, 0.75f, true);
 
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
@@ -200,18 +201,6 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                     doRotationAndRemoveWriter(writerKey, writer);
             }
         }
-    }
-
-    private AbstractHDFSWriter getOrCreateWriter(String writerKey, Tuple tuple) throws IOException {
-        AbstractHDFSWriter writer;
-
-        writer = writers.get(writerKey);
-        if (writer == null) {
-            Path pathForNextFile = getBasePathForNextFile(tuple);
-            writer = makeNewWriter(pathForNextFile, tuple);
-            writers.put(writerKey, writer);
-        }
-        return writer;
     }
 
     /**
@@ -308,17 +297,31 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     abstract protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException;
 
-    static class WritersMap extends LinkedHashMap<String, AbstractHDFSWriter> {
-        final long maxWriters;
+    private AbstractHDFSWriter getOrCreateWriter(String writerKey, Tuple tuple) throws IOException {
+        AbstractHDFSWriter writer = writers.get( writerKey );
+        if (writer == null) {
+            LOG.debug("Creating Writer for writerKey : " + writerKey);
+            Path pathForNextFile = getBasePathForNextFile(tuple);
+            writer = makeNewWriter(pathForNextFile, tuple);
 
-        public WritersMap(long maxWriters) {
-            super((int)maxWriters, 0.75f, true);
-            this.maxWriters = maxWriters;
+            if (writers.size() > (this.maxOpenFiles - 1)) {
+                LOG.info("cached writers size {} exceeded maxOpenFiles {} ", writers.size(), this.maxOpenFiles);
+                retireEldestWriter();
+            }
+            this.writers.put(writerKey, writer);
         }
+        return writer;
+    }
 
-        @Override
-        protected boolean removeEldestEntry(Map.Entry<String, AbstractHDFSWriter> eldest) {
-            return this.size() > this.maxWriters;
+    /**
+     * Locate writer that has not been used for longest time and retire it
+     */
+    private void retireEldestWriter() throws IOException {
+        LOG.info("Attempting to close eldest writer");
+        Iterator<String> iterator = this.writers.keySet().iterator();
+        if (iterator.hasNext()) {
+            String eldestKey = iterator.next();
+            doRotationAndRemoveWriter(eldestKey, this.writers.get(eldestKey));
         }
     }
 }

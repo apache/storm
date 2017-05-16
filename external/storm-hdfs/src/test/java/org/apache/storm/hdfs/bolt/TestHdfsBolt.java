@@ -214,9 +214,35 @@ public class TestHdfsBolt {
         Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
     }
 
-    public void createBaseDirectory(FileSystem passedFs, String path) throws IOException {
-        Path p = new Path(path);
-        passedFs.mkdirs(p);
+    @Test
+    public void testWriterRetirement() throws IOException {
+	// We do not want the count sync policy to fire so set it to one greater than the number of tuples we will write (10)
+        HdfsBolt bolt = makeHdfsBolt(hdfsURI, 11, 1000f);
+
+	// Use the id field as the partition path to ensure that each tuple gets written to its own directory
+        Partitioner partitoner = new Partitioner() {
+            @Override
+            public String getPartitionPath(Tuple tuple) {
+                return Path.SEPARATOR +  tuple.getIntegerByField("id");
+            }
+        };
+
+        bolt.prepare(new Config(), topologyContext, collector);
+        bolt.withPartitioner(partitoner);
+        bolt.withMaxOpenFiles(9);
+
+	// Write 10 tuples.  The 10th tuple should force the least recently used writer (0) to be retired since we are only allowing 9 open writers.
+        for (int i = 0; i < 10; i++) {
+            bolt.execute(generateTestTuple(i, null, null, null));
+        }
+
+	// Verify that writers for 1-9 have not been closed yet
+        for (int i = 1; i < 10; i++) {
+            Assert.assertEquals(1, countZeroLengthFiles(testRoot + Path.SEPARATOR + i));
+        }
+	
+	// Verify that the writer for 0 has been closed
+        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + Path.SEPARATOR + "0"));
     }
 
     private HdfsBolt makeHdfsBolt(String nameNodeAddr, int countSync, float rotationSizeMB) {
@@ -282,3 +308,4 @@ public class TestHdfsBolt {
         return zeroLength;
     }
 }
+
