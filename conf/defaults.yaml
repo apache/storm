@@ -315,3 +315,6 @@ worker.metrics:
     "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
 
 num.stat.buckets: 20
+
+# Config for storm-kafka-client
+kafkaspout.jaasconf.path: null
