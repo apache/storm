@@ -117,7 +117,11 @@ public class AutoHDFS extends AbstractAutoCreds {
                             FileSystem fileSystem = FileSystem.get(nameNodeURI, configuration);
                             Credentials credential= proxyUser.getCredentials();
 
-                            fileSystem.addDelegationTokens(hdfsPrincipal, credential);
+                            if (configuration.get(STORM_USER_NAME_KEY) == null) {
+                                configuration.set(STORM_USER_NAME_KEY, hdfsPrincipal);
+                            }
+
+                            fileSystem.addDelegationTokens(configuration.get(STORM_USER_NAME_KEY), credential);
                             LOG.info("Delegation tokens acquired for user {}", topologySubmitterUser);
                             return credential;
                         } catch (IOException e) {
