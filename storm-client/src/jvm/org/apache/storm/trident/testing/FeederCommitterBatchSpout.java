@@ -27,7 +27,7 @@ import org.apache.storm.trident.spout.ITridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 
 
-public class FeederCommitterBatchSpout implements ICommitterTridentSpout, IFeeder {
+public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Integer, List<List<Object>>>>, IFeeder {
 
     FeederBatchSpout _spout;
     
@@ -74,7 +74,7 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout, IFeede
     }
 
     @Override
-    public BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return _spout.getCoordinator(txStateId, conf, context);
     }
 

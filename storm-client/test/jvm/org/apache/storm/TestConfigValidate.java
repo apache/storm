@@ -86,7 +86,7 @@ public class TestConfigValidate {
 
     @Test(expected = InvalidTopologyException.class)
     public void testValidateTopologyBlobStoreMap() throws InvalidTopologyException {
-        Map<String,Map> stormConf = new HashMap<>();
+        Map<String, Object> stormConf = new HashMap<>();
         Map<String,Map> topologyMap = new HashMap<>();
         topologyMap.put("key1", new HashMap<String,String>());
         topologyMap.put("key2", new HashMap<String,String>());

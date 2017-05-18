@@ -109,7 +109,7 @@ public class ReachTopology {
         }
     }
 
-    public static class PartialUniquer extends BaseBatchBolt {
+    public static class PartialUniquer extends BaseBatchBolt<Object> {
         BatchOutputCollector _collector;
         Object _id;
         Set<String> _followers = new HashSet<String>();
@@ -136,7 +136,7 @@ public class ReachTopology {
         }
     }
 
-    public static class CountAggregator extends BaseBatchBolt {
+    public static class CountAggregator extends BaseBatchBolt<Object> {
         BatchOutputCollector _collector;
         Object _id;
         int _count = 0;

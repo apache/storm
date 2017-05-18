@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class BatchNumberList extends BaseBatchBolt {
+public class BatchNumberList extends BaseBatchBolt<Object> {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {

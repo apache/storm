@@ -23,8 +23,8 @@ import org.apache.storm.tuple.Fields;
 import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 
-public class BatchSpoutExecutor implements ITridentSpout {
-    public static class EmptyCoordinator implements BatchCoordinator {
+public class BatchSpoutExecutor implements ITridentSpout<Object> {
+    public static class EmptyCoordinator implements BatchCoordinator<Object> {
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
             return null;
@@ -44,7 +44,7 @@ public class BatchSpoutExecutor implements ITridentSpout {
         }
     }
     
-    public class BatchSpoutEmitter implements Emitter {
+    public class BatchSpoutEmitter implements Emitter<Object> {
 
         @Override
         public void emitBatch(TransactionAttempt tx, Object coordinatorMeta, TridentCollector collector) {
@@ -69,12 +69,12 @@ public class BatchSpoutExecutor implements ITridentSpout {
     }
     
     @Override
-    public BatchCoordinator getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Object> getCoordinator(String txStateId, Map conf, TopologyContext context) {
         return new EmptyCoordinator();
     }
 
     @Override
-    public Emitter getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter<Object> getEmitter(String txStateId, Map conf, TopologyContext context) {
         _spout.open(conf, context);
         return new BatchSpoutEmitter();
     }

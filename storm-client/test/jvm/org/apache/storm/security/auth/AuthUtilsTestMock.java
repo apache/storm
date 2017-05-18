@@ -40,43 +40,54 @@ public class AuthUtilsTestMock implements IAutoCredentials,
     // INimbusCredentialPlugin 
     // IPrincipalToLocal 
     // IGroupMappingServiceProvider 
+    @Override
     public void prepare(Map conf) {}
 
     // IHttpCredentialsPlugin
+    @Override
     public ReqContext populateContext(ReqContext ctx, HttpServletRequest req) {
         return null;
     }
 
     // IHttpCredentialsPlugin
+    @Override
     public String getUserName(HttpServletRequest req){
         return null;
     }
 
     // IPrincipalToLocal 
+    @Override
     public String toLocal(Principal principal) {
         return null;
     }
 
     // IGroupMappingServiceProvider 
+    @Override
     public Set<String> getGroups(String user) throws IOException {
         return null;
     }
 
     // ICredentialsRenewer
+    @Override
     public void renew(Map<String, String> credentials, Map topologyConf) {}
 
     // IAutoCredentials
-    public void updateSubject(Subject subject, Map<String,String> conf) {}
+    @Override
+    public void updateSubject(Subject subject, Map<String,String> creds) {}
 
     // IAutoCredentials
-    public void populateSubject(Subject subject, Map<String,String> conf) {}
+    @Override
+    public void populateSubject(Subject subject, Map<String,String> creds) {}
 
     // IAutoCredentials
-    public void populateCredentials(Map<String,String> conf) {}
+    @Override
+    public void populateCredentials(Map<String,String> creds) {}
 
     // INimbusCredentialPlugin
+    @Override
     public void populateCredentials(Map<String,String> credentials, Map conf) {}
 
     // Shutdownable via INimbusCredentailPlugin
+    @Override
     public void shutdown() {}
 }

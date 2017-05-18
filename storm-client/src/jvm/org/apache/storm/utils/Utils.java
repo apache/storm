@@ -932,32 +932,39 @@ public class Utils {
         return store;
     }
 
-    private static Object normalizeConf(Object conf) {
-        if (conf == null) return new HashMap();
-        if (conf instanceof Map) {
-            Map<Object, Object> confMap = new HashMap((Map) conf);
-            for (Map.Entry<Object, Object> entry : confMap.entrySet()) {
-                confMap.put(entry.getKey(), normalizeConf(entry.getValue()));
-            }
-            return confMap;
-        } else if (conf instanceof List) {
-            List confList =  new ArrayList((List) conf);
+    @SuppressWarnings("unchecked")
+    private static Object normalizeConfValue(Object obj) {
+        if (obj instanceof Map) {
+            return normalizeConf((Map<String, Object>) obj);
+        } else if (obj instanceof Collection) {
+            List<Object> confList =  new ArrayList<>((Collection<Object>) obj);
             for (int i = 0; i < confList.size(); i++) {
                 Object val = confList.get(i);
-                confList.set(i, normalizeConf(val));
+                confList.set(i, normalizeConfValue(val));
             }
             return confList;
-        } else if (conf instanceof Integer) {
-            return ((Integer) conf).longValue();
-        } else if (conf instanceof Float) {
-            return ((Float) conf).doubleValue();
+        } else if (obj instanceof Integer) {
+            return ((Number) obj).longValue();
+        } else if (obj instanceof Float) {
+            return ((Float) obj).doubleValue();
         } else {
-            return conf;
+            return obj;
         }
+    }
+    
+    private static Map<String, Object> normalizeConf(Map<String, Object> conf) {
+        if (conf == null) {
+            return new HashMap<>();
+        }
+        Map<String, Object> ret = new HashMap<>(conf);
+        for (Map.Entry<String, Object> entry : ret.entrySet()) {
+            ret.put(entry.getKey(), normalizeConfValue(entry.getValue()));
+        }
+        return ret;
     }
 
     public static boolean isValidConf(Map<String, Object> stormConf) {
-        return normalizeConf(stormConf).equals(normalizeConf((Map) JSONValue.parse(JSONValue.toJSONString(stormConf))));
+        return normalizeConf(stormConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(stormConf))));
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map stormConf) {

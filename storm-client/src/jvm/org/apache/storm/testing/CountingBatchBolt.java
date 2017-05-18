@@ -26,7 +26,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import java.util.Map;
 
-public class CountingBatchBolt extends BaseBatchBolt {
+public class CountingBatchBolt extends BaseBatchBolt<Object> {
     BatchOutputCollector _collector;
     Object _id;
     int _count = 0;
