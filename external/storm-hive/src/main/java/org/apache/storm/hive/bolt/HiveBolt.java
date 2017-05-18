@@ -18,6 +18,9 @@
 
 package org.apache.storm.hive.bolt;
 
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.SerializationError;
+import org.apache.hive.hcatalog.streaming.StreamingException;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
@@ -30,14 +33,12 @@ import org.apache.storm.hive.common.HiveWriter;
 
 import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
-import org.apache.hive.hcatalog.streaming.*;
 import org.apache.storm.hive.common.HiveOptions;
 import org.apache.storm.hive.common.HiveUtils;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.Timer;
@@ -48,7 +49,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.List;
-import java.util.LinkedList;
 import java.io.IOException;
 
 public class HiveBolt extends BaseRichBolt {
@@ -57,11 +57,11 @@ public class HiveBolt extends BaseRichBolt {
     private HiveOptions options;
     private ExecutorService callTimeoutPool;
     private transient Timer heartBeatTimer;
-    private Boolean kerberosEnabled = false;
     private AtomicBoolean sendHeartBeat = new AtomicBoolean(false);
     private UserGroupInformation ugi = null;
     private Map<HiveEndPoint, HiveWriter> allWriters;
     private BatchHelper batchHelper;
+    private boolean tokenAuthEnabled;
 
     public HiveBolt(HiveOptions options) {
         this.options = options;
@@ -70,23 +70,14 @@ public class HiveBolt extends BaseRichBolt {
     @Override
     public void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector)  {
         try {
-            if(options.getKerberosPrincipal() == null && options.getKerberosKeytab() == null) {
-                kerberosEnabled = false;
-            } else if(options.getKerberosPrincipal() != null && options.getKerberosKeytab() != null) {
-                kerberosEnabled = true;
-            } else {
-                throw new IllegalArgumentException("To enable Kerberos, need to set both KerberosPrincipal " +
-                                                   " & KerberosKeytab");
+            tokenAuthEnabled = HiveUtils.isTokenAuthEnabled(conf);
+            try {
+                ugi = HiveUtils.authenticate(tokenAuthEnabled, options.getKerberosKeytab(), options.getKerberosPrincipal());
+            } catch(HiveUtils.AuthenticationFailed ex) {
+                LOG.error("Hive kerberos authentication failed " + ex.getMessage(), ex);
+                throw new IllegalArgumentException(ex);
             }
 
-            if (kerberosEnabled) {
-                try {
-                    ugi = HiveUtils.authenticate(options.getKerberosKeytab(), options.getKerberosPrincipal());
-                } catch(HiveUtils.AuthenticationFailed ex) {
-                    LOG.error("Hive Kerberos authentication failed " + ex.getMessage(), ex);
-                    throw new IllegalArgumentException(ex);
-                }
-            }
             this.collector = collector;
             this.batchHelper = new BatchHelper(options.getBatchSize(), collector);
             allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
@@ -259,7 +250,7 @@ public class HiveBolt extends BaseRichBolt {
             HiveWriter writer = allWriters.get( endPoint );
             if (writer == null) {
                 LOG.debug("Creating Writer to Hive end point : " + endPoint);
-                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
+                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options, tokenAuthEnabled);
                 if (allWriters.size() > (options.getMaxOpenConnections() - 1)) {
                     LOG.info("cached HiveEndPoint size {} exceeded maxOpenConnections {} ", allWriters.size(), options.getMaxOpenConnections());
                     int retired = retireIdleWriters();
