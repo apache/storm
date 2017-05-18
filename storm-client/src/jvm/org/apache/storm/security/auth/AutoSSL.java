@@ -45,23 +45,23 @@ import java.util.Map;
  */
 public class AutoSSL implements IAutoCredentials {
     private static final Logger LOG = LoggerFactory.getLogger(AutoSSL.class);
-    private Map conf;
+    private Map<String, Object> conf;
     private String writeDir = "./";
 
     public static final String SSL_FILES_CONF = "ssl.credential.files";
 
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         this.conf = conf;
         writeDir = getSSLWriteDirFromConf(this.conf);
     }
 
     @VisibleForTesting
-    protected String getSSLWriteDirFromConf(Map conf) {
+    protected String getSSLWriteDirFromConf(Map<String, Object> conf) {
       return "./";
     }
 
     @VisibleForTesting
-    Collection<String> getSSLFilesFromConf(Map conf) {
+    Collection<String> getSSLFilesFromConf(Map<String, Object> conf) {
         Object sslConf = conf.get(SSL_FILES_CONF);
         if (sslConf == null) {
             LOG.info("No ssl files requested, if you want to use SSL please set {} to the " +

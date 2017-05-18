@@ -164,7 +164,7 @@ public class JmsSpout extends BaseRichSpout implements MessageListener {
      * topic/queue.
      */
     @SuppressWarnings("rawtypes")
-    public void open(Map conf, TopologyContext context,
+    public void open(Map<String, Object> conf, TopologyContext context,
                      SpoutOutputCollector collector) {
         if (this.jmsProvider == null) {
             throw new IllegalStateException("JMS provider has not been set.");

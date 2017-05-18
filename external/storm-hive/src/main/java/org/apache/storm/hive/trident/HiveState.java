@@ -73,7 +73,7 @@ public class HiveState implements State {
     public void commit(Long txId) {
     }
 
-    public void prepare(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions)  {
+    public void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions)  {
         try {
             tokenAuthEnabled = HiveUtils.isTokenAuthEnabled(conf);
             try {

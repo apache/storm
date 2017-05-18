@@ -30,27 +30,27 @@ import org.slf4j.LoggerFactory;
 
 public class ThriftServer {
     private static final Logger LOG = LoggerFactory.getLogger(ThriftServer.class);
-    private Map _storm_conf; //storm configuration
+    private Map _topoConf; //storm configuration
     protected TProcessor _processor = null;
     private final ThriftConnectionType _type;
     private TServer _server;
     private Configuration _login_conf;
     private int _port;
     
-    public ThriftServer(Map storm_conf, TProcessor processor, ThriftConnectionType type) {
-        _storm_conf = storm_conf;
+    public ThriftServer(Map<String, Object> topoConf, TProcessor processor, ThriftConnectionType type) {
+        _topoConf = topoConf;
         _processor = processor;
         _type = type;
 
         try {
             //retrieve authentication configuration 
-            _login_conf = AuthUtils.GetConfiguration(_storm_conf);
+            _login_conf = AuthUtils.GetConfiguration(_topoConf);
         } catch (Exception x) {
             LOG.error(x.getMessage(), x);
         }
         try {
             //locate our thrift transport plugin
-            ITransportPlugin transportPlugin = AuthUtils.GetTransportPlugin(_type, _storm_conf, _login_conf);
+            ITransportPlugin transportPlugin = AuthUtils.GetTransportPlugin(_type, _topoConf, _login_conf);
             //server
             _server = transportPlugin.getServer(_processor);
             _port = transportPlugin.getPort();

@@ -47,7 +47,7 @@ public class Pacemaker implements IServerMessageHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(Pacemaker.class);
     private Map<String, byte[]> heartbeats;
-    private Map conf;
+    private Map<String, Object> conf;
 
     private final static Meter meterSendPulseCount = StormMetricsRegistry.registerMeter("pacemaker:send-pulse-count");
     private final static Meter meterTotalReceivedSize = StormMetricsRegistry.registerMeter("pacemaker:total-receive-size");
@@ -56,7 +56,7 @@ public class Pacemaker implements IServerMessageHandler {
     private final static Histogram histogramHeartbeatSize = StormMetricsRegistry.registerHistogram("pacemaker:heartbeat-size", new ExponentiallyDecayingReservoir());
 
 
-    public Pacemaker(Map conf) {
+    public Pacemaker(Map<String, Object> conf) {
         heartbeats = new ConcurrentHashMap();
         this.conf = conf;
         StormMetricsRegistry.registerGauge("pacemaker:size-total-keys",
@@ -211,7 +211,7 @@ public class Pacemaker implements IServerMessageHandler {
 
     public static void main(String[] args) {
         SysOutOverSLF4J.sendSystemOutAndErrToSLF4J();
-        Map conf = ConfigUtils.overrideLoginConfigWithSystemProperty(Utils.readStormConfig());
+        Map<String, Object> conf = ConfigUtils.overrideLoginConfigWithSystemProperty(Utils.readStormConfig());
         final Pacemaker serverHandler = new Pacemaker(conf);
         serverHandler.launchServer();
     }

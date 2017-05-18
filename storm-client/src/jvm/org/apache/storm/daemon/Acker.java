@@ -59,7 +59,7 @@ public class Acker implements IBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         this.pending = new RotatingMap<Object, AckObject>(TIMEOUT_BUCKET_NUM);
     }

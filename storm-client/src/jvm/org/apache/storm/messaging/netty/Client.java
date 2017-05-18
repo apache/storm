@@ -77,7 +77,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private static final long NO_DELAY_MS = 0L;
     private static final Timer timer = new Timer("Netty-ChannelAlive-Timer", true);
 
-    private final Map stormConf;
+    private final Map<String, Object> topoConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
     private final ClientBootstrap bootstrap;
     private final InetSocketAddress dstAddress;
@@ -139,24 +139,24 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final Object writeLock = new Object();
 
     @SuppressWarnings("rawtypes")
-    Client(Map stormConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
-        this.stormConf = stormConf;
+    Client(Map<String, Object> topoConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+        this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
         this.context = context;
-        int bufferSize = ObjectReader.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int bufferSize = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
         // if SASL authentication is disabled, saslChannelReady is initialized as true; otherwise false
-        saslChannelReady.set(!ObjectReader.getBoolean(stormConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
+        saslChannelReady.set(!ObjectReader.getBoolean(topoConf.get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION), false));
         LOG.info("creating Netty Client, connecting to {}:{}, bufferSize: {}", host, port, bufferSize);
-        int messageBatchSize = ObjectReader.getInt(stormConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
+        int messageBatchSize = ObjectReader.getInt(topoConf.get(Config.STORM_NETTY_MESSAGE_BATCH_SIZE), 262144);
 
-        int maxReconnectionAttempts = ObjectReader.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
-        int minWaitMs = ObjectReader.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
-        int maxWaitMs = ObjectReader.getInt(stormConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
+        int maxReconnectionAttempts = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_RETRIES));
+        int minWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MIN_SLEEP_MS));
+        int maxWaitMs = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_MAX_SLEEP_MS));
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
         // Initiate connection to remote destination
-        bootstrap = createClientBootstrap(factory, bufferSize, stormConf);
+        bootstrap = createClientBootstrap(factory, bufferSize, topoConf);
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -189,12 +189,12 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         }, 0, CHANNEL_ALIVE_INTERVAL_MS);
     }
 
-    private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize, Map stormConf) {
+    private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize, Map<String, Object> topoConf) {
         ClientBootstrap bootstrap = new ClientBootstrap(factory);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", bufferSize);
         bootstrap.setOption("keepAlive", true);
-        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, stormConf));
+        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, topoConf));
         return bootstrap;
     }
 
@@ -495,7 +495,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     public Map getConfig() {
-        return stormConf;
+        return topoConf;
     }
 
     /** ISaslClient interface **/
@@ -508,11 +508,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     public String name() {
-        return (String)stormConf.get(Config.TOPOLOGY_NAME);
+        return (String)topoConf.get(Config.TOPOLOGY_NAME);
     }
 
     public String secretKey() {
-        return SaslUtils.getSecretKey(stormConf);
+        return SaslUtils.getSecretKey(topoConf);
     }
     /** end **/
 

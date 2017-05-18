@@ -29,7 +29,7 @@ public interface TridentProcessor extends Serializable, TupleReceiver {
     // preparation is done, therefore, receivers won't be ready to receive tuples yet
     // can't emit tuples from here anyway, since it's not within a batch context (which is only
     // startBatch, execute, and finishBatch
-    void prepare(Map conf, TopologyContext context, TridentContext tridentContext);
+    void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext);
     void cleanup();
     
     void startBatch(ProcessorContext processorContext);

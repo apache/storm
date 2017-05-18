@@ -56,7 +56,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     private Map<String, Map<String, Object>> configMap = new HashMap<>();
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         doPrepare(conf);
         loadConfigKeys(conf);
         for (String key : configKeys) {
@@ -69,7 +69,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map conf) {
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> conf) {
         try {
             loadConfigKeys(conf);
             if (!configKeys.isEmpty()) {
@@ -88,7 +88,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
         }
     }
 
-    private Map<String, Object> updateConfigs(Map topologyConf) {
+    private Map<String, Object> updateConfigs(Map<String, Object> topologyConf) {
         Map<String, Object> res = new HashMap<>(topologyConf);
         for (String configKey : configKeys) {
             if (!res.containsKey(configKey) && configMap.containsKey(configKey)) {
@@ -99,7 +99,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     }
 
     @Override
-    public void renew(Map<String, String> credentials, Map topologyConf) {
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf) {
         doRenew(credentials, updateConfigs(topologyConf));
     }
 
@@ -146,7 +146,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
         return res;
     }
 
-    protected void fillHadoopConfiguration(Map topoConf, String configKey, Configuration configuration) {
+    protected void fillHadoopConfiguration(Map<String, Object> topoConf, String configKey, Configuration configuration) {
         Map<String, Object> config = (Map<String, Object>) topoConf.get(configKey);
         LOG.info("TopoConf {}, got config {}, for configKey {}", topoConf, config, configKey);
         if (config != null) {
@@ -173,7 +173,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
      *
      * @param conf the storm cluster conf set via storm.yaml
      */
-    protected abstract void doPrepare(Map conf);
+    protected abstract void doPrepare(Map<String, Object> conf);
 
     /**
      * The lookup key for the config key string
@@ -187,11 +187,11 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
      */
     protected abstract String getCredentialKey(String configKey);
 
-    protected abstract byte[] getHadoopCredentials(Map conf, String configKey);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> conf, String configKey);
 
-    protected abstract byte[] getHadoopCredentials(Map conf);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> conf);
 
-    protected abstract void doRenew(Map<String, String> credentials, Map topologyConf);
+    protected abstract void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf);
 
     @SuppressWarnings("unchecked")
     private void addCredentialToSubject(Subject subject, Map<String, String> credentials) {
@@ -243,7 +243,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     }
 
-    private void loadConfigKeys(Map conf) {
+    private void loadConfigKeys(Map<String, Object> conf) {
         List<String> keys;
         String configKeyString = getConfigKeyString();
         if ((keys = (List<String>) conf.get(configKeyString)) != null) {

@@ -68,7 +68,7 @@ public class TridentSocketSpout implements IBatchSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context) {
+    public void open(Map<String, Object> conf, TopologyContext context) {
         this.queue = new LinkedBlockingDeque<>();
         this.objectMapper = new ObjectMapper();
         this.batches = new HashMap<>();

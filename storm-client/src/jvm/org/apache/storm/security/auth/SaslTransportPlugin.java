@@ -51,21 +51,21 @@ import org.apache.thrift.transport.TTransportFactory;
  */
 public abstract class SaslTransportPlugin implements ITransportPlugin {
     protected ThriftConnectionType type;
-    protected Map storm_conf;
+    protected Map<String, Object> topoConf;
     protected Configuration login_conf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
         this.type = type;
-        this.storm_conf = storm_conf;
+        this.topoConf = topoConf;
         this.login_conf = login_conf;
     }
 
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
-        int configuredPort = type.getPort(storm_conf);
-        Integer socketTimeout = type.getSocketTimeOut(storm_conf);
+        int configuredPort = type.getPort(topoConf);
+        Integer socketTimeout = type.getSocketTimeOut(topoConf);
         TTransportFactory serverTransportFactory = getServerTransportFactory();
         TServerSocket serverTransport = null;
         if (socketTimeout != null) {
@@ -74,8 +74,8 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             serverTransport = new TServerSocket(configuredPort);
         }
         this.port = serverTransport.getServerSocket().getLocalPort();
-        int numWorkerThreads = type.getNumThreads(storm_conf);
-        Integer queueSize = type.getQueueSize(storm_conf);
+        int numWorkerThreads = type.getNumThreads(topoConf);
+        Integer queueSize = type.getQueueSize(topoConf);
 
         TThreadPoolServer.Args server_args = new TThreadPoolServer.Args(serverTransport).
                 processor(new TUGIWrapProcessor(processor)).

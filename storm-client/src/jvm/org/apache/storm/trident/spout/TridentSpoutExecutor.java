@@ -56,7 +56,7 @@ public class TridentSpoutExecutor implements ITridentBatchBolt {
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector) {
         _emitter = _spout.getEmitter(_txStateId, conf, context);
         _collector = new AddIdCollector(_streamName, collector);
     }

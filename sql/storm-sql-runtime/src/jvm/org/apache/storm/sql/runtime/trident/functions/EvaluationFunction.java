@@ -46,7 +46,7 @@ public class EvaluationFunction implements OperationAwareMapFunction {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         if (projectionInstance instanceof DebuggableExecutableExpression) {
             LOG.info("Expression code: {}", ((DebuggableExecutableExpression) projectionInstance).getDelegateCode());
         }

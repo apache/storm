@@ -34,14 +34,14 @@ public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
     JmxReporter reporter = null;
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map stormConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
         LOG.info("Preparing...");
         JmxReporter.Builder builder = JmxReporter.forRegistry(metricsRegistry);
-        String domain = ObjectReader.getString(stormConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
+        String domain = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
         if (domain != null) {
             builder.inDomain(domain);
         }
-        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(stormConf);
+        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(topoConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }

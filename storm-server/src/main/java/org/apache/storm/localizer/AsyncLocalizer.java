@@ -110,7 +110,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         protected void downloadBaseBlobs(File tmproot) throws Exception {
             String stormJarKey = ConfigUtils.masterStormJarKey(_topologyId);
             String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
-            String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
+            String topoConfKey = ConfigUtils.masterStormConfKey(_topologyId);
             String jarPath = ConfigUtils.supervisorStormJarPath(tmproot.getAbsolutePath());
             String codePath = ConfigUtils.supervisorStormCodePath(tmproot.getAbsolutePath());
             String confPath = ConfigUtils.supervisorStormConfPath(tmproot.getAbsolutePath());
@@ -120,7 +120,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             try {
                 ServerUtils.downloadResourcesAsSupervisor(stormJarKey, jarPath, blobStore);
                 ServerUtils.downloadResourcesAsSupervisor(stormCodeKey, codePath, blobStore);
-                ServerUtils.downloadResourcesAsSupervisor(stormConfKey, confPath, blobStore);
+                ServerUtils.downloadResourcesAsSupervisor(topoConfKey, confPath, blobStore);
             } finally {
                 blobStore.shutdown();
             }
@@ -172,7 +172,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         protected void downloadBaseBlobs(File tmproot) throws Exception {
             _fsOps.forceMkdir(tmproot);
             String stormCodeKey = ConfigUtils.masterStormCodeKey(_topologyId);
-            String stormConfKey = ConfigUtils.masterStormConfKey(_topologyId);
+            String topoConfKey = ConfigUtils.masterStormConfKey(_topologyId);
             File codePath = new File(ConfigUtils.supervisorStormCodePath(tmproot.getAbsolutePath()));
             File confPath = new File(ConfigUtils.supervisorStormConfPath(tmproot.getAbsolutePath()));
             BlobStore blobStore = ServerUtils.getNimbusBlobStore(_conf, null);
@@ -181,7 +181,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                     blobStore.readBlobTo(stormCodeKey, codeOutStream, null);
                 }
                 try (OutputStream confOutStream = _fsOps.getOutputStream(confPath)) {
-                    blobStore.readBlobTo(stormConfKey, confOutStream, null);
+                    blobStore.readBlobTo(topoConfKey, confOutStream, null);
                 }
             } finally {
                 blobStore.shutdown();
@@ -218,12 +218,12 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         public Void call() throws Exception {
             try {
                 String stormroot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-                Map<String, Object> stormConf = ConfigUtils.readSupervisorStormConf(_conf, _topologyId);
+                Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(_conf, _topologyId);
 
                 @SuppressWarnings("unchecked")
-                Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-                String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-                String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
+                Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+                String user = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+                String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
 
                 List<LocalResource> localResourceList = new ArrayList<>();
                 if (blobstoreMap != null) {

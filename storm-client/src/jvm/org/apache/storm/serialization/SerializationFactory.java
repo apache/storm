@@ -48,7 +48,7 @@ public class SerializationFactory {
     public static final Logger LOG = LoggerFactory.getLogger(SerializationFactory.class);
     public static final ServiceLoader<SerializationRegister> loader = ServiceLoader.load(SerializationRegister.class);
 
-    public static Kryo getKryo(Map conf) {
+    public static Kryo getKryo(Map<String, Object> conf) {
         IKryoFactory kryoFactory = (IKryoFactory) ReflectionUtils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
         Kryo k = kryoFactory.getKryo(conf);
         k.register(byte[].class);
@@ -188,7 +188,7 @@ public class SerializationFactory {
         }
     }
 
-    private static Serializer resolveSerializerInstance(Kryo k, Class superClass, Class<? extends Serializer> serializerClass, Map conf) {
+    private static Serializer resolveSerializerInstance(Kryo k, Class superClass, Class<? extends Serializer> serializerClass, Map<String, Object> conf) {
         try {
             try {
                 return serializerClass.getConstructor(Kryo.class, Class.class, Map.class).newInstance(k, superClass, conf);
@@ -223,7 +223,7 @@ public class SerializationFactory {
         }
     }
 
-    private static Map<String, String> normalizeKryoRegister(Map conf) {
+    private static Map<String, String> normalizeKryoRegister(Map<String, Object> conf) {
         // TODO: de-duplicate this logic with the code in nimbus
         Object res = conf.get(Config.TOPOLOGY_KRYO_REGISTER);
         if(res==null) return new TreeMap<>();

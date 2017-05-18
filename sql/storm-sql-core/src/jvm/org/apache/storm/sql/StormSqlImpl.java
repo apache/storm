@@ -108,7 +108,7 @@ class StormSqlImpl extends StormSql {
 
   @Override
   public void submit(
-      String name, Iterable<String> statements, Map<String, ?> stormConf, SubmitOptions opts,
+      String name, Iterable<String> statements, Map<String, Object> topoConf, SubmitOptions opts,
       StormSubmitter.ProgressListener progressListener, String asUser)
       throws Exception {
     Map<String, ISqlTridentDataSource> dataSources = new HashMap<>();
@@ -133,7 +133,7 @@ class StormSqlImpl extends StormSql {
           jarPath = Files.createTempFile("storm-sql", ".jar");
           System.setProperty("storm.jar", jarPath.toString());
           packageTopology(jarPath, processor);
-          StormSubmitter.submitTopologyAs(name, stormConf, topo.build(), opts, progressListener, asUser);
+          StormSubmitter.submitTopologyAs(name, topoConf, topo.build(), opts, progressListener, asUser);
         } finally {
           if (jarPath != null) {
             Files.delete(jarPath);

@@ -106,7 +106,7 @@ public class TransactionalWords {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
             _collector = collector;
             _id = id;
         }
@@ -184,7 +184,7 @@ public class TransactionalWords {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
             _collector = collector;
             _attempt = attempt;
         }

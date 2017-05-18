@@ -140,7 +140,7 @@ public class TestUtilsForResourceAwareScheduler {
         return retMap;
     }
 
-    public static TopologyDetails getTopology(String name, Map config, int numSpout, int numBolt,
+    public static TopologyDetails getTopology(String name, Map<String, Object> config, int numSpout, int numBolt,
                                               int spoutParallelism, int boltParallelism, int launchTime, int priority) {
 
         Config conf = new Config();
@@ -191,7 +191,7 @@ public class TestUtilsForResourceAwareScheduler {
             _isDistributed = isDistributed;
         }
 
-        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             _collector = collector;
         }
 
@@ -232,7 +232,7 @@ public class TestUtilsForResourceAwareScheduler {
         OutputCollector _collector;
 
         @Override
-        public void prepare(Map conf, TopologyContext context,
+        public void prepare(Map<String, Object> conf, TopologyContext context,
                             OutputCollector collector) {
             _collector = collector;
         }
@@ -250,7 +250,7 @@ public class TestUtilsForResourceAwareScheduler {
 
     public static class INimbusTest implements INimbus {
         @Override
-        public void prepare(Map stormConf, String schedulerLocalDir) {
+        public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
 
         }
 

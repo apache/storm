@@ -22,7 +22,7 @@ import java.util.Map;
 
 public interface IScheduler {
     
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
     
     /**
      * Set assignments for the topologies which needs scheduling. The new assignments is available 

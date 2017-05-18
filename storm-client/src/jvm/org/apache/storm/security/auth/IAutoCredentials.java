@@ -28,7 +28,7 @@ import javax.security.auth.Subject;
  */
 public interface IAutoCredentials {
 
-    public void prepare(Map conf);
+    public void prepare(Map<String, Object> conf);
 
     /**
      * Called to populate the credentials on the client side.

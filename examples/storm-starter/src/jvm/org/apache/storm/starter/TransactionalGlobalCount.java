@@ -90,7 +90,7 @@ public class TransactionalGlobalCount {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
             _collector = collector;
             _id = id;
         }
@@ -118,7 +118,7 @@ public class TransactionalGlobalCount {
         int _sum = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
             _collector = collector;
             _attempt = attempt;
         }

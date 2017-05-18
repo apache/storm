@@ -1481,7 +1481,7 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
 
-    public static void setClasspath(Map conf, String cp) {
+    public static void setClasspath(Map<String, Object> conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }
 
@@ -1489,7 +1489,7 @@ public class Config extends HashMap<String, Object> {
         setClasspath(this, cp);
     }
 
-    public static void setEnvironment(Map conf, Map env) {
+    public static void setEnvironment(Map<String, Object> conf, Map env) {
         conf.put(Config.TOPOLOGY_ENVIRONMENT, env);
     }
 
@@ -1497,7 +1497,7 @@ public class Config extends HashMap<String, Object> {
         setEnvironment(this, env);
     }
 
-    public static void setDebug(Map conf, boolean isOn) {
+    public static void setDebug(Map<String, Object> conf, boolean isOn) {
         conf.put(Config.TOPOLOGY_DEBUG, isOn);
     }
 
@@ -1505,7 +1505,7 @@ public class Config extends HashMap<String, Object> {
         setDebug(this, isOn);
     }
 
-    public static void setNumWorkers(Map conf, int workers) {
+    public static void setNumWorkers(Map<String, Object> conf, int workers) {
         conf.put(Config.TOPOLOGY_WORKERS, workers);
     }
 
@@ -1513,7 +1513,7 @@ public class Config extends HashMap<String, Object> {
         setNumWorkers(this, workers);
     }
 
-    public static void setNumAckers(Map conf, int numExecutors) {
+    public static void setNumAckers(Map<String, Object> conf, int numExecutors) {
         conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, numExecutors);
     }
 
@@ -1521,7 +1521,7 @@ public class Config extends HashMap<String, Object> {
         setNumAckers(this, numExecutors);
     }
 
-    public static void setNumEventLoggers(Map conf, int numExecutors) {
+    public static void setNumEventLoggers(Map<String, Object> conf, int numExecutors) {
         conf.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numExecutors);
     }
 
@@ -1530,7 +1530,7 @@ public class Config extends HashMap<String, Object> {
     }
 
 
-    public static void setMessageTimeoutSecs(Map conf, int secs) {
+    public static void setMessageTimeoutSecs(Map<String, Object> conf, int secs) {
         conf.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, secs);
     }
 
@@ -1538,7 +1538,7 @@ public class Config extends HashMap<String, Object> {
         setMessageTimeoutSecs(this, secs);
     }
 
-    public static void registerSerialization(Map conf, Class klass) {
+    public static void registerSerialization(Map<String, Object> conf, Class klass) {
         getRegisteredSerializations(conf).add(klass.getName());
     }
 
@@ -1546,7 +1546,7 @@ public class Config extends HashMap<String, Object> {
         registerSerialization(this, klass);
     }
 
-    public static void registerSerialization(Map conf, Class klass, Class<? extends Serializer> serializerClass) {
+    public static void registerSerialization(Map<String, Object> conf, Class klass, Class<? extends Serializer> serializerClass) {
         Map<String, String> register = new HashMap<String, String>();
         register.put(klass.getName(), serializerClass.getName());
         getRegisteredSerializations(conf).add(register);
@@ -1556,7 +1556,7 @@ public class Config extends HashMap<String, Object> {
         registerSerialization(this, klass, serializerClass);
     }
 
-    public static void registerMetricsConsumer(Map conf, Class klass, Object argument, long parallelismHint) {
+    public static void registerMetricsConsumer(Map<String, Object> conf, Class klass, Object argument, long parallelismHint) {
         HashMap m = new HashMap();
         m.put("class", klass.getCanonicalName());
         m.put("parallelism.hint", parallelismHint);
@@ -1572,7 +1572,7 @@ public class Config extends HashMap<String, Object> {
         registerMetricsConsumer(this, klass, argument, parallelismHint);
     }
 
-    public static void registerMetricsConsumer(Map conf, Class klass, long parallelismHint) {
+    public static void registerMetricsConsumer(Map<String, Object> conf, Class klass, long parallelismHint) {
         registerMetricsConsumer(conf, klass, null, parallelismHint);
     }
 
@@ -1580,7 +1580,7 @@ public class Config extends HashMap<String, Object> {
         registerMetricsConsumer(this, klass, parallelismHint);
     }
 
-    public static void registerMetricsConsumer(Map conf, Class klass) {
+    public static void registerMetricsConsumer(Map<String, Object> conf, Class klass) {
         registerMetricsConsumer(conf, klass, null, 1L);
     }
 
@@ -1588,7 +1588,7 @@ public class Config extends HashMap<String, Object> {
         registerMetricsConsumer(this, klass);
     }
 
-    public static void registerDecorator(Map conf, Class<? extends IKryoDecorator> klass) {
+    public static void registerDecorator(Map<String, Object> conf, Class<? extends IKryoDecorator> klass) {
         getRegisteredDecorators(conf).add(klass.getName());
     }
 
@@ -1596,7 +1596,7 @@ public class Config extends HashMap<String, Object> {
         registerDecorator(this, klass);
     }
 
-    public static void setKryoFactory(Map conf, Class<? extends IKryoFactory> klass) {
+    public static void setKryoFactory(Map<String, Object> conf, Class<? extends IKryoFactory> klass) {
         conf.put(Config.TOPOLOGY_KRYO_FACTORY, klass.getName());
     }
 
@@ -1604,7 +1604,7 @@ public class Config extends HashMap<String, Object> {
         setKryoFactory(this, klass);
     }
 
-    public static void setSkipMissingKryoRegistrations(Map conf, boolean skip) {
+    public static void setSkipMissingKryoRegistrations(Map<String, Object> conf, boolean skip) {
         conf.put(Config.TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS, skip);
     }
 
@@ -1612,7 +1612,7 @@ public class Config extends HashMap<String, Object> {
         setSkipMissingKryoRegistrations(this, skip);
     }
 
-    public static void setMaxTaskParallelism(Map conf, int max) {
+    public static void setMaxTaskParallelism(Map<String, Object> conf, int max) {
         conf.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, max);
     }
 
@@ -1620,7 +1620,7 @@ public class Config extends HashMap<String, Object> {
         setMaxTaskParallelism(this, max);
     }
 
-    public static void setMaxSpoutPending(Map conf, int max) {
+    public static void setMaxSpoutPending(Map<String, Object> conf, int max) {
         conf.put(Config.TOPOLOGY_MAX_SPOUT_PENDING, max);
     }
 
@@ -1628,7 +1628,7 @@ public class Config extends HashMap<String, Object> {
         setMaxSpoutPending(this, max);
     }
 
-    public static void setStatsSampleRate(Map conf, double rate) {
+    public static void setStatsSampleRate(Map<String, Object> conf, double rate) {
         conf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, rate);
     }
 
@@ -1636,7 +1636,7 @@ public class Config extends HashMap<String, Object> {
         setStatsSampleRate(this, rate);
     }
 
-    public static void setFallBackOnJavaSerialization(Map conf, boolean fallback) {
+    public static void setFallBackOnJavaSerialization(Map<String, Object> conf, boolean fallback) {
         conf.put(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION, fallback);
     }
 
@@ -1644,7 +1644,7 @@ public class Config extends HashMap<String, Object> {
         setFallBackOnJavaSerialization(this, fallback);
     }
 
-    private static List getRegisteredSerializations(Map conf) {
+    private static List getRegisteredSerializations(Map<String, Object> conf) {
         List ret;
         if(!conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) {
             ret = new ArrayList();
@@ -1655,7 +1655,7 @@ public class Config extends HashMap<String, Object> {
         return ret;
     }
 
-    private static List getRegisteredDecorators(Map conf) {
+    private static List getRegisteredDecorators(Map<String, Object> conf) {
         List ret;
         if(!conf.containsKey(Config.TOPOLOGY_KRYO_DECORATORS)) {
             ret = new ArrayList();

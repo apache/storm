@@ -34,7 +34,7 @@ public class BaseOperation implements Operation {
      *                metrics.
      */
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
     }
 
     /**

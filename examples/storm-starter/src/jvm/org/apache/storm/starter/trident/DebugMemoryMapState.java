@@ -66,7 +66,7 @@ public class DebugMemoryMapState<T> extends MemoryMapState<T> {
         }
 
         @Override
-        public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             return new DebugMemoryMapState(_id + partitionIndex);
         }
     }

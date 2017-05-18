@@ -38,7 +38,7 @@ public class MultitenantScheduler implements IScheduler {
   private Map _conf;
   
   @Override
-  public void prepare(@SuppressWarnings("rawtypes") Map conf) {
+  public void prepare(@SuppressWarnings("rawtypes") Map<String, Object> conf) {
     _conf = conf;
   }
  

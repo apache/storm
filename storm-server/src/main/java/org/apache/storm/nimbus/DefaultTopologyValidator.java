@@ -26,6 +26,6 @@ public class DefaultTopologyValidator implements ITopologyValidator {
     public void prepare(Map StormConf){
     }
     @Override
-    public void validate(String topologyName, Map topologyConf, StormTopology topology) throws InvalidTopologyException {        
+    public void validate(String topologyName, Map<String, Object> topologyConf, StormTopology topology) throws InvalidTopologyException {        
     }    
 }

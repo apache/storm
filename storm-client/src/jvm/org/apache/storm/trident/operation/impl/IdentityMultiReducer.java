@@ -27,7 +27,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 public class IdentityMultiReducer<T> implements MultiReducer<T> {
 
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
     }
 
     @Override

@@ -41,7 +41,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
     // IPrincipalToLocal 
     // IGroupMappingServiceProvider 
     @Override
-    public void prepare(Map conf) {}
+    public void prepare(Map<String, Object> conf) {}
 
     // IHttpCredentialsPlugin
     @Override
@@ -69,7 +69,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // ICredentialsRenewer
     @Override
-    public void renew(Map<String, String> credentials, Map topologyConf) {}
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf) {}
 
     // IAutoCredentials
     @Override
@@ -85,7 +85,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // INimbusCredentialPlugin
     @Override
-    public void populateCredentials(Map<String,String> credentials, Map conf) {}
+    public void populateCredentials(Map<String,String> credentials, Map<String, Object> conf) {}
 
     // Shutdownable via INimbusCredentailPlugin
     @Override

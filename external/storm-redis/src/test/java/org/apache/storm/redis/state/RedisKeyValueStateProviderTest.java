@@ -37,9 +37,9 @@ public class RedisKeyValueStateProviderTest {
     public void testgetDefaultConfig() throws Exception {
 
         RedisKeyValueStateProvider provider = new RedisKeyValueStateProvider();
-        Map<String, String> stormConf = new HashMap<>();
-        //stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\"}");
-        RedisKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
+        Map<String, Object> topoConf = new HashMap<>();
+        //topoConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\"}");
+        RedisKeyValueStateProvider.StateConfig config = provider.getStateConfig(topoConf);
         assertNotNull(config);
     }
 
@@ -47,12 +47,12 @@ public class RedisKeyValueStateProviderTest {
     @Test
     public void testgetConfigWithProviderConfig() throws Exception {
         RedisKeyValueStateProvider provider = new RedisKeyValueStateProvider();
-        Map<String, String> stormConf = new HashMap<>();
-        stormConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
+        Map<String, Object> topoConf = new HashMap<>();
+        topoConf.put(Config.TOPOLOGY_STATE_PROVIDER_CONFIG, "{\"keyClass\":\"String\", \"valueClass\":\"String\"," +
                 " \"jedisPoolConfig\":" +
                 "{\"host\":\"localhost\", \"port\":1000}}");
 
-        RedisKeyValueStateProvider.StateConfig config = provider.getStateConfig(stormConf);
+        RedisKeyValueStateProvider.StateConfig config = provider.getStateConfig(topoConf);
         //System.out.println(config);
         assertEquals("String", config.keyClass);
         assertEquals("String", config.valueClass);

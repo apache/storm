@@ -56,17 +56,17 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         // get the last successfully committed state from state store
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId();
-        prepare(stormConf, context, collector, StateFactory.getState(namespace, stormConf, context));
+        prepare(topoConf, context, collector, StateFactory.getState(namespace, topoConf, context));
     }
 
     // package access for unit tests
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector, State state) {
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector, State state) {
         init(context, collector);
         this.collector = new AckTrackingOutputCollector(collector);
-        bolt.prepare(stormConf, context, this.collector);
+        bolt.prepare(topoConf, context, this.collector);
         this.state = state;
     }
 

@@ -101,7 +101,7 @@ public class EventHubSpout extends BaseRichSpout {
    * @param collector
    * @throws Exception
    */
-  public void preparePartitions(Map config, int totalTasks, int taskIndex, SpoutOutputCollector collector) throws Exception {
+  public void preparePartitions(Map<String, Object> config, int totalTasks, int taskIndex, SpoutOutputCollector collector) throws Exception {
     this.collector = collector;
     if(stateStore == null) {
       String zkEndpointAddress = eventHubConfig.getZkConnectionString();
@@ -135,7 +135,7 @@ public class EventHubSpout extends BaseRichSpout {
   }
 
   @Override
-  public void open(Map config, TopologyContext context, SpoutOutputCollector collector) {
+  public void open(Map<String, Object> config, TopologyContext context, SpoutOutputCollector collector) {
     logger.info("begin:start open()");
     String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
     eventHubConfig.setTopologyName(topologyName);

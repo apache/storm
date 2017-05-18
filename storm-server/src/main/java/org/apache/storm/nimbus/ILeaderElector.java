@@ -30,7 +30,7 @@ public interface ILeaderElector extends Closeable {
      * Method guaranteed to be called as part of initialization of leader elector instance.
      * @param conf configuration
      */
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
 
     /**
      * queue up for leadership lock. The call returns immediately and the caller must

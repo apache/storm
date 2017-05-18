@@ -29,7 +29,7 @@ public class InMemoryKeyValueStateProvider implements StateProvider {
     private final ConcurrentHashMap<String, State> states = new ConcurrentHashMap<>();
 
     @Override
-    public State newState(String namespace, Map stormConf, TopologyContext context) {
+    public State newState(String namespace, Map<String, Object> topoConf, TopologyContext context) {
         State state = states.get(namespace);
         if (state == null) {
             State newState = new InMemoryKeyValueState<>();

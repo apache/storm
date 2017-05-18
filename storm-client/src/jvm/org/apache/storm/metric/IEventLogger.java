@@ -56,7 +56,7 @@ public interface IEventLogger {
         }
     }
 
-    void prepare(Map stormConf, TopologyContext context);
+    void prepare(Map<String, Object> topoConf, TopologyContext context);
 
     /**
      * This method would be invoked when the {@link EventLoggerBolt} receives a tuple from the spouts or bolts that has

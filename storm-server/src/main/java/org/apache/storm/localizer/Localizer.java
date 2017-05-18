@@ -489,7 +489,7 @@ public class Localizer {
     private boolean _uncompress;
     private boolean _isUpdate;
 
-    public DownloadBlob(Localizer localizer, Map conf, String key, File localFile,
+    public DownloadBlob(Localizer localizer, Map<String, Object> conf, String key, File localFile,
         String user, boolean uncompress, boolean update) {
       _localizer = localizer;
       _conf = conf;
@@ -508,7 +508,7 @@ public class Localizer {
     }
   }
 
-  private LocalizedResource downloadBlob(Map conf, String key, File localFile,
+  private LocalizedResource downloadBlob(Map<String, Object> conf, String key, File localFile,
       String user, boolean uncompress, boolean isUpdate)
       throws AuthorizationException, KeyNotFoundException, IOException {
     ClientBlobStore blobstore = null;
@@ -645,7 +645,7 @@ public class Localizer {
     }
   }
 
-  public void setBlobPermissions(Map conf, String user, String path)
+  public void setBlobPermissions(Map<String, Object> conf, String user, String path)
       throws IOException {
 
     if (!ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {

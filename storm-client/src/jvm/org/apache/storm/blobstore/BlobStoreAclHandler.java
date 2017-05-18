@@ -56,7 +56,7 @@ public class BlobStoreAclHandler {
     private Set<String> _admins;
     private boolean doAclValidation;
 
-    public BlobStoreAclHandler(Map conf) {
+    public BlobStoreAclHandler(Map<String, Object> conf) {
         _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
         _supervisors = new HashSet<String>();
         _admins = new HashSet<String>();

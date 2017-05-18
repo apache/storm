@@ -71,7 +71,7 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         long now = System.currentTimeMillis();
         if ((now - 5000) > _lastUpdate || _acl == null) {
             Map<String,AclFunctionEntry> acl = new HashMap<>();
-            Map conf = Utils.findAndReadConfigFile(_aclFileName);
+            Map<String, Object> conf = Utils.findAndReadConfigFile(_aclFileName);
             if (conf.containsKey(Config.DRPC_AUTHORIZER_ACL)) {
                 Map<String,Map<String,?>> confAcl =
                     (Map<String,Map<String,?>>)
@@ -99,7 +99,7 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         Boolean isStrict = 
                 (Boolean) conf.get(Config.DRPC_AUTHORIZER_ACL_STRICT);
         _permitWhenMissingFunctionEntry =

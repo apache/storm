@@ -61,7 +61,7 @@ public class StringGenSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.records = genStringList(strLen, strCount);
 
         this.collector = collector;

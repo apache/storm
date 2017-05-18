@@ -92,7 +92,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
     }
         
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _throttler = new WindowedTimeThrottler((Number)conf.get(Config.TOPOLOGY_TRIDENT_BATCH_EMIT_INTERVAL_MILLIS), 1);
         for(String spoutId: _managedSpoutIds) {
             _states.add(TransactionalState.newCoordinatorState(conf, spoutId));

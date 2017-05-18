@@ -100,7 +100,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         LOG.info("Preparing bolt with configuration {}", this);
         //for backward compatibility.
         if (mapper == null) {
@@ -110,10 +110,10 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
         //for backward compatibility.
         if (topicSelector == null) {
-            if (stormConf.containsKey(TOPIC)) {
+            if (topoConf.containsKey(TOPIC)) {
                 LOG.info("TopicSelector not specified. Using [{}] for topic [{}] specified in bolt configuration,",
-                        DefaultTopicSelector.class.getSimpleName(), stormConf.get(TOPIC));
-                this.topicSelector = new DefaultTopicSelector((String) stormConf.get(TOPIC));
+                        DefaultTopicSelector.class.getSimpleName(), topoConf.get(TOPIC));
+                this.topicSelector = new DefaultTopicSelector((String) topoConf.get(TOPIC));
             } else {
                 throw new IllegalStateException("topic should be specified in bolt's configuration");
             }

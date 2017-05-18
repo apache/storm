@@ -26,9 +26,9 @@ import java.util.Map;
 
 class StormClientPipelineFactory implements ChannelPipelineFactory {
     private Client client;
-    private Map conf;
+    private Map<String, Object> conf;
 
-    StormClientPipelineFactory(Client client, Map conf) {
+    StormClientPipelineFactory(Client client, Map<String, Object> conf) {
         this.client = client;
         this.conf = conf;
     }

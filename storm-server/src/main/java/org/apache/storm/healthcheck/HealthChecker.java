@@ -40,7 +40,7 @@ public class HealthChecker {
     private static final String TIMEOUT = "timeout";
     private static final String FAILED_WITH_EXIT_CODE = "failed_with_exit_code";
 
-    public static int healthCheck(Map conf) {
+    public static int healthCheck(Map<String, Object> conf) {
         String healthDir = ServerConfigUtils.absoluteHealthCheckDir(conf);
         List<String> results = new ArrayList<>();
         if (healthDir != null) {
@@ -72,7 +72,7 @@ public class HealthChecker {
 
     }
 
-    public static String processScript(Map conf, String script) {
+    public static String processScript(Map<String, Object> conf, String script) {
         Thread interruptThread = null;
         try {
             Process process = Runtime.getRuntime().exec(script);

@@ -36,13 +36,13 @@ public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<L
     }
 
     @Override
-    public IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map> getEmitter(Map conf, TopologyContext context) {
+    public IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map> getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new TridentKafkaEmitter(conf, context, _config, context
                 .getStormId()).asOpaqueEmitter();
     }
 
     @Override
-    public IOpaquePartitionedTridentSpout.Coordinator getCoordinator(Map conf, TopologyContext tc) {
+    public IOpaquePartitionedTridentSpout.Coordinator getCoordinator(Map<String, Object> conf, TopologyContext tc) {
         return new org.apache.storm.kafka.trident.Coordinator(conf, _config);
     }
 

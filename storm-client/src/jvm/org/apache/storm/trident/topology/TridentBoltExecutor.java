@@ -208,7 +208,7 @@ public class TridentBoltExecutor implements IRichBolt {
     TopologyContext _context;
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {        
+    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {        
         _messageTimeoutMs = context.maxTopologyMessageTimeout() * 1000L;
         _lastRotate = System.currentTimeMillis();
         _batches = new RotatingMap<>(2);

@@ -33,8 +33,8 @@ import java.util.Map;
  * 7. Storm calls postDecorate hook
  */
 public interface IKryoFactory {
-    Kryo getKryo(Map conf);
-    void preRegister(Kryo k, Map conf);
-    void postRegister(Kryo k, Map conf);
-    void postDecorate(Kryo k, Map conf);
+    Kryo getKryo(Map<String, Object> conf);
+    void preRegister(Kryo k, Map<String, Object> conf);
+    void postRegister(Kryo k, Map<String, Object> conf);
+    void postDecorate(Kryo k, Map<String, Object> conf);
 }

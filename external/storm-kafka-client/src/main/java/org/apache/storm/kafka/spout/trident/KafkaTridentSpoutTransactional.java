@@ -28,12 +28,12 @@ import java.util.Map;
 // TODO
 public class KafkaTridentSpoutTransactional<Ps, P extends ISpoutPartition, T> implements IPartitionedTridentSpout<Ps, P, T> {
     @Override
-    public Coordinator<Ps> getCoordinator(Map conf, TopologyContext context) {
+    public Coordinator<Ps> getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return null;
     }
 
     @Override
-    public Emitter<Ps, P, T> getEmitter(Map conf, TopologyContext context) {
+    public Emitter<Ps, P, T> getEmitter(Map<String, Object> conf, TopologyContext context) {
         return null;
     }
 

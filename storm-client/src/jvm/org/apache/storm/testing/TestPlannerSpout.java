@@ -51,7 +51,7 @@ public class TestPlannerSpout extends BaseRichSpout {
     }
 
     
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         
     }
     

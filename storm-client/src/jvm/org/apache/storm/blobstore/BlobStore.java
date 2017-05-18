@@ -73,7 +73,7 @@ public abstract class BlobStore implements Shutdownable {
      * @param baseDir The directory path to store the blobs
      * @param nimbusInfo Contains the nimbus host, port and leadership information.
      */
-    public abstract void prepare(Map conf, String baseDir, NimbusInfo nimbusInfo);
+    public abstract void prepare(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo);
 
     /**
      * Creates the blob.

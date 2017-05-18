@@ -42,7 +42,7 @@ public class HBaseSecurityUtil {
     public static final String HBASE_CREDENTIALS_CONFIG_KEYS = "hbaseCredentialsConfigKeys";
     private static  UserProvider legacyProvider = null;
 
-    public static UserProvider login(Map conf, Configuration hbaseConfig) throws IOException {
+    public static UserProvider login(Map<String, Object> conf, Configuration hbaseConfig) throws IOException {
         //Allowing keytab based login for backward compatibility.
         if (UserGroupInformation.isSecurityEnabled() && (conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null ||
                 !(((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHBase.class.getName())))) {

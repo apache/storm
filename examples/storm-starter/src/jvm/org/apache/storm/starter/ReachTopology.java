@@ -115,7 +115,7 @@ public class ReachTopology {
         Set<String> _followers = new HashSet<String>();
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
             _collector = collector;
             _id = id;
         }
@@ -142,7 +142,7 @@ public class ReachTopology {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
             _collector = collector;
             _id = id;
         }

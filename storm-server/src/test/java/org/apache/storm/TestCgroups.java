@@ -100,12 +100,12 @@ public class TestCgroups {
         Assert.assertFalse("Make sure cgroup was removed properly", dirExists(pathToWorkerCgroupDir));
     }
 
-    private boolean stormCgroupHierarchyExists(Map config) {
+    private boolean stormCgroupHierarchyExists(Map<String, Object> config) {
         String pathToStormCgroupHierarchy = (String) config.get(Config.STORM_CGROUP_HIERARCHY_DIR);
         return dirExists(pathToStormCgroupHierarchy);
     }
 
-    private boolean stormCgroupSupervisorRootDirExists(Map config) {
+    private boolean stormCgroupSupervisorRootDirExists(Map<String, Object> config) {
         String pathTostormCgroupSupervisorRootDir = ((String) config.get(Config.STORM_CGROUP_HIERARCHY_DIR))
                 + "/" + ((String) config.get(DaemonConfig.STORM_SUPERVISOR_CGROUP_ROOTDIR));
 

@@ -33,7 +33,7 @@ public class CompleteTopologyParam {
 	/**
 	 * the config for the topology when it was submitted to the cluster
 	 */
-	private Map<String, Object> stormConf = new Config();
+	private Map<String, Object> topoConf = new Config();
 	/**
 	 * whether cleanup the state?
 	 */
@@ -61,14 +61,14 @@ public class CompleteTopologyParam {
 	}
 
 	public Map<String, Object> getStormConf() {
-		return stormConf;
+		return topoConf;
 	}
 
-	public void setStormConf(Map<String, Object> stormConf) {
-	    if (stormConf == null) {
-	        stormConf = new Config();
+	public void setStormConf(Map<String, Object> topoConf) {
+	    if (topoConf == null) {
+	        topoConf = new Config();
 	    }
-		this.stormConf = stormConf;
+		this.topoConf = topoConf;
 	}
 
 	public boolean getCleanupState() {

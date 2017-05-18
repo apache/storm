@@ -48,15 +48,15 @@ public class TransactionalState {
     CuratorFramework _curator;
     List<ACL> _zkAcls = null;
     
-    public static TransactionalState newUserState(Map conf, String id) {
+    public static TransactionalState newUserState(Map<String, Object> conf, String id) {
         return new TransactionalState(conf, id, "user");
     }
     
-    public static TransactionalState newCoordinatorState(Map conf, String id) {
+    public static TransactionalState newCoordinatorState(Map<String, Object> conf, String id) {
         return new TransactionalState(conf, id, "coordinator");        
     }
     
-    protected TransactionalState(Map conf, String id, String subroot) {
+    protected TransactionalState(Map<String, Object> conf, String id, String subroot) {
         try {
             conf = new HashMap(conf);
             String transactionalRoot = (String)conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);

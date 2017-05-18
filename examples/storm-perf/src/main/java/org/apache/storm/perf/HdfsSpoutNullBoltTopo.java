@@ -54,7 +54,7 @@ public class HdfsSpoutNullBoltTopo {
     public static final int DEFAULT_BOLT_NUM = 1;
 
 
-    public static StormTopology getTopology(Map config) {
+    public static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int boltNum = Helper.getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
@@ -93,7 +93,7 @@ public class HdfsSpoutNullBoltTopo {
         }
 
         Integer durationSec = Integer.parseInt(args[0]);
-        Map topoConf = Utils.findAndReadConfigFile(args[1]);
+        Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
 
         // Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

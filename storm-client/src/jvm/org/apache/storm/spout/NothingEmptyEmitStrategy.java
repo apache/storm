@@ -25,7 +25,7 @@ public class NothingEmptyEmitStrategy implements ISpoutWaitStrategy {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -52,26 +52,26 @@ import org.slf4j.LoggerFactory;
  */
 public class SimpleTransportPlugin implements ITransportPlugin {
     protected ThriftConnectionType type;
-    protected Map storm_conf;
+    protected Map<String, Object> topoConf;
     protected Configuration login_conf;
     private static final Logger LOG = LoggerFactory.getLogger(SimpleTransportPlugin.class);
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
         this.type = type;
-        this.storm_conf = storm_conf;
+        this.topoConf = topoConf;
         this.login_conf = login_conf;
     }
 
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
-        int configuredPort = type.getPort(storm_conf);
+        int configuredPort = type.getPort(topoConf);
         TNonblockingServerSocket serverTransport = new TNonblockingServerSocket(configuredPort);
         this.port = serverTransport.getPort();
-        int numWorkerThreads = type.getNumThreads(storm_conf);
-        int maxBufferSize = type.getMaxBufferSize(storm_conf);
-        Integer queueSize = type.getQueueSize(storm_conf);
+        int numWorkerThreads = type.getNumThreads(topoConf);
+        int maxBufferSize = type.getMaxBufferSize(topoConf);
+        Integer queueSize = type.getQueueSize(topoConf);
 
         THsHaServer.Args server_args = new THsHaServer.Args(serverTransport).
                 processor(new SimpleWrapProcessor(processor)).
@@ -97,7 +97,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
      */
     @Override
     public TTransport connect(TTransport transport, String serverHost, String asUser) throws TTransportException {
-        int maxBufferSize = type.getMaxBufferSize(storm_conf);
+        int maxBufferSize = type.getMaxBufferSize(topoConf);
         //create a framed transport
         TTransport conn = new TFramedTransport(transport, maxBufferSize);
 
@@ -151,7 +151,7 @@ public class SimpleTransportPlugin implements ITransportPlugin {
             //anonymous user
             Subject s = getDefaultSubject();
             if (s == null) {
-              final String user = (String)storm_conf.get("debug.simple.transport.user");
+              final String user = (String)topoConf.get("debug.simple.transport.user");
               if (user != null) {
                 HashSet<Principal> principals = new HashSet<>();
                 principals.add(new Principal() {

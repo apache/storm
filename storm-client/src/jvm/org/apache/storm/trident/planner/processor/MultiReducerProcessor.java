@@ -46,7 +46,7 @@ public class MultiReducerProcessor implements TridentProcessor {
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, TridentContext tridentContext) {
         List<Factory> parents = tridentContext.getParentTupleFactories();
         _context = tridentContext;
         _streamToIndex = new HashMap<>();

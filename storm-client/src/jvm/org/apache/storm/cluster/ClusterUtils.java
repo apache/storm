@@ -91,7 +91,7 @@ public class ClusterUtils {
         _instance = INSTANCE;
     }
 
-    public static List<ACL> mkTopoOnlyAcls(Map topoConf) throws NoSuchAlgorithmException {
+    public static List<ACL> mkTopoOnlyAcls(Map<String, Object> topoConf) throws NoSuchAlgorithmException {
         List<ACL> aclList = null;
         String payload = (String) topoConf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         if (Utils.isZkAuthenticationConfiguredTopology(topoConf)) {
@@ -213,7 +213,7 @@ public class ClusterUtils {
         }
     }
 
-    public IStateStorage mkStateStorageImpl(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
+    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
         String className = null;
         IStateStorage stateStorage = null;
         if (config.get(Config.STORM_CLUSTER_STATE_STORE) != null) {
@@ -227,7 +227,7 @@ public class ClusterUtils {
         return stateStorage;
     }
 
-    public static IStateStorage mkStateStorage(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
+    public static IStateStorage mkStateStorage(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
         return _instance.mkStateStorageImpl(config, auth_conf, acls, context);
     }
 

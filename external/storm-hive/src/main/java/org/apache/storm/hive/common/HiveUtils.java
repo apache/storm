@@ -103,7 +103,7 @@ public class HiveUtils {
         }
     }
 
-    public static boolean isTokenAuthEnabled(Map conf) {
+    public static boolean isTokenAuthEnabled(Map<String, Object> conf) {
         return conf.get(TOPOLOGY_AUTO_CREDENTIALS) != null && (((List) conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHive.class.getName()));
     }
 

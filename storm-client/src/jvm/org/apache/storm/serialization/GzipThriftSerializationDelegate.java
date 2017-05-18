@@ -31,7 +31,7 @@ import org.apache.thrift.TSerializer;
 public class GzipThriftSerializationDelegate implements SerializationDelegate {
 
     @Override
-    public void prepare(Map stormConf) {
+    public void prepare(Map<String, Object> topoConf) {
         // No-op
     }
 

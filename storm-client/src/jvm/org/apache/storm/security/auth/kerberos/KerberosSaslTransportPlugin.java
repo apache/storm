@@ -93,7 +93,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
     public TTransportFactory getServerTransportFactory() throws IOException {
         //create an authentication callback handler
-        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, storm_conf);
+        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, topoConf);
         
         //login our principal
         Subject subject = null;

@@ -53,12 +53,12 @@ class KerberosSaslNettyServer {
     private Subject subject;
     private List<String> authorizedUsers;
 
-    KerberosSaslNettyServer(Map storm_conf, String jaas_section, List<String> authorizedUsers) {
+    KerberosSaslNettyServer(Map<String, Object> topoConf, String jaas_section, List<String> authorizedUsers) {
         this.authorizedUsers = authorizedUsers;
         LOG.debug("Getting Configuration.");
         Configuration login_conf;
         try {
-            login_conf = AuthUtils.GetConfiguration(storm_conf);
+            login_conf = AuthUtils.GetConfiguration(topoConf);
         }
         catch (Throwable t) {
             LOG.error("Failed to get login_conf: ", t);

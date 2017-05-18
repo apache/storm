@@ -51,7 +51,7 @@ public class IsolationScheduler implements IScheduler {
     private Map<String, Number> isoMachines;
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         this.isoMachines = (Map<String, Number>) conf.get(DaemonConfig.ISOLATION_SCHEDULER_MACHINES);
         Validate.notEmpty(isoMachines);
     }

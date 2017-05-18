@@ -60,7 +60,7 @@ public class AutoHBase extends AbstractAutoCreds {
     public String hbasePrincipal;
 
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
         if(conf.containsKey(HBASE_KEYTAB_FILE_KEY) && conf.containsKey(HBASE_PRINCIPAL_KEY)) {
             hbaseKeytab = (String) conf.get(HBASE_KEYTAB_FILE_KEY);
             hbasePrincipal = (String) conf.get(HBASE_PRINCIPAL_KEY);
@@ -79,24 +79,24 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
         return getHadoopCredentials(conf, configuration);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf) {
         return getHadoopCredentials(conf, HBaseConfiguration.create());
     }
 
-    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+    private Configuration getHadoopConfiguration(Map<String, Object> topoConf, String configKey) {
         Configuration configuration = HBaseConfiguration.create();
         fillHadoopConfiguration(topoConf, configKey, configuration);
         return configuration;
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, Configuration hbaseConf) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
@@ -143,7 +143,7 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf) {
         //HBASE tokens are not renewable so we always have to get new ones.
         populateCredentials(credentials, topologyConf);
     }
@@ -156,7 +156,7 @@ public class AutoHBase extends AbstractAutoCreds {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
         conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
         conf.put(HBASE_PRINCIPAL_KEY,args[1]); // hbase principal storm-hbase@WITZEN.COM
         conf.put(HBASE_KEYTAB_FILE_KEY,args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab

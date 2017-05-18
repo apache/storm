@@ -27,7 +27,7 @@ import java.util.Map;
 public class ThriftSerializationDelegate implements SerializationDelegate {
 
     @Override
-    public void prepare(Map stormConf) {
+    public void prepare(Map<String, Object> topoConf) {
     }
 
     @Override

@@ -37,7 +37,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     
     public WorkerTopologyContext(
             StormTopology topology,
-            Map stormConf,
+            Map<String, Object> topoConf,
             Map<Integer, String> taskToComponent,
             Map<String, List<Integer>> componentToSortedTasks,
             Map<String, Map<String, Fields>> componentToStreamToFields,
@@ -49,7 +49,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
             Map<String, Object> defaultResources,
             Map<String, Object> userResources
             ) {
-        super(topology, stormConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
+        super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
         _codeDir = codeDir;
         _defaultResources = defaultResources;
         _userResources = userResources;

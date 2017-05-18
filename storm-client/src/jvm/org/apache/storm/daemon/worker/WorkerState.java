@@ -75,7 +75,7 @@ public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
 
-    final Map conf;
+    final Map<String, Object> conf;
     final IContext mqContext;
 
     public Map getConf() {
@@ -185,7 +185,7 @@ public class WorkerState {
     // executors and taskIds running in this worker
     final Set<List<Long>> executors;
     final List<Integer> taskIds;
-    final Map topologyConf;
+    final Map<String, Object> topologyConf;
     final StormTopology topology;
     final StormTopology systemTopology;
     final Map<Integer, String> taskToComponent;
@@ -259,8 +259,8 @@ public class WorkerState {
 
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
-    public WorkerState(Map conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-        Map topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
+    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
+        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.transferQueue = new DisruptorQueue("worker-transfer-queue",
@@ -628,7 +628,7 @@ public class WorkerState {
         return executorsAssignedToThisWorker;
     }
 
-    private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map topologyConf, Set<List<Long>> executors) {
+    private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
         Map<List<Long>, DisruptorQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new DisruptorQueue("receive-queue",

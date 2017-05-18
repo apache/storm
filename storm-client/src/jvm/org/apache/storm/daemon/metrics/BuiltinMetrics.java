@@ -25,9 +25,9 @@ import org.apache.storm.task.TopologyContext;
 public abstract class BuiltinMetrics {
     protected final Map<String, IMetric> metricMap = new HashMap<>();
 
-    public void registerAll(Map stormConf, TopologyContext context) {
+    public void registerAll(Map<String, Object> topoConf, TopologyContext context) {
         for (Map.Entry<String, IMetric> entry : metricMap.entrySet()) {
-            BuiltinMetricsUtil.registerMetric("__" + entry.getKey(), entry.getValue(), stormConf, context);
+            BuiltinMetricsUtil.registerMetric("__" + entry.getKey(), entry.getValue(), topoConf, context);
         }
     }
 }

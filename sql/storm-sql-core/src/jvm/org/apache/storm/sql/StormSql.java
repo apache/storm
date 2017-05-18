@@ -43,7 +43,7 @@ public abstract class StormSql {
    * Submit the SQL statements to Nimbus and run it as a topology.
    */
   public abstract void submit(
-      String name, Iterable<String> statements, Map<String, ?> stormConf, SubmitOptions opts,
+      String name, Iterable<String> statements, Map<String, Object> topoConf, SubmitOptions opts,
       StormSubmitter.ProgressListener progressListener, String asUser)
       throws Exception;
 

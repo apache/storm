@@ -79,7 +79,7 @@ import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 public class Worker implements Shutdownable, DaemonCommon {
 
     private static final Logger LOG = LoggerFactory.getLogger(Worker.class);
-    private final Map conf;
+    private final Map<String, Object> conf;
     private final IContext context;
     private final String topologyId;
     private final String assignmentId;
@@ -111,7 +111,7 @@ public class Worker implements Shutdownable, DaemonCommon {
      * @param workerId     - worker id
      */
 
-    public Worker(Map conf, IContext context, String topologyId, String assignmentId, int port, String workerId) {
+    public Worker(Map<String, Object> conf, IContext context, String topologyId, String assignmentId, int port, String workerId) {
         this.conf = conf;
         this.context = context;
         this.topologyId = topologyId;
@@ -135,7 +135,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             FileUtils.writeStringToFile(new File(ConfigUtils.workerArtifactsPidPath(conf, topologyId, port)), pid,
                 Charset.forName("UTF-8"));
         }
-        final Map topologyConf =
+        final Map<String, Object> topologyConf =
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
         List<ACL> acls = Utils.getWorkerACL(topologyConf);
         IStateStorage stateStorage =
@@ -449,7 +449,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         String assignmentId = args[1];
         String portStr = args[2];
         String workerId = args[3];
-        Map conf = Utils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         Utils.setupDefaultUncaughtExceptionHandler();
         StormCommon.validateDistributedMode(conf);
         Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(portStr), workerId);

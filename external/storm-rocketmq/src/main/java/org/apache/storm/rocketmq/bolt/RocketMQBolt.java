@@ -49,7 +49,7 @@ public class RocketMQBolt implements IRichBolt {
     private Properties properties;
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         Validate.notEmpty(properties, "Producer properties can not be empty");
 
         // Since RocketMQ Producer is thread-safe, RocketMQBolt uses a single

@@ -34,7 +34,7 @@ public class ReportError implements IReportError {
 
     private static final Logger LOG = LoggerFactory.getLogger(ReportError.class);
 
-    private final Map stormConf;
+    private final Map<String, Object> topoConf;
     private final IStormClusterState stormClusterState;
     private final String stormId;
     private final String componentId;
@@ -45,14 +45,14 @@ public class ReportError implements IReportError {
     private AtomicInteger intervalStartTime;
     private AtomicInteger intervalErrors;
 
-    public ReportError(Map stormConf, IStormClusterState stormClusterState, String stormId, String componentId, WorkerTopologyContext workerTopologyContext) {
-        this.stormConf = stormConf;
+    public ReportError(Map<String, Object> topoConf, IStormClusterState stormClusterState, String stormId, String componentId, WorkerTopologyContext workerTopologyContext) {
+        this.topoConf = topoConf;
         this.stormClusterState = stormClusterState;
         this.stormId = stormId;
         this.componentId = componentId;
         this.workerTopologyContext = workerTopologyContext;
-        this.errorIntervalSecs = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS));
-        this.maxPerInterval = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL));
+        this.errorIntervalSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_ERROR_THROTTLE_INTERVAL_SECS));
+        this.maxPerInterval = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_MAX_ERROR_REPORT_PER_INTERVAL));
         this.intervalStartTime = new AtomicInteger(Time.currentTimeSecs());
         this.intervalErrors = new AtomicInteger(0);
     }

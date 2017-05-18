@@ -55,7 +55,7 @@ class PacemakerServer implements ISaslServer {
     private ConcurrentSkipListSet<Channel> authenticated_channels = new ConcurrentSkipListSet<Channel>();
     private ThriftNettyServerCodec.AuthMethod authMethod;
 
-    public PacemakerServer(IServerMessageHandler handler, Map config){
+    public PacemakerServer(IServerMessageHandler handler, Map<String, Object> config){
         int maxWorkers = (int)config.get(DaemonConfig.PACEMAKER_MAX_THREADS);
         this.port = (int)config.get(Config.PACEMAKER_PORT);
         this.handler = handler;

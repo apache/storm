@@ -34,9 +34,9 @@ public class PacemakerClientPool {
     
     private ConcurrentHashMap<String, PacemakerClient> clientForServer = new ConcurrentHashMap<>();
     private ConcurrentLinkedQueue<String> servers;
-    private Map config;
+    private Map<String, Object> config;
 
-    public PacemakerClientPool(Map config) {
+    public PacemakerClientPool(Map<String, Object> config) {
         this.config = config;
         List<String> serverList = (List<String>)config.get(Config.PACEMAKER_SERVERS);
         if(serverList == null) {

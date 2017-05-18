@@ -57,7 +57,7 @@ public class AutoHDFS extends AbstractAutoCreds {
     private String hdfsPrincipal;
 
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
         if(conf.containsKey(STORM_KEYTAB_FILE_KEY) && conf.containsKey(STORM_USER_NAME_KEY)) {
             hdfsKeyTab = (String) conf.get(STORM_KEYTAB_FILE_KEY);
             hdfsPrincipal = (String) conf.get(STORM_USER_NAME_KEY);
@@ -75,24 +75,24 @@ public class AutoHDFS extends AbstractAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
         return getHadoopCredentials(conf, configuration);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf) {
         return getHadoopCredentials(conf, new Configuration());
     }
 
-    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+    private Configuration getHadoopConfiguration(Map<String, Object> topoConf, String configKey) {
         Configuration configuration = new Configuration();
         fillHadoopConfiguration(topoConf, configKey, configuration);
         return configuration;
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] getHadoopCredentials(Map conf, final Configuration configuration) {
+    private byte[] getHadoopCredentials(Map<String, Object> conf, final Configuration configuration) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 login(configuration);
@@ -148,7 +148,7 @@ public class AutoHDFS extends AbstractAutoCreds {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf) {
         for (Pair<String, Credentials> cred : getCredentials(credentials)) {
             try {
                 Configuration configuration = getHadoopConfiguration(topologyConf, cred.getFirst());
@@ -192,7 +192,7 @@ public class AutoHDFS extends AbstractAutoCreds {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
         conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
         conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
         conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab

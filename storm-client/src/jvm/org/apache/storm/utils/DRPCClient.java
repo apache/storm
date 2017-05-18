@@ -61,7 +61,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         return _localOverrideClient.getServiceId();
     }
 
-    public static DRPCClient getConfiguredClient(Map conf) throws TTransportException {
+    public static DRPCClient getConfiguredClient(Map<String, Object> conf) throws TTransportException {
         DistributedRPC.Iface override = _localOverrideClient;
         if (override != null) {
             return new DRPCClient(override);
@@ -86,12 +86,12 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
         this.client = override;
     }
     
-    public DRPCClient(Map conf, String host, int port) throws TTransportException {
+    public DRPCClient(Map<String, Object> conf, String host, int port) throws TTransportException {
         this(conf, host, port, null);
         _retryForever = true;
     }
 
-    public DRPCClient(Map conf, String host, int port, Integer timeout) throws TTransportException {
+    public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         super(conf, _localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
                 host, port, timeout, null);
         this.host = host;

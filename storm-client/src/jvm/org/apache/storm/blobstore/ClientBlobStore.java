@@ -50,7 +50,7 @@ import java.util.Map;
  * @see org.apache.storm.hdfs.blobstore.HdfsBlobStore
  */
 public abstract class ClientBlobStore implements Shutdownable {
-    protected Map conf;
+    protected Map<String, Object> conf;
 
     public interface WithBlobstore {
         void run(ClientBlobStore blobStore) throws Exception;
@@ -71,7 +71,7 @@ public abstract class ClientBlobStore implements Shutdownable {
      * Sets up the client API by parsing the configs.
      * @param conf The storm conf containing the config details.
      */
-    public abstract void prepare(Map conf);
+    public abstract void prepare(Map<String, Object> conf);
 
     /**
      * Client facing API to create a blob.
@@ -157,7 +157,7 @@ public abstract class ClientBlobStore implements Shutdownable {
      * @param client NimbusClient
      * @return indicates where the client connection has been setup.
      */
-    public abstract boolean setClient(Map conf, NimbusClient client);
+    public abstract boolean setClient(Map<String, Object> conf, NimbusClient client);
 
     /**
      * Creates state inside a zookeeper.

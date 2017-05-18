@@ -221,7 +221,7 @@ public class TestUtils {
   public static class MockStateFactory implements StateFactory {
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
       return new MockState();
     }
   }
@@ -234,7 +234,7 @@ public class TestUtils {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
       // NOOP
     }
 
@@ -270,7 +270,7 @@ public class TestUtils {
       private boolean emitted = false;
 
       @Override
-      public void open(Map conf, TopologyContext context) {
+      public void open(Map<String, Object> conf, TopologyContext context) {
       }
 
       @Override
@@ -329,7 +329,7 @@ public class TestUtils {
       private boolean emitted = false;
 
       @Override
-      public void open(Map conf, TopologyContext context) {
+      public void open(Map<String, Object> conf, TopologyContext context) {
       }
 
       @Override
@@ -391,7 +391,7 @@ public class TestUtils {
       private boolean emitted = false;
 
       @Override
-      public void open(Map conf, TopologyContext context) {
+      public void open(Map<String, Object> conf, TopologyContext context) {
       }
 
       @Override
@@ -450,7 +450,7 @@ public class TestUtils {
       private boolean emitted = false;
 
       @Override
-      public void open(Map conf, TopologyContext context) {
+      public void open(Map<String, Object> conf, TopologyContext context) {
       }
 
       @Override
@@ -515,7 +515,7 @@ public class TestUtils {
       private boolean emitted = false;
 
       @Override
-      public void open(Map conf, TopologyContext context) {
+      public void open(Map<String, Object> conf, TopologyContext context) {
       }
 
       @Override

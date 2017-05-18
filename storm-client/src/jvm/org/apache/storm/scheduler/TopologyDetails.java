@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 
 public class TopologyDetails {
     private String topologyId;
-    private Map topologyConf;
+    private Map<String, Object> topologyConf;
     private StormTopology topology;
     private Map<ExecutorDetails, String> executorToComponent;
     private int numWorkers;
@@ -57,16 +57,16 @@ public class TopologyDetails {
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyDetails.class);
 
-    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers) {
+    public TopologyDetails(String topologyId, Map<String, Object> topologyConf, StormTopology topology, int numWorkers) {
         this(topologyId, topologyConf, topology,  numWorkers,  null, 0);
     }
 
-    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology,
+    public TopologyDetails(String topologyId, Map<String, Object> topologyConf, StormTopology topology,
                            int numWorkers, Map<ExecutorDetails, String> executorToComponents) {
         this(topologyId, topologyConf, topology,  numWorkers,  executorToComponents, 0);
     }
 
-    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology,
+    public TopologyDetails(String topologyId, Map<String, Object> topologyConf, StormTopology topology,
                            int numWorkers, Map<ExecutorDetails, String> executorToComponents, int launchTime) {
         this.topologyId = topologyId;
         this.topologyConf = topologyConf;

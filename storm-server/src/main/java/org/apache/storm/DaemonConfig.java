@@ -894,15 +894,15 @@ public class DaemonConfig implements Validated {
     @isPositiveNumber
     public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB = "storm.cgroup.memory.limit.tolerance.margin.mb";
 
-    public static String getCgroupRootDir(Map conf) {
+    public static String getCgroupRootDir(Map<String, Object> conf) {
         return (String) conf.get(STORM_SUPERVISOR_CGROUP_ROOTDIR);
     }
 
-    public static String getCgroupStormHierarchyDir(Map conf) {
+    public static String getCgroupStormHierarchyDir(Map<String, Object> conf) {
         return (String) conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
     }
 
-    public static ArrayList<String> getCgroupStormResources(Map conf) {
+    public static ArrayList<String> getCgroupStormResources(Map<String, Object> conf) {
         ArrayList<String> ret = new ArrayList<String>();
         for (String entry : ((Iterable<String>) conf.get(DaemonConfig.STORM_CGROUP_RESOURCES))) {
             ret.add(entry);
@@ -910,7 +910,7 @@ public class DaemonConfig implements Validated {
         return ret;
     }
 
-    public static String getCgroupStormHierarchyName(Map conf) {
+    public static String getCgroupStormHierarchyName(Map<String, Object> conf) {
         return (String) conf.get(DaemonConfig.STORM_CGROUP_HIERARCHY_NAME);
     }
 

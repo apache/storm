@@ -45,7 +45,7 @@ import static org.junit.Assert.assertTrue;
 public class BlobSynchronizerTest {
   private URI base;
   private File baseFile;
-  private static Map conf = new HashMap();
+  private static Map<String, Object> conf = new HashMap();
   private NIOServerCnxnFactory factory;
 
   @Before
@@ -71,7 +71,7 @@ public class BlobSynchronizerTest {
 
   private LocalFsBlobStore initLocalFs() {
     LocalFsBlobStore store = new LocalFsBlobStore();
-    Map conf = Utils.readStormConfig();
+    Map<String, Object> conf = Utils.readStormConfig();
     conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
     this.conf = conf;

@@ -67,7 +67,7 @@ public abstract class HttpForwardingMetricsServer {
         }
     }
 
-    public HttpForwardingMetricsServer(Map conf) {
+    public HttpForwardingMetricsServer(Map<String, Object> conf) {
         _conf = Utils.readStormConfig();
         if (conf != null) {
             _conf.putAll(conf);

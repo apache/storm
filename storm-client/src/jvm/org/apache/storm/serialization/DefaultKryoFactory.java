@@ -43,7 +43,7 @@ public class DefaultKryoFactory implements IKryoFactory {
     }    
     
     @Override
-    public Kryo getKryo(Map conf) {
+    public Kryo getKryo(Map<String, Object> conf) {
         KryoSerializableDefault k = new KryoSerializableDefault();
         k.setRegistrationRequired(!((Boolean) conf.get(Config.TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION)));        
         k.setReferences(false);
@@ -51,14 +51,14 @@ public class DefaultKryoFactory implements IKryoFactory {
     }
 
     @Override
-    public void preRegister(Kryo k, Map conf) {
+    public void preRegister(Kryo k, Map<String, Object> conf) {
     }
     
-    public void postRegister(Kryo k, Map conf) {
+    public void postRegister(Kryo k, Map<String, Object> conf) {
         ((KryoSerializableDefault)k).overrideDefault(true);
     }
 
     @Override
-    public void postDecorate(Kryo k, Map conf) {        
+    public void postDecorate(Kryo k, Map<String, Object> conf) {        
     }    
 }

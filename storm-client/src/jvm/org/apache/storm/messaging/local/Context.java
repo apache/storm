@@ -196,7 +196,7 @@ public class Context implements IContext {
         
     @SuppressWarnings("rawtypes")
     @Override
-    public void prepare(Map storm_conf) {
+    public void prepare(Map<String, Object> topoConf) {
         //NOOP
     }
 

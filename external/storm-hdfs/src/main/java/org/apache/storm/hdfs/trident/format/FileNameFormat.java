@@ -26,7 +26,7 @@ import java.util.Map;
  */
 public interface FileNameFormat extends Serializable {
 
-    void prepare(Map conf, int partitionIndex, int numPartitions);
+    void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions);
 
     /**
      * Returns the filename the HdfsBolt will create.

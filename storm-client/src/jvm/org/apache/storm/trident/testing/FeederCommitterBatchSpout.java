@@ -69,12 +69,12 @@ public class FeederCommitterBatchSpout implements ICommitterTridentSpout<Map<Int
     }
     
     @Override
-    public Emitter getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new CommitterEmitter(_spout.getEmitter(txStateId, conf, context));
     }
 
     @Override
-    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return _spout.getCoordinator(txStateId, conf, context);
     }
 

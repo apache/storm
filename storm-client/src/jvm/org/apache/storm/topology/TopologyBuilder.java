@@ -68,7 +68,7 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * builder.setBolt("4", new TestGlobalCount())
  *          .globalGrouping("1");
  *
- * Map conf = new HashMap();
+ * Map<String, Object> conf = new HashMap();
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * 
  * StormSubmitter.submitTopology("mytopology", conf, builder.createTopology());
@@ -89,7 +89,7 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * builder.setBolt("4", new TestGlobalCount())
  *          .globalGrouping("1");
  *
- * Map conf = new HashMap();
+ * Map<String, Object> conf = new HashMap();
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * conf.put(Config.TOPOLOGY_DEBUG, true);
  *
@@ -538,7 +538,7 @@ public class TopologyBuilder {
             }
             common.set_parallelism_hint(dop);
         }
-        Map conf = component.getComponentConfiguration();
+        Map<String, Object> conf = component.getComponentConfiguration();
         if(conf!=null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
     }

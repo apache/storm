@@ -44,7 +44,7 @@ public class TransactionalSpoutBatchExecutor implements IRichBolt {
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
         _collector = new BatchOutputCollectorImpl(collector);
         _emitter = _spout.getEmitter(conf, context);
     }

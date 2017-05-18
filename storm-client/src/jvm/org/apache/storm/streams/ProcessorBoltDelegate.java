@@ -53,7 +53,7 @@ class ProcessorBoltDelegate implements Serializable {
     private final String id;
     private final DirectedGraph<Node, Edge> graph;
     private final List<ProcessorNode> nodes;
-    private Map stormConf;
+    private Map<String, Object> topoConf;
     private TopologyContext topologyContext;
     private OutputCollector outputCollector;
     private final List<ProcessorNode> outgoingProcessors = new ArrayList<>();
@@ -81,8 +81,8 @@ class ProcessorBoltDelegate implements Serializable {
         return Collections.unmodifiableList(nodes);
     }
 
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        this.stormConf = stormConf;
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        this.topoConf = topoConf;
         topologyContext = context;
         outputCollector = collector;
         DirectedSubgraph<Node, Edge> subgraph = new DirectedSubgraph<>(graph, new HashSet<>(nodes), null);

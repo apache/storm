@@ -89,8 +89,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final List<Integer> taskIds;
     protected final String componentId;
     protected final AtomicBoolean openOrPrepareWasCalled;
-    protected final Map stormConf;
-    protected final Map conf;
+    protected final Map<String, Object> topoConf;
+    protected final Map<String, Object> conf;
     protected final String stormId;
     protected final HashMap sharedExecutorData;
     protected final AtomicBoolean stormActive;
@@ -124,7 +124,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.taskIds = StormCommon.executorIdToTasks(executorId);
         this.componentId = workerTopologyContext.getComponentId(taskIds.get(0));
         this.openOrPrepareWasCalled = new AtomicBoolean(false);
-        this.stormConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
+        this.topoConf = normalizedComponentConf(workerData.getTopologyConf(), workerTopologyContext, componentId);
         this.receiveQueue = (workerData.getExecutorReceiveQueueMap().get(executorId));
         this.stormId = workerData.getTopologyId();
         this.conf = workerData.getConf();
@@ -132,12 +132,12 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         this.stormActive = workerData.getIsTopologyActive();
         this.stormComponentDebug = workerData.getStormComponentToDebug();
 
-        this.transferQueue = mkExecutorBatchQueue(stormConf, executorId);
-        this.executorTransfer = new ExecutorTransfer(workerData, transferQueue, stormConf);
+        this.transferQueue = mkExecutorBatchQueue(topoConf, executorId);
+        this.executorTransfer = new ExecutorTransfer(workerData, transferQueue, topoConf);
 
         this.suicideFn = workerData.getSuicideCallback();
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(), Utils.getWorkerACL(stormConf),
+            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(), Utils.getWorkerACL(topoConf),
                     new ClusterStateContext(DaemonType.WORKER));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
@@ -148,25 +148,25 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         Map<String, Bolt> bolts = topology.get_bolts();
         if (spouts.containsKey(componentId)) {
             this.type = StatsUtil.SPOUT;
-            this.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(stormConf),ObjectReader.getInt(stormConf.get(Config.NUM_STAT_BUCKETS)));
+            this.stats = new SpoutExecutorStats(ConfigUtils.samplingRate(topoConf),ObjectReader.getInt(topoConf.get(Config.NUM_STAT_BUCKETS)));
         } else if (bolts.containsKey(componentId)) {
             this.type = StatsUtil.BOLT;
-            this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(stormConf),ObjectReader.getInt(stormConf.get(Config.NUM_STAT_BUCKETS)));
+            this.stats = new BoltExecutorStats(ConfigUtils.samplingRate(topoConf),ObjectReader.getInt(topoConf.get(Config.NUM_STAT_BUCKETS)));
         } else {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
 
         this.intervalToTaskToMetricToRegistry = new HashMap<>();
         this.taskToComponent = workerData.getTaskToComponent();
-        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, stormConf);
-        this.reportError = new ReportError(stormConf, stormClusterState, stormId, componentId, workerTopologyContext);
+        this.streamToComponentToGrouper = outboundComponents(workerTopologyContext, componentId, topoConf);
+        this.reportError = new ReportError(topoConf, stormClusterState, stormId, componentId, workerTopologyContext);
         this.reportErrorDie = new ReportErrorAndDie(reportError, suicideFn);
-        this.sampler = ConfigUtils.mkStatsSampler(stormConf);
+        this.sampler = ConfigUtils.mkStatsSampler(topoConf);
         this.throttleOn = workerData.getThrottleOn();
-        this.isDebug = ObjectReader.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
         this.rand = new Random(Utils.secureRandomLong());
         this.credentials = credentials;
-        this.hasEventLoggers = StormCommon.hasEventLoggers(stormConf);
+        this.hasEventLoggers = StormCommon.hasEventLoggers(topoConf);
 
         try {
             this.hostname = Utils.hostname();
@@ -349,14 +349,14 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                 WorkerBackpressureThread.notifyBackpressureChecker(workerData.getBackpressureTrigger());
             }
         });
-        receiveQueue.setHighWaterMark(ObjectReader.getDouble(stormConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
-        receiveQueue.setLowWaterMark(ObjectReader.getDouble(stormConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
-        receiveQueue.setEnableBackpressure(ObjectReader.getBoolean(stormConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false));
+        receiveQueue.setHighWaterMark(ObjectReader.getDouble(topoConf.get(Config.BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK)));
+        receiveQueue.setLowWaterMark(ObjectReader.getDouble(topoConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
+        receiveQueue.setEnableBackpressure(ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false));
     }
 
     protected void setupTicks(boolean isSpout) {
-        final Integer tickTimeSecs = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
-        boolean enableMessageTimeout = (Boolean) stormConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
+        final Integer tickTimeSecs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS), null);
+        boolean enableMessageTimeout = (Boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
         if (tickTimeSecs != null) {
             if (Utils.isSystemId(componentId) || (!enableMessageTimeout && isSpout)) {
                 LOG.info("Timeouts disabled for executor " + componentId + ":" + executorId);
@@ -377,11 +377,11 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     }
 
 
-    private DisruptorQueue mkExecutorBatchQueue(Map stormConf, List<Long> executorId) {
-        int sendSize = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
-        int waitTimeOutMs = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
-        int batchSize = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
-        int batchTimeOutMs = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
+    private DisruptorQueue mkExecutorBatchQueue(Map<String, Object> topoConf, List<Long> executorId) {
+        int sendSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE));
+        int waitTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
+        int batchSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
+        int batchTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
         return new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.SINGLE,
                 sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
     }
@@ -390,7 +390,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
      * Returns map of stream id to component id to grouper
      */
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> outboundComponents(
-            WorkerTopologyContext workerTopologyContext, String componentId, Map stormConf) {
+            WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
         Map<String, Map<String, LoadAwareCustomStreamGrouping>> ret = new HashMap<>();
 
         Map<String, Map<String, Grouping>> outputGroupings = workerTopologyContext.getTargets(componentId);
@@ -404,7 +404,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                 Grouping grouping = cg.getValue();
                 List<Integer> outTasks = workerTopologyContext.getComponentTasks(component);
                 LoadAwareCustomStreamGrouping grouper = GrouperFactory.mkGrouper(
-                        workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, stormConf);
+                        workerTopologyContext, componentId, streamId, outFields, grouping, outTasks, topoConf);
                 componentGrouper.put(component, grouper);
             }
             if (componentGrouper.size() > 0) {
@@ -421,7 +421,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         return ret;
     }
 
-    private Map normalizedComponentConf(Map stormConf, WorkerTopologyContext topologyContext, String componentId) {
+    private Map normalizedComponentConf(Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
         List<Object> keysToRemove = All_CONFIGS();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
@@ -456,7 +456,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         }
 
         Map<Object, Object> ret = new HashMap<>();
-        ret.putAll(stormConf);
+        ret.putAll(topoConf);
         ret.putAll(componentConf);
 
         return ret;
@@ -483,7 +483,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     }
 
     public Map getStormConf() {
-        return stormConf;
+        return topoConf;
     }
 
     public String getStormId() {

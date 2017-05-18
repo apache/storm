@@ -41,7 +41,7 @@ public class ClientBlobStoreTest {
 
     private Map<String, SettableBlobMeta> allBlobs;
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
       this.conf = conf;
       allBlobs = new HashMap<String, SettableBlobMeta>();
     }
@@ -100,7 +100,7 @@ public class ClientBlobStoreTest {
     }
 
     @Override
-    public boolean setClient(Map conf, NimbusClient client) {
+    public boolean setClient(Map<String, Object> conf, NimbusClient client) {
       return false;
     }
 
@@ -113,7 +113,7 @@ public class ClientBlobStoreTest {
   public void setUp() throws Exception {
 
     client = new TestClientBlobStore();
-    Map conf = new HashMap<String,String>();
+    Map<String, Object> conf = new HashMap<>();
     client.prepare(conf);
 
   }

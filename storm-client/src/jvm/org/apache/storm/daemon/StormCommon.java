@@ -99,7 +99,7 @@ public class StormCommon {
         return stormClusterState.getTopoId(topologyName).get();
     }
 
-    public static void validateDistributedMode(Map conf) {
+    public static void validateDistributedMode(Map<String, Object> conf) {
         if (ConfigUtils.isLocalMode(conf)) {
             throw new IllegalArgumentException("Cannot start server in local mode!");
         }
@@ -191,7 +191,7 @@ public class StormCommon {
 
         Map<String, Object> componentMap = allComponents(topology);
         for (Object componentObj : componentMap.values()) {
-            Map conf = componentConf(componentObj);
+            Map<String, Object> conf = componentConf(componentObj);
             ComponentCommon common = getComponentCommon(componentObj);
             int parallelismHintNum = Thrift.getParallelismHint(common);
             Integer taskNum = ObjectReader.getInt(conf.get(Config.TOPOLOGY_TASKS), 0);
@@ -276,7 +276,7 @@ public class StormCommon {
     }
 
     @SuppressWarnings("unchecked")
-    public static void addAcker(Map conf, StormTopology topology) {
+    public static void addAcker(Map<String, Object> conf, StormTopology topology) {
         int ackerNum = ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_EXECUTORS), ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         Map<GlobalStreamId, Grouping> inputs = ackerInputs(topology);
 
@@ -363,7 +363,7 @@ public class StormCommon {
         return inputs;
     }
 
-    public static void addEventLogger(Map conf, StormTopology topology) {
+    public static void addEventLogger(Map<String, Object> conf, StormTopology topology) {
         Integer numExecutors = ObjectReader.getInt(conf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS),
                 ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKERS)));
         HashMap<String, Object> componentConf = new HashMap<>();
@@ -380,7 +380,7 @@ public class StormCommon {
     }
 
     @SuppressWarnings("unchecked")
-    public static Map<String, Bolt> metricsConsumerBoltSpecs(Map conf, StormTopology topology) {
+    public static Map<String, Bolt> metricsConsumerBoltSpecs(Map<String, Object> conf, StormTopology topology) {
         Map<String, Bolt> metricsConsumerBolts = new HashMap<>();
 
         Set<String> componentIdsEmitMetrics = new HashSet<>();
@@ -434,7 +434,7 @@ public class StormCommon {
         return metricsConsumerBolts;
     }
 
-    public static void addMetricComponents(Map conf, StormTopology topology) {
+    public static void addMetricComponents(Map<String, Object> conf, StormTopology topology) {
         Map<String, Bolt> metricsConsumerBolts = metricsConsumerBoltSpecs(conf, topology);
         for (Map.Entry<String, Bolt> entry : metricsConsumerBolts.entrySet()) {
             topology.put_to_bolts(entry.getKey(), entry.getValue());
@@ -442,7 +442,7 @@ public class StormCommon {
     }
 
     @SuppressWarnings("unused")
-    public static void addSystemComponents(Map conf, StormTopology topology) {
+    public static void addSystemComponents(Map<String, Object> conf, StormTopology topology) {
         Map<String, StreamInfo> outputStreams = new HashMap<>();
         outputStreams.put(Constants.SYSTEM_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("rate_secs")));
         outputStreams.put(Constants.METRICS_TICK_STREAM_ID, Thrift.outputFields(Arrays.asList("interval")));
@@ -455,20 +455,20 @@ public class StormCommon {
         topology.put_to_bolts(Constants.SYSTEM_COMPONENT_ID, systemBoltSpec);
     }
 
-    public static StormTopology systemTopology(Map stormConf, StormTopology topology) throws InvalidTopologyException {
-        return _instance.systemTopologyImpl(stormConf, topology);
+    public static StormTopology systemTopology(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+        return _instance.systemTopologyImpl(topoConf, topology);
     }
 
-    protected StormTopology systemTopologyImpl(Map stormConf, StormTopology topology) throws InvalidTopologyException {
+    protected StormTopology systemTopologyImpl(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
         validateBasic(topology);
 
         StormTopology ret = topology.deepCopy();
-        addAcker(stormConf, ret);
-        if (hasEventLoggers(stormConf)) {
-            addEventLogger(stormConf, ret);
+        addAcker(topoConf, ret);
+        if (hasEventLoggers(topoConf)) {
+            addEventLogger(topoConf, ret);
         }
-        addMetricComponents(stormConf, ret);
-        addSystemComponents(stormConf, ret);
+        addMetricComponents(topoConf, ret);
+        addSystemComponents(topoConf, ret);
         addMetricStreams(ret);
         addSystemStreams(ret);
 
@@ -477,13 +477,13 @@ public class StormCommon {
         return ret;
     }
 
-    public static boolean hasAckers(Map stormConf) {
-        Object ackerNum = stormConf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
+    public static boolean hasAckers(Map<String, Object> topoConf) {
+        Object ackerNum = topoConf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
         return ackerNum == null || ObjectReader.getInt(ackerNum) > 0;
     }
 
-    public static boolean hasEventLoggers(Map stormConf) {
-        Object eventLoggerNum = stormConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS);
+    public static boolean hasEventLoggers(Map<String, Object> topoConf) {
+        Object eventLoggerNum = topoConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS);
         return eventLoggerNum == null || ObjectReader.getInt(eventLoggerNum) > 0;
     }
 
@@ -492,21 +492,21 @@ public class StormCommon {
         return Thrift.getParallelismHint(common);
     }
 
-    public static Map<Integer, String> stormTaskInfo(StormTopology userTopology, Map stormConf) throws InvalidTopologyException {
-        return _instance.stormTaskInfoImpl(userTopology, stormConf);
+    public static Map<Integer, String> stormTaskInfo(StormTopology userTopology, Map<String, Object> topoConf) throws InvalidTopologyException {
+        return _instance.stormTaskInfoImpl(userTopology, topoConf);
     }
 
     /*
      * Returns map from task -> componentId
      */
-    protected Map<Integer, String> stormTaskInfoImpl(StormTopology userTopology, Map stormConf) throws InvalidTopologyException {
+    protected Map<Integer, String> stormTaskInfoImpl(StormTopology userTopology, Map<String, Object> topoConf) throws InvalidTopologyException {
         Map<Integer, String> taskIdToComponentId = new HashMap<>();
 
-        StormTopology systemTopology = systemTopology(stormConf, userTopology);
+        StormTopology systemTopology = systemTopology(topoConf, userTopology);
         Map<String, Object> components = allComponents(systemTopology);
         Map<String, Integer> componentIdToTaskNum = new TreeMap<>();
         for (Map.Entry<String, Object> entry : components.entrySet()) {
-            Map conf = componentConf(entry.getValue());
+            Map<String, Object> conf = componentConf(entry.getValue());
             Object taskNum = conf.get(Config.TOPOLOGY_TASKS);
             componentIdToTaskNum.put(entry.getKey(), ObjectReader.getInt(taskNum));
         }
@@ -545,12 +545,12 @@ public class StormCommon {
         return tasksToNodePort;
     }
 
-    public static IAuthorizer mkAuthorizationHandler(String klassName, Map conf)
+    public static IAuthorizer mkAuthorizationHandler(String klassName, Map<String, Object> conf)
             throws IllegalAccessException, InstantiationException, ClassNotFoundException {
         return _instance.mkAuthorizationHandlerImpl(klassName, conf);
     }
 
-    protected IAuthorizer mkAuthorizationHandlerImpl(String klassName, Map conf)
+    protected IAuthorizer mkAuthorizationHandlerImpl(String klassName, Map<String, Object> conf)
             throws ClassNotFoundException, IllegalAccessException, InstantiationException {
         IAuthorizer aznHandler = null;
         if (StringUtils.isNotBlank(klassName)) {
@@ -571,21 +571,21 @@ public class StormCommon {
     public static WorkerTopologyContext makeWorkerContext(Map<String, Object> workerData) {
         try {
             StormTopology stormTopology = (StormTopology) workerData.get(Constants.SYSTEM_TOPOLOGY);
-            Map stormConf = (Map) workerData.get(Constants.STORM_CONF);
+            Map<String, Object> topoConf = (Map) workerData.get(Constants.STORM_CONF);
             Map<Integer, String> taskToComponent = (Map<Integer, String>) workerData.get(Constants.TASK_TO_COMPONENT);
             Map<String, List<Integer>> componentToSortedTasks =
                     (Map<String, List<Integer>>) workerData.get(Constants.COMPONENT_TO_SORTED_TASKS);
             Map<String, Map<String, Fields>> componentToStreamToFields =
                     (Map<String, Map<String, Fields>>) workerData.get(Constants.COMPONENT_TO_STREAM_TO_FIELDS);
             String stormId = (String) workerData.get(Constants.STORM_ID);
-            Map conf = (Map) workerData.get(Constants.CONF);
+            Map<String, Object> conf = (Map) workerData.get(Constants.CONF);
             Integer port = (Integer) workerData.get(Constants.PORT);
             String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, stormId));
             String pidDir = ConfigUtils.workerPidsRoot(conf, stormId);
             List<Integer> workerTasks = (List<Integer>) workerData.get(Constants.TASK_IDS);
             Map<String, Object> defaultResources = (Map<String, Object>) workerData.get(Constants.DEFAULT_SHARED_RESOURCES);
             Map<String, Object> userResources = (Map<String, Object>) workerData.get(Constants.USER_SHARED_RESOURCES);
-            return new WorkerTopologyContext(stormTopology, stormConf, taskToComponent, componentToSortedTasks,
+            return new WorkerTopologyContext(stormTopology, topoConf, taskToComponent, componentToSortedTasks,
                     componentToStreamToFields, stormId, codeDir, pidDir, port, workerTasks, defaultResources, userResources);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);

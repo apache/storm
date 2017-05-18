@@ -89,7 +89,7 @@ public class UtilsTest {
     }
 
     public void getConfiguredClientThrowsRuntimeExceptionOnBadArgsTest () throws TTransportException {
-        Map config = ConfigUtils.readStormConfig();
+        Map<String, Object> config = ConfigUtils.readStormConfig();
         config.put(Config.STORM_NIMBUS_RETRY_TIMES, 0);
 
         try {

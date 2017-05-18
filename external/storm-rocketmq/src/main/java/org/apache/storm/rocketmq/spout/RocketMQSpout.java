@@ -75,7 +75,7 @@ public class RocketMQSpout implements IRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         // Since RocketMQ Consumer is thread-safe, RocketMQSpout uses a single
         // consumer instance across threads to improve the performance.
         synchronized (RocketMQSpout.class) {

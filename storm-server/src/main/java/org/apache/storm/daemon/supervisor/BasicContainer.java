@@ -346,7 +346,7 @@ public class BasicContainer extends Container {
     
     protected List<String> frameworkClasspath() {
         File stormWorkerLibDir = new File(_stormHome, "lib-worker");
-        String stormConfDir =
+        String topoConfDir =
                 System.getenv("STORM_CONF_DIR") != null ?
                 System.getenv("STORM_CONF_DIR") :
                 new File(_stormHome, "conf").getAbsolutePath();
@@ -356,7 +356,7 @@ public class BasicContainer extends Container {
         pathElements.add(getWildcardDir(stormWorkerLibDir));
         pathElements.add(getWildcardDir(stormExtlibDir));
         pathElements.add(extcp);
-        pathElements.add(stormConfDir);
+        pathElements.add(topoConfDir);
 
         return pathElements;
     }
@@ -634,7 +634,7 @@ public class BasicContainer extends Container {
             final String jlp) throws IOException {
         final String javaCmd = javaCmd("java");
         final String stormOptions = ConfigUtils.concatIfNotNull(System.getProperty("storm.options"));
-        final String stormConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
+        final String topoConfFile = ConfigUtils.concatIfNotNull(System.getProperty("storm.conf.file"));
         final String workerTmpDir = ConfigUtils.workerTmpRoot(_conf, _workerId);
         
         List<String> classPathParams = getClassPathParams(stormRoot);
@@ -659,7 +659,7 @@ public class BasicContainer extends Container {
                 _conf.get(Config.WORKER_GC_CHILDOPTS)), memOnheap));
         commandList.addAll(getWorkerProfilerChildOpts(memOnheap));
         commandList.add("-Djava.library.path=" + jlp);
-        commandList.add("-Dstorm.conf.file=" + stormConfFile);
+        commandList.add("-Dstorm.conf.file=" + topoConfFile);
         commandList.add("-Dstorm.options=" + stormOptions);
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
         commandList.addAll(classPathParams);

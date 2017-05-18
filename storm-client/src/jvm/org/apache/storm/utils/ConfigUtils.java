@@ -68,21 +68,21 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String workerArtifactsRoot(Map conf) {
+    public static String workerArtifactsRoot(Map<String, Object> conf) {
         return _instance.workerArtifactsRootImpl(conf);
     }
 
-    public static String workerArtifactsRoot(Map conf, String id) {
+    public static String workerArtifactsRoot(Map<String, Object> conf, String id) {
         return (workerArtifactsRoot(conf) + FILE_SEPARATOR + id);
     }
 
-    public static String workerArtifactsRoot(Map conf, String id, Integer port) {
+    public static String workerArtifactsRoot(Map<String, Object> conf, String id, Integer port) {
         return (workerArtifactsRoot(conf, id) + FILE_SEPARATOR + port);
     }
 
     public static String getLogDir() {
         String dir;
-        Map conf;
+        Map<String, Object> conf;
         if (System.getProperty("storm.log.dir") != null) {
             dir = System.getProperty("storm.log.dir");
         } else if ((conf = readStormConfig()).get("storm.log.dir") != null) {
@@ -104,7 +104,7 @@ public class ConfigUtils {
         return _instance.readStormConfigImpl();
     }
 
-    public static int samplingRate(Map conf) {
+    public static int samplingRate(Map<String, Object> conf) {
         double rate = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_STATS_SAMPLE_RATE));
         if (rate != 0) {
             return (int) (1 / rate);
@@ -112,7 +112,7 @@ public class ConfigUtils {
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
     }
 
-    public static Callable<Boolean> mkStatsSampler(Map conf) {
+    public static Callable<Boolean> mkStatsSampler(Map<String, Object> conf) {
         return evenSampler(samplingRate(conf));
     }
 
@@ -135,7 +135,7 @@ public class ConfigUtils {
         };
     }
 
-    public static StormTopology readSupervisorTopology(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
+    public static StormTopology readSupervisorTopology(Map<String, Object> conf, String stormId, AdvancedFSOps ops) throws IOException {
         return _instance.readSupervisorTopologyImpl(conf, stormId, ops);
     }
 
@@ -153,12 +153,12 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String supervisorStormDistRoot(Map conf) throws IOException {
+    public static String supervisorStormDistRoot(Map<String, Object> conf) throws IOException {
         return ConfigUtils._instance.supervisorStormDistRootImpl(conf);
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String supervisorStormDistRoot(Map conf, String stormId) throws IOException {
+    public static String supervisorStormDistRoot(Map<String, Object> conf, String stormId) throws IOException {
         return _instance.supervisorStormDistRootImpl(conf, stormId);
     }
 
@@ -170,7 +170,7 @@ public class ConfigUtils {
         return (concatIfNotNull(stormRoot) + FILE_SEPARATOR + "stormconf.ser");
     }
 
-    public static String absoluteStormLocalDir(Map conf) {
+    public static String absoluteStormLocalDir(Map<String, Object> conf) {
         String stormHome = System.getProperty("storm.home");
         String localDir = (String) conf.get(Config.STORM_LOCAL_DIR);
         if (localDir == null) {
@@ -193,23 +193,23 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String workerRoot(Map conf) {
+    public static String workerRoot(Map<String, Object> conf) {
         return _instance.workerRootImpl(conf);
     }
 
-    public static String workerRoot(Map conf, String id) {
+    public static String workerRoot(Map<String, Object> conf, String id) {
         return (workerRoot(conf) + FILE_SEPARATOR + id);
     }
 
-    public static String workerPidsRoot(Map conf, String id) {
+    public static String workerPidsRoot(Map<String, Object> conf, String id) {
         return (workerRoot(conf, id) + FILE_SEPARATOR + "pids");
     }
 
-    public static String workerPidPath(Map conf, String id, String pid) {
+    public static String workerPidPath(Map<String, Object> conf, String id, String pid) {
         return (workerPidsRoot(conf, id) + FILE_SEPARATOR + pid);
     }
 
-    public static String workerArtifactsPidPath(Map conf, String id, Integer port) {
+    public static String workerArtifactsPidPath(Map<String, Object> conf, String id, Integer port) {
         return (workerArtifactsRoot(conf, id, port) + FILE_SEPARATOR +  "worker.pid");
     }
 
@@ -218,13 +218,13 @@ public class ConfigUtils {
         return _instance.readSupervisorStormConfImpl(conf, stormId);
     }
 
-    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf, String stormConfPath) throws IOException {
+    public static Map<String, Object> readSupervisorStormConfGivenPath(Map<String, Object> conf, String topoConfPath) throws IOException {
         Map<String, Object> ret = new HashMap<>(conf);
-        ret.putAll(Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(stormConfPath))));
+        ret.putAll(Utils.fromCompressedJsonConf(FileUtils.readFileToByteArray(new File(topoConfPath))));
         return ret;
     }
 
-    public static Map overrideLoginConfigWithSystemProperty(Map conf) { // note that we delete the return value
+    public static Map overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
              conf.put("java.security.auth.login.config", loginConfFile);
@@ -232,11 +232,11 @@ public class ConfigUtils {
         return conf;
     }
 
-    public static String workerHeartbeatsRoot(Map conf, String id) {
+    public static String workerHeartbeatsRoot(Map<String, Object> conf, String id) {
         return (workerRoot(conf, id) + FILE_SEPARATOR + "heartbeats");
     }
 
-    public static LocalState workerState(Map conf, String id) throws IOException {
+    public static LocalState workerState(Map<String, Object> conf, String id) throws IOException {
         return new LocalState(workerHeartbeatsRoot(conf, id));
     }
 
@@ -289,19 +289,19 @@ public class ConfigUtils {
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test
-    public static String supervisorLocalDir(Map conf) throws IOException {
+    public static String supervisorLocalDir(Map<String, Object> conf) throws IOException {
         return _instance.supervisorLocalDirImpl(conf);
     }
 
-    public static String workerTmpRoot(Map conf, String id) {
+    public static String workerTmpRoot(Map<String, Object> conf, String id) {
         return (workerRoot(conf, id) + FILE_SEPARATOR + "tmp");
     }
 
-    public static String workerUserRoot(Map conf) {
+    public static String workerUserRoot(Map<String, Object> conf) {
         return (absoluteStormLocalDir(conf) + FILE_SEPARATOR + "workers-users");
     }
 
-    public static String workerUserFile(Map conf, String workerId) {
+    public static String workerUserFile(Map<String, Object> conf, String workerId) {
         return (workerUserRoot(conf) + FILE_SEPARATOR + workerId);
     }
 
@@ -313,7 +313,7 @@ public class ConfigUtils {
         return new File((logRoot + FILE_SEPARATOR + id + FILE_SEPARATOR + port));
     }
 
-    public StormTopology readSupervisorTopologyImpl(Map conf, String stormId, AdvancedFSOps ops) throws IOException {
+    public StormTopology readSupervisorTopologyImpl(Map<String, Object> conf, String stormId, AdvancedFSOps ops) throws IOException {
         String stormRoot = supervisorStormDistRoot(conf, stormId);
         String topologyPath = supervisorStormCodePath(stormRoot);
         return readSupervisorStormCodeGivenPath(topologyPath, ops);
@@ -325,7 +325,7 @@ public class ConfigUtils {
         return conf;
     }
 
-    public String workerArtifactsRootImpl(Map conf) {
+    public String workerArtifactsRootImpl(Map<String, Object> conf) {
         String artifactsDir = (String)conf.get(Config.STORM_WORKERS_ARTIFACTS_DIR);
         if (artifactsDir == null) {
             return (getLogDir() + FILE_SEPARATOR + "workers-artifacts");
@@ -338,11 +338,11 @@ public class ConfigUtils {
         }
     }
 
-    public String supervisorStormDistRootImpl(Map conf, String stormId) throws IOException {
+    public String supervisorStormDistRootImpl(Map<String, Object> conf, String stormId) throws IOException {
         return supervisorStormDistRoot(conf) + FILE_SEPARATOR + URLEncoder.encode(stormId, "UTF-8");
     }
 
-    public String workerRootImpl(Map conf) {
+    public String workerRootImpl(Map<String, Object> conf) {
         return (absoluteStormLocalDir(conf) + FILE_SEPARATOR + "workers");
     }
 
@@ -352,11 +352,11 @@ public class ConfigUtils {
         return readSupervisorStormConfGivenPath(conf, confPath);
     }
 
-    public String supervisorStormDistRootImpl(Map conf) throws IOException {
+    public String supervisorStormDistRootImpl(Map<String, Object> conf) throws IOException {
         return stormDistPath(supervisorLocalDir(conf));
     }
 
-    public String supervisorLocalDirImpl(Map conf) throws IOException {
+    public String supervisorLocalDirImpl(Map<String, Object> conf) throws IOException {
         String ret = ConfigUtils.absoluteStormLocalDir(conf) + FILE_SEPARATOR + "supervisor";
         FileUtils.forceMkdir(new File(ret));
         return ret;

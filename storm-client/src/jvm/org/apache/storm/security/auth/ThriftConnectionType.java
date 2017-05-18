@@ -66,7 +66,7 @@ public enum ThriftConnectionType {
         return _isFake;
     }
     
-    public String getTransportPlugin(Map conf) {
+    public String getTransportPlugin(Map<String, Object> conf) {
         String ret = (String)conf.get(_transConf);
         if (ret == null) {
             ret = (String)conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
@@ -74,35 +74,35 @@ public enum ThriftConnectionType {
         return ret;
     }
 
-    public int getPort(Map conf) {
+    public int getPort(Map<String, Object> conf) {
         if (_isFake) {
             return -1;
         }
         return ObjectReader.getInt(conf.get(_portConf));
     }
 
-    public Integer getQueueSize(Map conf) {
+    public Integer getQueueSize(Map<String, Object> conf) {
         if (_qConf == null) {
             return null;
         }
         return (Integer)conf.get(_qConf);
     }
 
-    public int getNumThreads(Map conf) {
+    public int getNumThreads(Map<String, Object> conf) {
         if (_isFake) {
             return 1;
         }
         return ObjectReader.getInt(conf.get(_threadsConf));
     }
 
-    public int getMaxBufferSize(Map conf) {
+    public int getMaxBufferSize(Map<String, Object> conf) {
         if (_isFake) {
             return 1;
         }
         return ObjectReader.getInt(conf.get(_buffConf));
     }
 
-    public Integer getSocketTimeOut(Map conf) {
+    public Integer getSocketTimeOut(Map<String, Object> conf) {
         if (_socketTimeoutConf == null) {
             return null;
         }

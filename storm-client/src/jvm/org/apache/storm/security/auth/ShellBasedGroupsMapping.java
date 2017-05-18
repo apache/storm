@@ -40,11 +40,11 @@ public class ShellBasedGroupsMapping implements
 
     /**
      * Invoked once immediately after construction
-     * @param storm_conf Storm configuration
+     * @param topoConf Storm configuration
      */
     @Override
-    public void prepare(Map storm_conf) {
-        int timeout = ObjectReader.getInt(storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS));
+    public void prepare(Map<String, Object> topoConf) {
+        int timeout = ObjectReader.getInt(topoConf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS));
         cachedGroups = new TimeCacheMap<>(timeout);
     }
 

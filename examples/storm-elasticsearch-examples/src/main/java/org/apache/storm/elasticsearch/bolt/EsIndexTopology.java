@@ -74,7 +74,7 @@ public class EsIndexTopology {
             declarer.declare(new Fields("source", "index", "type", "id"));
         }
 
-        public void open(Map config, TopologyContext context,
+        public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();

@@ -792,7 +792,7 @@ public class TridentTopology {
         for(Group g: groups) {
             if(isSpoutGroup(g)) {
                 SpoutNode n = (SpoutNode) g.nodes.iterator().next();
-                Map conf = getSpoutComponentConfig(n.spout);
+                Map<String, Object> conf = getSpoutComponentConfig(n.spout);
                 if(conf==null) conf = new HashMap();
                 Number maxP = (Number) conf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
                 if(maxP!=null) {

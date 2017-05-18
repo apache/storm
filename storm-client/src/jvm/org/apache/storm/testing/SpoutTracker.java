@@ -79,7 +79,7 @@ public class SpoutTracker extends BaseRichSpout {
         _trackId = trackId;
     }
 
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _tracker = new SpoutTrackOutputCollector(collector);
         _delegate.open(conf, context, new SpoutOutputCollector(_tracker));
     }

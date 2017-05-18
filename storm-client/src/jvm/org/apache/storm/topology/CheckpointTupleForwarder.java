@@ -54,9 +54,9 @@ public class CheckpointTupleForwarder extends BaseStatefulBoltExecutor {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector outputCollector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector outputCollector) {
         init(context, new AnchoringOutputCollector(outputCollector));
-        bolt.prepare(stormConf, context, collector);
+        bolt.prepare(topoConf, context, collector);
     }
 
     @Override

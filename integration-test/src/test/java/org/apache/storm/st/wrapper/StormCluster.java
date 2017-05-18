@@ -44,7 +44,7 @@ public class StormCluster {
     private final Nimbus.Iface client;
 
     public StormCluster() {
-        Map conf = getConfig();
+        Map<String, Object> conf = getConfig();
         this.client = NimbusClient.getConfiguredClient(conf).getClient();
     }
 

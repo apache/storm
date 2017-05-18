@@ -26,7 +26,7 @@ public interface FailedMsgRetryManager extends Serializable {
     /**
      * Initialization
      */
-    void prepare(SpoutConfig spoutConfig, Map stormConf);
+    void prepare(SpoutConfig spoutConfig, Map<String, Object> topoConf);
 
     /**
      * Message corresponding to the offset failed in kafka spout.

@@ -84,7 +84,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
      * @param conf Storm configuration
      */
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         _admins = new HashSet<>();
         _supervisors = new HashSet<>();
         _nimbusUsers = new HashSet<>();
@@ -112,11 +112,11 @@ public class SimpleACLAuthorizer implements IAuthorizer {
      * permit() method is invoked for each incoming Thrift request
      * @param context request context includes info about
      * @param operation operation name
-     * @param topology_conf configuration of targeted topology
+     * @param topoConf configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     @Override
-    public boolean permit(ReqContext context, String operation, Map topology_conf) {
+    public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         String principal = context.principal().getName();
         String user = _ptol.toLocal(context.principal());
         Set<String> userGroups = new HashSet<>();
@@ -143,8 +143,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
 
         if (_topoCommands.contains(operation)) {
             Set topoUsers = new HashSet<String>();
-            if (topology_conf.containsKey(Config.TOPOLOGY_USERS)) {
-                topoUsers.addAll((Collection<String>)topology_conf.get(Config.TOPOLOGY_USERS));
+            if (topoConf.containsKey(Config.TOPOLOGY_USERS)) {
+                topoUsers.addAll((Collection<String>)topoConf.get(Config.TOPOLOGY_USERS));
             }
 
             if (topoUsers.contains(principal) || topoUsers.contains(user)) {
@@ -152,8 +152,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             }
 
             Set<String> topoGroups = new HashSet<>();
-            if (topology_conf.containsKey(Config.TOPOLOGY_GROUPS) && topology_conf.get(Config.TOPOLOGY_GROUPS) != null) {
-                topoGroups.addAll((Collection<String>)topology_conf.get(Config.TOPOLOGY_GROUPS));
+            if (topoConf.containsKey(Config.TOPOLOGY_GROUPS) && topoConf.get(Config.TOPOLOGY_GROUPS) != null) {
+                topoGroups.addAll((Collection<String>)topoConf.get(Config.TOPOLOGY_GROUPS));
             }
 
             if (checkUserGroupAllowed(userGroups, topoGroups)) return true;

@@ -51,7 +51,7 @@ public class AutoSSLTest {
         }
 
         @Override
-        protected String getSSLWriteDirFromConf(Map conf) {
+        protected String getSSLWriteDirFromConf(Map<String, Object> conf) {
             return baseDir;
         }
     }
@@ -59,7 +59,7 @@ public class AutoSSLTest {
     @Test
     public void testgetSSLFilesFromConf() throws Exception {
         AutoSSL assl = new AutoSSL();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
         assertNull(assl.getSSLFilesFromConf(conf));
         conf.put(AutoSSL.SSL_FILES_CONF, "sslfile1.txt");
         assl.prepare(conf);
@@ -74,7 +74,7 @@ public class AutoSSLTest {
     @Test
     public void testgetSSLFilesFromConfMultipleComma() throws Exception {
         AutoSSL assl = new AutoSSL();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
         assertNull(assl.getSSLFilesFromConf(conf));
         conf.put(AutoSSL.SSL_FILES_CONF, "sslfile1.txt,sslfile2.txt,sslfile3.txt");
         assl.prepare(conf);

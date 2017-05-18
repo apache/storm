@@ -74,11 +74,11 @@ public class LocalFsBlobStore extends BlobStore {
     private NimbusInfo nimbusInfo;
     private FileBlobStoreImpl fbs;
     private final int allPermissions = READ | WRITE | ADMIN;
-    private Map conf;
+    private Map<String, Object> conf;
     private CuratorFramework zkClient;
 
     @Override
-    public void prepare(Map conf, String overrideBase, NimbusInfo nimbusInfo) {
+    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo) {
         this.conf = conf;
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf);

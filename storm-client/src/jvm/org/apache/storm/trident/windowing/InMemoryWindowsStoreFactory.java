@@ -35,7 +35,7 @@ public class InMemoryWindowsStoreFactory implements WindowsStoreFactory {
     private InMemoryWindowsStore inMemoryWindowsStore;
 
     @Override
-    public WindowsStore create(Map stormConf) {
+    public WindowsStore create(Map<String, Object> topoConf) {
         if(inMemoryWindowsStore == null) {
             inMemoryWindowsStore = new InMemoryWindowsStore();
         }

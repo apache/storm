@@ -76,7 +76,7 @@ public class MapStateTest {
     @Test
     public void transactionalStateTest() throws Exception {
 
-        Map config = new HashMap();
+        Map<String, Object> config = new HashMap();
         StateFactory factory = MapStateFactoryBuilder.transactional(getCassandraConfig())
                 .withTable("words_ks", "words_table")
                 .withKeys("word")
@@ -89,7 +89,7 @@ public class MapStateTest {
     @Test
     public void opaqueStateTest() throws Exception {
 
-        Map config = new HashMap();
+        Map<String, Object> config = new HashMap();
         StateFactory factory = MapStateFactoryBuilder.opaque(getCassandraConfig())
                 .withTable("words_ks", "words_table")
                 .withKeys("word")

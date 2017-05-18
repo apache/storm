@@ -493,7 +493,7 @@ public class Utils {
         return ret.toString();
     }
 
-    public static List<ACL> getWorkerACL(Map conf) {
+    public static List<ACL> getWorkerACL(Map<String, Object> conf) {
         //This is a work around to an issue with ZK where a sasl super user is not super unless there is an open SASL ACL so we are trying to give the correct perms
         if (!isZkAuthenticationConfiguredTopology(conf)) {
             return null;
@@ -516,7 +516,7 @@ public class Utils {
      * @param conf the topology configuration
      * @return true if ZK is configured else false
      */
-    public static boolean isZkAuthenticationConfiguredTopology(Map conf) {
+    public static boolean isZkAuthenticationConfiguredTopology(Map<String, Object> conf) {
         return (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME) != null
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
@@ -689,11 +689,11 @@ public class Utils {
     /**
      * Creates an instance of the pluggable SerializationDelegate or falls back to
      * DefaultSerializationDelegate if something goes wrong.
-     * @param stormConf The config from which to pull the name of the pluggable class.
+     * @param topoConf The config from which to pull the name of the pluggable class.
      * @return an instance of the class specified by storm.meta.serialization.delegate
      */
-    private static SerializationDelegate getSerializationDelegate(Map stormConf) {
-        String delegateClassName = (String)stormConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
+    private static SerializationDelegate getSerializationDelegate(Map<String, Object> topoConf) {
+        String delegateClassName = (String)topoConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
         SerializationDelegate delegate;
         try {
             Class delegateClass = Class.forName(delegateClassName);
@@ -702,7 +702,7 @@ public class Utils {
             LOG.error("Failed to construct serialization delegate, falling back to default", e);
             delegate = new DefaultSerializationDelegate();
         }
-        delegate.prepare(stormConf);
+        delegate.prepare(topoConf);
         return delegate;
     }
 
@@ -926,7 +926,7 @@ public class Utils {
         }
     }
 
-    public static ClientBlobStore getClientBlobStore(Map conf) {
+    public static ClientBlobStore getClientBlobStore(Map<String, Object> conf) {
         ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance((String) conf.get(Config.CLIENT_BLOBSTORE));
         store.prepare(conf);
         return store;
@@ -963,12 +963,12 @@ public class Utils {
         return ret;
     }
 
-    public static boolean isValidConf(Map<String, Object> stormConf) {
-        return normalizeConf(stormConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(stormConf))));
+    public static boolean isValidConf(Map<String, Object> topoConf) {
+        return normalizeConf(topoConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConf))));
     }
 
-    public static TopologyInfo getTopologyInfo(String name, String asUser, Map stormConf) {
-        try (NimbusClient client = NimbusClient.getConfiguredClientAs(stormConf, asUser)) {
+    public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
             String topologyId = getTopologyId(name, client.getClient());
             if (null != topologyId) {
                 return client.getClient().getTopologyInfo(topologyId);
@@ -993,9 +993,9 @@ public class Utils {
         return null;
     }
 
-    public static void validateTopologyBlobStoreMap(Map<String, ?> stormConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
+    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
         @SuppressWarnings("unchecked")
-        Map<String, Object> blobStoreMap = (Map<String, Object>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             Set<String> mapKeys = blobStoreMap.keySet();
             Set<String> missingKeys = new HashSet<>();
@@ -1052,7 +1052,7 @@ public class Utils {
      * @param configKey The key pointing to the pluggable class
      * @return an instance of the class or null if it is not specified.
      */
-    public static Object getConfiguredClass(Map conf, Object configKey) {
+    public static Object getConfiguredClass(Map<String, Object> conf, Object configKey) {
         if (conf.containsKey(configKey)) {
             return ReflectionUtils.newInstance((String)conf.get(configKey));
         }
@@ -1065,18 +1065,18 @@ public class Utils {
      * @param conf the storm configuration, not the topology configuration
      * @return true if it is configured else false.
      */
-    public static boolean isZkAuthenticationConfiguredStormServer(Map conf) {
+    public static boolean isZkAuthenticationConfiguredStormServer(Map<String, Object> conf) {
         return null != System.getProperty("java.security.auth.login.config")
                 || (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
     }
 
-    public static byte[] toCompressedJsonConf(Map<String, Object> stormConf) {
+    public static byte[] toCompressedJsonConf(Map<String, Object> topoConf) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             OutputStreamWriter out = new OutputStreamWriter(new GZIPOutputStream(bos));
-            JSONValue.writeJSONString(stormConf, out);
+            JSONValue.writeJSONString(topoConf, out);
             out.close();
             return bos.toByteArray();
         } catch (IOException e) {

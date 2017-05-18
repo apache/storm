@@ -27,5 +27,5 @@ public interface ICommitterTridentSpout<X> extends ITridentSpout<X> {
     } 
     
     @Override
-    public Emitter getEmitter(String txStateId, Map conf, TopologyContext context);    
+    public Emitter getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context);    
 }

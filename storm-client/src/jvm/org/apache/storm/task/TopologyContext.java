@@ -60,7 +60,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
 
 
     public TopologyContext(StormTopology topology,
-                           Map stormConf,
+                           Map<String, Object> topoConf,
                            Map<Integer, String> taskToComponent,
                            Map<String, List<Integer>> componentToSortedTasks,
                            Map<String, Map<String, Fields>> componentToStreamToFields,
@@ -75,7 +75,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            Map<String, Object> executorData,
                            Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
                            AtomicBoolean openOrPrepareWasCalled) {
-        super(topology, stormConf, taskToComponent, componentToSortedTasks,
+        super(topology, topoConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, stormId, codeDir, pidDir,
                 workerPort, workerTasks, defaultResources, userResources);
         _taskId = taskId;
@@ -261,7 +261,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     public void addTaskHook(ITaskHook hook) {
-        hook.prepare(_stormConf, this);
+        hook.prepare(_topoConf, this);
         _hooks.add(hook);
     }
 

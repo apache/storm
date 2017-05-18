@@ -97,7 +97,7 @@ public class HdfsBlobStoreImplTest {
         String validKey = "validkeyBasic";
 
         FileSystem fs = dfscluster.getFileSystem();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
 
         TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, hadoopConf);
         // should have created blobDir
@@ -215,7 +215,7 @@ public class HdfsBlobStoreImplTest {
     @Test
     public void testGetFileLength() throws IOException {
         FileSystem fs = dfscluster.getFileSystem();
-        Map conf = new HashMap();
+        Map<String, Object> conf = new HashMap();
         String validKey = "validkeyBasic";
         String testString = "testingblob";
         TestHdfsBlobStoreImpl hbs = new TestHdfsBlobStoreImpl(blobDir, conf, hadoopConf);

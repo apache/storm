@@ -48,7 +48,7 @@ public class BatchNumberList extends BaseBatchBolt<Object> {
     
     
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
         _collector = collector;
     }
 

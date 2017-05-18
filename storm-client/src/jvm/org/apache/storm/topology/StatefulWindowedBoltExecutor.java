@@ -58,21 +58,21 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        prepare(stormConf, context, collector, getWindowState(stormConf, context));
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        prepare(topoConf, context, collector, getWindowState(topoConf, context));
     }
 
     // package access for unit tests
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector,
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
                  KeyValueState<TaskStream, WindowState> windowState) {
-        init(stormConf, context, collector, windowState);
-        super.prepare(stormConf, context, collector);
+        init(topoConf, context, collector, windowState);
+        super.prepare(topoConf, context, collector);
     }
 
-    private void init(Map stormConf, TopologyContext context, OutputCollector collector,
+    private void init(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
                       KeyValueState<TaskStream, WindowState> windowState) {
-        if (stormConf.containsKey(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME)) {
-            msgIdFieldName = (String) stormConf.get(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
+        if (topoConf.containsKey(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME)) {
+            msgIdFieldName = (String) topoConf.get(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME);
         } else {
             throw new IllegalArgumentException(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME + " is not set");
         }
@@ -279,9 +279,9 @@ public class StatefulWindowedBoltExecutor<T extends State> extends WindowedBoltE
         return input.getLongByField(msgIdFieldName);
     }
 
-    private KeyValueState<TaskStream, WindowState> getWindowState(Map stormConf, TopologyContext context) {
+    private KeyValueState<TaskStream, WindowState> getWindowState(Map<String, Object> topoConf, TopologyContext context) {
         String namespace = context.getThisComponentId() + "-" + context.getThisTaskId() + "-window";
-        return (KeyValueState<TaskStream, WindowState>) StateFactory.getState(namespace, stormConf, context);
+        return (KeyValueState<TaskStream, WindowState>) StateFactory.getState(namespace, topoConf, context);
     }
 
     static class WindowState {

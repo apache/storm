@@ -72,7 +72,7 @@ public class CassandraMapStateFactory implements StateFactory {
 
     @Override
     @SuppressWarnings("unchecked")
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
 
         CassandraBackingMap cassandraBackingMap = new CassandraBackingMap(cassandraConfig, options);
         cassandraBackingMap.prepare();

@@ -37,7 +37,7 @@ public interface Operation extends Serializable {
      *                metrics.
      * @see org.apache.storm.trident.operation.TridentOperationContext
      */
-    void prepare(Map conf, TridentOperationContext context);
+    void prepare(Map<String, Object> conf, TridentOperationContext context);
 
     /**
      * When running in local mode, called when the local cluster is being shut down.

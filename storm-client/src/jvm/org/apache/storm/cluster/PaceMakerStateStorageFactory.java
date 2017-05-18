@@ -25,7 +25,7 @@ import org.apache.zookeeper.data.ACL;
 
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
     @Override
-    public IStateStorage mkStore(Map config, Map auth_conf, List<ACL> acls, ClusterStateContext context) {
+    public IStateStorage mkStore(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context) {
         try {
             ZKStateStorageFactory zkfact = new ZKStateStorageFactory();
             IStateStorage zkState = zkfact.mkStore(config, auth_conf, acls, context);

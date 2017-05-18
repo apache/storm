@@ -36,15 +36,15 @@ import java.util.Map;
 public class CuratorUtils {
     public static final Logger LOG = LoggerFactory.getLogger(CuratorUtils.class);
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root) {
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, String root) {
         return newCurator(conf, servers, port, root, null);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         return newCurator(conf, servers, port, "", auth);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         List<String> serverPorts = new ArrayList<String>();
         for (String zkServer : servers) {
             serverPorts.add(zkServer + ":" + ObjectReader.getInt(port));
@@ -57,7 +57,7 @@ public class CuratorUtils {
         return builder.build();
     }
 
-    protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map conf, ZookeeperAuthInfo auth)
+    protected static void setupBuilder(CuratorFrameworkFactory.Builder builder, final String zkStr, Map<String, Object> conf, ZookeeperAuthInfo auth)
     {
         List<String> exhibitorServers = ObjectReader.getStrings(conf.get(Config.STORM_EXHIBITOR_SERVERS));
         if (!exhibitorServers.isEmpty()) {
@@ -94,19 +94,19 @@ public class CuratorUtils {
     }
 
     public static void testSetupBuilder(CuratorFrameworkFactory.Builder
-                                                builder, String zkStr, Map conf, ZookeeperAuthInfo auth)
+                                                builder, String zkStr, Map<String, Object> conf, ZookeeperAuthInfo auth)
     {
         setupBuilder(builder, zkStr, conf, auth);
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, root, auth);
         LOG.info("Starting Utils Curator...");
         ret.start();
         return ret;
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCuratorStarted(Map<String, Object> conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
         CuratorFramework ret = newCurator(conf, servers, port, auth);
         LOG.info("Starting Utils Curator (2)...");
         ret.start();

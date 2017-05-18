@@ -39,7 +39,7 @@ public class SimpleWhitelistAuthorizer implements IAuthorizer {
      * @param conf Storm configuration 
      */
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         users = new HashSet<>();
         if (conf.containsKey(WHITELIST_USERS_CONF)) {
             users.addAll((Collection<String>)conf.get(WHITELIST_USERS_CONF));
@@ -50,11 +50,11 @@ public class SimpleWhitelistAuthorizer implements IAuthorizer {
      * `permit()` method is invoked for each incoming Thrift request
      * @param context request context includes info about 
      * @param operation operation name
-     * @param topology_conf configuration of targeted topology
+     * @param topoConf configuration of targeted topology
      * @return true if the request is authorized, false if reject
      */
     @Override
-    public boolean permit(ReqContext context, String operation, Map topology_conf) {
+    public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         return context.principal() != null ? users.contains(context.principal().getName()) : false;
     }
 }

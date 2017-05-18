@@ -95,9 +95,9 @@ public class DRPCSpout extends BaseRichSpout {
     private class Adder implements Callable<Void> {
         private String server;
         private int port;
-        private Map conf;
+        private Map<String, Object> conf;
 
-        public Adder(String server, int port, Map conf) {
+        public Adder(String server, int port, Map<String, Object> conf) {
             this.server = server;
             this.port = port;
             this.conf = conf;
@@ -148,7 +148,7 @@ public class DRPCSpout extends BaseRichSpout {
     }
  
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
         if(_local_drpc_id==null) {
             _backround = new ExtendedThreadPoolExecutor(0, Integer.MAX_VALUE,

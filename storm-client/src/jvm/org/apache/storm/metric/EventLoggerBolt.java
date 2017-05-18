@@ -42,10 +42,10 @@ public class EventLoggerBolt implements IBolt {
     private IEventLogger eventLogger;
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         LOG.info("EventLoggerBolt prepare called");
         eventLogger = new FileBasedEventLogger();
-        eventLogger.prepare(stormConf, context);
+        eventLogger.prepare(topoConf, context);
     }
 
     @Override

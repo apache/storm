@@ -46,7 +46,7 @@ public class BatchBoltExecutor implements IRichBolt, FinishedCallback, TimeoutCa
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
         _conf = conf;
         _context = context;
         _collector = new BatchOutputCollectorImpl(collector);

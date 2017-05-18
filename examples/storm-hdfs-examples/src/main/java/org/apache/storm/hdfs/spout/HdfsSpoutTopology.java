@@ -60,7 +60,7 @@ public class HdfsSpoutTopology {
     }
 
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
       this.collector = collector;
     }
 

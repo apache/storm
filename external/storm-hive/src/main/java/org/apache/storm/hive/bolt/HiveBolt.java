@@ -68,7 +68,7 @@ public class HiveBolt extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector)  {
+    public void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector)  {
         try {
             tokenAuthEnabled = HiveUtils.isTokenAuthEnabled(conf);
             try {

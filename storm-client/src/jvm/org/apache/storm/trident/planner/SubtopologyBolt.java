@@ -94,7 +94,7 @@ public class SubtopologyBolt implements ITridentBatchBolt {
     }
 
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector batchCollector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector batchCollector) {
         int thisComponentNumTasks = context.getComponentTasks(context.getThisComponentId()).size();
         for(Node n: _nodes) {
             if(n.stateInfo!=null) {

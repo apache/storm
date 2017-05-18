@@ -71,7 +71,7 @@ public class SupervisorHeartbeat implements Runnable {
         return supervisorInfo;
     }
 
-    private Map<String, Double> mkSupervisorCapacities(Map conf) {
+    private Map<String, Double> mkSupervisorCapacities(Map<String, Object> conf) {
         Map<String, Double> ret = new HashMap<String, Double>();
         Double mem = ObjectReader.getDouble(conf.get(Config.SUPERVISOR_MEMORY_CAPACITY_MB), 4096.0);
         ret.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);

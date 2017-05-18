@@ -50,7 +50,7 @@ public class BoltExecutor extends Executor {
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
-        this.executeSampler = ConfigUtils.mkStatsSampler(stormConf);
+        this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
     }
 
     public void init(Map<Integer, Task> idToTask) {
@@ -63,25 +63,25 @@ public class BoltExecutor extends Executor {
             Task taskData = entry.getValue();
             IBolt boltObject = (IBolt) taskData.getTaskObject();
             TopologyContext userContext = taskData.getUserContext();
-            taskData.getBuiltInMetrics().registerAll(stormConf, userContext);
+            taskData.getBuiltInMetrics().registerAll(topoConf, userContext);
             if (boltObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue,
                         "transfer", workerData.getTransferQueue());
-                BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
+                BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
 
                 Map cachedNodePortToSocket = (Map) workerData.getCachedNodeToPortSocket().get();
-                BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, stormConf, userContext);
-                BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), stormConf, userContext);
+                BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
+                BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
             } else {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue);
-                BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, userContext);
+                BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
             }
 
             IOutputCollector outputCollector = new BoltOutputCollectorImpl(this, taskData, entry.getKey(), rand, hasEventLoggers, isDebug);
-            boltObject.prepare(stormConf, userContext, new OutputCollector(outputCollector));
+            boltObject.prepare(topoConf, userContext, new OutputCollector(outputCollector));
         }
         openOrPrepareWasCalled.set(true);
         LOG.info("Prepared bolt {}:{}", componentId, idToTask.keySet());

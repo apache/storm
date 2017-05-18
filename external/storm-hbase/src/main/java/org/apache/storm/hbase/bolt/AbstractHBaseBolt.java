@@ -51,7 +51,7 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map topoConf, TopologyContext topologyContext, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext topologyContext, OutputCollector collector) {
         this.collector = collector;
         final Configuration hbConfig = HBaseConfiguration.create();
 

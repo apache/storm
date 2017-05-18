@@ -43,15 +43,15 @@ public class TransactionalState {
     KryoValuesDeserializer _des;
     List<ACL> _zkAcls = null;
     
-    public static TransactionalState newUserState(Map conf, String id, Map componentConf) {
+    public static TransactionalState newUserState(Map<String, Object> conf, String id, Map componentConf) {
         return new TransactionalState(conf, id, componentConf, "user");
     }
     
-    public static TransactionalState newCoordinatorState(Map conf, String id, Map componentConf) {
+    public static TransactionalState newCoordinatorState(Map<String, Object> conf, String id, Map componentConf) {
         return new TransactionalState(conf, id, componentConf, "coordinator");        
     }
     
-    protected TransactionalState(Map conf, String id, Map componentConf, String subroot) {
+    protected TransactionalState(Map<String, Object> conf, String id, Map componentConf, String subroot) {
         try {
             conf = new HashMap(conf);
             // ensure that the serialization registrations are consistent with the declarations in this spout

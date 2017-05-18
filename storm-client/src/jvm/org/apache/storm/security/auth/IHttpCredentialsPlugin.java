@@ -27,9 +27,9 @@ import javax.servlet.http.HttpServletRequest;
 public interface IHttpCredentialsPlugin {
     /**
      * Invoked once immediately after construction
-     * @param storm_conf Storm configuration
+     * @param topoConf Storm configuration
      */
-    void prepare(Map storm_conf);
+    void prepare(Map<String, Object> topoConf);
 
     /**
      * Gets the user name from the request.

@@ -28,7 +28,7 @@ import java.util.zip.GZIPOutputStream;
 public class GzipSerializationDelegate implements SerializationDelegate {
 
     @Override
-    public void prepare(Map stormConf) {
+    public void prepare(Map<String, Object> topoConf) {
         // No-op
     }
 

@@ -36,7 +36,7 @@ public class MapFunctionExecutor extends BaseOperation implements Function {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         // If MapFunction is aware of prepare, let it handle preparation
         if (function instanceof Operation) {
             ((Operation) function).prepare(conf, context);

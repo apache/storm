@@ -63,7 +63,7 @@ public class LocalizerTest {
 
   class TestLocalizer extends Localizer {
 
-    TestLocalizer(Map conf, String baseDir) {
+    TestLocalizer(Map<String, Object> conf, String baseDir) {
       super(conf, baseDir);
     }
 
@@ -143,7 +143,7 @@ public class LocalizerTest {
 
   @Test
   public void testDirPaths() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     Localizer localizer = new TestLocalizer(conf, baseDir.toString());
 
     String expectedDir = constructUserCacheDir(baseDir.toString(), user1);
@@ -157,7 +157,7 @@ public class LocalizerTest {
 
   @Test
   public void testReconstruct() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
 
     String expectedFileDir1 = constructExpectedFilesDir(baseDir.toString(), user1);
     String expectedArchiveDir1 = constructExpectedArchivesDir(baseDir.toString(), user1);
@@ -271,7 +271,7 @@ public class LocalizerTest {
       supportSymlinks = false;
     }
 
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
 
@@ -348,7 +348,7 @@ public class LocalizerTest {
 
   @Test
   public void testBasic() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
 
@@ -415,7 +415,7 @@ public class LocalizerTest {
 
   @Test
   public void testMultipleKeysOneUser() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
 
@@ -504,7 +504,7 @@ public class LocalizerTest {
 
   @Test(expected = AuthorizationException.class)
   public void testFailAcls() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
 
@@ -528,7 +528,7 @@ public class LocalizerTest {
 
   @Test(expected = KeyNotFoundException.class)
   public void testKeyNotFoundException() throws Exception {
-    Map conf = Utils.readStormConfig();
+    Map<String, Object> conf = Utils.readStormConfig();
     String key1 = "key1";
     conf.put(Config.STORM_LOCAL_DIR, "target");
     LocalFsBlobStore bs = new LocalFsBlobStore();
@@ -541,7 +541,7 @@ public class LocalizerTest {
 
     @Test
   public void testMultipleUsers() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
 
@@ -625,7 +625,7 @@ public class LocalizerTest {
 
   @Test
   public void testUpdate() throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60*60*1000);
 

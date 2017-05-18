@@ -41,7 +41,7 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
     private Client client;
     private KryoValuesDeserializer _des;
 
-    StormClientHandler(Client client, Map conf) {
+    StormClientHandler(Client client, Map<String, Object> conf) {
         this.client = client;
         _des = new KryoValuesDeserializer(conf);
     }

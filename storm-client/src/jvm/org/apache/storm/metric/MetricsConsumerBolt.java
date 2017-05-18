@@ -68,14 +68,14 @@ public class MetricsConsumerBolt implements IBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         try {
             _metricsConsumer = (IMetricsConsumer)Class.forName(_consumerClassName).newInstance();
         } catch (Exception e) {
             throw new RuntimeException("Could not instantiate a class listed in config under section " +
                 Config.TOPOLOGY_METRICS_CONSUMER_REGISTER + " with fully qualified name " + _consumerClassName, e);
         }
-        _metricsConsumer.prepare(stormConf, _registrationArgument, context, collector);
+        _metricsConsumer.prepare(topoConf, _registrationArgument, context, collector);
         _collector = collector;
         _taskExecuteThread = new Thread(new MetricsHandlerRunnable());
         _taskExecuteThread.setDaemon(true);

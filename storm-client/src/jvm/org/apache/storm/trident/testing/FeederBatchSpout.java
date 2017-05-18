@@ -167,7 +167,7 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
     }
 
     @Override
-    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Map<Integer, List<List<Object>>>> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
         int numTasks = context.getComponentTasks(
                             TridentTopologyBuilder.spoutIdFromCoordinatorId(
                                 context.getThisComponentId()))
@@ -176,7 +176,7 @@ public class FeederBatchSpout implements ITridentSpout<Map<Integer, List<List<Ob
     }
 
     @Override
-    public Emitter<Map<Integer, List<List<Object>>>> getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter<Map<Integer, List<List<Object>>>> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new FeederEmitter(context.getThisTaskIndex());
     }
     

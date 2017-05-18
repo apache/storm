@@ -46,7 +46,7 @@ public class RandomIntegerSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
         this.rand = new Random();
     }

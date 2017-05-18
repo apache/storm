@@ -79,7 +79,7 @@ public class FileBasedEventLogger implements IEventLogger {
 
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context) {
         String stormId = context.getStormId();
         int port = context.getThisWorkerPort();
 
@@ -87,7 +87,7 @@ public class FileBasedEventLogger implements IEventLogger {
          * Include the topology name & worker port in the file name so that
          * multiple event loggers can log independently.
          */
-        String workersArtifactRoot = ConfigUtils.workerArtifactsRoot(stormConf, stormId, port);
+        String workersArtifactRoot = ConfigUtils.workerArtifactsRoot(topoConf, stormId, port);
 
         Path path = Paths.get(workersArtifactRoot, "events.log");
         File dir = path.toFile().getParentFile();

@@ -80,7 +80,7 @@ public interface IMetricsConsumer {
         }
     }
 
-    void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);
+    void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);
     void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints);
     void cleanup();
 }

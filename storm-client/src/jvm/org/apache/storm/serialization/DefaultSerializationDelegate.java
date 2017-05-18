@@ -24,7 +24,7 @@ import java.util.Map;
 public class DefaultSerializationDelegate implements SerializationDelegate {
 
     @Override
-    public void prepare(Map stormConf) {
+    public void prepare(Map<String, Object> topoConf) {
         // No-op
     }
 

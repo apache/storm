@@ -35,7 +35,7 @@ public class TestGlobalCount extends BaseRichBolt {
     private int _count;
     OutputCollector _collector;
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
         _count = 0;
     }

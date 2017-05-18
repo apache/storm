@@ -78,9 +78,9 @@ public class Thrift {
     public static class SpoutDetails {
         private IRichSpout spout;
         private Integer parallelism;
-        private Map conf;
+        private Map<String, Object> conf;
 
-        public SpoutDetails(IRichSpout spout, Integer parallelism, Map conf) {
+        public SpoutDetails(IRichSpout spout, Integer parallelism, Map<String, Object> conf) {
             this.spout = spout;
             this.parallelism = parallelism;
             this.conf = conf;
@@ -101,11 +101,11 @@ public class Thrift {
 
     public static class BoltDetails {
         private Object bolt;
-        private Map conf;
+        private Map<String, Object> conf;
         private Integer parallelism;
         private Map<GlobalStreamId, Grouping> inputs;
 
-        public BoltDetails(Object bolt, Map conf, Integer parallelism,
+        public BoltDetails(Object bolt, Map<String, Object> conf, Integer parallelism,
                            Map<GlobalStreamId, Grouping> inputs) {
             this.bolt = bolt;
             this.conf = conf;
@@ -256,7 +256,7 @@ public class Thrift {
     }
 
     public static ComponentCommon prepareComponentCommon(Map<GlobalStreamId, Grouping> inputs, Map<String, StreamInfo> outputs,
-                                                         Integer parallelismHint, Map conf) {
+                                                         Integer parallelismHint, Map<String, Object> conf) {
         Map<GlobalStreamId, Grouping> mappedInputs = new HashMap<>();
         Map<String, StreamInfo> mappedOutputs = new HashMap<>();
         if (inputs != null && !inputs.isEmpty()) {
@@ -281,7 +281,7 @@ public class Thrift {
     }
 
     public static Bolt prepareSerializedBoltDetails(Map<GlobalStreamId, Grouping> inputs, IBolt bolt, Map<String, StreamInfo> outputs,
-                                                    Integer parallelismHint, Map conf) {
+                                                    Integer parallelismHint, Map<String, Object> conf) {
         ComponentCommon common = prepareComponentCommon(inputs, outputs, parallelismHint, conf);
         return new Bolt(ComponentObject.serialized_java(Utils.javaSerialize(bolt)), common);
     }
@@ -296,7 +296,7 @@ public class Thrift {
     }
 
     public static BoltDetails prepareBoltDetails(Map<GlobalStreamId, Grouping> inputs, Object bolt,
-                                                 Integer parallelismHint, Map conf) {
+                                                 Integer parallelismHint, Map<String, Object> conf) {
         BoltDetails details = new BoltDetails(bolt, conf, parallelismHint, inputs);
         return details;
     }
@@ -309,7 +309,7 @@ public class Thrift {
         return prepareSpoutDetails(spout, parallelismHint, null);
     }
 
-    public static SpoutDetails prepareSpoutDetails(IRichSpout spout, Integer parallelismHint, Map conf) {
+    public static SpoutDetails prepareSpoutDetails(IRichSpout spout, Integer parallelismHint, Map<String, Object> conf) {
         SpoutDetails details = new SpoutDetails(spout, parallelismHint, conf);
         return details;
     }

@@ -35,7 +35,7 @@ public class KeyedCountingBatchBolt extends BaseBatchBolt<Object> {
     Map<Object, Integer> _counts = new HashMap<Object, Integer>();
     
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
         _collector = collector;
         _id = id;
     }

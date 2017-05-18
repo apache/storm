@@ -24,7 +24,7 @@ import java.util.Map;
 import org.apache.storm.trident.operation.TridentCollector;
 
 public interface IBatchSpout extends ITridentDataSource {
-    void open(Map conf, TopologyContext context);
+    void open(Map<String, Object> conf, TopologyContext context);
     void emitBatch(long batchId, TridentCollector collector);
     void ack(long batchId);
     void close();

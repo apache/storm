@@ -33,26 +33,26 @@ public class CsvPreparableReporter implements PreparableReporter<CsvReporter> {
     CsvReporter reporter = null;
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map stormConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
         LOG.debug("Preparing...");
         CsvReporter.Builder builder = CsvReporter.forRegistry(metricsRegistry);
 
-        Locale locale = MetricsUtils.getMetricsReporterLocale(stormConf);
+        Locale locale = MetricsUtils.getMetricsReporterLocale(topoConf);
         if (locale != null) {
             builder.formatFor(locale);
         }
 
-        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(stormConf);
+        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(topoConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
 
-        TimeUnit durationUnit = MetricsUtils.getMetricsDurationUnit(stormConf);
+        TimeUnit durationUnit = MetricsUtils.getMetricsDurationUnit(topoConf);
         if (durationUnit != null) {
             builder.convertDurationsTo(durationUnit);
         }
 
-        File csvMetricsDir = MetricsUtils.getCsvLogDir(stormConf);
+        File csvMetricsDir = MetricsUtils.getCsvLogDir(topoConf);
         reporter = builder.build(csvMetricsDir);
     }
 

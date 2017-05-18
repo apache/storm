@@ -124,12 +124,12 @@ public class ShellBolt implements IBolt {
         this.changeDirectory = changeDirectory;
     }
 
-    public void prepare(Map stormConf, TopologyContext context,
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
                         final OutputCollector collector) {
-        if (ConfigUtils.isLocalMode(stormConf)) {
+        if (ConfigUtils.isLocalMode(topoConf)) {
             _isLocalMode = true;
         }
-        Object maxPending = stormConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
+        Object maxPending = topoConf.get(Config.TOPOLOGY_SHELLBOLT_MAX_PENDING);
         if (maxPending != null) {
             this._pendingWrites = new ShellBoltMessageQueue(((Number)maxPending).intValue());
         }
@@ -139,10 +139,10 @@ public class ShellBolt implements IBolt {
 
         _context = context;
 
-        if (stormConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
-            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+        if (topoConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
         } else {
-            workerTimeoutMills = 1000 * ObjectReader.getInt(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
         }
 
         _process = new ShellProcess(_command);
@@ -151,7 +151,7 @@ public class ShellBolt implements IBolt {
         }
 
         //subprocesses must send their pid first thing
-        Number subpid = _process.launch(stormConf, context, changeDirectory);
+        Number subpid = _process.launch(topoConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
         // reader

@@ -89,7 +89,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   private Configuration hdfsConfig;
 
-  private Map conf = null;
+  private Map<String, Object> conf = null;
   private FileLock lock;
   private String spoutId = null;
 
@@ -365,7 +365,7 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
   @SuppressWarnings("deprecation")
-public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
     LOG.info("Opening HDFS Spout");
     this.conf = conf;
     this.commitTimer = new Timer();

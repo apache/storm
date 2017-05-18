@@ -51,18 +51,18 @@ public class LocalNimbusTest {
         localClusterConf.put("nimbus-daemon", true);
         ILocalCluster localCluster = Testing.getLocalCluster(localClusterConf);
 
-        Config stormConf = new Config();
-        stormConf.putAll(Utils.readDefaultConfig());
-        stormConf.setDebug(true);
-        stormConf.put("storm.cluster.mode", "local"); // default is aways "distributed" but here local cluster is being used.
-        stormConf.put(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN, InmemoryTopologySubmitterHook.class.getName());
+        Config topoConf = new Config();
+        topoConf.putAll(Utils.readDefaultConfig());
+        topoConf.setDebug(true);
+        topoConf.put("storm.cluster.mode", "local"); // default is aways "distributed" but here local cluster is being used.
+        topoConf.put(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN, InmemoryTopologySubmitterHook.class.getName());
 
         List<TopologyDetails> topologyNames =new ArrayList<>();
         for (int i=0; i<4; i++) {
             final String topologyName = "word-count-"+ UUID.randomUUID().toString();
             final StormTopology stormTopology = createTestTopology();
             topologyNames.add(new TopologyDetails(topologyName, stormTopology));
-            localCluster.submitTopology(topologyName, stormConf, stormTopology);
+            localCluster.submitTopology(topologyName, topoConf, stormTopology);
         }
 
         Assert.assertEquals(InmemoryTopologySubmitterHook.submittedTopologies, topologyNames);
@@ -87,7 +87,7 @@ public class LocalNimbusTest {
         public static final List<TopologyDetails> submittedTopologies = new ArrayList<>();
 
         @Override
-        public void notify(TopologyInfo topologyInfo, Map stormConf, StormTopology topology) throws IllegalAccessException {
+        public void notify(TopologyInfo topologyInfo, Map<String, Object> topoConf, StormTopology topology) throws IllegalAccessException {
             submittedTopologies.add(new TopologyDetails(topologyInfo.get_name(), topology));
         }
     }

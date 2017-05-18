@@ -32,7 +32,7 @@ public class KinesisBoltTest extends BaseRichBolt {
     private transient OutputCollector collector;
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
     }
 

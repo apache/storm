@@ -46,12 +46,12 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     }
 
     @Override
-    public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(Map conf, TopologyContext context) {
+    public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new KafkaTridentSpoutEmitter<>(kafkaManager, context);
     }
 
     @Override
-    public Coordinator<List<TopicPartition>> getCoordinator(Map conf, TopologyContext context) {
+    public Coordinator<List<TopicPartition>> getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return new KafkaTridentSpoutOpaqueCoordinator<>(kafkaManager);
     }
 

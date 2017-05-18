@@ -33,16 +33,16 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
 
     ISaslServer server;
     /** Used for client or server's token to send or receive from each other. */
-    private Map storm_conf;
+    private Map<String, Object> topoConf;
     private String jaas_section;
     private List<String> authorizedUsers;
 
     private static final Logger LOG = LoggerFactory
         .getLogger(KerberosSaslServerHandler.class);
 
-    public KerberosSaslServerHandler(ISaslServer server, Map storm_conf, String jaas_section, List<String> authorizedUsers) throws IOException {
+    public KerberosSaslServerHandler(ISaslServer server, Map<String, Object> topoConf, String jaas_section, List<String> authorizedUsers) throws IOException {
         this.server = server;
-        this.storm_conf = storm_conf;
+        this.topoConf = topoConf;
         this.jaas_section = jaas_section;
         this.authorizedUsers = authorizedUsers;
     }
@@ -70,7 +70,7 @@ public class KerberosSaslServerHandler extends SimpleChannelUpstreamHandler {
                 if (saslNettyServer == null) {
                     LOG.debug("No saslNettyServer for {}  yet; creating now, with topology token: ", channel);
                     try {
-                        saslNettyServer = new KerberosSaslNettyServer(storm_conf, jaas_section, authorizedUsers);
+                        saslNettyServer = new KerberosSaslNettyServer(topoConf, jaas_section, authorizedUsers);
                         KerberosSaslNettyServerState.getKerberosSaslNettyServer.set(channel,
                                                                                     saslNettyServer);
                     } catch (RuntimeException ioe) {

@@ -58,7 +58,7 @@ public class KerberosSaslNettyClient {
     /**
      * Create a KerberosSaslNettyClient for authentication with servers.
      */
-    public KerberosSaslNettyClient(Map storm_conf, String jaas_section, String host) {
+    public KerberosSaslNettyClient(Map<String, Object> topoConf, String jaas_section, String host) {
         LOG.debug("KerberosSaslNettyClient: Creating SASL {} client to authenticate to server ",
                   SaslUtils.KERBEROS);
 
@@ -66,7 +66,7 @@ public class KerberosSaslNettyClient {
 
         Configuration login_conf;
         try {
-            login_conf = AuthUtils.GetConfiguration(storm_conf);
+            login_conf = AuthUtils.GetConfiguration(topoConf);
         }
         catch (Throwable t) {
             LOG.error("Failed to get login_conf: ", t);

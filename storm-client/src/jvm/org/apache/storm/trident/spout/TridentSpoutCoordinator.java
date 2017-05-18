@@ -51,7 +51,7 @@ public class TridentSpoutCoordinator implements IBasicBolt {
     }
     
     @Override
-    public void prepare(Map conf, TopologyContext context) {
+    public void prepare(Map<String, Object> conf, TopologyContext context) {
         _coord = _spout.getCoordinator(_id, conf, context);
         _underlyingState = TransactionalState.newCoordinatorState(conf, _id);
         _state = new RotatingTransactionalState(_underlyingState, META_DIR);

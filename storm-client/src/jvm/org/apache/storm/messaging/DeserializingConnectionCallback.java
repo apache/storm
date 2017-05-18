@@ -41,7 +41,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback {
              }
          };
 
-    public DeserializingConnectionCallback(final Map conf, final GeneralTopologyContext context, WorkerState.ILocalTransferCallback callback) {
+    public DeserializingConnectionCallback(final Map<String, Object> conf, final GeneralTopologyContext context, WorkerState.ILocalTransferCallback callback) {
         _conf = conf;
         _context = context;
         _cb = callback;

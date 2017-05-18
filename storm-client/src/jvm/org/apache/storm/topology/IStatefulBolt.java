@@ -36,7 +36,7 @@ public interface IStatefulBolt<T extends State> extends IStatefulComponent<T> {
     /**
      * @see org.apache.storm.task.IBolt#prepare(Map, TopologyContext, OutputCollector)
      */
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector);
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector);
     /**
      * @see org.apache.storm.task.IBolt#execute(Tuple)
      */

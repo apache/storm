@@ -34,10 +34,10 @@ public interface ITransportPlugin {
     /**
      * Invoked once immediately after construction
      * @param type the type of connection this will process.
-     * @param storm_conf Storm configuration 
+     * @param topoConf Storm configuration 
      * @param login_conf login configuration
      */
-    void prepare(ThriftConnectionType type, Map storm_conf, Configuration login_conf);
+    void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf);
     
     /**
      * Create a server associated with a given port, service handler, and purpose

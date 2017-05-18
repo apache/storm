@@ -46,7 +46,7 @@ public class EsStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         EsState esState = new EsState(esConfig, tupleMapper);
         esState.prepare();
         return esState;

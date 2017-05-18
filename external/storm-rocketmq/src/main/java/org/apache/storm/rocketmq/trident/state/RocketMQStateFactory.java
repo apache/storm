@@ -32,7 +32,7 @@ public class RocketMQStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics,
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics,
             int partitionIndex, int numPartitions) {
         RocketMQState state = new RocketMQState(conf, options);
         state.prepare();

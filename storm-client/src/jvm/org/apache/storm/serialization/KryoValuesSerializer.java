@@ -29,7 +29,7 @@ public class KryoValuesSerializer {
     ListDelegate _delegate;
     Output _kryoOut;
     
-    public KryoValuesSerializer(Map conf) {
+    public KryoValuesSerializer(Map<String, Object> conf) {
         _kryo = SerializationFactory.getKryo(conf);
         _delegate = new ListDelegate();
         _kryoOut = new Output(2000, 2000000000);

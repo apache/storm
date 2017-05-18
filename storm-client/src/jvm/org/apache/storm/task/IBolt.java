@@ -48,11 +48,11 @@ public interface IBolt extends Serializable {
      *
      * This includes the:
      * 
-     * @param stormConf The Storm configuration for this bolt. This is the configuration provided to the topology merged in with cluster configuration on this machine.
+     * @param topoConf The Storm configuration for this bolt. This is the configuration provided to the topology merged in with cluster configuration on this machine.
      * @param context This object can be used to get information about this task's place within the topology, including the task id and component id of this task, input and output information, etc.
      * @param collector The collector is used to emit tuples from this bolt. Tuples can be emitted at any time, including the prepare and cleanup methods. The collector is thread-safe and should be saved as an instance variable of this bolt object.
      */
-    void prepare(Map stormConf, TopologyContext context, OutputCollector collector);
+    void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector);
 
     /**
      * Process a single tuple of input. The Tuple object contains metadata on it

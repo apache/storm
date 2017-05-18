@@ -44,7 +44,7 @@ public class TopologySpoutLag {
     private static final String ERROR_INFO = "errorInfo";
     private final static Logger logger = LoggerFactory.getLogger(TopologySpoutLag.class);
 
-    public static Map<String, Map<String, Object>> lag (StormTopology stormTopology, Map topologyConf) {
+    public static Map<String, Map<String, Object>> lag (StormTopology stormTopology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Object>> result = new HashMap<>();
         Map<String, SpoutSpec> spouts = stormTopology.get_spouts();
         String className = null;
@@ -101,7 +101,7 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static List<String> getCommandLineOptionsForOldKafkaSpout (Map<String, Object> jsonConf, Map topologyConf) {
+    private static List<String> getCommandLineOptionsForOldKafkaSpout (Map<String, Object> jsonConf, Map<String, Object> topologyConf) {
         logger.debug("json configuration: {}", jsonConf);
 
         List<String> commands = new ArrayList<>();
@@ -138,7 +138,7 @@ public class TopologySpoutLag {
         return commands;
     }
 
-    private static Map<String, Object> getLagResultForKafka (String spoutId, SpoutSpec spoutSpec, Map topologyConf, boolean old) throws IOException {
+    private static Map<String, Object> getLagResultForKafka (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf, boolean old) throws IOException {
         ComponentCommon componentCommon = spoutSpec.get_common();
         String json = componentCommon.get_json_conf();
         Map<String, Object> result = null;
@@ -187,11 +187,11 @@ public class TopologySpoutLag {
         return kafkaSpoutLagInfo;
     }
 
-    private static Map<String, Object> getLagResultForNewKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map topologyConf) throws IOException {
+    private static Map<String, Object> getLagResultForNewKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf) throws IOException {
         return getLagResultForKafka(spoutId, spoutSpec, topologyConf, false);
     }
 
-    private static Map<String, Object> getLagResultForOldKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map topologyConf) throws IOException {
+    private static Map<String, Object> getLagResultForOldKafkaSpout (String spoutId, SpoutSpec spoutSpec, Map<String, Object> topologyConf) throws IOException {
         return getLagResultForKafka(spoutId, spoutSpec, topologyConf, true);
     }
 }

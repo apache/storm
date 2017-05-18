@@ -47,7 +47,7 @@ public class GroupedMultiReducerExecutor implements MultiReducer<Map<TridentTupl
     }
     
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
         for(int i=0; i<_groupFields.size(); i++) {
             _groupFactories.add(context.makeProjectionFactory(i, _groupFields.get(i)));
             _inputFactories.add(context.makeProjectionFactory(i, _inputFields.get(i)));

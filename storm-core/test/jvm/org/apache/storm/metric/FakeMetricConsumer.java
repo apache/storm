@@ -35,7 +35,7 @@ public class FakeMetricConsumer implements IMetricsConsumer {
     public static final Table<String, String, Multimap<Integer, Object>> buffer = HashBasedTable.create();
 
     @Override
-    public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
         synchronized (buffer) {
             buffer.clear();
         }

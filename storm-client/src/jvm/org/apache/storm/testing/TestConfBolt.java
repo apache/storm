@@ -40,7 +40,7 @@ public class TestConfBolt extends BaseBasicBolt {
     }        
 
     @Override
-    public void prepare(Map conf, TopologyContext context) {
+    public void prepare(Map<String, Object> conf, TopologyContext context) {
         _conf = conf;
     }    
     

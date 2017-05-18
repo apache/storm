@@ -52,12 +52,12 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
     }
 
     @Override
-    public BatchCoordinator<Object> getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new RichSpoutCoordinator();
     }
 
     @Override
-    public Emitter<Object> getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new RichSpoutEmitter(conf, context);
     }
     
@@ -71,7 +71,7 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
         long lastRotate = System.currentTimeMillis();
         long rotateTime;
 
-        public RichSpoutEmitter(Map conf, TopologyContext context) {
+        public RichSpoutEmitter(Map<String, Object> conf, TopologyContext context) {
             _conf = conf;
             _context = context;
             Number batchSize = (Number) conf.get(MAX_BATCH_SIZE_CONF);

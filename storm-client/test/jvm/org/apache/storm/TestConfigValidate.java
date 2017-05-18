@@ -86,22 +86,22 @@ public class TestConfigValidate {
 
     @Test(expected = InvalidTopologyException.class)
     public void testValidateTopologyBlobStoreMap() throws InvalidTopologyException {
-        Map<String, Object> stormConf = new HashMap<>();
+        Map<String, Object> topoConf = new HashMap<>();
         Map<String,Map> topologyMap = new HashMap<>();
         topologyMap.put("key1", new HashMap<String,String>());
         topologyMap.put("key2", new HashMap<String,String>());
-        stormConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
+        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
         HashSet<String> keySet = new HashSet<>();
         keySet.add("key1");
         keySet.add("key2");
-        Utils.validateTopologyBlobStoreMap(stormConf, keySet);
+        Utils.validateTopologyBlobStoreMap(topoConf, keySet);
         keySet.remove("key2");
-        Utils.validateTopologyBlobStoreMap(stormConf, keySet);
+        Utils.validateTopologyBlobStoreMap(topoConf, keySet);
     }
 
     @Test
     public void defaultYamlTest() throws InvocationTargetException, NoSuchMethodException, NoSuchFieldException, InstantiationException, IllegalAccessException {
-        Map conf = Utils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
         ConfigValidation.validateFields(conf);
     }
 

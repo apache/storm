@@ -57,7 +57,7 @@ public class JsonSerializer implements ISerializer {
         }
     }
 
-    public Number connect(Map conf, TopologyContext context)
+    public Number connect(Map<String, Object> conf, TopologyContext context)
             throws IOException, NoOutputException {
         JSONObject setupInfo = new JSONObject();
         setupInfo.put("pidDir", context.getPIDDir());

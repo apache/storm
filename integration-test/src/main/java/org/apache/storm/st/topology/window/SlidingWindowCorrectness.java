@@ -102,7 +102,7 @@ public class SlidingWindowCorrectness implements TestableTopology {
         }
 
         @Override
-        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             componentId = context.getThisComponentId();
             this.collector = collector;
         }
@@ -133,7 +133,7 @@ public class SlidingWindowCorrectness implements TestableTopology {
         private String componentId;
 
         @Override
-        public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
             componentId = context.getThisComponentId();
             this.collector = collector;
         }

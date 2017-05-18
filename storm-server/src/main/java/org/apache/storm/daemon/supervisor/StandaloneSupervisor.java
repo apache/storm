@@ -30,10 +30,10 @@ import java.util.Map;
 
 public class StandaloneSupervisor implements ISupervisor {
     private String supervisorId;
-    private Map conf;
+    private Map<String, Object> conf;
 
     @Override
-    public void prepare(Map stormConf, String schedulerLocalDir) {
+    public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
         try {
             LocalState localState = new LocalState(schedulerLocalDir);
             String supervisorId = localState.getSupervisorId();
@@ -41,7 +41,7 @@ public class StandaloneSupervisor implements ISupervisor {
                 supervisorId = generateSupervisorId();
                 localState.setSupervisorId(supervisorId);
             }
-            this.conf = stormConf;
+            this.conf = topoConf;
             this.supervisorId = supervisorId;
         } catch (IOException e) {
             throw new RuntimeException(e);

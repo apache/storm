@@ -58,7 +58,7 @@ public class SocketState implements State {
         }
 
         @Override
-        public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             BufferedWriter out;
             try {
                 Socket socket = new Socket(host, port);

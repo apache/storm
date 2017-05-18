@@ -63,7 +63,7 @@ public class CheckpointSpout extends BaseRichSpout {
     private CheckPointState curTxState;
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         open(context, collector, loadCheckpointInterval(conf), loadCheckpointState(conf, context));
     }
 
@@ -132,7 +132,7 @@ public class CheckpointSpout extends BaseRichSpout {
     /**
      * Loads the last saved checkpoint state the from persistent storage.
      */
-    private KeyValueState<String, CheckPointState> loadCheckpointState(Map conf, TopologyContext ctx) {
+    private KeyValueState<String, CheckPointState> loadCheckpointState(Map<String, Object> conf, TopologyContext ctx) {
         String namespace = ctx.getThisComponentId() + "-" + ctx.getThisTaskId();
         KeyValueState<String, CheckPointState> state =
                 (KeyValueState<String, CheckPointState>) StateFactory.getState(namespace, conf, ctx);
@@ -147,10 +147,10 @@ public class CheckpointSpout extends BaseRichSpout {
         return state;
     }
 
-    private int loadCheckpointInterval(Map stormConf) {
+    private int loadCheckpointInterval(Map<String, Object> topoConf) {
         int interval = 0;
-        if (stormConf.containsKey(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)) {
-            interval = ((Number) stormConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)).intValue();
+        if (topoConf.containsKey(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)) {
+            interval = ((Number) topoConf.get(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL)).intValue();
         }
         // ensure checkpoint interval is not less than a sane low value.
         interval = Math.max(100, interval);

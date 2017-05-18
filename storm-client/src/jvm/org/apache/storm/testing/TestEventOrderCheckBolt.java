@@ -41,7 +41,7 @@ public class TestEventOrderCheckBolt extends BaseRichBolt {
     OutputCollector _collector;
     Map<Integer, Long> recentEventId = new HashMap<Integer, Long>();
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         _collector = collector;
         _count = 0;
     }

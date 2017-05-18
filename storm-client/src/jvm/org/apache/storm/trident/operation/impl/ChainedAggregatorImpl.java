@@ -45,7 +45,7 @@ public class ChainedAggregatorImpl implements Aggregator<ChainedResult> {
         }
     }
     
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         _inputFactories = new ProjectionFactory[_inputFields.length];
         for(int i=0; i<_inputFields.length; i++) {
             _inputFactories[i] = context.makeProjectionFactory(_inputFields[i]);

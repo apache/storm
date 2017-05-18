@@ -31,7 +31,7 @@ import java.util.Map;
 public class ThriftClientTest {
 
     private int NIMBUS_TIMEOUT = 3 * 1000;
-    private Map conf;
+    private Map<String, Object> conf;
 
     @Before
     public void setup() {

@@ -48,7 +48,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     private NimbusClient client;
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         this._conf = conf;
         _blobStore = new HdfsBlobStore();
         _blobStore.prepare(conf, null, null);
@@ -105,7 +105,7 @@ public class HdfsClientBlobStore extends ClientBlobStore {
     }
 
     @Override
-    public boolean setClient(Map conf, NimbusClient client) {
+    public boolean setClient(Map<String, Object> conf, NimbusClient client) {
         this.client = client;
         return true;
     }

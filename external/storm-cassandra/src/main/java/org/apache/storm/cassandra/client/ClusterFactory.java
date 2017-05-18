@@ -38,12 +38,12 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
 
     /**
      * Creates a new Cluster based on the specified configuration.
-     * @param stormConf the storm configuration.
+     * @param topoConf the storm configuration.
      * @return a new a new {@link com.datastax.driver.core.Cluster} instance.
      */
     @Override
-    protected Cluster make(Map<String, Object> stormConf) {
-        CassandraConf cassandraConf = new CassandraConf(stormConf);
+    protected Cluster make(Map<String, Object> topoConf) {
+        CassandraConf cassandraConf = new CassandraConf(topoConf);
 
         Cluster.Builder cluster = Cluster.builder()
                 .withoutJMXReporting()

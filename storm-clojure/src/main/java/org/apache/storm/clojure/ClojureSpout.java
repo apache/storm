@@ -52,7 +52,7 @@ public class ClojureSpout implements IRichSpout {
     
 
     @Override
-    public void open(final Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
+    public void open(final Map<String, Object> conf, final TopologyContext context, final SpoutOutputCollector collector) {
         IFn hof = ClojureUtil.loadClojureFn(_fnSpec.get(0), _fnSpec.get(1));
         try {
             IFn preparer = (IFn) hof.applyTo(RT.seq(_params));

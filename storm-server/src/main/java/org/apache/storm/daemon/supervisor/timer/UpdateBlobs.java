@@ -89,10 +89,10 @@ public class UpdateBlobs implements Runnable {
      * @param localizer
      * @throws IOException
      */
-    private void updateBlobsForTopology(Map conf, String stormId, Localizer localizer) throws IOException {
-        Map stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
-        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+    private void updateBlobsForTopology(Map<String, Object> conf, String stormId, Localizer localizer) throws IOException {
+        Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        String user = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         List<LocalResource> localresources = SupervisorUtils.blobstoreMapToLocalresources(blobstoreMap);
         try {
             localizer.updateBlobs(localresources, user);

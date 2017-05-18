@@ -22,7 +22,7 @@ import java.util.Collection;
 
 
 public interface ISupervisor {
-    void prepare(Map stormConf, String schedulerLocalDir);
+    void prepare(Map<String, Object> topoConf, String schedulerLocalDir);
     // for mesos, this is {hostname}-{topologyid}
     /**
      * The id used for writing metadata into ZK.

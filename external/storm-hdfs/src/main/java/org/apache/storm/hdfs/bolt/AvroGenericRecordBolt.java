@@ -88,7 +88,7 @@ public class AvroGenericRecordBolt extends AbstractHdfsBolt{
     }
 
     @Override
-    protected void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException {
+    protected void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws IOException {
         LOG.info("Preparing AvroGenericRecord Bolt...");
         this.fs = FileSystem.get(URI.create(this.fsUrl), hdfsConfig);
     }

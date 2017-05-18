@@ -39,7 +39,7 @@ class StormServerPipelineFactory implements ChannelPipelineFactory {
         // Encoder
         pipeline.addLast("encoder", new MessageEncoder());
 
-        boolean isNettyAuth = (Boolean) this.server.storm_conf
+        boolean isNettyAuth = (Boolean) this.server.topoConf
                 .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
         if (isNettyAuth) {
             // Authenticate: Removed after authentication completes

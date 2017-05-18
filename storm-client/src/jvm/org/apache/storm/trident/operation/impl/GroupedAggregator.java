@@ -49,7 +49,7 @@ public class GroupedAggregator implements Aggregator<Object[]> {
     }
     
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         _inputFactory = context.makeProjectionFactory(_inFields);
         _groupFactory = context.makeProjectionFactory(_groupFields);
         _agg.prepare(conf, new TridentOperationContext(context, _inputFactory));

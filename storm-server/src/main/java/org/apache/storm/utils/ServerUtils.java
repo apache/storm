@@ -132,11 +132,11 @@ public class ServerUtils {
         return null;
       }
 
-    public static BlobStore getNimbusBlobStore(Map conf, NimbusInfo nimbusInfo) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo) {
         return getNimbusBlobStore(conf, null, nimbusInfo);
     }
 
-    public static BlobStore getNimbusBlobStore(Map conf, String baseDir, NimbusInfo nimbusInfo) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo) {
         String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
@@ -243,7 +243,7 @@ public class ServerUtils {
         return fileName + "." + version;
     }
 
-    public static ClientBlobStore getClientBlobStoreForSupervisor(Map conf) {
+    public static ClientBlobStore getClientBlobStoreForSupervisor(Map<String, Object> conf) {
         ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance(
                 (String) conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE));
         store.prepare(conf);
@@ -325,7 +325,7 @@ public class ServerUtils {
         return ret;
     }
 
-    public static Localizer createLocalizer(Map conf, String baseDir) {
+    public static Localizer createLocalizer(Map<String, Object> conf, String baseDir) {
         return new Localizer(conf, baseDir);
     }
 

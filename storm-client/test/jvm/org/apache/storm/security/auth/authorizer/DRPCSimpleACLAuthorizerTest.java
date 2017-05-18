@@ -156,7 +156,7 @@ public class DRPCSimpleACLAuthorizerTest {
     }
 
     private boolean isPermitted(IAuthorizer authorizer, ReqContext context, String operation, String function) {
-        Map config = new HashMap();
+        Map<String, Object> config = new HashMap();
         config.put(DRPCSimpleACLAuthorizer.FUNCTION_KEY, function);
         return authorizer.permit(context, operation, config);
     }

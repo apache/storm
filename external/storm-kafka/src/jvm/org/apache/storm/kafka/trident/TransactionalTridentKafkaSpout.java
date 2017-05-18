@@ -35,12 +35,12 @@ public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<
 
 
     @Override
-    public IPartitionedTridentSpout.Coordinator getCoordinator(Map conf, TopologyContext context) {
+    public IPartitionedTridentSpout.Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return new org.apache.storm.kafka.trident.Coordinator(conf, _config);
     }
 
     @Override
-    public IPartitionedTridentSpout.Emitter getEmitter(Map conf, TopologyContext context) {
+    public IPartitionedTridentSpout.Emitter getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new TridentKafkaEmitter(conf, context, _config, context.getStormId()).asTransactionalEmitter();
     }
 

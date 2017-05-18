@@ -80,7 +80,7 @@ public class SingleEmitAggregator implements Aggregator<SingleEmitState> {
     int totalPartitions;
     
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         _agg.prepare(conf, context);
         this.myPartitionIndex = context.getPartitionIndex();
         this.totalPartitions = context.numPartitions();

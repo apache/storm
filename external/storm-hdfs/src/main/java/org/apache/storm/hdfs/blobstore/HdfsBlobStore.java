@@ -76,7 +76,7 @@ public class HdfsBlobStore extends BlobStore {
     private BlobStoreAclHandler _aclHandler;
     private HdfsBlobStoreImpl _hbs;
     private Subject _localSubject;
-    private Map conf;
+    private Map<String, Object> conf;
 
     /**
      * Get the subject from Hadoop so we can use it to validate the acls. There is no direct
@@ -112,7 +112,7 @@ public class HdfsBlobStore extends BlobStore {
     }
 
     @Override
-    public void prepare(Map conf, String overrideBase, NimbusInfo nimbusInfo) {
+    public void prepare(Map<String, Object> conf, String overrideBase, NimbusInfo nimbusInfo) {
         this.conf = conf;
         prepareInternal(conf, overrideBase, null);
     }
@@ -121,7 +121,7 @@ public class HdfsBlobStore extends BlobStore {
      * Allow a Hadoop Configuration to be passed for testing. If it's null then the hadoop configs
      * must be in your classpath.
      */
-    protected void prepareInternal(Map conf, String overrideBase, Configuration hadoopConf) {
+    protected void prepareInternal(Map<String, Object> conf, String overrideBase, Configuration hadoopConf) {
         this.conf = conf;
         if (overrideBase == null) {
             overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);

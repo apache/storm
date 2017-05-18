@@ -45,7 +45,7 @@ public class EvaluationFilter extends BaseFilter {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         if (filterInstance != null && filterInstance instanceof DebuggableExecutableExpression) {
             LOG.info("Expression code for filter: \n{}", ((DebuggableExecutableExpression) filterInstance).getDelegateCode());
         }

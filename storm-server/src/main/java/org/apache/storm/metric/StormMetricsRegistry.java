@@ -58,14 +58,14 @@ public class StormMetricsRegistry {
         return register(name, histogram);
     }
 
-    public static void startMetricsReporters(Map stormConf) {
-        for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(stormConf)) {
-            startMetricsReporter(reporter, stormConf);
+    public static void startMetricsReporters(Map<String, Object> topoConf) {
+        for (PreparableReporter reporter : MetricsUtils.getPreparableReporters(topoConf)) {
+            startMetricsReporter(reporter, topoConf);
         }
     }
 
-    private static void startMetricsReporter(PreparableReporter reporter, Map stormConf) {
-        reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, stormConf);
+    private static void startMetricsReporter(PreparableReporter reporter, Map<String, Object> topoConf) {
+        reporter.prepare(StormMetricsRegistry.DEFAULT_REGISTRY, topoConf);
         reporter.start();
         LOG.info("Started statistics report plugin...");
     }
