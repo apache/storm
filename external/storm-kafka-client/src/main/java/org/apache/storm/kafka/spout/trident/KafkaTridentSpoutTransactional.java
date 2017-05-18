@@ -25,14 +25,15 @@ import org.apache.storm.trident.spout.ISpoutPartition;
 import org.apache.storm.tuple.Fields;
 
 // TODO
-public class KafkaTridentSpoutTransactional<Ps, P extends ISpoutPartition, T> implements IPartitionedTridentSpout<Ps, P, T> {
+public class KafkaTridentSpoutTransactional<PartitionsT, P extends ISpoutPartition, T> 
+        implements IPartitionedTridentSpout<PartitionsT, P, T> {
     @Override
-    public Coordinator<Ps> getCoordinator(Map<String, Object> conf, TopologyContext context) {
+    public Coordinator<PartitionsT> getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return null;
     }
 
     @Override
-    public Emitter<Ps, P, T> getEmitter(Map<String, Object> conf, TopologyContext context) {
+    public Emitter<PartitionsT, P, T> getEmitter(Map<String, Object> conf, TopologyContext context) {
         return null;
     }
 
