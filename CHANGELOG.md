@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
  * STORM-2493: update documents to reflect the changes
  * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
