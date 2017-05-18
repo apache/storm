@@ -52,21 +52,18 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     private static final Logger LOG = LoggerFactory.getLogger(AbstractAutoCreds.class);
     public static final String CONFIG_KEY_RESOURCES = "resources";
 
-    private List<String> configKeys = new ArrayList<>();
+    private Set<String> configKeys = new HashSet<>();
     private Map<String, Map<String, Object>> configMap = new HashMap<>();
 
     @Override
     public void prepare(Map conf) {
         doPrepare(conf);
-        String configKeyString = getConfigKeyString();
-        if (conf.containsKey(configKeyString)) {
-            configKeys.addAll((List<String>) conf.get(configKeyString));
-            for (String key : configKeys) {
-                if (conf.containsKey(key)) {
-                    Map<String, Object> config = (Map<String, Object>) conf.get(key);
-                    configMap.put(key, config);
-                    LOG.info("configKey = {}, config = {}", key, config);
-                }
+        loadConfigKeys(conf);
+        for (String key : configKeys) {
+            if (conf.containsKey(key)) {
+                Map<String, Object> config = (Map<String, Object>) conf.get(key);
+                configMap.put(key, config);
+                LOG.info("configKey = {}, config = {}", key, config);
             }
         }
     }
@@ -74,6 +71,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     @Override
     public void populateCredentials(Map<String, String> credentials, Map conf) {
         try {
+            loadConfigKeys(conf);
             if (!configKeys.isEmpty()) {
                 Map<String, Object> updatedConf = updateConfigs(conf);
                 for (String configKey : configKeys) {
@@ -111,7 +109,6 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
                 DatatypeConverter.printBase64Binary("dummy place holder".getBytes()));
     }
 
-
     /**
      * {@inheritDoc}
      */
@@ -120,6 +117,7 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
         addCredentialToSubject(subject, credentials);
         addTokensToUGI(subject);
     }
+
 
     /**
      * {@inheritDoc}
@@ -243,6 +241,14 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
         }
         return credential;
 
+    }
+
+    private void loadConfigKeys(Map conf) {
+        List<String> keys;
+        String configKeyString = getConfigKeyString();
+        if ((keys = (List<String>) conf.get(configKeyString)) != null) {
+            configKeys.addAll(keys);
+        }
     }
 
 }
