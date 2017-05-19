@@ -31,9 +31,11 @@ import java.util.Map;
 /**
  * An Event Data Scheme which deserializes message payload into the raw bytes.
  *
- * The resulting tuple would contain two items, the first being the message
+ * The resulting tuple would contain three items, the first being the message
  * bytes, and the second a map of properties that include metadata, which can be
- * used to determine who processes the message, and how it is processed.
+ * used to determine who processes the message, and how it is processed.The third is
+ * the system properties which exposes information like enqueue-time, offset and
+ * sequence number
  */
 public class BinaryEventDataScheme implements IEventDataScheme {
 
@@ -56,16 +58,17 @@ public class BinaryEventDataScheme implements IEventDataScheme {
 				throw new RuntimeException(e);
 			}
 		}
-		Map metaDataMap = eventData.getProperties().size() > 0 ? eventData.getProperties() : null;
+		Map metaDataMap =  eventData.getProperties();
+		Map systemMetaDataMap = eventData.getSystemProperties();
 		fieldContents.add(messageData);
-		if ( metaDataMap != null ) {
-			fieldContents.add(metaDataMap);
-		}
+		fieldContents.add(metaDataMap);
+		fieldContents.add(systemMetaDataMap);
 		return fieldContents;
 	}
 
 	@Override
 	public Fields getOutputFields() {
-		return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
+		return new Fields(FieldConstants.Message, FieldConstants.META_DATA,
+				FieldConstants.SYSTEM_META_DATA);
 	}
 }
