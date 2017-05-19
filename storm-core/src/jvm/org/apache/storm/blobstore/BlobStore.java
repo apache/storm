@@ -61,7 +61,7 @@ import org.apache.storm.generated.SettableBlobMeta;
  */
 public abstract class BlobStore implements Shutdownable {
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
-    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$");
+    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
 
     /**

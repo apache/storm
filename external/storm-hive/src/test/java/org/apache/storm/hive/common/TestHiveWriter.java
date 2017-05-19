@@ -114,7 +114,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           ,callTimeoutPool, mapper, ugi, "test-instantiate");
+                                           ,callTimeoutPool, mapper, ugi, "test-instantiate", false);
         writer.close();
     }
 
@@ -125,7 +125,7 @@ public class TestHiveWriter {
             .withPartitionFields(new Fields(partNames));
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi, "test-write-basic");
+                                           , callTimeoutPool, mapper, ugi, "test-write-basic", false);
         writeTuples(writer,mapper,3);
         writer.flush(false);
         writer.close();
@@ -140,7 +140,7 @@ public class TestHiveWriter {
 
         HiveEndPoint endPoint = new HiveEndPoint(metaStoreURI, dbName, tblName, Arrays.asList(partitionVals));
         HiveWriter writer = new HiveWriter(endPoint, 10, true, timeout
-                                           , callTimeoutPool, mapper, ugi, "test-write-multi-flush");
+                                           , callTimeoutPool, mapper, ugi, "test-write-multi-flush", false);
         Tuple tuple = generateTestTuple("1","abc");
         writer.write(mapper.mapRecord(tuple));
         tuple = generateTestTuple("2","def");

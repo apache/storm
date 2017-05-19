@@ -1,4 +1,9 @@
 ﻿## 1.1.1
+ * STORM-2501: Auto populate Hive Credentials
+ * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
+ * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
+ * STORM-2493: update documents to reflect the changes
+ * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2512: Make constructor public and add one more builder constructor
  * STORM-2505: Spout to support topic compaction
