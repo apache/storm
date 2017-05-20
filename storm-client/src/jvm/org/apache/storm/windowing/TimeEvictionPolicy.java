@@ -38,7 +38,7 @@ public class TimeEvictionPolicy<T> implements EvictionPolicy<T> {
      * {@inheritDoc}
      */
     @Override
-    public Action evict(Event<T> event) {
+    public Action evict(Event<T> event) {      
         long now = evictionContext == null ? System.currentTimeMillis() : evictionContext.getReferenceTime();
         long diff = now - event.getTimestamp();
         if (diff >= windowLength) {

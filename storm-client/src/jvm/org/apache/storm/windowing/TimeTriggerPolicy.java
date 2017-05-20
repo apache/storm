@@ -114,9 +114,7 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T> {
                      * set the current timestamp as the reference time for the eviction policy
                      * to evict the events
                      */
-                    if (evictionPolicy != null) {
-                        evictionPolicy.setContext(new DefaultEvictionContext(System.currentTimeMillis()));
-                    }
+                    evictionPolicy.setContext(new DefaultEvictionContext(System.currentTimeMillis()));
                     handler.onTrigger();
                 } catch (Throwable th) {
                     LOG.error("handler.onTrigger failed ", th);
