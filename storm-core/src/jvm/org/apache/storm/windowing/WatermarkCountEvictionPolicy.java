@@ -19,7 +19,7 @@ package org.apache.storm.windowing;
 
 /**
  * An eviction policy that tracks count based on watermark ts and
- * evicts events upto the watermark based on a threshold count.
+ * evicts events up to the watermark based on a threshold count.
  *
  * @param <T> the type of event tracked by this policy.
  */
@@ -30,6 +30,7 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
      */
     private long referenceTime;
     private long processed = 0L;
+    private EvictionContext context;
 
     public WatermarkCountEvictionPolicy(int count) {
         super(count);
@@ -37,6 +38,13 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
 
     @Override
     public Action evict(Event<T> event) {
+        if(context == null) {
+            //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.
+            //In this case we should hold on to all the events. When the first watermark is received, the context will be set,
+            //and the events will be reevaluated for eviction
+            return Action.STOP;
+        }
+        
         Action action;
         if (event.getTimestamp() <= referenceTime && processed < currentCount.get()) {
             action = super.evict(event);
@@ -56,6 +64,7 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
 
     @Override
     public void setContext(EvictionContext context) {
+        this.context = context;
         referenceTime = context.getReferenceTime();
         if (context.getCurrentCount() != null) {
             currentCount.set(context.getCurrentCount());
