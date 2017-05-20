@@ -356,6 +356,7 @@ public class BlobStoreAclHandler {
         for (String user : userNames) {
             fixACLsForUser(cleanAcls, user, opMask);
         }
+        fixEmptyNameACLForUsers(cleanAcls, userNames, opMask);
         if ((who == null || userNames.isEmpty()) && !worldEverything(acls)) {
             cleanAcls.addAll(BlobStoreAclHandler.WORLD_EVERYTHING);
             LOG.debug("Access Control for key {} is normalized to world everything {}", key, cleanAcls);
@@ -378,23 +379,60 @@ public class BlobStoreAclHandler {
 
     private void fixACLsForUser(List<AccessControl> acls, String user, int mask) {
         boolean foundUserACL = false;
+        List<AccessControl> emptyUserACLs = new ArrayList<>();
+
         for (AccessControl control : acls) {
-            if (control.get_type() == AccessControlType.USER && control.get_name().equals(user)) {
-                int currentAccess = control.get_access();
-                if ((currentAccess & mask) != mask) {
-                    control.set_access(currentAccess | mask);
+            if (control.get_type() == AccessControlType.USER) {
+                if (!control.is_set_name()) {
+                    emptyUserACLs.add(control);
+                } else if (control.get_name().equals(user)) {
+                    int currentAccess = control.get_access();
+                    if ((currentAccess & mask) != mask) {
+                        control.set_access(currentAccess | mask);
+                    }
+                    foundUserACL = true;
                 }
-                foundUserACL = true;
-                break;
             }
         }
-        if (!foundUserACL) {
+
+        // if ACLs have two user ACLs for empty user and principal, discard empty user ACL
+        if (!emptyUserACLs.isEmpty() && foundUserACL) {
+            acls.removeAll(emptyUserACLs);
+        }
+
+        // add default user ACL when only empty user ACL is not present
+        if (emptyUserACLs.isEmpty() && !foundUserACL) {
             AccessControl userACL = new AccessControl();
             userACL.set_type(AccessControlType.USER);
             userACL.set_name(user);
             userACL.set_access(mask);
             acls.add(userACL);
         }
+    }
+
+    private void fixEmptyNameACLForUsers(List<AccessControl> acls, Set<String> users, int mask) {
+        List<AccessControl> aclsToAdd = new ArrayList<>();
+        List<AccessControl> aclsToRemove = new ArrayList<>();
+
+        for (AccessControl control : acls) {
+            if (control.get_type() == AccessControlType.USER && !control.is_set_name()) {
+                aclsToRemove.add(control);
+
+                int currentAccess = control.get_access();
+                if ((currentAccess & mask) != mask) {
+                    control.set_access(currentAccess | mask);
+                }
+
+                for (String user : users) {
+                    AccessControl copiedControl = new AccessControl(control);
+                    copiedControl.set_name(user);
+                    aclsToAdd.add(copiedControl);
+                }
+            }
+        }
+
+        acls.removeAll(aclsToRemove);
+        acls.addAll(aclsToAdd);
     }
 
     private Set<String> getUserNamesFromSubject(Subject who) {
