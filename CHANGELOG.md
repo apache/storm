@@ -250,6 +250,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2518: Handles empty name for "USER type" ACL when normalizing ACLs
  * STORM-2501: Auto populate Hive Credentials
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2512: Make constructor public and add one more builder constructor
