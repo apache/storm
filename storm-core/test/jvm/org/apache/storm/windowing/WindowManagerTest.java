@@ -29,9 +29,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
+import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.empty;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -155,7 +158,48 @@ public class WindowManagerTest {
         // window should be compacted and events should be expired.
         assertEquals(seq(1, threshold - windowLength), listener.onExpiryEvents);
     }
-
+    
+    private void testEvictBeforeWatermarkForWatermarkEvictionPolicy(EvictionPolicy watermarkEvictionPolicy, int windowLength) throws Exception {
+        /**
+         * The watermark eviction policy must not evict tuples until the first watermark has been received.
+         * The policies can't make a meaningful decision prior to the first watermark, so the safe decision
+         * is to postpone eviction.
+         */ 
+        int threshold = WindowManager.EXPIRE_EVENTS_THRESHOLD;
+        windowManager.setEvictionPolicy(watermarkEvictionPolicy);
+        WatermarkCountTriggerPolicy triggerPolicy = new WatermarkCountTriggerPolicy(windowLength, windowManager,
+            watermarkEvictionPolicy, windowManager);
+        triggerPolicy.start();
+        windowManager.setTriggerPolicy(triggerPolicy);
+        for (int i : seq(1, threshold)) {
+            windowManager.add(i, i);
+        }
+        assertThat("The watermark eviction policies should never evict events before the first watermark is received",  listener.onExpiryEvents, is(empty()));
+        windowManager.add(new WaterMarkEvent<Integer>(threshold));
+        // The events should be put in a window when the first watermark is received
+        assertEquals(seq(1, threshold), listener.onActivationEvents);
+        //Now add some more events and a new watermark, and check that the previous events are expired
+        for(int i : seq(threshold+1, threshold*2)) {
+            windowManager.add(i, i);
+        }
+        windowManager.add(new WaterMarkEvent<Integer>(threshold + windowLength+1));
+        //All the events should be expired when the next watermark is received
+        assertThat("All the events should be expired after the second watermark", listener.onExpiryEvents, equalTo(seq(1, threshold)));
+    }
+    
+    @Test
+    public void testExpireThresholdWithWatermarkCountEvictionPolicy() throws Exception {
+        int windowLength = WindowManager.EXPIRE_EVENTS_THRESHOLD;
+        EvictionPolicy watermarkCountEvictionPolicy = new WatermarkCountEvictionPolicy(windowLength);
+        testEvictBeforeWatermarkForWatermarkEvictionPolicy(watermarkCountEvictionPolicy, windowLength);
+    }
+    
+    @Test
+    public void testExpireThresholdWithWatermarkTimeEvictionPolicy() throws Exception {
+        int windowLength = WindowManager.EXPIRE_EVENTS_THRESHOLD;
+        EvictionPolicy watermarkTimeEvictionPolicy = new WatermarkTimeEvictionPolicy(windowLength);
+        testEvictBeforeWatermarkForWatermarkEvictionPolicy(watermarkTimeEvictionPolicy, windowLength);
+    }
 
     @Test
     public void testTimeBasedWindow() throws Exception {
