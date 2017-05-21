@@ -81,7 +81,7 @@ public class EsPercolateBolt extends AbstractEsBolt {
             Map<String, String> indexParams = new HashMap<>();
             indexParams.put(type, null);
             String percolateDoc = "{\"doc\": " + source + "}";
-            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"), new HashMap<>(), new StringEntity(percolateDoc));
+            Response response = client.performRequest("get", getEndpoint(index, type, "_percolate"), new HashMap<String, String>(), new StringEntity(percolateDoc));
             PercolateResponse percolateResponse = objectMapper.readValue(response.getEntity().getContent(), PercolateResponse.class);
             if (!percolateResponse.getMatches().isEmpty()) {
                 for (PercolateResponse.Match match : percolateResponse.getMatches()) {
