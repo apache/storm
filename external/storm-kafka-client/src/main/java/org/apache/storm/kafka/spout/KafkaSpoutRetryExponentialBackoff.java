@@ -32,6 +32,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.utils.Time;
 
 /**
@@ -290,6 +291,19 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
             }
         }
         return count;
+    }
+
+    @Override
+    public KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record) {
+        KafkaSpoutMessageId msgId = new KafkaSpoutMessageId(record);
+        if (toRetryMsgs.contains(msgId)) {
+            for (KafkaSpoutMessageId originalMsgId : toRetryMsgs) {
+                if (originalMsgId.equals(msgId)) {
+                    return originalMsgId;
+                }
+            }
+        }
+        return msgId;
     }
 
     // if value is greater than Long.MAX_VALUE it truncates to Long.MAX_VALUE
