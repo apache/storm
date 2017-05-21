@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2518 Handles empty name for "USER type" ACL when normalizing
  * STORM-2501: Auto populate Hive Credentials
  * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
  * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
