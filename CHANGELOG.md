@@ -250,6 +250,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2413: Make new Kafka spout respect tuple retry limits
  * STORM-2518: Handles empty name for "USER type" ACL when normalizing ACLs
  * STORM-2501: Auto populate Hive Credentials
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
