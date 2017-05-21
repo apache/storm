@@ -17,7 +17,6 @@
  */
 package org.apache.storm.kafka.spout;
 
-
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
 
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -37,11 +36,14 @@ import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.eq;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -61,7 +63,6 @@ import org.junit.Before;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-
 public class SingleTopicKafkaSpoutTest {
 
     @Rule
@@ -77,12 +78,15 @@ public class SingleTopicKafkaSpoutTest {
     private KafkaConsumer<String, String> consumerSpy;
     private KafkaConsumerFactory<String, String> consumerFactory;
     private KafkaSpout<String, String> spout;
+    private int maxRetries = 3;
 
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
         KafkaSpoutConfig spoutConfig = getKafkaSpoutConfigBuilder(kafkaUnitRule.getKafkaUnit().getKafkaPort())
             .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
+            .setRetry(new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0),
+                maxRetries, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0)))
             .build();
         this.consumerSpy = spy(new KafkaConsumerFactoryDefault().createConsumer(spoutConfig));
         this.consumerFactory = new KafkaConsumerFactory<String, String>() {
@@ -100,8 +104,8 @@ public class SingleTopicKafkaSpoutTest {
 
         for (int i = 0; i < msgCount; i++) {
             ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
-                    topicName, Integer.toString(i),
-                    Integer.toString(i));
+                topicName, Integer.toString(i),
+                Integer.toString(i));
             kafkaUnitRule.getKafkaUnit().sendMessage(producerRecord);
         }
     }
@@ -315,5 +319,27 @@ public class SingleTopicKafkaSpoutTest {
         expectedReemitIds.add(capturedMessageIds.get(3));
         expectedReemitIds.add(capturedMessageIds.get(2));
         assertThat("Expected reemits to be the 3 failed tuples", new HashSet<>(reemittedMessageIds.getAllValues()), is(expectedReemitIds));
+    }
+
+    @Test
+    public void shouldDropMessagesAfterMaxRetriesAreReached() throws Exception {
+        //Check that if one message fails repeatedly, the retry cap limits how many times the message can be reemitted
+        int messageCount = 1;
+        initializeSpout(messageCount);
+
+        //Emit and fail the same tuple until we've reached retry limit
+        for (int i = 0; i <= maxRetries; i++) {
+            ArgumentCaptor<KafkaSpoutMessageId> messageIdFailed = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+            spout.nextTuple();
+            verify(collector).emit(anyString(), anyListOf(Object.class), messageIdFailed.capture());
+            KafkaSpoutMessageId msgId = messageIdFailed.getValue();
+            spout.fail(msgId);
+            assertThat("Expected message id number of failures to match the number of times the message has failed", msgId.numFails(), is(i + 1));
+            reset(collector);
+        }
+
+        //Verify that the tuple is not emitted again
+        spout.nextTuple();
+        verify(collector, never()).emit(anyString(), anyListOf(Object.class), anyObject());
     }
 }
