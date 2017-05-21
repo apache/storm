@@ -15,11 +15,11 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.Arrays;
 import java.util.List;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 
@@ -33,6 +33,12 @@ public class SimpleRecordTranslator<K, V> implements RecordTranslator<K, V> {
         this(func, fields, "default");
     }
     
+    /**
+     * Creates a SimpleRecordTranslator.
+     * @param func The mapping function responsible for translating a Kafka record to a Tuple
+     * @param fields The fields tuples constructed by this translator will contain
+     * @param stream The stream tuples constructed by this translator will target
+     */
     public SimpleRecordTranslator(Func<ConsumerRecord<K, V>, List<Object>> func, Fields fields, String stream) {
         this.func = func;
         this.fields = fields;

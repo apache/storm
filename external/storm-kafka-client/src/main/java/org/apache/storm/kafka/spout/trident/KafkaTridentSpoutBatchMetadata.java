@@ -18,24 +18,26 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.List;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.List;
-
 /**
- * Wraps transaction batch information
+ * Wraps transaction batch information.
  */
 public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutBatchMetadata.class);
 
-    private TopicPartition topicPartition;  // topic partition of this batch
-    private long firstOffset;               // first offset of this batch
-    private long lastOffset;                // last offset of this batch
+    // topic partition of this batch
+    private TopicPartition topicPartition;  
+    // first offset of this batch
+    private long firstOffset;               
+    // last offset of this batch
+    private long lastOffset;                
 
     public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, long firstOffset, long lastOffset) {
         this.topicPartition = topicPartition;
@@ -43,7 +45,8 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
         this.lastOffset = lastOffset;
     }
 
-    public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, ConsumerRecords<K, V> consumerRecords, KafkaTridentSpoutBatchMetadata<K, V> lastBatch) {
+    public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, ConsumerRecords<K, V> consumerRecords,
+            KafkaTridentSpoutBatchMetadata<K, V> lastBatch) {
         this.topicPartition = topicPartition;
 
         List<ConsumerRecord<K, V>> records = consumerRecords.records(topicPartition);
@@ -74,10 +77,10 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
 
     @Override
     public String toString() {
-        return super.toString() +
-                "{topicPartition=" + topicPartition +
-                ", firstOffset=" + firstOffset +
-                ", lastOffset=" + lastOffset +
-                '}';
+        return super.toString()
+                + "{topicPartition=" + topicPartition
+                + ", firstOffset=" + firstOffset
+                + ", lastOffset=" + lastOffset
+                + '}';
     }
 }

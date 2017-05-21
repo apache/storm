@@ -15,6 +15,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.ArrayList;
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
@@ -55,7 +55,7 @@ public class ManualPartitionPatternSubscription extends PatternSubscription {
     @Override
     public void refreshAssignment() {
         List<TopicPartition> allPartitions = new ArrayList<>();
-        for(Map.Entry<String, List<PartitionInfo>> entry: consumer.listTopics().entrySet()) {
+        for (Map.Entry<String, List<PartitionInfo>> entry: consumer.listTopics().entrySet()) {
             if (pattern.matcher(entry.getKey()).matches()) {
                 for (PartitionInfo partitionInfo: entry.getValue()) {
                     allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));

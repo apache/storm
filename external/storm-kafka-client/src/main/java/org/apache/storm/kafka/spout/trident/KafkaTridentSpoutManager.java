@@ -18,6 +18,9 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -27,10 +30,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
 
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
@@ -90,10 +89,10 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
 
     @Override
     public String toString() {
-        return super.toString() +
-                "{kafkaConsumer=" + kafkaConsumer +
-                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
-                '}';
+        return super.toString()
+                + "{kafkaConsumer=" + kafkaConsumer
+                + ", kafkaSpoutConfig=" + kafkaSpoutConfig
+                + '}';
     }
 
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {

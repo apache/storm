@@ -15,24 +15,24 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.util.Comparator;
-
 import org.apache.kafka.common.TopicPartition;
 
 /**
  * Singleton comparator of TopicPartitions.  Topics have precedence over partitions.
  * Topics are compared through String.compare and partitions are compared
  * numerically.
- * 
+ * <p/>
  * Use INSTANCE for all sorting.
  */
 public class TopicPartitionComparator implements Comparator<TopicPartition> {
     public static final TopicPartitionComparator INSTANCE = new TopicPartitionComparator();
     
     /**
-     * Private to make it a singleton
+     * Private to make it a singleton.
      */
     private TopicPartitionComparator() {
         //Empty
