@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2503: Fix lgtm.com alerts on equality and comparison operations.
  * STORM-2499: Add Serialization plugin for EventHub System Properties
  * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
  * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
