@@ -541,7 +541,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
                     connections2 += (componentMap.get(childId).execs.size() * o2.execs.size());
                 }
 
-                if (connections1 > connections1) {
+                if (connections1 > connections2) {
                     return -1;
                 } else if (connections1 < connections2) {
                     return 1;
@@ -567,9 +567,9 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             public int compare(Component o1, Component o2) {
                 int connections1 = o1.execs.size() * thisComp.execs.size();
                 int connections2 = o2.execs.size() * thisComp.execs.size();
-                if (connections1 > connections2) {
+                if (connections1 < connections2) {
                     return -1;
-                } else if (connections1 < connections2) {
+                } else if (connections1 > connections2) {
                     return 1;
                 } else {
                     return o1.id.compareTo(o2.id);

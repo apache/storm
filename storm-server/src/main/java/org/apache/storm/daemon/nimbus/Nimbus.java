@@ -2159,14 +2159,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 synchronized(lock) {
                     Credentials origCreds = state.credentials(id, null);
                     if (origCreds != null) {
-                        Map<String, String> orig = origCreds.get_creds();
-                        Map<String, String> newCreds = new HashMap<>(orig);
+                        Map<String, String> origCredsMap = origCreds.get_creds();
+                        Map<String, String> newCredsMap = new HashMap<>(origCredsMap);
                         for (ICredentialsRenewer renewer: renewers) {
                             LOG.info("Renewing Creds For {} with {}", id, renewer);
-                            renewer.renew(newCreds, topoConf);
+                            renewer.renew(newCredsMap, topoConf);
                         }
-                        if (!newCreds.equals(origCreds)) {
-                            state.setCredentials(id, new Credentials(newCreds), topoConf);
+                        if (!newCredsMap.equals(origCredsMap)) {
+                            state.setCredentials(id, new Credentials(newCredsMap), topoConf);
                         }
                     }
                 }
