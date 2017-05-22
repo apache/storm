@@ -41,7 +41,7 @@ The syntax of `CREATE EXTERNAL TABLE` closely follows the one defined in
 `PARALLELISM` is StormSQL's own keyword which describes parallelism hint for input data source. This is same as providing parallelism hint to Trident Spout.
 Downstream operators are executed with same parallelism before repartition (Aggregation triggers repartition).
 
-Default value is 1, and this option is no effect on output data source. (We might change if needed. Normally repartition is the thing to avoid.)
+Default value is 1, and this option has no effect on output data source. (We might change if needed. Normally repartition is the thing to avoid.)
 
 ## Plugging in External Data Sources
 
