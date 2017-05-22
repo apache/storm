@@ -3478,7 +3478,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             topoPageInfo.set_name(topoName);
             topoPageInfo.set_status(extractStatusStr(base));
             topoPageInfo.set_uptime_secs(Time.deltaSecs(launchTimeSecs));
-            topoPageInfo.set_topoConf(JSONValue.toJSONString(topoConf));
+            topoPageInfo.set_topology_conf(JSONValue.toJSONString(topoConf));
             topoPageInfo.set_replication_count(getBlobReplicationCount(ConfigUtils.masterStormCodeKey(topoId)));
             if (base.is_set_component_debug()) {
                 DebugOptions debug = base.get_component_debug().get(topoId);

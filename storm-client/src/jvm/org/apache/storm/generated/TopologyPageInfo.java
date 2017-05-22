@@ -62,7 +62,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
   private static final org.apache.thrift.protocol.TField NUM_TASKS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_tasks", org.apache.thrift.protocol.TType.I32, (short)5);
   private static final org.apache.thrift.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_workers", org.apache.thrift.protocol.TType.I32, (short)6);
   private static final org.apache.thrift.protocol.TField NUM_EXECUTORS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_executors", org.apache.thrift.protocol.TType.I32, (short)7);
-  private static final org.apache.thrift.protocol.TField TOPOLOGY_CONF_FIELD_DESC = new org.apache.thrift.protocol.TField("topoConf", org.apache.thrift.protocol.TType.STRING, (short)8);
+  private static final org.apache.thrift.protocol.TField TOPOLOGY_CONF_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_conf", org.apache.thrift.protocol.TType.STRING, (short)8);
   private static final org.apache.thrift.protocol.TField ID_TO_SPOUT_AGG_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("id_to_spout_agg_stats", org.apache.thrift.protocol.TType.MAP, (short)9);
   private static final org.apache.thrift.protocol.TField ID_TO_BOLT_AGG_STATS_FIELD_DESC = new org.apache.thrift.protocol.TField("id_to_bolt_agg_stats", org.apache.thrift.protocol.TType.MAP, (short)10);
   private static final org.apache.thrift.protocol.TField SCHED_STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("sched_status", org.apache.thrift.protocol.TType.STRING, (short)11);
@@ -91,7 +91,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
   private int num_tasks; // optional
   private int num_workers; // optional
   private int num_executors; // optional
-  private String topoConf; // optional
+  private String topology_conf; // optional
   private Map<String,ComponentAggregateStats> id_to_spout_agg_stats; // optional
   private Map<String,ComponentAggregateStats> id_to_bolt_agg_stats; // optional
   private String sched_status; // optional
@@ -116,7 +116,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     NUM_TASKS((short)5, "num_tasks"),
     NUM_WORKERS((short)6, "num_workers"),
     NUM_EXECUTORS((short)7, "num_executors"),
-    TOPOLOGY_CONF((short)8, "topoConf"),
+    TOPOLOGY_CONF((short)8, "topology_conf"),
     ID_TO_SPOUT_AGG_STATS((short)9, "id_to_spout_agg_stats"),
     ID_TO_BOLT_AGG_STATS((short)10, "id_to_bolt_agg_stats"),
     SCHED_STATUS((short)11, "sched_status"),
@@ -259,7 +259,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
     tmpMap.put(_Fields.NUM_EXECUTORS, new org.apache.thrift.meta_data.FieldMetaData("num_executors", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32)));
-    tmpMap.put(_Fields.TOPOLOGY_CONF, new org.apache.thrift.meta_data.FieldMetaData("topoConf", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+    tmpMap.put(_Fields.TOPOLOGY_CONF, new org.apache.thrift.meta_data.FieldMetaData("topology_conf", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     tmpMap.put(_Fields.ID_TO_SPOUT_AGG_STATS, new org.apache.thrift.meta_data.FieldMetaData("id_to_spout_agg_stats", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
@@ -326,8 +326,8 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     this.num_tasks = other.num_tasks;
     this.num_workers = other.num_workers;
     this.num_executors = other.num_executors;
-    if (other.is_set_topoConf()) {
-      this.topoConf = other.topoConf;
+    if (other.is_set_topology_conf()) {
+      this.topology_conf = other.topology_conf;
     }
     if (other.is_set_id_to_spout_agg_stats()) {
       Map<String,ComponentAggregateStats> __this__id_to_spout_agg_stats = new HashMap<String,ComponentAggregateStats>(other.id_to_spout_agg_stats.size());
@@ -404,7 +404,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     this.num_workers = 0;
     set_num_executors_isSet(false);
     this.num_executors = 0;
-    this.topoConf = null;
+    this.topology_conf = null;
     this.id_to_spout_agg_stats = null;
     this.id_to_bolt_agg_stats = null;
     this.sched_status = null;
@@ -585,26 +585,26 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __NUM_EXECUTORS_ISSET_ID, value);
   }
 
-  public String get_topoConf() {
-    return this.topoConf;
+  public String get_topology_conf() {
+    return this.topology_conf;
   }
 
-  public void set_topoConf(String topoConf) {
-    this.topoConf = topoConf;
+  public void set_topology_conf(String topology_conf) {
+    this.topology_conf = topology_conf;
   }
 
-  public void unset_topoConf() {
-    this.topoConf = null;
+  public void unset_topology_conf() {
+    this.topology_conf = null;
   }
 
-  /** Returns true if field topoConf is set (has been assigned a value) and false otherwise */
-  public boolean is_set_topoConf() {
-    return this.topoConf != null;
+  /** Returns true if field topology_conf is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topology_conf() {
+    return this.topology_conf != null;
   }
 
-  public void set_topoConf_isSet(boolean value) {
+  public void set_topology_conf_isSet(boolean value) {
     if (!value) {
-      this.topoConf = null;
+      this.topology_conf = null;
     }
   }
 
@@ -1020,9 +1020,9 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
 
     case TOPOLOGY_CONF:
       if (value == null) {
-        unset_topoConf();
+        unset_topology_conf();
       } else {
-        set_topoConf((String)value);
+        set_topology_conf((String)value);
       }
       break;
 
@@ -1165,7 +1165,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
       return get_num_executors();
 
     case TOPOLOGY_CONF:
-      return get_topoConf();
+      return get_topology_conf();
 
     case ID_TO_SPOUT_AGG_STATS:
       return get_id_to_spout_agg_stats();
@@ -1235,7 +1235,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     case NUM_EXECUTORS:
       return is_set_num_executors();
     case TOPOLOGY_CONF:
-      return is_set_topoConf();
+      return is_set_topology_conf();
     case ID_TO_SPOUT_AGG_STATS:
       return is_set_id_to_spout_agg_stats();
     case ID_TO_BOLT_AGG_STATS:
@@ -1344,12 +1344,12 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
         return false;
     }
 
-    boolean this_present_topoConf = true && this.is_set_topoConf();
-    boolean that_present_topoConf = true && that.is_set_topoConf();
-    if (this_present_topoConf || that_present_topoConf) {
-      if (!(this_present_topoConf && that_present_topoConf))
+    boolean this_present_topology_conf = true && this.is_set_topology_conf();
+    boolean that_present_topology_conf = true && that.is_set_topology_conf();
+    if (this_present_topology_conf || that_present_topology_conf) {
+      if (!(this_present_topology_conf && that_present_topology_conf))
         return false;
-      if (!this.topoConf.equals(that.topoConf))
+      if (!this.topology_conf.equals(that.topology_conf))
         return false;
     }
 
@@ -1521,10 +1521,10 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
     if (present_num_executors)
       list.add(num_executors);
 
-    boolean present_topoConf = true && (is_set_topoConf());
-    list.add(present_topoConf);
-    if (present_topoConf)
-      list.add(topoConf);
+    boolean present_topology_conf = true && (is_set_topology_conf());
+    list.add(present_topology_conf);
+    if (present_topology_conf)
+      list.add(topology_conf);
 
     boolean present_id_to_spout_agg_stats = true && (is_set_id_to_spout_agg_stats());
     list.add(present_id_to_spout_agg_stats);
@@ -1677,12 +1677,12 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
         return lastComparison;
       }
     }
-    lastComparison = Boolean.valueOf(is_set_topoConf()).compareTo(other.is_set_topoConf());
+    lastComparison = Boolean.valueOf(is_set_topology_conf()).compareTo(other.is_set_topology_conf());
     if (lastComparison != 0) {
       return lastComparison;
     }
-    if (is_set_topoConf()) {
-      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topoConf, other.topoConf);
+    if (is_set_topology_conf()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topology_conf, other.topology_conf);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -1898,13 +1898,13 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
       sb.append(this.num_executors);
       first = false;
     }
-    if (is_set_topoConf()) {
+    if (is_set_topology_conf()) {
       if (!first) sb.append(", ");
-      sb.append("topoConf:");
-      if (this.topoConf == null) {
+      sb.append("topology_conf:");
+      if (this.topology_conf == null) {
         sb.append("null");
       } else {
-        sb.append(this.topoConf);
+        sb.append(this.topology_conf);
       }
       first = false;
     }
@@ -2133,8 +2133,8 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
             break;
           case 8: // TOPOLOGY_CONF
             if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
-              struct.topoConf = iprot.readString();
-              struct.set_topoConf_isSet(true);
+              struct.topology_conf = iprot.readString();
+              struct.set_topology_conf_isSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -2342,10 +2342,10 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
         oprot.writeI32(struct.num_executors);
         oprot.writeFieldEnd();
       }
-      if (struct.topoConf != null) {
-        if (struct.is_set_topoConf()) {
+      if (struct.topology_conf != null) {
+        if (struct.is_set_topology_conf()) {
           oprot.writeFieldBegin(TOPOLOGY_CONF_FIELD_DESC);
-          oprot.writeString(struct.topoConf);
+          oprot.writeString(struct.topology_conf);
           oprot.writeFieldEnd();
         }
       }
@@ -2493,7 +2493,7 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
       if (struct.is_set_num_executors()) {
         optionals.set(5);
       }
-      if (struct.is_set_topoConf()) {
+      if (struct.is_set_topology_conf()) {
         optionals.set(6);
       }
       if (struct.is_set_id_to_spout_agg_stats()) {
@@ -2557,8 +2557,8 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
       if (struct.is_set_num_executors()) {
         oprot.writeI32(struct.num_executors);
       }
-      if (struct.is_set_topoConf()) {
-        oprot.writeString(struct.topoConf);
+      if (struct.is_set_topology_conf()) {
+        oprot.writeString(struct.topology_conf);
       }
       if (struct.is_set_id_to_spout_agg_stats()) {
         {
@@ -2655,8 +2655,8 @@ public class TopologyPageInfo implements org.apache.thrift.TBase<TopologyPageInf
         struct.set_num_executors_isSet(true);
       }
       if (incoming.get(6)) {
-        struct.topoConf = iprot.readString();
-        struct.set_topoConf_isSet(true);
+        struct.topology_conf = iprot.readString();
+        struct.set_topology_conf_isSet(true);
       }
       if (incoming.get(7)) {
         {
