@@ -120,6 +120,8 @@ struct StormTopology {
   4: optional list<binary> worker_hooks;
   5: optional list<string> dependency_jars;
   6: optional list<string> dependency_artifacts;
+  7: optional string storm_version;
+  8: optional string jdk_version;
 }
 
 exception AlreadyAliveException {
@@ -154,6 +156,7 @@ struct TopologySummary {
   5: required i32 num_workers;
   6: required i32 uptime_secs;
   7: required string status;
+  8: optional string storm_version;
 513: optional string sched_status;
 514: optional string owner;
 515: optional i32 replication_count;
@@ -255,6 +258,7 @@ struct TopologyInfo {
   5: required string status;
   6: required map<string, list<ErrorInfo>> errors;
   7: optional map<string, DebugOptions> component_debug;
+  8: optional string storm_version;
 513: optional string sched_status;
 514: optional string owner;
 515: optional i32 replication_count;
@@ -352,6 +356,7 @@ struct TopologyPageInfo {
 14: optional DebugOptions debug_options;
 15: optional i32 replication_count;
 16: optional list<WorkerSummary> workers;
+17: optional string storm_version;
 521: optional double requested_memonheap;
 522: optional double requested_memoffheap;
 523: optional double requested_cpu;

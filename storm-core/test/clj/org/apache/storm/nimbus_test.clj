@@ -37,7 +37,7 @@
             TopologyInitialStatus TopologyStatus AlreadyAliveException KillOptions RebalanceOptions
             InvalidTopologyException AuthorizationException
             LogConfig LogLevel LogLevelAction Assignment NodeInfo])
-  (:import [java.util HashMap HashSet Optional])
+  (:import [java.util Map HashMap HashSet Optional])
   (:import [java.io File])
   (:import [javax.security.auth Subject])
   (:import [org.apache.storm.utils Time Time$SimulatedTime IPredicate StormCommonInstaller Utils$UptimeComputer ReflectionUtils Utils ConfigUtils ServerConfigUtils]
@@ -1338,8 +1338,7 @@
       (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) expected-conf)
       (.thenReturn (Mockito/when (.readTopology blob-store (Mockito/any String) (Mockito/anyObject))) nil)
       (testing "getTopologyConf calls check-authorization! with the correct parameters."
-      (let [expected-operation "getTopologyConf"
-            expected-conf-json (JSONValue/toJSONString expected-conf)]
+      (let [expected-operation "getTopologyConf"]
           (try
             (is (= expected-conf
                    (->> (.getTopologyConf nimbus topology-id)
@@ -1347,7 +1346,8 @@
                         clojurify-structure)))
             (catch NotAliveException e)
             (finally
-              (.checkAuthorization (Mockito/verify nimbus) topology-name expected-conf expected-operation)))))
+              (.checkAuthorization (Mockito/verify nimbus) nil nil "getClusterInfo")
+              (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))))))
 
       (testing "getTopology calls check-authorization! with the correct parameters."
         (let [expected-operation "getTopology"
@@ -1360,9 +1360,9 @@
               (.getTopology nimbus topology-id)
               (catch NotAliveException e)
               (finally
-                (.checkAuthorization (Mockito/verify nimbus) topology-name expected-conf expected-operation)
+                (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))
                 (. (Mockito/verify common-spy)
-                  (systemTopologyImpl (Matchers/eq expected-conf)
+                  (systemTopologyImpl (Matchers/any Map)
                                       (Matchers/any))))))))
 
       (testing "getUserTopology calls check-authorization with the correct parameters."
@@ -1371,7 +1371,7 @@
             (.getUserTopology nimbus topology-id)
             (catch NotAliveException e)
             (finally
-              (.checkAuthorization (Mockito/verify nimbus) topology-name expected-conf expected-operation)
+              (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))
               ;;One for this time and one for getTopology call
               (.readTopology (Mockito/verify blob-store (Mockito/times 2)) (Mockito/eq topology-id) (Mockito/anyObject))))))))))
 
@@ -1417,8 +1417,9 @@
       (.getSupervisorPageInfo nimbus "super1" nil true)
  
       ;; afterwards, it should get called twice
-      (.checkAuthorization (Mockito/verify nimbus) expected-name expected-conf "getSupervisorPageInfo")
-      (.checkAuthorization (Mockito/verify nimbus) expected-name expected-conf "getTopology")))))
+      (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq expected-name) (Mockito/any Map) (Mockito/eq "getSupervisorPageInfo"))
+      (.checkAuthorization (Mockito/verify nimbus) nil nil "getClusterInfo")
+      (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq expected-name) (Mockito/any Map) (Mockito/eq "getTopology"))))))
 
 (deftest test-nimbus-iface-getTopology-methods-throw-correctly
   (with-open [cluster (LocalCluster. )]

@@ -213,6 +213,11 @@
             Scheduler Info
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
+            Storm Version
+          </span>
+        </th>
       </tr>
     </thead>
     <tbody>
@@ -231,6 +236,7 @@
         <td>{{assignedCpu}}</td>
         {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
+        <td>{{stormVersion}}</td>
       </tr>
       {{/topologies}}
     </tbody>

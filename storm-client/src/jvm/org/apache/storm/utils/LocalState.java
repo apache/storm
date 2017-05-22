@@ -84,7 +84,13 @@ public class LocalState {
 
     private TBase deserialize(ThriftSerializedObject obj, TDeserializer td) {
         try {
-            Class<?> clazz = Class.forName(obj.get_name());
+            Class<?> clazz;
+            try {
+                clazz = Class.forName(obj.get_name());
+            } catch (ClassNotFoundException ex) {
+                //Try to maintain rolling upgrade compatible with 0.10 releases
+                clazz = Class.forName(obj.get_name().replaceAll("^backtype\\.storm\\.", "org.apache.storm."));
+            }
             TBase instance = (TBase) clazz.newInstance();
             td.deserialize(instance, obj.get_bits());
             return instance;
