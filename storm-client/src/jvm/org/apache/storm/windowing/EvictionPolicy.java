@@ -27,7 +27,7 @@ public interface EvictionPolicy<T> {
     /**
      * The action to be taken when {@link EvictionPolicy#evict(Event)} is invoked.
      */
-    enum Action {
+    public enum Action {
         /**
          * expire the event and remove it from the queue
          */

@@ -57,7 +57,14 @@ public class WatermarkTimeEvictionPolicy<T> extends TimeEvictionPolicy<T> {
      */
     @Override
     public Action evict(Event<T> event) {
-        long referenceTime = evictionContext.getReferenceTime() != null ? evictionContext.getReferenceTime() : 0L;
+        if(evictionContext == null) {
+            //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.
+            //In this case we should hold on to all the events. When the first watermark is received, the context will be set,
+            //and the events will be reevaluated for eviction
+            return Action.STOP;
+        }
+        
+        long referenceTime = evictionContext.getReferenceTime();
         long diff =  referenceTime - event.getTimestamp();
         if (diff < -lag) {
             return Action.STOP;

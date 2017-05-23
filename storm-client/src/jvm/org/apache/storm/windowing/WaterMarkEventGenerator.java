@@ -77,7 +77,7 @@ public class WaterMarkEventGenerator<T> implements Runnable {
         try {
             long waterMarkTs = computeWaterMarkTs();
             if (waterMarkTs > lastWaterMarkTs) {
-                this.windowManager.add(new WaterMarkEvent<T>(waterMarkTs));
+                this.windowManager.add(new WaterMarkEvent<>(waterMarkTs));
                 lastWaterMarkTs = waterMarkTs;
             }
         } catch (Throwable th) {
