@@ -57,11 +57,14 @@ The optional ClientId is used as a part of the ZooKeeper path where the spout's 
 
 There are 2 extensions of KafkaConfig currently in use.
 
-Spoutconfig is an extension of KafkaConfig that supports additional fields with ZooKeeper connection info and for controlling
-behavior specific to KafkaSpout. The Zkroot will be used as root to store your consumer's offset. The id should uniquely
-identify your spout.
+SpoutConfig is an extension of KafkaConfig that supports additional fields with ZooKeeper connection info and for controlling
+behavior specific to KafkaSpout.
+The clientId will be used to identify requests which are made using the Kafka Protocol.
+The zkRoot will be used as root to store your consumer's offset.
+The id should uniquely identify your spout.
 
 ```java
+public SpoutConfig(BrokerHosts hosts, String topic, String clientId, String zkRoot, String id);
 public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id);
 public SpoutConfig(BrokerHosts hosts, String topic, String id);
 ```
