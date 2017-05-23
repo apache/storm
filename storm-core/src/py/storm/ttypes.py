@@ -1392,6 +1392,8 @@ class StormTopology:
    - bolts
    - state_spouts
    - worker_hooks
+   - storm_version
+   - jdk_version
   """
 
   thrift_spec = (
@@ -1400,13 +1402,19 @@ class StormTopology:
     (2, TType.MAP, 'bolts', (TType.STRING,None,TType.STRUCT,(Bolt, Bolt.thrift_spec)), None, ), # 2
     (3, TType.MAP, 'state_spouts', (TType.STRING,None,TType.STRUCT,(StateSpoutSpec, StateSpoutSpec.thrift_spec)), None, ), # 3
     (4, TType.LIST, 'worker_hooks', (TType.STRING,None), None, ), # 4
+    None, # 5
+    None, # 6
+    (7, TType.STRING, 'storm_version', None, None, ), # 7
+    (8, TType.STRING, 'jdk_version', None, None, ), # 8
   )
 
-  def __init__(self, spouts=None, bolts=None, state_spouts=None, worker_hooks=None,):
+  def __init__(self, spouts=None, bolts=None, state_spouts=None, worker_hooks=None, storm_version=None, jdk_version=None,):
     self.spouts = spouts
     self.bolts = bolts
     self.state_spouts = state_spouts
     self.worker_hooks = worker_hooks
+    self.storm_version = storm_version
+    self.jdk_version = jdk_version
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -1463,6 +1471,16 @@ class StormTopology:
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 7:
+        if ftype == TType.STRING:
+          self.storm_version = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 8:
+        if ftype == TType.STRING:
+          self.jdk_version = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -1504,6 +1522,14 @@ class StormTopology:
         oprot.writeString(iter72)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
+    if self.storm_version is not None:
+      oprot.writeFieldBegin('storm_version', TType.STRING, 7)
+      oprot.writeString(self.storm_version.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.jdk_version is not None:
+      oprot.writeFieldBegin('jdk_version', TType.STRING, 8)
+      oprot.writeString(self.jdk_version.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -1523,6 +1549,8 @@ class StormTopology:
     value = (value * 31) ^ hash(self.bolts)
     value = (value * 31) ^ hash(self.state_spouts)
     value = (value * 31) ^ hash(self.worker_hooks)
+    value = (value * 31) ^ hash(self.storm_version)
+    value = (value * 31) ^ hash(self.jdk_version)
     return value
 
   def __repr__(self):

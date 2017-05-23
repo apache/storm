@@ -153,7 +153,7 @@ public class TopologyBuilder {
 
         stormTopology.set_worker_hooks(_workerHooks);
 
-        return stormTopology;
+        return Utils.addVersions(stormTopology);
     }
 
     /**
