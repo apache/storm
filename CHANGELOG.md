@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2524: Add the option to set client.id to storm-kafka
  * STORM-2448: Add in Storm and JDK versions when submitting a topology.
  * STORM-2503: Fix lgtm.com alerts on equality and comparison operations.
  * STORM-2499: Add Serialization plugin for EventHub System Properties
