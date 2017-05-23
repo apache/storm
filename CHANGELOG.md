@@ -226,6 +226,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.4
+ * STORM-2524: Set Kafka client.id with storm-kafka
  * STORM-2450: Write resources into correct local director
  * STORM-2038: No symlinks for local cluster 
 
