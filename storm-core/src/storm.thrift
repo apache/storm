@@ -120,6 +120,8 @@ struct StormTopology {
   4: optional list<binary> worker_hooks;
   5: optional list<string> dependency_jars;
   6: optional list<string> dependency_artifacts;
+  7: optional string storm_version;
+  8: optional string jdk_version;
 }
 
 exception AlreadyAliveException {
