@@ -29,30 +29,19 @@ import java.util.Set;
 public class ThriftTopologyUtils {
     public static Set<String> getComponentIds(StormTopology topology) {
         Set<String> ret = new HashSet<String>();
-        for(StormTopology._Fields f: StormTopology.metaDataMap.keySet()) {
-            Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(f);
-            ret.addAll(componentMap.keySet());
-        }
+        ret.addAll(topology.get_bolts().keySet());
+        ret.addAll(topology.get_spouts().keySet());
+        ret.addAll(topology.get_state_spouts().keySet());
         return ret;
     }
 
     public static ComponentCommon getComponentCommon(StormTopology topology, String componentId) {
-        for(StormTopology._Fields f: StormTopology.metaDataMap.keySet()) {
-            Map<String, Object> componentMap = (Map<String, Object>) topology.getFieldValue(f);
-            if(componentMap.containsKey(componentId)) {
-                Object component = componentMap.get(componentId);
-                if(component instanceof Bolt) {
-                    return ((Bolt) component).get_common();
-                }
-                if(component instanceof SpoutSpec) {
-                    return ((SpoutSpec) component).get_common();
-                }
-                if(component instanceof StateSpoutSpec) {
-                    return ((StateSpoutSpec) component).get_common();
-                }
-                throw new RuntimeException("Unreachable code! No get_common conversion for component " + component);
-            }
-        }
+        Bolt b = topology.get_bolts().get(componentId);
+        if (b != null) return b.get_common();
+        SpoutSpec s = topology.get_spouts().get(componentId);
+        if (s != null) return s.get_common();
+        StateSpoutSpec ss = topology.get_state_spouts().get(componentId);
+        if (ss != null) return ss.get_common();
         throw new IllegalArgumentException("Could not find component common for " + componentId);
     }
 }

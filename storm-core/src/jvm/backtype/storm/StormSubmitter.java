@@ -201,6 +201,7 @@ public class StormSubmitter {
                 passedCreds = tmpCreds.get_creds();
             }
         }
+        topology = Utils.addVersions(topology);
         Map<String,String> fullCreds = populateCredentials(conf, passedCreds);
         if (!fullCreds.isEmpty()) {
             if (opts == null) {

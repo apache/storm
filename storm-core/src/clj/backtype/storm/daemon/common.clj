@@ -102,13 +102,12 @@
         )))))
 
 (defn- validate-ids! [^StormTopology topology]
-  (let [sets (map #(.getFieldValue topology %) thrift/STORM-TOPOLOGY-FIELDS)
+  (let [sets [(.get_bolts topology) (.get_spouts topology) (.get_state_spouts topology)]
         offending (apply any-intersection sets)]
     (if-not (empty? offending)
       (throw (InvalidTopologyException.
               (str "Duplicate component ids: " offending))))
-    (doseq [f thrift/STORM-TOPOLOGY-FIELDS
-            :let [obj-map (.getFieldValue topology f)]]
+    (doseq [obj-map sets]
       (doseq [id (keys obj-map)]
         (if (system-id? id)
           (throw (InvalidTopologyException.
@@ -122,9 +121,9 @@
 
 (defn all-components [^StormTopology topology]
   (apply merge {}
-         (for [f thrift/STORM-TOPOLOGY-FIELDS]
-           (.getFieldValue topology f)
-           )))
+    (.get_bolts topology)
+    (.get_spouts topology)
+    (.get_state_spouts topology)))
 
 (defn component-conf [component]
   (->> component
