@@ -19,11 +19,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Topology Visualization</title>
-    <script type="text/javascript" src="/js/jquery-1.11.1.min.js"></script>
-    <script type="text/javascript" src="/js/url.min.js"></script>
-    <script type="text/javascript" src="/js/vis.min.js"></script>
-    <script type="text/javascript" src="/js/visualization.js"></script>
     <link href="/css/vis.min.css" rel="stylesheet" type="text/css" />
+    <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
+    <script src="/js/jquery.mustache.js" type="text/javascript"></script>
+    <script src="/js/url.min.js" type="text/javascript"></script>
+    <script src="/js/vis.min.js" type="text/javascript"></script>
+    <script src="/js/visualization.js" type="text/javascript"></script>
 
     <style type="text/css">
         a, a:visited {
@@ -132,5 +133,76 @@
     </div>
 
     <div id="mynetwork"></div>
+
+    <!-- template for stream selector checkbox -->
+    <script id="stream_selector_template" type="text/template">
+        <li>
+            <label>
+                <input type="checkbox" id="stream-{{streamName}}" class="stream_checkbox" onclick="checkStream(this);" {{checked}}>{{streamName}}
+            </label>
+        </li>
+    </script>
+
+    <!-- template for bolt info -->
+    <script id="bolt_info_template" type="text/template">
+        <!-- top level component details -->
+        <li>Id: <a href="{{:link}}" target="_new">{{:id}}</a></li>
+        <li>Type: {{:type}}</li>
+        <li>Latency: {{:latency}} ms</li>
+        <li>Capacity: {{:capacity}}</li>
+        <li>Transferred: {{:transferred}}</li>
+
+        <!-- Inputs to Component -->
+        <li>
+            <details>
+                <summary>{{:inputs_length}} Inputs</summary>
+                <ul id="bolt-inputs">
+                    <!-- Start loop over inputs -->
+                    {{#:inputs}}
+                    <li>
+                        <details>
+                            <summary>
+                                {{#:show_link}}
+                                    <a href="#" onclick="network.selectNodes(['{{:component}}']); handleNodeClickEvent('{{:component}}'); return false;">{{:component}}</a>
+                                {{/:show_link}}
+                                {{^:show_link}}
+                                    {{:component}}
+                                {{/:show_link}}
+                            </summary>
+                            <ul>
+                                <li>Stream: {{:stream}}</li>
+                                <li>Grouping: {{:grouping}}</li>
+                            </ul>
+                        </details>
+                    </li>
+                    {{/:inputs}}
+                </ul>
+            </details>
+        </li>
+
+        <!-- Instance Details -->
+        <li>
+            <details>
+                <summary>
+                    {{:stats_length}} Instance(s)
+                </summary>
+                <ul id="bolt-instances">
+                    <!-- Start loop over instances -->
+                    {{#:stats}}
+                    <li>
+                        <details>
+                            <summary>
+                                {{:host}}:{{:port}}
+                            </summary>
+                            <ul>
+                                <li>Uptime: {{:uptime_str}}</li>
+                            </ul>
+                        </details>
+                    </li>
+                    {{/:stats}}
+                </ul>
+            </details>
+        </li>
+    </script>
 </body>
 </html>
