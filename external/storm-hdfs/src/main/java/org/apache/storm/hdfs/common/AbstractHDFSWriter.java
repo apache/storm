@@ -18,12 +18,13 @@
 package org.apache.storm.hdfs.common;
 
 import org.apache.hadoop.fs.Path;
+import org.apache.storm.hdfs.bolt.AbstractHdfsBolt;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
 
 import java.io.IOException;
 
-abstract public class AbstractHDFSWriter {
+abstract public class AbstractHDFSWriter implements AbstractHdfsBolt.Writer {
     long lastUsedTime;
     long offset;
     boolean needsRotation;
@@ -36,7 +37,7 @@ abstract public class AbstractHDFSWriter {
         this.filePath = path;
     }
 
-    final public long write(Tuple tuple) throws IOException{
+    final public long write(Tuple tuple) throws IOException {
         doWrite(tuple);
         this.needsRotation = rotationPolicy.mark(tuple, offset);
 

@@ -17,12 +17,6 @@
  */
 package org.apache.storm.hdfs.bolt;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -30,23 +24,21 @@ import org.apache.storm.hdfs.bolt.format.FileNameFormat;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.TimedRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.apache.storm.hdfs.common.AbstractHDFSWriter;
 import org.apache.storm.hdfs.common.NullPartitioner;
 import org.apache.storm.hdfs.common.Partitioner;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
@@ -57,7 +49,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final int DEFAULT_TICK_TUPLE_INTERVAL_SECS = 15;
     private static final Integer DEFAULT_MAX_OPEN_FILES = 50;
 
-    protected Map<String, AbstractHDFSWriter> writers;
+    protected Map<String, Writer> writers;
     protected Map<String, Integer> rotationCounterMap = new HashMap<>();
     protected List<RotationAction> rotationActions = new ArrayList<>();
     protected OutputCollector collector;
@@ -78,7 +70,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     protected transient Configuration hdfsConfig;
 
-    protected void rotateOutputFile(AbstractHDFSWriter writer) throws IOException {
+    protected void rotateOutputFile(Writer writer) throws IOException {
         LOG.info("Rotating output file...");
         long start = System.currentTimeMillis();
         synchronized (this.writeLock) {
@@ -136,7 +128,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         synchronized (this.writeLock) {
             boolean forceSync = false;
-            AbstractHDFSWriter writer = null;
+            Writer writer = null;
             String writerKey = null;
 
             if (TupleUtils.isTick(tuple)) {
@@ -202,8 +194,8 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         }
     }
 
-    private AbstractHDFSWriter getOrCreateWriter(String writerKey, Tuple tuple) throws IOException {
-        AbstractHDFSWriter writer;
+    private Writer getOrCreateWriter(String writerKey, Tuple tuple) throws IOException {
+        Writer writer;
 
         writer = writers.get(writerKey);
         if (writer == null) {
@@ -229,7 +221,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         return boltKey + "****" + partitionDir;
     }
 
-    void doRotationAndRemoveWriter(String writerKey, AbstractHDFSWriter writer) {
+    void doRotationAndRemoveWriter(String writerKey, Writer writer) {
         try {
             rotateOutputFile(writer);
         } catch (IOException e) {
@@ -253,7 +245,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     private void syncAllWriters() throws IOException {
-        for (AbstractHDFSWriter writer : writers.values()) {
+        for (Writer writer : writers.values()) {
             writer.sync();
         }
     }
@@ -264,7 +256,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                for (final AbstractHDFSWriter writer : writers.values()) {
+                for (final Writer writer : writers.values()) {
                     try {
                         rotateOutputFile(writer);
                     } catch (IOException e) {
@@ -297,9 +289,9 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     abstract protected String getWriterKey(Tuple tuple);
 
-    abstract protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException;
+    abstract protected Writer makeNewWriter(Path path, Tuple tuple) throws IOException;
 
-    static class WritersMap extends LinkedHashMap<String, AbstractHDFSWriter> {
+    static class WritersMap extends LinkedHashMap<String, Writer> {
         final long maxWriters;
 
         public WritersMap(long maxWriters) {
@@ -308,8 +300,20 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         }
 
         @Override
-        protected boolean removeEldestEntry(Map.Entry<String, AbstractHDFSWriter> eldest) {
+        protected boolean removeEldestEntry(Map.Entry<String, Writer> eldest) {
             return this.size() > this.maxWriters;
         }
+    }
+
+    public interface Writer {
+        long write(Tuple tuple) throws IOException;
+
+        void sync() throws IOException;
+
+        void close() throws IOException;
+
+        boolean needsRotation();
+
+        Path getFilePath();
     }
 }
