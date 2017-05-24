@@ -17,6 +17,12 @@
  */
 package org.apache.storm.hdfs.bolt;
 
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -28,17 +34,18 @@ import org.apache.storm.hdfs.common.NullPartitioner;
 import org.apache.storm.hdfs.common.Partitioner;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.Map;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
@@ -291,6 +298,18 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     abstract protected Writer makeNewWriter(Path path, Tuple tuple) throws IOException;
 
+    public interface Writer {
+        long write(Tuple tuple) throws IOException;
+
+        void sync() throws IOException;
+
+        void close() throws IOException;
+
+        boolean needsRotation();
+
+        Path getFilePath();
+    }
+
     static class WritersMap extends LinkedHashMap<String, Writer> {
         final long maxWriters;
 
@@ -303,17 +322,5 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         protected boolean removeEldestEntry(Map.Entry<String, Writer> eldest) {
             return this.size() > this.maxWriters;
         }
-    }
-
-    public interface Writer {
-        long write(Tuple tuple) throws IOException;
-
-        void sync() throws IOException;
-
-        void close() throws IOException;
-
-        boolean needsRotation();
-
-        Path getFilePath();
     }
 }
