@@ -25,13 +25,12 @@ import org.apache.storm.tuple.Tuple;
 import java.io.IOException;
 
 abstract public class AbstractHDFSWriter implements AbstractHdfsBolt.Writer {
-    long lastUsedTime;
-    long offset;
-    boolean needsRotation;
-    Path filePath;
-    FileRotationPolicy rotationPolicy;
+    protected long offset;
+    protected boolean needsRotation;
+    final protected Path filePath;
+    final protected FileRotationPolicy rotationPolicy;
 
-    AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
+    public AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
         //This must be defensively copied, because a bolt probably has only one rotation policy object
         this.rotationPolicy = policy.copy();
         this.filePath = path;
