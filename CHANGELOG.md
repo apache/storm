@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2527: Initialize java.sql.DriverManager earlier to avoid deadlock
  * STORM-2525: Fix flaky integration tests
  * STORM-2526: Revert changes mistakenly made to generated files
  * STORM-2524: Add the option to set client.id to storm-kafka
