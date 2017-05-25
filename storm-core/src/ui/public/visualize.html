@@ -1,0 +1,208 @@
+<html>
+<head>
+    <!--
+     Licensed to the Apache Software Foundation (ASF) under one or more
+     contributor license agreements.  See the NOTICE file distributed with
+     this work for additional information regarding copyright ownership.
+     The ASF licenses this file to You under the Apache License, Version 2.0
+     (the "License"); you may not use this file except in compliance with
+     the License.  You may obtain a copy of the License at
+
+         http://www.apache.org/licenses/LICENSE-2.0
+
+     Unless required by applicable law or agreed to in writing, software
+     distributed under the License is distributed on an "AS IS" BASIS,
+     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     See the License for the specific language governing permissions and
+     limitations under the License.
+    -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Topology Visualization</title>
+    <link href="/css/vis.min.css" rel="stylesheet" type="text/css" />
+    <script src="/js/jquery-1.11.1.min.js" type="text/javascript"></script>
+    <script src="/js/jquery.mustache.js" type="text/javascript"></script>
+    <script src="/js/url.min.js" type="text/javascript"></script>
+    <script src="/js/vis.min.js" type="text/javascript"></script>
+    <script src="/js/visualization.js" type="text/javascript"></script>
+
+    <style type="text/css">
+        a, a:visited {
+            color: blue;
+        }
+
+        ul {
+            list-style-type: none;
+            margin-top: 0px;
+            padding-left: 10px;
+        }
+
+        details li {
+            margin-left: 10px;
+        }
+
+        #available-streams {
+            padding-left: 0;
+        }
+
+        #bolt-details {
+            padding-left: 20px;
+        }
+
+        #streams_slideout:hover {
+            left: 0;
+        }
+
+        #streams_slideout_inner:hover {
+            left: 0;
+        }
+
+        #streams_slideout_inner {
+            position: fixed;
+            top: 40px;
+            left: -315px;
+            background: #6DAD53;
+            width: 325px;
+            padding: 10px;
+            -webkit-transition-duration: 0.3s;
+            -moz-transition-duration: 0.3s;
+            -o-transition-duration: 0.3s;
+            transition-duration: 0.3s;
+            text-align: left;
+            -webkit-border-radius: 0 0 5px 0;
+            -moz-border-radius: 0 0 5px 0;
+            border-radius: 0 0 5px 0;
+            z-index: 10;
+            max-height: 400px;
+            overflow: scroll;
+            opacity: 0.95;
+        }
+
+        #bolt_slideout:hover {
+            right: 0;
+        }
+
+        #bolt_slideout_inner:hover {
+            right: 0;
+        }
+
+        #bolt_slideout_inner {
+            display: none;
+            position: fixed;
+            top: 40px;
+            right: -390px;
+            background: #6DAD53;
+            width: 400px;
+            padding: 10px;
+            -webkit-transition-duration: 0.3s;
+            -moz-transition-duration: 0.3s;
+            -o-transition-duration: 0.3s;
+            transition-duration: 0.3s;
+            text-align: left;
+            -webkit-border-radius: 0 0 0 5px;
+            -moz-border-radius: 0 0 0 5px;
+            border-radius: 0 0 0 5px;
+            z-index: 10;
+            max-height: 400px;
+            overflow: scroll;
+            opacity: 0.95;
+        }
+
+        details {
+            padding-left: 5px;
+            margin-left: 0px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Slide out for stream selection -->
+    <div id="streams_slideout">
+        <div id="streams_slideout_inner">
+            <img src="/images/streams.png" alt="Feedback" style="float: right;"/>
+            <ul id="available-streams">
+            </ul>
+        </div>
+    </div>
+
+    <!-- Slide out for bolt stats -->
+    <div id="bolt_slideout">
+        <div id="bolt_slideout_inner">
+            <img src="/images/bolt_info.png" alt="Feedback" style="float: left;"/>
+            <ul id="bolt-details"></ul>
+        </div>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <!-- template for stream selector checkbox -->
+    <script id="stream_selector_template" type="text/template">
+        <li>
+            <label>
+                <input type="checkbox" id="stream-{{streamName}}" class="stream_checkbox" onclick="checkStream(this);" {{checked}}>{{streamName}}
+            </label>
+        </li>
+    </script>
+
+    <!-- template for bolt info -->
+    <script id="bolt_info_template" type="text/template">
+        <!-- top level component details -->
+        <li>Id: <a href="{{:link}}" target="_new">{{:id}}</a></li>
+        <li>Type: {{:type}}</li>
+        <li>Latency: {{:latency}} ms</li>
+        <li>Capacity: {{:capacity}}</li>
+        <li>Transferred: {{:transferred}}</li>
+
+        <!-- Inputs to Component -->
+        <li>
+            <details>
+                <summary>{{:inputs_length}} Inputs</summary>
+                <ul id="bolt-inputs">
+                    <!-- Start loop over inputs -->
+                    {{#:inputs}}
+                    <li>
+                        <details>
+                            <summary>
+                                {{#:show_link}}
+                                    <a href="#" onclick="network.selectNodes(['{{:component}}']); handleNodeClickEvent('{{:component}}'); return false;">{{:component}}</a>
+                                {{/:show_link}}
+                                {{^:show_link}}
+                                    {{:component}}
+                                {{/:show_link}}
+                            </summary>
+                            <ul>
+                                <li>Stream: {{:stream}}</li>
+                                <li>Grouping: {{:grouping}}</li>
+                            </ul>
+                        </details>
+                    </li>
+                    {{/:inputs}}
+                </ul>
+            </details>
+        </li>
+
+        <!-- Instance Details -->
+        <li>
+            <details>
+                <summary>
+                    {{:stats_length}} Instance(s)
+                </summary>
+                <ul id="bolt-instances">
+                    <!-- Start loop over instances -->
+                    {{#:stats}}
+                    <li>
+                        <details>
+                            <summary>
+                                {{:host}}:{{:port}}
+                            </summary>
+                            <ul>
+                                <li>Uptime: {{:uptime_str}}</li>
+                            </ul>
+                        </details>
+                    </li>
+                    {{/:stats}}
+                </ul>
+            </details>
+        </li>
+    </script>
+</body>
+</html>
