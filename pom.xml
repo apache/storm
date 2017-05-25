@@ -1129,7 +1129,7 @@
                                 <encoding>UTF-8</encoding>
                                 <failOnViolation>true</failOnViolation>
                                 <logViolationsToConsole>false</logViolationsToConsole>
-                                <outputFile></outputFile>
+                                <outputFile>target/checkstyle-violation.xml</outputFile>
                                 <violationSeverity>warning</violationSeverity>
                             </configuration>
                             <goals>
