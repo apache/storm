@@ -139,3 +139,100 @@ PRE.jsonFormatter-codeContainer {
 #toggle-on-components-btn .btn {
   margin: 10px;
 }
+
+div#visualization {
+    color: #333;
+    font-family: "Helvetica Neue",Helvetica,Arial,sans-serif;
+    font-size: 14px;
+    line-height: 1.42857;
+}
+
+div#visualization a, div#visualization a:visited {
+    color: blue;
+}
+
+div#visualization ul {
+    list-style-type: none;
+    margin-top: 0;
+    padding-left: 10px;
+}
+
+div#visualization details li {
+    margin-left: 10px;
+}
+
+div#visualization #available-streams {
+    padding-left: 0;
+}
+
+div#visualization #bolt-details {
+    padding-left: 20px;
+}
+
+div#visualization #streams_slideout:hover {
+    left: 0;
+}
+
+div#visualization #streams_slideout_inner:hover {
+    left: 0;
+}
+
+div#visualization #streams_slideout_inner {
+    position: fixed;
+    top: 40px;
+    left: -300px;
+    background: #6DAD53;
+    width: 325px;
+    padding: 10px;
+    -webkit-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    text-align: left;
+    -webkit-border-radius: 0 0 5px 0;
+    -moz-border-radius: 0 0 5px 0;
+    border-radius: 0 0 5px 0;
+    z-index: 10;
+    max-height: 300px;
+    overflow: scroll;
+    opacity: 0.95;
+}
+
+div#visualization #bolt_slideout:hover {
+    right: 0;
+}
+
+div#visualization #bolt_slideout_inner:hover {
+    right: 0;
+}
+
+div#visualization #bolt_slideout_inner {
+    display: none;
+    position: fixed;
+    top: 40px;
+    right: -370px;
+    background: #6DAD53;
+    width: 400px;
+    padding: 10px;
+    -webkit-transition-duration: 0.3s;
+    -moz-transition-duration: 0.3s;
+    -o-transition-duration: 0.3s;
+    transition-duration: 0.3s;
+    text-align: left;
+    -webkit-border-radius: 0 0 0 5px;
+    -moz-border-radius: 0 0 0 5px;
+    border-radius: 0 0 0 5px;
+    z-index: 10;
+    max-height: 300px;
+    overflow: scroll;
+    opacity: 0.95;
+}
+
+div#visualization details {
+    padding-left: 5px;
+    margin-left: 0;
+}
+div#visualization summary {
+    display: list-item;
+    outline: none;
+}
