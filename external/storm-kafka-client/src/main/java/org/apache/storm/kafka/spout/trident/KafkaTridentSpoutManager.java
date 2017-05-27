@@ -19,7 +19,6 @@
 package org.apache.storm.kafka.spout.trident;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -34,9 +33,6 @@ import org.slf4j.LoggerFactory;
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
 
-    // Kafka
-    private transient KafkaConsumer<K, V> kafkaConsumer;
-
     // Bookkeeping
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     // Declare some KafkaSpoutConfig references for convenience
@@ -48,15 +44,11 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
         LOG.debug("Created {}", this);
     }
 
-    KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
-        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
+    KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context, ConsumerRebalanceListener listener) {
+        final KafkaConsumer<K, V> kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
                 kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
 
-        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
-        return kafkaConsumer;
-    }
-
-    KafkaConsumer<K, V> getKafkaConsumer() {
+        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, listener, context);
         return kafkaConsumer;
     }
 
@@ -79,7 +71,6 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
             }
             fields = fs;
         }
-        LOG.debug("OutputFields = {}", fields);
         return fields;
     }
 
@@ -89,25 +80,6 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
 
     @Override
     public String toString() {
-        return super.toString()
-                + "{kafkaConsumer=" + kafkaConsumer
-                + ", kafkaSpoutConfig=" + kafkaSpoutConfig
-                + '}';
-    }
-
-    private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
-        @Override
-        public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-            LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
-                    kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
-            KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.removeAll(partitions);
-        }
-
-        @Override
-        public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
-            KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.addAll(partitions);
-            LOG.info("Partitions reassignment. [consumer-group={}, consumer={}, topic-partitions={}]",
-                    kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
-        }
+        return super.toString() + "{kafkaSpoutConfig=" + kafkaSpoutConfig + '}';
     }
 }

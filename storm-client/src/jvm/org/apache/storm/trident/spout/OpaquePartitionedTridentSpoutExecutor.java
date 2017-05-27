@@ -37,11 +37,11 @@ import java.util.TreeMap;
 
 
 public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentSpout<Object> {
-    protected final Logger LOG = LoggerFactory.getLogger(OpaquePartitionedTridentSpoutExecutor.class);
-
     IOpaquePartitionedTridentSpout<Object, ISpoutPartition, Object> _spout;
     
     public class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
+        protected final Logger LOG = LoggerFactory.getLogger(Coordinator.class);
+
         IOpaquePartitionedTridentSpout.Coordinator _coordinator;
 
         public Coordinator(Map<String, Object> conf, TopologyContext context) {
@@ -50,8 +50,10 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
         
         @Override
         public Object initializeTransaction(long txid, Object prevMetadata, Object currMetadata) {
-            LOG.debug("Initialize Transaction. [txid = {}], [prevMetadata = {}], [currMetadata = {}]", txid, prevMetadata, currMetadata);
-            return _coordinator.getPartitionsForBatch();
+            final Object partitionsForBatch = _coordinator.getPartitionsForBatch();
+            LOG.debug("Initialize Transaction. [txid = {}], [prevMetadata = {}], [currMetadata = {}], [partitionsForBatch = {}]",
+                      txid, prevMetadata, currMetadata, partitionsForBatch);
+            return partitionsForBatch;
         }
 
 
@@ -85,11 +87,13 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
         }
     }
     
-    public class Emitter implements ICommitterTridentSpout.Emitter {        
+    public class Emitter implements ICommitterTridentSpout.Emitter {
+        protected final Logger LOG = LoggerFactory.getLogger(Emitter.class);
+
         IOpaquePartitionedTridentSpout.Emitter<Object, ISpoutPartition, Object> _emitter;
         TransactionalState _state;
         TreeMap<Long, Map<String, Object>> _cachedMetas = new TreeMap<>();
-        Map<String, EmitterPartitionState> _partitionStates = new HashMap<>();
+        Map<String, EmitterPartitionState> _partitionStates = new HashMap<>();      // key is partition id
         int _index;
         int _numTasks;
 
@@ -116,7 +120,7 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                     _partitionStates.put(partition.getId(), new EmitterPartitionState(new RotatingTransactionalState(_state, partition.getId()), partition));
                 }
 
-                // refresh all partitions for backwards compatibility with old spout
+                // refresh all partitions for backwards compatibility with old trident spout
                 _emitter.refreshPartitions(_emitter.getOrderedPartitions(coordinatorMeta));
                 _savedCoordinatorMeta = coordinatorMeta;
                 _changedMeta = true;

@@ -54,7 +54,7 @@ public class KafkaProducerTopology {
     /**
      * @return the Storm config for the topology that publishes sentences to kafka using a kafka bolt.
      */
-    private static Properties newProps(final String brokerUrl, final String topicName) {
+    static Properties newProps(final String brokerUrl, final String topicName) {
         return new Properties() {{
             put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
             put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
