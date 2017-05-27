@@ -106,16 +106,15 @@
 (defn get-pacemaker-write-client [conf servers client-pool]
   ;; Client should be created in case of an exception or first write call
   ;; Shutdown happens in the retry loop
-  (try 
-    (.waitUntilReady
-     (let [client (get @client-pool (first @servers))]
-       (if (nil? client)
-         (do
-           (swap! client-pool merge {(first @servers) (PacemakerClient. conf (first @servers))})
-           (get @client-pool (first @servers)))
-         client)))
-    (catch Exception e
-      (throw e))))
+  (let [client (get @client-pool (first @servers))]
+    (try
+      (.waitUntilReady
+	    (let [] (if (nil? client)
+          (do (swap! client-pool merge {(first @servers) (PacemakerClient. conf (first @servers))})
+            (get @client-pool (first @servers)))
+              client)))
+       (catch Exception e (throw e)))
+    (get @client-pool (first @servers))))
 
 ;; So we can mock the client for testing
 (defn makeClientPool [conf client-pool servers]

@@ -201,7 +201,7 @@ public class PacemakerClient implements ISaslClient {
         }
     }
 
-    private void waitUntilReady() throws PacemakerConnectionException {
+    public void waitUntilReady() throws PacemakerConnectionException {
         // Wait for 'ready' (channel connected and maybe authentication)
         if(!ready.get() || channelRef.get() == null) {
             synchronized(this) {
