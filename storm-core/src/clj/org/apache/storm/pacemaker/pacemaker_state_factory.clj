@@ -108,11 +108,11 @@
   ;; Shutdown happens in the retry loop
   (let [client (get @client-pool (first @servers))]
     (try
-      (.waitUntilReady
-	    (let [] (if (nil? client)
-          (do (swap! client-pool merge {(first @servers) (PacemakerClient. conf (first @servers))})
-            (get @client-pool (first @servers)))
-              client)))
+        (.waitUntilReady
+            (let [] (if (nil? client)
+                 (do (swap! client-pool merge {(first @servers) (PacemakerClient. conf (first @servers))})
+                     (get @client-pool (first @servers)))
+                      client)))
        (catch Exception e (throw e)))
     (get @client-pool (first @servers))))
 
