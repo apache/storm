@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2528: Bump log4j version to 2.8.2
  * STORM-2527: Initialize java.sql.DriverManager earlier to avoid deadlock
  * STORM-2448: Add in Storm and JDK versions when submitting a topology
  * STORM-2413: Make new Kafka spout respect tuple retry limits
