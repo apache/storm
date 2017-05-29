@@ -32,11 +32,11 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.thrift.TException;
 
 @Path("/drpc/")
-public class DrpcResource {
+public class DRPCResource {
     private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
     private final DRPC drpc;
 
-    public DrpcResource(DRPC drpc) {
+    public DRPCResource(DRPC drpc) {
         this.drpc = drpc;
     }
     

@@ -30,7 +30,7 @@ import org.apache.storm.generated.DRPCExecutionException;
 import org.json.simple.JSONValue;
 
 @Provider
-public class DrpcExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
+public class DRPCExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
 
     @Override
     public Response toResponse(DRPCExecutionException ex) {

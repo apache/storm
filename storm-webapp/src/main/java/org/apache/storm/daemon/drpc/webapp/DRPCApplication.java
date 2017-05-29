@@ -27,18 +27,18 @@ import javax.ws.rs.core.Application;
 import org.apache.storm.daemon.drpc.DRPC;
 
 @ApplicationPath("")
-public class DrpcApplication extends Application {
+public class DRPCApplication extends Application {
     private static DRPC _drpc;
     private final Set<Object> singletons = new HashSet<Object>();
 
     /**
      * Constructor.
-     * Creates new instance of DrpcResource, DrpcExceptionMapper and AuthorizationExceptionMapper
+     * Creates new instance of DRPCResource, DRPCExceptionMapper and AuthorizationExceptionMapper
      * and adds them to a set which can be retrieved later.
      */
-    public DrpcApplication() {
-        singletons.add(new DrpcResource(_drpc));
-        singletons.add(new DrpcExceptionMapper());
+    public DRPCApplication() {
+        singletons.add(new DRPCResource(_drpc));
+        singletons.add(new DRPCExceptionMapper());
         singletons.add(new AuthorizationExceptionMapper());
     }
     

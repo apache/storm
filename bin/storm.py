@@ -796,7 +796,7 @@ def drpc():
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.drpc.DrpcServer",
+        "org.apache.storm.daemon.drpc.DRPCServer",
         jvmtype="-server",
         daemonName="drpc",
         jvmopts=jvmopts,

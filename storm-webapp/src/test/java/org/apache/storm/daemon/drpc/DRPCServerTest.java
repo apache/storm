@@ -44,8 +44,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 
-public class DrpcServerTest {
-    private static final Logger LOG = LoggerFactory.getLogger(DrpcServerTest.class);
+public class DRPCServerTest {
+    private static final Logger LOG = LoggerFactory.getLogger(DRPCServerTest.class);
     private static final ExecutorService exec = Executors.newCachedThreadPool();
     
     @AfterClass
@@ -87,7 +87,7 @@ public class DrpcServerTest {
     @Test
     public void testGoodThrift() throws Exception {
         Map<String, Object> conf = getConf(0, 0, null);
-        try (DrpcServer server = new DrpcServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
             try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
                  DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
@@ -106,7 +106,7 @@ public class DrpcServerTest {
     @Test
     public void testFailedThrift() throws Exception {
         Map<String, Object> conf = getConf(0, 0, null);
-        try (DrpcServer server = new DrpcServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
             try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
                     DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
@@ -145,7 +145,7 @@ public class DrpcServerTest {
     public void testGoodHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET TEST...");
         Map<String, Object> conf = getConf(0, 0, 0);
-        try (DrpcServer server = new DrpcServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
@@ -166,7 +166,7 @@ public class DrpcServerTest {
     public void testFailedHttpGet() throws Exception {
         LOG.info("STARTING HTTP GET (FAIL) TEST...");
         Map<String, Object> conf = getConf(0, 0, 0);
-        try (DrpcServer server = new DrpcServer(conf)) {
+        try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
