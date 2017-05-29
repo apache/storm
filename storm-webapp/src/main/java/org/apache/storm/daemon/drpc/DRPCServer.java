@@ -132,7 +132,7 @@ public class DRPCServer implements AutoCloseable {
 
     /**
      * Constructor.
-     * @param conf Drpc conf dor the servers
+     * @param conf Drpc conf for the servers
      */
     public DRPCServer(Map<String, Object> conf) {
         drpc = new DRPC(conf);
