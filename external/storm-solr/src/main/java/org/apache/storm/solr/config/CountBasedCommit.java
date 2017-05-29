@@ -40,7 +40,11 @@ public class CountBasedCommit implements SolrCommitStrategy {
 
     @Override
     public boolean commit() {
-        return count != 0 && count % threshold == 0;
+        boolean b = (count != 0 && count % threshold == 0);
+        if(b){
+            count = 0;
+        }
+        return b;
     }
 
 
