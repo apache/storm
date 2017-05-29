@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc.webapp;
 
 import java.util.HashMap;
@@ -29,7 +30,7 @@ import org.apache.storm.generated.DRPCExecutionException;
 import org.json.simple.JSONValue;
 
 @Provider
-public class DRPCExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
+public class DrpcExceptionMapper implements ExceptionMapper<DRPCExecutionException> {
 
     @Override
     public Response toResponse(DRPCExecutionException ex) {
