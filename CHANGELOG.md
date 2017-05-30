@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
  * STORM-2528: Bump log4j version to 2.8.2
  * STORM-2527: Initialize java.sql.DriverManager earlier to avoid deadlock
  * STORM-2448: Add in Storm and JDK versions when submitting a topology
