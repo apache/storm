@@ -109,12 +109,14 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T> {
         return new Runnable() {
             @Override
             public void run() {
+                // do not process current timestamp since tuples might arrive while the trigger is executing
+                long now = System.currentTimeMillis() - 1;
                 try {
                     /*
                      * set the current timestamp as the reference time for the eviction policy
                      * to evict the events
                      */
-                    evictionPolicy.setContext(new DefaultEvictionContext(System.currentTimeMillis()));
+                    evictionPolicy.setContext(new DefaultEvictionContext(now, null, null, duration));
                     handler.onTrigger();
                 } catch (Throwable th) {
                     LOG.error("handler.onTrigger failed ", th);
