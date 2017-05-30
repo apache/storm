@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2516: Fix timing issues with testPrepareLateTupleStreamWithoutBuilder
  * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
  * STORM-2206: replacing visualization with viz.js
  * STORM-2527: Initialize java.sql.DriverManager earlier to avoid deadlock
