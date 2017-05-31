@@ -17,8 +17,9 @@
  */
 package org.apache.storm.kafka.spout.internal;
 
-import java.util.concurrent.TimeUnit;
 import org.apache.storm.utils.Time;
+
+import java.util.concurrent.TimeUnit;
 
 public class Timer {
     private final long delay;
@@ -71,5 +72,13 @@ public class Timer {
             start = Time.nanoTime();
         }
         return expired;
+    }
+
+    public boolean isExpired() {
+        return Time.nanoTime() - start >= periodNanos;
+    }
+
+    public void reset() {
+        start = Time.nanoTime();
     }
 }

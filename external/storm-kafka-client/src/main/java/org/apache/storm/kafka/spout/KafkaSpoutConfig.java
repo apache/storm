@@ -22,7 +22,7 @@ import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
+import org.apache.storm.kafka.spout.internal.TimeInterval;
 import org.apache.storm.tuple.Fields;
 
 import java.io.Serializable;
@@ -43,13 +43,15 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final int DEFAULT_MAX_RETRIES = Integer.MAX_VALUE;     // Retry forever
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    // 10,000,000 records => 80MBs of memory footprint in the worst case
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000; // 2s
-    public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =  
+    public static final TimeInterval DEFAULT_INITIAL_STARTUP_DELAY = TimeInterval.seconds(10);
+
+    public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =
             new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
                     DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
     /**
      * Retry in a tight loop (keep unit tests fasts) do not use in production.
      */
-    public static final KafkaSpoutRetryService UNIT_TEST_RETRY_SERVICE = 
+    public static final KafkaSpoutRetryService UNIT_TEST_RETRY_SERVICE =
     new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(0),
             DEFAULT_MAX_RETRIES, TimeInterval.milliSeconds(0));
 
@@ -66,7 +68,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * If no offset has been committed, it behaves as LATEST.</li>
      * </ul>
      * */
-    public static enum FirstPollOffsetStrategy {
+    public enum FirstPollOffsetStrategy {
         EARLIEST,
         LATEST,
         UNCOMMITTED_EARLIEST,
@@ -107,6 +109,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
+        private TimeInterval initialStartupDelay = DEFAULT_INITIAL_STARTUP_DELAY;
 
         public Builder(String bootstrapServers, String ... topics) {
             this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new NamedSubscription(topics));
@@ -177,6 +180,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             this.keyDesClazz = keyDesClazz;
             this.valueDes = valueDes;
             this.valueDesClazz = valueDesClazz;
+            this.initialStartupDelay = builder.initialStartupDelay;
         }
 
         /**
@@ -416,6 +420,14 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * Sets the amount of time the Spout waits before the first call to nextTuple. The default value is 10s
+         */
+        public Builder<K, V> setInitialStartupDelay(TimeInterval initialStartupDelay) {
+            this.initialStartupDelay = initialStartupDelay;
+            return this;
+        }
+
         public KafkaSpoutConfig<K,V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -438,6 +450,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final KafkaSpoutRetryService retryService;
     private final long partitionRefreshPeriodMs;
     private final boolean emitNullTuples;
+    private final TimeInterval initialStartupDelay;
 
     public KafkaSpoutConfig(Builder<K,V> builder) {
         this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
@@ -454,6 +467,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDesClazz = builder.valueDesClazz;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
         this.emitNullTuples = builder.emitNullTuples;
+        this.initialStartupDelay = builder.initialStartupDelay;
     }
 
     public Map<String, Object> getKafkaProps() {
@@ -527,6 +541,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return emitNullTuples;
     }
 
+    public TimeInterval getInitialStartupDelay() {
+        return initialStartupDelay;
+    }
+
     @Override
     public String toString() {
         return "KafkaSpoutConfig{" +
@@ -540,6 +558,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 ", subscription=" + subscription +
                 ", translator=" + translator +
                 ", retryService=" + retryService +
+                ", initialStartupDelay=" + initialStartupDelay +
                 '}';
     }
 }
