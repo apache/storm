@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2536: excludes jersey 1.x from storm-autocreds 
  * STORM-2516: Fix timing issues with testPrepareLateTupleStreamWithoutBuilder
  * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
  * STORM-2528: Bump log4j version to 2.8.2
