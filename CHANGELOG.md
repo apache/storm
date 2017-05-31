@@ -259,6 +259,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2536: excludes jersey 1.x from storm-autocreds 
  * STORM-2528: Bump log4j version to 2.8.2
  * STORM-2413: Make new Kafka spout respect tuple retry limits
  * STORM-2518: Handles empty name for "USER type" ACL when normalizing ACLs
