@@ -75,6 +75,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient KafkaSpoutRetryService retryService;              // Class that has the logic to handle tuple failure
     private transient Timer commitTimer;                                // timer == null for auto commit mode
     private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
+    private transient long consumerStartTime;
+    private transient boolean consumerStarted;
+
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
     private transient Map<TopicPartition, OffsetManager> offsetManagers;// Tuples that were successfully acked/emitted. These tuples will be committed periodically when the commit timer expires, or after a consumer rebalance, or during close/deactivate
@@ -215,24 +218,29 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            if (initialized) {
-                if (commit()) {
-                    commitOffsetsForAckedTuples();
-                }
-
-                if (poll()) {
-                    try {
-                        setWaitingToEmit(pollKafkaBroker());
-                    } catch (RetriableException e) {
-                        LOG.error("Failed to poll from kafka.", e);
+            if (consumerStarted) {
+                if (initialized) {
+                    if (commit()) {
+                        commitOffsetsForAckedTuples();
                     }
-                }
 
-                if (waitingToEmit()) {
-                    emit();
+                    if (poll()) {
+                        try {
+                            setWaitingToEmit(pollKafkaBroker());
+                        } catch (RetriableException e) {
+                            LOG.error("Failed to poll from kafka.", e);
+                        }
+                    }
+
+                    if (waitingToEmit()) {
+                        emit();
+                    }
+                } else {
+                    LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
                 }
-            } else {
-                LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
+            } else if (System.currentTimeMillis() > consumerStartTime) {
+                consumerStarted = true;
+                LOG.info("Kafka consumer is started after initial delay.");
             }
         } catch (InterruptException e) {
             throwKafkaConsumerInterruptedException();
@@ -443,6 +451,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     public void activate() {
         try {
             subscribeKafkaConsumer();
+            LOG.info("Consumer startup delay [{}] ms ", kafkaSpoutConfig.getConsumerStartupDelayMs());
+            consumerStartTime = System.currentTimeMillis() + kafkaSpoutConfig.getConsumerStartupDelayMs();
         } catch (InterruptException e) {
             throwKafkaConsumerInterruptedException();
         }
