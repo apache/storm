@@ -86,7 +86,7 @@ public class TridentKafkaEmitter {
         try {
             return failFastEmitNewPartitionBatch(attempt, collector, partition, lastMeta);
         } catch (FailedFetchException e) {
-            LOG.warn("Failed to fetch from partition " + partition);
+            LOG.warn("Failed to fetch from partition " + partition, e);
             if (lastMeta == null) {
                 return null;
             } else {

@@ -189,7 +189,7 @@ public class KafkaUtils {
     }
 
     public static ByteBufferMessageSet fetchMessages(KafkaConfig config, SimpleConsumer consumer, Partition partition, long offset)
-            throws TopicOffsetOutOfRangeException, FailedFetchException,RuntimeException {
+            throws TopicOffsetOutOfRangeException, FailedFetchException, RuntimeException {
         ByteBufferMessageSet msgs = null;
         String topic = partition.topic;
         int partitionId = partition.partition;
@@ -219,7 +219,6 @@ public class KafkaUtils {
                 throw new TopicOffsetOutOfRangeException(msg);
             } else {
                 String message = "Error fetching data from [" + partition + "] for topic [" + topic + "]: [" + error + "]";
-                LOG.error(message);
                 throw new FailedFetchException(message);
             }
         } else {
