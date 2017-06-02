@@ -629,6 +629,10 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         return getNimbus().getTopologyInfo(id);
     }
 
+    public int getThriftServerPort() {
+        return thriftServer.getPort();
+    }
+
     @Override
     public synchronized void close() throws Exception {
         if (nimbus != null) {

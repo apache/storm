@@ -55,6 +55,12 @@ public interface IConnection {
      * @return a Load for each of the tasks it knows about.
      */
     public Map<Integer, Load> getLoad(Collection<Integer> tasks);
+    
+    /**
+     * Get the port for this connection
+     * @return The port this connection is using
+     */
+    public int getPort();
 
     /**
      * close this connection

@@ -65,7 +65,7 @@ public class Context implements IContext {
      */
     public synchronized IConnection bind(String storm_id, int port) {
         IConnection server = new Server(topoConf, port);
-        connections.put(key(storm_id, port), server);
+        connections.put(key(storm_id, server.getPort()), server);
         return server;
     }
 
@@ -80,7 +80,7 @@ public class Context implements IContext {
         }
         IConnection client =  new Client(topoConf, clientChannelFactory, 
                 clientScheduleService, host, port, this);
-        connections.put(key(host, port), client);
+        connections.put(key(host, client.getPort()), client);
         return client;
     }
 

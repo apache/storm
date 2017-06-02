@@ -36,7 +36,7 @@ public interface IContext {
     public void prepare(Map<String, Object> topoConf);
     
     /**
-     * This method is invoked when a worker is unload a messaging plugin
+     * This method is invoked when a worker is unloading a messaging plugin
      */
     public void term();
 
