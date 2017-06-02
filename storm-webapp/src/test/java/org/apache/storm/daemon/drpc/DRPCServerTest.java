@@ -89,8 +89,8 @@ public class DRPCServerTest {
         Map<String, Object> conf = getConf(0, 0, null);
         try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
-            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDRPCPort());
-                 DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
+                 DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
                 Future<String> found = exec.submit(() -> client.getClient().execute("testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
@@ -108,8 +108,8 @@ public class DRPCServerTest {
         Map<String, Object> conf = getConf(0, 0, null);
         try (DRPCServer server = new DRPCServer(conf)) {
             server.start();
-            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDRPCPort());
-                    DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+            try (DRPCClient client = new DRPCClient(conf, "localhost", server.getDrpcPort());
+                    DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
                 Future<String> found = exec.submit(() -> client.getClient().execute("testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
@@ -149,7 +149,7 @@ public class DRPCServerTest {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
-            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
                 Future<String> found = exec.submit(() -> GET(server.getHttpServerPort(), "testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
@@ -170,7 +170,7 @@ public class DRPCServerTest {
             server.start();
             //TODO need a better way to do this
             Thread.sleep(2000);
-            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDRPCInvokePort())) {
+            try (DRPCInvocationsClient invoke = new DRPCInvocationsClient(conf, "localhost", server.getDrpcInvokePort())) {
                 Future<String> found = exec.submit(() -> GET(server.getHttpServerPort(), "testing", "test"));
                 DRPCRequest request = getNextAvailableRequest(invoke, "testing");
                 assertNotNull(request);
