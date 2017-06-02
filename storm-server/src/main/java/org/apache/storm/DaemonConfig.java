@@ -22,6 +22,7 @@ import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.Validated;
 
@@ -889,10 +890,88 @@ public class DaemonConfig implements Validated {
     public static String STORM_CGROUP_CGEXEC_CMD = "storm.cgroup.cgexec.cmd";
 
     /**
-     * The amount of memory a worker can exceed its allocation before cgroup will kill it
+     * Please use STORM_SUPERVISOR_MEMORY_LIMIT_TOLERANCE_MARGIN_MB instead. The amount of memory a
+     * worker can exceed its allocation before cgroup will kill it.
+     */
+    @isPositiveNumber(includeZero = true)
+    public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB =
+        "storm.cgroup.memory.limit.tolerance.margin.mb";
+
+    /**
+     * Java does not always play nicely with cgroups. It is coming but not fully implemented and not
+     * for the way storm uses cgroups. In the short term you can disable the hard memory enforcement
+     * by cgroups and let the supervisor handle shooting workers going over their limit in a kinder
+     * way.
+     */
+    @isBoolean
+    public static String STORM_CGROUP_MEMORY_ENFORCEMENT_ENABLE = "storm.cgroup.memory.enforcement.enable";
+
+    // Configs for memory enforcement done by the supervisor (not cgroups directly)
+
+    /**
+     * Memory given to each worker for free (because java and storm have some overhead). This is
+     * memory on the box that the workers can use. This should not be included in
+     * SUPERVISOR_MEMORY_CAPACITY_MB, as nimbus does not use this memory for scheduling.
      */
     @isPositiveNumber
-    public static String STORM_CGROUP_MEMORY_LIMIT_TOLERANCE_MARGIN_MB = "storm.cgroup.memory.limit.tolerance.margin.mb";
+    public static String STORM_SUPERVISOR_MEMORY_LIMIT_TOLERANCE_MARGIN_MB =
+        "storm.supervisor.memory.limit.tolerance.margin.mb";
+
+    /**
+     * A multiplier for the memory limit of a worker that will have the supervisor shoot it
+     * immediately. 1.0 means shoot the worker as soon as it goes over. 2.0 means shoot the worker if
+     * its usage is double what was requested. This value is combined with
+     * STORM_SUPERVISOR_HARD_MEMORY_LIMIT_OVERAGE and which ever is greater is used for enforcement.
+     * This allows small workers to not be shot.
+     */
+    @isPositiveNumber
+    public static String STORM_SUPERVISOR_HARD_MEMORY_LIMIT_MULTIPLIER =
+        "storm.supervisor.hard.memory.limit.multiplier";
+
+    /**
+     * If the memory usage of a worker goes over its limit by this value is it shot immediately. This
+     * value is combined with STORM_SUPERVISOR_HARD_LIMIT_MEMORY_MULTIPLIER and which ever is greater
+     * is used for enforcement. This allows small workers to not be shot.
+     */
+    @isPositiveNumber(includeZero = true)
+    public static String STORM_SUPERVISOR_HARD_LIMIT_MEMORY_OVERAGE_MB = "storm.supervisor.hard.memory.limit.overage.mb";
+
+    /**
+     * If the amount of memory that is free in the system (either on the box or in the supervisor's
+     * cgroup) is below this number (in MB) consider the system to be in low memory mode and start
+     * shooting workers if they are over their limit.
+     */
+    @isPositiveNumber
+    public static String STORM_SUPERVISOR_LOW_MEMORY_THRESHOLD_MB = "storm.supervisor.low.memory.threshold.mb";
+
+    /**
+     * If the amount of memory that is free in the system (either on the box or in the supervisor's
+     * cgroup) is below this number (in MB) consider the system to be a little low on memory and start
+     * shooting workers if they are over their limit for a given grace period
+     * STORM_SUPERVISOR_MEDIUM_MEMORY_GRACE_PERIOD_MS.
+     */
+    @isPositiveNumber
+    public static String STORM_SUPERVISOR_MEDIUM_MEMORY_THRESHOLD_MB = "storm.supervisor.medium.memory.threshold.mb";
+
+    /**
+     * The number of milliseconds that a worker is allowed to be over their limit when there is a
+     * medium amount of memory free in the system.
+     */
+    @isPositiveNumber
+    public static String STORM_SUPERVISOR_MEDIUM_MEMORY_GRACE_PERIOD_MS =
+        "storm.supervisor.medium.memory.grace.period.ms";
+
+    // VALIDATION ONLY CONFIGS
+    // Some configs inside Config.java may reference classes we don't want to expose in storm-client, but we still want to validate
+    // That they reference a valid class.  To allow this to happen we do part of the validation on the client side with annotations on
+    // static final members of the Config class, and other validations here.  We avoid naming them the same thing because clojure code
+    // walks these two classes and creates clojure constants for these values.
+
+    /**
+     * Server side validation that @{see Config#TOPOLOGY_SCHEDULER_STRATEGY} is set ot a subclass of IStrategy.
+     */
+    @isImplementationOfClass(implementsClass = IStrategy.class)
+    public static final String VALIDATE_TOPOLOGY_SCHEDULER_STRATEGY = Config.TOPOLOGY_SCHEDULER_STRATEGY;
 
     public static String getCgroupRootDir(Map<String, Object> conf) {
         return (String) conf.get(STORM_SUPERVISOR_CGROUP_ROOTDIR);
@@ -902,8 +981,14 @@ public class DaemonConfig implements Validated {
         return (String) conf.get(Config.STORM_CGROUP_HIERARCHY_DIR);
     }
 
+    /**
+     * Get the cgroup resources from the conf
+     *
+     * @param conf the config to read
+     * @return the resources.
+     */
     public static ArrayList<String> getCgroupStormResources(Map<String, Object> conf) {
-        ArrayList<String> ret = new ArrayList<String>();
+        ArrayList<String> ret = new ArrayList<>();
         for (String entry : ((Iterable<String>) conf.get(DaemonConfig.STORM_CGROUP_RESOURCES))) {
             ret.add(entry);
         }
@@ -913,5 +998,4 @@ public class DaemonConfig implements Validated {
     public static String getCgroupStormHierarchyName(Map<String, Object> conf) {
         return (String) conf.get(DaemonConfig.STORM_CGROUP_HIERARCHY_NAME);
     }
-
 }

@@ -124,13 +124,13 @@ public class SupervisorDetails {
         return this._total_resources.get(type);
     }
 
-    public Double getTotalMemory() {
+    public double getTotalMemory() {
         Double totalMemory = getTotalResource(Config.SUPERVISOR_MEMORY_CAPACITY_MB);
         assert totalMemory != null;
         return totalMemory;
     }
 
-    public Double getTotalCPU() {
+    public double getTotalCPU() {
         Double totalCPU = getTotalResource(Config.SUPERVISOR_CPU_CAPACITY);
         assert totalCPU != null;
         return totalCPU;

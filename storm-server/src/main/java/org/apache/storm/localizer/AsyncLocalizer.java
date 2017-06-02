@@ -23,6 +23,8 @@ import java.io.OutputStream;
 import java.net.JarURLConnection;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -101,12 +103,14 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     private class DownloadBaseBlobsDistributed implements Callable<Void> {
         protected final String _topologyId;
         protected final File _stormRoot;
+        protected final LocalAssignment _assignment;
         protected final String owner;
-
-        public DownloadBaseBlobsDistributed(String topologyId, String owner) throws IOException {
+        
+        public DownloadBaseBlobsDistributed(String topologyId, LocalAssignment assignment) throws IOException {
             _topologyId = topologyId;
             _stormRoot = new File(ConfigUtils.supervisorStormDistRoot(_conf, _topologyId));
-            this.owner = owner;
+            _assignment = assignment;
+	    owner = assignment.get_owner();
         }
         
         protected void downloadBaseBlobs(File tmproot) throws Exception {
@@ -146,8 +150,18 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 File tr = new File(tmproot);
                 try {
                     downloadBaseBlobs(tr);
+                    if (_assignment.is_set_total_node_shared()) {
+                        File sharedMemoryDirTmpLocation = new File(tr, "shared_by_topology");
+                        //We need to create a directory for shared memory to write to (we should not encourage this though)
+                        Path path = sharedMemoryDirTmpLocation.toPath();
+                        Files.createDirectories(path);
+                    }
                     _fsOps.moveDirectoryPreferAtomic(tr, _stormRoot);
                     _fsOps.setupStormCodeDir(owner, _stormRoot);
+                    if (_assignment.is_set_total_node_shared()) {
+                        File sharedMemoryDir = new File(_stormRoot, "shared_by_topology");
+                        _fsOps.setupWorkerArtifactsDir(owner, sharedMemoryDir);
+                    }
                     deleteAll = false;
                 } finally {
                     if (deleteAll) {
@@ -166,8 +180,8 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     
     private class DownloadBaseBlobsLocal extends DownloadBaseBlobsDistributed {
 
-        public DownloadBaseBlobsLocal(String topologyId, String owner) throws IOException {
-            super(topologyId, owner);
+        public DownloadBaseBlobsLocal(String topologyId, LocalAssignment assignment) throws IOException {
+            super(topologyId, assignment);
         }
         
         @Override
@@ -312,9 +326,9 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         if (localResource == null) {
             Callable<Void> c;
             if (_isLocalMode) {
-                c = new DownloadBaseBlobsLocal(topologyId, assignment.get_owner());
+                c = new DownloadBaseBlobsLocal(topologyId, assignment);
             } else {
-                c = new DownloadBaseBlobsDistributed(topologyId, assignment.get_owner());
+                c = new DownloadBaseBlobsDistributed(topologyId, assignment);
             }
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _basicPending.put(topologyId, localResource);

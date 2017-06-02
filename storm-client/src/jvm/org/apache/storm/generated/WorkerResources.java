@@ -58,6 +58,8 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
   private static final org.apache.thrift.protocol.TField MEM_ON_HEAP_FIELD_DESC = new org.apache.thrift.protocol.TField("mem_on_heap", org.apache.thrift.protocol.TType.DOUBLE, (short)1);
   private static final org.apache.thrift.protocol.TField MEM_OFF_HEAP_FIELD_DESC = new org.apache.thrift.protocol.TField("mem_off_heap", org.apache.thrift.protocol.TType.DOUBLE, (short)2);
   private static final org.apache.thrift.protocol.TField CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("cpu", org.apache.thrift.protocol.TType.DOUBLE, (short)3);
+  private static final org.apache.thrift.protocol.TField SHARED_MEM_ON_HEAP_FIELD_DESC = new org.apache.thrift.protocol.TField("shared_mem_on_heap", org.apache.thrift.protocol.TType.DOUBLE, (short)4);
+  private static final org.apache.thrift.protocol.TField SHARED_MEM_OFF_HEAP_FIELD_DESC = new org.apache.thrift.protocol.TField("shared_mem_off_heap", org.apache.thrift.protocol.TType.DOUBLE, (short)5);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -68,12 +70,16 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
   private double mem_on_heap; // optional
   private double mem_off_heap; // optional
   private double cpu; // optional
+  private double shared_mem_on_heap; // optional
+  private double shared_mem_off_heap; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     MEM_ON_HEAP((short)1, "mem_on_heap"),
     MEM_OFF_HEAP((short)2, "mem_off_heap"),
-    CPU((short)3, "cpu");
+    CPU((short)3, "cpu"),
+    SHARED_MEM_ON_HEAP((short)4, "shared_mem_on_heap"),
+    SHARED_MEM_OFF_HEAP((short)5, "shared_mem_off_heap");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -94,6 +100,10 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
           return MEM_OFF_HEAP;
         case 3: // CPU
           return CPU;
+        case 4: // SHARED_MEM_ON_HEAP
+          return SHARED_MEM_ON_HEAP;
+        case 5: // SHARED_MEM_OFF_HEAP
+          return SHARED_MEM_OFF_HEAP;
         default:
           return null;
       }
@@ -137,8 +147,10 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
   private static final int __MEM_ON_HEAP_ISSET_ID = 0;
   private static final int __MEM_OFF_HEAP_ISSET_ID = 1;
   private static final int __CPU_ISSET_ID = 2;
+  private static final int __SHARED_MEM_ON_HEAP_ISSET_ID = 3;
+  private static final int __SHARED_MEM_OFF_HEAP_ISSET_ID = 4;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.MEM_ON_HEAP,_Fields.MEM_OFF_HEAP,_Fields.CPU};
+  private static final _Fields optionals[] = {_Fields.MEM_ON_HEAP,_Fields.MEM_OFF_HEAP,_Fields.CPU,_Fields.SHARED_MEM_ON_HEAP,_Fields.SHARED_MEM_OFF_HEAP};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -147,6 +159,10 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
     tmpMap.put(_Fields.MEM_OFF_HEAP, new org.apache.thrift.meta_data.FieldMetaData("mem_off_heap", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.CPU, new org.apache.thrift.meta_data.FieldMetaData("cpu", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.SHARED_MEM_ON_HEAP, new org.apache.thrift.meta_data.FieldMetaData("shared_mem_on_heap", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.SHARED_MEM_OFF_HEAP, new org.apache.thrift.meta_data.FieldMetaData("shared_mem_off_heap", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(WorkerResources.class, metaDataMap);
@@ -163,6 +179,8 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
     this.mem_on_heap = other.mem_on_heap;
     this.mem_off_heap = other.mem_off_heap;
     this.cpu = other.cpu;
+    this.shared_mem_on_heap = other.shared_mem_on_heap;
+    this.shared_mem_off_heap = other.shared_mem_off_heap;
   }
 
   public WorkerResources deepCopy() {
@@ -177,6 +195,10 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
     this.mem_off_heap = 0.0;
     set_cpu_isSet(false);
     this.cpu = 0.0;
+    set_shared_mem_on_heap_isSet(false);
+    this.shared_mem_on_heap = 0.0;
+    set_shared_mem_off_heap_isSet(false);
+    this.shared_mem_off_heap = 0.0;
   }
 
   public double get_mem_on_heap() {
@@ -245,6 +267,50 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __CPU_ISSET_ID, value);
   }
 
+  public double get_shared_mem_on_heap() {
+    return this.shared_mem_on_heap;
+  }
+
+  public void set_shared_mem_on_heap(double shared_mem_on_heap) {
+    this.shared_mem_on_heap = shared_mem_on_heap;
+    set_shared_mem_on_heap_isSet(true);
+  }
+
+  public void unset_shared_mem_on_heap() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SHARED_MEM_ON_HEAP_ISSET_ID);
+  }
+
+  /** Returns true if field shared_mem_on_heap is set (has been assigned a value) and false otherwise */
+  public boolean is_set_shared_mem_on_heap() {
+    return EncodingUtils.testBit(__isset_bitfield, __SHARED_MEM_ON_HEAP_ISSET_ID);
+  }
+
+  public void set_shared_mem_on_heap_isSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SHARED_MEM_ON_HEAP_ISSET_ID, value);
+  }
+
+  public double get_shared_mem_off_heap() {
+    return this.shared_mem_off_heap;
+  }
+
+  public void set_shared_mem_off_heap(double shared_mem_off_heap) {
+    this.shared_mem_off_heap = shared_mem_off_heap;
+    set_shared_mem_off_heap_isSet(true);
+  }
+
+  public void unset_shared_mem_off_heap() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __SHARED_MEM_OFF_HEAP_ISSET_ID);
+  }
+
+  /** Returns true if field shared_mem_off_heap is set (has been assigned a value) and false otherwise */
+  public boolean is_set_shared_mem_off_heap() {
+    return EncodingUtils.testBit(__isset_bitfield, __SHARED_MEM_OFF_HEAP_ISSET_ID);
+  }
+
+  public void set_shared_mem_off_heap_isSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __SHARED_MEM_OFF_HEAP_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case MEM_ON_HEAP:
@@ -271,6 +337,22 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       }
       break;
 
+    case SHARED_MEM_ON_HEAP:
+      if (value == null) {
+        unset_shared_mem_on_heap();
+      } else {
+        set_shared_mem_on_heap((Double)value);
+      }
+      break;
+
+    case SHARED_MEM_OFF_HEAP:
+      if (value == null) {
+        unset_shared_mem_off_heap();
+      } else {
+        set_shared_mem_off_heap((Double)value);
+      }
+      break;
+
     }
   }
 
@@ -284,6 +366,12 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
 
     case CPU:
       return get_cpu();
+
+    case SHARED_MEM_ON_HEAP:
+      return get_shared_mem_on_heap();
+
+    case SHARED_MEM_OFF_HEAP:
+      return get_shared_mem_off_heap();
 
     }
     throw new IllegalStateException();
@@ -302,6 +390,10 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       return is_set_mem_off_heap();
     case CPU:
       return is_set_cpu();
+    case SHARED_MEM_ON_HEAP:
+      return is_set_shared_mem_on_heap();
+    case SHARED_MEM_OFF_HEAP:
+      return is_set_shared_mem_off_heap();
     }
     throw new IllegalStateException();
   }
@@ -346,6 +438,24 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
         return false;
     }
 
+    boolean this_present_shared_mem_on_heap = true && this.is_set_shared_mem_on_heap();
+    boolean that_present_shared_mem_on_heap = true && that.is_set_shared_mem_on_heap();
+    if (this_present_shared_mem_on_heap || that_present_shared_mem_on_heap) {
+      if (!(this_present_shared_mem_on_heap && that_present_shared_mem_on_heap))
+        return false;
+      if (this.shared_mem_on_heap != that.shared_mem_on_heap)
+        return false;
+    }
+
+    boolean this_present_shared_mem_off_heap = true && this.is_set_shared_mem_off_heap();
+    boolean that_present_shared_mem_off_heap = true && that.is_set_shared_mem_off_heap();
+    if (this_present_shared_mem_off_heap || that_present_shared_mem_off_heap) {
+      if (!(this_present_shared_mem_off_heap && that_present_shared_mem_off_heap))
+        return false;
+      if (this.shared_mem_off_heap != that.shared_mem_off_heap)
+        return false;
+    }
+
     return true;
   }
 
@@ -367,6 +477,16 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
     list.add(present_cpu);
     if (present_cpu)
       list.add(cpu);
+
+    boolean present_shared_mem_on_heap = true && (is_set_shared_mem_on_heap());
+    list.add(present_shared_mem_on_heap);
+    if (present_shared_mem_on_heap)
+      list.add(shared_mem_on_heap);
+
+    boolean present_shared_mem_off_heap = true && (is_set_shared_mem_off_heap());
+    list.add(present_shared_mem_off_heap);
+    if (present_shared_mem_off_heap)
+      list.add(shared_mem_off_heap);
 
     return list.hashCode();
   }
@@ -409,6 +529,26 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_shared_mem_on_heap()).compareTo(other.is_set_shared_mem_on_heap());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_shared_mem_on_heap()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shared_mem_on_heap, other.shared_mem_on_heap);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_shared_mem_off_heap()).compareTo(other.is_set_shared_mem_off_heap());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_shared_mem_off_heap()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.shared_mem_off_heap, other.shared_mem_off_heap);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -444,6 +584,18 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       if (!first) sb.append(", ");
       sb.append("cpu:");
       sb.append(this.cpu);
+      first = false;
+    }
+    if (is_set_shared_mem_on_heap()) {
+      if (!first) sb.append(", ");
+      sb.append("shared_mem_on_heap:");
+      sb.append(this.shared_mem_on_heap);
+      first = false;
+    }
+    if (is_set_shared_mem_off_heap()) {
+      if (!first) sb.append(", ");
+      sb.append("shared_mem_off_heap:");
+      sb.append(this.shared_mem_off_heap);
       first = false;
     }
     sb.append(")");
@@ -515,6 +667,22 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 4: // SHARED_MEM_ON_HEAP
+            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
+              struct.shared_mem_on_heap = iprot.readDouble();
+              struct.set_shared_mem_on_heap_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 5: // SHARED_MEM_OFF_HEAP
+            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
+              struct.shared_mem_off_heap = iprot.readDouble();
+              struct.set_shared_mem_off_heap_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -541,6 +709,16 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       if (struct.is_set_cpu()) {
         oprot.writeFieldBegin(CPU_FIELD_DESC);
         oprot.writeDouble(struct.cpu);
+        oprot.writeFieldEnd();
+      }
+      if (struct.is_set_shared_mem_on_heap()) {
+        oprot.writeFieldBegin(SHARED_MEM_ON_HEAP_FIELD_DESC);
+        oprot.writeDouble(struct.shared_mem_on_heap);
+        oprot.writeFieldEnd();
+      }
+      if (struct.is_set_shared_mem_off_heap()) {
+        oprot.writeFieldBegin(SHARED_MEM_OFF_HEAP_FIELD_DESC);
+        oprot.writeDouble(struct.shared_mem_off_heap);
         oprot.writeFieldEnd();
       }
       oprot.writeFieldStop();
@@ -570,7 +748,13 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       if (struct.is_set_cpu()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.is_set_shared_mem_on_heap()) {
+        optionals.set(3);
+      }
+      if (struct.is_set_shared_mem_off_heap()) {
+        optionals.set(4);
+      }
+      oprot.writeBitSet(optionals, 5);
       if (struct.is_set_mem_on_heap()) {
         oprot.writeDouble(struct.mem_on_heap);
       }
@@ -580,12 +764,18 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       if (struct.is_set_cpu()) {
         oprot.writeDouble(struct.cpu);
       }
+      if (struct.is_set_shared_mem_on_heap()) {
+        oprot.writeDouble(struct.shared_mem_on_heap);
+      }
+      if (struct.is_set_shared_mem_off_heap()) {
+        oprot.writeDouble(struct.shared_mem_off_heap);
+      }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, WorkerResources struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(5);
       if (incoming.get(0)) {
         struct.mem_on_heap = iprot.readDouble();
         struct.set_mem_on_heap_isSet(true);
@@ -597,6 +787,14 @@ public class WorkerResources implements org.apache.thrift.TBase<WorkerResources,
       if (incoming.get(2)) {
         struct.cpu = iprot.readDouble();
         struct.set_cpu_isSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.shared_mem_on_heap = iprot.readDouble();
+        struct.set_shared_mem_on_heap_isSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.shared_mem_off_heap = iprot.readDouble();
+        struct.set_shared_mem_off_heap_isSet(true);
       }
     }
   }

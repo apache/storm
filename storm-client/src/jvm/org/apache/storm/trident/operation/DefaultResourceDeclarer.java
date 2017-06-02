@@ -15,11 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.trident.operation;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
+
 import org.apache.storm.Config;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.topology.ResourceDeclarer;
 
@@ -29,8 +34,12 @@ import org.apache.storm.topology.ResourceDeclarer;
  */
 public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implements ResourceDeclarer<T>, ITridentResource {
 
-    private Map<String, Number> resources = new HashMap<>();
-    private static Map<String, Object> conf = Utils.readStormConfig();
+    //@{link org.apache.storm.trident.planner.Node} and several other trident classes inherit from DefaultResourceDeclarer
+    // These classes are serialized out as part of the bolts and spouts of a topology, often for each bolt/spout in the topology.
+    // The following are marked as transient because they are never used after the topology is created so keeping them around just wastes
+    // space in the serialized topology
+    private final transient Map<String, Number> resources = new HashMap<>();
+    private final transient Set<SharedMemory> sharedMemory = new HashSet<>();
 
     @Override
     public T setMemoryLoad(Number onHeap) {
@@ -64,5 +73,16 @@ public class DefaultResourceDeclarer<T extends DefaultResourceDeclarer> implemen
     @Override
     public Map<String, Number> getResources() {
         return new HashMap<String, Number>(resources);
+    }
+
+    @Override
+    public Set<SharedMemory> getSharedMemory() {
+        return sharedMemory;
+    }
+
+    @Override
+    public T addSharedMemory(SharedMemory request) {
+        sharedMemory.add(request);
+        return (T) this;
     }
 }

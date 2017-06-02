@@ -104,12 +104,12 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * the inputs for that component.
  */
 public class TopologyBuilder {
-    private Map<String, IRichBolt> _bolts = new HashMap<>();
-    private Map<String, IRichSpout> _spouts = new HashMap<>();
-    private Map<String, ComponentCommon> _commons = new HashMap<>();
+    private final Map<String, IRichBolt> _bolts = new HashMap<>();
+    private final Map<String, IRichSpout> _spouts = new HashMap<>();
+    private final Map<String, ComponentCommon> _commons = new HashMap<>();
+    private final Map<String, Set<String>> _componentToSharedMemory = new HashMap<>();
+    private final Map<String, SharedMemory> _sharedMemory = new HashMap<>();
     private boolean hasStatefulBolt = false;
-
-//    private Map<String, Map<GlobalStreamId, Grouping>> _inputs = new HashMap<String, Map<GlobalStreamId, Grouping>>();
 
     private Map<String, StateSpoutSpec> _stateSpouts = new HashMap<>();
     private List<ByteBuffer> _workerHooks = new ArrayList<>();
@@ -154,11 +154,16 @@ public class TopologyBuilder {
 
         StormTopology stormTopology = new StormTopology(spoutSpecs,
                 boltSpecs,
-                new HashMap<String, StateSpoutSpec>());
+                new HashMap<>());
 
         stormTopology.set_worker_hooks(_workerHooks);
 
-        return Utils.addVersions(stormTopology);
+	if (!_componentToSharedMemory.isEmpty()) {
+            stormTopology.set_component_to_shared_memory(_componentToSharedMemory);
+            stormTopology.set_shared_memory(_sharedMemory);
+        }
+
+	return Utils.addVersions(stormTopology);
     }
 
     /**
@@ -550,6 +555,7 @@ public class TopologyBuilder {
             _id = id;
         }
         
+        @SuppressWarnings("unchecked")
         @Override
         public T addConfigurations(Map<String, Object> conf) {
             if(conf!=null && conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) {
@@ -557,6 +563,19 @@ public class TopologyBuilder {
             }
             String currConf = _commons.get(_id).get_json_conf();
             _commons.get(_id).set_json_conf(mergeIntoJson(parseJson(currConf), conf));
+            return (T) this;
+        }
+        
+        @SuppressWarnings("unchecked")
+        @Override
+        public T addSharedMemory(SharedMemory request) {
+            SharedMemory found = _sharedMemory.get(request.get_name());
+            if (found != null && !found.equals(request)) {
+                throw new IllegalArgumentException("Cannot have multiple different shared memory regions with the same name");
+            }
+            _sharedMemory.put(request.get_name(), request);
+            Set<String> mems = _componentToSharedMemory.computeIfAbsent(_id, (k) -> new HashSet<>());
+            mems.add(request.get_name());
             return (T) this;
         }
     }

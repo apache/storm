@@ -17,7 +17,6 @@
  */
 package org.apache.storm;
 
-import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidation;
@@ -256,7 +255,10 @@ public class Config extends HashMap<String, Object> {
      * The strategy to use when scheduling a topology with Resource Aware Scheduler
      */
     @NotNull
-    @isImplementationOfClass(implementsClass = IStrategy.class)
+    @isString
+    //NOTE: @isImplementationOfClass(implementsClass = IStrategy.class) is enforced in DaemonConf, so
+    // an error will be thrown by nimbus on topology submission and not by the client prior to submitting
+    // the topology.
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
@@ -1758,14 +1760,8 @@ public class Config extends HashMap<String, Object> {
         this.put(Config.TOPOLOGY_PRIORITY, priority);
     }
 
-    /**
-     * Takes as input the strategy class name. Strategy must implement the IStrategy interface
-     * @param clazz class of the strategy to use
-     */
-    public void setTopologyStrategy(Class<? extends IStrategy> clazz) {
-        if (clazz != null) {
-            this.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, clazz.getName());
-        }
+    public void setTopologyStrategy(String strategy) {
+        this.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategy);
     }
 
 }

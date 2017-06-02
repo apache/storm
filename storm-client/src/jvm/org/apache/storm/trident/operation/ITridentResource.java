@@ -18,6 +18,9 @@
 package org.apache.storm.trident.operation;
 
 import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.generated.SharedMemory;
 
 /**
  * This interface is implemented by various Trident classes in order to
@@ -29,4 +32,9 @@ public interface ITridentResource {
      * @return a name of resource name -> amount of that resource. *Return should never be null!*
      */
     Map<String, Number> getResources();
+    
+    /**
+     * @return the shared memory region requests
+     */
+    Set<SharedMemory> getSharedMemory();
 }

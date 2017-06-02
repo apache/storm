@@ -18,19 +18,16 @@
 
 package org.apache.storm.scheduler.resource.strategies.priority;
 
+import java.util.Map;
+
+import org.apache.storm.scheduler.ISchedulingState;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.SchedulingState;
+import org.apache.storm.scheduler.resource.User;
 
 public interface ISchedulingPriorityStrategy {
-
-    /**
-     * initializes
-     */
-    public void prepare(SchedulingState schedulingState);
-
     /**
      * Gets the next topology to schedule
      * @return return the next topology to schedule.  If there is no topologies left to schedule, return null
      */
-    public TopologyDetails getNextTopologyToSchedule();
+    public TopologyDetails getNextTopologyToSchedule(ISchedulingState schedulingState, Map<String, User> userMap);
 }

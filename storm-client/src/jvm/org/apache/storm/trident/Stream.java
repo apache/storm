@@ -19,6 +19,7 @@ package org.apache.storm.trident;
 
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.ResourceDeclarer;
 import org.apache.storm.topology.base.BaseWindowedBolt;
@@ -162,6 +163,12 @@ public class Stream implements IAggregatableStream, ResourceDeclarer<Stream> {
     @Override
     public Stream setMemoryLoad(Number onHeap, Number offHeap) {
         _node.setMemoryLoad(onHeap, offHeap);
+        return this;
+    }
+    
+    @Override
+    public Stream addSharedMemory(SharedMemory request) {
+        _node.addSharedMemory(request);
         return this;
     }
 
