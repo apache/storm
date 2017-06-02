@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2537: Resolved checkstyle violations for storm-webapp module
  * STORM-2503: Restore comparator logic in `DefaultResourceAwareStrategy`
  * STORM-2516: Fix timing issues with testPrepareLateTupleStreamWithoutBuilder
  * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
