@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2532: Remove uses of Utils.getAvailablePort where possible 
  * STORM-2535: Replace test-reset-timeout with a more reliable test 
  * STORM-2537: Resolved checkstyle violations for storm-webapp module
  * STORM-2503: Restore comparator logic in `DefaultResourceAwareStrategy`
