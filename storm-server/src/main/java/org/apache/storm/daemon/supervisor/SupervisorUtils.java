@@ -115,7 +115,7 @@ public class SupervisorUtils {
     public static Set<String> readDownloadedTopologyIds(Map<String, Object> conf) throws IOException {
         Set<String> stormIds = new HashSet<>();
         String path = ConfigUtils.supervisorStormDistRoot(conf);
-        Collection<String> rets = ServerUtils.readDirContents(path);
+        Collection<String> rets = ConfigUtils.readDirContents(path);
         for (String ret : rets) {
             stormIds.add(URLDecoder.decode(ret));
         }
@@ -124,7 +124,7 @@ public class SupervisorUtils {
 
     public static Collection<String> supervisorWorkerIds(Map<String, Object> conf) {
         String workerRoot = ConfigUtils.workerRoot(conf);
-        return ServerUtils.readDirContents(workerRoot);
+        return ConfigUtils.readDirContents(workerRoot);
     }
 
     /**

@@ -23,6 +23,7 @@ import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellUtils.ExitCodeException;
@@ -41,10 +42,11 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Collection;
+import java.util.ArrayList;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -65,9 +67,8 @@ import static java.nio.file.StandardCopyOption.ATOMIC_MOVE;
  */
 public class Localizer {
   public static final Logger LOG = LoggerFactory.getLogger(Localizer.class);
-  public static final String USERCACHE = "usercache";
   public static final String FILECACHE = "filecache";
-
+  public static final String USERCACHE = "usercache";
   // sub directories to store either files or uncompressed archives respectively
   public static final String FILESDIR = "files";
   public static final String ARCHIVESDIR = "archives";
@@ -198,15 +199,6 @@ public class Localizer {
     }
   }
 
-  protected File[] readDirContents(String location) {
-    File dir = new File(location);
-    File[] files = null;
-    if (dir.exists()) {
-      files = dir.listFiles();
-    }
-    return files;
-  }
-
   // Looks for files in the directory with .current suffix
   protected File[] readCurrentBlobs(String location) {
     File dir = new File(location);
@@ -226,9 +218,8 @@ public class Localizer {
   protected void reconstructLocalizedResources() {
     try {
       LOG.info("Reconstruct localized resource: " + getUserCacheDir().getPath());
-      File[] users = readDirContents(getUserCacheDir().getPath());
-
-      if (users != null) {
+      Collection<File> users = ConfigUtils.readDirFiles(getUserCacheDir().getPath());
+      if (!(users == null || users.isEmpty())) {
         for (File userDir : users) {
           String user = userDir.getName();
           LOG.debug("looking in: {} for user: {}", userDir.getPath(), user);

@@ -1526,6 +1526,14 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String NUM_STAT_BUCKETS = "num.stat.buckets";
 
+    /**
+     * Interval to check for the worker to check for updated blobs and refresh worker state accordingly.
+     * The default is 10 seconds
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS = "worker.blob.update.poll.interval.secs";
+
     public static void setClasspath(Map<String, Object> conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }

@@ -62,6 +62,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -142,6 +144,8 @@ public class WorkerState {
         return componentToSortedTasks;
     }
 
+    public Map<String, Long> getBlobToLastKnownVersion() {return blobToLastKnownVersion;}
+
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
     }
@@ -191,6 +195,7 @@ public class WorkerState {
     final Map<Integer, String> taskToComponent;
     final Map<String, Map<String, Fields>> componentToStreamToFields;
     final Map<String, List<Integer>> componentToSortedTasks;
+    final ConcurrentMap<String, Long> blobToLastKnownVersion;
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
@@ -245,6 +250,7 @@ public class WorkerState {
     final StormTimer refreshLoadTimer = mkHaltingTimer("refresh-load-timer");
     final StormTimer refreshConnectionsTimer = mkHaltingTimer("refresh-connections-timer");
     final StormTimer refreshCredentialsTimer = mkHaltingTimer("refresh-credentials-timer");
+    final StormTimer checkForUpdatedBlobsTimer = mkHaltingTimer("check-for-updated-blobs-timer");
     final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
     final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
@@ -284,6 +290,7 @@ public class WorkerState {
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, executors);
         this.shortExecutorReceiveQueueMap = new HashMap<>();
         this.taskIds = new ArrayList<>();
+        this.blobToLastKnownVersion = new ConcurrentHashMap<>();
         for (Map.Entry<List<Long>, DisruptorQueue> entry : executorReceiveQueueMap.entrySet()) {
             this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
             this.taskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
