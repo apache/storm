@@ -521,7 +521,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
     }
 
     /**
-     * sort components by the number of in and out connections that need to be made
+     * sort components by the number of in and out connections that need to be made, in descending order
      *
      * @param componentMap The components that need to be sorted
      * @return a sorted set of components
@@ -541,7 +541,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
                     connections2 += (componentMap.get(childId).execs.size() * o2.execs.size());
                 }
 
-                if (connections1 > connections1) {
+                if (connections1 > connections2) {
                     return -1;
                 } else if (connections1 < connections2) {
                     return 1;
@@ -555,7 +555,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
     }
 
     /**
-     * Sort a component's neighbors by the number of connections it needs to make with this component
+     * Sort a component's neighbors by the number of connections it needs to make with this component, in descending order
      *
      * @param thisComp     the component that we need to sort its neighbors
      * @param componentMap all the components to sort
@@ -581,7 +581,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
     }
 
     /**
-     * Order executors based on how many in and out connections it will potentially need to make.
+     * Order executors based on how many in and out connections it will potentially need to make, in descending order.
      * First order components by the number of in and out connections it will have.  Then iterate through the sorted list of components.
      * For each component sort the neighbors of that component by how many connections it will have to make with that component.
      * Add an executor from this component and then from each neighboring component in sorted order.  Do this until there is nothing left to schedule
