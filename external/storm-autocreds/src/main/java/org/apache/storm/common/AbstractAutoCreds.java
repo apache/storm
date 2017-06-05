@@ -71,10 +71,10 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     @Override
     public void populateCredentials(Map<String, String> credentials, Map conf) {
         try {
-            loadConfigKeys(conf);
-            if (!configKeys.isEmpty()) {
+            List<String> loadedKeys = loadConfigKeys(conf);
+            if (!loadedKeys.isEmpty()) {
                 Map<String, Object> updatedConf = updateConfigs(conf);
-                for (String configKey : configKeys) {
+                for (String configKey : loadedKeys) {
                     credentials.put(getCredentialKey(configKey),
                             DatatypeConverter.printBase64Binary(getHadoopCredentials(updatedConf, configKey)));
                 }
@@ -243,12 +243,13 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     }
 
-    private void loadConfigKeys(Map conf) {
+    private List<String> loadConfigKeys(Map conf) {
         List<String> keys;
         String configKeyString = getConfigKeyString();
         if ((keys = (List<String>) conf.get(configKeyString)) != null) {
             configKeys.addAll(keys);
         }
+        return keys;
     }
 
 }
