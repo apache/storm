@@ -15,31 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.storm.hbase.security;
-
-import org.apache.storm.common.AbstractHadoopAutoCreds;
-
-import java.util.Map;
-
-import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIALS;
+package org.apache.storm.hive.security;
 
 /**
- * Auto credentials plugin for HBase implementation. This class provides a way to automatically
- * push credentials to a topology and to retrieve them in the worker.
+ * This class provides util methods for storm-hdfs connector communicating
+ * with secured Hive.
  */
-public class AutoHBase extends AbstractHadoopAutoCreds {
-    @Override
-    public void doPrepare(Map conf) {
-    }
+public final class HiveSecurityUtil {
+  public static final String HIVE_KEYTAB_FILE_KEY = "hive.keytab.file";
+  public static final String HIVE_PRINCIPAL_KEY = "hive.kerberos.principal";
+  public static final String HIVE_CREDENTIALS_CONFIG_KEYS = "hiveCredentialsConfigKeys";
+  public static final String HIVE_CREDENTIALS = "HIVE_CREDENTIALS";
 
-    @Override
-    protected String getConfigKeyString() {
-        return HBaseSecurityUtil.HBASE_CREDENTIALS_CONFIG_KEYS;
-    }
-
-    @Override
-    public String getCredentialKey(String configKey) {
-        return HBASE_CREDENTIALS + configKey;
-    }
+  private HiveSecurityUtil() {
+  }
 }

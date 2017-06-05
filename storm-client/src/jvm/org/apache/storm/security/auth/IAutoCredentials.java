@@ -24,7 +24,7 @@ import javax.security.auth.Subject;
 
 /**
  * Provides a way to automatically push credentials to a topology and to
- * retreave them in the worker.
+ * retrieve them in the worker.
  */
 public interface IAutoCredentials {
 
