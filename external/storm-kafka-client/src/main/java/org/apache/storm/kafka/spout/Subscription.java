@@ -37,7 +37,7 @@ public abstract class Subscription implements Serializable {
     public abstract <K, V> void subscribe(KafkaConsumer<K,V> consumer, ConsumerRebalanceListener listener, TopologyContext context);
     
     /**
-     * @return a string representing the subscribed topics.
+     * @return A human-readable string representing the subscribed topics.
      */
     public abstract String getTopicsString();
     
