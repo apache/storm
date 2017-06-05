@@ -16,7 +16,7 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout;
+package org.apache.storm.kafka.spout.subscription;
 
 import java.util.List;
 import org.apache.kafka.common.TopicPartition;

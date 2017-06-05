@@ -16,7 +16,7 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout;
+package org.apache.storm.kafka.spout.subscription;
 
 import java.io.Serializable;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;

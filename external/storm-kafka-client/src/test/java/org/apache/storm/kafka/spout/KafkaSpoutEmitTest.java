@@ -16,7 +16,6 @@
 package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
-import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyLong;
 import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.inOrder;
@@ -32,18 +31,16 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
-import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
@@ -56,45 +53,30 @@ public class KafkaSpoutEmitTest {
     private final Map<String, Object> conf = new HashMap<>();
     private final TopicPartition partition = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 1);
     private KafkaConsumer<String, String> consumerMock;
-    private KafkaSpout<String, String> spout;
-    private KafkaSpoutConfig spoutConfig;
+    private KafkaSpoutConfig<String, String> spoutConfig;
 
-    private void setupSpout(Set<TopicPartition> assignedPartitions) {
+    @Before
+    public void setUp() {
         spoutConfig = getKafkaSpoutConfigBuilder(-1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
             .build();
-
         consumerMock = mock(KafkaConsumer.class);
-        KafkaConsumerFactory<String, String> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
-
-        //Set up a spout listening to 1 topic partition
-        spout = new KafkaSpout<>(spoutConfig, consumerFactory);
-
-        spout.open(conf, contextMock, collectorMock);
-        spout.activate();
-
-        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
-        verify(consumerMock).subscribe(anyCollection(), rebalanceListenerCapture.capture());
-
-        //Assign partitions to the spout
-        ConsumerRebalanceListener consumerRebalanceListener = rebalanceListenerCapture.getValue();
-        consumerRebalanceListener.onPartitionsAssigned(assignedPartitions);
     }
 
     @Test
     public void testNextTupleEmitsAtMostOneTuple() {
         //The spout should emit at most one message per call to nextTuple
         //This is necessary for Storm to be able to throttle the spout according to maxSpoutPending
-        setupSpout(Collections.singleton(partition));
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
         Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
         List<ConsumerRecord<String, String>> recordsForPartition = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
-            recordsForPartition.add(new ConsumerRecord(partition.topic(), partition.partition(), i, "key", "value"));
+            recordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
         }
         records.put(partition, recordsForPartition);
 
         when(consumerMock.poll(anyLong()))
-            .thenReturn(new ConsumerRecords(records));
+            .thenReturn(new ConsumerRecords<>(records));
 
         spout.nextTuple();
 
@@ -107,17 +89,17 @@ public class KafkaSpoutEmitTest {
         
         //Emit maxUncommittedOffsets messages, and fail all of them. Then ensure that the spout will retry them when the retry backoff has passed
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
-            setupSpout(Collections.singleton(partition));
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             List<ConsumerRecord<String, String>> recordsForPartition = new ArrayList<>();
             for (int i = 0; i < spoutConfig.getMaxUncommittedOffsets(); i++) {
                 //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
-                recordsForPartition.add(new ConsumerRecord(partition.topic(), partition.partition(), i, "key", "value"));
+                recordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
             }
             records.put(partition, recordsForPartition);
 
             when(consumerMock.poll(anyLong()))
-                .thenReturn(new ConsumerRecords(records));
+                .thenReturn(new ConsumerRecords<>(records));
 
             for (int i = 0; i < recordsForPartition.size(); i++) {
                 spout.nextTuple();
@@ -172,13 +154,13 @@ public class KafkaSpoutEmitTest {
         
         //Emit maxUncommittedOffsets messages, and fail only the last. Then ensure that the spout will allow no more than maxUncommittedOffsets + maxPollRecords - 1 uncommitted offsets when retrying
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
-            setupSpout(Collections.singleton(partition));
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
             
             Map<TopicPartition, List<ConsumerRecord<String, String>>> firstPollRecords = new HashMap<>();
             List<ConsumerRecord<String, String>> firstPollRecordsForPartition = new ArrayList<>();
             for (int i = 0; i < spoutConfig.getMaxUncommittedOffsets(); i++) {
                 //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
-                firstPollRecordsForPartition.add(new ConsumerRecord(partition.topic(), partition.partition(), i, "key", "value"));
+                firstPollRecordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
             }
             firstPollRecords.put(partition, firstPollRecordsForPartition);
             
@@ -186,13 +168,13 @@ public class KafkaSpoutEmitTest {
             Map<TopicPartition, List<ConsumerRecord<String, String>>> secondPollRecords = new HashMap<>();
             List<ConsumerRecord<String, String>> secondPollRecordsForPartition = new ArrayList<>();
             for(int i = 0; i < maxPollRecords; i++) {
-                secondPollRecordsForPartition.add(new ConsumerRecord(partition.topic(), partition.partition(), spoutConfig.getMaxUncommittedOffsets() + i, "key", "value"));
+                secondPollRecordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), spoutConfig.getMaxUncommittedOffsets() + i, "key", "value"));
             }
             secondPollRecords.put(partition, secondPollRecordsForPartition);
 
             when(consumerMock.poll(anyLong()))
-                .thenReturn(new ConsumerRecords(firstPollRecords))
-                .thenReturn(new ConsumerRecords(secondPollRecords));
+                .thenReturn(new ConsumerRecords<>(firstPollRecords))
+                .thenReturn(new ConsumerRecords<>(secondPollRecords));
 
             for (int i = 0; i < spoutConfig.getMaxUncommittedOffsets() + maxPollRecords; i++) {
                 spout.nextTuple();
