@@ -23,7 +23,7 @@ import java.io.Serializable;
  * RedisDataTypeDescription defines data type and additional key if needed for lookup / store tuples.
  */
 public class RedisDataTypeDescription implements Serializable {
-    public enum RedisDataType { STRING, HASH, LIST, SET, SORTED_SET, HYPER_LOG_LOG, GEO }
+    public enum RedisDataType { STRING, HASH, LIST, SET, SORTED_SET, HYPER_LOG_LOG, GEO, EXISTS }
 
     private RedisDataType dataType;
     private String additionalKey;
