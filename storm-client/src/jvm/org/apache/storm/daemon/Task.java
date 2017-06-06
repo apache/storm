@@ -185,6 +185,8 @@ public class Task {
             workerData.getTaskToComponent(),
             workerData.getComponentToSortedTasks(),
             workerData.getComponentToStreamToFields(),
+            // This is updated by the Worker and the topology has shared access to it
+            workerData.getBlobToLastKnownVersion(),
             workerData.getTopologyId(),
             ConfigUtils.supervisorStormResourcesPath(
                     ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),

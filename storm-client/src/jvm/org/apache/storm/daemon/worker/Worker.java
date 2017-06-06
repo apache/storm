@@ -29,6 +29,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
@@ -79,6 +81,7 @@ import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 public class Worker implements Shutdownable, DaemonCommon {
 
     private static final Logger LOG = LoggerFactory.getLogger(Worker.class);
+    private static final Pattern BLOB_VERSION_EXTRACTION = Pattern.compile(".*\\.([0-9]+)$");
     private final Map<String, Object> conf;
     private final IContext context;
     private final String topologyId;
@@ -246,7 +249,20 @@ public class Worker implements Shutdownable, DaemonCommon {
                             }
                         }
                     });
-              
+
+                workerState.checkForUpdatedBlobsTimer.scheduleRecurring(0,
+                        (Integer) conf.getOrDefault(Config.WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS, 10), new Runnable() {
+                            @Override public void run() {
+                                try {
+                                    LOG.debug("Checking if blobs have updated");
+                                    updateBlobUpdates();
+                                } catch (IOException e) {
+                                    // IOException from reading the version files to be ignored
+                                    LOG.error(e.getStackTrace().toString());
+                                }
+                            }
+                        });
+
                 // The jitter allows the clients to get the data at different times, and avoids thundering herd
                 if (!(Boolean) topologyConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING)) {
                     workerState.refreshLoadTimer.scheduleRecurringWithJitter(0, 1, 500, workerState::refreshLoad);
@@ -298,6 +314,35 @@ public class Worker implements Shutdownable, DaemonCommon {
             LOG.error("Worker failed to write heartbeats to ZK or Pacemaker...will retry", ex);
         }
     }
+
+    public Map<String, Long> getCurrentBlobVersions() throws IOException {
+        Map<String, Long> results = new HashMap<>();
+        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        if (blobstoreMap != null) {
+            String stormRoot = ConfigUtils.supervisorStormDistRoot(workerState.getTopologyConf(), workerState.getTopologyId());
+            for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
+                String localFileName = entry.getKey();
+                Map<String, Object> blobInfo = entry.getValue();
+                if (blobInfo != null && blobInfo.containsKey("localname")) {
+                    localFileName = (String) blobInfo.get("localname");
+                }
+
+                String blobWithVersion = new File(stormRoot, localFileName).getCanonicalFile().getName();
+                Matcher m = BLOB_VERSION_EXTRACTION.matcher(blobWithVersion);
+                if (m.matches()) {
+                    results.put(localFileName, Long.valueOf(m.group(1)));
+                }
+            }
+        }
+        return results;
+    }
+
+    public void updateBlobUpdates() throws IOException {
+        Map<String, Long> latestBlobVersions = getCurrentBlobVersions();
+        workerState.blobToLastKnownVersion.putAll(latestBlobVersions);
+        LOG.debug("Latest versions for blobs {}", latestBlobVersions);
+    }
+
 
     public void checkCredentialsChanged() {
         Credentials newCreds = workerState.stormClusterState.credentials(topologyId, null);
@@ -409,6 +454,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.heartbeatTimer.close();
             workerState.refreshConnectionsTimer.close();
             workerState.refreshCredentialsTimer.close();
+            workerState.checkForUpdatedBlobsTimer.close();
             workerState.refreshBackpressureTimer.close();
             workerState.refreshActiveTimer.close();
             workerState.executorHeartbeatTimer.close();
@@ -437,6 +483,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             && workerState.refreshConnectionsTimer.isTimerWaiting()
             && workerState.refreshLoadTimer.isTimerWaiting()
             && workerState.refreshCredentialsTimer.isTimerWaiting()
+            && workerState.checkForUpdatedBlobsTimer.isTimerWaiting()
             && workerState.refreshBackpressureTimer.isTimerWaiting()
             && workerState.refreshActiveTimer.isTimerWaiting()
             && workerState.executorHeartbeatTimer.isTimerWaiting()

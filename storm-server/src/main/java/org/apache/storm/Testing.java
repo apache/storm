@@ -700,6 +700,7 @@ public class Testing {
                 taskToComp,
                 null,
                 compToStreamToFields,
+                null,
                 "test-storm-id",
                 null,
                 null,

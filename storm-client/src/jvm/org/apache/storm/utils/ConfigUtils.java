@@ -18,6 +18,7 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
@@ -30,7 +31,10 @@ import java.net.URLEncoder;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.concurrent.Callable;
+import java.util.stream.Collectors;
 
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
@@ -65,6 +69,32 @@ public class ConfigUtils {
             throw new IllegalArgumentException("Illegal cluster mode in conf: " + mode);
         }
         return true;
+    }
+
+    /**
+     * Returns a Collection of file names found under the given directory.
+     * @param dir a directory
+     * @return the Collection of file names
+     */
+    public static Collection<String> readDirContents(String dir) {
+        Collection<File> ret = readDirFiles(dir);
+        return ret.stream().map( car -> car.getName() ).collect( Collectors.toList() );
+    }
+
+    /**
+     * Returns a Collection of files found under the given directory.
+     * @param dir a directory
+     * @return the Collection of file names
+     */
+    public static Collection<File> readDirFiles(String dir) {
+        Collection<File> ret = new HashSet<>();
+        File[] files = new File(dir).listFiles();
+        if (files != null) {
+            for (File f: files) {
+                ret.add(f);
+            }
+        }
+        return ret;
     }
 
     // we use this "weird" wrapper pattern temporarily for mocking in clojure test

@@ -2369,7 +2369,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             for (ClusterMetricsConsumerExecutor exec: clusterConsumerExceutors) {
                 exec.prepare();
             }
-            
+
             if (isLeader()) {
                 for (String topoId: state.activeStorms()) {
                     transition(topoId, TopologyActions.STARTUP, null);
