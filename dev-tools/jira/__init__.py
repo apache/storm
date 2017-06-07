@@ -47,6 +47,12 @@ def search_group(reg, txt, group):
     return m.group(group)
 
 
+def url_open_with_browser_user_agent(url):
+    req = urllib2.Request(url)
+    req.add_header('User-Agent','Mozilla/5.0 (X11; Fedora; Linux x86_64; rv:38.0) Gecko/20100101 Firefox/38.0')
+    return urllib2.urlopen(req)
+
+
 class JiraComment:
     """A comment on a JIRA"""
 
@@ -193,7 +199,7 @@ class Jira:
             count = 100
             while (at < end):
                 params = urllib.urlencode({'startAt': at, 'maxResults': count})
-                resp = urllib2.urlopen(self.parent.baseUrl + "/issue/" + jiraId + "/comment?" + params)
+                resp = url_open_with_browser_user_agent(self.parent.baseUrl + "/issue/" + jiraId + "/comment?" + params)
                 data = json.loads(resp.read())
                 if (data.has_key('errorMessages')):
                     raise Exception(data['errorMessages'])
@@ -229,7 +235,7 @@ class JiraRepo:
 
     def __init__(self, baseUrl):
         self.baseUrl = baseUrl
-        resp = urllib2.urlopen(baseUrl + "/field")
+        resp = url_open_with_browser_user_agent(baseUrl + "/field")
         data = json.loads(resp.read())
 
         self.fieldIdMap = {}
@@ -237,7 +243,7 @@ class JiraRepo:
             self.fieldIdMap[part['name']] = part['id']
 
     def get(self, id):
-        resp = urllib2.urlopen(self.baseUrl + "/issue/" + id)
+        resp = url_open_with_browser_user_agent(self.baseUrl + "/issue/" + id)
         data = json.loads(resp.read())
         if (data.has_key('errorMessages')):
             raise Exception(data['errorMessages'])
@@ -252,7 +258,7 @@ class JiraRepo:
         while (at < end):
             params = urllib.urlencode({'jql': query, 'startAt': at, 'maxResults': count})
             # print params
-            resp = urllib2.urlopen(self.baseUrl + "/search?%s" % params)
+            resp = url_open_with_browser_user_agent(self.baseUrl + "/search?%s" % params)
             data = json.loads(resp.read())
             if (data.has_key('errorMessages')):
                 raise Exception(data['errorMessages'])
