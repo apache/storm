@@ -99,7 +99,7 @@ import com.google.common.annotations.VisibleForTesting;
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
-
+    private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
 
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
@@ -528,7 +528,11 @@ public class Utils {
     }
 
     public static void handleUncaughtException(Throwable t) {
-        if (t != null && t instanceof Error) {
+        handleUncaughtException(t, defaultAllowedExceptions);
+    }
+
+    public static void handleUncaughtException(Throwable t, Set<Class> allowedExceptions) {
+        if (t != null) {
             if (t instanceof OutOfMemoryError) {
                 try {
                     System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
@@ -536,17 +540,16 @@ public class Utils {
                     //Again we don't want to exit because of logging issues.
                 }
                 Runtime.getRuntime().halt(-1);
-            } else {
-                //Running in daemon mode, we would pass Error to calling thread.
-                throw (Error) t;
             }
-        } else if (t instanceof Exception) {
-            System.err.println("Uncaught Exception detected. Leave error log and ignore... Exception: " + t);
-            System.err.println("Stack trace:");
-            StringWriter sw = new StringWriter();
-            t.printStackTrace(new PrintWriter(sw));
-            System.err.println(sw.toString());
         }
+
+        if(allowedExceptions.contains(t.getClass())) {
+            LOG.info("Swallowing {} {}", t.getClass(), t);
+            return;
+        }
+
+        //Running in daemon mode, we would pass Error to calling thread.
+        throw new Error(t);
     }
 
     public static byte[] thriftSerialize(TBase t) {
