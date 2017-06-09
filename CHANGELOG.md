@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-1642: Rethrow exception on serialization error and kill worker
  * STORM-2515: Fix most checkstyle violations in storm-kafka-client
  * STORM-2543: Let Topology query if blobs have changed
  * STORM-2532: Remove uses of Utils.getAvailablePort where possible 
