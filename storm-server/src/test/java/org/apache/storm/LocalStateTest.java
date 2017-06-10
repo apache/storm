@@ -4,12 +4,15 @@ import org.apache.commons.io.FileUtils;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.testing.TmpPath;
 import org.apache.storm.utils.LocalState;
+import org.apache.thrift.TBase;
 import org.junit.Assert;
 import org.junit.Test;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
 public class LocalStateTest {
 
@@ -27,16 +30,13 @@ public class LocalStateTest {
 
             ls1.put("a", globalStreamId_a);
             ls1.put("b", globalStreamId_b);
-            Assert.assertTrue(ls1.snapshot().containsKey("a"));
-            Assert.assertTrue(ls1.snapshot().containsValue(globalStreamId_a));
-            Assert.assertTrue(ls1.snapshot().containsKey("b"));
-            Assert.assertTrue(ls1.snapshot().containsValue(globalStreamId_b));
-            Assert.assertEquals(globalStreamId_a, ls1.get("a"));
-            Assert.assertEquals(null, ls1.get("c"));
-            Assert.assertEquals(ls1.snapshot(), new LocalState(dir1_tmp.getPath()).snapshot());
-            Assert.assertEquals(globalStreamId_b, ls1.get("b"));
-            Assert.assertTrue(ls2.snapshot().isEmpty());
+            Map<String, GlobalStreamId> expected = new HashMap<>();
+            expected.put("a", globalStreamId_a);
+            expected.put("b", globalStreamId_b);
+            Assert.assertEquals(expected, ls1.snapshot());
+            Assert.assertEquals(expected, new LocalState(dir1_tmp.getPath()).snapshot());
 
+            Assert.assertTrue(ls2.snapshot().isEmpty());
             ls2.put("b", globalStreamId_a);
             ls2.put("b", globalStreamId_b);
             ls2.put("b", globalStreamId_c);
