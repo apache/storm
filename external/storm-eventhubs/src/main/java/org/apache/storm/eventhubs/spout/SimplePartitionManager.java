@@ -17,11 +17,16 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import java.util.Map;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import java.time.Instant;
 
-import java.util.Map;
+import com.microsoft.eventhubs.client.Constants;
+import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
+import com.microsoft.eventhubs.client.EventHubOffsetFilter;
+import com.microsoft.eventhubs.client.IEventHubFilter;
+
 /**
  * A simple partition manager that does not re-send failed messages
  */
@@ -57,15 +62,16 @@ public class SimplePartitionManager implements IPartitionManager {
     String offset = stateStore.readData(statePath);
     logger.info("read offset from state store: " + offset);
     if(offset == null) {
-      offset = FieldConstants.DefaultStartingOffset;
+      offset = Constants.DefaultStartingOffset;
     }
-    IEventFilter filter;
-    if (offset.equals(FieldConstants.DefaultStartingOffset)
+
+    IEventHubFilter filter;
+    if (offset.equals(Constants.DefaultStartingOffset)
         && config.getEnqueueTimeFilter() != 0) {
-      filter = new EventHubFilter(Instant.ofEpochMilli(config.getEnqueueTimeFilter()));
+      filter = new EventHubEnqueueTimeFilter(config.getEnqueueTimeFilter());
     }
-    else{
-      filter = new EventHubFilter(offset);
+    else {
+      filter = new EventHubOffsetFilter(offset);
     }
 
     receiver.open(filter);
@@ -92,12 +98,12 @@ public class SimplePartitionManager implements IPartitionManager {
   }
 
   @Override
-  public EventDataWrap receive() {
-    EventDataWrap eventDatawrap = receiver.receive();
-    if (eventDatawrap != null) {
-      lastOffset = eventDatawrap.getEventData().getSystemProperties().getOffset();
+  public EventData receive() {
+    EventData eventData = receiver.receive(5000);
+    if (eventData != null) {
+      lastOffset = eventData.getMessageId().getOffset();
     }
-    return eventDatawrap;
+    return eventData;
   }
 
   @Override

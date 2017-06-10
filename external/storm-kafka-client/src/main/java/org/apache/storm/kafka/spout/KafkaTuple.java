@@ -15,7 +15,6 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout;
 
 import org.apache.storm.tuple.Values;
@@ -36,13 +35,8 @@ public class KafkaTuple extends Values {
         super(vals);
     }
     
-    /**
-     * Sets the target stream of this Tuple.
-     * @param stream The target stream
-     * @return This
-     */
     public KafkaTuple routedTo(String stream) {
-        assert this.stream == null;
+        assert(this.stream == null);
         this.stream = stream;
         return this;
     }

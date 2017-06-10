@@ -196,7 +196,7 @@ public class JmsBolt extends BaseTickTupleAwareRichBolt {
      * Initializes JMS resources.
      */
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+    public void prepare(Map stormConf, TopologyContext context,
                         OutputCollector collector) {
         if (this.jmsProvider == null || this.producer == null) {
             throw new IllegalStateException("JMS Provider and MessageProducer not set.");

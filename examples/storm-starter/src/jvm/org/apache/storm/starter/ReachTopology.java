@@ -109,13 +109,13 @@ public class ReachTopology {
         }
     }
 
-    public static class PartialUniquer extends BaseBatchBolt<Object> {
+    public static class PartialUniquer extends BaseBatchBolt {
         BatchOutputCollector _collector;
         Object _id;
         Set<String> _followers = new HashSet<String>();
 
         @Override
-        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
             _collector = collector;
             _id = id;
         }
@@ -136,13 +136,13 @@ public class ReachTopology {
         }
     }
 
-    public static class CountAggregator extends BaseBatchBolt<Object> {
+    public static class CountAggregator extends BaseBatchBolt {
         BatchOutputCollector _collector;
         Object _id;
         int _count = 0;
 
         @Override
-        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
             _collector = collector;
             _id = id;
         }

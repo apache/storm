@@ -14,8 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# $1 is the Zookeeper version to install
-apt-get --yes install zookeeper=$1 zookeeperd=$1
+apt-get --yes install zookeeper=3.3.5* zookeeperd=3.3.5*
 service zookeeper stop
 echo maxClientCnxns=200 >> /etc/zookeeper/conf/zoo.cfg
 service zookeeper start

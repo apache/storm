@@ -60,7 +60,7 @@ public class KafkaSpoutNullBoltTopo {
     public static final String BOLT_ID = "devNullBolt";
 
 
-    public static StormTopology getTopology(Map<String, Object> config) {
+    public static StormTopology getTopology(Map config) {
 
         final int spoutNum = getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int boltNum = getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
@@ -107,7 +107,7 @@ public class KafkaSpoutNullBoltTopo {
             return;
         }
         Integer durationSec = Integer.parseInt(args[0]);
-        Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
+        Map topoConf = Utils.findAndReadConfigFile(args[1]);
 
         //  Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

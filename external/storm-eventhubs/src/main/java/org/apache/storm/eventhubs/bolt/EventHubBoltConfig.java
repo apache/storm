@@ -17,12 +17,10 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
-import com.microsoft.azure.servicebus.ConnectionStringBuilder;
+import java.io.Serializable;
+
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-
-import java.io.Serializable;
-
-import java.io.Serializable;
+import com.microsoft.eventhubs.client.ConnectionStringBuilder;
 
 /*
  * EventHubs bolt configurations
@@ -83,8 +81,8 @@ public class EventHubBoltConfig implements Serializable {
   public EventHubBoltConfig(String userName, String password, String namespace,
       String targetFqnAddress, String entityPath, boolean partitionMode,
       IEventDataFormat dataFormat) {
-    this.connectionString = new ConnectionStringBuilder(namespace,entityPath,
-            userName,password).toString();
+    this.connectionString = new ConnectionStringBuilder(userName, password,
+    		namespace, targetFqnAddress).getConnectionString();
     this.entityPath = entityPath;
     this.partitionMode = partitionMode;
     this.dataFormat = dataFormat;

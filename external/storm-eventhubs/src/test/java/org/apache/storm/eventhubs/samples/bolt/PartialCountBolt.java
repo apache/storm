@@ -43,7 +43,7 @@ public class PartialCountBolt extends BaseBasicBolt {
   private int partialCount;
   
   @Override
-  public void prepare(Map<String, Object> topoConf, TopologyContext context) {
+  public void prepare(Map stormConf, TopologyContext context) {
     partialCount = 0;
   }
   

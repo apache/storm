@@ -56,7 +56,7 @@ public class FileReadSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context,
+    public void open(Map conf, TopologyContext context,
                      SpoutOutputCollector collector) {
         this.collector = collector;
         Object ackObj = conf.get("topology.acker.executors");

@@ -34,10 +34,10 @@ public interface BeanFactory<T> extends Serializable {
 
     /**
      * Return an instance, which may be shared or independent, of the specified type.
-     * @param topoConf The storm configuration
+     * @param stormConf The storm configuration
      * @return
      */
-    T get(Map<String, Object> topoConf);
+    T get(Map<String, Object> stormConf);
 
 
     /**

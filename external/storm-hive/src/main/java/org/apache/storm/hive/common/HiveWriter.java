@@ -19,15 +19,15 @@
 package org.apache.storm.hive.common;
 
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 import java.util.concurrent.Callable;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
-import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.*;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
@@ -58,8 +58,7 @@ public class HiveWriter {
 
     public HiveWriter(HiveEndPoint endPoint, int txnsPerBatch,
                       boolean autoCreatePartitions, long callTimeout,
-                      ExecutorService callTimeoutPool, HiveMapper mapper,
-                      UserGroupInformation ugi, boolean tokenAuthEnabled)
+                      ExecutorService callTimeoutPool, HiveMapper mapper, UserGroupInformation ugi)
         throws InterruptedException, ConnectFailure {
         try {
             this.autoCreatePartitions = autoCreatePartitions;
@@ -67,9 +66,9 @@ public class HiveWriter {
             this.callTimeoutPool = callTimeoutPool;
             this.endPoint = endPoint;
             this.ugi = ugi;
-            this.connection = newConnection(ugi, tokenAuthEnabled);
+            this.connection = newConnection(ugi);
             this.txnsPerBatch = txnsPerBatch;
-            this.recordWriter = getRecordWriter(mapper, tokenAuthEnabled);
+            this.recordWriter = mapper.createRecordWriter(endPoint);
             this.txnBatch = nextTxnBatch(recordWriter);
             this.closed = false;
             this.lastUsed = System.currentTimeMillis();
@@ -80,35 +79,6 @@ public class HiveWriter {
         } catch(Exception e) {
             throw new ConnectFailure(endPoint, e);
         }
-    }
-
-    public RecordWriter getRecordWriter(final HiveMapper mapper, final boolean tokenAuthEnabled) throws  Exception {
-        if (!tokenAuthEnabled)
-          return mapper.createRecordWriter(endPoint);
-
-        try {
-            return ugi.doAs (
-                    new PrivilegedExceptionAction<RecordWriter>() {
-                        @Override
-                        public RecordWriter run() throws StreamingException, IOException, ClassNotFoundException {
-                            return mapper.createRecordWriter(endPoint);
-                        }
-                    }
-            );
-        } catch (Exception e) {
-            throw new ConnectFailure(endPoint, e);
-        }
-    }
-
-
-    private  HiveConf createHiveConf(String metaStoreURI, boolean tokenAuthEnabled)  {
-        if (!tokenAuthEnabled)
-            return null;
-
-        HiveConf hcatConf = new HiveConf();
-        hcatConf.setVar(HiveConf.ConfVars.METASTOREURIS, metaStoreURI);
-        hcatConf.setBoolVar(HiveConf.ConfVars.METASTORE_USE_THRIFT_SASL, true);
-        return hcatConf;
     }
 
     @Override
@@ -259,13 +229,13 @@ public class HiveWriter {
         }
     }
 
-    private StreamingConnection newConnection(final UserGroupInformation ugi, final boolean tokenAuthEnabled)
+    private StreamingConnection newConnection(final UserGroupInformation ugi)
         throws InterruptedException, ConnectFailure {
         try {
             return  callWithTimeout(new CallRunner<StreamingConnection>() {
                     @Override
                     public StreamingConnection call() throws Exception {
-                        return endPoint.newConnection(autoCreatePartitions, createHiveConf(endPoint.metaStoreUri, tokenAuthEnabled) , ugi); // could block
+                        return endPoint.newConnection(autoCreatePartitions, null, ugi); // could block
                     }
                 });
         } catch(StreamingException e) {

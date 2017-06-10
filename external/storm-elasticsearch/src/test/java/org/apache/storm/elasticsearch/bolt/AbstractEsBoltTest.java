@@ -19,9 +19,6 @@ package org.apache.storm.elasticsearch.bolt;
 
 import com.google.common.testing.NullPointerTester;
 
-import java.lang.reflect.Method;
-import java.util.UUID;
-
 import org.apache.storm.Config;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.elasticsearch.common.EsConfig;
@@ -36,10 +33,6 @@ import org.mockito.runners.MockitoJUnitRunner;
 public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
 
     protected static Config config = new Config();
-    protected static final String documentId = UUID.randomUUID().toString();
-    protected static final String index = "index";
-    protected static final String source = "{\"user\":\"user1\"}";
-    protected static final String type = "type";
 
     @Mock
     protected OutputCollector outputCollector;
@@ -55,7 +48,7 @@ public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
     protected abstract Bolt createBolt(EsConfig esConfig);
 
     protected EsConfig esConfig() {
-        return new EsConfig();
+        return new EsConfig("test-cluster", new String[] {"127.0.0.1:9300"});
     }
 
     @After
@@ -66,12 +59,6 @@ public abstract class AbstractEsBoltTest<Bolt extends AbstractEsBolt> {
     @Test
     public void constructorsThrowOnNull() throws Exception {
         new NullPointerTester().setDefault(EsConfig.class, esConfig()).testAllPublicConstructors(getBoltClass());
-    }
-
-    @Test
-    public void getEndpointThrowsOnNull() throws Exception {
-        Method getEndpointMethod = AbstractEsBolt.class.getDeclaredMethod("getEndpoint", String.class, String.class, String.class);
-        new NullPointerTester().setDefault(String.class, "test").testMethodParameter(null, getEndpointMethod, 0);
     }
 
     protected abstract Class<Bolt> getBoltClass();

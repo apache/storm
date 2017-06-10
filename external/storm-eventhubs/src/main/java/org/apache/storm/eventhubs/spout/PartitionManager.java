@@ -29,9 +29,9 @@ public class PartitionManager extends SimplePartitionManager {
   private final int ehReceiveTimeoutMs = 5000;
 
   //all sent events are stored in pending
-  private final Map<String, EventDataWrap> pending;
+  private final Map<String, EventData> pending;
   //all failed events are put in toResend, which is sorted by event's offset
-  private final TreeSet<EventDataWrap> toResend;
+  private final TreeSet<EventData> toResend;
 
   public PartitionManager(
     EventHubSpoutConfig spoutConfig,
@@ -41,29 +41,29 @@ public class PartitionManager extends SimplePartitionManager {
 
     super(spoutConfig, partitionId, stateStore, receiver);
     
-    this.pending = new LinkedHashMap<String, EventDataWrap>();
-    this.toResend = new TreeSet<EventDataWrap>();
+    this.pending = new LinkedHashMap<String, EventData>();
+    this.toResend = new TreeSet<EventData>();
   }
 
   @Override
-  public EventDataWrap receive() {
+  public EventData receive() {
     if(pending.size() >= config.getMaxPendingMsgsPerPartition()) {
       return null;
     }
 
-    EventDataWrap eventDatawrap;
+    EventData eventData;
     if (toResend.isEmpty()) {
-      eventDatawrap = receiver.receive();
+      eventData = receiver.receive(ehReceiveTimeoutMs);
     } else {
-      eventDatawrap = toResend.pollFirst();
+      eventData = toResend.pollFirst();
     }
 
-    if (eventDatawrap != null) {
-      lastOffset = eventDatawrap.getMessageId().getOffset();
-      pending.put(lastOffset, eventDatawrap);
+    if (eventData != null) {
+      lastOffset = eventData.getMessageId().getOffset();
+      pending.put(lastOffset, eventData);
     }
 
-    return eventDatawrap;
+    return eventData;
   }
 
   @Override
@@ -74,8 +74,8 @@ public class PartitionManager extends SimplePartitionManager {
   @Override
   public void fail(String offset) {
     logger.warn("fail on " + offset);
-    EventDataWrap eventDataWrap = pending.remove(offset);
-    toResend.add(eventDataWrap);
+    EventData eventData = pending.remove(offset);
+    toResend.add(eventData);
   }
   
   @Override

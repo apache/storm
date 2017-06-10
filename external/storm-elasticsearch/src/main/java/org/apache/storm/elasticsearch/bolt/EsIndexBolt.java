@@ -17,19 +17,17 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
-import static java.util.Objects.requireNonNull;
-
-import java.util.HashMap;
-import java.util.Map;
-
-import org.apache.http.entity.StringEntity;
-import org.apache.storm.elasticsearch.common.DefaultEsTupleMapper;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.utils.TupleUtils;
+
+import java.util.Map;
+
+import static org.elasticsearch.common.base.Preconditions.checkNotNull;
 
 /**
  * Basic bolt for storing tuple to ES document.
@@ -39,20 +37,12 @@ public class EsIndexBolt extends AbstractEsBolt {
 
     /**
      * EsIndexBolt constructor
-     * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
-     */
-    public EsIndexBolt(EsConfig esConfig) {
-        this(esConfig, new DefaultEsTupleMapper());
-    }
-
-    /**
-     * EsIndexBolt constructor
-     * @param esConfig Elasticsearch configuration containing node addresses {@link EsConfig}
+     * @param esConfig Elasticsearch configuration containing node addresses and cluster name {@link EsConfig}
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
     public EsIndexBolt(EsConfig esConfig, EsTupleMapper tupleMapper) {
         super(esConfig);
-        this.tupleMapper = requireNonNull(tupleMapper);
+        this.tupleMapper = checkNotNull(tupleMapper);
     }
 
     @Override
@@ -71,9 +61,8 @@ public class EsIndexBolt extends AbstractEsBolt {
             String index = tupleMapper.getIndex(tuple);
             String type = tupleMapper.getType(tuple);
             String id = tupleMapper.getId(tuple);
-            Map<String, String> params = tupleMapper.getParams(tuple, new HashMap<>());
 
-            client.performRequest("put", getEndpoint(index, type, id), params, new StringEntity(source));
+            client.prepareIndex(index, type, id).setSource(source).execute().actionGet();
             collector.ack(tuple);
         } catch (Exception e) {
             collector.reportError(e);

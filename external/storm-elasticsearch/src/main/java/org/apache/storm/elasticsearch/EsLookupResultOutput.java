@@ -20,9 +20,10 @@ package org.apache.storm.elasticsearch;
 import java.io.Serializable;
 import java.util.Collection;
 
+import org.elasticsearch.action.get.GetResponse;
+
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.elasticsearch.client.Response;
 
 /**
  * @since 0.11
@@ -33,7 +34,7 @@ public interface EsLookupResultOutput extends Serializable {
     /**
      * @return collection of values to emit.
      */
-    Collection<Values> toValues(Response response);
+    Collection<Values> toValues(GetResponse response);
 
     /**
      * @return output fields to declare.

@@ -18,8 +18,6 @@
 
 package org.apache.storm.kafka.spout.trident;
 
-import java.util.List;
-import java.util.Map;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.task.TopologyContext;
@@ -28,8 +26,10 @@ import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<TopicPartition>,
-        KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> {
+import java.util.List;
+import java.util.Map;
+
+public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSpout<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> {
     private static final long serialVersionUID = -8003272486566259640L;
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaque.class);
@@ -46,13 +46,12 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
     }
 
     @Override
-    public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(
-            Map<String, Object> conf, TopologyContext context) {
+    public Emitter<List<TopicPartition>, KafkaTridentSpoutTopicPartition, KafkaTridentSpoutBatchMetadata<K,V>> getEmitter(Map conf, TopologyContext context) {
         return new KafkaTridentSpoutEmitter<>(kafkaManager, context);
     }
 
     @Override
-    public Coordinator<List<TopicPartition>> getCoordinator(Map<String, Object> conf, TopologyContext context) {
+    public Coordinator<List<TopicPartition>> getCoordinator(Map conf, TopologyContext context) {
         return new KafkaTridentSpoutOpaqueCoordinator<>(kafkaManager);
     }
 
@@ -70,7 +69,7 @@ public class KafkaTridentSpoutOpaque<K,V> implements IOpaquePartitionedTridentSp
 
     @Override
     public String toString() {
-        return super.toString()
-                + "{kafkaManager=" + kafkaManager + '}';
+        return super.toString() +
+                "{kafkaManager=" + kafkaManager + '}';
     }
 }

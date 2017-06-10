@@ -58,7 +58,7 @@ public class KafkaSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map<String, Object> conf, final TopologyContext context, final SpoutOutputCollector collector) {
+    public void open(Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
         _collector = collector;
         String topologyInstanceId = context.getStormId();
         Map<String, Object> stateConf = new HashMap<>(conf);

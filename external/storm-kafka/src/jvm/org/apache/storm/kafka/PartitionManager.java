@@ -64,18 +64,18 @@ public class PartitionManager {
     SimpleConsumer _consumer;
     DynamicPartitionConnections _connections;
     ZkState _state;
-    Map _topoConf;
+    Map _stormConf;
     long numberFailed, numberAcked;
 
     public PartitionManager(
             DynamicPartitionConnections connections,
             String topologyInstanceId,
             ZkState state,
-            Map<String, Object> topoConf,
+            Map stormConf,
             SpoutConfig spoutConfig,
             Partition id)
     {
-        this(connections, topologyInstanceId, state, topoConf, spoutConfig, id, null);
+        this(connections, topologyInstanceId, state, stormConf, spoutConfig, id, null);
     }
 
     /**
@@ -85,7 +85,7 @@ public class PartitionManager {
             DynamicPartitionConnections connections,
             String topologyInstanceId,
             ZkState state,
-            Map<String, Object> topoConf,
+            Map stormConf,
             SpoutConfig spoutConfig,
             Partition id,
             PartitionManager previousManager) {
@@ -95,7 +95,7 @@ public class PartitionManager {
         _topologyInstanceId = topologyInstanceId;
         _consumer = connections.register(id.host, id.topic, id.partition);
         _state = state;
-        _topoConf = topoConf;
+        _stormConf = stormConf;
         numberAcked = numberFailed = 0;
 
         if (previousManager != null) {
@@ -110,7 +110,7 @@ public class PartitionManager {
         } else {
             try {
                 _failedMsgRetryManager = (FailedMsgRetryManager) Class.forName(spoutConfig.failedMsgRetryManagerClass).newInstance();
-                _failedMsgRetryManager.prepare(spoutConfig, _topoConf);
+                _failedMsgRetryManager.prepare(spoutConfig, _stormConf);
             } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                 throw new IllegalArgumentException(String.format("Failed to create an instance of <%s> from: <%s>",
                         FailedMsgRetryManager.class,
@@ -336,7 +336,7 @@ public class PartitionManager {
             LOG.debug("Writing last completed offset ({}) to ZK for {} for topology: {}", lastCompletedOffset, _partition, _topologyInstanceId);
             Map<Object, Object> data = (Map<Object, Object>) ImmutableMap.builder()
                     .put("topology", ImmutableMap.of("id", _topologyInstanceId,
-                            "name", _topoConf.get(Config.TOPOLOGY_NAME)))
+                            "name", _stormConf.get(Config.TOPOLOGY_NAME)))
                     .put("offset", lastCompletedOffset)
                     .put("partition", _partition.partition)
                     .put("broker", ImmutableMap.of("host", _partition.host.host,

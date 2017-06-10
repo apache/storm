@@ -44,7 +44,7 @@ public class ZkCoordinatorTest {
 
     private KafkaTestBroker broker = new KafkaTestBroker();
     private TestingServer server;
-    private Map<String, Object> topoConf = new HashMap();
+    private Map stormConf = new HashMap();
     private SpoutConfig spoutConfig;
     private ZkState state;
     private SimpleConsumer simpleConsumer;
@@ -57,14 +57,14 @@ public class ZkCoordinatorTest {
         ZkHosts hosts = new ZkHosts(connectionString);
         hosts.refreshFreqSecs = 1;
         spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
-        Map<String, Object> conf = buildZookeeperConfig(server);
+        Map conf = buildZookeeperConfig(server);
         state = new ZkState(conf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
         when(dynamicPartitionConnections.register(any(Broker.class), any(String.class) ,anyInt())).thenReturn(simpleConsumer);
     }
 
     private Map buildZookeeperConfig(TestingServer server) {
-        Map<String, Object> conf = new HashMap();
+        Map conf = new HashMap();
         conf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, server.getPort());
         conf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);
@@ -174,7 +174,7 @@ public class ZkCoordinatorTest {
     private List<ZkCoordinator> buildCoordinators(int totalTasks) {
         List<ZkCoordinator> coordinatorList = new ArrayList<ZkCoordinator>();
         for (int i = 0; i < totalTasks; i++) {
-            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, topoConf, spoutConfig, state, i, totalTasks, "test-id", reader);
+            ZkCoordinator coordinator = new ZkCoordinator(dynamicPartitionConnections, stormConf, spoutConfig, state, i, totalTasks, "test-id", reader);
             coordinatorList.add(coordinator);
         }
         return coordinatorList;

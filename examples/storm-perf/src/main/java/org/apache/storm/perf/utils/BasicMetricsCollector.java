@@ -77,9 +77,9 @@ public class BasicMetricsCollector implements AutoCloseable {
 
     boolean first = true;
     
-    public BasicMetricsCollector(String topoName, Map<String, Object> topoConfig) {
+    public BasicMetricsCollector(String topoName, Map<String, Object> stormConfig) {
         Set<MetricsItem> items = getMetricsToCollect();
-        this.config = new MetricsCollectorConfig(topoName, topoConfig);
+        this.config = new MetricsCollectorConfig(topoName, stormConfig);
         collectTopologyStats = collectTopologyStats(items);
         collectExecutorStats = collectExecutorStats(items);
         collectThroughput = collectThroughput(items);
@@ -252,15 +252,15 @@ public class BasicMetricsCollector implements AutoCloseable {
         private static final Logger LOG = Logger.getLogger(MetricsCollectorConfig.class);
 
         // storm configuration
-        public final Map<String, Object> topoConfig;
+        public final Map<String, Object> stormConfig;
         // storm topology name
         public final String name;
         // benchmark label
         public final String label;
 
-        public MetricsCollectorConfig(String topoName, Map<String, Object> topoConfig) {
-            this.topoConfig = topoConfig;
-            String labelStr = (String) topoConfig.get("benchmark.label");
+        public MetricsCollectorConfig(String topoName, Map<String, Object> stormConfig) {
+            this.stormConfig = stormConfig;
+            String labelStr = (String) stormConfig.get("benchmark.label");
             this.name = topoName;
             if (labelStr == null) {
                 LOG.warn("'benchmark.label' not found in config. Defaulting to topology name");

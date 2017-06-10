@@ -17,20 +17,27 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import org.apache.storm.eventhubs.spout.*;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
+import com.microsoft.eventhubs.client.Constants;
+import com.microsoft.eventhubs.client.EventHubEnqueueTimeFilter;
+import com.microsoft.eventhubs.client.EventHubException;
+import com.microsoft.eventhubs.client.EventHubOffsetFilter;
+
+import org.apache.storm.eventhubs.spout.EventData;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.eventhubs.spout.IEventHubReceiver;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
   private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
   private final int receiveTimeoutMs = 5000;
   private final IEventHubReceiver receiver;
   private final EventHubSpoutConfig spoutConfig;
-  private String lastOffset = FieldConstants.DefaultStartingOffset;
+  private String lastOffset = Constants.DefaultStartingOffset;
   
   public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver) {
     this.receiver = receiver;
@@ -40,12 +47,12 @@ public class TridentPartitionManager implements ITridentPartitionManager {
   @Override
   public boolean open(String offset) {
     try {
-      if((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
+      if((offset == null || offset.equals(Constants.DefaultStartingOffset)) 
         && spoutConfig.getEnqueueTimeFilter() != 0) {
-          receiver.open(new EventHubFilter(Instant.ofEpochMilli(spoutConfig.getEnqueueTimeFilter())));
+          receiver.open(new EventHubEnqueueTimeFilter(spoutConfig.getEnqueueTimeFilter()));
       }
       else {
-        receiver.open(new EventHubFilter(offset));
+        receiver.open(new EventHubOffsetFilter(offset));
       }
       lastOffset = offset;
       return true;
@@ -62,8 +69,8 @@ public class TridentPartitionManager implements ITridentPartitionManager {
   }
   
   @Override
-  public List<EventDataWrap> receiveBatch(String offset, int count) {
-    List<EventDataWrap> batch = new ArrayList<EventDataWrap>(count);
+  public List<EventData> receiveBatch(String offset, int count) {
+    List<EventData> batch = new ArrayList<EventData>(count);
     if(!offset.equals(lastOffset) || !receiver.isOpen()) {
       //re-establish connection to eventhub servers using the right offset
       //TBD: might be optimized with cache.
@@ -74,7 +81,7 @@ public class TridentPartitionManager implements ITridentPartitionManager {
     }
     
     for(int i=0; i<count; ++i) {
-      EventDataWrap ed = receiver.receive();
+      EventData ed = receiver.receive(receiveTimeoutMs);
       if(ed == null) {
         break;
       }

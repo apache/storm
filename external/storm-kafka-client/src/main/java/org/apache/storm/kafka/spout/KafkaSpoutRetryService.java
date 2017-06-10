@@ -18,11 +18,11 @@
 
 package org.apache.storm.kafka.spout;
 
+import org.apache.kafka.common.TopicPartition;
+
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Map;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.TopicPartition;
+import java.util.Set;
 
 /**
  * Represents the logic that manages the retrial of failed tuples.
@@ -38,7 +38,7 @@ public interface KafkaSpoutRetryService extends Serializable {
     boolean schedule(KafkaSpoutMessageId msgId);
 
     /**
-     * Removes a message from the list of messages scheduled for retrial.
+     * Removes a message from the list of messages scheduled for retrial
      * @param msgId message to remove from retrial
      * @return true if the message was scheduled for retrial, false otherwise
      */
@@ -54,11 +54,10 @@ public interface KafkaSpoutRetryService extends Serializable {
     boolean retainAll(Collection<TopicPartition> topicPartitions);
 
     /**
-     * @return The earliest retriable offset for each TopicPartition that has
-     *     offsets ready to be retried, i.e. for which a tuple has failed
-     *     and has retry time less than current time.
+     * @return set of topic partitions that have offsets that are ready to be retried, i.e.,
+     * for which a tuple has failed and has retry time less than current time
      */
-    Map<TopicPartition, Long> earliestRetriableOffsets();
+    Set<TopicPartition> retriableTopicPartitions();
 
     /**
      * Checks if a specific failed {@link KafkaSpoutMessageId} is ready to be retried,
@@ -73,21 +72,7 @@ public interface KafkaSpoutRetryService extends Serializable {
      * The message may or may not be ready to be retried yet.
      * @param msgId message to check for scheduling status
      * @return true if the message is scheduled to be retried, regardless of being or not ready to be retried.
-     *     Returns false is this message is not scheduled for retrial
+     * Returns false is this message is not scheduled for retrial
      */
     boolean isScheduled(KafkaSpoutMessageId msgId);
-
-    /**
-     * Get the number of messages ready for retry.
-     * @return The number of messages that are ready for retry
-     */
-    int readyMessageCount();
-
-    /**
-     * Gets the {@link KafkaSpoutMessageId} for the given record.
-     * @param record The record to fetch the id for
-     * @return The id the record was scheduled for retry with,
-     *     or a new {@link KafkaSpoutMessageId} if the record was not scheduled for retry.
-     */
-    KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record);
 }

@@ -17,8 +17,9 @@
  */
 package org.apache.storm.kafka;
 
-import java.io.IOException;
 import org.junit.rules.ExternalResource;
+
+import java.io.IOException;
 
 
 public class KafkaUnitRule extends ExternalResource {

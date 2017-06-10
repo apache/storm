@@ -35,7 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.common.HdfsUtils;
-import org.apache.storm.hdfs.security.HdfsSecurityUtil;
+import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   private Configuration hdfsConfig;
 
-  private Map<String, Object> conf = null;
+  private Map conf = null;
   private FileLock lock;
   private String spoutId = null;
 
@@ -365,7 +365,7 @@ public class HdfsSpout extends BaseRichSpout {
   }
 
   @SuppressWarnings("deprecation")
-public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
     LOG.info("Opening HDFS Spout");
     this.conf = conf;
     this.commitTimer = new Timer();

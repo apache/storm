@@ -17,11 +17,10 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.util.List;
+import org.apache.qpid.amqp_1_0.client.Message;
 
 public interface IEventDataScheme extends Serializable {
 
@@ -30,10 +29,10 @@ public interface IEventDataScheme extends Serializable {
    *
    * @see #getOutputFields() for the list of fields the tuple will contain.
    *
-   * @param eventData The EventData to Deserialize.
+   * @param message The Message to Deserialize.
    * @return A tuple containing the deserialized fields of the message.
    */
-  List<Object> deserialize(EventData eventData);
+  List<Object> deserialize(Message message);
 
   /**
    * Retrieve the Fields that are present on tuples created by this object.

@@ -72,7 +72,7 @@ public class MqttBolt extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         this.topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
         this.publisher = new MqttPublisher(this.options, this.keyStoreLoader, this.retain);

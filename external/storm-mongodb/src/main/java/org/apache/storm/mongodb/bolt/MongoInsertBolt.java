@@ -105,9 +105,9 @@ public class MongoInsertBolt extends AbstractMongoBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+    public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collector) {
-        super.prepare(topoConf, context, collector);
+        super.prepare(stormConf, context, collector);
         this.batchHelper = new BatchHelper(batchSize, collector);
     }
 

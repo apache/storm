@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsConstants;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -47,7 +48,7 @@ public class EsIndexTopology {
         UserDataSpout spout = new UserDataSpout();
         builder.setSpout(SPOUT_ID, spout, 1);
         EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
-        EsConfig esConfig = new EsConfig("http://localhost:9300");
+        EsConfig esConfig = new EsConfig(EsConstants.clusterName, new String[]{"localhost:9300"});
         builder.setBolt(BOLT_ID, new EsIndexBolt(esConfig, tupleMapper), 1).shuffleGrouping(SPOUT_ID);
 
         EsTestUtil.startEsNode();
@@ -74,7 +75,7 @@ public class EsIndexTopology {
             declarer.declare(new Fields("source", "index", "type", "id"));
         }
 
-        public void open(Map<String, Object> config, TopologyContext context,
+        public void open(Map config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();

@@ -39,12 +39,12 @@ import java.util.Map;
 public class OpenTsdbState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(OpenTsdbState.class);
 
-    private final Map<String, Object> conf;
+    private final Map conf;
     private final OpenTsdbClient.Builder openTsdbClientBuilder;
     private final Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers;
     private OpenTsdbClient openTsdbClient;
 
-    public OpenTsdbState(Map<String, Object> conf, OpenTsdbClient.Builder openTsdbClientBuilder, Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
+    public OpenTsdbState(Map conf, OpenTsdbClient.Builder openTsdbClientBuilder, Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
         this.conf = conf;
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleMetricPointMappers = tupleMetricPointMappers;

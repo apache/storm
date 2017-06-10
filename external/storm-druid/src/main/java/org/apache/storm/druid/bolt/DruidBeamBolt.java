@@ -65,14 +65,14 @@ public class DruidBeamBolt<E> extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         tranquilizer = Tranquilizer.builder()
                 .maxBatchSize(druidConfig.getMaxBatchSize())
                 .maxPendingBatches(druidConfig.getMaxPendingBatches())
                 .lingerMillis(druidConfig.getLingerMillis())
                 .blockOnFull(druidConfig.isBlockOnFull())
-                .build(beamFactory.makeBeam(topoConf, context));
+                .build(beamFactory.makeBeam(stormConf, context));
         this.tranquilizer.start();
     }
 
