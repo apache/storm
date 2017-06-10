@@ -34,7 +34,7 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     public static final String FUNCTION_NAME = "function.name";
 
     @Override
-    public abstract void prepare(Map conf);
+    public abstract void prepare(Map<String, Object> conf);
 
     abstract protected boolean permitClientRequest(ReqContext context, String operation, Map params);
 

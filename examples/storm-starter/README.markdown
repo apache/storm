@@ -39,6 +39,7 @@ these topologies first:
 2. [WordCountTopology](src/jvm/org/apache/storm/starter/WordCountTopology.java):  Basic topology that makes use of multilang by
    implementing one bolt in Python
 3. [ReachTopology](src/jvm/org/apache/storm/starter/ReachTopology.java): Example of complex DRPC on top of Storm
+4. [LambdaTopology](src/jvm/org/apache/storm/starter/LambdaTopology.java): Example of writing spout/bolt using Java8 lambda expression
 
 After you have familiarized yourself with these topologies, take a look at the other topopologies in
 [src/jvm/org/apache/storm/starter/](src/jvm/org/apache/storm/starter/) such as [RollingTopWords](src/jvm/org/apache/storm/starter/RollingTopWords.java)

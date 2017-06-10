@@ -49,7 +49,7 @@ public class LoggingMetricsConsumer implements IMetricsConsumer {
     public static final Logger LOG = LoggerFactory.getLogger(LoggingMetricsConsumer.class);
 
     @Override
-    public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { }
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { }
 
     static private String padding = "                       ";
 

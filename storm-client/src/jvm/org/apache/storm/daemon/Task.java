@@ -66,7 +66,7 @@ public class Task {
     private Integer taskId;
     private String componentId;
     private Object taskObject; // Spout/Bolt object
-    private Map stormConf;
+    private Map<String, Object> topoConf;
     private Callable<Boolean> emitSampler;
     private CommonStats executorStats;
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper;
@@ -77,18 +77,18 @@ public class Task {
         this.taskId = taskId;
         this.executor = executor;
         this.workerData = executor.getWorkerData();
-        this.stormConf = executor.getStormConf();
+        this.topoConf = executor.getStormConf();
         this.componentId = executor.getComponentId();
         this.streamComponentToGrouper = executor.getStreamToComponentToGrouper();
         this.executorStats = executor.getStats();
         this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
         this.workerTopologyContext = executor.getWorkerTopologyContext();
-        this.emitSampler = ConfigUtils.mkStatsSampler(stormConf);
+        this.emitSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.loadMapping = workerData.getLoadMapping();
         this.systemTopologyContext = mkTopologyContext(workerData.getSystemTopology());
         this.userTopologyContext = mkTopologyContext(workerData.getTopology());
         this.taskObject = mkTaskObject();
-        this.debug = stormConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) stormConf.get(Config.TOPOLOGY_DEBUG);
+        this.debug = topoConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) topoConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
     }
 
@@ -178,13 +178,15 @@ public class Task {
     }
 
     private TopologyContext mkTopologyContext(StormTopology topology) throws IOException {
-        Map conf = workerData.getConf();
+        Map<String, Object> conf = workerData.getConf();
         return new TopologyContext(
             topology,
             workerData.getTopologyConf(),
             workerData.getTaskToComponent(),
             workerData.getComponentToSortedTasks(),
             workerData.getComponentToStreamToFields(),
+            // This is updated by the Worker and the topology has shared access to it
+            workerData.getBlobToLastKnownVersion(),
             workerData.getTopologyId(),
             ConfigUtils.supervisorStormResourcesPath(
                     ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),
@@ -232,7 +234,7 @@ public class Task {
     }
 
     private void addTaskHooks() {
-        List<String> hooksClassList = (List<String>) stormConf.get(Config.TOPOLOGY_AUTO_TASK_HOOKS);
+        List<String> hooksClassList = (List<String>) topoConf.get(Config.TOPOLOGY_AUTO_TASK_HOOKS);
         if (null != hooksClassList) {
             for (String hookClass : hooksClassList) {
                 try {

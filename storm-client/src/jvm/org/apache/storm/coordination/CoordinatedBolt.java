@@ -207,7 +207,7 @@ public class CoordinatedBolt implements IRichBolt {
         _idStreamSpec = idStreamSpec;
     }
     
-    public void prepare(Map config, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
         TimeCacheMap.ExpiredCallback<Object, TrackingInfo> callback = null;
         if(_delegate instanceof TimeoutCallback) {
             callback = new TimeoutItems();

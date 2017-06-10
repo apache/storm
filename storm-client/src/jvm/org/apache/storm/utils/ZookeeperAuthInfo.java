@@ -26,7 +26,7 @@ public class ZookeeperAuthInfo {
     public String scheme;
     public byte[] payload = null;
     
-    public ZookeeperAuthInfo(Map conf) {
+    public ZookeeperAuthInfo(Map<String, Object> conf) {
         String scheme = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
         String payload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
 

@@ -121,7 +121,7 @@ public class TestHdfsSpout {
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
     runSpout(spout,"r11");
@@ -143,7 +143,7 @@ public class TestHdfsSpout {
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
     openSpout(spout, 0, conf);
 
@@ -176,7 +176,7 @@ public class TestHdfsSpout {
     spout2.setCommitFrequencySec(1000);  // effectively disable commits based on time
     spout2.setLockTimeoutSec(lockExpirySec);
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
     openSpout(spout2, 1, conf);
 
@@ -233,7 +233,7 @@ public class TestHdfsSpout {
     spout2.setCommitFrequencySec(1000); // effectively disable commits based on time
     spout2.setLockTimeoutSec(lockExpirySec);
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
     openSpout(spout2, 1, conf);
 
@@ -348,7 +348,7 @@ public class TestHdfsSpout {
     spout.setCommitFrequencyCount(1);
     spout.setCommitFrequencySec(1);
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "1"); // enable ACKing
     openSpout(spout, 0, conf);
 
@@ -427,7 +427,7 @@ public class TestHdfsSpout {
 
 
     HdfsSpout spout = makeSpout(Configs.SEQ, SequenceFileReader.defaultFields);
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
     // consume both files
@@ -455,7 +455,7 @@ public class TestHdfsSpout {
 
     // 2) run spout
     HdfsSpout spout = makeSpout(MockTextFailingReader.class.getName(), MockTextFailingReader.defaultFields);
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
     List<String> res = runSpout(spout, "r11");
@@ -481,7 +481,7 @@ public class TestHdfsSpout {
      spout.setCommitFrequencySec(1000);  // effectively disable commits based on time
 
 
-     Map conf = getCommonConfigs();
+     Map<String, Object> conf = getCommonConfigs();
      openSpout(spout, 0, conf);
 
      // 1) read initial lines in file, then check if lock exists
@@ -531,7 +531,7 @@ public class TestHdfsSpout {
     spout.setCommitFrequencyCount(2);   // 1 lock log entry every 2 tuples
     spout.setCommitFrequencySec(1000);  // Effectively disable commits based on time
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
     // 1) read 5 lines in file,
@@ -558,7 +558,7 @@ public class TestHdfsSpout {
     spout.setCommitFrequencyCount(0); // disable it
     spout.setCommitFrequencySec(2);   // log every 2 sec
 
-    Map conf = getCommonConfigs();
+    Map<String, Object> conf = getCommonConfigs();
     openSpout(spout, 0, conf);
 
     // 1) read 5 lines in file
@@ -589,7 +589,7 @@ public class TestHdfsSpout {
 
 
   private Map getCommonConfigs() {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     conf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "0");
     return conf;
   }
@@ -605,7 +605,7 @@ public class TestHdfsSpout {
     return spout;
   }
 
-  private void openSpout(HdfsSpout spout, int spoutId, Map conf) {
+  private void openSpout(HdfsSpout spout, int spoutId, Map<String, Object> conf) {
     MockCollector collector = new MockCollector();
     spout.open(conf, new MockTopologyContext(spoutId), collector);
   }
@@ -725,7 +725,7 @@ public class TestHdfsSpout {
     public static final String[] defaultFields = {"line"};
     int readAttempts = 0;
 
-    public MockTextFailingReader(FileSystem fs, Path file, Map conf) throws IOException {
+    public MockTextFailingReader(FileSystem fs, Path file, Map<String, Object> conf) throws IOException {
       super(fs, file, conf);
     }
 
@@ -745,8 +745,8 @@ public class TestHdfsSpout {
     private final int componentId;
 
     public MockTopologyContext(int componentId) {
-      // StormTopology topology, Map stormConf, Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks, Map<String, Map<String, Fields>> componentToStreamToFields, String stormId, String codeDir, String pidDir, Integer taskId, Integer workerPort, List<Integer> workerTasks, Map<String, Object> defaultResources, Map<String, Object> userResources, Map<String, Object> executorData, Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics, Atom openOrPrepareWasCalled
-      super(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
+      // StormTopology topology, Map<String, Object> topoConf, Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks, Map<String, Map<String, Fields>> componentToStreamToFields, String stormId, String codeDir, String pidDir, Integer taskId, Integer workerPort, List<Integer> workerTasks, Map<String, Object> defaultResources, Map<String, Object> userResources, Map<String, Object> executorData, Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics, Atom openOrPrepareWasCalled
+      super(null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null, null);
       this.componentId = componentId;
     }
 

@@ -60,7 +60,7 @@ public class HdfsStateTest {
         private String currentFileName = "";
 
         @Override
-        public void prepare(Map conf, int partitionIndex, int numPartitions) {
+        public void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions) {
 
         }
 
@@ -94,7 +94,7 @@ public class HdfsStateTest {
                 .withRotationPolicy(rotationPolicy)
                 .withFsUrl("file://" + TEST_OUT_DIR);
 
-        Map<String, String> conf = new HashMap<>();
+        Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_NAME, TEST_TOPOLOGY_NAME);
 
         HdfsState state = new HdfsState(options);

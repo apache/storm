@@ -64,6 +64,6 @@ public interface IPartitionedTransactionalSpout<T> extends IComponent {
         void close();
     }
     
-    Coordinator getCoordinator(Map conf, TopologyContext context);
-    Emitter<T> getEmitter(Map conf, TopologyContext context);      
+    Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context);
+    Emitter<T> getEmitter(Map<String, Object> conf, TopologyContext context);      
 }

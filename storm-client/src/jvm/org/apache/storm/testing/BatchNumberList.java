@@ -29,7 +29,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class BatchNumberList extends BaseBatchBolt {
+public class BatchNumberList extends BaseBatchBolt<Object> {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
@@ -48,7 +48,7 @@ public class BatchNumberList extends BaseBatchBolt {
     
     
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, Object id) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, Object id) {
         _collector = collector;
     }
 

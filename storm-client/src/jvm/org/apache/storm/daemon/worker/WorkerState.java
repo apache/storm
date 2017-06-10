@@ -62,6 +62,8 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -75,7 +77,7 @@ public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
 
-    final Map conf;
+    final Map<String, Object> conf;
     final IContext mqContext;
 
     public Map getConf() {
@@ -142,6 +144,8 @@ public class WorkerState {
         return componentToSortedTasks;
     }
 
+    public Map<String, Long> getBlobToLastKnownVersion() {return blobToLastKnownVersion;}
+
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
     }
@@ -185,12 +189,13 @@ public class WorkerState {
     // executors and taskIds running in this worker
     final Set<List<Long>> executors;
     final List<Integer> taskIds;
-    final Map topologyConf;
+    final Map<String, Object> topologyConf;
     final StormTopology topology;
     final StormTopology systemTopology;
     final Map<Integer, String> taskToComponent;
     final Map<String, Map<String, Fields>> componentToStreamToFields;
     final Map<String, List<Integer>> componentToSortedTasks;
+    final ConcurrentMap<String, Long> blobToLastKnownVersion;
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
@@ -245,6 +250,7 @@ public class WorkerState {
     final StormTimer refreshLoadTimer = mkHaltingTimer("refresh-load-timer");
     final StormTimer refreshConnectionsTimer = mkHaltingTimer("refresh-connections-timer");
     final StormTimer refreshCredentialsTimer = mkHaltingTimer("refresh-credentials-timer");
+    final StormTimer checkForUpdatedBlobsTimer = mkHaltingTimer("check-for-updated-blobs-timer");
     final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
     final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
@@ -259,8 +265,8 @@ public class WorkerState {
 
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
-    public WorkerState(Map conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-        Map topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
+    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
+        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.transferQueue = new DisruptorQueue("worker-transfer-queue",
@@ -284,6 +290,7 @@ public class WorkerState {
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, executors);
         this.shortExecutorReceiveQueueMap = new HashMap<>();
         this.taskIds = new ArrayList<>();
+        this.blobToLastKnownVersion = new ConcurrentHashMap<>();
         for (Map.Entry<List<Long>, DisruptorQueue> entry : executorReceiveQueueMap.entrySet()) {
             this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
             this.taskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
@@ -628,7 +635,7 @@ public class WorkerState {
         return executorsAssignedToThisWorker;
     }
 
-    private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map topologyConf, Set<List<Long>> executors) {
+    private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
         Map<List<Long>, DisruptorQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new DisruptorQueue("receive-queue",

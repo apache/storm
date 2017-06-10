@@ -51,10 +51,10 @@ public class ReturnResults extends BaseRichBolt {
     Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        _conf = stormConf;
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        _conf = topoConf;
         _collector = collector;
-        local = stormConf.get(Config.STORM_CLUSTER_MODE).equals("local");
+        local = topoConf.get(Config.STORM_CLUSTER_MODE).equals("local");
     }
 
     @Override

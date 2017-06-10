@@ -47,13 +47,13 @@ public class ResourceAwareScheduler implements IScheduler {
     private SchedulingState schedulingState;
 
     @SuppressWarnings("rawtypes")
-    private Map conf;
+    private Map<String, Object> conf;
 
     private static final Logger LOG = LoggerFactory
             .getLogger(ResourceAwareScheduler.class);
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         this.conf = conf;
 
     }

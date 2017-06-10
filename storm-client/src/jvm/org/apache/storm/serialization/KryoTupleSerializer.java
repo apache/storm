@@ -28,7 +28,7 @@ public class KryoTupleSerializer implements ITupleSerializer {
     SerializationFactory.IdDictionary _ids;   
     Output _kryoOut;
     
-    public KryoTupleSerializer(final Map conf, final GeneralTopologyContext context) {
+    public KryoTupleSerializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
         _kryo = new KryoValuesSerializer(conf);
         _kryoOut = new Output(2000, 2000000000);
         _ids = new SerializationFactory.IdDictionary(context.getRawTopology());

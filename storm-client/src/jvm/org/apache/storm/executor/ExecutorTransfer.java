@@ -39,18 +39,18 @@ public class ExecutorTransfer implements EventHandler, Callable {
 
     private final WorkerState workerData;
     private final DisruptorQueue batchTransferQueue;
-    private final Map stormConf;
+    private final Map<String, Object> topoConf;
     private final KryoTupleSerializer serializer;
     private final MutableObject cachedEmit;
     private final boolean isDebug;
 
-    public ExecutorTransfer(WorkerState workerData, DisruptorQueue batchTransferQueue, Map stormConf) {
+    public ExecutorTransfer(WorkerState workerData, DisruptorQueue batchTransferQueue, Map<String, Object> topoConf) {
         this.workerData = workerData;
         this.batchTransferQueue = batchTransferQueue;
-        this.stormConf = stormConf;
-        this.serializer = new KryoTupleSerializer(stormConf, workerData.getWorkerTopologyContext());
+        this.topoConf = topoConf;
+        this.serializer = new KryoTupleSerializer(topoConf, workerData.getWorkerTopologyContext());
         this.cachedEmit = new MutableObject(new ArrayList<>());
-        this.isDebug = ObjectReader.getBoolean(stormConf.get(Config.TOPOLOGY_DEBUG), false);
+        this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
     }
 
     public void transfer(int task, Tuple tuple) {

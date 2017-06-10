@@ -73,12 +73,12 @@ public class Cluster {
      */
     private Map<String, List<String>> hostToId;
 
-    private Map conf = null;
+    private Map<String, Object> conf = null;
 
     private Set<String> blackListedHosts = new HashSet<String>();
     private INimbus inimbus;
 
-    public Cluster(INimbus nimbus, Map<String, SupervisorDetails> supervisors, Map<String, SchedulerAssignmentImpl> assignments, Map storm_conf){
+    public Cluster(INimbus nimbus, Map<String, SupervisorDetails> supervisors, Map<String, SchedulerAssignmentImpl> assignments, Map<String, Object> topoConf){
         this.inimbus = nimbus;
         this.supervisors = new HashMap<String, SupervisorDetails>(supervisors.size());
         this.supervisors.putAll(supervisors);
@@ -98,7 +98,7 @@ public class Cluster {
             }
             this.hostToId.get(host).add(nodeId);
         }
-        this.conf = storm_conf;
+        this.conf = topoConf;
     }
 
     /**

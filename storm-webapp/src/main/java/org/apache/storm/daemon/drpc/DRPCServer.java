@@ -15,7 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc;
+
+import com.codahale.metrics.Meter;
+import com.google.common.annotations.VisibleForTesting;
 
 import java.util.Arrays;
 import java.util.List;
@@ -45,14 +49,18 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.codahale.metrics.Meter;
-import com.google.common.annotations.VisibleForTesting;
-
 public class DRPCServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(DRPCServer.class);
-    private final static Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
+    private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");
    
     //TODO in the future this might be better in a common webapp location
+
+    /**
+     * Add a request context filter to the Servlet Context Handler.
+     * @param context The Servlet Context handler
+     * @param configName Config name
+     * @param conf Conf to be added in context filter
+     */
     public static void addRequestContextFilter(ServletContextHandler context, String configName, Map<String, Object> conf) {
         IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String)conf.get(configName));
         ReqContextFilter filter = new ReqContextFilter(auth);
@@ -61,7 +69,7 @@ public class DRPCServer implements AutoCloseable {
  
     private static ThriftServer mkHandlerServer(final DistributedRPC.Iface service, Integer port, Map<String, Object> conf) {
         ThriftServer ret = null;
-        if (port != null && port > 0) {
+        if (port != null && port >= 0) {
             ret = new ThriftServer(conf, new DistributedRPC.Processor<>(service),
                     ThriftConnectionType.DRPC);
         }
@@ -76,7 +84,7 @@ public class DRPCServer implements AutoCloseable {
     private static Server mkHttpServer(Map<String, Object> conf, DRPC drpc) {
         Integer drpcHttpPort = (Integer) conf.get(DaemonConfig.DRPC_HTTP_PORT);
         Server ret = null;
-        if (drpcHttpPort != null && drpcHttpPort > 0) {
+        if (drpcHttpPort != null && drpcHttpPort >= 0) {
             LOG.info("Starting RPC HTTP servers...");
             String filterClass = (String) (conf.get(DaemonConfig.DRPC_HTTP_FILTER));
             @SuppressWarnings("unchecked")
@@ -98,8 +106,8 @@ public class DRPCServer implements AutoCloseable {
             DRPCApplication.setup(drpc);
             ret = UIHelpers.jettyCreateServer(drpcHttpPort, null, httpsPort);
             
-            UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword, httpsTsPath, httpsTsPassword, httpsTsType,
-                    httpsNeedClientAuth, httpsWantClientAuth);
+            UIHelpers.configSsl(ret, httpsPort, httpsKsPath, httpsKsPassword, httpsKsType, httpsKeyPassword,
+                    httpsTsPath, httpsTsPassword, httpsTsType, httpsNeedClientAuth, httpsWantClientAuth);
             
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.NO_SESSIONS);
             context.setContextPath("/");
@@ -115,60 +123,99 @@ public class DRPCServer implements AutoCloseable {
         return ret;
     }
     
-    private final DRPC _drpc;
-    private final ThriftServer _handlerServer;
-    private final ThriftServer _invokeServer;
-    private final Server _httpServer;
-    private boolean _closed = false;
+    private final DRPC drpc;
+    private final ThriftServer handlerServer;
+    private final ThriftServer invokeServer;
+    private final Server httpServer;
+    private Thread handlerServerThread;
+    private boolean closed = false;
 
+    /**
+     * Constructor.
+     * @param conf Drpc conf for the servers
+     */
     public DRPCServer(Map<String, Object> conf) {
-        _drpc = new DRPC(conf);
-        DRPCThrift thrift = new DRPCThrift(_drpc);
-        _handlerServer = mkHandlerServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_PORT), null), conf);
-        _invokeServer = mkInvokeServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT), 3773), conf);
-        _httpServer = mkHttpServer(conf, _drpc);
+        drpc = new DRPC(conf);
+        DRPCThrift thrift = new DRPCThrift(drpc);
+        handlerServer = mkHandlerServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_PORT), null), conf);
+        invokeServer = mkInvokeServer(thrift, ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT), 3773), conf);
+        httpServer = mkHttpServer(conf, drpc);
     }
 
     @VisibleForTesting
     void start() throws Exception {
         LOG.info("Starting Distributed RPC servers...");
-        new Thread(() -> _invokeServer.serve()).start();
-
-        if (_httpServer != null) {
-            _httpServer.start();
+        new Thread(() -> invokeServer.serve()).start();
+        
+        if (httpServer != null) {
+            httpServer.start();
         }
         
-        if (_handlerServer != null) {
-            _handlerServer.serve();
+        if (handlerServer != null) {
+            handlerServerThread = new Thread(handlerServer::serve);
+            handlerServerThread.start();
+        }
+    }
+    
+    @VisibleForTesting
+    void awaitTermination() throws InterruptedException {
+        if (handlerServerThread != null) {
+            handlerServerThread.join();
         } else {
-            _httpServer.join();
+            httpServer.join();
         }
     }
 
     @Override
     public synchronized void close() {
-        if (!_closed) {
+        if (!closed) {
             //This is kind of useless...
             meterShutdownCalls.mark();
 
-            if (_handlerServer != null) {
-                _handlerServer.stop();
+            if (handlerServer != null) {
+                handlerServer.stop();
             }
 
-            if (_invokeServer != null) {
-                _invokeServer.stop();
+            if (invokeServer != null) {
+                invokeServer.stop();
             }
 
             //TODO this is causing issues...
-            //if (_httpServer != null) {
-            //    _httpServer.destroy();
+            //if (httpServer != null) {
+            //    httpServer.destroy();
             //}
             
-            _drpc.close();
-            _closed  = true;
+            drpc.close();
+            closed = true;
         }
     }
     
+    /**
+     * @return The port the DRPC handler server is listening on.
+     */
+    public int getDrpcPort() {
+        return handlerServer.getPort();
+    }
+    
+    /**
+     * @return The port the DRPC invoke server is listening on.
+     */
+    public int getDrpcInvokePort() {
+        return invokeServer.getPort();
+    }
+    
+    /**
+     * @return The port the HTTP server is listening on. Not available until {@link #start() } has run.
+     */
+    public int getHttpServerPort() {
+        assert httpServer.getConnectors().length == 1;
+        
+        return httpServer.getConnectors()[0].getLocalPort();
+    }
+
+    /**
+     * Main method to start the server.
+     */
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
@@ -176,6 +223,7 @@ public class DRPCServer implements AutoCloseable {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             StormMetricsRegistry.startMetricsReporters(conf);
             server.start();
+            server.awaitTermination();
         }
     }
 }

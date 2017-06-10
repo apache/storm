@@ -41,6 +41,7 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.thrift.TException;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,10 +84,10 @@ public class ServerUtils {
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
     public static final String CLASS_PATH_SEPARATOR = System.getProperty("path.separator");
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
-    public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final String CURRENT_BLOB_SUFFIX_ID = "current";
 
     public static final String DEFAULT_CURRENT_BLOB_SUFFIX = "." + CURRENT_BLOB_SUFFIX_ID;
+    public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
     /**
@@ -132,11 +133,11 @@ public class ServerUtils {
         return null;
       }
 
-    public static BlobStore getNimbusBlobStore(Map conf, NimbusInfo nimbusInfo) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, NimbusInfo nimbusInfo) {
         return getNimbusBlobStore(conf, null, nimbusInfo);
     }
 
-    public static BlobStore getNimbusBlobStore(Map conf, String baseDir, NimbusInfo nimbusInfo) {
+    public static BlobStore getNimbusBlobStore(Map<String, Object> conf, String baseDir, NimbusInfo nimbusInfo) {
         String type = (String)conf.get(DaemonConfig.NIMBUS_BLOBSTORE);
         if (type == null) {
             type = LocalFsBlobStore.class.getName();
@@ -214,36 +215,14 @@ public class ServerUtils {
     }
 
     public static long localVersionOfBlob(String localFile) {
-        File f = new File(localFile + DEFAULT_BLOB_VERSION_SUFFIX);
-        long currentVersion = 0;
-        if (f.exists() && !(f.isDirectory())) {
-            BufferedReader br = null;
-            try {
-                br = new BufferedReader(new FileReader(f));
-                String line = br.readLine();
-                currentVersion = Long.parseLong(line);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            } finally {
-                try {
-                    if (br != null) {
-                        br.close();
-                    }
-                } catch (Exception ignore) {
-                    LOG.error("Exception trying to cleanup", ignore);
-                }
-            }
-            return currentVersion;
-        } else {
-            return -1;
-        }
+        return Utils.getVersionFromBlobVersionFile(new File(localFile + DEFAULT_BLOB_VERSION_SUFFIX));
     }
 
     public static String constructBlobWithVersionFileName(String fileName, long version) {
         return fileName + "." + version;
     }
 
-    public static ClientBlobStore getClientBlobStoreForSupervisor(Map conf) {
+    public static ClientBlobStore getClientBlobStoreForSupervisor(Map<String, Object> conf) {
         ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance(
                 (String) conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE));
         store.prepare(conf);
@@ -309,23 +288,7 @@ public class ServerUtils {
         return Files.getOwner(FileSystems.getDefault().getPath(path)).getName();
     }
 
-    /**
-     * Returns a Collection of file names found under the given directory.
-     * @param dir a directory
-     * @return the Collection of file names
-     */
-    public static Collection<String> readDirContents(String dir) {
-        Collection<String> ret = new HashSet<>();
-        File[] files = new File(dir).listFiles();
-        if (files != null) {
-            for (File f: files) {
-                ret.add(f.getName());
-            }
-        }
-        return ret;
-    }
-
-    public static Localizer createLocalizer(Map conf, String baseDir) {
+    public static Localizer createLocalizer(Map<String, Object> conf, String baseDir) {
         return new Localizer(conf, baseDir);
     }
 

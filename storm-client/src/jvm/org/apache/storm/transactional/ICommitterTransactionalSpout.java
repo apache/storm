@@ -27,5 +27,5 @@ public interface ICommitterTransactionalSpout<X> extends ITransactionalSpout<X> 
     } 
     
     @Override
-    public Emitter getEmitter(Map conf, TopologyContext context);    
+    public Emitter getEmitter(Map<String, Object> conf, TopologyContext context);    
 }

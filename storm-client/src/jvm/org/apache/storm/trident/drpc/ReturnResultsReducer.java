@@ -51,12 +51,12 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
         }
     }
     boolean local;
-    Map conf;
+    Map<String, Object> conf;
     Map<List, DRPCInvocationsClient> _clients = new HashMap<>();
     
     
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
         this.conf = conf;
         local = conf.get(Config.STORM_CLUSTER_MODE).equals("local");
     }

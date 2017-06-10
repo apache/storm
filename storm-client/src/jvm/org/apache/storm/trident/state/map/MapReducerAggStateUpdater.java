@@ -79,7 +79,7 @@ public class MapReducerAggStateUpdater implements StateUpdater<MapState> {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         _groupFactory = context.makeProjectionFactory(_groupFields);
         _inputFactory = context.makeProjectionFactory(_inputFields);
     }

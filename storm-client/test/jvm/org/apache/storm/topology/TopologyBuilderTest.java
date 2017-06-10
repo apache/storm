@@ -99,7 +99,7 @@ public class TopologyBuilderTest {
             @Override
             public void declareOutputFields(OutputFieldsDeclarer declarer) {}
             @Override
-            public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {}
+            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {}
             @Override
             public void nextTuple() {}
             private void writeObject(java.io.ObjectOutputStream stream) {}

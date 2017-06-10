@@ -22,7 +22,7 @@
             TestAggregatesCounter TestConfBolt AckFailMapTracker AckTracker TestPlannerSpout])
   (:import [org.apache.storm.utils Time])
   (:import [org.apache.storm.tuple Fields])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [org.apache.storm config util])
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.utils Utils]))
@@ -149,19 +149,25 @@
       (.advanceClusterTime cluster 12)
       (assert-failed tracker 2)
       )))
-
-(defbolt extend-timeout-twice {} {:prepare true}
+      
+(defbolt reset-timeout-bolt {} {:prepare true}
   [conf context collector]
-  (let [state (atom -1)]
+  (let [tuple-counter (atom 1)
+        first-tuple (atom nil)]
     (bolt
       (execute [tuple]
-        (do
-          (Time/sleep (* 8 1000))
-          (reset-timeout! collector tuple)
-          (Time/sleep (* 8 1000))
-          (reset-timeout! collector tuple)
-          (Time/sleep (* 8 1000))
-          (ack! collector tuple)
+        (do 
+          (condp = @tuple-counter
+            1 (reset! first-tuple tuple)
+            2 (reset-timeout! collector @first-tuple)
+            5 (do 
+                (ack! collector @first-tuple)
+                (ack! collector tuple)
+              )
+            (do 
+              (reset-timeout! collector @first-tuple)
+              (ack! collector tuple)))
+          (swap! tuple-counter inc)
         )))))
 
 (deftest test-reset-timeout
@@ -175,18 +181,33 @@
                      {"1" (Thrift/prepareSpoutDetails feeder)}
                      {"2" (Thrift/prepareBoltDetails 
                             {(Utils/getGlobalStreamId "1" nil)
-                             (Thrift/prepareGlobalGrouping)} extend-timeout-twice)})]
+                             (Thrift/prepareGlobalGrouping)} reset-timeout-bolt)})]
     (.submitTopology cluster
                            "timeout-tester"
                            {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
                            topology)
-    (.advanceClusterTime cluster 11)
+    ;The first tuple will be used to check timeout reset
     (.feed feeder ["a"] 1)
-    (.advanceClusterTime cluster 21)
+    ;The second tuple is used to wait for the spout to rotate the spout's pending map
+    (.feed feeder ["b"] 2)
+    (.advanceClusterTime cluster 9)
+    ;The other tuples are used to reset the first tuple's timeout,
+    ;and to wait for the message to get through to the spout (acks use the same path as timeout resets)
+    (.feed feeder ["c"] 3)
+    (assert-acked tracker 3)
+    (.advanceClusterTime cluster 9)
+    (.feed feeder ["d"], 4)
+    (assert-acked tracker 4)
+    (.advanceClusterTime cluster 2)
+    ;The time is now twice the message timeout, the second tuple should expire since it was not acked
+    ;Waiting for this also ensures that the first tuple gets failed if reset-timeout doesn't work
+    (assert-failed tracker 2)
+    ;Put in a tuple to cause the first tuple to be acked
+    (.feed feeder ["e"], 5)
+    (assert-acked tracker 5)
+    ;The first tuple should be acked and should not have failed
     (is (not (.isFailed tracker 1)))
-    (is (not (.isAcked tracker 1)))
-    (.advanceClusterTime cluster 5)
-    (assert-acked tracker 1)
+    (is (.isAcked tracker 1))
     )))
 
 (defn mk-validate-topology-1 []

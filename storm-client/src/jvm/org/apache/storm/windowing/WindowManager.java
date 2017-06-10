@@ -46,6 +46,9 @@ public class WindowManager<T> implements TriggerHandler {
     /**
      * Expire old events every EXPIRE_EVENTS_THRESHOLD to
      * keep the window size in check.
+     * 
+     * Note that if the eviction policy is based on watermarks, events will not be evicted until a new
+     * watermark would cause them to be considered expired anyway, regardless of this limit
      */
     public static final int EXPIRE_EVENTS_THRESHOLD = 100;
 

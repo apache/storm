@@ -38,22 +38,22 @@ public class ThriftClient implements AutoCloseable {
     private String _asUser;
     protected boolean _retryForever = false;
 
-    public ThriftClient(Map storm_conf, ThriftConnectionType type, String host) {
-        this(storm_conf, type, host, null, null, null);
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host) {
+        this(topoConf, type, host, null, null, null);
     }
 
-    public ThriftClient(Map storm_conf, ThriftConnectionType type, String host, Integer port, Integer timeout){
-        this(storm_conf, type, host, port, timeout, null);
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout){
+        this(topoConf, type, host, port, timeout, null);
     }
 
-    public ThriftClient(Map storm_conf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser) {
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser) {
         //create a socket with server
         if (host==null) {
             throw new IllegalArgumentException("host is not set");
         }
 
         if (port == null) {
-            port = type.getPort(storm_conf);
+            port = type.getPort(topoConf);
         }
 
         if (port<=0 && !type.isFake()) {
@@ -63,7 +63,7 @@ public class ThriftClient implements AutoCloseable {
         _host = host;
         _port = port;
         _timeout = timeout;
-        _conf = storm_conf;
+        _conf = topoConf;
         _type = type;
         _asUser = asUser;
         if (!type.isFake()) {

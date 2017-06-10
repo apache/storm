@@ -53,11 +53,11 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
     private transient KryoValuesSerializer _serializer;
 
     @Override
-    public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { 
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { 
         try {
             _url = new URL((String)registrationArgument);
             _errorReporter = errorReporter;
-            _serializer = new KryoValuesSerializer(stormConf);
+            _serializer = new KryoValuesSerializer(topoConf);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

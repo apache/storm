@@ -19,9 +19,6 @@ package org.apache.storm.trident.tuple;
 
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import clojure.lang.IPersistentVector;
-import clojure.lang.PersistentVector;
-import clojure.lang.RT;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,9 +32,9 @@ import java.util.Arrays;
  * Extends AbstractList so that it can be emitted directly as Storm tuples
  */
 public class TridentTupleView extends AbstractList<Object> implements TridentTuple {
-    ValuePointer[] _index;
-    Map<String, ValuePointer> _fieldIndex;
-    IPersistentVector _delegates;
+    private final ValuePointer[] _index;
+    private final Map<String, ValuePointer> _fieldIndex;
+    private final List<List<Object>> _delegates;
 
     public static class ProjectionFactory implements Factory {
         Map<String, ValuePointer> _fieldIndex;
@@ -90,7 +87,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
         }
         
         public TridentTuple create(List<Object> selfVals) {
-            return new TridentTupleView(PersistentVector.EMPTY.cons(selfVals), _index, _fieldIndex);
+            return new TridentTupleView(Arrays.asList(selfVals), _index, _fieldIndex);
         }
 
         @Override
@@ -138,8 +135,8 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
         }
         
         public TridentTuple create(TridentTupleView parent, List<Object> selfVals) {
-            IPersistentVector curr = parent._delegates;
-            curr = (IPersistentVector) RT.conj(curr, selfVals);
+            List<List<Object>> curr = new ArrayList<>(parent._delegates);
+            curr.add(selfVals);
             return new TridentTupleView(curr, _index, _fieldIndex);
         }
 
@@ -174,7 +171,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
         }
         
         public TridentTuple create(Tuple parent) {            
-            return new TridentTupleView(PersistentVector.EMPTY.cons(parent.getValues()), index, fieldIndex);
+            return new TridentTupleView(Arrays.asList(parent.getValues()), index, fieldIndex);
         }
 
         @Override
@@ -204,7 +201,7 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
     public static final TridentTupleView EMPTY_TUPLE = new TridentTupleView(null, new ValuePointer[0], new HashMap());
 
     // index and fieldIndex are precomputed, delegates built up over many operations using persistent data structures
-    public TridentTupleView(IPersistentVector delegates, ValuePointer[] index, Map<String, ValuePointer> fieldIndex) {
+    public TridentTupleView(List delegates, ValuePointer[] index, Map<String, ValuePointer> fieldIndex) {
         _delegates = delegates;
         _index = index;
         _fieldIndex = fieldIndex;
@@ -356,6 +353,6 @@ public class TridentTupleView extends AbstractList<Object> implements TridentTup
     }
 
     private Object getValueByPointer(ValuePointer ptr) {
-        return ((List<Object>)_delegates.nth(ptr.delegateIndex)).get(ptr.index);     
+        return _delegates.get(ptr.delegateIndex).get(ptr.index);
     }
 }

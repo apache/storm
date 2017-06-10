@@ -44,7 +44,7 @@ public class PartitionedTransactionalSpoutExecutor implements ITransactionalSpou
     class Coordinator implements ITransactionalSpout.Coordinator<Integer> {
         private IPartitionedTransactionalSpout.Coordinator _coordinator;
         
-        public Coordinator(Map conf, TopologyContext context) {
+        public Coordinator(Map<String, Object> conf, TopologyContext context) {
             _coordinator = _spout.getCoordinator(conf, context);
         }
         
@@ -71,7 +71,7 @@ public class PartitionedTransactionalSpoutExecutor implements ITransactionalSpou
         private int _index;
         private int _numTasks;
         
-        public Emitter(Map conf, TopologyContext context) {
+        public Emitter(Map<String, Object> conf, TopologyContext context) {
             _emitter = _spout.getEmitter(conf, context);
             _state = TransactionalState.newUserState(conf, (String) conf.get(Config.TOPOLOGY_TRANSACTIONAL_ID), getComponentConfiguration()); 
             _index = context.getThisTaskIndex();
@@ -120,12 +120,12 @@ public class PartitionedTransactionalSpoutExecutor implements ITransactionalSpou
     }    
 
     @Override
-    public ITransactionalSpout.Coordinator getCoordinator(Map conf, TopologyContext context) {
+    public ITransactionalSpout.Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 
     @Override
-    public ITransactionalSpout.Emitter getEmitter(Map conf, TopologyContext context) {
+    public ITransactionalSpout.Emitter getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new Emitter(conf, context);
     }
 

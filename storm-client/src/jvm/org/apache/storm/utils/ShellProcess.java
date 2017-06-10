@@ -64,11 +64,11 @@ public class ShellProcess implements Serializable {
         }
     }
 
-    public Number launch(Map conf, TopologyContext context) {
+    public Number launch(Map<String, Object> conf, TopologyContext context) {
         return launch(conf, context, true);
     }
 
-    public Number launch(Map conf, TopologyContext context, boolean changeDirectory) {
+    public Number launch(Map<String, Object> conf, TopologyContext context, boolean changeDirectory) {
         ProcessBuilder builder = new ProcessBuilder(command);
         if (!env.isEmpty()) {
             Map<String, String> buildEnv = builder.environment();
@@ -98,7 +98,7 @@ public class ShellProcess implements Serializable {
         return this.pid;
     }
 
-    private ISerializer getSerializer(Map conf) {
+    private ISerializer getSerializer(Map<String, Object> conf) {
         //get factory class name
         String serializer_className = (String)conf.get(Config.TOPOLOGY_MULTILANG_SERIALIZER);
         LOG.info("Storm multilang serializer: " + serializer_className);

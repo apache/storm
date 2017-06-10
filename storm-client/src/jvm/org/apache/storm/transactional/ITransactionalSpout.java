@@ -83,12 +83,12 @@ public interface ITransactionalSpout<T> extends IComponent {
      * of tuples should be emitted and when transactions should commit. The Coordinator that you provide 
      * in a TransactionalSpout provides metadata for each transaction so that the transactions can be replayed.
      */
-    Coordinator<T> getCoordinator(Map conf, TopologyContext context);
+    Coordinator<T> getCoordinator(Map<String, Object> conf, TopologyContext context);
 
     /**
      * The emitter for a TransactionalSpout runs as many tasks across the cluster. Emitters are responsible for
      * emitting batches of tuples for a transaction and must ensure that the same batch of tuples is always
      * emitted for the same transaction id.
      */    
-    Emitter<T> getEmitter(Map conf, TopologyContext context);
+    Emitter<T> getEmitter(Map<String, Object> conf, TopologyContext context);
 }

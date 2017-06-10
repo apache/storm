@@ -35,13 +35,13 @@ import java.util.Set;
 public class BlobSynchronizer {
     private static final Logger LOG = LoggerFactory.getLogger(BlobSynchronizer.class);
     private CuratorFramework zkClient;
-    private Map conf;
+    private Map<String, Object> conf;
     private BlobStore blobStore;
     private Set<String> blobStoreKeySet = new HashSet<String>();
     private Set<String> zookeeperKeySet = new HashSet<String>();
     private NimbusInfo nimbusInfo;
 
-    public BlobSynchronizer(BlobStore blobStore, Map conf) {
+    public BlobSynchronizer(BlobStore blobStore, Map<String, Object> conf) {
         this.blobStore = blobStore;
         this.conf = conf;
     }

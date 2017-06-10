@@ -48,7 +48,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     class Coordinator implements ITridentSpout.BatchCoordinator<Object> {
         private IPartitionedTridentSpout.Coordinator<Object> _coordinator;
         
-        public Coordinator(Map conf, TopologyContext context) {
+        public Coordinator(Map<String, Object> conf, TopologyContext context) {
             _coordinator = _spout.getCoordinator(conf, context);
         }
         
@@ -101,7 +101,7 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
         private int _index;
         private int _numTasks;
         
-        public Emitter(String txStateId, Map conf, TopologyContext context) {
+        public Emitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
             _emitter = _spout.getEmitter(conf, context);
             _state = TransactionalState.newUserState(conf, txStateId); 
             _index = context.getThisTaskIndex();
@@ -167,12 +167,12 @@ public class PartitionedTridentSpoutExecutor implements ITridentSpout<Object> {
     }    
 
     @Override
-    public ITridentSpout.BatchCoordinator<Object> getCoordinator(String txStateId, Map conf, TopologyContext context) {
+    public ITridentSpout.BatchCoordinator<Object> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 
     @Override
-    public ITridentSpout.Emitter<Object> getEmitter(String txStateId, Map conf, TopologyContext context) {
+    public ITridentSpout.Emitter<Object> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new Emitter(txStateId, conf, context);
     }
 

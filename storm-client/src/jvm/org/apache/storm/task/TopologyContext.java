@@ -57,13 +57,15 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     private Map<String, Object> _executorData;
     private Map<Integer,Map<Integer, Map<String, IMetric>>> _registeredMetrics;
     private AtomicBoolean _openOrPrepareWasCalled;
-
+    // This is updated by the Worker and the topology has shared access to it
+    private Map<String, Long> blobToLastKnownVersion;
 
     public TopologyContext(StormTopology topology,
-                           Map stormConf,
+                           Map<String, Object> topoConf,
                            Map<Integer, String> taskToComponent,
                            Map<String, List<Integer>> componentToSortedTasks,
                            Map<String, Map<String, Fields>> componentToStreamToFields,
+                           Map<String, Long> blobToLastKnownVersionShared,
                            String stormId,
                            String codeDir,
                            String pidDir,
@@ -75,13 +77,14 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            Map<String, Object> executorData,
                            Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
                            AtomicBoolean openOrPrepareWasCalled) {
-        super(topology, stormConf, taskToComponent, componentToSortedTasks,
+        super(topology, topoConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, stormId, codeDir, pidDir,
                 workerPort, workerTasks, defaultResources, userResources);
         _taskId = taskId;
         _executorData = executorData;
         _registeredMetrics = registeredMetrics;
         _openOrPrepareWasCalled = openOrPrepareWasCalled;
+        blobToLastKnownVersion = blobToLastKnownVersionShared;
     }
 
 
@@ -142,6 +145,10 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      */
     public <T extends ISubscribedState> T setSubscribedState(String componentId, String streamId, T obj) {
         throw new NotImplementedException();
+    }
+
+    public Map<String, Long> getBlobToLastKnownVersion() {
+        return blobToLastKnownVersion;
     }
 
     /**
@@ -261,7 +268,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     public void addTaskHook(ITaskHook hook) {
-        hook.prepare(_stormConf, this);
+        hook.prepare(_topoConf, this);
         _hooks.add(hook);
     }
 

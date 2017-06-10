@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon.drpc.webapp;
 
-import org.apache.storm.daemon.drpc.DRPC;
+package org.apache.storm.daemon.drpc.webapp;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -25,11 +24,18 @@ import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
+import org.apache.storm.daemon.drpc.DRPC;
+
 @ApplicationPath("")
 public class DRPCApplication extends Application {
     private static DRPC _drpc;
     private final Set<Object> singletons = new HashSet<Object>();
-    
+
+    /**
+     * Constructor.
+     * Creates new instance of DRPCResource, DRPCExceptionMapper and AuthorizationExceptionMapper
+     * and adds them to a set which can be retrieved later.
+     */
     public DRPCApplication() {
         singletons.add(new DRPCResource(_drpc));
         singletons.add(new DRPCExceptionMapper());

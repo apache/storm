@@ -37,8 +37,16 @@ public interface EvictionContext {
      */
     Long getSlidingCount();
 
+
     /**
-     * Returns the current count of events in the queue up to the reference tim
+     * Returns the sliding interval for time based windows
+     *
+     * @return the sliding interval
+     */
+    Long getSlidingInterval();
+
+    /**
+     * Returns the current count of events in the queue up to the reference time
      * based on which count based evictions can be performed.
      *
      * @return the current count

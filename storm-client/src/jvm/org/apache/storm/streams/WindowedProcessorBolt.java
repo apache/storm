@@ -54,8 +54,8 @@ class WindowedProcessorBolt extends BaseWindowedBolt implements StreamBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        delegate.prepare(stormConf, context, collector);
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        delegate.prepare(topoConf, context, collector);
     }
 
     @Override

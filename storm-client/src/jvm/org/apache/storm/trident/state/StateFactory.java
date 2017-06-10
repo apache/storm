@@ -22,5 +22,5 @@ import java.io.Serializable;
 import java.util.Map;
 
 public interface StateFactory extends Serializable {
-    State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions);
+    State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions);
 }

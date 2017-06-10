@@ -35,13 +35,13 @@ public class MessagingTest {
 
     @Test
     public void testLocalTransport() throws Exception {
-        Config stormConf = new Config();
-        stormConf.put(Config.TOPOLOGY_WORKERS, 2);
-        stormConf.put(Config.STORM_MESSAGING_TRANSPORT , "org.apache.storm.messaging.netty.Context");
+        Config topoConf = new Config();
+        topoConf.put(Config.TOPOLOGY_WORKERS, 2);
+        topoConf.put(Config.STORM_MESSAGING_TRANSPORT , "org.apache.storm.messaging.netty.Context");
 
         try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime()
                     .withSupervisors(1).withPortsPerSupervisor(2)
-                    .withDaemonConf(stormConf).build()) {
+                    .withDaemonConf(topoConf).build()) {
 
             TopologyBuilder builder = new TopologyBuilder();
             builder.setSpout("1", new TestWordSpout(true), 2);

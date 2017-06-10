@@ -66,7 +66,7 @@ public class FeederSpout extends BaseRichSpout {
         InprocMessaging.waitForReader(_id);
     }
     
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
     }
 

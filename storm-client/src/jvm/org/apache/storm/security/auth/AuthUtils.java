@@ -56,14 +56,14 @@ public class AuthUtils {
 
     /**
      * Construct a JAAS configuration object per storm configuration file
-     * @param storm_conf Storm configuration
+     * @param topoConf Storm configuration
      * @return JAAS configuration object
      */
-    public static Configuration GetConfiguration(Map storm_conf) {
+    public static Configuration GetConfiguration(Map<String, Object> topoConf) {
         Configuration login_conf = null;
 
         //find login file configuration from Storm configuration
-        String loginConfigurationFile = (String)storm_conf.get("java.security.auth.login.config");
+        String loginConfigurationFile = (String)topoConf.get("java.security.auth.login.config");
         if ((loginConfigurationFile != null) && (loginConfigurationFile.length()>0)) {
             File config_file = new File(loginConfigurationFile);
             if (!config_file.canRead()) {
@@ -151,13 +151,13 @@ public class AuthUtils {
 
     /**
      * Construct a principal to local plugin
-     * @param storm_conf storm configuration
+     * @param topoConf storm configuration
      * @return the plugin
      */
-    public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map<String, Object> storm_conf) {
+    public static IPrincipalToLocal GetPrincipalToLocalPlugin(Map<String, Object> topoConf) {
         IPrincipalToLocal ptol = null;
         try {
-            String ptol_klassName = (String) storm_conf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
+            String ptol_klassName = (String) topoConf.get(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
             if (ptol_klassName == null) {
                 LOG.warn("No principal to local given {}", Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN);
             } else {
@@ -165,7 +165,7 @@ public class AuthUtils {
                 //TODO this can only ever be null if someone is doing something odd with mocking
                 // We should really fix the mocking and remove this
                 if (ptol != null) {
-                    ptol.prepare(storm_conf);
+                    ptol.prepare(topoConf);
                 }
             }
         } catch (Exception e) {
@@ -202,7 +202,7 @@ public class AuthUtils {
      * @param conf the storm configuration to use.
      * @return the configured credential renewers.
      */
-    public static Collection<ICredentialsRenewer> GetCredentialRenewers(Map conf) {
+    public static Collection<ICredentialsRenewer> GetCredentialRenewers(Map<String, Object> conf) {
         try {
             Set<ICredentialsRenewer> ret = new HashSet<>();
             Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_CREDENTIAL_RENEWERS);
@@ -224,7 +224,7 @@ public class AuthUtils {
      * @param conf nimbus configuration to use.
      * @return nimbus auto credential plugins.
      */
-    public static Collection<INimbusCredentialPlugin> getNimbusAutoCredPlugins(Map conf) {
+    public static Collection<INimbusCredentialPlugin> getNimbusAutoCredPlugins(Map<String, Object> conf) {
         try {
             Set<INimbusCredentialPlugin> ret = new HashSet<>();
             Collection<String> clazzes = (Collection<String>)conf.get(Config.NIMBUS_AUTO_CRED_PLUGINS);
@@ -243,17 +243,17 @@ public class AuthUtils {
 
     /**
      * Get all of the configured AutoCredential Plugins.
-     * @param storm_conf the storm configuration to use.
+     * @param topoConf the storm configuration to use.
      * @return the configured auto credentials.
      */
-    public static Collection<IAutoCredentials> GetAutoCredentials(Map storm_conf) {
+    public static Collection<IAutoCredentials> GetAutoCredentials(Map<String, Object> topoConf) {
         try {
             Set<IAutoCredentials> autos = new HashSet<>();
-            Collection<String> clazzes = (Collection<String>)storm_conf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
+            Collection<String> clazzes = (Collection<String>)topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS);
             if (clazzes != null) {
                 for (String clazz : clazzes) {
                     IAutoCredentials a = ReflectionUtils.newInstance(clazz);
-                    a.prepare(storm_conf);
+                    a.prepare(topoConf);
                     autos.add(a);
                 }
             }
@@ -308,11 +308,11 @@ public class AuthUtils {
     /**
      * Construct a transport plugin per storm configuration
      */
-    public static ITransportPlugin GetTransportPlugin(ThriftConnectionType type, Map storm_conf, Configuration login_conf) {
+    public static ITransportPlugin GetTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
         try {
-            String transport_plugin_klassName = type.getTransportPlugin(storm_conf);
+            String transport_plugin_klassName = type.getTransportPlugin(topoConf);
             ITransportPlugin transportPlugin = ReflectionUtils.newInstance(transport_plugin_klassName);
-            transportPlugin.prepare(type, storm_conf, login_conf);
+            transportPlugin.prepare(type, topoConf, login_conf);
             return transportPlugin;
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -339,7 +339,7 @@ public class AuthUtils {
      * @param conf storm configuration
      * @return the plugin
      */
-    public static IHttpCredentialsPlugin GetUiHttpCredentialsPlugin(Map conf) {
+    public static IHttpCredentialsPlugin GetUiHttpCredentialsPlugin(Map<String, Object> conf) {
         String klassName = (String)conf.get(Config.UI_HTTP_CREDS_PLUGIN);
         return AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }
@@ -350,7 +350,7 @@ public class AuthUtils {
      * @param conf storm configuration
      * @return the plugin
      */
-    public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map conf) {
+    public static IHttpCredentialsPlugin GetDrpcHttpCredentialsPlugin(Map<String, Object> conf) {
         String klassName = (String)conf.get(Config.DRPC_HTTP_CREDS_PLUGIN);
         return klassName == null ? null : AuthUtils.GetHttpCredentialsPlugin(conf, klassName);
     }

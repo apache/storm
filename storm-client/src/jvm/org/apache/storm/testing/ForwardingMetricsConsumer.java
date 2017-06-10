@@ -55,7 +55,7 @@ public class ForwardingMetricsConsumer implements IMetricsConsumer {
     OutputStream out;
 
     @Override
-    public void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
+    public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) {
         String [] parts = ((String)registrationArgument).split(":",2);
         host = parts[0];
         port = Integer.valueOf(parts[1]);

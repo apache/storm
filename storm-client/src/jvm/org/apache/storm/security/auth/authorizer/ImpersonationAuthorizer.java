@@ -37,7 +37,7 @@ public class ImpersonationAuthorizer implements IAuthorizer {
     protected IGroupMappingServiceProvider _groupMappingProvider;
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         userImpersonationACL = new HashMap<>();
 
         Map<String, Map<String, List<String>>> userToHostAndGroup = (Map<String, Map<String, List<String>>>) conf.get(Config.NIMBUS_IMPERSONATION_ACL);
@@ -56,7 +56,7 @@ public class ImpersonationAuthorizer implements IAuthorizer {
     }
 
     @Override
-    public boolean permit(ReqContext context, String operation, Map topology_conf) {
+    public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         if (!context.isImpersonating()) {
             LOG.debug("Not an impersonation attempt.");
             return true;

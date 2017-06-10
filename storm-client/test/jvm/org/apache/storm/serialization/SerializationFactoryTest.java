@@ -32,7 +32,7 @@ public class SerializationFactoryTest {
 
     @Test
     public void test_registers_default_when_not_in_conf() throws ClassNotFoundException {
-        Map conf = Utils.readDefaultConfig();
+        Map<String, Object> conf = Utils.readDefaultConfig();
         String className = (String) conf.get(Config.TOPOLOGY_TUPLE_SERIALIZER);
         Class configuredClass = Class.forName(className);
         Kryo kryo = SerializationFactory.getKryo(conf);
@@ -41,7 +41,7 @@ public class SerializationFactoryTest {
 
     @Test(expected = RuntimeException.class)
     public void test_throws_runtimeexception_when_no_such_class() {
-        Map conf = Utils.readDefaultConfig();
+        Map<String, Object> conf = Utils.readDefaultConfig();
         conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, "null.this.class.does.not.exist");
         SerializationFactory.getKryo(conf);
     }
@@ -50,7 +50,7 @@ public class SerializationFactoryTest {
     public void test_registers_when_valid_class_name() {
         Class arbitraryClass = BlowfishTupleSerializer.class;
         String secretKey = "0123456789abcdef";
-        Map conf = Utils.readDefaultConfig();
+        Map<String, Object> conf = Utils.readDefaultConfig();
         conf.put(Config.TOPOLOGY_TUPLE_SERIALIZER, arbitraryClass.getName());
         conf.put(BlowfishTupleSerializer.SECRET_KEY, secretKey);
         Kryo kryo = SerializationFactory.getKryo(conf);

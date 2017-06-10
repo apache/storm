@@ -32,10 +32,10 @@ public interface IWorkerHook extends Serializable {
     /**
      * This method is called when a worker is started
      *
-     * @param stormConf The Storm configuration for this worker
+     * @param topoConf The Storm configuration for this worker
      * @param context This object can be used to get information about this worker's place within the topology
      */
-    void start(Map stormConf, WorkerTopologyContext context);
+    void start(Map<String, Object> topoConf, WorkerTopologyContext context);
 
     /**
      * This method is called right before a worker shuts down

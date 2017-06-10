@@ -128,7 +128,7 @@ public class HdfsFileTopology {
             declarer.declare(new Fields("sentence", "timestamp"));
         }
 
-        public void open(Map config, TopologyContext context,
+        public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();
@@ -167,7 +167,7 @@ public class HdfsFileTopology {
         private HashMap<String, Long> counts = null;
         private OutputCollector collector;
 
-        public void prepare(Map config, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> config, TopologyContext context, OutputCollector collector) {
             this.counts = new HashMap<String, Long>();
             this.collector = collector;
         }

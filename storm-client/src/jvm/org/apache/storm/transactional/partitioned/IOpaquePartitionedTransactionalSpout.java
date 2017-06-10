@@ -51,6 +51,6 @@ public interface IOpaquePartitionedTransactionalSpout<T> extends IComponent {
         void close();
     }
     
-    Emitter<T> getEmitter(Map conf, TopologyContext context);     
-    Coordinator getCoordinator(Map conf, TopologyContext context);     
+    Emitter<T> getEmitter(Map<String, Object> conf, TopologyContext context);     
+    Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context);     
 }

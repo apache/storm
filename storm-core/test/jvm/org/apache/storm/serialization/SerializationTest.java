@@ -79,17 +79,17 @@ public class SerializationTest {
     }
 
     private Map mkConf(Map extra) {
-        Map config = Utils.readDefaultConfig();
+        Map<String, Object> config = Utils.readDefaultConfig();
         config.putAll(extra);
         return config;
     }
 
-    private byte[] serialize(List vals, Map conf) throws IOException {
+    private byte[] serialize(List vals, Map<String, Object> conf) throws IOException {
         KryoValuesSerializer serializer = new KryoValuesSerializer(mkConf(conf));
         return serializer.serialize(vals);
     }
 
-    private List deserialize(byte[] bytes, Map conf) throws IOException {
+    private List deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(mkConf(conf));
         return deserializer.deserialize(bytes);
     }
@@ -98,7 +98,7 @@ public class SerializationTest {
         return roundtrip(vals, new HashMap());
     }
 
-    private List roundtrip(List vals, Map conf) throws IOException {
+    private List roundtrip(List vals, Map<String, Object> conf) throws IOException {
         return deserialize(serialize(vals, conf), conf);
     }
 

@@ -46,7 +46,7 @@ public class TestWordSpout extends BaseRichSpout {
         _isDistributed = isDistributed;
     }
         
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
     }
     

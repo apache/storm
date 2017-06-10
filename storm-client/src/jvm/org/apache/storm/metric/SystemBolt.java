@@ -91,7 +91,7 @@ public class SystemBolt implements IBolt {
 
     @SuppressWarnings({ "unchecked", "rawtypes" })
     @Override
-    public void prepare(final Map topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(final Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         if(_prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {
             throw new RuntimeException("A single worker should have 1 SystemBolt instance.");
         }

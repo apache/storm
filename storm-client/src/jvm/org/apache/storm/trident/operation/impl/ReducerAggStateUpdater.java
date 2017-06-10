@@ -43,7 +43,7 @@ public class ReducerAggStateUpdater implements StateUpdater<Snapshottable> {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {        
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {        
     }
 
     @Override

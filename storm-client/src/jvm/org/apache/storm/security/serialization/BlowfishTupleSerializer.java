@@ -49,10 +49,10 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     private static final Logger LOG = LoggerFactory.getLogger(BlowfishTupleSerializer.class);
     private BlowfishSerializer _serializer;
 
-    public BlowfishTupleSerializer(Kryo kryo, Map storm_conf) {
+    public BlowfishTupleSerializer(Kryo kryo, Map<String, Object> topoConf) {
         String encryption_key;
         try {
-            encryption_key = (String)storm_conf.get(SECRET_KEY);
+            encryption_key = (String)topoConf.get(SECRET_KEY);
             LOG.debug("Blowfish serializer being constructed ...");
             if (encryption_key == null) {
                 throw new RuntimeException("Blowfish encryption key not specified");

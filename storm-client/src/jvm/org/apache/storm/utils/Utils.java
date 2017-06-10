@@ -18,12 +18,56 @@
 
 package org.apache.storm.utils;
 
-import clojure.lang.RT;
-import org.apache.storm.Config;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStreamWriter;
+import java.io.PrintWriter;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.lang.management.ManagementFactory;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.UnknownHostException;
+import java.nio.ByteBuffer;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.UUID;
+import java.util.concurrent.Callable;
+import java.util.jar.JarEntry;
+import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
 
-import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
+import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
@@ -50,52 +94,12 @@ import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
-import java.io.Serializable;
-import java.io.StringWriter;
-import java.lang.management.ManagementFactory;
-import java.net.InetAddress;
-import java.net.ServerSocket;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-import java.util.UUID;
-import java.util.concurrent.Callable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
+import com.google.common.annotations.VisibleForTesting;
 
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
-
+    private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
     public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
 
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();
@@ -494,7 +498,7 @@ public class Utils {
         return ret.toString();
     }
 
-    public static List<ACL> getWorkerACL(Map conf) {
+    public static List<ACL> getWorkerACL(Map<String, Object> conf) {
         //This is a work around to an issue with ZK where a sasl super user is not super unless there is an open SASL ACL so we are trying to give the correct perms
         if (!isZkAuthenticationConfiguredTopology(conf)) {
             return null;
@@ -517,14 +521,18 @@ public class Utils {
      * @param conf the topology configuration
      * @return true if ZK is configured else false
      */
-    public static boolean isZkAuthenticationConfiguredTopology(Map conf) {
+    public static boolean isZkAuthenticationConfiguredTopology(Map<String, Object> conf) {
         return (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME) != null
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
     }
 
     public static void handleUncaughtException(Throwable t) {
-        if (t != null && t instanceof Error) {
+        handleUncaughtException(t, defaultAllowedExceptions);
+    }
+
+    public static void handleUncaughtException(Throwable t, Set<Class> allowedExceptions) {
+        if (t != null) {
             if (t instanceof OutOfMemoryError) {
                 try {
                     System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
@@ -532,17 +540,16 @@ public class Utils {
                     //Again we don't want to exit because of logging issues.
                 }
                 Runtime.getRuntime().halt(-1);
-            } else {
-                //Running in daemon mode, we would pass Error to calling thread.
-                throw (Error) t;
             }
-        } else if (t instanceof Exception) {
-            System.err.println("Uncaught Exception detected. Leave error log and ignore... Exception: " + t);
-            System.err.println("Stack trace:");
-            StringWriter sw = new StringWriter();
-            t.printStackTrace(new PrintWriter(sw));
-            System.err.println(sw.toString());
         }
+
+        if(allowedExceptions.contains(t.getClass())) {
+            LOG.info("Swallowing {} {}", t.getClass(), t);
+            return;
+        }
+
+        //Running in daemon mode, we would pass Error to calling thread.
+        throw new Error(t);
     }
 
     public static byte[] thriftSerialize(TBase t) {
@@ -690,11 +697,11 @@ public class Utils {
     /**
      * Creates an instance of the pluggable SerializationDelegate or falls back to
      * DefaultSerializationDelegate if something goes wrong.
-     * @param stormConf The config from which to pull the name of the pluggable class.
+     * @param topoConf The config from which to pull the name of the pluggable class.
      * @return an instance of the class specified by storm.meta.serialization.delegate
      */
-    private static SerializationDelegate getSerializationDelegate(Map stormConf) {
-        String delegateClassName = (String)stormConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
+    private static SerializationDelegate getSerializationDelegate(Map<String, Object> topoConf) {
+        String delegateClassName = (String)topoConf.get(Config.STORM_META_SERIALIZATION_DELEGATE);
         SerializationDelegate delegate;
         try {
             Class delegateClass = Class.forName(delegateClassName);
@@ -703,7 +710,7 @@ public class Utils {
             LOG.error("Failed to construct serialization delegate, falling back to default", e);
             delegate = new DefaultSerializationDelegate();
         }
-        delegate.prepare(stormConf);
+        delegate.prepare(topoConf);
         return delegate;
     }
 
@@ -864,15 +871,6 @@ public class Utils {
         return findAndReadConfigFile(name, true);
     }
 
-    public static synchronized clojure.lang.IFn loadClojureFn(String namespace, String name) {
-        try {
-            clojure.lang.Compiler.eval(RT.readString("(require '" + namespace + ")"));
-        } catch (Exception e) {
-            //if playing from the repl and defining functions, file won't exist
-        }
-        return (clojure.lang.IFn) RT.var(namespace, name).deref();
-    }
-
     /**
      * "[[:a 1] [:b 1] [:c 2]} -> {1 [:a :b] 2 :c}"
      * Reverses an assoc-list style Map like reverseMap(Map...)
@@ -936,42 +934,49 @@ public class Utils {
         }
     }
 
-    public static ClientBlobStore getClientBlobStore(Map conf) {
+    public static ClientBlobStore getClientBlobStore(Map<String, Object> conf) {
         ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance((String) conf.get(Config.CLIENT_BLOBSTORE));
         store.prepare(conf);
         return store;
     }
 
-    private static Object normalizeConf(Object conf) {
-        if (conf == null) return new HashMap();
-        if (conf instanceof Map) {
-            Map<Object, Object> confMap = new HashMap((Map) conf);
-            for (Map.Entry<Object, Object> entry : confMap.entrySet()) {
-                confMap.put(entry.getKey(), normalizeConf(entry.getValue()));
-            }
-            return confMap;
-        } else if (conf instanceof List) {
-            List confList =  new ArrayList((List) conf);
+    @SuppressWarnings("unchecked")
+    private static Object normalizeConfValue(Object obj) {
+        if (obj instanceof Map) {
+            return normalizeConf((Map<String, Object>) obj);
+        } else if (obj instanceof Collection) {
+            List<Object> confList =  new ArrayList<>((Collection<Object>) obj);
             for (int i = 0; i < confList.size(); i++) {
                 Object val = confList.get(i);
-                confList.set(i, normalizeConf(val));
+                confList.set(i, normalizeConfValue(val));
             }
             return confList;
-        } else if (conf instanceof Integer) {
-            return ((Integer) conf).longValue();
-        } else if (conf instanceof Float) {
-            return ((Float) conf).doubleValue();
+        } else if (obj instanceof Integer) {
+            return ((Number) obj).longValue();
+        } else if (obj instanceof Float) {
+            return ((Float) obj).doubleValue();
         } else {
-            return conf;
+            return obj;
         }
     }
-
-    public static boolean isValidConf(Map<String, Object> stormConf) {
-        return normalizeConf(stormConf).equals(normalizeConf((Map) JSONValue.parse(JSONValue.toJSONString(stormConf))));
+    
+    private static Map<String, Object> normalizeConf(Map<String, Object> conf) {
+        if (conf == null) {
+            return new HashMap<>();
+        }
+        Map<String, Object> ret = new HashMap<>(conf);
+        for (Map.Entry<String, Object> entry : ret.entrySet()) {
+            ret.put(entry.getKey(), normalizeConfValue(entry.getValue()));
+        }
+        return ret;
     }
 
-    public static TopologyInfo getTopologyInfo(String name, String asUser, Map stormConf) {
-        try (NimbusClient client = NimbusClient.getConfiguredClientAs(stormConf, asUser)) {
+    public static boolean isValidConf(Map<String, Object> topoConf) {
+        return normalizeConf(topoConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConf))));
+    }
+
+    public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(topoConf, asUser)) {
             String topologyId = getTopologyId(name, client.getClient());
             if (null != topologyId) {
                 return client.getClient().getTopologyInfo(topologyId);
@@ -996,9 +1001,9 @@ public class Utils {
         return null;
     }
 
-    public static void validateTopologyBlobStoreMap(Map<String, ?> stormConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
+    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
         @SuppressWarnings("unchecked")
-        Map<String, Object> blobStoreMap = (Map<String, Object>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
             Set<String> mapKeys = blobStoreMap.keySet();
             Set<String> missingKeys = new HashSet<>();
@@ -1044,6 +1049,31 @@ public class Utils {
         return dump.toString();
     }
 
+    public static long getVersionFromBlobVersionFile(File versionFile) {
+        long currentVersion = 0;
+        if (versionFile.exists() && !(versionFile.isDirectory())) {
+            BufferedReader br = null;
+            try {
+                br = new BufferedReader(new FileReader(versionFile));
+                String line = br.readLine();
+                currentVersion = Long.parseLong(line);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            } finally {
+                try {
+                    if (br != null) {
+                        br.close();
+                    }
+                } catch (Exception ignore) {
+                    LOG.error("Exception trying to cleanup", ignore);
+                }
+            }
+            return currentVersion;
+        } else {
+            return -1;
+        }
+    }
+
     public static boolean checkDirExists(String dir) {
         File file = new File(dir);
         return file.isDirectory();
@@ -1055,7 +1085,7 @@ public class Utils {
      * @param configKey The key pointing to the pluggable class
      * @return an instance of the class or null if it is not specified.
      */
-    public static Object getConfiguredClass(Map conf, Object configKey) {
+    public static Object getConfiguredClass(Map<String, Object> conf, Object configKey) {
         if (conf.containsKey(configKey)) {
             return ReflectionUtils.newInstance((String)conf.get(configKey));
         }
@@ -1068,18 +1098,18 @@ public class Utils {
      * @param conf the storm configuration, not the topology configuration
      * @return true if it is configured else false.
      */
-    public static boolean isZkAuthenticationConfiguredStormServer(Map conf) {
+    public static boolean isZkAuthenticationConfiguredStormServer(Map<String, Object> conf) {
         return null != System.getProperty("java.security.auth.login.config")
                 || (conf != null
                 && conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME) != null
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_AUTH_SCHEME)).isEmpty());
     }
 
-    public static byte[] toCompressedJsonConf(Map<String, Object> stormConf) {
+    public static byte[] toCompressedJsonConf(Map<String, Object> topoConf) {
         try {
             ByteArrayOutputStream bos = new ByteArrayOutputStream();
             OutputStreamWriter out = new OutputStreamWriter(new GZIPOutputStream(bos));
-            JSONValue.writeJSONString(stormConf, out);
+            JSONValue.writeJSONString(topoConf, out);
             out.close();
             return bos.toByteArray();
         } catch (IOException e) {
@@ -1164,18 +1194,30 @@ public class Utils {
         return null;
     }
 
-    public static int getAvailablePort(int prefferedPort) {
+    /**
+     * Gets an available port. Consider if it is possible to pass port 0 to the
+     * server instead of using this method, since there is no guarantee that the
+     * port returned by this method will remain free.
+     *
+     * @param preferredPort
+     * @return The preferred port if available, or a random available port
+     */
+    public static int getAvailablePort(int preferredPort) {
         int localPort = -1;
-        try(ServerSocket socket = new ServerSocket(prefferedPort)) {
+        try(ServerSocket socket = new ServerSocket(preferredPort)) {
             localPort = socket.getLocalPort();
         } catch(IOException exp) {
-            if (prefferedPort > 0) {
+            if (preferredPort > 0) {
                 return getAvailablePort(0);
             }
         }
         return localPort;
     }
 
+    /**
+     * Shortcut to calling {@link #getAvailablePort(int) } with 0 as the preferred port
+     * @return A random available port
+     */
     public static int getAvailablePort() {
         return getAvailablePort(0);
     }
@@ -1269,5 +1311,148 @@ public class Utils {
         public int upTime() {
             return Time.deltaSecs(startTime);
         }
+    }
+
+    /**
+     * Add version information to the given topology
+     * @param topology the topology being submitted (MIGHT BE MODIFIED)
+     * @return topology
+     */
+    public static StormTopology addVersions(StormTopology topology) {
+        String stormVersion = VersionInfo.getVersion();
+        if (stormVersion != null && 
+                !"Unknown".equalsIgnoreCase(stormVersion) && 
+                !topology.is_set_storm_version()) {
+            topology.set_storm_version(stormVersion);
+        }
+        
+        String jdkVersion = System.getProperty("java.version");
+        if (jdkVersion != null && !topology.is_set_jdk_version()) {
+            topology.set_jdk_version(jdkVersion);
+        }
+        return topology;
+    }
+    
+    /**
+     * Get a map of version to classpath from the conf Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP
+     * @param conf what to read it out of
+     * @param currentCP the current classpath for this version of storm (not included in the conf, but returned by this)
+     * @return the map
+     */
+    public static NavigableMap<SimpleVersion, List<String>> getConfiguredClasspathVersions(Map<String, Object> conf, List<String> currentCP) {
+        TreeMap<SimpleVersion, List<String>> ret = new TreeMap<>();
+        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_CLASSPATH_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+            ret.put(new SimpleVersion(entry.getKey()), Arrays.asList(entry.getValue().split(File.pathSeparator)));
+        }
+        ret.put(VersionInfo.OUR_VERSION, currentCP);
+        return ret;
+    }
+    
+    /**
+     * Get a map of version to worker main from the conf Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP
+     * @param conf what to read it out of
+     * @return the map
+     */
+    public static NavigableMap<SimpleVersion, String> getConfiguredWorkerMainVersions(Map<String, Object> conf) {
+        TreeMap<SimpleVersion, String> ret = new TreeMap<>();
+        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_MAIN_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+            ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
+        }
+
+        ret.put(VersionInfo.OUR_VERSION, "org.apache.storm.daemon.worker.Worker");
+        return ret;
+    }
+    
+    
+    /**
+     * Get a map of version to worker log writer from the conf Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP
+     * @param conf what to read it out of
+     * @return the map
+     */
+    public static NavigableMap<SimpleVersion, String> getConfiguredWorkerLogWriterVersions(Map<String, Object> conf) {
+        TreeMap<SimpleVersion, String> ret = new TreeMap<>();
+        Map<String, String> fromConf = (Map<String, String>) conf.getOrDefault(Config.SUPERVISOR_WORKER_VERSION_LOGWRITER_MAP, Collections.emptyMap());
+        for (Map.Entry<String, String> entry: fromConf.entrySet()) {
+            ret.put(new SimpleVersion(entry.getKey()), entry.getValue());
+        }
+
+        ret.put(VersionInfo.OUR_VERSION, "org.apache.storm.LogWriter");
+        return ret;
+    }
+    
+    
+    public static <T> T getCompatibleVersion(NavigableMap<SimpleVersion, T> versionedMap, SimpleVersion desiredVersion, String what, T defaultValue) {
+        Entry<SimpleVersion, T> ret = versionedMap.ceilingEntry(desiredVersion);
+        if (ret == null || ret.getKey().getMajor() != desiredVersion.getMajor()) {
+            //Could not find a "fully" compatible version.  Look to see if there is a possibly compatible version right below it
+            ret = versionedMap.floorEntry(desiredVersion);
+            if (ret == null || ret.getKey().getMajor() != desiredVersion.getMajor()) {
+                if (defaultValue != null) {
+                    LOG.warn("Could not find any compatible {} falling back to using {}", what, defaultValue);
+                }
+                return defaultValue;
+            }
+            LOG.warn("Could not find a higer compatible version for {} {}, using {} instead", what, desiredVersion, ret.getKey());
+        }
+        return ret.getValue();
+    }
+    
+    @SuppressWarnings("unchecked")
+    private static Map<String, Object> readConfIgnoreNotFound(Yaml yaml, File f) throws IOException {
+        Map<String, Object> ret = null;
+        if (f.exists()) {
+            try (FileReader fr = new FileReader(f)) {
+                ret = (Map<String, Object>) yaml.load(fr);
+            }
+        }
+        return ret;
+    }
+    
+    public static Map<String, Object> getConfigFromClasspath(List<String> cp, Map<String, Object> conf) throws IOException {
+        if (cp == null || cp.isEmpty()) {
+            return conf;
+        }
+        Yaml yaml = new Yaml(new SafeConstructor());
+        Map<String, Object> defaultsConf = null;
+        Map<String, Object> stormConf = null;
+        for (String part: cp) {
+            File f = new File(part);
+            if (f.isDirectory()) {
+                if (defaultsConf == null) {
+                    defaultsConf = readConfIgnoreNotFound(yaml, new File(f, "defaults.yaml"));
+                }
+                
+                if (stormConf == null) {
+                    stormConf = readConfIgnoreNotFound(yaml, new File(f, "storm.yaml"));
+                }
+            } else {
+                //Lets assume it is a jar file
+                try (JarFile jarFile = new JarFile(f)) {
+                    Enumeration<JarEntry> jarEnums = jarFile.entries();
+                    while (jarEnums.hasMoreElements()) {
+                        JarEntry entry = jarEnums.nextElement();
+                        if (!entry.isDirectory()) {
+                            if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
+                                try (InputStream in = jarFile.getInputStream(entry)) {
+                                    defaultsConf = (Map<String, Object>) yaml.load(new InputStreamReader(in));
+                                }
+                            }
+                            
+                            if (stormConf == null && entry.getName().equals("storm.yaml")) {
+                                try (InputStream in = jarFile.getInputStream(entry)) {
+                                    stormConf = (Map<String, Object>) yaml.load(new InputStreamReader(in));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        if (stormConf != null) {
+            defaultsConf.putAll(stormConf);
+        }
+        return defaultsConf;
     }
 }

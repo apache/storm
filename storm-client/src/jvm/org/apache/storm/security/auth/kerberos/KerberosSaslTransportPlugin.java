@@ -61,11 +61,11 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
             if (conf == null) {
                 throw new IllegalArgumentException("Configuration should not be null");
             }
-            SortedMap<String, ?> configsMap = AuthUtils.pullConfig(conf, login_context);
-            if (configsMap!=null) {
+            SortedMap<String, ?> authConf = AuthUtils.pullConfig(conf, login_context);
+            if (authConf!=null) {
                 StringBuilder stringBuilder = new StringBuilder();
-                for (String configKey: configsMap.keySet()) {
-                    String configValue = (String) configsMap.get(configKey);
+                for (String configKey: authConf.keySet()) {
+                    String configValue = (String) authConf.get(configKey);
                     stringBuilder.append(configKey);
                     stringBuilder.append(configValue);
                 }
@@ -93,7 +93,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
     public TTransportFactory getServerTransportFactory() throws IOException {
         //create an authentication callback handler
-        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, storm_conf);
+        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, topoConf);
         
         //login our principal
         Subject subject = null;

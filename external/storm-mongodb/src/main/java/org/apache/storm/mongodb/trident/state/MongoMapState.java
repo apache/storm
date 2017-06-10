@@ -131,7 +131,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
         }
 
         @SuppressWarnings({"rawtypes", "unchecked"})
-        public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             IBackingMap state = new MongoMapState(conf, options);
 
             if(options.cacheSize > 0) {

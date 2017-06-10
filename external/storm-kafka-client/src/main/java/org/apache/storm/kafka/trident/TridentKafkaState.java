@@ -15,20 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.trident;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.topology.FailedException;
-import org.apache.kafka.clients.producer.KafkaProducer;
-import org.apache.kafka.clients.producer.ProducerRecord;
-import org.apache.kafka.clients.producer.RecordMetadata;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
-import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.tuple.TridentTuple;
+package org.apache.storm.kafka.trident;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -36,6 +24,18 @@ import java.util.Objects;
 import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
+import org.apache.storm.kafka.trident.selector.KafkaTopicSelector;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.topology.FailedException;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.tuple.TridentTuple;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TridentKafkaState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaState.class);
@@ -75,27 +75,27 @@ public class TridentKafkaState implements State {
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
         try {
-            long startTime = System.currentTimeMillis();
-	     int numberOfRecords = tuples.size();
-	     List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
+            final long startTime = System.currentTimeMillis();
+            int numberOfRecords = tuples.size();
+            List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
             for (TridentTuple tuple : tuples) {
                 topic = topicSelector.getTopic(tuple);
                 Object messageFromTuple = mapper.getMessageFromTuple(tuple);
-		 Object keyFromTuple = mapper.getKeyFromTuple(tuple);
-				
+                Object keyFromTuple = mapper.getKeyFromTuple(tuple);
+
                 if (topic != null) {
-                   if (messageFromTuple != null) {
-		      Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
-		      futures.add(result);
-		   } else {
-		      LOG.warn("skipping Message with Key "+ keyFromTuple +" as message was null");
-		   }
-			
+                    if (messageFromTuple != null) {
+                        Future<RecordMetadata> result = producer.send(new ProducerRecord(topic, keyFromTuple, messageFromTuple));
+                        futures.add(result);
+                    } else {
+                        LOG.warn("skipping Message with Key " + keyFromTuple + " as message was null");
+                    }
+
                 } else {
-                      LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
+                    LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
                 }
             }
-            
+
             int emittedRecords = futures.size();
             List<ExecutionException> exceptions = new ArrayList<>(emittedRecords);
             for (Future<RecordMetadata> future : futures) {
@@ -106,20 +106,20 @@ public class TridentKafkaState implements State {
                 }
             }
 
-            if (exceptions.size() > 0){
-		StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages " + tuples + " from topic = " + topic 
-				+ " because of the following exceptions:" + System.lineSeparator());
-				
-		for (ExecutionException exception : exceptions) {
-			errorMsg = errorMsg.append(exception.getMessage()).append(System.lineSeparator()); ;
-		}
-		String message = errorMsg.toString();
-		LOG.error(message);
-		throw new FailedException(message);
-	    }
-	    long latestTime = System.currentTimeMillis();
-	    LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime-startTime, topic);
-			
+            if (exceptions.size() > 0) {
+                StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages " + tuples + " from topic = " + topic
+                    + " because of the following exceptions:" + System.lineSeparator());
+
+                for (ExecutionException exception : exceptions) {
+                    errorMsg = errorMsg.append(exception.getMessage()).append(System.lineSeparator());;
+                }
+                String message = errorMsg.toString();
+                LOG.error(message);
+                throw new FailedException(message);
+            }
+            long latestTime = System.currentTimeMillis();
+            LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime - startTime, topic);
+
         } catch (Exception ex) {
             String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
             LOG.warn(errorMsg, ex);

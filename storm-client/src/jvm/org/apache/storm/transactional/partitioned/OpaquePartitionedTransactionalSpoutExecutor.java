@@ -40,7 +40,7 @@ public class OpaquePartitionedTransactionalSpoutExecutor implements ICommitterTr
     public class Coordinator implements ITransactionalSpout.Coordinator<Object> {
         IOpaquePartitionedTransactionalSpout.Coordinator _coordinator;
 
-        public Coordinator(Map conf, TopologyContext context) {
+        public Coordinator(Map<String, Object> conf, TopologyContext context) {
             _coordinator = _spout.getCoordinator(conf, context);
         }
         
@@ -68,7 +68,7 @@ public class OpaquePartitionedTransactionalSpoutExecutor implements ICommitterTr
         int _index;
         int _numTasks;
         
-        public Emitter(Map conf, TopologyContext context) {
+        public Emitter(Map<String, Object> conf, TopologyContext context) {
             _emitter = _spout.getEmitter(conf, context);
             _index = context.getThisTaskIndex();
             _numTasks = context.getComponentTasks(context.getThisComponentId()).size();
@@ -138,12 +138,12 @@ public class OpaquePartitionedTransactionalSpoutExecutor implements ICommitterTr
     }
     
     @Override
-    public ITransactionalSpout.Coordinator<Object> getCoordinator(Map conf, TopologyContext context) {
+    public ITransactionalSpout.Coordinator<Object> getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return new Coordinator(conf, context);
     }
 
     @Override
-    public ICommitterTransactionalSpout.Emitter getEmitter(Map conf, TopologyContext context) {
+    public ICommitterTransactionalSpout.Emitter getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new Emitter(conf, context);
     }
 

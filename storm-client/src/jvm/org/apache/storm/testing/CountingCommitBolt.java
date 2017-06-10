@@ -34,7 +34,7 @@ public class CountingCommitBolt extends BaseTransactionalBolt implements ICommit
     int _count = 0;
     
     @Override
-    public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
         _id = id;
         _collector = collector;
     }

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class LeaderElectorImp implements ILeaderElector {
     private static Logger LOG = LoggerFactory.getLogger(LeaderElectorImp.class);
-    private final Map conf;
+    private final Map<String, Object> conf;
     private final List<String> servers;
     private final CuratorFramework zk;
     private final String leaderlockPath;
@@ -45,7 +45,7 @@ public class LeaderElectorImp implements ILeaderElector {
     private final AtomicReference<LeaderLatchListener> leaderLatchListener;
     private final BlobStore blobStore;
 
-    public LeaderElectorImp(Map conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id, AtomicReference<LeaderLatch> leaderLatch,
+    public LeaderElectorImp(Map<String, Object> conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id, AtomicReference<LeaderLatch> leaderLatch,
             AtomicReference<LeaderLatchListener> leaderLatchListener, BlobStore blobStore) {
         this.conf = conf;
         this.servers = servers;
@@ -58,7 +58,7 @@ public class LeaderElectorImp implements ILeaderElector {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         // no-op for zookeeper implementation
     }
 

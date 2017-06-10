@@ -468,3 +468,45 @@ function toggleComponents(elId) {
         showComponents(dt.api().row(this), show);
     });
 }
+
+function open_visualization() {
+    window.open('/visualize.html?id='+ $.url("?id"), '_blank');
+}
+
+function show_visualization(sys) {
+    getStatic("/templates/topology-page-template.html", function(template) {
+        jsError(function() {
+            var topologyVisualization = $("#visualization-container");
+            if (topologyVisualization.find("canvas").length == 0) {
+                topologyVisualization.append(
+                    Mustache.render($(template)
+                        .filter("#topology-visualization-container-template")
+                        .html(),
+                        {id: $.url("?id")}));
+            }
+        });
+
+        $("#visualization-container").show(500);
+        $("#show-hide-visualization").attr('value', 'Hide Visualization');
+        $("#show-hide-visualization").unbind("click");
+        $("#show-hide-visualization").click(function () { hide_visualization(sys) });
+    });
+}
+
+function hide_visualization(sys) {
+    $("#visualization-container").hide(500);
+    $("#show-hide-visualization").attr('value', 'Show Visualization');
+    $("#show-hide-visualization").unbind("click");
+    $("#show-hide-visualization").click(function () { show_visualization(sys) });
+    $("#visualization-container").empty();
+}
+
+function jsError(other) {
+  try {
+    other();
+  } catch (err) {
+    getStatic("/templates/json-error-template.html", function(template) {
+      $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+    });
+  }
+}

@@ -49,7 +49,7 @@ public interface ISerializer extends Serializable {
      * @param context topology context
      * @return process pid
      */
-    Number connect(Map conf, TopologyContext context) throws IOException,
+    Number connect(Map<String, Object> conf, TopologyContext context) throws IOException,
             NoOutputException;
 
     /**

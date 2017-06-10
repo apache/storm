@@ -55,7 +55,7 @@ public class RichSpoutBatchTriggerer implements IRichSpout {
     }
     
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _delegate.open(conf, context, new SpoutOutputCollector(new StreamOverrideCollector(collector)));
         _outputTasks = new ArrayList<>();
         for(String component: Utils.get(context.getThisTargets(),

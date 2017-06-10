@@ -46,13 +46,13 @@ public class ThriftNettyClientCodec {
 
     private PacemakerClient client;
     private AuthMethod authMethod;
-    private Map storm_conf;
+    private Map<String, Object> topoConf;
     private String host;
 
-    public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map storm_conf, AuthMethod authMethod, String host) {
+    public ThriftNettyClientCodec(PacemakerClient pacemaker_client, Map<String, Object> topoConf, AuthMethod authMethod, String host) {
         client = pacemaker_client;
         this.authMethod = authMethod;
-        this.storm_conf = storm_conf;
+        this.topoConf = topoConf;
         this.host = host;
     }
 
@@ -68,7 +68,7 @@ public class ThriftNettyClientCodec {
                         LOG.debug("Adding KerberosSaslClientHandler to pacemaker client pipeline.");
                         pipeline.addLast(KERBEROS_HANDLER,
                                          new KerberosSaslClientHandler(client,
-                                                                       storm_conf,
+                                                                       topoConf,
                                                                        AuthUtils.LOGIN_CONTEXT_PACEMAKER_CLIENT,
                                                                        host));
                     }

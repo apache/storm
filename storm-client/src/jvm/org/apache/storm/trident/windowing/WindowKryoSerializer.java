@@ -37,8 +37,8 @@ public class WindowKryoSerializer {
     private final Output output;
     private final Input input;
 
-    public WindowKryoSerializer(Map stormConf) {
-        kryo = SerializationFactory.getKryo(stormConf);
+    public WindowKryoSerializer(Map<String, Object> topoConf) {
+        kryo = SerializationFactory.getKryo(topoConf);
         output = new Output(2000, 2_000_000_000);
         input = new Input();
     }

@@ -84,20 +84,20 @@ public class WindowTridentProcessor implements TridentProcessor {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, TridentContext tridentContext) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, TridentContext tridentContext) {
         this.topologyContext = context;
         List<TridentTuple.Factory> parents = tridentContext.getParentTupleFactories();
         if (parents.size() != 1) {
             throw new RuntimeException("Aggregation related operation can only have one parent");
         }
 
-        Long maxTuplesCacheSize = getWindowTuplesCacheSize(stormConf);
+        Long maxTuplesCacheSize = getWindowTuplesCacheSize(topoConf);
 
         this.tridentContext = tridentContext;
         collector = new FreshCollector(tridentContext);
         projection = new TridentTupleView.ProjectionFactory(parents.get(0), inputFields);
 
-        windowStore = windowStoreFactory.create(stormConf);
+        windowStore = windowStoreFactory.create(topoConf);
         windowTaskId = windowId + WindowsStore.KEY_SEPARATOR + topologyContext.getThisTaskId() + WindowsStore.KEY_SEPARATOR;
         windowTriggerInprocessId = getWindowTriggerInprocessIdPrefix(windowTaskId);
 
@@ -116,7 +116,7 @@ public class WindowTridentProcessor implements TridentProcessor {
         return TRIGGER_PREFIX + windowTaskId;
     }
 
-    private Long getWindowTuplesCacheSize(Map conf) {
+    private Long getWindowTuplesCacheSize(Map<String, Object> conf) {
         if (conf.containsKey(Config.TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT)) {
             return ((Number) conf.get(Config.TOPOLOGY_TRIDENT_WINDOWING_INMEMORY_CACHE_LIMIT)).longValue();
         }

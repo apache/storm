@@ -1,4 +1,36 @@
 ﻿## 2.0.0
+ * STORM-1642: Rethrow exception on serialization error and kill worker
+ * STORM-2515: Fix most checkstyle violations in storm-kafka-client
+ * STORM-2543: Let Topology query if blobs have changed
+ * STORM-2532: Remove uses of Utils.getAvailablePort where possible 
+ * STORM-2535: Replace test-reset-timeout with a more reliable test 
+ * STORM-2537: Resolved checkstyle violations for storm-webapp module
+ * STORM-2503: Restore comparator logic in `DefaultResourceAwareStrategy`
+ * STORM-2516: Fix timing issues with testPrepareLateTupleStreamWithoutBuilder
+ * STORM-2489: Overlap and data loss on WindowedBolt based on Duration
+ * STORM-2206: replacing visualization with viz.js
+ * STORM-2527: Initialize java.sql.DriverManager earlier to avoid deadlock
+ * STORM-2525: Fix flaky integration tests
+ * STORM-2526: Revert changes mistakenly made to generated files
+ * STORM-2524: Add the option to set client.id to storm-kafka
+ * STORM-2448: Add in Storm and JDK versions when submitting a topology.
+ * STORM-2503: Fix lgtm.com alerts on equality and comparison operations.
+ * STORM-2499: Add Serialization plugin for EventHub System Properties
+ * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
+ * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
+ * STORM-2493: update documents to reflect the changes
+ * STORM-2511: Submitting a topology with name containing unicode getting failed
+ * STORM-2510: update checkstyle configuration to lower violations
+ * STORM-2479: Fix port assignment race condition in storm-webapp tests
+ * STORM-2191: shorten classpaths by using wildcards
+ * STORM-2495: Integrate checkstyle check during build
+ * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
+ * STORM-2468: Remove clojure from storm-client
+ * STORM-2490: Lambda support
+ * STORM-2349: Add one RocketMQ plugin for the Apache Storm
+ * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
+ * STORM-2480: principle should be modified to principal
+ * STORM-2371: Replace existing AMQP eventhub client with the lastest one from Microsoft eventhubs
  * STORM-2475: Fix parsing of host:port to deal with IPv6 addresses
  * STORM-832: Allow config validation to be used by plugins/etc.
  * STORM-2471: Add metric for thread count
@@ -234,10 +266,24 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2536: excludes jersey 1.x from storm-autocreds 
+ * STORM-2528: Bump log4j version to 2.8.2
+ * STORM-2413: Make new Kafka spout respect tuple retry limits
+ * STORM-2518: Handles empty name for "USER type" ACL when normalizing ACLs
+ * STORM-2501: Auto populate Hive Credentials
+ * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
+ * STORM-2512: Make constructor public and add one more builder constructor
+ * STORM-2482: Refactor the Storm auto credential plugins to be more usable
+ * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
+ * STORM-2488: The UI user Must be HTTP
  * STORM-2315: New kafka spout can't commit offset when ack is disabled
  * STORM-2467: Use explicit charset when decoding from array backed buffer
  * STORM-2429: Properly validate supervisor.scheduler.meta
  * STORM-2451: windows storm.cmd does not set log4j2 config file correctly by default
+ * STORM-2379: ElasticSearch connector changes to use new APIs.
+ * STORM-2505: Spout to support topic compaction
+
+
 
 ## 1.1.0
  * STORM-2416: Release Packaging Improvements

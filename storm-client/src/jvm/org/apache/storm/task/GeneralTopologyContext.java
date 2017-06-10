@@ -41,14 +41,14 @@ public class GeneralTopologyContext implements JSONAware {
     private Map<String, List<Integer>> _componentToTasks;
     private Map<String, Map<String, Fields>> _componentToStreamToFields;
     private String _stormId;
-    protected Map _stormConf;
+    protected Map _topoConf;
     
     // pass in componentToSortedTasks for the case of running tons of tasks in single executor
-    public GeneralTopologyContext(StormTopology topology, Map stormConf,
+    public GeneralTopologyContext(StormTopology topology, Map<String, Object> topoConf,
             Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks,
             Map<String, Map<String, Fields>> componentToStreamToFields, String stormId) {
         _topology = topology;
-        _stormConf = stormConf;
+        _topoConf = topoConf;
         _taskToComponent = taskToComponent;
         _stormId = stormId;
         _componentToTasks = componentToSortedTasks;
@@ -183,13 +183,13 @@ public class GeneralTopologyContext implements JSONAware {
     }
     
     public int maxTopologyMessageTimeout() {
-        Integer max = ObjectReader.getInt(_stormConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
+        Integer max = ObjectReader.getInt(_topoConf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS));
         for(String spout: getRawTopology().get_spouts().keySet()) {
             ComponentCommon common = getComponentCommon(spout);
             String jsonConf = common.get_json_conf();
             if(jsonConf!=null) {
                 try {
-                    Map conf = (Map) JSONValue.parseWithException(jsonConf);
+                    Map<String, Object> conf = (Map) JSONValue.parseWithException(jsonConf);
                     Object comp = conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
                     max = Math.max(ObjectReader.getInt(comp, max), max);
                 } catch (ParseException e) {

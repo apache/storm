@@ -18,6 +18,19 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
+
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -32,20 +45,6 @@ import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
 public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTridentSpout.Emitter<
         List<TopicPartition>,
@@ -71,7 +70,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     private TopologyContext topologyContext;
 
-    public KafkaTridentSpoutEmitter(KafkaTridentSpoutManager<K, V> kafkaManager, TopologyContext topologyContext, Timer refreshSubscriptionTimer) {
+    public KafkaTridentSpoutEmitter(KafkaTridentSpoutManager<K, V> kafkaManager, TopologyContext topologyContext,
+            Timer refreshSubscriptionTimer) {
         this.kafkaConsumer = kafkaManager.createAndSubscribeKafkaConsumer(topologyContext);
         this.kafkaManager = kafkaManager;
         this.topologyContext = topologyContext;
@@ -85,7 +85,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
     }
 
     /**
-     * Creates instance of this class with default 500 millisecond refresh subscription timer
+     * Creates instance of this class with default 500 millisecond refresh subscription timer.
      */
     public KafkaTridentSpoutEmitter(KafkaTridentSpoutManager<K, V> kafkaManager, TopologyContext topologyContext) {
         this(kafkaManager, topologyContext, new Timer(500,
@@ -94,7 +94,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     @Override
     public KafkaTridentSpoutBatchMetadata<K, V> emitPartitionBatch(TransactionAttempt tx, TridentCollector collector,
-                                                                   KafkaTridentSpoutTopicPartition currBatchPartition, KafkaTridentSpoutBatchMetadata<K, V> lastBatch) {
+            KafkaTridentSpoutTopicPartition currBatchPartition, KafkaTridentSpoutBatchMetadata<K, V> lastBatch) {
 
         LOG.debug("Processing batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], [collector = {}]",
                 tx, currBatchPartition, lastBatch, collector);
@@ -105,9 +105,9 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
         Collection<TopicPartition> pausedTopicPartitions = Collections.emptySet();
 
         if (assignments == null || !assignments.contains(currBatchPartition.getTopicPartition())) {
-            LOG.warn("SKIPPING processing batch [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], " +
-                            "[collector = {}] because it is not part of the assignments {} of consumer instance [{}] " +
-                            "of consumer group [{}]", tx, currBatchPartition, lastBatch, collector, assignments,
+            LOG.warn("SKIPPING processing batch [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
+                            + "[collector = {}] because it is not part of the assignments {} of consumer instance [{}] "
+                            + "of consumer group [{}]", tx, currBatchPartition, lastBatch, collector, assignments,
                     kafkaConsumer, kafkaManager.getKafkaSpoutConfig().getConsumerGroupId());
         } else {
             try {
@@ -133,8 +133,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
                 kafkaConsumer.resume(pausedTopicPartitions);
                 LOG.trace("Resumed topic-partitions {}", pausedTopicPartitions);
             }
-            LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], " +
-                    "[currBatchMetadata = {}], [collector = {}]", tx, currBatchPartition, lastBatch, currentBatch, collector);
+            LOG.debug("Emitted batch: [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
+                    + "[currBatchMetadata = {}], [collector = {}]", tx, currBatchPartition, lastBatch, currentBatch, collector);
         }
 
         return currentBatch;
@@ -188,7 +188,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
     }
 
     private boolean isFirstPoll(TopicPartition tp) {
-         return !firstPoll.contains(tp);
+        return !firstPoll.contains(tp);
     }
 
     // returns paused topic-partitions.
@@ -203,8 +203,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     @Override
     public void refreshPartitions(List<KafkaTridentSpoutTopicPartition> partitionResponsibilities) {
-        LOG.trace("Refreshing of topic-partitions handled by Kafka. " +
-                "No action taken by this method for topic partitions {}", partitionResponsibilities);
+        LOG.trace("Refreshing of topic-partitions handled by Kafka. "
+                + "No action taken by this method for topic partitions {}", partitionResponsibilities);
     }
 
     /**
@@ -254,8 +254,8 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     @Override
     public String toString() {
-        return super.toString() +
-                "{kafkaManager=" + kafkaManager +
-                '}';
+        return super.toString()
+                + "{kafkaManager=" + kafkaManager
+                + '}';
     }
 }

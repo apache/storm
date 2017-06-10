@@ -50,7 +50,7 @@ public class WeatherBatchSpout implements IBatchSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context) {
+    public void open(Map<String, Object> conf, TopologyContext context) {
 
     }
 

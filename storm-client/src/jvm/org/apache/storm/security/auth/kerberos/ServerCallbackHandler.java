@@ -40,7 +40,7 @@ public class ServerCallbackHandler implements CallbackHandler {
 
     private String userName;
 
-    public ServerCallbackHandler(Configuration configuration, Map stormConf) throws IOException {
+    public ServerCallbackHandler(Configuration configuration, Map<String, Object> topoConf) throws IOException {
         if (configuration==null) return;
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);

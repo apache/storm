@@ -59,7 +59,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     protected SimpleClientProvider clientProvider;
     protected SimpleClient client;
     protected Session session;
-    protected Map stormConfig;
+    protected Map<String, Object> topoConfig;
 
     protected CassandraConf cassandraConf;
 
@@ -89,11 +89,11 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
      * {@inheritDoc}
      */
     @Override
-    public void prepare(Map stormConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
+    public void prepare(Map<String, Object> topoConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.outputCollector = outputCollector;
-        this.stormConfig = stormConfig;
+        this.topoConfig = topoConfig;
 
-        Map<String, Object> cassandraClientConfig = cassandraConfig != null ? cassandraConfig : stormConfig;
+        Map<String, Object> cassandraClientConfig = cassandraConfig != null ? cassandraConfig : topoConfig;
 
         this.cassandraConf = new CassandraConf(cassandraClientConfig);
         this.client = clientProvider.getClient(cassandraClientConfig);

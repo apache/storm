@@ -86,7 +86,7 @@ public class BatchSubtopologyBuilder {
         for(InputDeclaration decl: _masterBolt.declarations) {
             decl.declare(declarer);
         }
-        for(Map conf: _masterBolt.componentConfs) {
+        for(Map<String, Object> conf: _masterBolt.componentConfs) {
             declarer.addConfigurations(conf);
         }
         for(String id: _bolts.keySet()) {
@@ -108,7 +108,7 @@ public class BatchSubtopologyBuilder {
                                                                       coordinatedArgs,
                                                                       null),
                                                   component.parallelism);
-            for(Map conf: component.componentConfs) {
+            for(Map<String, Object> conf: component.componentConfs) {
                 input.addConfigurations(conf);
             }
             for(String c: componentBoltSubscriptions(component)) {

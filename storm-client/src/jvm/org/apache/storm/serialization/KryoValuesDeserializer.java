@@ -28,7 +28,7 @@ public class KryoValuesDeserializer {
     Kryo _kryo;
     Input _kryoInput;
     
-    public KryoValuesDeserializer(Map conf) {
+    public KryoValuesDeserializer(Map<String, Object> conf) {
         _kryo = SerializationFactory.getKryo(conf);
         _kryoInput = new Input(1);
     }

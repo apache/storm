@@ -51,7 +51,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
     @SuppressWarnings("rawtypes")
-    Map storm_conf;
+    Map<String, Object> topoConf;
     int port;
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
     private final AtomicInteger messagesDequeued = new AtomicInteger(0);
@@ -64,17 +64,18 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, null));
     private KryoValuesSerializer _ser;
     private IConnectionCallback _cb = null; 
+    private final int boundPort;
     
     @SuppressWarnings("rawtypes")
-    Server(Map storm_conf, int port) {
-        this.storm_conf = storm_conf;
+    Server(Map<String, Object> topoConf, int port) {
+        this.topoConf = topoConf;
         this.port = port;
-        _ser = new KryoValuesSerializer(storm_conf);
+        _ser = new KryoValuesSerializer(topoConf);
 
         // Configure the server.
-        int buffer_size = ObjectReader.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
-        int backlog = ObjectReader.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
-        int maxWorkers = ObjectReader.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
+        int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
+        int backlog = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SOCKET_BACKLOG), 500);
+        int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_SERVER_WORKER_THREADS));
 
         ThreadFactory bossFactory = new NettyRenameThreadFactory(netty_name() + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory(netty_name() + "-worker");
@@ -100,6 +101,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
         // Bind and start to accept incoming connections.
         Channel channel = bootstrap.bind(new InetSocketAddress(port));
+        boundPort = ((InetSocketAddress)channel.getLocalAddress()).getPort();
         allChannels.add(channel);
     }
     
@@ -156,6 +158,11 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         allChannels.remove(channel);
     }
 
+    @Override
+    public int getPort() {
+        return boundPort;
+    }
+    
     /**
      * close all channels, and release resources
      */
@@ -256,11 +263,11 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     public String name() {
-        return (String)storm_conf.get(Config.TOPOLOGY_NAME);
+        return (String)topoConf.get(Config.TOPOLOGY_NAME);
     }
 
     public String secretKey() {
-        return SaslUtils.getSecretKey(storm_conf);
+        return SaslUtils.getSecretKey(topoConf);
     }
 
     public void authenticated(Channel c) {

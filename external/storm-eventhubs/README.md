@@ -32,6 +32,10 @@ We have included a simple EventHubs send client for testing purpose. You can run
  	[username] [password] [entityPath] [partitionId] [messageSize] [messageCount]
 If you want to send messages to all partitions, use "-1" as partitionId.
 
+### Serialization Scheme ###
+    By default the serialization scheme is StringEventDataScheme where only the body of the eventdata is being sent.
+    To have a more comprehensive Eventhub metadata exposure look into the BinaryEventDataScheme.
+
 ### Windows Azure Eventhubs ###
 	http://azure.microsoft.com/en-us/services/event-hubs/
 

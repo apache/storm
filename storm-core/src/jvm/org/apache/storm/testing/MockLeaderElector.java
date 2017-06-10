@@ -43,7 +43,7 @@ public class MockLeaderElector implements ILeaderElector {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         //NOOP
     }
 

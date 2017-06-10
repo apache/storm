@@ -70,7 +70,7 @@ public class NimbusClient extends ThriftClient {
         withConfiguredClient(cb, ConfigUtils.readStormConfig());
     }
 
-    public static void withConfiguredClient(WithNimbus cb, Map conf) throws Exception {
+    public static void withConfiguredClient(WithNimbus cb, Map<String, Object> conf) throws Exception {
         ReqContext context = ReqContext.context();
         Principal principal = context.principal();
         String user = principal == null ? null : principal.getName();
@@ -79,11 +79,11 @@ public class NimbusClient extends ThriftClient {
         }
     }
 
-    public static NimbusClient getConfiguredClient(Map conf) {
+    public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
 
-    public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
+    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser) {
         Nimbus.Iface override = _localOverrideClient;
         if (override != null) {
             return new NimbusClient(override);
@@ -144,23 +144,23 @@ public class NimbusClient extends ThriftClient {
                         Config.NIMBUS_SEEDS + "?");
     }
 
-    public NimbusClient(Map conf, String host, int port) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host, int port) throws TTransportException {
         this(conf, host, port, null, null);
     }
 
-    public NimbusClient(Map conf, String host, int port, Integer timeout) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
 
-    public NimbusClient(Map conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
 
-    public NimbusClient(Map conf, String host) throws TTransportException {
+    public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
         super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;

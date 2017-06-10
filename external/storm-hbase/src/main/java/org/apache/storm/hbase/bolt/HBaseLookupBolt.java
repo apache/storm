@@ -73,7 +73,7 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
 
      @SuppressWarnings({ "unchecked", "rawtypes" })
      @Override
-     public void prepare(Map config, TopologyContext topologyContext, OutputCollector collector) {
+     public void prepare(Map<String, Object> config, TopologyContext topologyContext, OutputCollector collector) {
           super.prepare(config, topologyContext, collector);
           cacheEnabled = Boolean.parseBoolean(config.getOrDefault("hbase.cache.enable", "false").toString());
           int cacheTTL = Integer.parseInt(config.getOrDefault("hbase.cache.ttl.seconds", "300").toString());

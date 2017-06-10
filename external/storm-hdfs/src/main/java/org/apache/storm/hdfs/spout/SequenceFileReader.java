@@ -49,7 +49,7 @@ public class SequenceFileReader<Key extends Writable,Value extends Writable>
   private final Value value;
 
 
-  public SequenceFileReader(FileSystem fs, Path file, Map conf)
+  public SequenceFileReader(FileSystem fs, Path file, Map<String, Object> conf)
           throws IOException {
     super(fs, file);
     int bufferSize = !conf.containsKey(BUFFER_SIZE) ? DEFAULT_BUFF_SIZE : Integer.parseInt( conf.get(BUFFER_SIZE).toString() );
@@ -59,7 +59,7 @@ public class SequenceFileReader<Key extends Writable,Value extends Writable>
     this.offset = new SequenceFileReader.Offset(0,0,0);
   }
 
-  public SequenceFileReader(FileSystem fs, Path file, Map conf, String offset)
+  public SequenceFileReader(FileSystem fs, Path file, Map<String, Object> conf, String offset)
           throws IOException {
     super(fs, file);
     int bufferSize = !conf.containsKey(BUFFER_SIZE) ? DEFAULT_BUFF_SIZE : Integer.parseInt( conf.get(BUFFER_SIZE).toString() );

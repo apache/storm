@@ -123,7 +123,7 @@ public class BucketTestHiveTopology {
             declarer.declare(new Fields(this.outputFields));
         }
 
-        public void open(Map config, TopologyContext context,
+        public void open(Map<String, Object> config, TopologyContext context,
                          SpoutOutputCollector collector) {
             this.collector = collector;
             this.pending = new ConcurrentHashMap<UUID, Values>();

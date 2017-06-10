@@ -55,7 +55,7 @@ public class MqttSpout implements IRichSpout, Listener {
     protected transient TopologyContext context;
     protected transient LinkedBlockingQueue<AckableMessage> incoming;
     protected transient HashMap<Long, AckableMessage> pending;
-    private transient Map conf;
+    private transient Map<String, Object> conf;
     protected MqttMessageMapper type;
     protected MqttOptions options;
     protected KeyStoreLoader keyStoreLoader;
@@ -95,7 +95,7 @@ public class MqttSpout implements IRichSpout, Listener {
         return null;
     }
 
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
 
         this.collector = collector;

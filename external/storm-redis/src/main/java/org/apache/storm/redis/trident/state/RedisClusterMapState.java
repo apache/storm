@@ -229,7 +229,7 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
          * {@inheritDoc}
          */
         @Override
-        public State makeState(@SuppressWarnings("rawtypes") Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(@SuppressWarnings("rawtypes") Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                             jedisClusterConfig.getTimeout(),
                                                             jedisClusterConfig.getMaxRedirections(),

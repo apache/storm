@@ -33,11 +33,11 @@ public class BaseWorkerHook implements IWorkerHook, Serializable {
     /**
      * This method is called when a worker is started
      *
-     * @param stormConf The Storm configuration for this worker
+     * @param topoConf The Storm configuration for this worker
      * @param context This object can be used to get information about this worker's place within the topology
      */
     @Override
-    public void start(Map stormConf, WorkerTopologyContext context) {
+    public void start(Map<String, Object> topoConf, WorkerTopologyContext context) {
         // NOOP
     }
 

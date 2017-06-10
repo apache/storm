@@ -15,8 +15,8 @@
 ;; limitations under the License.
 (ns integration.org.apache.storm.testing4j-test
   (:use [clojure.test])
-  (:use [org.apache.storm config util])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm daemon-config config util])
+  (:use [org.apache.storm clojure])
   (:require [integration.org.apache.storm.integration-test :as it])
   (:require [org.apache.storm.internal.thrift :as thrift])
   (:import [org.apache.storm Testing Config]

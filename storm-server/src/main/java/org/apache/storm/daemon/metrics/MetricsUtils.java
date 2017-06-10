@@ -36,8 +36,8 @@ import java.util.concurrent.TimeUnit;
 public class MetricsUtils {
     private final static Logger LOG = LoggerFactory.getLogger(MetricsUtils.class);
 
-    public static List<PreparableReporter> getPreparableReporters(Map stormConf) {
-        List<String> clazzes = (List<String>) stormConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGINS);
+    public static List<PreparableReporter> getPreparableReporters(Map<String, Object> topoConf) {
+        List<String> clazzes = (List<String>) topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGINS);
         List<PreparableReporter> reporterList = new ArrayList<>();
 
         if (clazzes != null) {
@@ -60,34 +60,34 @@ public class MetricsUtils {
         return reporter;
     }
 
-    public static Locale getMetricsReporterLocale(Map stormConf) {
-        String languageTag = ObjectReader.getString(stormConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE), null);
+    public static Locale getMetricsReporterLocale(Map<String, Object> topoConf) {
+        String languageTag = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE), null);
         if (languageTag != null) {
             return Locale.forLanguageTag(languageTag);
         }
         return null;
     }
 
-    public static TimeUnit getMetricsRateUnit(Map stormConf) {
-        return getTimeUnitForCofig(stormConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT);
+    public static TimeUnit getMetricsRateUnit(Map<String, Object> topoConf) {
+        return getTimeUnitForCofig(topoConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT);
     }
 
-    public static TimeUnit getMetricsDurationUnit(Map stormConf) {
-        return getTimeUnitForCofig(stormConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT);
+    public static TimeUnit getMetricsDurationUnit(Map<String, Object> topoConf) {
+        return getTimeUnitForCofig(topoConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT);
     }
 
-    private static TimeUnit getTimeUnitForCofig(Map stormConf, String configName) {
-        String rateUnitString = ObjectReader.getString(stormConf.get(configName), null);
+    private static TimeUnit getTimeUnitForCofig(Map<String, Object> topoConf, String configName) {
+        String rateUnitString = ObjectReader.getString(topoConf.get(configName), null);
         if (rateUnitString != null) {
             return TimeUnit.valueOf(rateUnitString);
         }
         return null;
     }
 
-    public static File getCsvLogDir(Map stormConf) {
-        String csvMetricsLogDirectory = ObjectReader.getString(stormConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
+    public static File getCsvLogDir(Map<String, Object> topoConf) {
+        String csvMetricsLogDirectory = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_CSV_LOG_DIR), null);
         if (csvMetricsLogDirectory == null) {
-            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(stormConf);
+            csvMetricsLogDirectory = ConfigUtils.absoluteStormLocalDir(topoConf);
             csvMetricsLogDirectory = csvMetricsLogDirectory + ConfigUtils.FILE_SEPARATOR + "csvmetrics";
         }
         File csvMetricsDir = new File(csvMetricsLogDirectory);

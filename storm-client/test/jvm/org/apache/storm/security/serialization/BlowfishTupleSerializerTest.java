@@ -68,9 +68,9 @@ public class BlowfishTupleSerializerTest {
                           " mollusks, their natural prey.";
         Kryo kryo = new Kryo();
         String arbitraryKey = "7dd6fb3203878381b08f9c89d25ed105";
-        Map stormConf = ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, arbitraryKey);
-        BlowfishTupleSerializer writerBTS = new BlowfishTupleSerializer(kryo, stormConf);
-        BlowfishTupleSerializer readerBTS = new BlowfishTupleSerializer(kryo, stormConf);
+        Map<String, Object> topoConf = ImmutableMap.of(BlowfishTupleSerializer.SECRET_KEY, arbitraryKey);
+        BlowfishTupleSerializer writerBTS = new BlowfishTupleSerializer(kryo, topoConf);
+        BlowfishTupleSerializer readerBTS = new BlowfishTupleSerializer(kryo, topoConf);
         int bufferSize = 1024;
         Output output = new Output(bufferSize, bufferSize);
         Input input = new Input(bufferSize);

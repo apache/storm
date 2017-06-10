@@ -99,7 +99,7 @@ public class DefaultScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         //noop
     }
 

@@ -49,7 +49,7 @@ public class EvaluationCalc implements OperationAwareFlatMapFunction {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         if (projectionInstance != null && projectionInstance instanceof DebuggableExecutableExpression) {
             LOG.info("Expression code for projection: \n{}", ((DebuggableExecutableExpression) projectionInstance).getDelegateCode());
         }

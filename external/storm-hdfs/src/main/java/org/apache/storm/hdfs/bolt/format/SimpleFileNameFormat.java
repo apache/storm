@@ -56,7 +56,7 @@ public class SimpleFileNameFormat implements FileNameFormat {
 
     @SuppressWarnings("unchecked")
     @Override
-    public void prepare(Map conf, TopologyContext topologyContext) {
+    public void prepare(Map<String, Object> conf, TopologyContext topologyContext) {
         this.componentId = topologyContext.getThisComponentId();
         this.taskId = topologyContext.getThisTaskId();
         try {

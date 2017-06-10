@@ -37,7 +37,7 @@ public class CountBolt extends BaseBasicBolt {
     Map<String, Integer> counts = new HashMap<>();
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
     @Override

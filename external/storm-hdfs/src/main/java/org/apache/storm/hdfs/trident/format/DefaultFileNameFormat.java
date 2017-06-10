@@ -67,7 +67,7 @@ public class DefaultFileNameFormat implements FileNameFormat {
     }
 
     @Override
-    public void prepare(Map conf, int partitionIndex, int numPartitions) {
+    public void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions) {
         this.partitionIndex = partitionIndex;
 
     }

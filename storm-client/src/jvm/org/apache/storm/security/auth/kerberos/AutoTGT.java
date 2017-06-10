@@ -49,9 +49,9 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
     private static final float TICKET_RENEW_WINDOW = 0.80f;
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
-    private Map conf;
+    private Map<String, Object> conf;
 
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         this.conf = conf;
     }
 
@@ -238,7 +238,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     }
 
     @Override
-    public void renew(Map<String,String> credentials, Map topologyConf) {
+    public void renew(Map<String,String> credentials, Map<String, Object> topologyConf) {
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             long refreshTime = getRefreshTime(tgt);
@@ -257,7 +257,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     public static void main(String[] args) throws Exception {
         AutoTGT at = new AutoTGT();
-        Map conf = new java.util.HashMap();
+        Map<String, Object> conf = new java.util.HashMap();
         conf.put("java.security.auth.login.config", args[0]);
         at.prepare(conf);
         Map<String,String> creds = new java.util.HashMap<String,String>();

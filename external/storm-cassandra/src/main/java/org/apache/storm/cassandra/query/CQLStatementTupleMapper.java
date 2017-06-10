@@ -40,7 +40,7 @@ public interface CQLStatementTupleMapper extends Serializable {
      * @param tuple the incoming tuple to map.
      * @return a list of {@link com.datastax.driver.core.Statement}.
      */
-    List<Statement> map(Map conf, Session session, ITuple tuple);
+    List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple);
 
     public static class DynamicCQLStatementTupleMapper implements CQLStatementTupleMapper {
         private List<CQLStatementBuilder> builders;
@@ -50,7 +50,7 @@ public interface CQLStatementTupleMapper extends Serializable {
         }
 
         @Override
-        public List<Statement> map(Map conf, Session session, ITuple tuple) {
+        public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
             List<Statement> statements = new LinkedList<>();
             for(CQLStatementBuilder b : builders) {
                 statements.addAll(b.build().map(conf, session, tuple));

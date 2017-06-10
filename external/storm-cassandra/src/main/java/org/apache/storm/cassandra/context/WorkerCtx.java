@@ -63,20 +63,20 @@ public class WorkerCtx implements Serializable {
      * Return an instance, which is shared (within a Worker), of the specified type.
      * @return
      */
-    public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> stormConf) {
-        return getWorkerBean(clazz, stormConf,false);
+    public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf) {
+        return getWorkerBean(clazz, topoConf,false);
     }
 
     /**
      * Return an instance, which is shared (within a Worker), of the specified type.
      *
      * @param clazz the class of the bean.
-     * @param stormConf the storm configuration
+     * @param topoConf the storm configuration
      * @param force if <code>true</code>= create a new instance even if one already exist.
      *
      * @return a instance of type {@link T}.
      */
-    public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> stormConf, boolean force) {
+    public <T, K, V> T getWorkerBean(Class<T> clazz, Map<K, V> topoConf, boolean force) {
         if( force ) workerCtx.remove(clazz);
         BeanFactory<T> factory = (BeanFactory<T>)  this.workerCtx.get(clazz);
         if( factory == null) {
@@ -84,6 +84,6 @@ public class WorkerCtx implements Serializable {
             workerCtx.putIfAbsent(clazz, instance);
             factory = (BeanFactory<T>) this.workerCtx.get(clazz);
         }
-        return factory.get((Map<String, Object>)stormConf);
+        return factory.get((Map<String, Object>)topoConf);
     }
 }

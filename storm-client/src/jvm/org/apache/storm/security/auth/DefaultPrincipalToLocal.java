@@ -29,7 +29,7 @@ public class DefaultPrincipalToLocal implements IPrincipalToLocal {
     /**
      * Invoked once immediately after construction
      */
-    public void prepare(Map storm_conf) {}
+    public void prepare(Map<String, Object> topoConf) {}
     
     /**
      * Convert a Principal to a local user name.

@@ -43,7 +43,7 @@ public class JoinerMultiReducer implements GroupedMultiReducer<JoinState> {
     }
     
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
         int[] sizes = new int[_sideFields.size() + 1];
         sizes[0] = _numGroupFields;
         for (int i = 0; i < _sideFields.size(); i++) {

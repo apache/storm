@@ -37,7 +37,7 @@ public class HdfsStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         LOG.info("makeState(partitonIndex={}, numpartitions={}", partitionIndex, numPartitions);
         HdfsState state = new HdfsState(this.options);
         state.prepare(conf, metrics, partitionIndex, numPartitions);

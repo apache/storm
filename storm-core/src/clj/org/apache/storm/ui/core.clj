@@ -24,7 +24,7 @@
         ring.middleware.multipart-params.temp-file)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
-  (:use [org.apache.storm config util log])
+  (:use [org.apache.storm config daemon-config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm.utils Time]
            [org.apache.storm.generated NimbusSummary]
@@ -554,7 +554,8 @@
        "assignedMemOnHeap" (.get_assigned_memonheap t)
        "assignedMemOffHeap" (.get_assigned_memoffheap t)
        "assignedTotalMem" (+ (.get_assigned_memonheap t) (.get_assigned_memoffheap t))
-       "assignedCpu" (.get_assigned_cpu t)})
+       "assignedCpu" (.get_assigned_cpu t)
+       "stormVersion" (.get_storm_version t)})
     "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)}))
 
 (defn topology-stats [window stats]
@@ -694,7 +695,8 @@
      "configuration" (.get_topology_conf topo-info)
      "debug" (or debugEnabled false)
      "samplingPct" (or samplingPct 10)
-     "replicationCount" (.get_replication_count topo-info)}))
+     "replicationCount" (.get_replication_count topo-info)
+     "stormVersion" (.get_storm_version topo-info)}))
 
 (defn exec-host-port
   [executors]

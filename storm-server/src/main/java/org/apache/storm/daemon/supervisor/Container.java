@@ -449,7 +449,7 @@ public abstract class Container implements Killable {
      */
     protected Set<Long> getAllPids() throws IOException {
         Set<Long> ret = new HashSet<>();
-        for (String listing: ServerUtils.readDirContents(ConfigUtils.workerPidsRoot(_conf, _workerId))) {
+        for (String listing: ConfigUtils.readDirContents(ConfigUtils.workerPidsRoot(_conf, _workerId))) {
             ret.add(Long.valueOf(listing));
         }
         

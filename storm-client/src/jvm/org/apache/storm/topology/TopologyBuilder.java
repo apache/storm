@@ -22,6 +22,12 @@ import org.apache.storm.generated.*;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.hooks.IWorkerHook;
+import org.apache.storm.lambda.LambdaBiConsumerBolt;
+import org.apache.storm.lambda.LambdaConsumerBolt;
+import org.apache.storm.lambda.LambdaSpout;
+import org.apache.storm.lambda.SerializableBiConsumer;
+import org.apache.storm.lambda.SerializableConsumer;
+import org.apache.storm.lambda.SerializableSupplier;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
@@ -62,7 +68,7 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * builder.setBolt("4", new TestGlobalCount())
  *          .globalGrouping("1");
  *
- * Map conf = new HashMap();
+ * Map<String, Object> conf = new HashMap();
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * 
  * StormSubmitter.submitTopology("mytopology", conf, builder.createTopology());
@@ -83,7 +89,7 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * builder.setBolt("4", new TestGlobalCount())
  *          .globalGrouping("1");
  *
- * Map conf = new HashMap();
+ * Map<String, Object> conf = new HashMap();
  * conf.put(Config.TOPOLOGY_WORKERS, 4);
  * conf.put(Config.TOPOLOGY_DEBUG, true);
  *
@@ -152,7 +158,7 @@ public class TopologyBuilder {
 
         stormTopology.set_worker_hooks(_workerHooks);
 
-        return stormTopology;
+        return Utils.addVersions(stormTopology);
     }
 
     /**
@@ -316,6 +322,70 @@ public class TopologyBuilder {
     }
 
     /**
+     * Define a new bolt in this topology. This defines a lambda basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param biConsumer lambda expression that implements tuple processing for this bolt
+     * @param fields fields for tuple that should be emitted to downstream bolts
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, String... fields) throws IllegalArgumentException {
+        return setBolt(id, biConsumer, null, fields);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a lambda basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param biConsumer lambda expression that implements tuple processing for this bolt
+     * @param fields fields for tuple that should be emitted to downstream bolts
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, SerializableBiConsumer<Tuple,BasicOutputCollector> biConsumer, Number parallelism_hint, String... fields) throws IllegalArgumentException {
+        return setBolt(id, new LambdaBiConsumerBolt(biConsumer, fields), parallelism_hint);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a lambda basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param consumer lambda expression that implements tuple processing for this bolt
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, SerializableConsumer<Tuple> consumer) throws IllegalArgumentException {
+        return setBolt(id, consumer, null);
+    }
+
+    /**
+     * Define a new bolt in this topology. This defines a lambda basic bolt, which is a
+     * simpler to use but more restricted kind of bolt. Basic bolts are intended
+     * for non-aggregation processing and automate the anchoring/acking process to
+     * achieve proper reliability in the topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this bolt's outputs.
+     * @param consumer lambda expression that implements tuple processing for this bolt
+     * @param parallelism_hint the number of tasks that should be assigned to execute this bolt. Each task will run on a thread in a process somewhere around the cluster.
+     * @return use the returned object to declare the inputs to this component
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public BoltDeclarer setBolt(String id, SerializableConsumer<Tuple> consumer, Number parallelism_hint) throws IllegalArgumentException {
+        return setBolt(id, new LambdaConsumerBolt(consumer), parallelism_hint);
+    }
+
+    /**
      * Define a new spout in this topology.
      *
      * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
@@ -350,6 +420,31 @@ public class TopologyBuilder {
     public void setStateSpout(String id, IRichStateSpout stateSpout, Number parallelism_hint) throws IllegalArgumentException {
         validateUnusedId(id);
         // TODO: finish
+    }
+
+    /**
+     * Define a new spout in this topology.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
+     * @param supplier lambda expression that implements tuple generating for this spout
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier) throws IllegalArgumentException {
+        return setSpout(id, supplier, null);
+    }
+
+    /**
+     * Define a new spout in this topology with the specified parallelism. If the spout declares
+     * itself as non-distributed, the parallelism_hint will be ignored and only one task
+     * will be allocated to this component.
+     *
+     * @param id the id of this component. This id is referenced by other components that want to consume this spout's outputs.
+     * @param parallelism_hint the number of tasks that should be assigned to execute this spout. Each task will run on a thread in a process somewhere around the cluster.
+     * @param supplier lambda expression that implements tuple generating for this spout
+     * @throws IllegalArgumentException if {@code parallelism_hint} is not positive
+     */
+    public SpoutDeclarer setSpout(String id, SerializableSupplier<?> supplier, Number parallelism_hint) throws IllegalArgumentException {
+        return setSpout(id, new LambdaSpout(supplier), parallelism_hint);
     }
 
     /**
@@ -443,7 +538,7 @@ public class TopologyBuilder {
             }
             common.set_parallelism_hint(dop);
         }
-        Map conf = component.getComponentConfiguration();
+        Map<String, Object> conf = component.getComponentConfiguration();
         if(conf!=null) common.set_json_conf(JSONValue.toJSONString(conf));
         _commons.put(id, common);
     }

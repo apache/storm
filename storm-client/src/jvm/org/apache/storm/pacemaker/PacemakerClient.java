@@ -65,7 +65,7 @@ public class PacemakerClient implements ISaslClient {
     public PacemakerClient() {
         bootstrap = new ClientBootstrap();
     }
-    public PacemakerClient(Map config, String host) {
+    public PacemakerClient(Map<String, Object> config, String host) {
 
         int port = (int)config.get(Config.PACEMAKER_PORT);
         client_name = (String)config.get(Config.TOPOLOGY_NAME);

@@ -103,7 +103,7 @@ public interface ITridentSpout<T> extends ITridentDataSource {
      * @param context topology context
      * @return spout coordinator instance
      */
-    BatchCoordinator<T> getCoordinator(String txStateId, Map conf, TopologyContext context);
+    BatchCoordinator<T> getCoordinator(String txStateId, Map<String, Object> conf, TopologyContext context);
 
     /**
      * The emitter for a TransactionalSpout runs as many tasks across the cluster. Emitters are responsible for
@@ -118,7 +118,7 @@ public interface ITridentSpout<T> extends ITridentDataSource {
      * @param context topology context
      * @return spout emitter
      */
-    Emitter<T> getEmitter(String txStateId, Map conf, TopologyContext context); 
+    Emitter<T> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context); 
     
     Map<String, Object> getComponentConfiguration();
     Fields getOutputFields();

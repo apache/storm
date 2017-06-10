@@ -34,10 +34,10 @@ public class DefaultHttpCredentialsPlugin implements IHttpCredentialsPlugin {
 
     /**
      * No-op
-     * @param storm_conf Storm configuration
+     * @param topoConf Storm configuration
      */
     @Override
-    public void prepare(Map storm_conf) {
+    public void prepare(Map<String, Object> topoConf) {
         // Do nothing.
     }
 

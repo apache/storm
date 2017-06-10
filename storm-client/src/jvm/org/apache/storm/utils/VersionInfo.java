@@ -23,7 +23,8 @@ import java.io.InputStream;
 import java.util.Properties;
 
 public class VersionInfo {
-
+  private static final VersionInfo COMMON_VERSION_INFO = new VersionInfo("storm-core");
+  public static final SimpleVersion OUR_VERSION = new SimpleVersion(COMMON_VERSION_INFO._getVersion());
   private Properties info;
 
   protected VersionInfo(String component) {
@@ -84,9 +85,6 @@ public class VersionInfo {
       " by " + _getUser() +
       " source checksum " + _getSrcChecksum();
   }
-
-
-  private static final VersionInfo COMMON_VERSION_INFO = new VersionInfo("storm-core");
 
   public static String getVersion() {
     return COMMON_VERSION_INFO._getVersion();

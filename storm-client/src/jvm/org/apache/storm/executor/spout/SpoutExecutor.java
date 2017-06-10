@@ -70,13 +70,13 @@ public class SpoutExecutor extends Executor {
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
-        this.spoutWaitStrategy = ReflectionUtils.newInstance((String) stormConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
-        this.spoutWaitStrategy.prepare(stormConf);
+        this.spoutWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
+        this.spoutWaitStrategy.prepare(topoConf);
 
-        this.backPressureEnabled = ObjectReader.getBoolean(stormConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false);
+        this.backPressureEnabled = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false);
 
         this.lastActive = new AtomicBoolean(false);
-        this.hasAckers = StormCommon.hasAckers(stormConf);
+        this.hasAckers = StormCommon.hasAckers(topoConf);
         this.emittedCount = new MutableLong(0);
         this.emptyEmitStreak = new MutableLong(0);
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
@@ -89,7 +89,7 @@ public class SpoutExecutor extends Executor {
 
         LOG.info("Opening spout {}:{}", componentId, idToTask.keySet());
         this.idToTask = idToTask;
-        this.maxSpoutPending = ObjectReader.getInt(stormConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 0) * idToTask.size();
+        this.maxSpoutPending = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING), 0) * idToTask.size();
         this.spouts = new ArrayList<>();
         for (Task task : idToTask.values()) {
             this.spouts.add((ISpout) task.getTaskObject());
@@ -105,7 +105,7 @@ public class SpoutExecutor extends Executor {
             }
         });
 
-        this.spoutThrottlingMetrics.registerAll(stormConf, idToTask.values().iterator().next().getUserContext());
+        this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.values().iterator().next().getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();
@@ -116,14 +116,14 @@ public class SpoutExecutor extends Executor {
             SpoutOutputCollector outputCollector = new SpoutOutputCollector(spoutOutputCollector);
             this.outputCollectors.add(outputCollector);
 
-            taskData.getBuiltInMetrics().registerAll(stormConf, taskData.getUserContext());
+            taskData.getBuiltInMetrics().registerAll(topoConf, taskData.getUserContext());
             Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue);
-            BuiltinMetricsUtil.registerQueueMetrics(map, stormConf, taskData.getUserContext());
+            BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, taskData.getUserContext());
 
             if (spoutObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) spoutObject).setCredentials(credentials);
             }
-            spoutObject.open(stormConf, taskData.getUserContext(), outputCollector);
+            spoutObject.open(topoConf, taskData.getUserContext(), outputCollector);
         }
         openOrPrepareWasCalled.set(true);
         LOG.info("Opened spout {}:{}", componentId, idToTask.keySet());

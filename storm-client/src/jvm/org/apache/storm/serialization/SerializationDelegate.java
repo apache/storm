@@ -27,7 +27,7 @@ public interface SerializationDelegate {
     /**
      * Lifecycle step that will be called after instantiating with nullary constructor.
      */
-    void prepare(Map stormConf);
+    void prepare(Map<String, Object> topoConf);
 
     byte[] serialize(Object object);
 

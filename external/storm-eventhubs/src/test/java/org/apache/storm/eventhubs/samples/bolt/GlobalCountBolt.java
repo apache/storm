@@ -45,7 +45,7 @@ public class GlobalCountBolt extends BaseBasicBolt {
   private long throughput;
   
   @Override
-  public void prepare(Map config, TopologyContext context) {
+  public void prepare(Map<String, Object> config, TopologyContext context) {
     globalCount = 0;
     globalCountDiff = 0;
     lastMetricsTime = System.nanoTime();

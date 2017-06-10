@@ -39,7 +39,13 @@ public interface IMetricsConsumer {
         public String srcComponentId; 
         public int srcTaskId; 
         public long timestamp;
-        public int updateIntervalSecs; 
+        public int updateIntervalSecs;
+
+        @Override
+        public String toString() {
+            return "TASK_INFO: { host: " + srcWorkerHost + ":" + srcWorkerPort +
+                    " comp: " + srcComponentId + "["+ srcTaskId + "]}";
+        }
     }
 
     // We can't move this to outside without breaking backward compatibility.
@@ -74,7 +80,7 @@ public interface IMetricsConsumer {
         }
     }
 
-    void prepare(Map stormConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);
+    void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter);
     void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints);
     void cleanup();
 }

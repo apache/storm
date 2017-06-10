@@ -35,8 +35,8 @@ public class NonRichBoltTracker implements IBolt {
         _trackId = id;
     }
 
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
-        _delegate.prepare(stormConf, context, collector);
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        _delegate.prepare(topoConf, context, collector);
     }
 
     public void execute(Tuple input) {

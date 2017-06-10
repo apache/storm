@@ -15,11 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kafka.bolt.selector;
 
-import org.apache.storm.tuple.Tuple;
-
 import java.io.Serializable;
+import org.apache.storm.tuple.Tuple;
 
 public interface KafkaTopicSelector extends Serializable {
     String getTopic(Tuple tuple);

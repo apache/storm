@@ -164,7 +164,7 @@ public class TransactionalTopologyBuilder {
                                                                       coordinatedArgs,
                                                                       idSpec),
                                                   component.parallelism);
-            for(Map conf: component.componentConfs) {
+            for(Map<String, Object> conf: component.componentConfs) {
                 input.addConfigurations(conf);
             }
             for(String c: componentBoltSubscriptions(component)) {

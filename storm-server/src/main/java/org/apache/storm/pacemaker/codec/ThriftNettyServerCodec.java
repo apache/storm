@@ -47,15 +47,15 @@ public class ThriftNettyServerCodec {
     
     private IServer server;
     private AuthMethod authMethod;
-    private Map storm_conf;
+    private Map<String, Object> topoConf;
     
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftNettyServerCodec.class);
 
-    public ThriftNettyServerCodec(IServer server, Map storm_conf, AuthMethod authMethod) {
+    public ThriftNettyServerCodec(IServer server, Map<String, Object> topoConf, AuthMethod authMethod) {
         this.server = server;
         this.authMethod = authMethod;
-        this.storm_conf = storm_conf;
+        this.topoConf = topoConf;
     }
 
     public ChannelPipelineFactory pipelineFactory() {
@@ -78,9 +78,9 @@ public class ThriftNettyServerCodec {
                     try {
                         LOG.debug("Adding KerberosSaslServerHandler to pacemaker server pipeline.");
                         ArrayList<String> authorizedUsers = new ArrayList(1);
-                        authorizedUsers.add((String)storm_conf.get(DaemonConfig.NIMBUS_DAEMON_USER));
+                        authorizedUsers.add((String)topoConf.get(DaemonConfig.NIMBUS_DAEMON_USER));
                         pipeline.addLast(KERBEROS_HANDLER, new KerberosSaslServerHandler((ISaslServer)server,
-                                                                                         storm_conf,
+                                                                                         topoConf,
                                                                                          AuthUtils.LOGIN_CONTEXT_PACEMAKER_SERVER,
                                                                                          authorizedUsers));
                     }

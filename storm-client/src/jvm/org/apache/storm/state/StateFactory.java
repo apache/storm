@@ -37,23 +37,23 @@ public class StateFactory {
      * {@link InMemoryKeyValueState} if no provider is configured.
      *
      * @param namespace the state namespace
-     * @param stormConf the storm conf
+     * @param topoConf the storm conf
      * @param context   the topology context
      * @return the state instance
      */
-    public static State getState(String namespace, Map stormConf, TopologyContext context) {
+    public static State getState(String namespace, Map<String, Object> topoConf, TopologyContext context) {
         State state;
         try {
             String provider = null;
-            if (stormConf.containsKey(Config.TOPOLOGY_STATE_PROVIDER)) {
-                provider = (String) stormConf.get(Config.TOPOLOGY_STATE_PROVIDER);
+            if (topoConf.containsKey(Config.TOPOLOGY_STATE_PROVIDER)) {
+                provider = (String) topoConf.get(Config.TOPOLOGY_STATE_PROVIDER);
             } else {
                 provider = DEFAULT_PROVIDER;
             }
             Class<?> klazz = Class.forName(provider);
             Object object = klazz.newInstance();
             if (object instanceof StateProvider) {
-                state = ((StateProvider) object).newState(namespace, stormConf, context);
+                state = ((StateProvider) object).newState(namespace, topoConf, context);
             } else {
                 String msg = "Invalid state provider '" + provider +
                         "'. Should implement org.apache.storm.state.StateProvider";

@@ -39,7 +39,7 @@ public class CombinerAggregatorInitImpl implements Function {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
     }
 
     @Override

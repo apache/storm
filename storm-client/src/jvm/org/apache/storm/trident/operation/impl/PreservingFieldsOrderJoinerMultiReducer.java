@@ -50,7 +50,7 @@ public class PreservingFieldsOrderJoinerMultiReducer implements GroupedMultiRedu
     }
 
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
         int[] sizes = new int[_originFields.size()];
         for (int i = 0; i < _originFields.size(); i++) {
             sizes[i] = _originFields.get(i).size();

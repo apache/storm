@@ -104,9 +104,9 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testPrepareWithFail() throws Exception {
-        Map<String, Object> stormConf = new HashMap<>();
+        Map<String, Object> topoConf = new HashMap<>();
         KeyValueState<String, CheckPointState> state =
-                (KeyValueState<String, CheckPointState>) StateFactory.getState("__state", stormConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("__state", topoConf, mockTopologyContext);
         CheckPointState txState = new CheckPointState(-1, COMMITTED);
         state.put("__state", txState);
 
@@ -150,9 +150,9 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testCommit() throws Exception {
-        Map<String, Object> stormConf = new HashMap();
-        stormConf.put(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL, 0);
-        spout.open(stormConf, mockTopologyContext, mockOutputCollector);
+        Map<String, Object> topoConf = new HashMap();
+        topoConf.put(Config.TOPOLOGY_STATE_CHECKPOINT_INTERVAL, 0);
+        spout.open(topoConf, mockTopologyContext, mockOutputCollector);
         ArgumentCaptor<String> stream = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Values> values = ArgumentCaptor.forClass(Values.class);
         ArgumentCaptor<Object> msgId = ArgumentCaptor.forClass(Object.class);
@@ -179,10 +179,10 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testRecoveryRollback() throws Exception {
-        Map<String, Object> stormConf = new HashMap();
+        Map<String, Object> topoConf = new HashMap();
 
         KeyValueState<String, CheckPointState> state =
-                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", stormConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
 
         CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.PREPARING);
         state.put("__state", checkPointState);
@@ -205,10 +205,10 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testRecoveryRollbackAck() throws Exception {
-        Map<String, Object> stormConf = new HashMap();
+        Map<String, Object> topoConf = new HashMap();
 
         KeyValueState<String, CheckPointState> state =
-                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", stormConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
 
         CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.PREPARING);
         state.put("__state", checkPointState);
@@ -235,10 +235,10 @@ public class CheckpointSpoutTest {
 
     @Test
     public void testRecoveryCommit() throws Exception {
-        Map<String, Object> stormConf = new HashMap();
+        Map<String, Object> topoConf = new HashMap();
 
         KeyValueState<String, CheckPointState> state =
-                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", stormConf, mockTopologyContext);
+                (KeyValueState<String, CheckPointState>) StateFactory.getState("test-1", topoConf, mockTopologyContext);
 
         CheckPointState checkPointState = new CheckPointState(100, CheckPointState.State.COMMITTING);
         state.put("__state", checkPointState);

@@ -37,7 +37,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
     private String host;
     private int port;
 
-    public DRPCInvocationsClient(Map conf, String host, int port) throws TTransportException {
+    public DRPCInvocationsClient(Map<String, Object> conf, String host, int port) throws TTransportException {
         super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null);
         this.host = host;
         this.port = port;

@@ -43,11 +43,11 @@ public class TickTupleTest {
         try {
             cluster =  new LocalCluster.Builder().withSimulatedTime().withNimbusDaemon(true).build();
             StormTopology topology = createNoOpTopology();
-            Config stormConf = new Config();
-            stormConf.putAll(Utils.readDefaultConfig());
-            stormConf.put("storm.cluster.mode", "local");
-            stormConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
-            cluster.submitTopology("test", stormConf,  topology);
+            Config topoConf = new Config();
+            topoConf.putAll(Utils.readDefaultConfig());
+            topoConf.put("storm.cluster.mode", "local");
+            topoConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
+            cluster.submitTopology("test", topoConf,  topology);
             cluster.advanceClusterTime(2);
             Assert.assertTrue("Test is passed", true);
         } finally {
@@ -64,7 +64,7 @@ public class TickTupleTest {
             }
 
             @Override
-            public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             }
 
             @Override
@@ -79,7 +79,7 @@ public class TickTupleTest {
     private BaseRichBolt makeNoOpBolt() {
         return new BaseRichBolt() {
             @Override
-            public void prepare(Map conf, TopologyContext topologyContext, OutputCollector outputCollector) {}
+            public void prepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector outputCollector) {}
             @Override
             public void execute(Tuple tuple) {}
 

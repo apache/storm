@@ -42,7 +42,7 @@ import java.util.Map;
 public class ResourceUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceUtils.class);
 
-    public static Map<String, Map<String, Double>> getBoltsResources(StormTopology topology, Map topologyConf) {
+    public static Map<String, Map<String, Double>> getBoltsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Double>> boltResources = new HashMap<String, Map<String, Double>>();
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
@@ -54,7 +54,7 @@ public class ResourceUtils {
         return boltResources;
     }
 
-    public static Map<String, Map<String, Double>> getSpoutsResources(StormTopology topology, Map topologyConf) {
+    public static Map<String, Map<String, Double>> getSpoutsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Double>> spoutResources = new HashMap<String, Map<String, Double>>();
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
@@ -66,12 +66,12 @@ public class ResourceUtils {
         return spoutResources;
     }
 
-    public static void checkIntialization(Map<String, Double> topology_resources, String Com, Map topologyConf) {
+    public static void checkIntialization(Map<String, Double> topology_resources, String Com, Map<String, Object> topologyConf) {
         checkInitMem(topology_resources, Com, topologyConf);
         checkInitCPU(topology_resources, Com, topologyConf);
     }
 
-    public static void checkInitMem(Map<String, Double> topology_resources, String Com, Map topologyConf) {
+    public static void checkInitMem(Map<String, Double> topology_resources, String Com, Map<String, Object> topologyConf) {
         if (!topology_resources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
             topology_resources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB,
                     ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), null));
@@ -84,7 +84,7 @@ public class ResourceUtils {
         }
     }
 
-    public static void checkInitCPU(Map<String, Double> topology_resources, String Com, Map topologyConf) {
+    public static void checkInitCPU(Map<String, Double> topology_resources, String Com, Map<String, Object> topologyConf) {
         if (!topology_resources.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
             topology_resources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT,
                     ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), null));
@@ -123,7 +123,7 @@ public class ResourceUtils {
         return topology_resources;
     }
 
-    private static void debugMessage(String memoryType, String Com, Map topologyConf) {
+    private static void debugMessage(String memoryType, String Com, Map<String, Object> topologyConf) {
         if (memoryType.equals("ONHEAP")) {
             LOG.debug(
                     "Unable to extract resource requirement for Component {} \n Resource : Memory Type : On Heap set to default {}",

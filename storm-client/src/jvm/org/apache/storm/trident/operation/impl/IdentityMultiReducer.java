@@ -24,24 +24,24 @@ import org.apache.storm.trident.operation.TridentMultiReducerContext;
 import org.apache.storm.trident.tuple.TridentTuple;
 
 
-public class IdentityMultiReducer implements MultiReducer {
+public class IdentityMultiReducer<T> implements MultiReducer<T> {
 
     @Override
-    public void prepare(Map conf, TridentMultiReducerContext context) {
+    public void prepare(Map<String, Object> conf, TridentMultiReducerContext context) {
     }
 
     @Override
-    public Object init(TridentCollector collector) {
+    public T init(TridentCollector collector) {
         return null;
     }
 
     @Override
-    public void execute(Object state, int streamIndex, TridentTuple input, TridentCollector collector) {
+    public void execute(T state, int streamIndex, TridentTuple input, TridentCollector collector) {
         collector.emit(input);
     }
 
     @Override
-    public void complete(Object state, TridentCollector collector) {
+    public void complete(T state, TridentCollector collector) {
     }
 
     @Override

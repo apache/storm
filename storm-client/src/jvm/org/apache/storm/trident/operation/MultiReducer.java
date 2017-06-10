@@ -23,7 +23,7 @@ import org.apache.storm.trident.tuple.TridentTuple;
 
 
 public interface MultiReducer<T> extends Serializable {
-    void prepare(Map conf, TridentMultiReducerContext context);
+    void prepare(Map<String, Object> conf, TridentMultiReducerContext context);
     T init(TridentCollector collector);
     void execute(T state, int streamIndex, TridentTuple input, TridentCollector collector);
     void complete(T state, TridentCollector collector);

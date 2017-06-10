@@ -57,7 +57,7 @@ public class BlobStoreTest {
   private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
   URI base;
   File baseFile;
-  private static Map conf = new HashMap();
+  private static Map<String, Object> conf = new HashMap();
   public static final int READ = 0x01;
   public static final int WRITE = 0x02;
   public static final int ADMIN = 0x04;
@@ -146,7 +146,7 @@ public class BlobStoreTest {
     Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-WE");
     Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-subject-DEF");
     Mockito.doNothing().when(spy).checkForBlobUpdate("test-empty-acls");
-    Map conf = Utils.readStormConfig();
+    Map<String, Object> conf = Utils.readStormConfig();
     conf.put(Config.STORM_LOCAL_DIR, baseFile.getAbsolutePath());
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
     spy.prepare(conf, null, null);

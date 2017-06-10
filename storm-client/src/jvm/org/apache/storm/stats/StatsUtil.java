@@ -641,12 +641,11 @@ public class StatsUtil {
 
     /**
      * aggregate topo executors stats
-     * TODO: change clojure maps to java HashMap's when nimbus.clj is translated to java
      *
      * @param topologyId     topology id
-     * @param exec2nodePort  executor -> host+port, note it's a clojure map
-     * @param task2component task -> component, note it's a clojure map
-     * @param beats          executor[start, end] -> executor heartbeat, note it's a java HashMap
+     * @param exec2nodePort  executor -> host+port
+     * @param task2component task -> component
+     * @param beats          executor[start, end] -> executor heartbeat
      * @param topology       storm topology
      * @param window         the window to be aggregated
      * @param includeSys     whether to include system streams
@@ -1232,8 +1231,8 @@ public class StatsUtil {
     /**
      * aggregate component executor stats
      *
-     * @param exec2hostPort  a Map of {executor -> host+port}, note it's a clojure map
-     * @param task2component a Map of {task id -> component}, note it's a clojure map
+     * @param exec2hostPort  a Map of {executor -> host+port}
+     * @param task2component a Map of {task id -> component}
      * @param beats          a converted HashMap of executor heartbeats, {executor -> heartbeat}
      * @param window         specified window
      * @param includeSys     whether to include system streams
@@ -1258,9 +1257,9 @@ public class StatsUtil {
      *
      * @param topologyId       topology id
      * @param topology         storm topology
-     * @param task2component   a Map of {task id -> component}, note it's a clojure map
+     * @param task2component   a Map of {task id -> component}
      * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
-     * @param exec2hostPort    a Map of {executor -> host+port}, note it's a clojure map
+     * @param exec2hostPort    a Map of {executor -> host+port}
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
@@ -1363,9 +1362,9 @@ public class StatsUtil {
      *
      * @param topologyId       topology id
      * @param topology         storm topology
-     * @param task2component   a Map of {task id -> component}, note it's a clojure map
+     * @param task2component   a Map of {task id -> component}
      * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
-     * @param exec2hostPort    a Map of {executor -> host+port}, note it's a clojure map
+     * @param exec2hostPort    a Map of {executor -> host+port}
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      *
@@ -1499,8 +1498,8 @@ public class StatsUtil {
     /**
      * extract a list of host port info for specified component
      *
-     * @param exec2hostPort  {executor -> host+port}, note it's a clojure map
-     * @param task2component {task id -> component}, note it's a clojure map
+     * @param exec2hostPort  {executor -> host+port}
+     * @param task2component {task id -> component}
      * @param includeSys     whether to include system streams
      * @param compId         component id
      * @return a list of host+port
@@ -1690,24 +1689,11 @@ public class StatsUtil {
         return ret;
     }
 
-
     /**
-     * convert a list of clojure executors to a java Set of List<Integer>
+     * convert a List<Long> executor to java List<Integer>
      */
-    public static Set<List<Integer>> convertExecutors(Set executors) {
-        Set<List<Integer>> convertedExecutors = new HashSet<>();
-        for (Object executor : executors) {
-            List l = (List) executor;
-            convertedExecutors.add(convertExecutor(l));
-        }
-        return convertedExecutors;
-    }
-
-    /**
-     * convert a clojure executor to java List<Integer>
-     */
-    public static List<Integer> convertExecutor(List executor) {
-        return Lists.newArrayList(((Number) executor.get(0)).intValue(), ((Number) executor.get(1)).intValue());
+    public static List<Integer> convertExecutor(List<Long> executor) {
+        return Lists.newArrayList(executor.get(0).intValue(), executor.get(1).intValue());
     }
 
     /**
@@ -2249,14 +2235,12 @@ public class StatsUtil {
     }
 
     /**
-     * convert clojure structure to java maps
+     * convert Long Executor Ids in ZkHbs to Integer ones structure to java maps
      */
-    public static Map<List<Integer>, ExecutorStats> convertExecutorZkHbs(Map executorBeats) {
+    public static Map<List<Integer>, ExecutorStats> convertExecutorZkHbs(Map<List<Long>, ExecutorStats> executorBeats) {
         Map<List<Integer>, ExecutorStats> ret = new HashMap<>();
-        for (Object executorBeat : executorBeats.entrySet()) {
-            Map.Entry entry = (Map.Entry) executorBeat;
-            List startEnd = (List) entry.getKey();
-            ret.put(convertExecutor(startEnd), (ExecutorStats) entry.getValue());
+        for (Map.Entry<List<Long>, ExecutorStats> entry : executorBeats.entrySet()) {
+            ret.put(convertExecutor(entry.getKey()), entry.getValue());
         }
         return ret;
     }
@@ -2393,11 +2377,11 @@ public class StatsUtil {
         return map.get(key);
     }
 
-    public static Map getMapByKey(Map map, String key) {
+    public static <K, V> Map<K,V> getMapByKey(Map map, String key) {
         if (map == null) {
             return null;
         }
-        return (Map) map.get(key);
+        return (Map<K,V>) map.get(key);
     }
 
     private static <K, V extends Number> long sumValues(Map<K, V> m) {

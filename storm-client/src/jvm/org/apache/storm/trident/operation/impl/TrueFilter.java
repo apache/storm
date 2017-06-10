@@ -30,7 +30,7 @@ public class TrueFilter implements Filter {
     }
 
     @Override
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
     }
 
     @Override

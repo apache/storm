@@ -61,7 +61,7 @@ class SaslUtils {
         return new String(Base64.encodeBase64(identifier), Charsets.UTF_8);
     }
 
-    static String getSecretKey(Map conf) {
+    static String getSecretKey(Map<String, Object> conf) {
         return conf == null || conf.isEmpty() ? null : (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
     }
 

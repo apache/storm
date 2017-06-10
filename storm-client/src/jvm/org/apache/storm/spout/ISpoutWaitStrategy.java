@@ -29,6 +29,6 @@ import java.util.Map;
  * The default strategy sleeps for one millisecond.
  */
 public interface ISpoutWaitStrategy {
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
     void emptyEmit(long streak);
 }

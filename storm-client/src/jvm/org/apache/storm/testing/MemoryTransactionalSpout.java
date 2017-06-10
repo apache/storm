@@ -84,7 +84,7 @@ public class MemoryTransactionalSpout implements IPartitionedTransactionalSpout<
         Integer _maxSpoutPending;
         Map<Integer, Integer> _emptyPartitions = new HashMap<>();
         
-        public Emitter(Map conf) {
+        public Emitter(Map<String, Object> conf) {
             Object c = conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING);
             if(c==null) _maxSpoutPending = 1;
             else _maxSpoutPending = ObjectReader.getInt(c);
@@ -138,12 +138,12 @@ public class MemoryTransactionalSpout implements IPartitionedTransactionalSpout<
     } 
     
     @Override
-    public IPartitionedTransactionalSpout.Coordinator getCoordinator(Map conf, TopologyContext context) {
+    public IPartitionedTransactionalSpout.Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context) {
         return new Coordinator();
     }
 
     @Override
-    public IPartitionedTransactionalSpout.Emitter<MemoryTransactionalSpoutMeta> getEmitter(Map conf, TopologyContext context) {
+    public IPartitionedTransactionalSpout.Emitter<MemoryTransactionalSpoutMeta> getEmitter(Map<String, Object> conf, TopologyContext context) {
         return new Emitter(conf);
     }
 

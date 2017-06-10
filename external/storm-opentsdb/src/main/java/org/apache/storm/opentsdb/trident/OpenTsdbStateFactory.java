@@ -42,7 +42,7 @@ public class OpenTsdbStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         final OpenTsdbState openTsdbState = new OpenTsdbState(conf, builder, tridentTupleOpenTsdbDatapointMappers);
         openTsdbState.prepare();
 

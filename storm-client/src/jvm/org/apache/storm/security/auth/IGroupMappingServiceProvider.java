@@ -26,9 +26,9 @@ public interface IGroupMappingServiceProvider {
 
     /**
      * Invoked once immediately after construction
-     * @param storm_conf Storm configuration
+     * @param topoConf Storm configuration
      */
-    void prepare(Map storm_conf);
+    void prepare(Map<String, Object> topoConf);
 
     /**
      * Get all various group memberships of a given user.

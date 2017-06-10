@@ -72,7 +72,7 @@ public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         this.solrClient = new CloudSolrClient(solrConfig.getZkHostString());
         this.toCommitTuples = new ArrayList<>(capacity());

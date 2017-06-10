@@ -107,14 +107,16 @@ public class SlidingTimeCorrectness implements TestableTopology {
         }
 
         @Override
-        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             componentId = context.getThisComponentId();
             this.collector = collector;
         }
 
         @Override
         public void nextTuple() {
-            TimeUtil.sleepMilliSec(rng.nextInt(800));
+            //Emitting too quickly can lead to spurious test failures because the worker log may roll right before we read it
+            //Sleep a bit between emits
+            TimeUtil.sleepMilliSec(rng.nextInt(100));
             currentNum++;
             TimeData data = TimeData.newData(currentNum);
             final Values tuple = data.getValues();
@@ -138,7 +140,7 @@ public class SlidingTimeCorrectness implements TestableTopology {
         private String componentId;
 
         @Override
-        public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
             componentId = context.getThisComponentId();
             this.collector = collector;
         }

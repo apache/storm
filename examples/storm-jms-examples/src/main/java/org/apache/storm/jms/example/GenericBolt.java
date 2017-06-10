@@ -68,7 +68,7 @@ public class GenericBolt extends BaseRichBolt {
     }
 
     @SuppressWarnings("rawtypes")
-    public void prepare(Map stormConf, TopologyContext context,
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
                         OutputCollector collector) {
         this.collector = collector;
 

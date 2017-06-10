@@ -71,7 +71,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraBackingMap.class);
 
-    private final Map conf;
+    private final Map<String, Object> conf;
     private final Options<T> options;
     private final Fields allFields;
 
@@ -82,7 +82,7 @@ public class CassandraBackingMap<T> implements IBackingMap<T> {
     private Semaphore throttle;
 
 
-    protected CassandraBackingMap(Map conf, Options<T> options) {
+    protected CassandraBackingMap(Map<String, Object> conf, Options<T> options) {
         this.conf = conf;
         this.options = options;
         List<String> allFields = options.keyFields.toList();

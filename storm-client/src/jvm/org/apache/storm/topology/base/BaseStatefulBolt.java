@@ -28,7 +28,7 @@ import java.util.Map;
 public abstract class BaseStatefulBolt<T extends State> implements IStatefulBolt<T> {
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         // NOOP
     }
 

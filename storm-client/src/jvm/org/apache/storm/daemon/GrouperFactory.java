@@ -46,7 +46,7 @@ public class GrouperFactory {
     public static LoadAwareCustomStreamGrouping mkGrouper(WorkerTopologyContext context, String componentId, String streamId, Fields outFields,
                                     Grouping thriftGrouping,
                                     List<Integer> unsortedTargetTasks,
-                                    Map topoConf) {
+                                    Map<String, Object> topoConf) {
         List<Integer> targetTasks = Ordering.natural().sortedCopy(unsortedTargetTasks);
         final boolean isNotLoadAware = (null != topoConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING) && (boolean) topoConf
             .get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING));

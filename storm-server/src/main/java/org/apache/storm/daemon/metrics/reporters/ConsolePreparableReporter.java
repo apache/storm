@@ -32,22 +32,22 @@ public class ConsolePreparableReporter implements PreparableReporter<ConsoleRepo
     ConsoleReporter reporter = null;
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map stormConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
         LOG.debug("Preparing...");
         ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(metricsRegistry);
 
         builder.outputTo(System.out);
-        Locale locale = MetricsUtils.getMetricsReporterLocale(stormConf);
+        Locale locale = MetricsUtils.getMetricsReporterLocale(topoConf);
         if (locale != null) {
             builder.formattedFor(locale);
         }
 
-        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(stormConf);
+        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(topoConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
 
-        TimeUnit durationUnit = MetricsUtils.getMetricsDurationUnit(stormConf);
+        TimeUnit durationUnit = MetricsUtils.getMetricsDurationUnit(topoConf);
         if (durationUnit != null) {
             builder.convertDurationsTo(durationUnit);
         }

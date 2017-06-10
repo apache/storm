@@ -102,10 +102,10 @@ public class SupervisorUtils {
      * @param conf
      */
     static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf) throws IOException {
-        Map<String, Object> stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
-        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-        String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
+        Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
+        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        String user = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+        String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
         List<LocalResource> localresources = SupervisorUtils.blobstoreMapToLocalresources(blobstoreMap);
         if (blobstoreMap != null) {
             localizer.addReferences(localresources, user, topoName);
@@ -115,7 +115,7 @@ public class SupervisorUtils {
     public static Set<String> readDownloadedTopologyIds(Map<String, Object> conf) throws IOException {
         Set<String> stormIds = new HashSet<>();
         String path = ConfigUtils.supervisorStormDistRoot(conf);
-        Collection<String> rets = ServerUtils.readDirContents(path);
+        Collection<String> rets = ConfigUtils.readDirContents(path);
         for (String ret : rets) {
             stormIds.add(URLDecoder.decode(ret));
         }
@@ -124,7 +124,7 @@ public class SupervisorUtils {
 
     public static Collection<String> supervisorWorkerIds(Map<String, Object> conf) {
         String workerRoot = ConfigUtils.workerRoot(conf);
-        return ServerUtils.readDirContents(workerRoot);
+        return ConfigUtils.readDirContents(workerRoot);
     }
 
     /**

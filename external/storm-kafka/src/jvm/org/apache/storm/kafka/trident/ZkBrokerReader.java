@@ -38,7 +38,7 @@ public class ZkBrokerReader implements IBrokerReader {
 
 	long refreshMillis;
 
-	public ZkBrokerReader(Map conf, String topic, ZkHosts hosts) {
+	public ZkBrokerReader(Map<String, Object> conf, String topic, ZkHosts hosts) {
 		try {
 			reader = new DynamicBrokersReader(conf, hosts.brokerZkStr, hosts.brokerZkPath, topic);
 			cachedBrokers = reader.getBrokerInfo();

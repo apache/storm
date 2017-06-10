@@ -61,11 +61,11 @@ public class KafkaUtils {
         throw new AssertionError();
     }
 
-    public static IBrokerReader makeBrokerReader(Map stormConf, KafkaConfig conf) {
+    public static IBrokerReader makeBrokerReader(Map<String, Object> topoConf, KafkaConfig conf) {
         if (conf.hosts instanceof StaticHosts) {
             return new StaticBrokerReader(conf.topic, ((StaticHosts) conf.hosts).getPartitionInformation());
         } else {
-            return new ZkBrokerReader(stormConf, conf.topic, (ZkHosts) conf.hosts);
+            return new ZkBrokerReader(topoConf, conf.topic, (ZkHosts) conf.hosts);
         }
     }
 

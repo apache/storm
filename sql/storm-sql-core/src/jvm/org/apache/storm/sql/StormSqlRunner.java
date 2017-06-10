@@ -53,7 +53,7 @@ public class StormSqlRunner {
         List<String> stmts = Files.readAllLines(Paths.get(filePath), StandardCharsets.UTF_8);
         StormSql sql = StormSql.construct();
         @SuppressWarnings("unchecked")
-        Map<String, ?> conf = Utils.readStormConfig();
+        Map<String, Object> conf = Utils.readStormConfig();
 
         if (commandLine.hasOption(OPTION_SQL_EXPLAIN_LONG)) {
             sql.explain(stmts);

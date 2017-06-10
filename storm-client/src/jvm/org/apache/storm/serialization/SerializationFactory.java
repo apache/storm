@@ -29,7 +29,6 @@ import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ListDelegate;
 import org.apache.storm.utils.ReflectionUtils;
-import carbonite.JavaBridge;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.Serializer;
 import com.esotericsoftware.kryo.serializers.DefaultSerializers.BigIntegerSerializer;
@@ -40,14 +39,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SerializationFactory {
     public static final Logger LOG = LoggerFactory.getLogger(SerializationFactory.class);
+    public static final ServiceLoader<SerializationRegister> loader = ServiceLoader.load(SerializationRegister.class);
 
-    public static Kryo getKryo(Map conf) {
+    public static Kryo getKryo(Map<String, Object> conf) {
         IKryoFactory kryoFactory = (IKryoFactory) ReflectionUtils.newInstance((String) conf.get(Config.TOPOLOGY_KRYO_FACTORY));
         Kryo k = kryoFactory.getKryo(conf);
         k.register(byte[].class);
@@ -71,11 +72,15 @@ public class SerializationFactory {
         k.register(org.apache.storm.metric.api.IMetricsConsumer.DataPoint.class);
         k.register(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo.class);
         k.register(ConsList.class);
-        try {
-            JavaBridge.registerPrimitives(k);
-            JavaBridge.registerCollections(k);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
+        
+        synchronized (loader) {
+            for (SerializationRegister sr: loader) {
+                try {
+                    sr.register(k);
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }
         }
 
         Map<String, String> registrations = normalizeKryoRegister(conf);
@@ -183,7 +188,7 @@ public class SerializationFactory {
         }
     }
 
-    private static Serializer resolveSerializerInstance(Kryo k, Class superClass, Class<? extends Serializer> serializerClass, Map conf) {
+    private static Serializer resolveSerializerInstance(Kryo k, Class superClass, Class<? extends Serializer> serializerClass, Map<String, Object> conf) {
         try {
             try {
                 return serializerClass.getConstructor(Kryo.class, Class.class, Map.class).newInstance(k, superClass, conf);
@@ -218,7 +223,7 @@ public class SerializationFactory {
         }
     }
 
-    private static Map<String, String> normalizeKryoRegister(Map conf) {
+    private static Map<String, String> normalizeKryoRegister(Map<String, Object> conf) {
         // TODO: de-duplicate this logic with the code in nimbus
         Object res = conf.get(Config.TOPOLOGY_KRYO_REGISTER);
         if(res==null) return new TreeMap<>();

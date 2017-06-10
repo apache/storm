@@ -106,7 +106,7 @@ public class TransactionalWords {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt id) {
             _collector = collector;
             _id = id;
         }
@@ -125,7 +125,7 @@ public class TransactionalWords {
             for (String key : _counts.keySet()) {
                 CountValue val = COUNT_DATABASE.get(key);
                 CountValue newVal;
-                if (val == null || !val.txid.equals(_id)) {
+                if (val == null || !val.txid.equals(_id.getTransactionId())) {
                     newVal = new CountValue();
                     newVal.txid = _id.getTransactionId();
                     if (val != null) {
@@ -184,7 +184,7 @@ public class TransactionalWords {
         int _count = 0;
 
         @Override
-        public void prepare(Map conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, BatchOutputCollector collector, TransactionAttempt attempt) {
             _collector = collector;
             _attempt = attempt;
         }

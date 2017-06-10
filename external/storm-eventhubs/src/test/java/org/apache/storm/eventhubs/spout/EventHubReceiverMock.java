@@ -17,22 +17,9 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import java.util.ArrayList;
-import java.util.List;
+import com.microsoft.azure.eventhubs.EventData;
+
 import java.util.Map;
-
-import org.apache.storm.eventhubs.spout.MessageId;
-import org.apache.storm.eventhubs.spout.EventData;
-import org.apache.storm.eventhubs.spout.IEventHubReceiver;
-import org.apache.qpid.amqp_1_0.client.Message;
-import org.apache.qpid.amqp_1_0.jms.impl.TextMessageImpl;
-import org.apache.qpid.amqp_1_0.type.Binary;
-import org.apache.qpid.amqp_1_0.type.Section;
-import org.apache.qpid.amqp_1_0.type.messaging.Data;
-
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.EventHubOffsetFilter;
-import com.microsoft.eventhubs.client.IEventHubFilter;
 
 /**
  * A mock receiver that emits fake data with offset starting from given offset
@@ -59,8 +46,10 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   }
 
   @Override
-  public void open(IEventHubFilter filter) throws EventHubException {
-    currentOffset = Long.parseLong(filter.getFilterValue());
+  public void open(IEventFilter filter) throws EventHubException {
+    currentOffset = filter.getOffset() != null ?
+            Long.parseLong(filter.getOffset()) :
+            filter.getTime().toEpochMilli();
     isOpen = true;
   }
 
@@ -68,26 +57,25 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   public void close() {
     isOpen = false;
   }
-  
+
   @Override
   public boolean isOpen() {
     return isOpen;
   }
 
   @Override
-  public EventData receive(long timeoutInMilliseconds) {
+  public EventDataWrap receive() {
     if(isPaused) {
       return null;
     }
 
     currentOffset++;
-    List<Section> body = new ArrayList<Section>();
+
     //the body of the message is "message" + currentOffset, e.g. "message123"
-    body.add(new Data(new Binary(("message" + currentOffset).getBytes())));
-    Message m = new Message(body);
+
     MessageId mid = new MessageId(partitionId, "" + currentOffset, currentOffset);
-    EventData ed = new EventData(m, mid);
-    return ed;
+    EventData ed = new EventData(("message" + currentOffset).getBytes());
+    return EventDataWrap.create(ed,mid);
   }
   
   @Override

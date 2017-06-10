@@ -38,7 +38,7 @@ public interface ContextQuery extends Serializable {
      *
      * @return a string bound query.
      */
-    public String resolves(Map config, ITuple tuple);
+    public String resolves(Map<String, Object> config, ITuple tuple);
 
     /**
      * Static implementation of {@link ContextQuery} interface.
@@ -55,7 +55,7 @@ public interface ContextQuery extends Serializable {
         }
 
         @Override
-        public String resolves(Map config, ITuple tuple) {
+        public String resolves(Map<String, Object> config, ITuple tuple) {
             return value;
         }
     }
@@ -72,7 +72,7 @@ public interface ContextQuery extends Serializable {
         }
 
         @Override
-        public String resolves(Map config, ITuple tuple) {
+        public String resolves(Map<String, Object> config, ITuple tuple) {
             if (config.containsKey(key)) return (String) config.get(key);
 
             throw new IllegalArgumentException("Bound query '" + key + "' does not exist in configuration");
@@ -92,7 +92,7 @@ public interface ContextQuery extends Serializable {
         }
 
         @Override
-        public String resolves(Map config, ITuple tuple) {
+        public String resolves(Map<String, Object> config, ITuple tuple) {
             String name = tuple.getStringByField(fieldName);
             if (config.containsKey(name)) return (String) config.get(name);
             throw new IllegalArgumentException("Bound query '" + name + "' does not exist in configuration");

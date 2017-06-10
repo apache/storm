@@ -24,6 +24,7 @@ import org.apache.storm.metric.api.rpc.IShellMetric;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.SpoutMsg;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellProcess;
 
 import java.util.Arrays;
@@ -37,7 +38,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 
-import clojure.lang.RT;
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,15 +92,15 @@ public class ShellSpout implements ISpout {
         this.changeDirectory = changeDirectory;
     }
 
-    public void open(Map stormConf, TopologyContext context,
+    public void open(Map<String, Object> topoConf, TopologyContext context,
                      SpoutOutputCollector collector) {
         _collector = collector;
         _context = context;
 
-        if (stormConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
+        if (topoConf.containsKey(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS)) {
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_SUBPROCESS_TIMEOUT_SECS));
         } else {
-            workerTimeoutMills = 1000 * RT.intCast(stormConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
+            workerTimeoutMills = 1000 * ObjectReader.getInt(topoConf.get(Config.SUPERVISOR_WORKER_TIMEOUT_SECS));
         }
 
         _process = new ShellProcess(_command);
@@ -108,7 +108,7 @@ public class ShellSpout implements ISpout {
             _process.setEnv(env);
         }
 
-        Number subpid = _process.launch(stormConf, context, changeDirectory);
+        Number subpid = _process.launch(topoConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));

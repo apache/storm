@@ -46,13 +46,13 @@ public class CassandraState implements State {
 
     private static final Logger LOG = LoggerFactory.getLogger(CassandraState.class);
 
-    private final Map conf;
+    private final Map<String, Object> conf;
     private final Options options;
 
     private Session session;
     private SimpleClient client;
 
-    protected CassandraState(Map conf, Options options) {
+    protected CassandraState(Map<String, Object> conf, Options options) {
         this.conf = conf;
         this.options = options;
     }

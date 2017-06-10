@@ -264,7 +264,7 @@
         <netty.version>3.9.0.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.8</log4j.version>
+        <log4j.version>2.8.2</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.1.0</metrics.version>
         <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
@@ -276,6 +276,7 @@
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
+        <hbase.version>1.1.0</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>
@@ -283,6 +284,7 @@
         <junit.version>4.11</junit.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
+        <hamcrest.version>1.3</hamcrest.version>
 
         <calcite.version>1.11.0</calcite.version>
 
@@ -302,11 +304,11 @@
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
 
-        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
-        <eventhubs.client.version>1.0.1</eventhubs.client.version>
+        <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.24.1</jersey.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
@@ -332,6 +334,7 @@
         <module>sql</module>
 
         <!-- externals -->
+        <module>external/storm-autocreds</module>
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
@@ -352,6 +355,7 @@
         <module>external/storm-druid</module>
         <module>external/storm-jms</module>
         <module>external/storm-pmml</module>
+        <module>external/storm-rocketmq</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
@@ -369,6 +373,7 @@
         <module>examples/storm-mqtt-examples</module>
         <module>examples/storm-pmml-examples</module>
         <module>examples/storm-jms-examples</module>
+        <module>examples/storm-rocketmq-examples</module>
         <module>examples/storm-perf</module>
     </modules>
 
@@ -458,15 +463,14 @@
                                 <exclude>**/src/ui/public/js/moment.min.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.blockUI.min.js</exclude>
                                 <exclude>**/src/ui/public/js/url.min.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor-graphics.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor-tween.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.mustache.js</exclude>
                                 <exclude>**/src/ui/public/js/typeahead.jquery.min.js</exclude>
                                 <exclude>**/src/ui/public/js/cytoscape-dagre.js</exclude>
                                 <exclude>**/src/ui/public/js/dagre.min.js</exclude>
                                 <exclude>**/src/ui/public/js/esprima.min.js</exclude>
                                 <exclude>**/src/ui/public/js/js-yaml.min.js</exclude>
+                                <exclude>**/src/ui/public/js/vis.min.js</exclude>
+                                <exclude>**/src/ui/public/css/vis.min.css</exclude>
                                 <exclude>**/src/main/resources/Audit.50.csv</exclude>
                                 <exclude>**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml</exclude>
                                 <exclude>**/src/main/sampledata/**</exclude>
@@ -615,7 +619,7 @@
                 <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${jersey.version}</version>
             </dependency> 
-             <dependency>
+            <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId> 
                 <artifactId>jersey-container-jetty-http</artifactId>
                 <version>${jersey.version}</version>
@@ -955,6 +959,24 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
@@ -1079,6 +1101,38 @@
                             <goals>
                                 <goal>integration-test</goal>
                                 <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.17</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <!-- If you change this, you should also update the storm_checkstyle.xml file to be
+                            based on the google_checks.xml from the version of checkstyle you are choosing. -->
+                            <version>7.7</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <configuration>
+                                <configLocation>storm-buildtools/storm_checkstyle.xml</configLocation>
+                                <encoding>UTF-8</encoding>
+                                <failOnViolation>true</failOnViolation>
+                                <logViolationsToConsole>false</logViolationsToConsole>
+                                <outputFile>target/checkstyle-violation.xml</outputFile>
+                                <violationSeverity>warning</violationSeverity>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -1218,7 +1272,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.11</version>
+                <version>2.17</version>
                 <reportSets>
                     <reportSet>
                         <reports>

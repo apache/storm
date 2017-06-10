@@ -80,7 +80,7 @@ public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
      */
     @Override
     public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
-        // FIXME: stores map (stormConf), topologyContext and expose these to derived classes
+        // FIXME: stores map (topoConf), topologyContext and expose these to derived classes
         this.collector = collector;
 
         if (jedisPoolConfig != null) {

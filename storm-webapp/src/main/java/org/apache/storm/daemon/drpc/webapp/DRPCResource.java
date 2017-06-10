@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.drpc.webapp;
+
+import com.codahale.metrics.Meter;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -28,14 +31,13 @@ import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.thrift.TException;
 
-import com.codahale.metrics.Meter;
-
 @Path("/drpc/")
 public class DRPCResource {
     private static final Meter meterHttpRequests = StormMetricsRegistry.registerMeter("drpc:num-execute-http-requests");
-    private final DRPC _drpc;
+    private final DRPC drpc;
+
     public DRPCResource(DRPC drpc) {
-        _drpc = drpc;
+        this.drpc = drpc;
     }
     
     //TODO put in some better exception mapping...
@@ -44,20 +46,21 @@ public class DRPCResource {
     @Path("/{func}") 
     public String post(@PathParam("func") String func, String args, @Context HttpServletRequest request) throws TException {
         meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, args);
+        return drpc.executeBlocking(func, args);
     }
     
     @GET
     @Path("/{func}/{args}") 
-    public String get(@PathParam("func") String func, @PathParam("args") String args, @Context HttpServletRequest request) throws TException {
+    public String get(@PathParam("func") String func, @PathParam("args") String args,
+                      @Context HttpServletRequest request) throws TException {
         meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, args);
+        return drpc.executeBlocking(func, args);
     }
     
     @GET
     @Path("/{func}") 
     public String get(@PathParam("func") String func, @Context HttpServletRequest request) throws TException {
         meterHttpRequests.mark();
-        return _drpc.executeBlocking(func, "");
+        return drpc.executeBlocking(func, "");
     }
 }

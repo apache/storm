@@ -80,6 +80,11 @@
             Scheduler Info
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
+            Storm Version
+          </span>
+        </th> 
       </tr>
     </thead>
     <tbody>
@@ -98,6 +103,7 @@
         <td>{{assignedCpu}}</td>
         {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
+        <td>{{stormVersion}}</td>
       </tr>
     </tbody>
   </table>
@@ -301,33 +307,13 @@
 </script>
 
 <script id="topology-visualization-container-template" type="text/html">
-  <p>
-    <table class="table table-striped compact">
-      <thead>
-        <tr>
-          <th class="header" colspan=4>
-            Streams
-          </th>
-        </tr>
-      </thead>
-      {{#visualizationTable}}
-      <tr>
-        {{#:row}}
-        <td>
-          <input type="checkbox" id={{:sani-stream}} class="stream-box" {{#:checked}}checked{{/:checked}}/>
-          {{:stream}}
-        </td>
-        {{/:row}}
-      </tr>
-      {{/visualizationTable}}
-    </table>
-  </p>
-  <canvas id="topoGraph" width=1024 height=768 style="border:1px solid #000000;">
+<iframe src="/visualize.html?id={{id}}" width="100%" height="500px"></iframe>
 </script>
 
 <script id="topology-visualization-template" type="text/html">
   <h2>Topology Visualization</h2>
   <input type="button" id="show-hide-visualization" value="Show Visualization" class="btn btn-default"/>
+  <input type="button" id="open-visualization" value="Open Visualization" class="btn btn-default"/>
   <p>
     <div id="visualization-container" style="display:none;">
     </div>

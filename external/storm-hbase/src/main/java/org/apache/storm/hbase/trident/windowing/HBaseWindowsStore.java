@@ -56,7 +56,7 @@ public class HBaseWindowsStore implements WindowsStore {
     private final byte[] family;
     private final byte[] qualifier;
 
-    public HBaseWindowsStore(final Map stormConf, final Configuration config, final String tableName, byte[] family, byte[] qualifier) {
+    public HBaseWindowsStore(final Map<String, Object> topoConf, final Configuration config, final String tableName, byte[] family, byte[] qualifier) {
         this.family = family;
         this.qualifier = qualifier;
 
@@ -76,7 +76,7 @@ public class HBaseWindowsStore implements WindowsStore {
         threadLocalWindowKryoSerializer = new ThreadLocal<WindowKryoSerializer>(){
             @Override
             protected WindowKryoSerializer initialValue() {
-                return new WindowKryoSerializer(stormConf);
+                return new WindowKryoSerializer(topoConf);
             }
         };
 

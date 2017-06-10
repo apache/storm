@@ -46,7 +46,7 @@ public class SingleJoinBolt extends BaseRichBolt {
   }
 
   @Override
-  public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+  public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
     _fieldLocations = new HashMap<String, GlobalStreamId>();
     _collector = collector;
     int timeout = ((Number) conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)).intValue();

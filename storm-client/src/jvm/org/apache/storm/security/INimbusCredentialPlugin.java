@@ -32,7 +32,7 @@ public interface INimbusCredentialPlugin extends Shutdownable {
      * this method will be called when nimbus initializes.
      * @param conf
      */
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
 
     /**
      * Method that will be called on nimbus as part of submit topology. This plugin will be called
@@ -43,5 +43,5 @@ public interface INimbusCredentialPlugin extends Shutdownable {
      * @param conf topology configuration
      * @return
      */
-    void populateCredentials(Map<String, String> credentials, Map conf);
+    void populateCredentials(Map<String, String> credentials, Map<String, Object> conf);
 }

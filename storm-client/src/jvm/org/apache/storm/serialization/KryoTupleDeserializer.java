@@ -32,7 +32,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
     SerializationFactory.IdDictionary _ids;
     Input _kryoInput;
     
-    public KryoTupleDeserializer(final Map conf, final GeneralTopologyContext context) {
+    public KryoTupleDeserializer(final Map<String, Object> conf, final GeneralTopologyContext context) {
         _kryo = new KryoValuesDeserializer(conf);
         _context = context;
         _ids = new SerializationFactory.IdDictionary(context.getRawTopology());

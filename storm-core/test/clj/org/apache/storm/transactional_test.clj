@@ -37,7 +37,7 @@
   (:import [org.mockito.exceptions.base MockitoAssertionError])
   (:import [java.util HashMap Collections ArrayList])
   (:use [org.apache.storm util config log])
-  (:use [org.apache.storm.internal clojure]))
+  (:use [org.apache.storm clojure]))
 
 ;; Testing TODO:
 ;; * Test that it repeats the meta for a partitioned state (test partitioned emitter on its own)

@@ -32,7 +32,7 @@ public class MongoStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics,
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics,
             int partitionIndex, int numPartitions) {
         MongoState state = new MongoState(conf, options);
         state.prepare();

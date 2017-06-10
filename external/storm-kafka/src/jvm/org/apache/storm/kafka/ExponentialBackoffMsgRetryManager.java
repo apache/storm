@@ -40,7 +40,7 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
 
     }
 
-    public void prepare(SpoutConfig spoutConfig, Map stormConf) {
+    public void prepare(SpoutConfig spoutConfig, Map<String, Object> topoConf) {
         this.retryInitialDelayMs = spoutConfig.retryInitialDelayMs;
         this.retryDelayMultiplier = spoutConfig.retryDelayMultiplier;
         this.retryDelayMaxMs = spoutConfig.retryDelayMaxMs;

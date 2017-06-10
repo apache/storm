@@ -31,7 +31,7 @@ import org.apache.storm.messaging.IContext;
 
 public class Context implements IContext {
     @SuppressWarnings("rawtypes")
-    private Map storm_conf;
+    private Map<String, Object> topoConf;
     private Map<String, IConnection> connections;
     private NioClientSocketChannelFactory clientChannelFactory;
     
@@ -41,12 +41,12 @@ public class Context implements IContext {
      * initialization per Storm configuration 
      */
     @SuppressWarnings("rawtypes")
-    public void prepare(Map storm_conf) {
-        this.storm_conf = storm_conf;
+    public void prepare(Map<String, Object> topoConf) {
+        this.topoConf = topoConf;
         connections = new HashMap<>();
 
         //each context will have a single client channel factory
-        int maxWorkers = ObjectReader.getInt(storm_conf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
+        int maxWorkers = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_CLIENT_WORKER_THREADS));
 		ThreadFactory bossFactory = new NettyRenameThreadFactory("client" + "-boss");
         ThreadFactory workerFactory = new NettyRenameThreadFactory("client" + "-worker");
         if (maxWorkers > 0) {
@@ -64,8 +64,8 @@ public class Context implements IContext {
      * establish a server with a binding port
      */
     public synchronized IConnection bind(String storm_id, int port) {
-        IConnection server = new Server(storm_conf, port);
-        connections.put(key(storm_id, port), server);
+        IConnection server = new Server(topoConf, port);
+        connections.put(key(storm_id, server.getPort()), server);
         return server;
     }
 
@@ -78,9 +78,9 @@ public class Context implements IContext {
         {
             return connection;
         }
-        IConnection client =  new Client(storm_conf, clientChannelFactory, 
+        IConnection client =  new Client(topoConf, clientChannelFactory, 
                 clientScheduleService, host, port, this);
-        connections.put(key(host, port), client);
+        connections.put(key(host, client.getPort()), client);
         return client;
     }
 

@@ -40,13 +40,13 @@ public class BuiltinMetricsUtil {
         throw new RuntimeException("Invalid component type!");
     }
 
-    public static void registerIconnectionServerMetric(Object server, Map stormConf, TopologyContext context) {
+    public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf, TopologyContext context) {
         if (server instanceof IStatefulObject) {
-            registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), stormConf, context);
+            registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), topoConf, context);
         }
     }
 
-    public static void registerIconnectionClientMetrics(final Map nodePortToSocket, Map stormConf, TopologyContext context) {
+    public static void registerIconnectionClientMetrics(final Map nodePortToSocket, Map<String, Object> topoConf, TopologyContext context) {
         IMetric metric = new IMetric() {
             @Override
             public Object getValueAndReset() {
@@ -62,20 +62,20 @@ public class BuiltinMetricsUtil {
                 return ret;
             }
         };
-        registerMetric("__send-iconnection", metric, stormConf, context);
+        registerMetric("__send-iconnection", metric, topoConf, context);
     }
 
-    public static void registerQueueMetrics(Map queues, Map stormConf, TopologyContext context) {
+    public static void registerQueueMetrics(Map queues, Map<String, Object> topoConf, TopologyContext context) {
         for (Object o : queues.entrySet()) {
             Map.Entry entry = (Map.Entry) o;
             String name = "__" + entry.getKey();
             IMetric metric = new StateMetric((IStatefulObject) entry.getValue());
-            registerMetric(name, metric, stormConf, context);
+            registerMetric(name, metric, topoConf, context);
         }
     }
 
-    public static void registerMetric(String name, IMetric metric, Map stormConf, TopologyContext context) {
-        int bucketSize = ((Number) stormConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
+    public static void registerMetric(String name, IMetric metric, Map<String, Object> topoConf, TopologyContext context) {
+        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
         context.registerMetric(name, metric, bucketSize);
     }
 }

@@ -31,9 +31,9 @@ public class GzipBridgeThriftSerializationDelegate implements SerializationDeleg
     private GzipThriftSerializationDelegate gzipDelegate = new GzipThriftSerializationDelegate();
 
     @Override
-    public void prepare(Map stormConf) {
-        defaultDelegate.prepare(stormConf);
-        gzipDelegate.prepare(stormConf);
+    public void prepare(Map<String, Object> topoConf) {
+        defaultDelegate.prepare(topoConf);
+        gzipDelegate.prepare(topoConf);
     }
 
     @Override

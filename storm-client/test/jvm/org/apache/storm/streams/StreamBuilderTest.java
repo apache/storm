@@ -235,7 +235,7 @@ public class StreamBuilderTest {
             }
 
             @Override
-            public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+            public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
 
             }
 
@@ -255,7 +255,7 @@ public class StreamBuilderTest {
             }
 
             @Override
-            public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+            public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
 
             }
 

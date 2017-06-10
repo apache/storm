@@ -32,7 +32,7 @@ public class ReducerAggregatorImpl implements Aggregator<Result> {
         _agg = agg;
     }
     
-    public void prepare(Map conf, TridentOperationContext context) {
+    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
         
     }
     

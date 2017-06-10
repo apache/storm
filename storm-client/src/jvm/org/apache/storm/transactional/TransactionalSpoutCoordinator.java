@@ -72,7 +72,7 @@ public class TransactionalSpoutCoordinator extends BaseRichSpout {
     }
     
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _rand = new Random(Utils.secureRandomLong());
         _state = TransactionalState.newCoordinatorState(conf, (String) conf.get(Config.TOPOLOGY_TRANSACTIONAL_ID), _spout.getComponentConfiguration());
         _coordinatorState = new RotatingTransactionalState(_state, META_DIR, true);

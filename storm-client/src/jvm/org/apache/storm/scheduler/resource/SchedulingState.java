@@ -33,9 +33,9 @@ public class SchedulingState {
     public final Cluster cluster;
     public final Topologies topologies;
     public final RAS_Nodes nodes;
-    public final Map conf = new Config();
+    public final Map<String, Object> conf = new Config();
 
-    public SchedulingState(Map<String, User> userMap, Cluster cluster, Topologies topologies, Map conf) {
+    public SchedulingState(Map<String, User> userMap, Cluster cluster, Topologies topologies, Map<String, Object> conf) {
         for (Map.Entry<String, User> userMapEntry : userMap.entrySet()) {
             String userId = userMapEntry.getKey();
             User user = userMapEntry.getValue();

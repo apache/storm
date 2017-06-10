@@ -50,7 +50,7 @@ public class RollingCountBoltTest {
     // given
     Tuple tickTuple = MockTupleHelpers.mockTickTuple();
     RollingCountBolt bolt = new RollingCountBolt();
-    Map conf = mock(Map.class);
+    Map<String, Object> conf = mock(Map.class);
     TopologyContext context = mock(TopologyContext.class);
     OutputCollector collector = mock(OutputCollector.class);
     bolt.prepare(conf, context, collector);
@@ -70,7 +70,7 @@ public class RollingCountBoltTest {
     Tuple tickTuple = MockTupleHelpers.mockTickTuple();
 
     RollingCountBolt bolt = new RollingCountBolt();
-    Map conf = mock(Map.class);
+    Map<String, Object> conf = mock(Map.class);
     TopologyContext context = mock(TopologyContext.class);
     OutputCollector collector = mock(OutputCollector.class);
     bolt.prepare(conf, context, collector);
