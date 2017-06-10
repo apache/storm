@@ -170,4 +170,19 @@ public class OffsetManagerTest {
         manager.addToAckMsgs(msgId);
     }
 
+    @Test
+    public void testGetNthUncommittedOffsetAfterCommittedOffset() { 
+        manager.addToEmitMsgs(initialFetchOffset + 1);
+        manager.addToEmitMsgs(initialFetchOffset + 2);
+        manager.addToEmitMsgs(initialFetchOffset + 5);
+        manager.addToEmitMsgs(initialFetchOffset + 30);
+        
+        assertThat("The third uncommitted offset should be 5", manager.getNthUncommittedOffsetAfterCommittedOffset(3), is(initialFetchOffset + 5L));
+        assertThat("The fourth uncommitted offset should be 30", manager.getNthUncommittedOffsetAfterCommittedOffset(4), is(initialFetchOffset + 30L));
+        
+        expect.expect(NoSuchElementException.class);
+        manager.getNthUncommittedOffsetAfterCommittedOffset(5);
+        
+    }
+
 }

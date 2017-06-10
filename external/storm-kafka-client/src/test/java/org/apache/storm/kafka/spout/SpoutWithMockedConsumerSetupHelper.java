@@ -51,39 +51,51 @@ public class SpoutWithMockedConsumerSetupHelper {
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
         TopologyContext contextMock, SpoutOutputCollector collectorMock, final KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {
-
-        Map<String, List<PartitionInfo>> partitionInfos = new HashMap<>();
-        for(TopicPartition tp : assignedPartitions) {
-            PartitionInfo info = new PartitionInfo(tp.topic(), tp.partition(), null, null, null);
-            List<PartitionInfo> infos = partitionInfos.get(tp.topic());
-            if(infos == null) {
-                infos = new ArrayList<>();
-                partitionInfos.put(tp.topic(), infos);
-            }
-            infos.add(info);
-        }
-        for(String topic : partitionInfos.keySet()) {
-            when(consumerMock.partitionsFor(topic))
-                .thenReturn(partitionInfos.get(topic));
-        }
+        
+        stubAssignment(contextMock, consumerMock, assignedPartitions);
         KafkaConsumerFactory<K, V> consumerFactory = new KafkaConsumerFactory<K, V>() {
             @Override
             public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
                 return consumerMock;
             }
         };
-
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory);
-
-        when(contextMock.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
-        when(contextMock.getThisTaskIndex()).thenReturn(0);
-
+        
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();
 
         verify(consumerMock).assign(assignedPartitions);
 
         return spout;
+    }
+    
+    /**
+     * Sets up the mocked context and consumer to appear to have the given partition assignment.
+     * 
+     * @param <K> The Kafka key type
+     * @param <V> The Kafka value type
+     * @param contextMock The mocked topology context
+     * @param consumerMock The mocked consumer
+     * @param assignedPartitions The partitions to assign to the consumer
+     */
+    public static <K, V> void stubAssignment(TopologyContext contextMock, KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {
+        Map<String, List<PartitionInfo>> partitionInfos = new HashMap<>();
+        for (TopicPartition tp : assignedPartitions) {
+            PartitionInfo info = new PartitionInfo(tp.topic(), tp.partition(), null, null, null);
+            List<PartitionInfo> infos = partitionInfos.get(tp.topic());
+            if (infos == null) {
+                infos = new ArrayList<>();
+                partitionInfos.put(tp.topic(), infos);
+            }
+            infos.add(info);
+        }
+        for (String topic : partitionInfos.keySet()) {
+            when(consumerMock.partitionsFor(topic)).thenReturn(partitionInfos.get(topic));
+        }
+        when(contextMock.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
+        when(contextMock.getThisTaskIndex()).thenReturn(0);
+
+        when(consumerMock.assignment()).thenReturn(assignedPartitions);
     }
 
     /**

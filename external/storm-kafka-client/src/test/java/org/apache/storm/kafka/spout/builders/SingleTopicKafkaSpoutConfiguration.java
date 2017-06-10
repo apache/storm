@@ -69,7 +69,7 @@ public class SingleTopicKafkaSpoutConfiguration {
         return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<String, String>("127.0.0.1:" + port, subscription));
     }
 
-    private static KafkaSpoutConfig.Builder<String, String> setCommonSpoutConfig(KafkaSpoutConfig.Builder<String, String> config) {
+    public static KafkaSpoutConfig.Builder<String, String> setCommonSpoutConfig(KafkaSpoutConfig.Builder<String, String> config) {
         return config
             .setRecordTranslator(TOPIC_KEY_VALUE_FUNC,
                 new Fields("topic", "key", "value"), STREAM)
