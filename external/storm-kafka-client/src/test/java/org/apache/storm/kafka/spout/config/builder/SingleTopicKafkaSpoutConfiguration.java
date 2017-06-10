@@ -41,7 +41,7 @@ public class SingleTopicKafkaSpoutConfiguration {
         return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<>("127.0.0.1:" + port, subscription));
     }
 
-    private static KafkaSpoutConfig.Builder<String, String> setCommonSpoutConfig(KafkaSpoutConfig.Builder<String, String> config) {
+    public static KafkaSpoutConfig.Builder<String, String> setCommonSpoutConfig(KafkaSpoutConfig.Builder<String, String> config) {
         return config.setRecordTranslator((r) -> new Values(r.topic(), r.key(), r.value()),
             new Fields("topic", "key", "value"), STREAM)
             .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")

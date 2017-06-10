@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.kafka.clients.consumer.*;
 import org.apache.kafka.common.TopicPartition;
@@ -75,16 +76,13 @@ public class KafkaSpoutCommitTest {
     public void testCommitSuccessWithOffsetVoids() {
         //Verify that the commit logic can handle offset voids
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+            Set<TopicPartition> assignedPartitions = Collections.singleton(partition);
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, assignedPartitions);
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             List<ConsumerRecord<String, String>> recordsForPartition = new ArrayList<>();
             // Offsets emitted are 0,1,2,3,4,<void>,8,9
-            for (int i = 0; i < 5; i++) {
-                recordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
-            }
-            for (int i = 8; i < 10; i++) {
-                recordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
-            }
+            recordsForPartition.addAll(SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 5));
+            recordsForPartition.addAll(SpoutWithMockedConsumerSetupHelper.createRecords(partition, 8, 2));
             records.put(partition, recordsForPartition);
 
             when(consumerMock.poll(anyLong()))

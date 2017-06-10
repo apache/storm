@@ -50,7 +50,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.anyList;
+
+import java.util.regex.Pattern;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -79,12 +81,15 @@ public class SingleTopicKafkaSpoutTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(kafkaUnitRule.getKafkaUnit().getKafkaPort())
-            .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
-            .setRetry(new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0),
-                maxRetries, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0)))
-            .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
-            .build();
+        KafkaSpoutConfig<String, String> spoutConfig =
+            SingleTopicKafkaSpoutConfiguration.setCommonSpoutConfig(
+                KafkaSpoutConfig.builder("127.0.0.1:" + kafkaUnitRule.getKafkaUnit().getKafkaPort(),
+                    Pattern.compile(SingleTopicKafkaSpoutConfiguration.TOPIC)))
+                .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
+                .setRetry(new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0),
+                    maxRetries, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0)))
+                .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
+                .build();
         this.consumerSpy = spy(new KafkaConsumerFactoryDefault<String, String>().createConsumer(spoutConfig));
         this.spout = new KafkaSpout<>(spoutConfig, (ignored) -> consumerSpy);
     }
@@ -93,7 +98,7 @@ public class SingleTopicKafkaSpoutTest {
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitRule.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
     }
-    
+
     /*
      * Asserts that commitSync has been called once, 
      * that there are only commits on one topic,
@@ -161,7 +166,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldContinueWithSlowDoubleAcks() throws Exception {
+    public void testShouldContinueWithSlowDoubleAcks() throws Exception {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             int messageCount = 20;
             prepareSpout(messageCount);
@@ -200,7 +205,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldEmitAllMessages() throws Exception {
+    public void testShouldEmitAllMessages() throws Exception {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             int messageCount = 10;
             prepareSpout(messageCount);
@@ -228,7 +233,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldReplayInOrderFailedMessages() throws Exception {
+    public void testShouldReplayInOrderFailedMessages() throws Exception {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             int messageCount = 10;
             prepareSpout(messageCount);
@@ -269,7 +274,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldReplayFirstTupleFailedOutOfOrder() throws Exception {
+    public void testShouldReplayFirstTupleFailedOutOfOrder() throws Exception {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             int messageCount = 10;
             prepareSpout(messageCount);
@@ -313,7 +318,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldReplayAllFailedTuplesWhenFailedOutOfOrder() throws Exception {
+    public void testShouldReplayAllFailedTuplesWhenFailedOutOfOrder() throws Exception {
         //The spout must reemit retriable tuples, even if they fail out of order.
         //The spout should be able to skip tuples it has already emitted when retrying messages, even if those tuples are also retries.
         int messageCount = 10;
@@ -347,7 +352,7 @@ public class SingleTopicKafkaSpoutTest {
     }
 
     @Test
-    public void shouldDropMessagesAfterMaxRetriesAreReached() throws Exception {
+    public void testShouldDropMessagesAfterMaxRetriesAreReached() throws Exception {
         //Check that if one message fails repeatedly, the retry cap limits how many times the message can be reemitted
         int messageCount = 1;
         prepareSpout(messageCount);
@@ -366,5 +371,23 @@ public class SingleTopicKafkaSpoutTest {
         //Verify that the tuple is not emitted again
         spout.nextTuple();
         verify(collector, never()).emit(any(), any(), any());
+    }
+
+    @Test
+    public void testSpoutMustRefreshPartitionsEvenIfNotPolling() throws Exception {
+        try (SimulatedTime time = new SimulatedTime()) {
+            SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
+
+            //Nothing is assigned yet, should emit nothing
+            spout.nextTuple();
+            verify(collector, never()).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
+
+            SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitRule.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, 1);
+            Time.advanceTime(KafkaSpoutConfig.DEFAULT_PARTITION_REFRESH_PERIOD_MS + KafkaSpout.TIMER_DELAY_MS);
+
+            //The new partition should be discovered and the message should be emitted
+            spout.nextTuple();
+            verify(collector).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
+        }
     }
 }
