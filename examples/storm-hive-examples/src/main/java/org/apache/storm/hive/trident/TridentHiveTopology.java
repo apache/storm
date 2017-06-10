@@ -142,7 +142,7 @@ public class TridentHiveTopology {
         }
 
         @Override
-        public void open(Map<String, Object> conf, TopologyContext context) {
+        public void open(Map conf, TopologyContext context) {
             index = 0;
         }
 

@@ -43,7 +43,7 @@ public class DynamicBrokersReader {
     private String _topic;
     private Boolean _isWildcardTopic;
 
-    public DynamicBrokersReader(Map<String, Object> conf, String zkStr, String zkPath, String topic) {
+    public DynamicBrokersReader(Map conf, String zkStr, String zkPath, String topic) {
         // Check required parameters
         Preconditions.checkNotNull(conf, "conf cannot be null");
 
@@ -200,7 +200,7 @@ public class DynamicBrokersReader {
      * Validate required parameters in the input configuration Map
      * @param conf
      */
-    private void validateConfig(final Map<String, Object> conf) {
+    private void validateConfig(final Map conf) {
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT),
                 "%s cannot be null", Config.STORM_ZOOKEEPER_SESSION_TIMEOUT);
         Preconditions.checkNotNull(conf.get(Config.STORM_ZOOKEEPER_CONNECTION_TIMEOUT),

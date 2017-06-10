@@ -20,6 +20,7 @@ package org.apache.storm.kafka.spout;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.tuple.Fields;
 import org.junit.Test;

@@ -17,31 +17,16 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
-import java.io.IOException;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
+import org.apache.storm.elasticsearch.ElasticsearchGetRequest;
 import org.apache.storm.elasticsearch.EsLookupResultOutput;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.tuple.Values;
+import org.elasticsearch.ElasticsearchException;
 import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.client.Response;
-import org.elasticsearch.client.ResponseException;
-import org.elasticsearch.client.RestClient;
+import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.Client;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -50,16 +35,26 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
 
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.tuple.Values;
+
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
 @RunWith(MockitoJUnitRunner.class)
 public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
-
-    static final Map<String, String> params = new HashMap<>();
 
     @Mock
     private EsConfig esConfig;
 
     @Mock
-    private EsTupleMapper tupleMapper;
+    private ElasticsearchGetRequest getRequest;
 
     @Mock
     private EsLookupResultOutput output;
@@ -71,15 +66,15 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
     private GetRequest request;
 
     @Mock
-    private RestClient client;
+    private Client client;
 
-    private RestClient originalClient;
+    private Client originalClient;
 
     @Override
     protected EsLookupBolt createBolt(EsConfig esConfig) {
         originalClient = EsLookupBolt.getClient();
         EsLookupBolt.replaceClient(this.client);
-        return new EsLookupBolt(esConfig, tupleMapper, output);
+        return new EsLookupBolt(esConfig, getRequest, output);
     }
 
     @After
@@ -89,29 +84,25 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
 
     @Before
     public void configureBoltDependencies() throws Exception {
-        when(tupleMapper.getIndex(tuple)).thenReturn(index);
-        when(tupleMapper.getType(tuple)).thenReturn(type);
-        when(tupleMapper.getId(tuple)).thenReturn(documentId);
-        when(output.toValues(any(Response.class))).thenReturn(Collections.singleton(new Values("")));
-    }
-
-    private void makeRequestAndThrow(Exception exception) throws IOException {
-        when(client.performRequest("get", AbstractEsBolt.getEndpoint(index, type, documentId), params)).thenThrow(exception);
-        bolt.execute(tuple);
+        when(getRequest.extractFrom(tuple)).thenReturn(request);
+        when(output.toValues(any(GetResponse.class))).thenReturn(Collections.singleton(new Values("")));
     }
 
     @Test
     public void failsTupleWhenClientThrows() throws Exception {
-        makeRequestAndThrow(EsTestUtil.generateMockResponseException());
+        when(client.get(request)).thenThrow(ElasticsearchException.class);
+        bolt.execute(tuple);
+
         verify(outputCollector).fail(tuple);
     }
 
     @Test
     public void reportsExceptionWhenClientThrows() throws Exception {
-        ResponseException responseException = EsTestUtil.generateMockResponseException();
-        makeRequestAndThrow(responseException);
+        ElasticsearchException elasticsearchException = new ElasticsearchException("dummy");
+        when(client.get(request)).thenThrow(elasticsearchException);
+        bolt.execute(tuple);
 
-        verify(outputCollector).reportError(responseException);
+        verify(outputCollector).reportError(elasticsearchException);
     }
 
     @Test

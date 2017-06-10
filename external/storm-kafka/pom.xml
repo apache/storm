@@ -52,14 +52,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <!--Note - the version would be inherited-->
-                <configuration>
-                    <maxAllowedViolations>557</maxAllowedViolations>
-                </configuration>
-            </plugin>
         </plugins>
         <sourceDirectory>src/jvm</sourceDirectory>
         <testSourceDirectory>src/test</testSourceDirectory>

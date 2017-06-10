@@ -56,4 +56,4 @@ To find version of the storm that you are running run `storm version` command.
 
 Code
 ----
-Start off by looking at file [DemoTest.java](https://github.com/apache/storm/blob/master/integration-test/src/test/java/org/apache/storm/st/DemoTest.java).
+Start off by looking at file [DemoTest.java](https://github.com/apache/storm/integration-test/blob/master/src/test/java/org/apache/storm/st/DemoTest.java).

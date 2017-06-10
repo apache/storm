@@ -20,7 +20,10 @@ package org.apache.storm.hive.common;
 
 import java.io.Serializable;
 
+import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
+import org.apache.hive.hcatalog.streaming.*;
+
 
 public class HiveOptions implements Serializable {
     /**

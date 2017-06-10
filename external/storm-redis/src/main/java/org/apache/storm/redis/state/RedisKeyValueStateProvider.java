@@ -41,22 +41,22 @@ public class RedisKeyValueStateProvider implements StateProvider {
     private static final Logger LOG = LoggerFactory.getLogger(RedisKeyValueStateProvider.class);
 
     @Override
-    public State newState(String namespace, Map<String, Object> topoConf, TopologyContext context) {
+    public State newState(String namespace, Map stormConf, TopologyContext context) {
         try {
-            return getRedisKeyValueState(namespace, getStateConfig(topoConf));
+            return getRedisKeyValueState(namespace, getStateConfig(stormConf));
         } catch (Exception ex) {
-            LOG.error("Error loading config from storm conf {}", topoConf);
+            LOG.error("Error loading config from storm conf {}", stormConf);
             throw new RuntimeException(ex);
         }
     }
 
-    StateConfig getStateConfig(Map<String, Object> topoConf) throws Exception {
+    StateConfig getStateConfig(Map stormConf) throws Exception {
         StateConfig stateConfig = null;
         String providerConfig = null;
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        if (topoConf.containsKey(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
-            providerConfig = (String) topoConf.get(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
+        if (stormConf.containsKey(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
+            providerConfig = (String) stormConf.get(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
             stateConfig = mapper.readValue(providerConfig, StateConfig.class);
         } else {
             stateConfig = new StateConfig();

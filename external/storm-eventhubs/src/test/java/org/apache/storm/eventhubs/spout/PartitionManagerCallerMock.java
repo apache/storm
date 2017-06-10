@@ -17,6 +17,10 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import org.apache.storm.eventhubs.spout.PartitionManager;
+import org.apache.storm.eventhubs.spout.EventData;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+
 /**
  * This mock exercises PartitionManager
  */
@@ -67,7 +71,7 @@ public class PartitionManagerCallerMock {
           count = Integer.parseInt(cmd.substring(1));
         }
         for(int i=0; i<count; ++i) {
-          EventDataWrap ed = pm.receive();
+          EventData ed = pm.receive();
           if(ed == null) {
             ret.append("null,");
           }

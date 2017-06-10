@@ -55,7 +55,7 @@ public class FastWordCountTopology {
     };
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
       _rand = ThreadLocalRandom.current();
     }

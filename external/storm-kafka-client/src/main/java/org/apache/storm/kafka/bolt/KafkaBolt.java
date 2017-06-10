@@ -15,28 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.kafka.bolt;
 
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.ExecutionException;
-import java.util.concurrent.Future;
-import org.apache.kafka.clients.producer.Callback;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.clients.producer.Callback;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.mapper.TupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
 import org.apache.storm.kafka.bolt.selector.KafkaTopicSelector;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.concurrent.Future;
+import java.util.concurrent.ExecutionException;
+import java.util.Map;
+import java.util.Properties;
 
 
 /**
@@ -80,7 +81,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Set the messages to be published to a single topic.
+     * Set the messages to be published to a single topic
      * @param topic the topic to publish to
      * @return this
      */
@@ -99,7 +100,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         LOG.info("Preparing bolt with configuration {}", this);
         //for backward compatibility.
         if (mapper == null) {
@@ -109,10 +110,10 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
 
         //for backward compatibility.
         if (topicSelector == null) {
-            if (topoConf.containsKey(TOPIC)) {
+            if (stormConf.containsKey(TOPIC)) {
                 LOG.info("TopicSelector not specified. Using [{}] for topic [{}] specified in bolt configuration,",
-                        DefaultTopicSelector.class.getSimpleName(), topoConf.get(TOPIC));
-                this.topicSelector = new DefaultTopicSelector((String) topoConf.get(TOPIC));
+                        DefaultTopicSelector.class.getSimpleName(), stormConf.get(TOPIC));
+                this.topicSelector = new DefaultTopicSelector((String) stormConf.get(TOPIC));
             } else {
                 throw new IllegalStateException("topic should be specified in bolt's configuration");
             }
@@ -138,7 +139,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
             key = mapper.getKeyFromTuple(input);
             message = mapper.getMessageFromTuple(input);
             topic = topicSelector.getTopic(input);
-            if (topic != null) {
+            if (topic != null ) {
                 Callback callback = null;
 
                 if (!fireAndForget && async) {
@@ -193,7 +194,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
      * the tuple as soon as it has handed the message off to the producer API
      * if false (the default) the message will be acked after it was successfully sent to kafka or
      * failed if it was not successfully sent.
-     * @param fireAndForget whether the bolt should fire and forget
+     * @param fireAndForget
      */
     public void setFireAndForget(boolean fireAndForget) {
         this.fireAndForget = fireAndForget;
@@ -210,10 +211,10 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     
     @Override
     public String toString() {
-        return "KafkaBolt: {mapper: " + mapper 
-            + " topicSelector: " + topicSelector
-            + " fireAndForget: " + fireAndForget 
-            + " async: " + async 
-            + " proerties: " + boltSpecifiedProperties;
+        return "KafkaBolt: {mapper: " + mapper +
+                " topicSelector: " + topicSelector +
+                " fireAndForget: " + fireAndForget +
+                " async: " + async +
+                " proerties: " + boltSpecifiedProperties;
     }
 }

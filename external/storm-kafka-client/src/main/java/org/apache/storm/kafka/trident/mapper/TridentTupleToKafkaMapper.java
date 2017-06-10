@@ -15,15 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.kafka.trident.mapper;
 
-import java.io.Serializable;
+import org.apache.storm.tuple.Tuple;
 import org.apache.storm.trident.tuple.TridentTuple;
 
+import java.io.Serializable;
+
 public interface TridentTupleToKafkaMapper<K,V>  extends Serializable {
-    
     K getKeyFromTuple(TridentTuple tuple);
-    
     V getMessageFromTuple(TridentTuple tuple);
 }

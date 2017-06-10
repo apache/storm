@@ -33,7 +33,7 @@ public class SplitSentenceBolt extends BaseBasicBolt {
     public static final String FIELDS = "word";
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context) {
+    public void prepare(Map stormConf, TopologyContext context) {
     }
 
     @Override

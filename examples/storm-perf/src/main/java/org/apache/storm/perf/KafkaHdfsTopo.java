@@ -72,7 +72,7 @@ public class KafkaHdfsTopo {
 
 
 
-  public static StormTopology getTopology(Map<String, Object> config) {
+  public static StormTopology getTopology(Map config) {
 
     final int spoutNum = getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
     final int boltNum = getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
@@ -136,7 +136,7 @@ public class KafkaHdfsTopo {
 
         Integer durationSec = Integer.parseInt(args[0]);
         String confFile = args[1];
-        Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
+        Map topoConf = Utils.findAndReadConfigFile(confFile);
 
         //  Submit topology to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

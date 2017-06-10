@@ -60,7 +60,7 @@ public class MqttPublishFunction extends BaseFunction {
 
 
     @Override
-    public void prepare(Map<String, Object> conf, TridentOperationContext context) {
+    public void prepare(Map conf, TridentOperationContext context) {
         this.topologyName = (String)conf.get(Config.TOPOLOGY_NAME);
         this.publisher = new MqttPublisher(this.options, this.keyStoreLoader, this.retain);
         try {

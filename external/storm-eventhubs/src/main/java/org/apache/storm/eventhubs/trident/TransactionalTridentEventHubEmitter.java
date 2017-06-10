@@ -17,16 +17,24 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.trident;
 
-import org.apache.storm.eventhubs.spout.*;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.spout.IPartitionedTridentSpout;
-import org.apache.storm.trident.topology.TransactionAttempt;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.apache.storm.eventhubs.spout.EventData;
+import org.apache.storm.eventhubs.spout.EventHubReceiverImpl;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.eventhubs.spout.IEventHubReceiver;
+import org.apache.storm.eventhubs.spout.IEventHubReceiverFactory;
+import com.microsoft.eventhubs.client.Constants;
+
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
+import org.apache.storm.trident.spout.IPartitionedTridentSpout;
+import org.apache.storm.trident.topology.TransactionAttempt;
 
 
 public class TransactionalTridentEventHubEmitter
@@ -103,15 +111,15 @@ public class TransactionalTridentEventHubEmitter
     int count = Integer.parseInt((String)meta.get("count"));
     logger.info("re-emit for partition " + partition.getId() + ", offset=" + offset + ", count=" + count);
     ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
-    List<EventDataWrap> listEvents = pm.receiveBatch(offset, count);
+    List<EventData> listEvents = pm.receiveBatch(offset, count);
     if(listEvents.size() != count) {
       logger.error("failed to refetch eventhub messages, new count=" + listEvents.size());
       return;
     }
 
-    for(EventDataWrap ed: listEvents) {
+    for(EventData ed: listEvents) {
       List<Object> tuples = 
-          spoutConfig.getEventDataScheme().deserialize(ed.getEventData());
+          spoutConfig.getEventDataScheme().deserialize(ed.getMessage());
       collector.emit(tuples);
     }
   }
@@ -120,20 +128,20 @@ public class TransactionalTridentEventHubEmitter
   public Map emitPartitionBatchNew(TransactionAttempt attempt,
       TridentCollector collector, Partition partition, Map meta) {
     ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
-    String offset = FieldConstants.DefaultStartingOffset;
+    String offset = Constants.DefaultStartingOffset;
     if(meta != null && meta.containsKey("nextOffset")) {
       offset = (String)meta.get("nextOffset");
     }
     //logger.info("emit for partition " + partition.getId() + ", offset=" + offset);
     String nextOffset = offset;
 
-    List<EventDataWrap> listEvents = pm.receiveBatch(offset, batchSize);
+    List<EventData> listEvents = pm.receiveBatch(offset, batchSize);
 
-    for(EventDataWrap ed: listEvents) {
+    for(EventData ed: listEvents) {
       //update nextOffset;
       nextOffset = ed.getMessageId().getOffset();
       List<Object> tuples = 
-          spoutConfig.getEventDataScheme().deserialize(ed.getEventData());
+          spoutConfig.getEventDataScheme().deserialize(ed.getMessage());
       collector.emit(tuples);
     }
     //logger.info("emitted new batches: " + listEvents.size());

@@ -17,13 +17,19 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import com.microsoft.azure.eventhubs.EventData;
 import org.apache.storm.tuple.Fields;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+
+import org.apache.qpid.amqp_1_0.client.Message;
+import org.apache.qpid.amqp_1_0.type.Section;
+import org.apache.qpid.amqp_1_0.type.messaging.AmqpValue;
+import org.apache.qpid.amqp_1_0.type.messaging.ApplicationProperties;
+import org.apache.qpid.amqp_1_0.type.messaging.Data;
+import org.apache.storm.tuple.Fields;
 
 /**
  * An Event Data Scheme which deserializes message payload into the Strings.
@@ -38,32 +44,21 @@ import java.util.List;
 public class StringEventDataScheme implements IEventDataScheme {
 
   private static final long serialVersionUID = 1L;
-  private static final Logger logger = LoggerFactory.getLogger(StringEventDataScheme.class);
 
   @Override
-  public List<Object> deserialize(EventData eventData) {
+  public List<Object> deserialize(Message message) {
     final List<Object> fieldContents = new ArrayList<Object>();
-    String messageData = "";
-    if (eventData.getBytes()!=null) {
-      messageData = new String(eventData.getBytes());
-    }
-    /*Will only serialize AMQPValue type*/
-    else if (eventData.getObject()!=null) {
-      try {
-        if (!(eventData.getObject() instanceof List)) {
-          messageData = eventData.getObject().toString();
-        } else {
-          throw new RuntimeException("Cannot serialize the given AMQP type.");
-        }
-      } catch (RuntimeException e){
-        logger.error("Failed to serialize EventData payload class"
-                + eventData.getObject().getClass());
-        logger.error("Exception encountered while serializing EventData payload is"
-                + e.toString());
-        throw e;
+
+    for (Section section : message.getPayload()) {
+      if (section instanceof Data) {
+        Data data = (Data) section;
+        fieldContents.add(new String(data.getValue().getArray()));
+      } else if (section instanceof AmqpValue) {
+        AmqpValue amqpValue = (AmqpValue) section;
+        fieldContents.add(amqpValue.getValue().toString());
       }
     }
-    fieldContents.add(messageData);
+    
     return fieldContents;
   }
 

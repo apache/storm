@@ -42,7 +42,7 @@ public abstract class AbstractMongoBolt extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map<String, Object> topoConf, TopologyContext context,
+    public void prepare(Map stormConf, TopologyContext context,
             OutputCollector collector) {
         this.collector = collector;
         this.mongoClient = new MongoDBClient(url, collectionName);

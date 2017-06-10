@@ -44,7 +44,7 @@ public class InOrderDeliveryTest {
     int _i = 0;
 
     @Override
-    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
       _base = context.getThisTaskIndex();
     }

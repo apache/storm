@@ -63,7 +63,7 @@ public class BlobStoreTest {
   protected static Configuration hadoopConf = null;
   URI base;
   File baseFile;
-  private static Map<String, Object> conf = new HashMap();
+  private static Map conf = new HashMap();
   public static final int READ = 0x01;
   public static final int WRITE = 0x02;
   public static final int ADMIN = 0x04;
@@ -164,7 +164,7 @@ public class BlobStoreTest {
     } catch (IOException e) {
       LOG.error("error creating MiniDFSCluster");
     }
-    Map<String, Object> conf = new HashMap();
+    Map conf = new HashMap();
     conf.put(Config.BLOBSTORE_DIR, dirName);
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
     conf.put(Config.STORM_BLOBSTORE_REPLICATION_FACTOR, 3);

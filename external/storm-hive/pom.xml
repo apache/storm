@@ -147,17 +147,6 @@
       <version>0.9.3</version>
       <scope>compile</scope>
     </dependency>
-    <dependency>
-      <groupId>org.apache.calcite</groupId>
-      <artifactId>calcite-core</artifactId>
-      <version>${calcite.version}</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.storm</groupId>
-      <artifactId>storm-autocreds</artifactId>
-      <version>${project.version}</version>
-    </dependency>
   </dependencies>
   <build>
     <plugins>
@@ -193,14 +182,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-checkstyle-plugin</artifactId>
-        <!--Note - the version would be inherited-->
-        <configuration>
-          <maxAllowedViolations>259</maxAllowedViolations>
-        </configuration>
       </plugin>
     </plugins>
   </build>

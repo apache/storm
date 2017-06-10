@@ -41,22 +41,31 @@ public class SingleTopicKafkaSpoutConfiguration {
 
     public static StormTopology getTopologyKafkaSpout(int port) {
         final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfigBuilder(port).build()), 1);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(port)), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
         return tp.createTopology();
     }
 
-    public static KafkaSpoutConfig.Builder<String,String> getKafkaSpoutConfigBuilder(int port) {
+    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(int port) {
+        return getKafkaSpoutConfig(port, 10_000);
+    }
+
+    static public KafkaSpoutConfig<String, String> getKafkaSpoutConfig(int port, long offsetCommitPeriodMs) {
+        return getKafkaSpoutConfig(port, offsetCommitPeriodMs, getRetryService());
+    }
+
+    static public KafkaSpoutConfig<String,String> getKafkaSpoutConfig(int port, long offsetCommitPeriodMs, KafkaSpoutRetryService retryService) {
         return KafkaSpoutConfig.builder("127.0.0.1:" + port, TOPIC)
                 .setRecordTranslator((r) -> new Values(r.topic(), r.key(), r.value()),
                         new Fields("topic", "key", "value"), STREAM)
                 .setGroupId("kafkaSpoutTestGroup")
                 .setMaxPollRecords(5)
-                .setRetry(getRetryService())
-                .setOffsetCommitPeriodMs(10_000)
+                .setRetry(retryService)
+                .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
                 .setFirstPollOffsetStrategy(EARLIEST)
                 .setMaxUncommittedOffsets(250)
-                .setPollTimeoutMs(1000);
+                .setPollTimeoutMs(1000)
+                .build();
     }
         
     protected static KafkaSpoutRetryService getRetryService() {

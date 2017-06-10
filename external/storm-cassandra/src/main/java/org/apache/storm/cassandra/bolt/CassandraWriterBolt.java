@@ -55,7 +55,7 @@ public class CassandraWriterBolt extends BaseCassandraBolt<Tuple> {
      */
     @Override
     protected void process(Tuple input) {
-        List<Statement> statements = getMapper().map(topoConfig, session, input);
+        List<Statement> statements = getMapper().map(stormConfig, session, input);
         if (statements.size() == 1) getAsyncExecutor().execAsync(statements.get(0), input);
         else getAsyncExecutor().execAsync(statements, input);
     }

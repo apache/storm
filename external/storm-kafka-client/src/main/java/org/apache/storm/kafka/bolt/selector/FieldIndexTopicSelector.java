@@ -15,7 +15,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.apache.storm.kafka.bolt.selector;
 
 import org.apache.storm.tuple.Tuple;
@@ -33,11 +32,6 @@ public class FieldIndexTopicSelector implements KafkaTopicSelector {
     private final int fieldIndex;
     private final String defaultTopicName;
 
-    /**
-     * Creates a new FieldIndexTopicSelector.
-     * @param fieldIndex The index of the field containing the topic name
-     * @param defaultTopicName The default topic name if the topic name cannot be read from the tuple
-     */
     public FieldIndexTopicSelector(int fieldIndex, String defaultTopicName) {
         this.fieldIndex = fieldIndex;
         if (fieldIndex < 0) {
