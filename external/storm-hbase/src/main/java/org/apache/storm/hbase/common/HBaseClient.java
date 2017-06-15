@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.security.PrivilegedExceptionAction;
 import java.util.List;
 import java.util.Map;
 
@@ -40,12 +39,7 @@ public class HBaseClient implements Closeable{
     public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
-            this.table = provider.getCurrent().getUGI().doAs(new PrivilegedExceptionAction<HTable>() {
-                @Override
-                public HTable run() throws IOException {
-                    return new HTable(configuration, tableName);
-                }
-            });
+            this.table = Utils.getTable(provider, configuration, tableName);
         } catch(Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }

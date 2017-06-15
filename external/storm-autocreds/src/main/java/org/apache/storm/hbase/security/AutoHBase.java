@@ -18,6 +18,8 @@
 
 package org.apache.storm.hbase.security;
 
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.storm.Config;
 import org.apache.storm.common.AbstractAutoCreds;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
@@ -111,20 +113,27 @@ public class AutoHBase extends AbstractAutoCreds {
                 }
                 provider.login(HBASE_KEYTAB_FILE_KEY, HBASE_PRINCIPAL_KEY, InetAddress.getLocalHost().getCanonicalHostName());
 
-                LOG.info("Logged into Hbase as principal = " + conf.get(HBASE_PRINCIPAL_KEY));
+                LOG.info("Logged into Hbase as principal = " + hbaseConf.get(HBASE_PRINCIPAL_KEY));
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
                 final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
 
-                User user = User.create(ugi);
+                User user = User.create(proxyUser);
 
                 if(user.isHBaseSecurityEnabled(hbaseConf)) {
-                    TokenUtil.obtainAndCacheToken(hbaseConf, proxyUser);
+                    final Connection connection = ConnectionFactory.createConnection(hbaseConf, user);
+                    TokenUtil.obtainAndCacheToken(connection, user);
 
                     LOG.info("Obtained HBase tokens, adding to user credentials.");
 
-                    Credentials credential= proxyUser.getCredentials();
+                    Credentials credential = proxyUser.getCredentials();
+
+                    for (Token<? extends TokenIdentifier> tokenForLog : credential.getAllTokens()) {
+                        LOG.debug("Obtained token info in credential: {} / {}",
+                                tokenForLog.toString(), tokenForLog.decodeIdentifier().getUser());
+                    }
+
                     ByteArrayOutputStream bao = new ByteArrayOutputStream();
                     ObjectOutputStream out = new ObjectOutputStream(bao);
                     credential.write(out);

@@ -17,6 +17,7 @@
  */
 package org.apache.storm.hbase.trident.state;
 
+import org.apache.storm.hbase.common.Utils;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.topology.FailedException;
 import org.apache.storm.tuple.Values;
@@ -81,12 +82,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
         try{
             UserProvider provider = HBaseSecurityUtil.login(map, hbConfig);
-            this.table = provider.getCurrent().getUGI().doAs(new PrivilegedExceptionAction<HTable>() {
-                @Override
-                public HTable run() throws IOException {
-                    return new HTable(hbConfig, options.tableName);
-                }
-            });
+            this.table = Utils.getTable(provider, hbConfig, options.tableName);
         } catch(Exception e){
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }
