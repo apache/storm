@@ -232,7 +232,9 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
         public State makeState(@SuppressWarnings("rawtypes") Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                             jedisClusterConfig.getTimeout(),
+                                                            jedisClusterConfig.getTimeout(),
                                                             jedisClusterConfig.getMaxRedirections(),
+                                                            jedisClusterConfig.getPassword(),
                                                             DEFAULT_POOL_CONFIG);
 
             RedisClusterMapState state = new RedisClusterMapState(jedisCluster, options, serializer, keyFactory);
