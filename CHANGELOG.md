@@ -39,7 +39,7 @@
  * STORM-2469: fix integration-test dependencies issue
  * STORM-2455: Expose the window start and end timestamp in TupleWindow
  * STORM-2435: Logging levels and consistency with console.log etc
- * STORM-2465: modify storm-redis's READEME.md and update storm-redis.md
+ * STORM-2465: modify storm-redis's README.md and update storm-redis.md
  * STORM-2464: update storm-mongodb.md
  * STORM-2463: fix DRPCTest.testDequeueAfterTimeout test failure 
  * STORM-2447: add in storm local to avoid having server on worker classpath
