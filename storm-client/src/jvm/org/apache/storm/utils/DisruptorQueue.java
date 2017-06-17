@@ -500,6 +500,22 @@ public class DisruptorQueue implements IStatefulObject {
         return Thread.currentThread().getId();
     }
 
+    private long getTupleCount(Object obj) {
+        //a published object could be an instance of either AddressedTuple, ArrayList<AddressedTuple>, or HashMap<Integer, ArrayList<TaskMessage>>.
+        long tupleCount;
+        if (obj instanceof ArrayList) {
+            tupleCount = ((ArrayList) obj).size();
+        } else if (obj instanceof HashMap) {
+            tupleCount = 0;
+            for (Object value:((HashMap) obj).values()) {
+                tupleCount += ((ArrayList) value).size();
+            }
+        } else {
+            tupleCount = 1;
+        }
+        return tupleCount;
+    }
+
     private void publishDirectSingle(Object obj, boolean block) throws InsufficientCapacityException {
         long at;
         long numberOfTuples;
@@ -510,17 +526,8 @@ public class DisruptorQueue implements IStatefulObject {
         }
         AtomicReference<Object> m = _buffer.get(at);
         m.set(obj);
-        if (obj instanceof ArrayList) {
-            numberOfTuples = ((ArrayList) obj).size();
-        } else if (obj instanceof HashMap) {
-            numberOfTuples = 0;
-            for (Object value:((HashMap) obj).values()) {
-                numberOfTuples += ((ArrayList) value).size();
-            }
-        } else {
-            numberOfTuples = 1;
-        }
         _buffer.publish(at);
+        numberOfTuples = getTupleCount(obj);
         _metrics.notifyArrivals(numberOfTuples);
     }
 
@@ -535,19 +542,12 @@ public class DisruptorQueue implements IStatefulObject {
             }
             long begin = end - (size - 1);
             long at = begin;
-            long numberOfTuples = size;
+            long numberOfTuples = 0;
             for (Object obj: objs) {
                 AtomicReference<Object> m = _buffer.get(at);
                 m.set(obj);
                 at++;
-                if (obj instanceof ArrayList) {
-                    numberOfTuples += (((ArrayList) obj).size() - 1);
-                } else if (obj instanceof HashMap) {
-                    numberOfTuples--;
-                    for (Object value : ((HashMap) obj).values()) {
-                        numberOfTuples += ((ArrayList) value).size();
-                    }
-                }
+                numberOfTuples += getTupleCount(obj);
             }
             _buffer.publish(begin, end);
             _metrics.notifyArrivals(numberOfTuples);
