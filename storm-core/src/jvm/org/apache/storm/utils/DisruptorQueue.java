@@ -496,8 +496,25 @@ public class DisruptorQueue implements IStatefulObject {
         return Thread.currentThread().getId();
     }
 
+    private long getTupleCount(Object obj) {
+        //a published object could be an instance of either AddressedTuple, ArrayList<AddressedTuple>, or HashMap<Integer, ArrayList<TaskMessage>>.
+        long tupleCount;
+        if (obj instanceof ArrayList) {
+            tupleCount = ((ArrayList) obj).size();
+        } else if (obj instanceof HashMap) {
+            tupleCount = 0;
+            for (Object value:((HashMap) obj).values()) {
+                tupleCount += ((ArrayList) value).size();
+            }
+        } else {
+            tupleCount = 1;
+        }
+        return tupleCount;
+    }
+
     private void publishDirectSingle(Object obj, boolean block) throws InsufficientCapacityException {
         long at;
+        long numberOfTuples;
         if (block) {
             at = _buffer.next();
         } else {
@@ -506,7 +523,8 @@ public class DisruptorQueue implements IStatefulObject {
         AtomicReference<Object> m = _buffer.get(at);
         m.set(obj);
         _buffer.publish(at);
-        _metrics.notifyArrivals(1);
+        numberOfTuples = getTupleCount(obj);
+        _metrics.notifyArrivals(numberOfTuples);
     }
 
     private void publishDirect(ArrayList<Object> objs, boolean block) throws InsufficientCapacityException {
@@ -520,13 +538,15 @@ public class DisruptorQueue implements IStatefulObject {
             }
             long begin = end - (size - 1);
             long at = begin;
+            long numberOfTuples = 0;
             for (Object obj: objs) {
                 AtomicReference<Object> m = _buffer.get(at);
                 m.set(obj);
                 at++;
+                numberOfTuples += getTupleCount(obj);
             }
             _buffer.publish(begin, end);
-            _metrics.notifyArrivals(size);
+            _metrics.notifyArrivals(numberOfTuples);
         }
     }
 
