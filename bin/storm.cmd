@@ -42,6 +42,8 @@
   if not "%storm-command%" == "jar" (
     set set_storm_options=true
   )
+  
+  @echo This script is deprecated. Please use the Powershell storm.ps1 script instead
 
   call %~dp0storm-config.cmd
 
