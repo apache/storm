@@ -267,6 +267,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2557: A bug in DisruptorQueue causing severe underestimation of queue arrival rates
  * STORM-2449: Ensure same key appears only once in State iterator
  * STORM-2536: excludes jersey 1.x from storm-autocreds 
  * STORM-2528: Bump log4j version to 2.8.2
