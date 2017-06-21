@@ -40,7 +40,15 @@ public class HBaseSecurityUtil {
     public static final String STORM_KEYTAB_FILE_KEY = "storm.keytab.file";
     public static final String STORM_USER_NAME_KEY = "storm.kerberos.principal";
     public static final String HBASE_CREDENTIALS_CONFIG_KEYS = "hbaseCredentialsConfigKeys";
-    private static  UserProvider legacyProvider = null;
+
+    public static final String HBASE_CREDENTIALS = "HBASE_CREDENTIALS";
+    public static final String HBASE_KEYTAB_FILE_KEY = "hbase.keytab.file";
+    public static final String HBASE_PRINCIPAL_KEY = "hbase.kerberos.principal";
+
+    private static UserProvider legacyProvider = null;
+
+    private HBaseSecurityUtil() {
+    }
 
     public static UserProvider login(Map<String, Object> conf, Configuration hbaseConfig) throws IOException {
         //Allowing keytab based login for backward compatibility.

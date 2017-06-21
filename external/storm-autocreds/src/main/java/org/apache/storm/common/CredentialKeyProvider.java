@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,31 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-package org.apache.storm.hbase.security;
-
-import org.apache.storm.common.AbstractHadoopAutoCreds;
-
-import java.util.Map;
-
-import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIALS;
+package org.apache.storm.common;
 
 /**
- * Auto credentials plugin for HBase implementation. This class provides a way to automatically
- * push credentials to a topology and to retrieve them in the worker.
+ * Provider interface for credential key.
  */
-public class AutoHBase extends AbstractHadoopAutoCreds {
-    @Override
-    public void doPrepare(Map conf) {
-    }
-
-    @Override
-    protected String getConfigKeyString() {
-        return HBaseSecurityUtil.HBASE_CREDENTIALS_CONFIG_KEYS;
-    }
-
-    @Override
-    public String getCredentialKey(String configKey) {
-        return HBASE_CREDENTIALS + configKey;
-    }
+public interface CredentialKeyProvider {
+  /**
+   * The lookup key for the config key string
+   *
+   * @return the config key string
+   */
+  String getCredentialKey(String configKey);
 }

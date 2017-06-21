@@ -17,10 +17,11 @@
  */
 package org.apache.storm.hdfs.security;
 
+import org.apache.storm.security.auth.kerberos.AutoTGT;
+
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.security.SecurityUtil;
 import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.storm.security.auth.kerberos.AutoTGT;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -35,19 +36,24 @@ import static org.apache.storm.Config.TOPOLOGY_AUTO_CREDENTIALS;
  * This class provides util methods for storm-hdfs connector communicating
  * with secured HDFS.
  */
-public class HdfsSecurityUtil {
+public final class HdfsSecurityUtil {
     public static final String STORM_KEYTAB_FILE_KEY = "hdfs.keytab.file";
     public static final String STORM_USER_NAME_KEY = "hdfs.kerberos.principal";
     public static final String HDFS_CREDENTIALS_CONFIG_KEYS = "hdfsCredentialsConfigKeys";
-
+    public static final String HDFS_CREDENTIALS = "HDFS_CREDENTIALS";
+    public static final String TOPOLOGY_HDFS_URI = "topology.hdfs.uri";
 
     private static final Logger LOG = LoggerFactory.getLogger(HdfsSecurityUtil.class);
     private static AtomicBoolean isLoggedIn = new AtomicBoolean();
-    public static void login(Map<String, Object> conf, Configuration hdfsConfig) throws IOException {
+
+    private HdfsSecurityUtil() {
+    }
+
+    public static void login(Map conf, Configuration hdfsConfig) throws IOException {
         //If AutoHDFS is specified, do not attempt to login using keytabs, only kept for backward compatibility.
         if(conf.get(TOPOLOGY_AUTO_CREDENTIALS) == null ||
                 (!(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoHDFS.class.getName())) &&
-                 !(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoTGT.class.getName())))) {
+                        !(((List)conf.get(TOPOLOGY_AUTO_CREDENTIALS)).contains(AutoTGT.class.getName())))) {
             if (UserGroupInformation.isSecurityEnabled()) {
                 // compareAndSet added because of https://issues.apache.org/jira/browse/STORM-1535
                 if (isLoggedIn.compareAndSet(false, true)) {
