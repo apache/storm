@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2556 Break down AutoCreds implementations into two kinds of classes
  * STORM-1290: port backtype.storm.local-state-test to java
  * STORM-1642: Rethrow exception on serialization error and kill worker
  * STORM-2515: Fix most checkstyle violations in storm-kafka-client
