@@ -188,44 +188,8 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                   "in your jar");
                 return;
             }
- 
-            try {
-                Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
-                login.invoke(null, subject);
-            } catch (NoSuchMethodException me) {
-                //The version of Hadoop does not have the needed client changes.
-                // So don't look now, but do something really ugly to work around it.
-                // This is because we are reaching into the hidden bits of Hadoop security, and it works for now, but may stop at any point in time.
-
-                //We are just trying to do the following
-                // Configuration conf = new Configuration();
-                // HadoopKerberosName.setConfiguration(conf);
-                // subject.getPrincipals().add(new User(tgt.getClient().toString(), AuthenticationMethod.KERBEROS, null));
-                String name = getTGT(subject).getClient().toString();
-
-                LOG.warn("The Hadoop client does not have loginUserFromSubject, Trying to hack around it. This may not work...");
-                Class<?> confClass = Class.forName("org.apache.hadoop.conf.Configuration");
-                Constructor confCons = confClass.getConstructor();
-                Object conf = confCons.newInstance();
-                Class<?> hknClass = Class.forName("org.apache.hadoop.security.HadoopKerberosName");
-                Method hknSetConf = hknClass.getMethod("setConfiguration",confClass);
-                hknSetConf.invoke(null, conf);
-
-                Class<?> authMethodClass = Class.forName("org.apache.hadoop.security.UserGroupInformation$AuthenticationMethod");
-                Object kerbAuthMethod = null;
-                for (Object authMethod : authMethodClass.getEnumConstants()) {
-                    if ("KERBEROS".equals(authMethod.toString())) {
-                        kerbAuthMethod = authMethod;
-                        break;
-                    }
-                }
-
-                Class<?> userClass = Class.forName("org.apache.hadoop.security.User");
-                Constructor userCons = userClass.getConstructor(String.class, authMethodClass, LoginContext.class);
-                userCons.setAccessible(true);
-                Object user = userCons.newInstance(name, kerbAuthMethod, null);
-                subject.getPrincipals().add((Principal)user);
-            }
+            Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
+            login.invoke(null, subject);
         } catch (Exception e) {
             LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop may not be compatible.", e);
         }
