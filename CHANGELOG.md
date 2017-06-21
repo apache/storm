@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2552: KafkaSpoutMessageId should be serializable
  * STORM-2557: A bug in DisruptorQueue causing severe underestimation of queue arrival rates
  * STORM-2449: Ensure same key appears only once in State iterator
  * STORM-2536: excludes jersey 1.x from storm-autocreds 
