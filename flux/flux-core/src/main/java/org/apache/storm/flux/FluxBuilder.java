@@ -18,12 +18,12 @@
 package org.apache.storm.flux;
 
 import org.apache.storm.Config;
+import org.apache.storm.flux.model.*;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.*;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.flux.model.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -185,6 +185,21 @@ public class FluxBuilder {
             } else {
                 throw new IllegalArgumentException("Class does not appear to be a bolt: " +
                         boltObj.getClass().getName());
+            }
+
+            BoltDef boltDef = topologyDef.getBoltDef(stream.getTo());
+            if (boltDef.getOnHeapMemoryLoad() > -1) {
+                if (boltDef.getOffHeapMemoryLoad() > -1) {
+                    declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad(), boltDef.getOffHeapMemoryLoad());
+                } else {
+                    declarer.setMemoryLoad(boltDef.getOnHeapMemoryLoad());
+                }
+            }
+            if (boltDef.getCpuLoad() > -1) {
+                declarer.setCPULoad(boltDef.getCpuLoad());
+            }
+            if (boltDef.getNumTasks() > -1) {
+                declarer.setNumTasks(boltDef.getNumTasks());
             }
 
             GroupingDef grouping = stream.getGrouping();
@@ -366,7 +381,22 @@ public class FluxBuilder {
             NoSuchMethodException, InvocationTargetException, InstantiationException, IllegalAccessException, NoSuchFieldException {
         for (SpoutDef sd : context.getTopologyDef().getSpouts()) {
             IRichSpout spout = buildSpout(sd, context);
-            builder.setSpout(sd.getId(), spout, sd.getParallelism());
+            SpoutDeclarer declarer = builder.setSpout(sd.getId(), spout, sd.getParallelism());
+
+            if (sd.getOnHeapMemoryLoad() > -1) {
+                if (sd.getOffHeapMemoryLoad() > -1) {
+                    declarer.setMemoryLoad(sd.getOnHeapMemoryLoad(), sd.getOffHeapMemoryLoad());
+                } else {
+                    declarer.setMemoryLoad(sd.getOnHeapMemoryLoad());
+                }
+            }
+            if (sd.getCpuLoad() > -1) {
+                declarer.setCPULoad(sd.getCpuLoad());
+            }
+            if (sd.getNumTasks() > -1) {
+                declarer.setNumTasks(sd.getNumTasks());
+            }
+
             context.addSpout(sd.getId(), spout);
         }
     }
