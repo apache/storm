@@ -56,6 +56,10 @@ public class ThriftClient implements AutoCloseable {
             port = type.getPort(topoConf);
         }
 
+        if (timeout == null) {
+            timeout = type.getSocketTimeOut(topoConf);
+        }
+
         if (port<=0 && !type.isFake()) {
             throw new IllegalArgumentException("invalid port: "+port);
         }          
