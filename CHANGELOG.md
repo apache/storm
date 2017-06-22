@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2563: Remove the workaround to handle missing UGI.loginUserFromSubject
  * STORM-2553: Add support for password in JedisCluster
  * STORM-2562: Use stronger key size for blow fish key generator and remove printStackTrace
  * STORM-2484: Add Flux support for bolt+spout memory configuration
