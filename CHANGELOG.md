@@ -270,6 +270,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2553: Add support for password in JedisCluster
  * STORM-2484: Add Flux support for bolt+spout memory configuration
  * STORM-2552: KafkaSpoutMessageId should be serializable
  * STORM-2557: A bug in DisruptorQueue causing severe underestimation of queue arrival rates
