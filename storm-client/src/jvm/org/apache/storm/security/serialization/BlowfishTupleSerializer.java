@@ -80,13 +80,13 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
     public static void main(String[] args) {
         try{
             KeyGenerator kgen = KeyGenerator.getInstance("Blowfish");
+            kgen.init(256);
             SecretKey skey = kgen.generateKey();
             byte[] raw = skey.getEncoded();
             String keyString = new String(Hex.encodeHex(raw));
             System.out.println("storm -c "+SECRET_KEY+"="+keyString+" -c "+Config.TOPOLOGY_TUPLE_SERIALIZER+"="+BlowfishTupleSerializer.class.getName() + " ..." );
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
-            ex.printStackTrace();
         }
     }    
 }
