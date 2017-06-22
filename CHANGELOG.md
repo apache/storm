@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2562: Use stronger key size for blow fish key generator and remove printStackTrace
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
  * STORM-2556: Break down AutoCreds implementations into two kinds of classes
  * STORM-1290: port backtype.storm.local-state-test to java
