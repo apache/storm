@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2555: handle impersonation properly for HBase delegation token
  * STORM-2551: Thrift client socket timeout
  * STORM-2563: Remove the workaround to handle missing UGI.loginUserFromSubject
  * STORM-2553: Add support for password in JedisCluster
