@@ -67,7 +67,7 @@ public class HBaseSecurityUtil {
             }
             return legacyProvider;
         } else {
-            return UserProvider.instantiate(hbaseConfig);
+            return null;
         }
     }
 }
