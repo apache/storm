@@ -40,6 +40,10 @@
     </developers>
 
     <dependencies>
+        <dependency>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
+        </dependency>
         <!--parent module dependency-->
         <dependency>
             <groupId>org.apache.storm</groupId>
