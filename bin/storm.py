@@ -103,6 +103,9 @@ STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
 DEP_JARS_OPTS = []
 DEP_ARTIFACTS_OPTS = []
 DEP_ARTIFACTS_REPOSITORIES_OPTS = []
+DEP_PROXY_URL = None
+DEP_PROXY_USERNAME = None
+DEP_PROXY_PASSWORD = None
 
 def get_config_opts():
     global CONFIG_OPTS
@@ -114,6 +117,19 @@ if not os.path.exists(STORM_LIB_DIR):
     print("\nYou can download a Storm release at http://storm.apache.org/downloads.html")
     print("******************************************")
     sys.exit(1)
+
+def get_jars_full(adir):
+    files = []
+    if os.path.isdir(adir):
+        files = os.listdir(adir)
+    elif os.path.exists(adir):
+        files = [adir]
+
+    ret = []
+    for f in files:
+        if f.endswith(".jar"):
+            ret.append(os.path.join(adir, f))
+    return ret
 
 # If given path is a dir, make it a wildcard so the JVM will include all JARs in the directory.
 def get_wildcard_dir(path):
@@ -160,11 +176,15 @@ def confvalue(name, extrapaths, daemon=True):
     return ""
 
 
-def resolve_dependencies(artifacts, artifact_repositories):
+def resolve_dependencies(artifacts, artifact_repositories, proxy_url, proxy_username, proxy_password):
     if len(artifacts) == 0:
         return {}
 
     print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
+
+    if proxy_url is not None:
+        print("Proxy information: url (%s) username (%s)" % (proxy_url, proxy_username))
+
     sys.stdout.flush()
 
     # storm-submit module doesn't rely on storm-core and relevant libs
@@ -172,9 +192,17 @@ def resolve_dependencies(artifacts, artifact_repositories):
     classpath = normclasspath(os.pathsep.join(extrajars))
 
     command = [
-        JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain",
-        ",".join(artifacts), ",".join(artifact_repositories)
+        JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain"
     ]
+
+    command.extend(["--artifacts", ",".join(artifacts)])
+    command.extend(["--artifactRepositories", ",".join(artifact_repositories)])
+
+    if proxy_url is not None:
+        command.extend(["--proxyUrl", proxy_url])
+        if proxy_username is not None:
+            command.extend(["--proxyUsername", proxy_username])
+            command.extend(["--proxyPassword", proxy_password])
 
     p = sub.Popen(command, stdout=sub.PIPE)
     output, errors = p.communicate()
@@ -265,10 +293,10 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
     return exit_code
 
 def run_client_jar(jarfile, klass, args, daemon=False, client=True, extrajvmopts=[]):
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "null"):
@@ -348,6 +376,11 @@ def jar(jarfile, klass, *args):
     Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
     For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
 
+    You can also provide proxy information to let dependency resolver utilizing proxy if needed. There're three parameters for proxy:
+    --proxyUrl: URL representation of proxy ('http://host:port')
+    --proxyUsername: username of proxy if it requires basic auth
+    --proxyPassword: password of proxy if it requires basic auth
+
     Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
 
     When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
@@ -363,19 +396,18 @@ def sql(sql_file, topology_name):
     Compiles the SQL statements into a Trident topology and submits it to Storm.
     If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
 
-    --jars and --artifacts, and --artifactRepositories options available for jar are also applied to sql command.
-    Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories options.
+    --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options available for jar are also applied to sql command.
+    Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories, --proxyUrl, --proxyUsername, --proxyPassword options.
     You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
     """
-    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
 
     local_jars = DEP_JARS_OPTS
-    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
-
-    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
-    sql_runtime_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
     # include storm-sql-runtime jar(s) to local jar list
+    # --jars doesn't support wildcard so it should call get_jars_full
+    sql_runtime_jars = get_jars_full(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "runtime"))
     local_jars.extend(sql_runtime_jars)
 
     extrajars=[USER_CONF_DIR, STORM_BIN_DIR]
@@ -383,6 +415,7 @@ def sql(sql_file, topology_name):
     extrajars.extend(artifact_to_file_jars.values())
 
     # include this for running StormSqlRunner, but not for generated topology
+    sql_core_jars = get_wildcard_dir(os.path.join(STORM_TOOLS_LIB_DIR, "sql", "core"))
     extrajars.extend(sql_core_jars)
 
     if topology_name == "--explain":
@@ -938,6 +971,9 @@ def parse_config_opts(args):
     jars_list = []
     artifacts_list = []
     artifact_repositories_list = []
+    proxy_url = None
+    proxy_username = None
+    proxy_password = None
 
     while len(curr) > 0:
         token = curr.pop()
@@ -952,21 +988,33 @@ def parse_config_opts(args):
             artifacts_list.extend(curr.pop().split(','))
         elif token == "--artifactRepositories":
             artifact_repositories_list.extend(curr.pop().split(','))
+        elif token == "--proxyUrl":
+            proxy_url = curr.pop()
+        elif token == "--proxyUsername":
+            proxy_username = curr.pop()
+        elif token == "--proxyPassword":
+            proxy_password = curr.pop()
         else:
             args_list.append(token)
 
-    return config_list, jars_list, artifacts_list, artifact_repositories_list, args_list
+    return config_list, jars_list, artifacts_list, artifact_repositories_list, \
+           proxy_url, proxy_username, proxy_password, args_list
 
 def main():
     if len(sys.argv) <= 1:
         print_usage()
         sys.exit(-1)
-    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
-    config_list, jars_list, artifacts_list, artifact_repositories_list, args = parse_config_opts(sys.argv[1:])
+    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, \
+        DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD
+    config_list, jars_list, artifacts_list, artifact_repositories_list, proxy_url, proxy_username, \
+    proxy_password, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
     DEP_JARS_OPTS = jars_list
     DEP_ARTIFACTS_OPTS = artifacts_list
     DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
+    DEP_PROXY_URL = proxy_url
+    DEP_PROXY_USERNAME = proxy_username
+    DEP_PROXY_PASSWORD = proxy_password
     COMMAND = args[0]
     ARGS = args[1:]
     (COMMANDS.get(COMMAND, unknown_command))(*ARGS)
