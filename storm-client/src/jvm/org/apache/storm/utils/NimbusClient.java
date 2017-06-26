@@ -82,8 +82,16 @@ public class NimbusClient extends ThriftClient {
     public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
+    
+    public static NimbusClient getConfiguredClient(Map<String, Object> conf, Integer timeout) {
+        return getConfiguredClientAs(conf, null, timeout);
+    }
+    
+    public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
+        return getConfiguredClientAs(conf, asUser, null);
+    }
 
-    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser) {
+    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser, Integer timeout) {
         Nimbus.Iface override = _localOverrideClient;
         if (override != null) {
             return new NimbusClient(override);
@@ -110,7 +118,7 @@ public class NimbusClient extends ThriftClient {
             NimbusSummary nimbusSummary;
             NimbusClient client = null;
             try {
-                client = new NimbusClient(conf, host, port, null, asUser);
+                client = new NimbusClient(conf, host, port, timeout, asUser);
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
@@ -121,7 +129,7 @@ public class NimbusClient extends ThriftClient {
                         return ret;
                     }
                     try {
-                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
+                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), timeout, asUser);
                     } catch (TTransportException e) {
                         throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
                     }
