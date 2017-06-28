@@ -20,7 +20,7 @@ package org.apache.storm.kafka.spout.builders;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.List;
-
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
@@ -62,8 +62,8 @@ public class SingleTopicKafkaSpoutConfiguration {
         return KafkaSpoutConfig.builder("127.0.0.1:" + port, TOPIC)
                 .setRecordTranslator(TOPIC_KEY_VALUE_FUNC,
                         new Fields("topic", "key", "value"), STREAM)
-                .setGroupId("kafkaSpoutTestGroup")
-                .setMaxPollRecords(5)
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
+                .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 5)
                 .setRetry(getRetryService())
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
