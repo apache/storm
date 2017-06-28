@@ -21,8 +21,8 @@ You need to provide implementations for the following 2 interfaces
 These interfaces have 2 methods defined:
 
 ```java
-    K getKeyFromTuple(Tuple/TridentTuple tuple);
-    V getMessageFromTuple(Tuple/TridentTuple tuple);
+K getKeyFromTuple(Tuple/TridentTuple tuple);
+V getMessageFromTuple(Tuple/TridentTuple tuple);
 ```
 
 As the name suggests, these methods are called to map a tuple to a Kafka key and a Kafka message. If you just want one field
@@ -58,10 +58,9 @@ These are also defined in `org.apache.kafka.clients.producer.ProducerConfig`
 ### Using wildcard kafka topic match
 You can do a wildcard topic match by adding the following config
 
-```
-     Config config = new Config();
-     config.put("kafka.topic.wildcard.match",true);
-
+```java
+Config config = new Config();
+config.put("kafka.topic.wildcard.match",true);
 ```
 
 After this you can specify a wildcard topic for matching e.g. clickstream.*.log.  This will match all streams matching clickstream.my.log, clickstream.cart.log etc
@@ -72,65 +71,65 @@ After this you can specify a wildcard topic for matching e.g. clickstream.*.log.
 For the bolt :
 
 ```java
-        TopologyBuilder builder = new TopologyBuilder();
+TopologyBuilder builder = new TopologyBuilder();
 
-        Fields fields = new Fields("key", "message");
-        FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
-                    new Values("storm", "1"),
-                    new Values("trident", "1"),
-                    new Values("needs", "1"),
-                    new Values("javadoc", "1")
-        );
-        spout.setCycle(true);
-        builder.setSpout("spout", spout, 5);
-        //set producer properties.
-        Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
-        props.put("acks", "1");
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+Fields fields = new Fields("key", "message");
+FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
+            new Values("storm", "1"),
+            new Values("trident", "1"),
+            new Values("needs", "1"),
+            new Values("javadoc", "1")
+);
+spout.setCycle(true);
+builder.setSpout("spout", spout, 5);
+//set producer properties.
+Properties props = new Properties();
+props.put("bootstrap.servers", "localhost:9092");
+props.put("acks", "1");
+props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        KafkaBolt bolt = new KafkaBolt()
-                .withProducerProperties(props)
-                .withTopicSelector(new DefaultTopicSelector("test"))
-                .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
-        builder.setBolt("forwardToKafka", bolt, 8).shuffleGrouping("spout");
+KafkaBolt bolt = new KafkaBolt()
+        .withProducerProperties(props)
+        .withTopicSelector(new DefaultTopicSelector("test"))
+        .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper());
+builder.setBolt("forwardToKafka", bolt, 8).shuffleGrouping("spout");
 
-        Config conf = new Config();
+Config conf = new Config();
 
-        StormSubmitter.submitTopology("kafkaboltTest", conf, builder.createTopology());
+StormSubmitter.submitTopology("kafkaboltTest", conf, builder.createTopology());
 ```
 
 For Trident:
 
 ```java
-        Fields fields = new Fields("word", "count");
-        FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
-                new Values("storm", "1"),
-                new Values("trident", "1"),
-                new Values("needs", "1"),
-                new Values("javadoc", "1")
-        );
-        spout.setCycle(true);
+Fields fields = new Fields("word", "count");
+FixedBatchSpout spout = new FixedBatchSpout(fields, 4,
+        new Values("storm", "1"),
+        new Values("trident", "1"),
+        new Values("needs", "1"),
+        new Values("javadoc", "1")
+);
+spout.setCycle(true);
 
-        TridentTopology topology = new TridentTopology();
-        Stream stream = topology.newStream("spout1", spout);
+TridentTopology topology = new TridentTopology();
+Stream stream = topology.newStream("spout1", spout);
 
-        //set producer properties.
-        Properties props = new Properties();
-        props.put("bootstrap.servers", "localhost:9092");
-        props.put("acks", "1");
-        props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-        props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+//set producer properties.
+Properties props = new Properties();
+props.put("bootstrap.servers", "localhost:9092");
+props.put("acks", "1");
+props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
-        TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
-                .withProducerProperties(props)
-                .withKafkaTopicSelector(new DefaultTopicSelector("test"))
-                .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper("word", "count"));
-        stream.partitionPersist(stateFactory, fields, new TridentKafkaStateUpdater(), new Fields());
+TridentKafkaStateFactory stateFactory = new TridentKafkaStateFactory()
+        .withProducerProperties(props)
+        .withKafkaTopicSelector(new DefaultTopicSelector("test"))
+        .withTridentTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper("word", "count"));
+stream.partitionPersist(stateFactory, fields, new TridentKafkaStateUpdater(), new Fields());
 
-        Config conf = new Config();
-        StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
+Config conf = new Config();
+StormSubmitter.submitTopology("kafkaTridentTest", conf, topology.build());
 ```
 
 ## Reading From kafka (Spouts)
@@ -147,10 +146,8 @@ a spout.
 `topics` The topics the spout will consume can either be a `Collection` of specific topic names (1 or more) or a regular expression `Pattern`, which specifies
 that any topics that match that regular expression will be consumed.
 
-In the case of the Constructors you may also need to specify a key deserializer and a value deserializer.  This is to help guarantee type safety through the use
-of Java generics.  The defaults are `StringDeserializer`s and can be overwritten by calling `setKeyDeserializer` and/or `setValueDeserializer`.
-If these are set to null the code will fall back to what is set in the kafka properties, but it is preferable to be explicit here, again to maintain 
-type safety with the generics.
+If you are using the Builder Constructors instead of one of the `builder` methods, you will also need to specify a key deserializer and a value deserializer.  This is to help guarantee type safety through the use
+of Java generics.  The deserializers can be specified via the consumer properties set with `setProp`. See the KafkaConsumer configuration documentation for details.
 
 There are a few key configs to pay attention to.
 
@@ -166,11 +163,7 @@ for the first time. Allowed values include
 By default the "topic", "partition", "offset", "key", and "value" will be emitted to the "default" stream.  If you want to output entries to different
 streams based on the topic, storm provides `ByTopicRecordTranslator`.  See below for more examples on how to use these.
 
-`setProp` can be used to set kafka properties that do not have a convenience method.
-
-`setGroupId` lets you set the id of the kafka consumer group property "group.id'
-
-`setSSLKeystore` and `setSSLTruststore` allow you to configure SSL authentication.
+`setProp` and `setProps` can be used to set KafkaConsumer properties. The list of these properties can be found in the KafkaConsumer configuration documentation on the [Kafka website](http://kafka.apache.org/documentation.html#consumerconfigs).
 
 ### Usage Examples
 
@@ -236,7 +229,7 @@ output topic it will throw an exception and not continue.
 In most cases the built in SimpleRecordTranslator and ByTopicRecordTranslator should cover your use case.  If you do run into a situation where you need a custom one
 then this documentation will describe how to do this properly, and some of the less than obvious classes involved.
 
-The point of apply is to take a ConsumerRecord and turn it into a `List<Object>` that can be emitted.  What is not obvious is how to tell the spout to emit it to a
+The point of `apply` is to take a ConsumerRecord and turn it into a `List<Object>` that can be emitted.  What is not obvious is how to tell the spout to emit it to a
 specific stream.  To do this you will need to return an instance of `org.apache.storm.kafka.spout.KafkaTuple`.  This provides a method `routedTo` that will say which
 specific stream the tuple should go to.
 
@@ -250,7 +243,7 @@ Will cause the tuple to be emitted on the "bar" stream.
 
 Be careful when writing custom record translators because just like in a storm spout it needs to be self consistent.  The `streams` method should return
 a full set of streams that this translator will ever try to emit on.  Additionally `getFieldsFor` should return a valid Fields object for each of those
-streams.  If you are doing this for Trident a value must be in the List returned by apply for every field in the Fields object for that stream,
+streams.  If you are doing this for Trident a value must be in the List returned by `apply` for every field in the Fields object for that stream,
 otherwise trident can throw exceptions.
 
 
@@ -334,7 +327,7 @@ When selecting a kafka client version, you should ensure -
 
 # Kafka Spout Performance Tuning
 
-The Kafka spout provides two internal parameters to control its performance. The parameters can be set using the [KafkaSpoutConfig] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java) methods [setOffsetCommitPeriodMs] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L189-L193) and [setMaxUncommittedOffsets] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L211-L217). 
+The Kafka spout provides two internal parameters to control its performance. The parameters can be set using the [KafkaSpoutConfig](https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java) methods [setOffsetCommitPeriodMs](https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L189-L193) and [setMaxUncommittedOffsets](https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L211-L217). 
 
 * "offset.commit.period.ms" controls how often the spout commits to Kafka
 * "max.uncommitted.offsets" controls how many offsets can be pending commit before another poll can take place
@@ -344,7 +337,7 @@ The [Kafka consumer config] (http://kafka.apache.org/documentation.html#consumer
 
 * “fetch.min.bytes”
 * “fetch.max.wait.ms”
-* [Kafka Consumer] (http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html) instance poll timeout, which is specified for each Kafka spout using the [KafkaSpoutConfig] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java) method [setPollTimeoutMs] (https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L180-L184)
+* [Kafka Consumer](http://kafka.apache.org/090/javadoc/index.html?org/apache/kafka/clients/consumer/KafkaConsumer.html) instance poll timeout, which is specified for each Kafka spout using the [KafkaSpoutConfig](https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java) method [setPollTimeoutMs](https://github.com/apache/storm/blob/1.0.x-branch/external/storm-kafka-client/src/main/java/org/apache/storm/kafka/spout/KafkaSpoutConfig.java#L180-L184)
 <br/>
 
 Depending on the structure of your Kafka cluster, distribution of the data, and availability of data to poll, these parameters will have to be configured appropriately. Please refer to the Kafka documentation on Kafka parameter tuning.
@@ -363,6 +356,7 @@ Currently the Kafka spout has has the following default values, which have shown
 If reliability isn't important to you -- that is, you don't care about losing tuples in failure situations --, and want to remove the overhead of tuple tracking, then you can run a KafkaSpout with AutoCommitMode.
 
 To enable it, you need to:
+
 * set Config.TOPOLOGY_ACKERS to 0;
 * enable *AutoCommitMode* in Kafka consumer configuration; 
 

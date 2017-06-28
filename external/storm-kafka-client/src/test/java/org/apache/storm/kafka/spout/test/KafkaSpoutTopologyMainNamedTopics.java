@@ -24,7 +24,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
-
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
@@ -110,7 +110,7 @@ public class KafkaSpoutTopologyMainNamedTopics {
                 TOPIC_PART_OFF_KEY_VALUE_FUNC,
                 new Fields("topic", "partition", "offset", "key", "value"), TOPIC_2_STREAM);
         return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPICS)
-                .setGroupId("kafkaSpoutTestGroup")
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
                 .setRetry(getRetryService())
                 .setRecordTranslator(trans)
                 .setOffsetCommitPeriodMs(10_000)
