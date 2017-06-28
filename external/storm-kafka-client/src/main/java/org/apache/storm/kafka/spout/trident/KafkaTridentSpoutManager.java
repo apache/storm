@@ -49,8 +49,7 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     }
 
     KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
-        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
-                kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
+        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
 
         kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
         return kafkaConsumer;

@@ -23,6 +23,7 @@ import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrat
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
@@ -98,7 +99,7 @@ public class KafkaSpoutTopologyMainNamedTopics {
                 (r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
                 new Fields("topic", "partition", "offset", "key", "value"), TOPIC_2_STREAM);
         return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPICS)
-                .setGroupId("kafkaSpoutTestGroup")
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
                 .setRetry(getRetryService())
                 .setRecordTranslator(trans)
                 .setOffsetCommitPeriodMs(10_000)
