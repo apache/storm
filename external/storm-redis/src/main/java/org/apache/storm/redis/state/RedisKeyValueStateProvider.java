@@ -17,23 +17,21 @@
  */
 package org.apache.storm.redis.state;
 
+import com.fasterxml.jackson.annotation.JsonAutoDetect;
+import com.fasterxml.jackson.annotation.PropertyAccessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.storm.Config;
 import org.apache.storm.redis.common.config.JedisClusterConfig;
+import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.Serializer;
 import org.apache.storm.state.State;
 import org.apache.storm.state.StateProvider;
 import org.apache.storm.task.TopologyContext;
-import com.fasterxml.jackson.annotation.JsonAutoDetect;
-import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisCluster;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -45,7 +43,7 @@ public class RedisKeyValueStateProvider implements StateProvider {
     @Override
     public State newState(String namespace, Map<String, Object> topoConf, TopologyContext context) {
         try {
-            return getRedisKeyValueState(namespace, getStateConfig(topoConf));
+            return getRedisKeyValueState(namespace, topoConf, context, getStateConfig(topoConf));
         } catch (Exception ex) {
             LOG.error("Error loading config from storm conf {}", topoConf);
             throw new RuntimeException(ex);
@@ -53,12 +51,12 @@ public class RedisKeyValueStateProvider implements StateProvider {
     }
 
     StateConfig getStateConfig(Map<String, Object> topoConf) throws Exception {
-        StateConfig stateConfig = null;
-        String providerConfig = null;
+        StateConfig stateConfig;
+        String providerConfig;
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        if (topoConf.containsKey(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
-            providerConfig = (String) topoConf.get(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
+        if (topoConf.containsKey(Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
+            providerConfig = (String) topoConf.get(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
             stateConfig = mapper.readValue(providerConfig, StateConfig.class);
         } else {
             stateConfig = new StateConfig();
@@ -66,7 +64,8 @@ public class RedisKeyValueStateProvider implements StateProvider {
         return stateConfig;
     }
 
-    private RedisKeyValueState getRedisKeyValueState(String namespace, StateConfig config) throws Exception {
+    private RedisKeyValueState getRedisKeyValueState(String namespace, Map<String, Object> topoConf, TopologyContext context,
+                                                     StateConfig config) throws Exception {
         JedisPoolConfig jedisPoolConfig = getJedisPoolConfig(config);
         JedisClusterConfig jedisClusterConfig = getJedisClusterConfig(config);
 
@@ -75,34 +74,36 @@ public class RedisKeyValueStateProvider implements StateProvider {
         }
 
         if (jedisPoolConfig != null) {
-            return new RedisKeyValueState(namespace, jedisPoolConfig, getKeySerializer(config), getValueSerializer(config));
+            return new RedisKeyValueState(namespace, jedisPoolConfig,
+                getKeySerializer(topoConf, context, config), getValueSerializer(topoConf, context, config));
         } else {
-            return new RedisKeyValueState(namespace, jedisClusterConfig, getKeySerializer(config), getValueSerializer(config));
+            return new RedisKeyValueState(namespace, jedisClusterConfig,
+                getKeySerializer(topoConf, context, config), getValueSerializer(topoConf, context, config));
         }
     }
 
-    private Serializer getKeySerializer(StateConfig config) throws Exception {
-        Serializer serializer = null;
+    private Serializer getKeySerializer(Map<String, Object> topoConf, TopologyContext context, StateConfig config) throws Exception {
+        Serializer serializer;
         if (config.keySerializerClass != null) {
             Class<?> klass = (Class<?>) Class.forName(config.keySerializerClass);
             serializer = (Serializer) klass.newInstance();
         } else if (config.keyClass != null) {
-            serializer = new DefaultStateSerializer(Collections.singletonList(Class.forName(config.keyClass)));
+            serializer = new DefaultStateSerializer(topoConf, context, Collections.singletonList(Class.forName(config.keyClass)));
         } else {
-            serializer = new DefaultStateSerializer();
+            serializer = new DefaultStateSerializer(topoConf, context);
         }
         return serializer;
     }
 
-    private Serializer getValueSerializer(StateConfig config) throws Exception {
-        Serializer serializer = null;
+    private Serializer getValueSerializer(Map<String, Object> topoConf, TopologyContext context, StateConfig config) throws Exception {
+        Serializer serializer;
         if (config.valueSerializerClass != null) {
             Class<?> klass = (Class<?>) Class.forName(config.valueSerializerClass);
             serializer = (Serializer) klass.newInstance();
         } else if (config.valueClass != null) {
-            serializer = new DefaultStateSerializer(Collections.singletonList(Class.forName(config.valueClass)));
+            serializer = new DefaultStateSerializer(topoConf, context, Collections.singletonList(Class.forName(config.valueClass)));
         } else {
-            serializer = new DefaultStateSerializer();
+            serializer = new DefaultStateSerializer(topoConf, context);
         }
         return serializer;
     }

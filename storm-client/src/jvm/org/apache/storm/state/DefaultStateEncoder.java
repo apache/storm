@@ -18,7 +18,8 @@
 
 package org.apache.storm.state;
 
-import com.google.common.base.Optional;
+
+import java.util.Optional;
 
 /**
  * Default state encoder class for encoding/decoding key values. This class assumes encoded types of key and value are
@@ -28,7 +29,7 @@ public class DefaultStateEncoder<K, V> implements StateEncoder<K, V, byte[], byt
 
     public static final Serializer<Optional<byte[]>> internalValueSerializer = new DefaultStateSerializer<>();
 
-    public static final byte[] TOMBSTONE = internalValueSerializer.serialize(Optional.<byte[]>absent());
+    public static final byte[] TOMBSTONE = internalValueSerializer.serialize(Optional.<byte[]>empty());
 
     private final Serializer<K> keySerializer;
     private final Serializer<V> valueSerializer;

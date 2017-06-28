@@ -22,6 +22,7 @@ For example a word count bolt could use the key value state abstraction for the 
 last committed by the framework during the previous run.
 3. In the execute method, update the word count.
 
+```java
     public class WordCountBolt extends BaseStatefulBolt<KeyValueState<String, Long>> {
     private KeyValueState<String, Long> wordCounts;
     private OutputCollector collector;
@@ -45,6 +46,7 @@ last committed by the framework during the previous run.
         }
     ...
     }
+```
 
 4. The framework periodically checkpoints the state of the bolt (default every second). The frequency
 can be changed by setting the storm config `topology.state.checkpoint.interval.ms`

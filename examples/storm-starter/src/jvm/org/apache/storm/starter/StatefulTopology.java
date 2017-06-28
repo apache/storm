@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.starter;
 
 import java.util.Map;
@@ -63,6 +64,7 @@ import org.slf4j.LoggerFactory;
  */
 public class StatefulTopology {
     private static final Logger LOG = LoggerFactory.getLogger(StatefulTopology.class);
+
     /**
      * A bolt that uses {@link KeyValueState} to save its state.
      */

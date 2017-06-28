@@ -30,20 +30,20 @@ import java.util.concurrent.TimeUnit;
 /**
  * Invokes {@link TriggerHandler#onTrigger()} after the duration.
  */
-public class TimeTriggerPolicy<T> implements TriggerPolicy<T> {
+public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
     private static final Logger LOG = LoggerFactory.getLogger(TimeTriggerPolicy.class);
 
     private long duration;
     private final TriggerHandler handler;
     private final ScheduledExecutorService executor;
-    private final EvictionPolicy<T> evictionPolicy;
+    private final EvictionPolicy<T, ?> evictionPolicy;
     private ScheduledFuture<?> executorFuture;
 
     public TimeTriggerPolicy(long millis, TriggerHandler handler) {
         this(millis, handler, null);
     }
 
-    public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T> evictionPolicy) {
+    public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy) {
         this.duration = millis;
         this.handler = handler;
         this.executor = Executors.newSingleThreadScheduledExecutor();
@@ -128,5 +128,15 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T> {
                 }
             }
         };
+    }
+
+    @Override
+    public Void getState() {
+        return null;
+    }
+
+    @Override
+    public void restoreState(Void state) {
+
     }
 }

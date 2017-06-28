@@ -56,7 +56,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
     protected final Queue<TriggerResult> pendingTriggers = new ConcurrentLinkedQueue<>();
     protected final AtomicInteger triggerId = new AtomicInteger();
     private final String windowTriggerCountId;
-    private final TriggerPolicy<T> triggerPolicy;
+    private final TriggerPolicy<T, ?> triggerPolicy;
 
     public AbstractTridentWindowManager(WindowConfig windowConfig, String windowTaskId, WindowsStore windowStore,
                                         Aggregator aggregator, BatchOutputCollector delegateCollector) {
@@ -70,7 +70,7 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         windowManager = new WindowManager<>(new TridentWindowLifeCycleListener());
 
         WindowStrategy<T> windowStrategy = windowConfig.getWindowStrategy();
-        EvictionPolicy<T> evictionPolicy = windowStrategy.getEvictionPolicy();
+        EvictionPolicy<T, ?> evictionPolicy = windowStrategy.getEvictionPolicy();
         windowManager.setEvictionPolicy(evictionPolicy);
         triggerPolicy = windowStrategy.getTriggerPolicy(windowManager, evictionPolicy);
         windowManager.setTriggerPolicy(triggerPolicy);
