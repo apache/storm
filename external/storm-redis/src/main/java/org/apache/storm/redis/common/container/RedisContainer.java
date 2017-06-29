@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,18 +18,16 @@
 
 package org.apache.storm.redis.common.container;
 
+import org.apache.storm.redis.common.adapter.RedisCommandsAdapterJedis;
+import org.apache.storm.redis.common.commands.RedisCommands;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisCommands;
 import redis.clients.jedis.JedisPool;
 
 import java.io.Closeable;
 import java.io.IOException;
 
-/**
- * Container for managing Jedis instances.
- */
-public class JedisContainer implements JedisCommandsInstanceContainer {
+public class RedisContainer implements RedisCommandsInstanceContainer {
     private static final Logger LOG = LoggerFactory.getLogger(JedisContainer.class);
 
     private JedisPool jedisPool;
@@ -38,7 +36,7 @@ public class JedisContainer implements JedisCommandsInstanceContainer {
      * Constructor
      * @param jedisPool JedisPool which actually manages Jedis instances
      */
-    public JedisContainer(JedisPool jedisPool) {
+    public RedisContainer(JedisPool jedisPool) {
         this.jedisPool = jedisPool;
     }
 
@@ -46,21 +44,21 @@ public class JedisContainer implements JedisCommandsInstanceContainer {
      * {@inheritDoc}
      */
     @Override
-    public JedisCommands getInstance() {
-        return jedisPool.getResource();
+    public RedisCommands getInstance() {
+        return new RedisCommandsAdapterJedis(jedisPool.getResource());
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void returnInstance(JedisCommands jedisCommands) {
-        if (jedisCommands == null) {
+    public void returnInstance(RedisCommands redisCommands) {
+        if (redisCommands == null) {
             return;
         }
 
         try {
-            ((Closeable) jedisCommands).close();
+            ((Closeable) redisCommands).close();
         } catch (IOException e) {
             LOG.error("Failed to close (return) instance to pool");
         }
@@ -70,7 +68,7 @@ public class JedisContainer implements JedisCommandsInstanceContainer {
      * {@inheritDoc}
      */
     @Override
-    public void close() {
+    public void close() throws IOException {
         jedisPool.close();
     }
 }

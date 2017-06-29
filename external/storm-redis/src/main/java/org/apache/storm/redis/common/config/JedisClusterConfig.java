@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.common.config;
 
 import com.google.common.base.Preconditions;
@@ -34,6 +35,10 @@ public class JedisClusterConfig implements Serializable {
     private int timeout;
     private int maxRedirections;
     private String password;
+
+    // for jackson
+    public JedisClusterConfig() {
+    }
 
     /**
      * Constructor

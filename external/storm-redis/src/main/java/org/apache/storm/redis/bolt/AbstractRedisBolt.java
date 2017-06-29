@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.bolt;
 
 import org.apache.storm.task.OutputCollector;
@@ -37,7 +38,8 @@ import java.util.Map;
  * Due to environment abstraction, AbstractRedisBolt provides JedisCommands which contains only single key operations.
  * <p/>
  * Custom Bolts may want to follow this pattern:
- * <p><blockquote><pre>
+ * <p/>
+ * <blockquote><pre>
  * JedisCommands jedisCommands = null;
  * try {
  *     jedisCommand = getInstance();
@@ -50,7 +52,6 @@ import java.util.Map;
  * </pre></blockquote>
  *
  */
-// TODO: Separate Jedis / JedisCluster to provide full operations for each environment to users
 public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     protected OutputCollector collector;
 
@@ -60,7 +61,8 @@ public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     private JedisClusterConfig jedisClusterConfig;
 
     /**
-     * Constructor for single Redis environment (JedisPool)
+     * Constructor for single Redis environment (JedisPool).
+     *
      * @param config configuration for initializing JedisPool
      */
     public AbstractRedisBolt(JedisPoolConfig config) {
@@ -68,7 +70,8 @@ public abstract class AbstractRedisBolt extends BaseTickTupleAwareRichBolt {
     }
 
     /**
-     * Constructor for Redis Cluster environment (JedisCluster)
+     * Constructor for Redis Cluster environment (JedisCluster).
+     *
      * @param config configuration for initializing JedisCluster
      */
     public AbstractRedisBolt(JedisClusterConfig config) {

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.state;
 
 import org.apache.storm.spout.CheckPointState;

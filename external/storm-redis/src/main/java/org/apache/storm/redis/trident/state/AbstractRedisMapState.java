@@ -6,15 +6,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident.state;
 
 import com.google.common.collect.ImmutableMap;
@@ -46,92 +47,93 @@ import java.util.Map;
  * @param <T> value's type class
  */
 public abstract class AbstractRedisMapState<T> implements IBackingMap<T> {
-	public static final EnumMap<StateType, Serializer> DEFAULT_SERIALIZERS = Maps.newEnumMap(ImmutableMap.of(
-			StateType.NON_TRANSACTIONAL, new JSONNonTransactionalSerializer(),
-			StateType.TRANSACTIONAL, new JSONTransactionalSerializer(),
-			StateType.OPAQUE, new JSONOpaqueSerializer()
-	));
+    public static final EnumMap<StateType, Serializer> DEFAULT_SERIALIZERS = Maps.newEnumMap(ImmutableMap.of(
+            StateType.NON_TRANSACTIONAL, new JSONNonTransactionalSerializer(),
+            StateType.TRANSACTIONAL, new JSONTransactionalSerializer(),
+            StateType.OPAQUE, new JSONOpaqueSerializer()
+    ));
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override public List<T> multiGet(List<List<Object>> keys) {
-		if (keys.size() == 0) {
-			return Collections.emptyList();
-		}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public List<T> multiGet(List<List<Object>> keys) {
+        if (keys.size() == 0) {
+            return Collections.emptyList();
+        }
 
-		List<String> stringKeys = buildKeys(keys);
-		List<String> values = retrieveValuesFromRedis(stringKeys);
+        List<String> stringKeys = buildKeys(keys);
+        List<String> values = retrieveValuesFromRedis(stringKeys);
 
-		return deserializeValues(keys, values);
-	}
+        return deserializeValues(keys, values);
+    }
 
-	/**
-	 * {@inheritDoc}
-	 */
-	@Override
-	public void multiPut(List<List<Object>> keys, List<T> vals) {
-		if (keys.size() == 0) {
-			return;
-		}
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void multiPut(List<List<Object>> keys, List<T> vals) {
+        if (keys.size() == 0) {
+            return;
+        }
 
-		Map<String, String> keyValues = new HashMap<String, String>();
-		for (int i = 0; i < keys.size(); i++) {
-			String val = new String(getSerializer().serialize(vals.get(i)));
-			String redisKey = getKeyFactory().build(keys.get(i));
-			keyValues.put(redisKey, val);
-		}
+        Map<String, String> keyValues = new HashMap<String, String>();
+        for (int i = 0; i < keys.size(); i++) {
+            String val = new String(getSerializer().serialize(vals.get(i)));
+            String redisKey = getKeyFactory().build(keys.get(i));
+            keyValues.put(redisKey, val);
+        }
 
-		updateStatesToRedis(keyValues);
-	}
+        updateStatesToRedis(keyValues);
+    }
 
-	private List<String> buildKeys(List<List<Object>> keys) {
-		List<String> stringKeys = new ArrayList<String>();
+    private List<String> buildKeys(List<List<Object>> keys) {
+        List<String> stringKeys = new ArrayList<String>();
 
-		for (List<Object> key : keys) {
-			stringKeys.add(getKeyFactory().build(key));
-		}
+        for (List<Object> key : keys) {
+            stringKeys.add(getKeyFactory().build(key));
+        }
 
-		return stringKeys;
-	}
+        return stringKeys;
+    }
 
-	private List<T> deserializeValues(List<List<Object>> keys, List<String> values) {
-		List<T> result = new ArrayList<T>(keys.size());
-		for (String value : values) {
-			if (value != null) {
-				result.add((T) getSerializer().deserialize(value.getBytes()));
-			} else {
-				result.add(null);
-			}
-		}
-		return result;
-	}
+    private List<T> deserializeValues(List<List<Object>> keys, List<String> values) {
+        List<T> result = new ArrayList<T>(keys.size());
+        for (String value : values) {
+            if (value != null) {
+                result.add((T) getSerializer().deserialize(value.getBytes()));
+            } else {
+                result.add(null);
+            }
+        }
+        return result;
+    }
 
-	/**
-	 * Returns Serializer which is used for serializing tuple value and deserializing Redis value.
-	 *
-	 * @return serializer
-	 */
-	protected abstract Serializer getSerializer();
+    /**
+     * Returns Serializer which is used for serializing tuple value and deserializing Redis value.
+     *
+     * @return serializer
+     */
+    protected abstract Serializer getSerializer();
 
-	/**
-	 * Returns KeyFactory which is used for converting state key -> Redis key.
-	 * @return key factory
-	 */
-	protected abstract KeyFactory getKeyFactory();
+    /**
+     * Returns KeyFactory which is used for converting state key -> Redis key.
+     * @return key factory
+     */
+    protected abstract KeyFactory getKeyFactory();
 
-	/**
-	 * Retrieves values from Redis that each value is corresponding to each key.
-	 *
-	 * @param keys keys having state values
-	 * @return values which are corresponding to keys
-	 */
-	protected abstract List<String> retrieveValuesFromRedis(List<String> keys);
+    /**
+     * Retrieves values from Redis that each value is corresponding to each key.
+     *
+     * @param keys keys having state values
+     * @return values which are corresponding to keys
+     */
+    protected abstract List<String> retrieveValuesFromRedis(List<String> keys);
 
-	/**
-	 * Updates (key, value) pairs to Redis.
-	 *
-	 * @param keyValues (key, value) pairs
-	 */
-	protected abstract void updateStatesToRedis(Map<String, String> keyValues);
+    /**
+     * Updates (key, value) pairs to Redis.
+     *
+     * @param keyValues (key, value) pairs
+     */
+    protected abstract void updateStatesToRedis(Map<String, String> keyValues);
 }

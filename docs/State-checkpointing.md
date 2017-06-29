@@ -70,6 +70,48 @@ json config with the following properties.
     }
 }
 ```
+ 
+For Redis Cluster state this is a json config with the following properties.
+ 
+```
+ {
+   "keyClass": "Optional fully qualified class name of the Key type.",
+   "valueClass": "Optional fully qualified class name of the Value type.",
+   "keySerializerClass": "Optional Key serializer implementation class.",
+   "valueSerializerClass": "Optional Value Serializer implementation class.",
+   "jedisClusterConfig": {
+     "nodes": ["localhost:7379", "localhost:7380", "localhost:7381"],
+     "timeout": 2000,
+     "maxRedirections": 5
+   }
+ }
+```
+
+NOTE: If you used Redis state with Storm version 1.1.0 or earlier, you would need to also migrate your state since the representation of state has changed  
+from Base64-encoded string to binary to reduce huge overhead. Storm provides a migration tool to help, which is placed on `storm-redis-example` module.
+
+Please download the source from download page or clone the project, and type below command:
+
+```
+mvn clean install -DskipTests
+cd examples/storm-redis-examples
+<storm-installation-dir>/bin/storm jar target/storm-redis-examples-*.jar org.apache.storm.redis.tools.Base64ToBinaryStateMigrationUtil [options]
+```
+
+Supported options are listed here:
+
+```
+ -d,--dbnum <arg>       Redis DB number (default: 0)
+ -h,--host <arg>        Redis hostname (default: localhost)
+ -n,--namespace <arg>   REQUIRED the list of namespace to migrate.
+ -p,--port <arg>        Redis port (default: 6379)
+    --password <arg>    Redis password (default: no password)
+```
+
+You can provide multiple `namespace` options to migrate multiple namespaces at once. 
+(e.g.: `--namespace total-7 --namespace partialsum-3`)
+Other options are not mandatory.
+Please note that you need to also migrate the key starting with "$checkpointspout-" since it's internal namespace of state. 
 
 ## Checkpoint mechanism
 Checkpoint is triggered by an internal checkpoint spout at the specified `topology.state.checkpoint.interval.ms`. If there is

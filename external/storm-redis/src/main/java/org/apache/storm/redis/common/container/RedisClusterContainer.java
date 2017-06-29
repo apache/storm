@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,59 +18,53 @@
 
 package org.apache.storm.redis.common.container;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import redis.clients.jedis.JedisCommands;
-import redis.clients.jedis.JedisPool;
+import org.apache.storm.redis.common.adapter.RedisCommandsAdapterJedisCluster;
+import org.apache.storm.redis.common.commands.RedisCommands;
+import redis.clients.jedis.JedisCluster;
 
-import java.io.Closeable;
 import java.io.IOException;
 
 /**
- * Container for managing Jedis instances.
+ * Container for managing JedisCluster.
+ * <p/>
+ * Note that JedisCluster doesn't need to be pooled since it's thread-safe and it stores pools internally.
  */
-public class JedisContainer implements JedisCommandsInstanceContainer {
-    private static final Logger LOG = LoggerFactory.getLogger(JedisContainer.class);
-
-    private JedisPool jedisPool;
+public class RedisClusterContainer implements RedisCommandsInstanceContainer {
+    private JedisCluster jedisCluster;
 
     /**
      * Constructor
-     * @param jedisPool JedisPool which actually manages Jedis instances
+     * @param jedisCluster JedisCluster instance
      */
-    public JedisContainer(JedisPool jedisPool) {
-        this.jedisPool = jedisPool;
+    public RedisClusterContainer(JedisCluster jedisCluster) {
+        this.jedisCluster = jedisCluster;
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public JedisCommands getInstance() {
-        return jedisPool.getResource();
+    public RedisCommands getInstance() {
+        return new RedisCommandsAdapterJedisCluster(this.jedisCluster);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public void returnInstance(JedisCommands jedisCommands) {
-        if (jedisCommands == null) {
-            return;
-        }
+    public void returnInstance(RedisCommands redisCommands) {
+        // do nothing
+    }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void close() throws IOException {
         try {
-            ((Closeable) jedisCommands).close();
+            this.jedisCluster.close();
         } catch (IOException e) {
-            LOG.error("Failed to close (return) instance to pool");
+            e.printStackTrace();
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void close() {
-        jedisPool.close();
     }
 }

@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.common.config;
 
 import redis.clients.jedis.Protocol;
@@ -36,7 +37,7 @@ public class JedisPoolConfig implements Serializable {
     public JedisPoolConfig() {
     }
     /**
-     * Constructor
+     * Constructor.
      * <p/>
      * You can use JedisPoolConfig.Builder() for leaving some fields to apply default value.
      *
