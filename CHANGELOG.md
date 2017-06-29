@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2559: There are three configurations in defaults.yaml haven't been used in storm
  * STORM-2598: Add proxy server option for dependency resolver
  * STORM-2562: Use stronger key size for blow fish key generator and remove printStackTrace
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
