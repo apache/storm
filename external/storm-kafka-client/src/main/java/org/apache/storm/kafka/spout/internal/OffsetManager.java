@@ -118,6 +118,8 @@ public class OffsetManager {
 
         OffsetAndMetadata nextCommitOffsetAndMetadata = null;
         if (nextCommitMsg != null) {
+            //The committed offset should be the next message
+            nextCommitOffset = nextCommitOffset + 1;
             nextCommitOffsetAndMetadata = new OffsetAndMetadata(nextCommitOffset, nextCommitMsg.getMetadata(Thread.currentThread()));
             LOG.debug("topic-partition [{}] has offsets [{}-{}] ready to be committed",
                 tp, committedOffset + 1, nextCommitOffsetAndMetadata.offset());
@@ -162,7 +164,7 @@ public class OffsetManager {
         LOG.debug("Committed offsets [{}-{} = {}] for topic-partition [{}].",
                     preCommitCommittedOffsets + 1, this.committedOffset, numCommittedOffsets, tp);
         
-        return numCommittedOffsets;
+        return numCommittedOffsets - 1;// The committed offset should be the next message
     }
 
     public long getCommittedOffset() {

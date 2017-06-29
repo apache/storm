@@ -52,7 +52,7 @@ public class KafkaSpoutMessageId implements Serializable {
      */
     public KafkaSpoutMessageId(TopicPartition topicPart, long offset, boolean emitted) {
         this.topicPart = topicPart;
-        this.offset = offset + 1;
+        this.offset = offset;
         this.emitted = emitted;
     }
 
