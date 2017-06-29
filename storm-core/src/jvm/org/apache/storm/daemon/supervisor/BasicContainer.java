@@ -336,7 +336,7 @@ public class BasicContainer extends Container {
      * @return the path with wildcard ("*") suffix
      */
     protected String getWildcardDir(File dir) {
-        return Paths.get(dir.toString(), "*").toString();
+        return dir.toString() + File.separator + "*";
     }
     
     protected List<String> frameworkClasspath() {
