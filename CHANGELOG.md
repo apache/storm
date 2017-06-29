@@ -429,6 +429,7 @@
  * STORM-1868: Modify TridentKafkaWordCount to run in distributed mode
 
 ## 1.0.4
+ * STORM-2597: Don't parse passed in class paths
  * STORM-2450: Write resources into correct local director
  * STORM-2038: No symlinks for local cluster 
 
