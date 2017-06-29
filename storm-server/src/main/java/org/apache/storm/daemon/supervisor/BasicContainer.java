@@ -34,7 +34,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
-import java.util.stream.Collectors;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -344,7 +343,7 @@ public class BasicContainer extends Container {
      * @return the path with wildcard ("*") suffix
      */
     protected String getWildcardDir(File dir) {
-        return Paths.get(dir.toString(), "*").toString();
+        return dir.toString() + File.separator + "*";
     }
     
     protected List<String> frameworkClasspath(SimpleVersion topoVersion) {
