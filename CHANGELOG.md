@@ -272,6 +272,7 @@
  * STORM-1769: Added a test to check local nimbus with notifier plugin
 
 ## 1.1.1
+ * STORM-2599: Fix BasicContainer wildcard classpath on Windows
  * STORM-2598: Add proxy server option for dependency resolver
  * STORM-2555: handle impersonation properly for HBase delegation token
  * STORM-2551: Thrift client socket timeout
