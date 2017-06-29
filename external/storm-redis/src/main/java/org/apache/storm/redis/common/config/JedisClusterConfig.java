@@ -35,6 +35,10 @@ public class JedisClusterConfig implements Serializable {
     private int maxRedirections;
     private String password;
 
+    // for jackson
+    public JedisClusterConfig() {
+    }
+
     /**
      * Constructor
      * <p/>
