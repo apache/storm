@@ -149,11 +149,9 @@ def get_classpath(extrajars, daemon=True, client=False):
     if daemon:
         ret.extend(get_wildcard_dir(os.path.join(STORM_DIR, "extlib-daemon")))
     if STORM_EXT_CLASSPATH != None:
-        for path in STORM_EXT_CLASSPATH.split(os.pathsep):
-            ret.extend(get_wildcard_dir(path))
+        ret.append(STORM_EXT_CLASSPATH)
     if daemon and STORM_EXT_CLASSPATH_DAEMON != None:
-        for path in STORM_EXT_CLASSPATH_DAEMON.split(os.pathsep):
-            ret.extend(get_wildcard_dir(path))
+        ret.append(STORM_EXT_CLASSPATH_DAEMON)
     ret.extend(extrajars)
     return normclasspath(os.pathsep.join(ret))
 
