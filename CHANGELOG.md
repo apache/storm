@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2601: add the timeout parameter to the method of getting the nimbus client
  * STORM-2369: [storm-redis] Use binary type for State management
  * STORM-2564: We should provide a template for storm-cluster-auth.yaml
  * STORM-2599: Fix BasicContainer wildcard classpath on Windows
