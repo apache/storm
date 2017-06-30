@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import java.net.ConnectException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -31,8 +32,11 @@ import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.thrift.TException;
 import org.apache.thrift.transport.TTransportException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
+    private static final Logger LOG = LoggerFactory.getLogger(DRPCClient.class);
     private static volatile ILocalDRPC _localOverrideClient = null;
     
     public static class LocalOverride implements AutoCloseable {
@@ -67,11 +71,33 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
             return new DRPCClient(override);
         }
 
-        List<String> servers = (List<String>) conf.get(Config.DRPC_SERVERS);
+        //Extend the config with defaults and the command line
+        Map<String, Object> fullConf = Utils.readStormConfig();
+        fullConf.putAll(Utils.readCommandLineOpts());
+        fullConf.putAll(conf);
+
+        int port = ObjectReader.getInt(fullConf.get(Config.DRPC_PORT), 3772);
+        List<String> servers = (List<String>) fullConf.get(Config.DRPC_SERVERS);
+        if (servers == null) {
+            throw new IllegalStateException(Config.DRPC_SERVERS + " is not set, could not find any DRPC servers to connect to.");
+        }
         Collections.shuffle(servers);
-        String host = servers.get(0);
-        int port = Integer.parseInt(conf.get(Config.DRPC_PORT).toString());
-        return new DRPCClient(conf, host, port);
+        RuntimeException excpt = null;
+        for (String host: servers) {
+            try {
+                return new DRPCClient(fullConf, host, port);
+            } catch (RuntimeException e) {
+                if (Utils.exceptionCauseIsInstanceOf(ConnectException.class, e)) {
+                    excpt = e;
+                } else {
+                    throw e;
+                }
+            }
+        }
+        if (excpt != null) {
+            throw excpt;
+        }
+        throw new IllegalStateException("It appears that no drpc servers were configured.");
     }
     
     private DistributedRPC.Iface client;
@@ -113,6 +139,11 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
     }
     
     public String execute(String func, String args) throws TException, DRPCExecutionException, AuthorizationException {
+        if (func == null)
+        {
+            throw new IllegalArgumentException("DRPC Function cannot be null");
+        }
+        LOG.debug("DRPC RUNNING \"{}\"(\"{}\")", func, args);
         return client.execute(func, args);
     }
 
