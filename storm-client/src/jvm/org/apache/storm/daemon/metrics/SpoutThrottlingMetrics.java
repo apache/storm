@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.metrics;
 
 import org.apache.storm.metric.api.CountMetric;
@@ -26,32 +27,20 @@ public class SpoutThrottlingMetrics extends BuiltinMetrics {
     private final CountMetric skippedInactive = new CountMetric();
 
     public SpoutThrottlingMetrics() {
-        this.metricMap.put("skipped-max-spout", skippedMaxSpout);
-        this.metricMap.put("skipped-throttle", skippedThrottle);
-        this.metricMap.put("skipped-inactive", skippedInactive);
+        metricMap.put("skipped-max-spout-ms", skippedMaxSpout);
+        metricMap.put("skipped-throttle-ms", skippedThrottle);
+        metricMap.put("skipped-inactive-ms", skippedInactive);
     }
 
-    public CountMetric getSkippedMaxSpout() {
-        return skippedMaxSpout;
+    public void skippedMaxSpoutMs(long ms) {
+        this.skippedMaxSpout.incrBy(ms);
     }
 
-    public CountMetric getSkippedThrottle() {
-        return skippedThrottle;
+    public void skippedThrottleMs(long ms) {
+        this.skippedThrottle.incrBy(ms);
     }
 
-    public CountMetric getSkippedInactive() {
-        return skippedInactive;
-    }
-
-    public void skippedMaxSpout(CommonStats stats) {
-        this.skippedMaxSpout.incrBy(stats.getRate());
-    }
-
-    public void skippedThrottle(CommonStats stats) {
-        this.skippedThrottle.incrBy(stats.getRate());
-    }
-
-    public void skippedInactive(CommonStats stats) {
-        this.skippedInactive.incrBy(stats.getRate());
+    public void skippedInactiveMs(long ms) {
+        this.skippedInactive.incrBy(ms);
     }
 }
