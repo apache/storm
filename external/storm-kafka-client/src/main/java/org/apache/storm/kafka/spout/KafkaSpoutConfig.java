@@ -45,6 +45,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         String AUTO_COMMIT_INTERVAL_MS = "auto.commit.interval.ms";
         String KEY_DESERIALIZER = "key.deserializer";
         String VALUE_DESERIALIZER = "value.deserializer";
+        String KAFKASPOUT_JAASCONF_PATH = "kafkaspout.jaasconf.path";
     }
 
     /**
