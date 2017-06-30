@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2558: Port storm.sh to Powershell and remove outdated batch scripts
  * STORM-2559: There are three configurations in defaults.yaml haven't been used in storm
  * STORM-2598: Add proxy server option for dependency resolver
  * STORM-2562: Use stronger key size for blow fish key generator and remove printStackTrace
