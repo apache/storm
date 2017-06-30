@@ -57,7 +57,15 @@ public class NimbusClient extends ThriftClient {
         return getConfiguredClientAs(conf, null);
     }
 
+    public static NimbusClient getConfiguredClient(Map conf, Integer timeout) {
+        return getConfiguredClientAs(conf, null, timeout);
+    }
+
     public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
+        return getConfiguredClientAs(conf, asUser, null);
+    }
+
+    public static NimbusClient getConfiguredClientAs(Map conf, String asUser, Integer timeout) {
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {
             if (asUser != null && !asUser.isEmpty()) {
                 LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence."
@@ -80,7 +88,7 @@ public class NimbusClient extends ThriftClient {
             NimbusSummary nimbusSummary;
             NimbusClient client = null;
             try {
-                client = new NimbusClient(conf, host, port, null, asUser);
+                client = new NimbusClient(conf, host, port, timeout, asUser);
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
@@ -91,7 +99,7 @@ public class NimbusClient extends ThriftClient {
                         return ret;
                     }
                     try {
-                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), null, asUser);
+                        return new NimbusClient(conf, nimbusSummary.get_host(), nimbusSummary.get_port(), timeout, asUser);
                     } catch (TTransportException e) {
                         throw new RuntimeException("Failed to create a nimbus client for the leader " + leaderNimbus, e);
                     }
