@@ -170,7 +170,7 @@ public class SingleTopicKafkaSpoutTest {
             Map<TopicPartition, OffsetAndMetadata> capturedCommit = commitCapture.getValue();
             TopicPartition expectedTp = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
             assertThat("Should have committed to the right topic", capturedCommit, Matchers.hasKey(expectedTp));
-            assertThat("Should have committed all the acked messages", capturedCommit.get(expectedTp).offset(), is((long)messageCount - 1));
+            assertThat("Should have committed all the acked messages", capturedCommit.get(expectedTp).offset(), is((long)messageCount));
 
             /* Verify that the following acked (now committed) tuples are not emitted again
              * Since the consumer position was somewhere in the middle of the acked tuples when the commit happened,

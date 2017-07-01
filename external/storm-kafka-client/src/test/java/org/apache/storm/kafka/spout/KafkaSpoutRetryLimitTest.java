@@ -18,7 +18,10 @@ package org.apache.storm.kafka.spout;
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.*;
+import static org.mockito.Matchers.anyCollection;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyLong;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -122,9 +125,9 @@ public class KafkaSpoutRetryLimitTest {
             inOrder.verify(consumerMock).commitSync(committedOffsets.capture());
             inOrder.verify(consumerMock).poll(anyLong());
 
-            //verify that Offset 3 was committed for the given TopicPartition
+            //verify that offset 4 was committed for the given TopicPartition, since processing should resume at 4.
             assertTrue(committedOffsets.getValue().containsKey(partition));
-            assertEquals(lastOffset, ((OffsetAndMetadata) (committedOffsets.getValue().get(partition))).offset());
+            assertEquals(lastOffset + 1, ((OffsetAndMetadata) (committedOffsets.getValue().get(partition))).offset());
         }
     }
 
