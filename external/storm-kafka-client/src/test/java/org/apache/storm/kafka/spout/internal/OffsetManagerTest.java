@@ -21,6 +21,8 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertThat;
 
 import java.util.NoSuchElementException;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutMessageId;
 import org.junit.Rule;
@@ -31,54 +33,141 @@ public class OffsetManagerTest {
 
     @Rule
     public ExpectedException expect = ExpectedException.none();
+    
+    private final long initialFetchOffset = 0;
+    private final TopicPartition testTp = new TopicPartition("testTopic", 0);
+    private final OffsetManager manager = new OffsetManager(testTp, initialFetchOffset);
 
     @Test
     public void testSkipMissingOffsetsWhenFindingNextCommitOffsetWithGapInMiddleOfAcked() {
-        /*If topic compaction is enabled in Kafka, we sometimes need to commit past a gap of deleted offsets
+        /* If topic compaction is enabled in Kafka, we sometimes need to commit past a gap of deleted offsets
          * Since the Kafka consumer should return offsets in order, we can assume that if a message is acked
          * then any prior message will have been emitted at least once.
          * If we see an acked message and some of the offsets preceding it were not emitted, they must have been compacted away and should be skipped.
          */
-        
-        TopicPartition tp = new TopicPartition("test", 0);
-        OffsetManager manager = new OffsetManager(tp, 0);
-        
         manager.addToEmitMsgs(0);
         manager.addToEmitMsgs(1);
         manager.addToEmitMsgs(2);
         //3, 4 compacted away
-        manager.addToEmitMsgs(5);
-        manager.addToEmitMsgs(6);
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 0));
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 1));
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 2));
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 6));
+        manager.addToEmitMsgs(initialFetchOffset + 5);
+        manager.addToEmitMsgs(initialFetchOffset + 6);
+        manager.addToAckMsgs(getMessageId(initialFetchOffset));
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 1));
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 2));
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 6));
         
-        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset().offset(), is(2L));
+        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset().offset(), is(initialFetchOffset + 3));
         
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 5));
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 5));
         
         assertThat("The offset manager should skip past the gap in acked messages, since the messages were not emitted", 
-            manager.findNextCommitOffset().offset(), is(6L));
+            manager.findNextCommitOffset().offset(), is(initialFetchOffset + 7));
     }
     
     @Test
     public void testSkipMissingOffsetsWhenFindingNextCommitOffsetWithGapBeforeAcked() {
-        
-        TopicPartition tp = new TopicPartition("test", 0);
-        OffsetManager manager = new OffsetManager(tp, 0);
-        
         //0-4 compacted away
-        manager.addToEmitMsgs(5);
-        manager.addToEmitMsgs(6);
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 6));
+        manager.addToEmitMsgs(initialFetchOffset + 5);
+        manager.addToEmitMsgs(initialFetchOffset + 6);
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 6));
         
         assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset(), is(nullValue()));
         
-        manager.addToAckMsgs(new KafkaSpoutMessageId(tp, 5));
+        manager.addToAckMsgs(getMessageId(initialFetchOffset + 5));
         
         assertThat("The offset manager should skip past the gap in acked messages, since the messages were not emitted", 
-            manager.findNextCommitOffset().offset(), is(6L));
+            manager.findNextCommitOffset().offset(), is(initialFetchOffset + 7));
+    }
+
+    @Test
+    public void testFindNextCommittedOffsetWithNoAcks() {
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("There shouldn't be a next commit offset when nothing has been acked", nextCommitOffset, is(nullValue()));
+    }
+
+    @Test
+    public void testFindNextCommitOffsetWithOneAck() {
+        /*
+         * The KafkaConsumer commitSync API docs: "The committed offset should be the next message your application will consume, i.e.
+         * lastProcessedMessageOffset + 1. "
+         */
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("The next commit offset should be one past the processed message offset", nextCommitOffset.offset(), is(initialFetchOffset + 1));
+    }
+
+    @Test
+    public void testFindNextCommitOffsetWithMultipleOutOfOrderAcks() {
+        emitAndAckMessage(getMessageId(initialFetchOffset + 1));
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("The next commit offset should be one past the processed message offset", nextCommitOffset.offset(), is(initialFetchOffset + 2));
+    }
+
+    @Test
+    public void testFindNextCommitOffsetWithAckedOffsetGap() {
+        emitAndAckMessage(getMessageId(initialFetchOffset + 2));
+        manager.addToEmitMsgs(initialFetchOffset + 1);
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("The next commit offset should cover the sequential acked offsets", nextCommitOffset.offset(), is(initialFetchOffset + 1));
+    }
+
+    @Test
+    public void testFindNextOffsetWithAckedButNotEmittedOffsetGap() {
+        /**
+         * If topic compaction is enabled in Kafka some offsets may be deleted.
+         * We distinguish this case from regular gaps in the acked offset sequence caused by out of order acking
+         * by checking that offsets in the gap have been emitted at some point previously. 
+         * If they haven't then they can't exist in Kafka, since the spout emits tuples in order.
+         */
+        emitAndAckMessage(getMessageId(initialFetchOffset + 2));
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("The next commit offset should cover all the acked offsets, since the offset in the gap hasn't been emitted and doesn't exist",
+            nextCommitOffset.offset(), is(initialFetchOffset + 3));
+    }
+    
+    @Test
+    public void testFindNextCommitOffsetWithUnackedOffsetGap() {
+        manager.addToEmitMsgs(initialFetchOffset + 1);
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        assertThat("The next commit offset should cover the contiguously acked offsets", nextCommitOffset.offset(), is(initialFetchOffset + 1));
+    }
+    
+    @Test
+    public void testFindNextCommitOffsetWhenTooLowOffsetIsAcked() {
+        OffsetManager startAtHighOffsetManager = new OffsetManager(testTp, 10);
+        emitAndAckMessage(getMessageId(0));
+        OffsetAndMetadata nextCommitOffset = startAtHighOffsetManager.findNextCommitOffset();
+        assertThat("Acking an offset earlier than the committed offset should have no effect", nextCommitOffset, is(nullValue()));
+    }
+    
+    @Test
+    public void testCommit() {
+        emitAndAckMessage(getMessageId(initialFetchOffset));
+        emitAndAckMessage(getMessageId(initialFetchOffset + 1));
+        emitAndAckMessage(getMessageId(initialFetchOffset + 2));
+        
+        long committedMessages = manager.commit(new OffsetAndMetadata(initialFetchOffset + 2));
+        
+        assertThat("Should have committed all messages to the left of the earliest uncommitted offset", committedMessages, is(2L));
+        assertThat("The committed messages should not be in the acked list anymore", manager.contains(getMessageId(initialFetchOffset)), is(false));
+        assertThat("The committed messages should not be in the emitted list anymore", manager.containsEmitted(initialFetchOffset), is(false));
+        assertThat("The committed messages should not be in the acked list anymore", manager.contains(getMessageId(initialFetchOffset + 1)), is(false));
+        assertThat("The committed messages should not be in the emitted list anymore", manager.containsEmitted(initialFetchOffset + 1), is(false));
+        assertThat("The uncommitted message should still be in the acked list", manager.contains(getMessageId(initialFetchOffset + 2)), is(true));
+        assertThat("The uncommitted message should still be in the emitted list", manager.containsEmitted(initialFetchOffset + 2), is(true));
+    }
+
+    private KafkaSpoutMessageId getMessageId(long offset) {
+        return new KafkaSpoutMessageId(testTp, offset);
+    }
+    
+    private void emitAndAckMessage(KafkaSpoutMessageId msgId) {
+        manager.addToEmitMsgs(msgId.offset());
+        manager.addToAckMsgs(msgId);
     }
 
 }

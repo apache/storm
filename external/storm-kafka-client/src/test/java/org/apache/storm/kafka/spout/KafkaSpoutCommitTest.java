@@ -39,9 +39,10 @@ import org.mockito.InOrder;
 import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.ArgumentMatchers.anyList;
 
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -94,7 +95,7 @@ public class KafkaSpoutCommitTest {
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(recordsForPartition.size())).emit(anyObject(), anyObject(), messageIds.capture());
+            verify(collectorMock, times(recordsForPartition.size())).emit(anyString(), anyList(), messageIds.capture());
 
             for (KafkaSpoutMessageId messageId : messageIds.getAllValues()) {
                 spout.ack(messageId);
@@ -110,10 +111,10 @@ public class KafkaSpoutCommitTest {
             inOrder.verify(consumerMock).commitSync(commitCapture.capture());
             inOrder.verify(consumerMock).poll(anyLong());
 
-            //verify that Offset 9 was last committed offset
+            //verify that Offset 10 was last committed offset, since this is the offset the spout should resume at
             Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
             assertTrue(commits.containsKey(partition));
-            assertEquals(9, commits.get(partition).offset());
+            assertEquals(10, commits.get(partition).offset());
         }
     }
 
