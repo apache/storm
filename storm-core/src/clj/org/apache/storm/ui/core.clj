@@ -1144,7 +1144,6 @@
   (GET "/api/v1/cluster/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-cluster-summary-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getClusterInfo")
     (let [user (get-user-name servlet-request)]
       (json-response (assoc (cluster-summary user)
                           "bugtracker-url" (*STORM-CONF* UI-PROJECT-BUGTRACKER-URL)
@@ -1152,7 +1151,6 @@
   (GET "/api/v1/nimbus/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-nimbus-summary-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getClusterInfo")
     (json-response (nimbus-summary) (:callback m)))
   (GET "/api/v1/history/summary" [:as {:keys [cookies servlet-request]} & m]
     (let [user (.getUserName http-creds-handler servlet-request)]
@@ -1160,13 +1158,11 @@
   (GET "/api/v1/supervisor/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-supervisor-summary-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getClusterInfo")
     (json-response (assoc (supervisor-summary)
                      "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m)))
   (GET "/api/v1/supervisor" [:as {:keys [cookies servlet-request scheme]} & m]
     (.mark ui:num-supervisor-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getSupervisorPageInfo")
     ;; supervisor takes either an id or a host query parameter, and technically both
     ;; that said, if both the id and host are provided, the id wins
     (let [id (:id m)
@@ -1176,7 +1172,6 @@
   (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-all-topologies-summary-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getClusterInfo")
     (json-response (all-topologies-summary) (:callback m)))
   (GET  "/api/v1/topology-workers/:id" [:as {:keys [cookies servlet-request]} id & m]
     (let [id (URLDecoder/decode id)]
@@ -1185,34 +1180,28 @@
   (GET "/api/v1/topology/:id" [:as {:keys [cookies servlet-request scheme]} id & m]
     (.mark ui:num-topology-page-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
       (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
   (GET "/api/v1/topology/:id/metrics" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-topology-metric-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (json-response (topology-metrics-page id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/lag" [:as {:keys [cookies servlet-request scheme]} id & m]
     (.mark ui:num-topology-lag-http-requests)
     (populate-context! servlet-request)
     (let [topology-conf (topology-config id)]
-      (assert-authorized-user "getUserTopology" topology-conf)
       (json-response (topology-lag id topology-conf) nil)))
   (GET "/api/v1/topology/:id/visualization-init" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-build-visualization-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (json-response (build-visualization id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/visualization" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-mk-visualization-data-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (json-response (mk-visualization-data id (:window m) (check-include-sys? (:sys m))) (:callback m)))
   (GET "/api/v1/topology/:id/component/:component" [:as {:keys [cookies servlet-request scheme]} id component & m]
     (.mark ui:num-component-page-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
       (json-response
           (component-page id component (:window m) (check-include-sys? (:sys m)) user (= scheme :https))
@@ -1220,7 +1209,6 @@
   (GET "/api/v1/topology/:id/logconfig" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-log-config-http-requests)
     (populate-context! servlet-request)
-    (assert-authorized-user "getTopology" (topology-config id))
     (json-response (log-config id) (:callback m)))
   (POST "/api/v1/topology/:id/activate" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-activate-topology-http-requests)
