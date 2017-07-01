@@ -53,7 +53,7 @@ import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
-import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.anyObject;
 import static org.mockito.Matchers.eq;
 
 import java.util.HashSet;
@@ -247,6 +247,6 @@ public class KafkaSpoutRebalanceTest {
         //This partition was previously assigned, so the consumer position shouldn't change
         verify(consumerMock, never()).seek(eq(assignedPartition), anyLong());
         //This partition is new, and should start at the committed offset
-        verify(consumerMock).seek(newPartition, committedOffset + 1);
+        verify(consumerMock).seek(newPartition, committedOffset);
     }
 }

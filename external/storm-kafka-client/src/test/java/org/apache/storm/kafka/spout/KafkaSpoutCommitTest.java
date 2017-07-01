@@ -42,8 +42,6 @@ import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 
-import org.mockito.stubbing.OngoingStubbing;
-
 public class KafkaSpoutCommitTest {
 
     private final long offsetCommitPeriodMs = 2_000;
@@ -107,10 +105,10 @@ public class KafkaSpoutCommitTest {
             inOrder.verify(consumerMock).commitSync(commitCapture.capture());
             inOrder.verify(consumerMock).poll(anyLong());
 
-            //verify that Offset 9 was last committed offset
+            //verify that Offset 10 was last committed offset, since this is the offset the spout should resume at
             Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
             assertTrue(commits.containsKey(partition));
-            assertEquals(9, commits.get(partition).offset());
+            assertEquals(10, commits.get(partition).offset());
         }
     }
 
