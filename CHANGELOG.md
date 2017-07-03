@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2597: Don't parse passed in class paths
  * STORM-2564: We should provide a template for storm-cluster-auth.yaml
  * STORM-2568: Fix getTopicsString
  * STORM-2563: Remove the workaround to handle missing UGI.loginUserFromSubject
