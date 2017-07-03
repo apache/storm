@@ -125,7 +125,7 @@ public class BoltExecutor extends Executor {
             boltObject.execute(tuple);
 
             Long ms = tuple.getExecuteSampleStartTime();
-            long delta = (ms != null) ? Time.deltaMs(ms) : 0;
+            long delta = (ms != null) ? Time.deltaMs(ms) : -1;
             if (isDebug) {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
