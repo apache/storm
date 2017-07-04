@@ -125,7 +125,7 @@ public class OffsetManager {
             nextCommitOffsetAndMetadata = new OffsetAndMetadata(nextEarliestUncommittedOffset,
                 nextCommitMsg.getMetadata(Thread.currentThread()));
             LOG.debug("topic-partition [{}] has offsets [{}-{}] ready to be committed",
-                tp, earliestUncommittedOffset, nextCommitOffsetAndMetadata.offset());
+                tp, earliestUncommittedOffset, nextCommitOffsetAndMetadata.offset() - 1);
         } else {
             LOG.debug("topic-partition [{}] has NO offsets ready to be committed", tp);
         }
