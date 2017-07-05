@@ -16,7 +16,7 @@ DRPCClient client = new DRPCClient("drpc-host", 3772);
 String result = client.execute("reach", "http://twitter.com");
 ```
 
-or if you just want to use a preconfigured client you can call.  The exact host will be selected randomly from the configured set of hosts
+or if you just want to use a preconfigured client you can call.  The exact host will be selected randomly from the configured set of hosts, if the host appears to be down it will loop through all configured hosts looking for one that works.
 
 ```java
 DRPCClient client = DRPCClient.getConfiguredClient(conf);
@@ -76,18 +76,19 @@ Using DRPC on an actual cluster is also straightforward. There's three steps:
 2. Configure the locations of the DRPC servers
 3. Submit DRPC topologies to Storm cluster
 
-Launching a DRPC server can be done with the `storm` script and is just like launching Nimbus or the UI:
-
-```
-bin/storm drpc
-```
-
-Next, you need to configure your Storm cluster to know the locations of the DRPC server(s). This is how `DRPCSpout` knows from where to read function invocations. This can be done through the `storm.yaml` file or the topology configurations. Configuring this through the `storm.yaml` looks something like this:
+First you need to configure your storm cluster to use teh DRPC servers.  This is how the `DRPCSpout` and the `DRPCClient` knows which hosts to talk to. This can be done through the `storm.yaml` file or the topology configurations. At a minimum `drpc.servers` should be set, but if you want to use the REST API you also need to set a port for it through `drpc.http.port`.
 
 ```yaml
 drpc.servers:
   - "drpc1.foo.com"
   - "drpc2.foo.com"
+drpc.http.port: 8081
+```
+
+Launching a DRPC server can be done with the `storm` script and is just like launching Nimbus or the UI:
+
+```
+bin/storm drpc
 ```
 
 Finally, you launch DRPC topologies using `StormSubmitter` just like you launch any other topology. To run the above example in remote mode, you do something like this:
@@ -97,6 +98,23 @@ StormSubmitter.submitTopology("exclamation-drpc", conf, builder.createRemoteTopo
 ```
 
 `createRemoteTopology` is used to create topologies suitable for Storm clusters.
+
+Assuming that the topology is listening on the `exclaim` function you can execute something several differnt ways.
+
+Programatically:
+```java
+Config conf = new Config();
+try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
+  //User the drpc client
+  String result = drpc.execute("exclaim", "argument");
+}
+```
+
+through curl:
+```curl http://hostname:8081/drpc/exclaim/argument```
+
+Through the command line:
+```bin/storm drpc-client exclaim argument```
 
 ### A more complex example
 

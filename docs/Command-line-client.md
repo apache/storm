@@ -21,6 +21,7 @@ These commands are:
 1. supervisor
 1. ui
 1. drpc
+1. drpc-client
 1. blobstore
 1. dev-zookeeper
 1. get-errors
@@ -136,6 +137,40 @@ Launches the UI daemon. The UI provides a web interface for a Storm cluster and 
 Syntax: `storm drpc`
 
 Launches a DRPC daemon. This command should be run under supervision with a tool like [daemontools](http://cr.yp.to/daemontools.html) or [monit](http://mmonit.com/monit/). See [Distributed RPC](Distributed-RPC.html) for more information.
+
+### drpc-client
+
+Syntax: `storm drpc-client [options] ([function argument]*)|(argument*)`
+
+Provides a very simple way to send DRPC requests. If a `-f` argument is supplied, to set the function name, all of the arguments are treated
+as arguments to the function.  If no function is given the arguments must be pairs of function argument.
+
+*NOTE:* This is not really intended for production use.  This is mostly because parsing out the results can be a pain.
+
+Creating an actuall DRPC client only takes a few lines, so for production please go with that.
+
+```java
+Config conf = new Config();
+try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {
+  //User the drpc client
+  String result = drpc.execute(function, argument);
+}
+```
+
+#### Examples
+
+`storm drpc-client exclaim a exclaim b test bar`
+
+This will submit 3 separate DRPC request.
+1. funciton = "exclaim" args = "a"
+2. function = "exclaim" args = "b"
+3. function = "test" args = "bar"
+
+`storm drpc-client -f exclaim a b`
+
+This will submit 2 separate DRPC request.
+1. funciton = "exclaim" args = "a"
+2. function = "exclaim" args = "b"
 
 ### blobstore
 

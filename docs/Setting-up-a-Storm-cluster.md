@@ -14,6 +14,7 @@ Here's a summary of the steps for setting up a Storm cluster:
 3. Download and extract a Storm release to Nimbus and worker machines
 4. Fill in mandatory configurations into storm.yaml
 5. Launch daemons under supervision using "storm" script and a supervisor of your choice
+6. Setup DRPC servers (Optional)
 
 ### Set up a Zookeeper cluster
 
@@ -83,6 +84,12 @@ supervisor.slots.ports:
     - 6703
 ```
 
+5) **drpc.servers**: If you want to setup DRPC servers they need to specified so that the workers can find them. This should be a list of the DRPC servers.  For example:
+
+```yaml
+drpc.servers: ["111.222.333.44"]
+```
+
 ### Monitoring Health of Supervisors
 
 Storm provides a mechanism by which administrators can configure the supervisor to run administrator supplied scripts periodically to determine if a node is healthy or not. Administrators can have the supervisor determine if the node is in a healthy state by performing any checks of their choice in scripts located in storm.health.check.dir. If a script detects the node to be in an unhealthy state, it must print a line to standard output beginning with the string ERROR. The supervisor will periodically run the scripts in the health check dir and check the output. If the script’s output contains the string ERROR, as described above, the supervisor will shut down any workers and exit.
@@ -111,8 +118,18 @@ If you need support from external libraries or custom plugins, you can place suc
 
 The last step is to launch all the Storm daemons. It is critical that you run each of these daemons under supervision. Storm is a __fail-fast__ system which means the processes will halt whenever an unexpected error is encountered. Storm is designed so that it can safely halt at any point and recover correctly when the process is restarted. This is why Storm keeps no state in-process -- if Nimbus or the Supervisors restart, the running topologies are unaffected. Here's how to run the Storm daemons:
 
-1. **Nimbus**: Run the command "bin/storm nimbus" under supervision on the master machine.
-2. **Supervisor**: Run the command "bin/storm supervisor" under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.
+1. **Nimbus**: Run the command `bin/storm nimbus` under supervision on the master machine.
+2. **Supervisor**: Run the command `bin/storm supervisor` under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.
 3. **UI**: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command "bin/storm ui" under supervision. The UI can be accessed by navigating your web browser to http://{ui host}:8080.
 
 As you can see, running the daemons is very straightforward. The daemons will log to the logs/ directory in wherever you extracted the Storm release.
+
+### Setup DRPC servers (Optional)
+
+Just like with nimbus or the supervisors you will need to launch the drpc server.  To do this run the command `bin/storm drpc` on each of the machines that you configured as a part of the `drpc.servers` config.
+
+#### DRPC Http Setup
+
+DRPC optionally offers a REST API as well.  To enable this set teh config `drpc.http.port` to the port you want to run on before launching the DRPC server. See the [REST documentation](STORM-UI-REST-API.html) for more information on how to use it.
+
+It also supports SSL by setting `drpc.https.port` along with the keystore and optional truststore similar to how you would configure the UI.
