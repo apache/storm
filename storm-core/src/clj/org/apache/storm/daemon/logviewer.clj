@@ -21,6 +21,7 @@
   (:use [org.apache.storm config daemon-config util log])
   (:use [org.apache.storm.ui helpers])
   (:import [org.apache.storm StormTimer]
+           [org.apache.storm.daemon.supervisor ClientSupervisorUtils]
            [org.apache.storm.daemon.supervisor SupervisorUtils]
            [org.apache.storm.metric StormMetricsRegistry])
   (:import [org.apache.storm.utils Time VersionInfo ConfigUtils Utils ServerUtils ServerConfigUtils])
@@ -501,6 +502,19 @@
                           pager-data)))))
       (-> (resp/response "Page not found")
           (resp/status 404)))))
+
+(defnk set-log-file-permissions [fname root-dir]
+  (let [file (.getCanonicalFile (File. root-dir fname))
+        run-as-user (*STORM-CONF* SUPERVISOR-RUN-WORKER-AS-USER)
+        parent (.getParent (File. root-dir fname))
+        md-file (if (nil? parent) nil (get-metadata-file-for-wroker-logdir parent))
+        topo-owner (if (nil? md-file) nil (get-topo-owner-from-metadata-file (.getCanonicalPath md-file)))]
+    (when (and run-as-user
+          (not-nil? topo-owner)
+          (.exists file)
+          (not (Files/isReadable (.toPath file))))     
+      (log-debug "Setting permissions on file " fname " with topo-owner " topo-owner)
+      (ClientSupervisorUtils/processLauncherAndWait *STORM-CONF* topo-owner ["blob" (.getCanonicalPath file)] nil (str "setup group read permissions for file: " fname)))))
 
 (defnk download-log-file [fname req resp user ^String root-dir :is-daemon false]
   (let [file (.getCanonicalFile (File. root-dir fname))]
@@ -1020,6 +1034,7 @@
             start (if (:start m) (parse-long-from-map m :start))
             length (if (:length m) (parse-long-from-map m :length))
             file (URLDecoder/decode (:file m))]
+        (set-log-file-permissions file log-root)
         (log-template (log-page file start length (:grep m) user log-root)
           file user))
       (catch InvalidRequestException ex
@@ -1098,6 +1113,7 @@
       (.mark logviewer:num-download-log-file-http-requests)
       (let [user (.getUserName http-creds-handler servlet-request)
             file (URLDecoder/decode (:file m))]
+        (set-log-file-permissions file log-root)
         (download-log-file file servlet-request servlet-response user log-root))
       (catch InvalidRequestException ex
         (log-error ex)
