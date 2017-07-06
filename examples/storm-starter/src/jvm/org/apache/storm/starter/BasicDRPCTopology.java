@@ -60,7 +60,7 @@ public class BasicDRPCTopology {
         }
 
         conf.setNumWorkers(3);
-        StormSubmitter.submitTopologyWithProgressBar(args[0], conf, builder.createRemoteTopology());
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, builder.createRemoteTopology());
         
         if (args.length > 1) {
             try (DRPCClient drpc = DRPCClient.getConfiguredClient(conf)) {

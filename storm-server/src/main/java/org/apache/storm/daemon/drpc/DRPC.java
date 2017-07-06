@@ -69,11 +69,26 @@ public class DRPC implements AutoCloseable {
             throw new RuntimeException(e);
         }
     }
-    
+
+    private static void logAccess(String operation, String function) {
+        logAccess(ReqContext.context(), operation, function);
+    }
+
+    private static void logAccess(ReqContext reqContext, String operation, String function) {
+        ThriftAccessLogger.logAccessFunction(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation,
+            function);
+    }
+
     @VisibleForTesting
-    static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, String operation, String function) throws AuthorizationException {
-        if (reqContext != null) {
-            ThriftAccessLogger.logAccessFunction(reqContext.requestID(), reqContext.remoteAddress(), reqContext.principal(), operation, function);
+    static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, String operation, String function)
+        throws AuthorizationException {
+        checkAuthorization(reqContext, auth, operation, function, true);
+    }
+
+    private static void checkAuthorization(ReqContext reqContext, IAuthorizer auth, String operation, String function, boolean log)
+        throws AuthorizationException {
+        if (reqContext != null && log) {
+            logAccess(reqContext, operation, function);
         }
         if (auth != null) {
             Map<String, Object> map = new HashMap<>();
@@ -115,6 +130,10 @@ public class DRPC implements AutoCloseable {
     private void checkAuthorization(String operation, String function) throws AuthorizationException {
         checkAuthorization(ReqContext.context(), _auth, operation, function);
     }
+
+    private void checkAuthorizationNoLog(String operation, String function) throws AuthorizationException {
+        checkAuthorization(ReqContext.context(), _auth, operation, function, false);
+    }
     
     private void cleanup(String id) {
         OutstandingRequest req = _requests.remove(id);
@@ -139,6 +158,9 @@ public class DRPC implements AutoCloseable {
     }
 
     private ConcurrentLinkedQueue<OutstandingRequest> getQueue(String function) {
+        if (function == null) {
+            throw new IllegalArgumentException("The function for a request cannot be null");
+        }
         ConcurrentLinkedQueue<OutstandingRequest> queue = _queues.get(function);
         if (queue == null) {
             _queues.putIfAbsent(function, new ConcurrentLinkedQueue<>());
@@ -159,10 +181,12 @@ public class DRPC implements AutoCloseable {
 
     public DRPCRequest fetchRequest(String functionName) throws AuthorizationException {
         meterFetchRequestCalls.mark();
-        checkAuthorization("fetchRequest", functionName);
+        checkAuthorizationNoLog("fetchRequest", functionName);
         ConcurrentLinkedQueue<OutstandingRequest> q = getQueue(functionName);
         OutstandingRequest req = q.poll();
         if (req != null) {
+            //Only log accesses that fetched something
+            logAccess("fetchRequest", functionName);
             req.fetched();
             DRPCRequest ret = req.getRequest();
             return ret;

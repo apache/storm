@@ -815,6 +815,25 @@ def logviewer():
         jvmopts=jvmopts,
         extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
 
+def drpcclient(*args):
+    """Syntax: [storm drpc-client [options] ([function argument]*)|(argument*)]
+
+    Provides a very simple way to send DRPC requests.
+    If a -f argument is supplied to set the function name all of the arguments are treated
+    as arguments to the function.  If no function is given the arguments must
+    be pairs of function argument.
+
+    The server and port are picked from the configs.
+    """
+    if not args:
+        print_usage(command="drpc-client")
+        sys.exit(2)
+    exec_storm_class(
+        "org.apache.storm.command.BasicDrpcClient",
+        args=args,
+        jvmtype="-client",
+        extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
+
 def drpc():
     """Syntax: [storm drpc]
 
@@ -919,7 +938,7 @@ def unknown_command(*args):
     sys.exit(254)
 
 COMMANDS = {"local": local, "jar": jar, "kill": kill, "shell": shell, "nimbus": nimbus, "ui": ui, "logviewer": logviewer,
-            "drpc": drpc, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
+            "drpc": drpc, "drpc-client": drpcclient, "supervisor": supervisor, "localconfvalue": print_localconfvalue,
             "remoteconfvalue": print_remoteconfvalue, "repl": repl, "classpath": print_classpath, "server_classpath": print_server_classpath,
             "activate": activate, "deactivate": deactivate, "rebalance": rebalance, "help": print_usage,
             "list": listtopos, "dev-zookeeper": dev_zookeeper, "version": version, "monitor": monitor,
