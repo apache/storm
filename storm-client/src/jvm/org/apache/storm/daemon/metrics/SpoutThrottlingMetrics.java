@@ -19,28 +19,27 @@
 package org.apache.storm.daemon.metrics;
 
 import org.apache.storm.metric.api.CountMetric;
-import org.apache.storm.stats.CommonStats;
 
 public class SpoutThrottlingMetrics extends BuiltinMetrics {
-    private final CountMetric skippedMaxSpout = new CountMetric();
-    private final CountMetric skippedThrottle = new CountMetric();
-    private final CountMetric skippedInactive = new CountMetric();
+    private final CountMetric skippedMaxSpoutMs = new CountMetric();
+    private final CountMetric skippedThrottleMs = new CountMetric();
+    private final CountMetric skippedInactiveMs = new CountMetric();
 
     public SpoutThrottlingMetrics() {
-        metricMap.put("skipped-max-spout-ms", skippedMaxSpout);
-        metricMap.put("skipped-throttle-ms", skippedThrottle);
-        metricMap.put("skipped-inactive-ms", skippedInactive);
+        metricMap.put("skipped-max-spout-ms", skippedMaxSpoutMs);
+        metricMap.put("skipped-throttle-ms", skippedThrottleMs);
+        metricMap.put("skipped-inactive-ms", skippedInactiveMs);
     }
 
     public void skippedMaxSpoutMs(long ms) {
-        this.skippedMaxSpout.incrBy(ms);
+        this.skippedMaxSpoutMs.incrBy(ms);
     }
 
     public void skippedThrottleMs(long ms) {
-        this.skippedThrottle.incrBy(ms);
+        this.skippedThrottleMs.incrBy(ms);
     }
 
     public void skippedInactiveMs(long ms) {
-        this.skippedInactive.incrBy(ms);
+        this.skippedInactiveMs.incrBy(ms);
     }
 }
