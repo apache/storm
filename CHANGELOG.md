@@ -290,6 +290,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2602: storm.zookeeper.topology.auth.payload doesn't work even you set it
  * STORM-2597: Don't parse passed in class paths
  * STORM-2564: We should provide a template for storm-cluster-auth.yaml
  * STORM-2568: Fix getTopicsString
