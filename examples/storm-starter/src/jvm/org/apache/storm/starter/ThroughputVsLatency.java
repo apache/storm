@@ -371,6 +371,7 @@ public class ThroughputVsLatency {
             }
         } finally {
             kill(client.getClient(), name);
+            System.exit(0);
         }
     }
 }

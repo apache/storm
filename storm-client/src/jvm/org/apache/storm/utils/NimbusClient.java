@@ -96,6 +96,10 @@ public class NimbusClient extends ThriftClient {
         if (override != null) {
             return new NimbusClient(override);
         }
+        Map<String, Object> fullConf = Utils.readStormConfig();
+        fullConf.putAll(Utils.readCommandLineOpts());
+        fullConf.putAll(conf);
+        conf = fullConf;
         if (conf.containsKey(Config.STORM_DO_AS_USER)) {
             if (asUser != null && !asUser.isEmpty()) {
                 LOG.warn("You have specified a doAsUser as param {} and a doAsParam as config, config will take precedence."

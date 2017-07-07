@@ -139,10 +139,10 @@ public class SpoutExecutor extends Executor {
             public Object call() throws Exception {
                 receiveQueue.consumeBatch(SpoutExecutor.this);
 
-                long currCount = emittedCount.get();
-                boolean throttleOn = backPressureEnabled && SpoutExecutor.this.throttleOn.get();
-                boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
-                boolean isActive = stormActive.get();
+                final long currCount = emittedCount.get();
+                final boolean throttleOn = backPressureEnabled && SpoutExecutor.this.throttleOn.get();
+                final boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
+                final boolean isActive = stormActive.get();
                 if (isActive) {
                     if (!lastActive.get()) {
                         lastActive.set(true);
@@ -164,16 +164,18 @@ public class SpoutExecutor extends Executor {
                             spout.deactivate();
                         }
                     }
+                    long start = Time.currentTimeMillis();
                     Time.sleep(100);
-                    spoutThrottlingMetrics.skippedInactive(stats);
+                    spoutThrottlingMetrics.skippedInactiveMs(Time.currentTimeMillis() - start);
                 }
                 if (currCount == emittedCount.get() && isActive) {
                     emptyEmitStreak.increment();
+                    long start = Time.currentTimeMillis();
                     spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
                     if (throttleOn) {
-                        spoutThrottlingMetrics.skippedThrottle(stats);
+                        spoutThrottlingMetrics.skippedThrottleMs(Time.currentTimeMillis() - start);
                     } else if (reachedMaxSpoutPending) {
-                        spoutThrottlingMetrics.skippedMaxSpout(stats);
+                        spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
                     }
                 } else {
                     emptyEmitStreak.set(0);
