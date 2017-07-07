@@ -277,6 +277,7 @@
  * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.2.0
+ * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2601: add the timeout parameter to the method of getting the nimbus client
  * STORM-2369: [storm-redis] Use binary type for State management
  * STORM-2599: Fix BasicContainer wildcard classpath on Windows
