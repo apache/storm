@@ -46,6 +46,8 @@ import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
  *
@@ -340,5 +342,10 @@ public class LocalFsBlobStore extends BlobStore {
 
     public void fullCleanup(long age) throws IOException {
         fbs.fullCleanup(age);
+    }
+    
+    @VisibleForTesting
+    File getKeyDataDir(String key) {
+        return fbs.getKeyDir(DATA_PREFIX + key);
     }
 }
