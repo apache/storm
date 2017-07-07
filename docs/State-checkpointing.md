@@ -50,8 +50,8 @@ last committed by the framework during the previous run.
 can be changed by setting the storm config `topology.state.checkpoint.interval.ms`
 5. For state persistence, use a state provider that supports persistence by setting the `topology.state.provider` in the
 storm config. E.g. for using Redis based key-value state implementation set `topology.state.provider: org.apache.storm.redis.state.RedisKeyValueStateProvider`
-in storm.yaml. The provider implementation jar should be in the class path, which in this case means putting the `storm-redis-*.jar`
-in the extlib directory.
+in storm.yaml. The provider implementation jar should be in the class path, which in this case means adding `storm-redis` 
+to dependency of your topology, or adding `--artifacts "org.apache.storm:storm-sql-redis:<storm-version>"` when submitting your topology with `storm jar`.
 6. The state provider properties can be overridden by setting `topology.state.provider.config`. For Redis state this is a
 json config with the following properties.
 
@@ -160,7 +160,10 @@ duplicate state updates during recovery.
 
 The state abstraction does not eliminate duplicate evaluations and currently provides only at-least once guarantee.
 
-In order to provide the at-least once guarantee, all bolts in a stateful topology are expected to anchor the tuples while emitting and ack the input tuples once its processed. For non-stateful bolts, the anchoring/acking can be automatically managed by extending the `BaseBasicBolt`. Stateful bolts are expected to anchor tuples while emitting and ack the tuple after processing like in the `WordCountBolt` example in the State management section above.
+In order to provide the at-least once guarantee, all bolts in a stateful topology are expected to anchor the tuples 
+while emitting and ack the input tuples once its processed. For non-stateful bolts, the anchoring/acking can be automatically 
+managed by extending the `BaseBasicBolt`. Stateful bolts are expected to anchor tuples while emitting and ack the tuple 
+after processing like in the `WordCountBolt` example in the State management section above.
 
 ### IStateful bolt hooks
 IStateful bolt interface provides hook methods where in the stateful bolts could implement some custom actions.
@@ -204,3 +207,81 @@ The framework instantiates the state via the corresponding `StateProvider` imple
 a `StateProvider` implementation which can load and return the state based on the namespace. Each state belongs to a unique namespace.
 The namespace is typically unique per task so that each task can have its own state. The StateProvider and the corresponding
 State implementation should be available in the class path of Storm (by placing them in the extlib directory).
+
+
+### Supported State Backends
+
+#### Redis
+
+* State provider class name (`topology.state.provider`)
+
+`org.apache.storm.redis.state.RedisKeyValueStateProvider`
+
+* Provider config (`topology.state.provider.config`)
+
+```
+ {
+   "keyClass": "Optional fully qualified class name of the Key type.",
+   "valueClass": "Optional fully qualified class name of the Value type.",
+   "keySerializerClass": "Optional Key serializer implementation class.",
+   "valueSerializerClass": "Optional Value Serializer implementation class.",
+   "jedisPoolConfig": {
+     "host": "localhost",
+     "port": 6379,
+     "timeout": 2000,
+     "database": 0,
+     "password": "xyz"
+   }
+ }
+ ```
+ 
+* Artifacts to add (`--artifacts`)
+
+`org.apache.storm:storm-redis:<storm-version>`
+
+#### HBase
+
+In order to make state scalable, HBaseKeyValueState stores state KV to a row. This introduces `non-atomic` commit phase and guarantee 
+eventual consistency on HBase side. It doesn't matter in point of state's view because HBaseKeyValueState can still provide not-yet-committed value.
+Even if worker crashes at commit phase, after restart it will read pending-commit states (stored atomically) from HBase and states will be stored eventually. 
+
+NOTE: HBase state provider uses pre-created table and column family, so users need to create and provide one to the provider config.
+
+You can simply create table via `create 'state', 'cf'` in `hbase shell` but in production you may want to give some more properties.
+
+* State provider class name (`topology.state.provider`)
+
+`org.apache.storm.hbase.state.HBaseKeyValueStateProvider`
+
+* Provider config (`topology.state.provider.config`)
+        
+```
+ {
+   "keyClass": "Optional fully qualified class name of the Key type.",
+   "valueClass": "Optional fully qualified class name of the Value type.",
+   "keySerializerClass": "Optional Key serializer implementation class.",
+   "valueSerializerClass": "Optional Value Serializer implementation class.",
+   "hbaseConfigKey": "config key to load hbase configuration from storm root configuration. (similar to storm-hbase)",
+   "tableName": "Pre-created table name for state.",
+   "columnFamily": "Pre-created column family for state."
+ }
+ ```
+
+If you want to initialize HBase state provider from codebase, please see below example:
+
+```
+Config conf = new Config();
+    Map<String, Object> hbConf = new HashMap<String, Object>();
+    hbConf.put("hbase.rootdir", "file:///tmp/hbase");
+    conf.put("hbase.conf", hbConf);
+    conf.put("topology.state.provider",  "org.apache.storm.hbase.state.HBaseKeyValueStateProvider");
+    conf.put("topology.state.provider.config", "{" +
+            "   \"hbaseConfigKey\": \"hbase.conf\"," +
+            "   \"tableName\": \"state\"," +
+            "   \"columnFamily\": \"cf\"" +
+            " }");
+```
+
+* Artifacts to add (`--artifacts`)
+
+`org.apache.storm:storm-hbase:<storm-version>`
