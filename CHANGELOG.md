@@ -1,4 +1,5 @@
 ﻿## 1.2.0
+ * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
  * STORM-2601: add the timeout parameter to the method of getting the nimbus client
  * STORM-2369: [storm-redis] Use binary type for State management
