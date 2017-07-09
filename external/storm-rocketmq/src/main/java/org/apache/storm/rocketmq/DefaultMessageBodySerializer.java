@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
 import java.nio.charset.StandardCharsets;
@@ -25,7 +26,7 @@ public class DefaultMessageBodySerializer implements MessageBodySerializer {
      * Currently, we just convert string to bytes using UTF-8 charset.
      * Note: in this way, object.toString() method is invoked.
      * @param body RocketMQ Message body
-     * @return
+     * @return serialized byte[]
      */
     @Override
     public byte[] serialize(Object body) {

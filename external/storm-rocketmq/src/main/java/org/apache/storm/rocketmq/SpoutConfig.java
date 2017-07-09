@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
 import org.apache.storm.rocketmq.spout.scheme.StringScheme;
 
-public class SpoutConfig extends RocketMQConfig {
+public class SpoutConfig extends RocketMqConfig {
     public static final String QUEUE_SIZE = "spout.queue.size";
 
     public static final String MESSAGES_MAX_RETRY = "spout.messages.max.retry";

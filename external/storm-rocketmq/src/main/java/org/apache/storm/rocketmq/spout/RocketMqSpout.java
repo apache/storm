@@ -15,7 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.spout;
+
+import static org.apache.storm.rocketmq.RocketMqUtils.getBoolean;
+import static org.apache.storm.rocketmq.RocketMqUtils.getInteger;
+
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
@@ -32,8 +42,8 @@ import org.apache.storm.Config;
 import org.apache.storm.rocketmq.ConsumerMessage;
 import org.apache.storm.rocketmq.DefaultMessageRetryManager;
 import org.apache.storm.rocketmq.MessageRetryManager;
-import org.apache.storm.rocketmq.RocketMQConfig;
-import org.apache.storm.rocketmq.RocketMQUtils;
+import org.apache.storm.rocketmq.RocketMqConfig;
+import org.apache.storm.rocketmq.RocketMqUtils;
 import org.apache.storm.rocketmq.SpoutConfig;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -42,21 +52,12 @@ import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.utils.ObjectReader;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.LinkedBlockingQueue;
-
-import static org.apache.storm.rocketmq.RocketMQUtils.getBoolean;
-import static org.apache.storm.rocketmq.RocketMQUtils.getInteger;
-
 /**
- * RocketMQSpout uses MQPushConsumer as the default implementation.
+ * RocketMqSpout uses MQPushConsumer as the default implementation.
  * PushConsumer is a high level consumer API, wrapping the pulling details
  * Looks like broker push messages to consumer
  */
-public class RocketMQSpout implements IRichSpout {
+public class RocketMqSpout implements IRichSpout {
     // TODO add metrics
 
     private static MQPushConsumer consumer;
@@ -68,17 +69,21 @@ public class RocketMQSpout implements IRichSpout {
     private MessageRetryManager messageRetryManager;
     private Scheme scheme;
 
-    public RocketMQSpout(Properties properties) {
+    /**
+     * RocketMqSpout Constructor.
+     * @param properties Properties Config
+     */
+    public RocketMqSpout(Properties properties) {
         Validate.notEmpty(properties, "Consumer properties can not be empty");
         this.properties = properties;
-        scheme = RocketMQUtils.createScheme(properties);
+        scheme = RocketMqUtils.createScheme(properties);
     }
 
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         // Since RocketMQ Consumer is thread-safe, RocketMQSpout uses a single
         // consumer instance across threads to improve the performance.
-        synchronized (RocketMQSpout.class) {
+        synchronized (RocketMqSpout.class) {
             if (consumer == null) {
                 buildAndStartConsumer();
             }
@@ -96,9 +101,9 @@ public class RocketMQSpout implements IRichSpout {
 
     protected void buildAndStartConsumer() {
         consumer = new DefaultMQPushConsumer();
-        RocketMQConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
+        RocketMqConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
 
-        boolean ordered = getBoolean(properties, RocketMQConfig.CONSUMER_MESSAGES_ORDERLY, false);
+        boolean ordered = getBoolean(properties, RocketMqConfig.CONSUMER_MESSAGES_ORDERLY, false);
         if (ordered) {
             consumer.registerMessageListener(new MessageListenerOrderly() {
                 @Override
@@ -133,9 +138,9 @@ public class RocketMQSpout implements IRichSpout {
     }
 
     /**
-     * process pushed messages
-     * @param msgs
-     * @return
+     * Process pushed messages.
+     * @param msgs messages
+     * @return the boolean flag processed result
      */
     protected boolean process(List<MessageExt> msgs) {
         if (msgs.isEmpty()) {
@@ -146,7 +151,7 @@ public class RocketMQSpout implements IRichSpout {
         for (MessageExt msg : msgs) {
             ConsumerMessage message = new ConsumerMessage(msg);
             // returning true upon success and false if this queue is full.
-            if(!queue.offer(message)){
+            if (!queue.offer(message)) {
                 notFull = false;
                 pending.offer(message);
             }
@@ -168,7 +173,7 @@ public class RocketMQSpout implements IRichSpout {
         }
 
         messageRetryManager.mark(message);
-        List<Object> tup = RocketMQUtils.generateTuples(message.getData(), scheme);
+        List<Object> tup = RocketMqUtils.generateTuples(message.getData(), scheme);
         if (tup != null) {
             collector.emit(tup, message.getId());
         }
@@ -198,7 +203,7 @@ public class RocketMQSpout implements IRichSpout {
 
     @Override
     public void close() {
-        synchronized (RocketMQSpout.class) {
+        synchronized (RocketMqSpout.class) {
             if (consumer != null) {
                 consumer.shutdown();
                 consumer = null;

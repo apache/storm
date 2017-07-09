@@ -15,19 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.spout.scheme;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.storm.tuple.Values;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+
+import org.apache.storm.tuple.Values;
 
 public class StringKeyValueScheme extends StringScheme implements KeyValueScheme {
 
     @Override
     public List<Object> deserializeKeyAndValue(ByteBuffer key, ByteBuffer value) {
-        if ( key == null ) {
+        if (key == null) {
             return deserialize(value);
         }
         String keyString = StringScheme.deserializeString(key);

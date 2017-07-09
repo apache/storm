@@ -15,13 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.common.mapper;
 
 import org.apache.storm.rocketmq.DefaultMessageBodySerializer;
 import org.apache.storm.rocketmq.MessageBodySerializer;
 import org.apache.storm.tuple.ITuple;
-
-import java.nio.charset.StandardCharsets;
 
 public class FieldNameBasedTupleToMessageMapper implements TupleToMessageMapper {
     public static final String BOLT_KEY = "key";
@@ -34,6 +33,11 @@ public class FieldNameBasedTupleToMessageMapper implements TupleToMessageMapper 
         this(BOLT_KEY, BOLT_MESSAGE);
     }
 
+    /**
+     * FieldNameBasedTupleToMessageMapper Constructor.
+     * @param boltKeyField tuple field for selecting the key
+     * @param boltMessageField  tuple field for selecting the value
+     */
     public FieldNameBasedTupleToMessageMapper(String boltKeyField, String boltMessageField) {
         this.boltKeyField = boltKeyField;
         this.boltMessageField = boltMessageField;
@@ -55,9 +59,9 @@ public class FieldNameBasedTupleToMessageMapper implements TupleToMessageMapper 
     }
 
     /**
-     * using this method can override the default  MessageBodySerializer
-     * @param serializer
-     * @return
+     * using this method can override the default  MessageBodySerializer.
+     * @param serializer MessageBodySerializer
+     * @return this object
      */
     public FieldNameBasedTupleToMessageMapper withMessageBodySerializer(MessageBodySerializer serializer) {
         this.messageBodySerializer = serializer;

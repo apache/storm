@@ -15,18 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.rocketmq;
 
-import org.apache.rocketmq.common.message.Message;
-import org.apache.storm.rocketmq.spout.scheme.KeyValueScheme;
-import org.apache.storm.spout.Scheme;
+package org.apache.storm.rocketmq;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Properties;
 
-public final class RocketMQUtils {
+import org.apache.rocketmq.common.message.Message;
+import org.apache.storm.rocketmq.spout.scheme.KeyValueScheme;
+import org.apache.storm.spout.Scheme;
+
+public final class RocketMqUtils {
 
     public static int getInteger(Properties props, String key, int defaultValue) {
         return Integer.parseInt(props.getProperty(key, String.valueOf(defaultValue)));
@@ -36,6 +37,11 @@ public final class RocketMQUtils {
         return Boolean.parseBoolean(props.getProperty(key, String.valueOf(defaultValue)));
     }
 
+    /**
+     * Create Scheme by Properties.
+     * @param props Properties
+     * @return Scheme
+     */
     public static Scheme createScheme(Properties props) {
         String schemeString = props.getProperty(SpoutConfig.SCHEME, SpoutConfig.DEFAULT_SCHEME);
         Scheme scheme;
@@ -49,6 +55,12 @@ public final class RocketMQUtils {
         return scheme;
     }
 
+    /**
+     * Generate Storm tuple values by Message and Scheme.
+     * @param msg RocketMQ Message
+     * @param scheme Scheme for deserializing
+     * @return tuple values
+     */
     public static List<Object> generateTuples(Message msg, Scheme scheme) {
         List<Object> tup;
         String rawKey = msg.getKeys();

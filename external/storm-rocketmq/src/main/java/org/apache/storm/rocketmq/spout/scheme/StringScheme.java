@@ -15,16 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.rocketmq.spout.scheme;
 
-import org.apache.storm.spout.Scheme;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
+package org.apache.storm.rocketmq.spout.scheme;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
+import org.apache.storm.utils.Utils;
 
 public class StringScheme implements Scheme {
     public static final String STRING_SCHEME_KEY = "str";
@@ -33,12 +33,17 @@ public class StringScheme implements Scheme {
         return new Values(deserializeString(bytes));
     }
 
-    public static String deserializeString(ByteBuffer string) {
-        if (string.hasArray()) {
-            int base = string.arrayOffset();
-            return new String(string.array(), base + string.position(), string.remaining());
+    /**
+     * Deserialize ByteBuffer to String.
+     * @param byteBuffer input ByteBuffer
+     * @return deserialized string
+     */
+    public static String deserializeString(ByteBuffer byteBuffer) {
+        if (byteBuffer.hasArray()) {
+            int base = byteBuffer.arrayOffset();
+            return new String(byteBuffer.array(), base + byteBuffer.position(), byteBuffer.remaining());
         } else {
-            return new String(Utils.toByteArray(string), StandardCharsets.UTF_8);
+            return new String(Utils.toByteArray(byteBuffer), StandardCharsets.UTF_8);
         }
     }
 

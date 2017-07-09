@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
 import java.io.Serializable;
 
 /**
- * RocketMQ message body serializer
+ * RocketMQ message body serializer.
  */
-public interface MessageBodySerializer extends Serializable{
+public interface MessageBodySerializer extends Serializable {
     byte[] serialize(Object body);
 }
