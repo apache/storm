@@ -15,27 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.trident.state;
 
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.Validate;
-import org.apache.storm.mongodb.common.MongoDBClient;
-import org.apache.storm.mongodb.common.QueryFilterCreator;
-import org.apache.storm.mongodb.common.mapper.MongoMapper;
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.topology.FailedException;
-import org.apache.storm.trident.state.*;
-import org.apache.storm.trident.state.map.*;
-import org.apache.storm.tuple.Values;
-import org.bson.Document;
-import org.bson.conversions.Bson;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.commons.lang.Validate;
+import org.apache.storm.mongodb.common.MongoDbClient;
+import org.apache.storm.mongodb.common.QueryFilterCreator;
+import org.apache.storm.mongodb.common.mapper.MongoMapper;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.topology.FailedException;
+import org.apache.storm.trident.state.JSONNonTransactionalSerializer;
+import org.apache.storm.trident.state.JSONOpaqueSerializer;
+import org.apache.storm.trident.state.JSONTransactionalSerializer;
+import org.apache.storm.trident.state.OpaqueValue;
+import org.apache.storm.trident.state.Serializer;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.trident.state.StateType;
+import org.apache.storm.trident.state.TransactionalValue;
+import org.apache.storm.trident.state.map.CachedMap;
+import org.apache.storm.trident.state.map.IBackingMap;
+import org.apache.storm.trident.state.map.MapState;
+import org.apache.storm.trident.state.map.NonTransactionalMap;
+import org.apache.storm.trident.state.map.OpaqueMap;
+import org.apache.storm.trident.state.map.SnapshottableMap;
+import org.apache.storm.trident.state.map.TransactionalMap;
+import org.apache.storm.tuple.Values;
+import org.bson.Document;
+import org.bson.conversions.Bson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MongoMapState<T> implements IBackingMap<T> {
     private static Logger LOG = LoggerFactory.getLogger(MongoMapState.class);
@@ -51,7 +67,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
 
     private Options<T> options;
     private Serializer<T> serializer;
-    private MongoDBClient mongoClient;
+    private MongoDbClient mongoClient;
     private Map map;
 
     protected MongoMapState(Map map, Options options) {
@@ -64,7 +80,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
         Validate.notNull(options.queryCreator, "queryCreator can not be null");
         Validate.notNull(options.mapper, "mapper can not be null");
 
-        this.mongoClient = new MongoDBClient(options.url, options.collectionName);
+        this.mongoClient = new MongoDbClient(options.url, options.collectionName);
     }
 
     public static class Options<T> implements Serializable {
@@ -134,7 +150,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
         public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             IBackingMap state = new MongoMapState(conf, options);
 
-            if(options.cacheSize > 0) {
+            if (options.cacheSize > 0) {
                 state = new CachedMap(state, options.cacheSize);
             }
 
@@ -164,7 +180,7 @@ public class MongoMapState<T> implements IBackingMap<T> {
             for (List<Object> keys : keysList) {
                 Bson filter = options.queryCreator.createFilterByKeys(keys);
                 Document doc = mongoClient.find(filter);
-                if(doc != null) {
+                if (doc != null) {
                     retval.add(this.serializer.deserialize((byte[])doc.get(options.serDocumentField)));
                 } else {
                     retval.add(null);

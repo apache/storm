@@ -15,14 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.mongodb.common;
 
-import org.apache.storm.tuple.ITuple;
-import org.bson.conversions.Bson;
+package org.apache.storm.mongodb.common;
 
 import com.mongodb.client.model.Filters;
 
 import java.util.List;
+
+import org.apache.storm.tuple.ITuple;
+import org.bson.conversions.Bson;
 
 public class SimpleQueryFilterCreator implements QueryFilterCreator {
 
@@ -35,7 +36,7 @@ public class SimpleQueryFilterCreator implements QueryFilterCreator {
 
     @Override
     public Bson createFilterByKeys(List<Object> keys) {
-        return Filters.eq("_id", MongoUtils.getID(keys));
+        return Filters.eq("_id", MongoUtils.getId(keys));
     }
 
     public SimpleQueryFilterCreator withField(String field) {

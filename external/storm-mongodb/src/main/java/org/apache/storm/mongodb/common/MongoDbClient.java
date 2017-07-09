@@ -15,12 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common;
-
-import java.util.List;
-
-import org.bson.Document;
-import org.bson.conversions.Bson;
 
 import com.mongodb.MongoClient;
 import com.mongodb.MongoClientURI;
@@ -29,12 +25,22 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertManyOptions;
 import com.mongodb.client.model.UpdateOptions;
 
-public class MongoDBClient {
+import java.util.List;
+
+import org.bson.Document;
+import org.bson.conversions.Bson;
+
+public class MongoDbClient {
 
     private MongoClient client;
     private MongoCollection<Document> collection;
 
-    public MongoDBClient(String url, String collectionName) {
+    /**
+     * The MongoDbClient constructor.
+     * @param url The Mongo server url
+     * @param collectionName The Mongo collection to read/write data
+     */
+    public MongoDbClient(String url, String collectionName) {
         //Creates a MongoURI from the given string.
         MongoClientURI uri = new MongoClientURI(url);
         //Creates a MongoClient described by a URI.
@@ -51,7 +57,7 @@ public class MongoDBClient {
      * The documents will be inserted in the order provided, 
      * stopping on the first failed insertion. 
      * 
-     * @param documents
+     * @param documents documents
      */
     public void insert(List<Document> documents, boolean ordered) {
         InsertManyOptions options = new InsertManyOptions();
@@ -65,8 +71,8 @@ public class MongoDBClient {
      * Update a single or all documents in the collection according to the specified arguments.
      * When upsert set to true, the new document will be inserted if there are no matches to the query filter.
      * 
-     * @param filter
-     * @param document
+     * @param filter Bson filter
+     * @param document Bson document
      * @param upsert a new document should be inserted if there are no matches to the query filter
      * @param many whether find all documents according to the query filter
      */
@@ -78,7 +84,7 @@ public class MongoDBClient {
         }
         if (many) {
             collection.updateMany(filter, document, options);
-        }else {
+        } else {
             collection.updateOne(filter, document, options);
         }
     }
@@ -86,7 +92,7 @@ public class MongoDBClient {
     /**
      * Finds a single document in the collection according to the specified arguments.
      *
-     * @param filter
+     * @param filter Bson filter
      */
     public Document find(Bson filter) {
         //TODO batch finding
@@ -96,7 +102,7 @@ public class MongoDBClient {
     /**
      * Closes all resources associated with this instance.
      */
-    public void close(){
+    public void close() {
         client.close();
     }
 
