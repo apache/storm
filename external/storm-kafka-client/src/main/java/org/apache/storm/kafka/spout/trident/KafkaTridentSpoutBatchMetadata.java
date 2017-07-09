@@ -33,9 +33,12 @@ import java.util.List;
 public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutBatchMetadata.class);
 
-    private TopicPartition topicPartition;  // topic partition of this batch
-    private long firstOffset;               // first offset of this batch
-    private long lastOffset;                // last offset of this batch
+    // topic partition of this batch
+    private TopicPartition topicPartition;  
+    // first offset of this batch
+    private long firstOffset;               
+    // last offset of this batch
+    private long lastOffset;
 
     public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, long firstOffset, long lastOffset) {
         this.topicPartition = topicPartition;
