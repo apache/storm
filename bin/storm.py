@@ -457,12 +457,12 @@ def kill(*args):
 
 
 def upload_credentials(*args):
-    """Syntax: [storm upload_credentials topology-name [credkey credvalue]*]
+    """Syntax: [storm upload-credentials topology-name [credkey credvalue]*]
 
     Uploads a new set of credentials to a running topology
     """
     if not args:
-        print_usage(command="upload_credentials")
+        print_usage(command="upload-credentials")
         sys.exit(2)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
@@ -618,7 +618,7 @@ def get_errors(*args):
     The result is returned in json format.
     """
     if not args:
-        print_usage(command="get_errors")
+        print_usage(command="get-errors")
         sys.exit(2)
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
