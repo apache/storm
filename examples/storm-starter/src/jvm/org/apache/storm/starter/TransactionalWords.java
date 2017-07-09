@@ -124,7 +124,7 @@ public class TransactionalWords {
       for (String key : _counts.keySet()) {
         CountValue val = COUNT_DATABASE.get(key);
         CountValue newVal;
-        if (val == null || !val.txid.equals(_id)) {
+        if (val == null || !val.txid.equals(_id.getTransactionId())) {
           newVal = new CountValue();
           newVal.txid = _id.getTransactionId();
           if (val != null) {

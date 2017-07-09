@@ -121,7 +121,7 @@ public class StoreBasedTridentWindowManager extends AbstractTridentWindowManager
         }
         String trimKey = key.substring(0, lastSepIndex);
         int secondLastSepIndex = trimKey.lastIndexOf(WindowsStore.KEY_SEPARATOR);
-        if (lastSepIndex < 0) {
+        if (secondLastSepIndex < 0) {
             throw new IllegalArgumentException("key "+key+" does not have second key separator '" + WindowsStore.KEY_SEPARATOR + "'");
         }
 
