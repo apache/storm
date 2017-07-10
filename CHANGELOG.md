@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2615: Add topology readonly user configuration
  * STORM-2093: Fix permissions in multi-tenant, secure mode
  * STORM-2610: Fixed throttle metrics
  * STORM-2609: Simple command line DRPC Client
