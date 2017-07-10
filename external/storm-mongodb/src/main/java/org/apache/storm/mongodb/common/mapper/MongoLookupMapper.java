@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common.mapper;
+
+import java.io.Serializable;
+import java.util.List;
 
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 import org.bson.Document;
-
-import java.io.Serializable;
-import java.util.List;
 
 public interface MongoLookupMapper extends Serializable {
 
@@ -38,7 +39,7 @@ public interface MongoLookupMapper extends Serializable {
 
     /**
      * declare what are the fields that this code will output.
-     * @param declarer
+     * @param declarer OutputFieldsDeclarer
      */
     void declareOutputFields(OutputFieldsDeclarer declarer);
 }

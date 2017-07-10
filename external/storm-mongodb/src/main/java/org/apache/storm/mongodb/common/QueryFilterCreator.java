@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common;
 
 import java.io.Serializable;
@@ -29,17 +30,17 @@ import org.bson.conversions.Bson;
 public interface QueryFilterCreator extends Serializable {
 
     /**
-     * Create a query Filter by given Tuple
+     * Create a query Filter by given Tuple.
      * 
-     * @param tuple
+     * @param tuple ITuple tuple
      * @return query Filter
      */
     Bson createFilter(ITuple tuple);
 
     /**
-     * Create a query Filter by given trident keys
+     * Create a query Filter by given trident keys.
      *
-     * @param keys
+     * @param keys keys
      * @return query Filter
      */
     Bson createFilterByKeys(List<Object> keys);

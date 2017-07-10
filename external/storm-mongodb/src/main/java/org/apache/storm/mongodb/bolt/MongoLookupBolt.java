@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.bolt;
 
+import java.util.List;
 import org.apache.commons.lang.Validate;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.mapper.MongoLookupMapper;
@@ -27,19 +29,22 @@ import org.apache.storm.utils.TupleUtils;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
-import java.util.List;
-
 /**
  * Basic bolt for querying from MongoDB.
- *
  * Note: Each MongoLookupBolt defined in a topology is tied to a specific collection.
- *
  */
 public class MongoLookupBolt extends AbstractMongoBolt {
 
     private QueryFilterCreator queryCreator;
     private MongoLookupMapper mapper;
 
+    /**
+     * MongoLookupBolt Constructor.
+     * @param url The MongoDB server url
+     * @param collectionName The collection where reading/writing data
+     * @param queryCreator QueryFilterCreator
+     * @param mapper MongoMapper converting tuple to an MongoDB document
+     */
     public MongoLookupBolt(String url, String collectionName, QueryFilterCreator queryCreator, MongoLookupMapper mapper) {
         super(url, collectionName);
 
@@ -56,7 +61,7 @@ public class MongoLookupBolt extends AbstractMongoBolt {
             return;
         }
 
-        try{
+        try {
             //get query filter
             Bson filter = queryCreator.createFilter(tuple);
             //find document from mongodb

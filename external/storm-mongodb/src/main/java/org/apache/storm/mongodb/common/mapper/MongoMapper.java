@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common.mapper;
 
 import java.io.Serializable;
@@ -29,7 +30,7 @@ import org.bson.Document;
 public interface MongoMapper extends Serializable {
 
     /**
-     * Converts a Tuple to a Document
+     * Converts a Tuple to a Document.
      * 
      * @param tuple the incoming tuple
      * @return the MongoDB document
@@ -37,7 +38,7 @@ public interface MongoMapper extends Serializable {
     Document toDocument(ITuple tuple);
 
     /**
-     * Converts a keys to a Document
+     * Converts a keys to a Document.
      *
      * @param keys the trident keys
      * @return the MongoDB document
