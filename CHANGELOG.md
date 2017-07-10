@@ -296,6 +296,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2608: Remove any pending offsets that are no longer valid 
  * STORM-2478: Fix BlobStoreTest.testDeleteAfterFailedCreate on Windows
  * STORM-2602: storm.zookeeper.topology.auth.payload doesn't work even you set it
  * STORM-2597: Don't parse passed in class paths
