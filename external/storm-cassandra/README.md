@@ -24,6 +24,15 @@ The following properties may be passed to storm configuration.
 | **cassandra.retryPolicy**                    | -               | DefaultRetryPolicy  |
 | **cassandra.reconnectionPolicy.baseDelayMs** | -               | 100 (ms)            |
 | **cassandra.reconnectionPolicy.maxDelayMs**  | -               | 60000 (ms)          |
+| **cassandra.pool.max.size**                  | -               | 256                 |
+| **cassandra.loadBalancingPolicy**            | -               | TokenAwarePolicy    |
+| **cassandra.datacenter.name**                | -               | -                   |
+| **cassandra.max.requests.per.con.local**     | -               | 1024                |
+| **cassandra.max.requests.per.con.remote**    | -               | 256                 |
+| **cassandra.heartbeat.interval.sec**         | -               | 30                  |
+| **cassandra.idle.timeout.sec**               | -               | 60                  |
+| **cassandra.socket.read.timeout.millis**     | -               | 12000               |
+| **cassandra.socket.connect.timeout.millis**  | -               | 5000                |
 
 ## CassandraWriterBolt
 
