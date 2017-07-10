@@ -15,7 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
+
+import static org.apache.storm.rocketmq.RocketMqUtils.getInteger;
+
+import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.ClientConfig;
@@ -25,15 +31,10 @@ import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.common.consumer.ConsumeFromWhere;
 import org.apache.rocketmq.remoting.common.RemotingUtil;
 
-import java.util.Properties;
-import java.util.UUID;
-
-import static org.apache.storm.rocketmq.RocketMQUtils.getInteger;
-
 /**
- * RocketMQConfig for Consumer/Producer
+ * RocketMqConfig for Consumer/Producer.
  */
-public class RocketMQConfig {
+public class RocketMqConfig {
     // common
     public static final String NAME_SERVER_ADDR = "nameserver.addr"; // Required
 
@@ -43,7 +44,7 @@ public class RocketMQConfig {
     public static final String DEFAULT_CLIENT_IP = RemotingUtil.getLocalAddress();
 
     public static final String CLIENT_CALLBACK_EXECUTOR_THREADS = "client.callback.executor.threads";
-    public static final int DEFAULT_CLIENT_CALLBACK_EXECUTOR_THREADS = Runtime.getRuntime().availableProcessors();;
+    public static final int DEFAULT_CLIENT_CALLBACK_EXECUTOR_THREADS = Runtime.getRuntime().availableProcessors();
 
     public static final String NAME_SERVER_POLL_INTERVAL = "nameserver.poll.interval";
     public static final int DEFAULT_NAME_SERVER_POLL_INTERVAL = 30000; // 30 seconds
@@ -87,6 +88,11 @@ public class RocketMQConfig {
     public static final int DEFAULT_CONSUMER_MAX_THREADS = 64;
 
 
+    /**
+     * Build Producer Configs.
+     * @param props Properties
+     * @param producer DefaultMQProducer
+     */
     public static void buildProducerConfigs(Properties props, DefaultMQProducer producer) {
         buildCommonConfigs(props, producer);
 
@@ -103,6 +109,11 @@ public class RocketMQConfig {
                 PRODUCER_TIMEOUT, DEFAULT_PRODUCER_TIMEOUT));
     }
 
+    /**
+     * Build Consumer Configs.
+     * @param props Properties
+     * @param consumer DefaultMQPushConsumer
+     */
     public static void buildConsumerConfigs(Properties props, DefaultMQPushConsumer consumer) {
         buildCommonConfigs(props, consumer);
 
@@ -141,6 +152,11 @@ public class RocketMQConfig {
         }
     }
 
+    /**
+     * Build Common Configs.
+     * @param props Properties
+     * @param client ClientConfig
+     */
     public static void buildCommonConfigs(Properties props, ClientConfig client) {
         String namesvr = props.getProperty(NAME_SERVER_ADDR);
         Validate.notEmpty(namesvr);

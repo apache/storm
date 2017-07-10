@@ -15,8 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.bolt;
 
+import java.util.Map;
+import java.util.Properties;
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
@@ -24,7 +27,7 @@ import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.client.producer.SendCallback;
 import org.apache.rocketmq.client.producer.SendResult;
 import org.apache.rocketmq.common.message.Message;
-import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.common.mapper.TupleToMessageMapper;
 import org.apache.storm.rocketmq.common.selector.TopicSelector;
 import org.apache.storm.task.OutputCollector;
@@ -35,11 +38,8 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.Properties;
-
-public class RocketMQBolt implements IRichBolt {
-    private static final Logger LOG = LoggerFactory.getLogger(RocketMQBolt.class);
+public class RocketMqBolt implements IRichBolt {
+    private static final Logger LOG = LoggerFactory.getLogger(RocketMqBolt.class);
 
     private static MQProducer producer;
     private OutputCollector collector;
@@ -54,10 +54,10 @@ public class RocketMQBolt implements IRichBolt {
 
         // Since RocketMQ Producer is thread-safe, RocketMQBolt uses a single
         // producer instance across threads to improve the performance.
-        synchronized (RocketMQBolt.class) {
+        synchronized (RocketMqBolt.class) {
             if (producer == null) {
                 producer = new DefaultMQProducer();
-                RocketMQConfig.buildProducerConfigs(properties, (DefaultMQProducer)producer);
+                RocketMqConfig.buildProducerConfigs(properties, (DefaultMQProducer)producer);
 
                 try {
                     producer.start();
@@ -73,22 +73,22 @@ public class RocketMQBolt implements IRichBolt {
         Validate.notNull(mapper, "TupleToMessageMapper can not be null");
     }
 
-    public RocketMQBolt withSelector(TopicSelector selector) {
+    public RocketMqBolt withSelector(TopicSelector selector) {
         this.selector = selector;
         return this;
     }
 
-    public RocketMQBolt withMapper(TupleToMessageMapper mapper) {
+    public RocketMqBolt withMapper(TupleToMessageMapper mapper) {
         this.mapper = mapper;
         return this;
     }
 
-    public RocketMQBolt withAsync(boolean async) {
+    public RocketMqBolt withAsync(boolean async) {
         this.async = async;
         return this;
     }
 
-    public RocketMQBolt withProperties(Properties properties) {
+    public RocketMqBolt withProperties(Properties properties) {
         this.properties = properties;
         return this;
     }
@@ -150,7 +150,7 @@ public class RocketMQBolt implements IRichBolt {
 
     @Override
     public void cleanup() {
-        synchronized (RocketMQBolt.class) {
+        synchronized (RocketMqBolt.class) {
             if (producer != null) {
                 producer.shutdown();
                 producer = null;

@@ -15,35 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
 /**
- * Interface for messages retry manager
+ * Interface for messages retry manager.
  */
 public interface MessageRetryManager {
     /**
      * Remove from the cache. Message with the id is successful.
-     * @param id
+     * @param id message id
      */
     void ack(String id);
 
     /**
      * Remove from the cache. Message with the id is failed.
      * Invoke retry logics if necessary.
-     * @param id
+     * @param id message id
      */
     void fail(String id);
 
     /**
      * Mark message in the cache.
-     * @param message
+     * @param message message
      */
     void mark(ConsumerMessage message);
 
     /**
      * Whether the message need retry.
-     * @param message
-     * @return
+     * @param message ConsumerMessage
+     * @return true if need retry, otherwise false
      */
     boolean needRetry(ConsumerMessage message);
 

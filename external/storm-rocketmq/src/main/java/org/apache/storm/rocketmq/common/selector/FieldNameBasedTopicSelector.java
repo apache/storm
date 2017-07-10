@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.common.selector;
 
 import org.apache.storm.tuple.ITuple;
@@ -33,7 +34,13 @@ public class FieldNameBasedTopicSelector implements TopicSelector {
     private final String tagFieldName;
     private final String defaultTagName;
 
-
+    /**
+     * FieldNameBasedTopicSelector Constructor.
+     * @param topicFieldName field name used for selecting topic
+     * @param defaultTopicName default field name used for selecting topic
+     * @param tagFieldName field name used for selecting tag
+     * @param defaultTagName default field name used for selecting tag
+     */
     public FieldNameBasedTopicSelector(String topicFieldName, String defaultTopicName, String tagFieldName, String defaultTagName) {
         this.topicFieldName = topicFieldName;
         this.defaultTopicName = defaultTopicName;

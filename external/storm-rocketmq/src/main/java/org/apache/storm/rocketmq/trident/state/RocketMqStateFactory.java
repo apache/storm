@@ -15,20 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.trident.state;
 
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.state.BaseStateUpdater;
-import org.apache.storm.trident.tuple.TridentTuple;
+import java.util.Map;
 
-import java.util.List;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
 
-public class RocketMQStateUpdater extends BaseStateUpdater<RocketMQState>  {
+public class RocketMqStateFactory implements StateFactory {
+
+    private RocketMqState.Options options;
+
+    public RocketMqStateFactory(RocketMqState.Options options) {
+        this.options = options;
+    }
 
     @Override
-    public void updateState(RocketMQState state, List<TridentTuple> tuples,
-                            TridentCollector collector) {
-        state.updateState(tuples, collector);
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics,
+            int partitionIndex, int numPartitions) {
+        RocketMqState state = new RocketMqState(conf, options);
+        state.prepare();
+        return state;
     }
 
 }

@@ -15,14 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.trident.state;
+
+import java.io.Serializable;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
 import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.common.message.Message;
-import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.common.mapper.TupleToMessageMapper;
 import org.apache.storm.rocketmq.common.selector.TopicSelector;
 import org.apache.storm.topology.FailedException;
@@ -32,19 +38,14 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+public class RocketMqState implements State {
 
-public class RocketMQState implements State {
-
-    private static final Logger LOG = LoggerFactory.getLogger(RocketMQState.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RocketMqState.class);
 
     private Options options;
     private MQProducer producer;
 
-    protected RocketMQState(Map map, Options options) {
+    protected RocketMqState(Map map, Options options) {
         this.options = options;
     }
 
@@ -73,7 +74,7 @@ public class RocketMQState implements State {
         Validate.notEmpty(options.properties, "Producer properties can not be empty");
 
         producer = new DefaultMQProducer();
-        RocketMQConfig.buildProducerConfigs(options.properties, (DefaultMQProducer)producer);
+        RocketMqConfig.buildProducerConfigs(options.properties, (DefaultMQProducer)producer);
 
         try {
             producer.start();
@@ -92,6 +93,11 @@ public class RocketMQState implements State {
         LOG.debug("commit is noop.");
     }
 
+    /**
+     * Update the RocketMQ state.
+     * @param tuples trident tuples
+     * @param collector trident collector
+     */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         try {
             for (TridentTuple tuple : tuples) {

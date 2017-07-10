@@ -15,9 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.common.selector;
 
-import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.tuple.ITuple;
 
 public class DefaultTopicSelector implements TopicSelector {
@@ -30,7 +31,7 @@ public class DefaultTopicSelector implements TopicSelector {
     }
 
     public DefaultTopicSelector(final String topicName) {
-        this(topicName, RocketMQConfig.DEFAULT_TAG);
+        this(topicName, RocketMqConfig.DEFAULT_TAG);
     }
 
     @Override

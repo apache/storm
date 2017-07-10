@@ -6,10 +6,10 @@ Storm/Trident integration for [RocketMQ](https://rocketmq.incubator.apache.org/)
 ## Read from Topic
 The spout included in this package for reading data from a topic.
 
-### RocketMQSpout
-To use the `RocketMQSpout`,  you construct an instance of it by specifying a Properties instance which including rocketmq configs.
-RocketMQSpout uses RocketMQ MQPushConsumer as the default implementation. PushConsumer is a high level consumer API, wrapping the pulling details. Looks like broker push messages to consumer.
-RocketMQSpout will retry 3(use `SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY` to change the value) times when messages are failed.
+### RocketMqSpout
+To use the `RocketMqSpout`,  you construct an instance of it by specifying a Properties instance which including rocketmq configs.
+RocketMqSpout uses RocketMQ MQPushConsumer as the default implementation. PushConsumer is a high level consumer API, wrapping the pulling details. Looks like broker push messages to consumer.
+RocketMqSpout will retry 3(use `SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY` to change the value) times when messages are failed.
 
  ```java
         Properties properties = new Properties();
@@ -17,7 +17,7 @@ RocketMQSpout will retry 3(use `SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY` to chang
         properties.setProperty(SpoutConfig.CONSUMER_GROUP, group);
         properties.setProperty(SpoutConfig.CONSUMER_TOPIC, topic);
 
-        RocketMQSpout spout = new RocketMQSpout(properties);
+        RocketMqSpout spout = new RocketMqSpout(properties);
  ```
 
 
@@ -51,18 +51,18 @@ public interface TopicSelector extends Serializable {
 `storm-rocketmq` includes general purpose `TopicSelector` implementations called `DefaultTopicSelector` and `FieldNameBasedTopicSelector`.
 
 
-### RocketMQBolt
-To use the `RocketMQBolt`, you construct an instance of it by specifying TupleToMessageMapper, TopicSelector and Properties instances.
-RocketMQBolt send messages async by default. You can change this by invoking `withAsync(false)`.
+### RocketMqBolt
+To use the `RocketMqBolt`, you construct an instance of it by specifying TupleToMessageMapper, TopicSelector and Properties instances.
+RocketMqBolt send messages async by default. You can change this by invoking `withAsync(false)`.
 
  ```java
         TupleToMessageMapper mapper = new FieldNameBasedTupleToMessageMapper("word", "count");
         TopicSelector selector = new DefaultTopicSelector(topic);
 
         properties = new Properties();
-        properties.setProperty(RocketMQConfig.NAME_SERVER_ADDR, nameserverAddr);
+        properties.setProperty(RocketMqConfig.NAME_SERVER_ADDR, nameserverAddr);
 
-        RocketMQBolt insertBolt = new RocketMQBolt()
+        RocketMqBolt insertBolt = new RocketMqBolt()
                 .withMapper(mapper)
                 .withSelector(selector)
                 .withProperties(properties);
@@ -76,19 +76,19 @@ We support trident persistent state that can be used with trident topologies. To
         TopicSelector selector = new DefaultTopicSelector(topic);
 
         Properties properties = new Properties();
-        properties.setProperty(RocketMQConfig.NAME_SERVER_ADDR, nameserverAddr);
+        properties.setProperty(RocketMqConfig.NAME_SERVER_ADDR, nameserverAddr);
 
-        RocketMQState.Options options = new RocketMQState.Options()
+        RocketMqState.Options options = new RocketMqState.Options()
                 .withMapper(mapper)
                 .withSelector(selector)
                 .withProperties(properties);
 
-        StateFactory factory = new RocketMQStateFactory(options);
+        StateFactory factory = new RocketMqStateFactory(options);
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout1", spout);
 
         stream.partitionPersist(factory, fields,
-                new RocketMQStateUpdater(), new Fields());
+                new RocketMqStateUpdater(), new Fields());
  ```
 

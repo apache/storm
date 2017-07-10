@@ -22,14 +22,14 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.common.mapper.FieldNameBasedTupleToMessageMapper;
 import org.apache.storm.rocketmq.common.mapper.TupleToMessageMapper;
 import org.apache.storm.rocketmq.common.selector.DefaultTopicSelector;
 import org.apache.storm.rocketmq.common.selector.TopicSelector;
-import org.apache.storm.rocketmq.trident.state.RocketMQState;
-import org.apache.storm.rocketmq.trident.state.RocketMQStateFactory;
-import org.apache.storm.rocketmq.trident.state.RocketMQStateUpdater;
+import org.apache.storm.rocketmq.trident.state.RocketMqState;
+import org.apache.storm.rocketmq.trident.state.RocketMqStateFactory;
+import org.apache.storm.rocketmq.trident.state.RocketMqStateUpdater;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
@@ -55,20 +55,20 @@ public class WordCountTrident {
         TopicSelector selector = new DefaultTopicSelector(topic);
 
         Properties properties = new Properties();
-        properties.setProperty(RocketMQConfig.NAME_SERVER_ADDR, nameserverAddr);
+        properties.setProperty(RocketMqConfig.NAME_SERVER_ADDR, nameserverAddr);
 
-        RocketMQState.Options options = new RocketMQState.Options()
+        RocketMqState.Options options = new RocketMqState.Options()
                 .withMapper(mapper)
                 .withSelector(selector)
                 .withProperties(properties);
 
-        StateFactory factory = new RocketMQStateFactory(options);
+        StateFactory factory = new RocketMqStateFactory(options);
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout1", spout);
 
         stream.partitionPersist(factory, fields,
-                new RocketMQStateUpdater(), new Fields());
+                new RocketMqStateUpdater(), new Fields());
 
         return topology.build();
     }

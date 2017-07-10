@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.rocketmq.spout.scheme;
 
-import org.apache.storm.spout.Scheme;
+package org.apache.storm.rocketmq.spout.scheme;
 
 import java.nio.ByteBuffer;
 import java.util.List;
+import org.apache.storm.spout.Scheme;
 
 public interface KeyValueScheme extends Scheme {
     List<Object> deserializeKeyAndValue(ByteBuffer key, ByteBuffer value);
