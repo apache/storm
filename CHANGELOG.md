@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2618: Add TridentKafkaStateUpdater for storm-kafka-client
  * STORM-2608: Remove any pending offsets that are no longer valid
  * STORM-2503: Fix lgtm.com alerts on equality and comparison operations
  * STORM-2478: Fix BlobStoreTest.testDeleteAfterFailedCreate on Windows
