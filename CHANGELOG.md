@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2594: Apply new code style to storm-rocketmq
  * STORM-2615: Add topology readonly user configuration
  * STORM-2093: Fix permissions in multi-tenant, secure mode
  * STORM-2610: Fixed throttle metrics
