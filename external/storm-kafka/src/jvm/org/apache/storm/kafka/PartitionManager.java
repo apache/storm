@@ -248,6 +248,8 @@ public class PartitionManager {
                     _lostMessageCount.incrBy(omitted.size());
                 }
 
+                _pending.headMap(offset).clear();
+
                 LOG.warn("Removing the failed offsets for {} that are out of range: {}", _partition, omitted);
             }
 
@@ -351,7 +353,7 @@ public class PartitionManager {
         }
     }
 
-    private String committedPath() {
+    protected String committedPath() {
         return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + _partition.getId();
     }
 
