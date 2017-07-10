@@ -19,6 +19,8 @@
 package org.apache.storm.utils;
 
 import java.util.Map;
+import java.util.List;
+import org.apache.storm.Config;
 
 public class ReflectionUtils {
     // A singleton instance allows us to mock delegated static methods in our
@@ -69,6 +71,16 @@ public class ReflectionUtils {
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    public static <T> T newSchedulerStrategyInstance(String klass, Map<String, Object> conf) {
+        List<String> allowedSchedulerStrategies = (List<String>) conf.get(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST);
+        if(allowedSchedulerStrategies == null || allowedSchedulerStrategies.contains(klass)) {
+            return newInstance(klass);
+        }
+        else {
+            throw new DisallowedStrategyException(klass, allowedSchedulerStrategies);
         }
     }
 
