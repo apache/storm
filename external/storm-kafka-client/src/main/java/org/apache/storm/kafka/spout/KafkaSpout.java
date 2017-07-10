@@ -18,22 +18,7 @@
 
 package org.apache.storm.kafka.spout;
 
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import java.util.concurrent.TimeUnit;
+import com.google.common.collect.Lists;
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -48,12 +33,32 @@ import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.kafka.spout.internal.Timer;
+import org.apache.storm.kafka.spout.internal.tasks.FixedDelayStartupTask;
+import org.apache.storm.kafka.spout.internal.tasks.PreFetchTask;
+import org.apache.storm.kafka.spout.internal.tasks.PreFetchTasksManager;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
+
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.LATEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_LATEST;
 
 public class KafkaSpout<K, V> extends BaseRichSpout {
     private static final long serialVersionUID = 4151921085047987154L;
@@ -74,7 +79,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;  // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient KafkaSpoutRetryService retryService;              // Class that has the logic to handle tuple failure
     private transient Timer commitTimer;                                // timer == null for auto commit mode
-    private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
+//    private transient boolean initialized;                              // Flag indicating that the spout is still undergoing initialization process.
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
     private transient Map<TopicPartition, OffsetManager> offsetManagers;// Tuples that were successfully acked/emitted. These tuples will be committed periodically when the commit timer expires, or after a consumer rebalance, or during close/deactivate
@@ -83,6 +88,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient long numUncommittedOffsets;                       // Number of offsets that have been polled and emitted but not yet been committed. Not used if auto commit mode is enabled.
     private transient Timer refreshSubscriptionTimer;                   // Triggers when a subscription should be refreshed
     private transient TopologyContext context;
+    private PreFetchTasksManager preFetchTasks;
 
 
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
@@ -97,7 +103,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        initialized = false;
         this.context = context;
 
         // Spout internals
@@ -127,12 +132,19 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // =========== Consumer Rebalance Listener - On the same thread as the caller ===========
 
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
+        private ConsumerRebalanceHandlerTask task;
+
+        public KafkaSpoutConsumerRebalanceListener(ConsumerRebalanceHandlerTask task) {
+            this.task = task;
+        }
+
         @Override
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
             LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
                     kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
-            if (!consumerAutoCommitMode && initialized) {
-                initialized = false;
+
+            if (!consumerAutoCommitMode && task.isComplete()) {
+                task.stop();
                 commitOffsetsForAckedTuples();
             }
         }
@@ -170,9 +182,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 final long fetchOffset = doSeek(tp, committedOffset);
                 setAcked(tp, fetchOffset);
             }
-            initialized = true;
+
+            task.start();
+
             LOG.info("Initialization complete");
         }
+
 
         /**
          * sets the cursor to the location dictated by the first poll strategy and returns the fetch offset
@@ -210,12 +225,34 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
     }
 
+    private class ConsumerRebalanceHandlerTask implements PreFetchTask {
+        private boolean complete;
+
+        @Override
+        public boolean isComplete() {
+            return complete;
+        }
+
+        @Override
+        public void start() {
+            complete = true;
+        }
+
+        @Override
+        public void stop() {
+            complete = false;
+        }
+
+        @Override
+        public void close() { }
+    }
+
     // ======== Next Tuple =======
 
     @Override
     public void nextTuple() {
         try {
-            if (initialized) {
+            if (preFetchTasks.allCompleted()) {
                 if (commit()) {
                     commitOffsetsForAckedTuples();
                 }
@@ -228,7 +265,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     }
                 }
 
-                if (waitingToEmit()) {
+                if (isWaitingToEmit()) {
                     emit();
                 }
             } else {
@@ -252,14 +289,16 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private boolean poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
         final int readyMessageCount = retryService.readyMessageCount();
-        final boolean poll = !waitingToEmit() &&
-            //Check that the number of uncommitted, nonretriable tuples is less than the maxUncommittedOffsets limit
-            //Accounting for retriable tuples this way still guarantees that the limit is followed on a per partition basis, and prevents locking up the spout when there are too many retriable tuples
-            (numUncommittedOffsets - readyMessageCount < maxUncommittedOffsets ||
-            consumerAutoCommitMode);
+        final boolean poll = !isWaitingToEmit() &&
+              /*
+               * Check that the number of uncommitted, non-retriable tuples is less than the maxUncommittedOffsets limit
+               * Accounting for retriable tuples this way still guarantees that the limit is followed on a per partition basis,
+               * and prevents locking up the spout when there are too many retriable tuples
+               */
+                (numUncommittedOffsets - readyMessageCount < maxUncommittedOffsets || consumerAutoCommitMode);
         
         if (!poll) {
-            if (waitingToEmit()) {
+            if (isWaitingToEmit()) {
                 LOG.debug("Not polling. Tuples waiting to be emitted. [{}] uncommitted offsets across all topic partitions", numUncommittedOffsets);
             }
 
@@ -270,7 +309,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         return poll;
     }
 
-    private boolean waitingToEmit() {
+    private boolean isWaitingToEmit() {
         return waitingToEmit != null && waitingToEmit.hasNext();
     }
 
@@ -442,16 +481,28 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void activate() {
         try {
-            subscribeKafkaConsumer();
+            final ConsumerRebalanceHandlerTask consumerRebalanceHandlerTask = new ConsumerRebalanceHandlerTask();
+            startPreFetchTasks(consumerRebalanceHandlerTask);
+            subscribeKafkaConsumer(consumerRebalanceHandlerTask);
         } catch (InterruptException e) {
             throwKafkaConsumerInterruptedException();
         }
     }
 
-    private void subscribeKafkaConsumer() {
+    private void startPreFetchTasks(final ConsumerRebalanceHandlerTask consumerRebalanceHandlerTask) {
+        preFetchTasks = new PreFetchTasksManager(Lists.newArrayList(
+                FixedDelayStartupTask.forTimeInterval(kafkaSpoutConfig.getInitialStartupDelay()),
+                consumerRebalanceHandlerTask));
+
+        preFetchTasks.startAll();
+    }
+
+    private void subscribeKafkaConsumer(final ConsumerRebalanceHandlerTask consumerRebalanceHandlerTask) {
         kafkaConsumer = kafkaConsumerFactory.createConsumer(kafkaSpoutConfig);
 
-        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
+        kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer,
+                new KafkaSpoutConsumerRebalanceListener(consumerRebalanceHandlerTask),
+                context);
     }
 
     @Override

@@ -18,7 +18,10 @@
 
 package org.apache.storm.kafka.spout;
 
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.spout.internal.TimeInterval;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,9 +34,6 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.concurrent.TimeUnit;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.utils.Time;
 
 /**
  * Implementation of {@link KafkaSpoutRetryService} using the exponential backoff formula. The time of the nextRetry is set as follows:
@@ -102,50 +102,6 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
 
         public long nextRetryTimeNanos() {
             return nextRetryTimeNanos;
-        }
-    }
-
-    public static class TimeInterval implements Serializable {
-        private final long lengthNanos;
-        private final TimeUnit timeUnit;
-        private final long length;
-
-        /**
-         * @param length length of the time interval in the units specified by {@link TimeUnit}
-         * @param timeUnit unit used to specify a time interval on which to specify a time unit
-         */
-        public TimeInterval(long length, TimeUnit timeUnit) {
-            this.lengthNanos = timeUnit.toNanos(length);
-            this.timeUnit = timeUnit;
-            this.length = length;
-        }
-        
-        public static TimeInterval seconds(long length) {
-            return new TimeInterval(length, TimeUnit.SECONDS);
-        }
-
-        public static TimeInterval milliSeconds(long length) {
-            return new TimeInterval(length, TimeUnit.MILLISECONDS);
-        }
-        
-        public static TimeInterval microSeconds(long length) {
-            return new TimeInterval(length, TimeUnit.MICROSECONDS);
-        }
-        
-        public long lengthNanos() {
-            return lengthNanos;
-        }
-        
-        public TimeUnit timeUnit() {
-            return timeUnit;
-        }
-
-        @Override
-        public String toString() {
-            return "TimeInterval{" +
-                    "length=" + length +
-                    ", timeUnit=" + timeUnit +
-                    '}';
         }
     }
 
@@ -310,9 +266,9 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     private long nextTime(KafkaSpoutMessageId msgId) {
         final long currentTimeNanos = Time.nanoTime();
         final long nextTimeNanos = msgId.numFails() == 1                // numFails = 1, 2, 3, ...
-                ? currentTimeNanos + initialDelay.lengthNanos
-                : currentTimeNanos + delayPeriod.lengthNanos * (long)(Math.pow(2, msgId.numFails()-1));
-        return Math.min(nextTimeNanos, currentTimeNanos + maxDelay.lengthNanos);
+                ? currentTimeNanos + initialDelay.getLengthNanos()
+                : currentTimeNanos + delayPeriod.getLengthNanos() * (long)(Math.pow(2, msgId.numFails()-1));
+        return Math.min(nextTimeNanos, currentTimeNanos + maxDelay.getLengthNanos());
     }
 
     @Override
