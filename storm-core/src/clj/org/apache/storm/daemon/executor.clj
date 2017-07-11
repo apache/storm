@@ -35,6 +35,8 @@
   (:import [org.apache.storm.metric.api IMetric IMetricsConsumer$TaskInfo IMetricsConsumer$DataPoint StateMetric])
   (:import [org.apache.storm Config Constants])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
+  (:import [org.apache.storm.metrics2 StormMetricRegistry])
+  (:import [com.codahale.metrics Meter])
   (:import [org.apache.storm.grouping LoadAwareCustomStreamGrouping LoadAwareShuffleGrouping LoadMapping ShuffleGrouping])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:require [org.apache.storm [thrift :as thrift]
@@ -231,6 +233,8 @@
                                   (str "executor"  executor-id "-send-queue")
                                   (storm-conf TOPOLOGY-EXECUTOR-SEND-BUFFER-SIZE)
                                   (storm-conf TOPOLOGY-DISRUPTOR-WAIT-TIMEOUT-MILLIS)
+                                  (.getStormId worker-context)
+                                  (.getThisWorkerPort worker-context)
                                   :producer-type :single-threaded
                                   :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)
                                   :batch-timeout (storm-conf TOPOLOGY-DISRUPTOR-BATCH-TIMEOUT-MILLIS))
@@ -275,7 +279,9 @@
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)
-     :spout-throttling-metrics (if (= executor-type :spout) 
+     :failed-meter (StormMetricRegistry/meter "failed" worker-context component-id)
+     :acked-meter (StormMetricRegistry/meter "acked" worker-context component-id)
+     :spout-throttling-metrics (if (= executor-type :spout)
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
      ;; TODO: add in the executor-specific stuff in a :specific... or make a spout-data, bolt-data function?
@@ -429,10 +435,12 @@
 (defn- fail-spout-msg [executor-data task-data msg-id tuple-info time-delta reason id debug?]
   (let [^ISpout spout (:object task-data)
         storm-conf (:storm-conf executor-data)
-        task-id (:task-id task-data)]
+        task-id (:task-id task-data)
+        failed-meter (:failed-meter executor-data)]
     ;;TODO: need to throttle these when there's lots of failures
     (when debug?
       (log-message "SPOUT Failing " id ": " tuple-info " REASON: " reason " MSG-ID: " msg-id))
+    (.mark failed-meter)
     (.fail spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutFail (SpoutFailInfo. msg-id task-id time-delta))
     (when time-delta
@@ -440,8 +448,10 @@
 
 (defn- ack-spout-msg [executor-data task-data msg-id tuple-info time-delta id debug?]
   (let [^ISpout spout (:object task-data)
-        task-id (:task-id task-data)]
+        task-id (:task-id task-data)
+        acked-meter (:acked-meter executor-data)]
     (when debug? (log-message "SPOUT Acking message " id " " msg-id))
+    (.mark acked-meter)
     (.ack spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutAck (SpoutAckInfo. msg-id task-id time-delta))
     (when time-delta
@@ -809,6 +819,7 @@
                          (let [delta (tuple-time-delta! tuple)]
                            (when debug? 
                              (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
+                           (.mark  ^Meter (:acked-meter (:executor-data task-data)))
                            (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
                            (when delta
                              (stats/bolt-acked-tuple! executor-stats
@@ -824,6 +835,7 @@
                                debug? (= true (storm-conf TOPOLOGY-DEBUG))]
                            (when debug? 
                              (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
+                           (.mark  ^Meter (:failed-meter (:executor-data task-data)))
                            (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
                            (when delta
                              (stats/bolt-failed-tuple! executor-stats

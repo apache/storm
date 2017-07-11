@@ -27,7 +27,7 @@ import java.io.IOException;
 import java.util.Map;
 
 /**
- * This class provides a mechanism to utilize the Confluent Schema Registry (https://github.com/confluentinc/schema-registry)
+ * This class provides a mechanism to utilize the Confluent Schema StormMetricRegistry (https://github.com/confluentinc/schema-registry)
  * for Storm to (de)serialize Avro generic records across a topology.  It assumes the schema registry is up and running
  * completely independent of Storm.
  */

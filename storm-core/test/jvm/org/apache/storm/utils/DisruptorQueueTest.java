@@ -178,10 +178,10 @@ public class DisruptorQueueTest extends TestCase {
     }
 
     private static DisruptorQueue createQueue(String name, int queueSize) {
-        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, 1, 1L);
+        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, 1, 1L, "test", 1000);
     }
 
     private static DisruptorQueue createQueue(String name, int batchSize, int queueSize) {
-        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, batchSize, 1L);
+        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, batchSize, 1L, "test", 1000);
     }
 }

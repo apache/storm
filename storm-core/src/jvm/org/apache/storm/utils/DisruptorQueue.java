@@ -34,6 +34,9 @@ import com.lmax.disruptor.dsl.ProducerType;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
+import org.apache.storm.metrics2.DisruptorMetrics;
+import org.apache.storm.metrics2.StormMetricRegistry;
+import org.apache.storm.task.WorkerTopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +67,7 @@ public class DisruptorQueue implements IStatefulObject {
     private static final String PREFIX = "disruptor-";
     private static final FlusherPool FLUSHER = new FlusherPool();
     
+    private static final Timer METRICS_TIMER = new Timer("disruptor-metrics-timer", true);
     private static int getNumFlusherPoolThreads() {
         int numThreads = 100;
         try {
@@ -345,27 +349,31 @@ public class DisruptorQueue implements IStatefulObject {
             return (1.0F * population() / capacity());
         }
 
-        public Object getState() {
-            Map state = new HashMap<String, Object>();
+        public double arrivalRate(){
+            return _rateTracker.reportRate();
+        }
 
+        public double sojournTime(){
             // get readPos then writePos so it's never an under-estimate
             long rp = readPos();
             long wp = writePos();
-
-            final double arrivalRateInSecs = _rateTracker.reportRate();
+            final double arrivalRateInSecs = arrivalRate();
 
             //Assume the queue is stable, in which the arrival rate is equal to the consumption rate.
             // If this assumption does not hold, the calculation of sojourn time should also consider
             // departure rate according to Queuing Theory.
-            final double sojournTime = (wp - rp) / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+            return (wp - rp) / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+        }
 
+        public Object getState() {
+            Map state = new HashMap<String, Object>();
             state.put("capacity", capacity());
-            state.put("population", wp - rp);
-            state.put("write_pos", wp);
-            state.put("read_pos", rp);
-            state.put("arrival_rate_secs", arrivalRateInSecs);
-            state.put("sojourn_time_ms", sojournTime); //element sojourn time in milliseconds
-            state.put("overflow", _overflowCount.get());
+            state.put("population", population());
+            state.put("write_pos", writePos());
+            state.put("read_pos", readPos());
+            state.put("arrival_rate_secs", arrivalRate());
+            state.put("sojourn_time_ms", sojournTime()); //element sojourn time in milliseconds
+            state.put("overflow", overflow());
 
             return state;
         }
@@ -385,7 +393,8 @@ public class DisruptorQueue implements IStatefulObject {
     private final int _inputBatchSize;
     private final ConcurrentHashMap<Long, ThreadLocalInserter> _batchers = new ConcurrentHashMap<Long, ThreadLocalInserter>();
     private final Flusher _flusher;
-    private final QueueMetrics _metrics;
+    private final QueueMetrics _metrics; // old metrics API
+    private final DisruptorMetrics _disruptorMetrics;
 
     private String _queueName = "";
     private DisruptorBackpressureCallback _cb = null;
@@ -395,7 +404,7 @@ public class DisruptorQueue implements IStatefulObject {
     private final AtomicLong _overflowCount = new AtomicLong(0);
     private volatile boolean _throttleOn = false;
 
-    public DisruptorQueue(String queueName, ProducerType type, int size, long readTimeout, int inputBatchSize, long flushInterval) {
+    public DisruptorQueue(String queueName, ProducerType type, int size, long readTimeout, int inputBatchSize, long flushInterval, String topologyId, int port) {
         this._queueName = PREFIX + queueName;
         WaitStrategy wait;
         if (readTimeout <= 0) {
@@ -409,12 +418,20 @@ public class DisruptorQueue implements IStatefulObject {
         _barrier = _buffer.newBarrier();
         _buffer.addGatingSequences(_consumer);
         _metrics = new QueueMetrics();
+        _disruptorMetrics = StormMetricRegistry.disruptorMetrics(_queueName, topologyId, port);
         //The batch size can be no larger than half the full queue size.
         //This is mostly to avoid contention issues.
         _inputBatchSize = Math.max(1, Math.min(inputBatchSize, size/2));
 
         _flusher = new Flusher(Math.max(flushInterval, 1), _queueName);
         _flusher.start();
+
+        METRICS_TIMER.schedule(new TimerTask(){
+            @Override
+            public void run() {
+                _disruptorMetrics.set(_metrics);
+            }
+        }, 15000, 15000); // TODO: Configurable interval
     }
 
     public String getName() {

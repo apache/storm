@@ -17,6 +17,7 @@
  */
 package org.apache.storm.task;
 
+import com.codahale.metrics.*;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
@@ -26,6 +27,7 @@ import org.apache.storm.metric.api.IReducer;
 import org.apache.storm.metric.api.ICombiner;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.metric.api.CombinedMetric;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
@@ -385,5 +387,29 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      */
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+    }
+
+    public Timer registerTimer(String name){
+        return StormMetricRegistry.registtry().timer(metricName(name));
+    }
+
+    public Histogram registerHistogram(String name){
+        return StormMetricRegistry.registtry().histogram(metricName(name));
+    }
+
+    public Meter registerMeter(String name){
+        return StormMetricRegistry.registtry().meter(metricName(name));
+    }
+
+    public Counter registerCounter(String name){
+        return StormMetricRegistry.registtry().counter(metricName(name));
+    }
+
+    public Gauge registerGauge(String name, Gauge gauge){
+        return StormMetricRegistry.registtry().register(metricName(name), gauge);
+    }
+
+    private String metricName(String name){
+        return String.format("storm.topology.%s.%s.%s-%s", getStormId(), getThisComponentId(), getThisWorkerPort(), name);
     }
 }

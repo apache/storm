@@ -139,6 +139,9 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
 
+    @isType(type=List.class)
+    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * A list of daemon metrics  reporter plugin class names.
      * These plugins must implement {@link org.apache.storm.daemon.metrics.reporters.PreparableReporter} interface.

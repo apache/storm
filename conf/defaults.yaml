@@ -293,3 +293,28 @@ storm.daemon.metrics.reporter.plugins:
 
 # configuration of cluster metrics consumer
 storm.cluster.metrics.consumer.publish.interval.secs: 60
+
+
+storm.metrics.reporters:
+  # Graphite Reporter
+  - class: "org.apache.storm.metrics2.reporters.GraphiteStormReporter"
+    daemons:
+        - "supervisor"
+        - "nimbus"
+        - "worker"
+    report.period: 60
+    report.period.units: "SECONDS"
+    graphite.host: "localhost"
+    graphite.port: 2003
+
+  # Console Reporter
+  - class: "org.apache.storm.metrics2.reporters.ConsoleStormReporter"
+    daemons:
+        - "worker"
+    report.period: 10
+    report.period.units: "SECONDS"
+
+    #TODO: not funtional, but you get the idea
+    filters:
+        "org.apache.storm.metrics2.filters.RegexFilter":
+            expression: ".*my_component.*emitted.*"

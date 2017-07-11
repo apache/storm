@@ -281,6 +281,14 @@
             <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-graphite</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-ganglia</artifactId>
+        </dependency>
+        <dependency>
             <groupId>metrics-clojure</groupId>
             <artifactId>metrics-clojure</artifactId>
         </dependency>
@@ -526,7 +534,6 @@
                             <include>org.clojure:tools.namespace</include>
                             <include>cheshire:cheshire</include>
                             <include>org.clojure:core.incubator</include>
-                            <include>io.dropwizard.metrics:*</include>
                             <include>metrics-clojure:*</include>
                         </includes>
                     </artifactSet>
@@ -700,10 +707,10 @@
                           <pattern>org.eclipse.jetty</pattern>
                           <shadedPattern>org.apache.storm.shade.org.eclipse.jetty</shadedPattern>
                         </relocation>
-                        <relocation>
-                            <pattern>com.codahale.metrics</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.codahale.metrics</shadedPattern>
-                        </relocation>
+                        <!--<relocation>-->
+                            <!--<pattern>com.codahale.metrics</pattern>-->
+                            <!--<shadedPattern>org.apache.storm.shade.com.codahale.metrics</shadedPattern>-->
+                        <!--</relocation>-->
                         <relocation>
                             <pattern>metrics.core</pattern>
                             <shadedPattern>org.apache.storm.shade.metrics.core</shadedPattern>
