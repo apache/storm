@@ -55,15 +55,15 @@ public class DirectoryCleaner {
     /**
      * If totalSize of files exceeds the either the per-worker quota or global quota,
      * Logviewer deletes oldest inactive log files in a worker directory or in all worker dirs.
-     * We use the parameter for_per_dir to switch between the two deletion modes.
+     * We use the parameter forPerDir to switch between the two deletion modes.
      * @param dirs the list of directories to be scanned for deletion
      * @param quota the per-dir quota or the total quota for the all directories
-     * @param for_per_dir if true, deletion happens for a single dir; otherwise, for all directories globally
-     * @param active_dirs only for global deletion, we want to skip the active logs in active_dirs
+     * @param forPerDir if true, deletion happens for a single dir; otherwise, for all directories globally
+     * @param activeDirs only for global deletion, we want to skip the active logs in activeDirs
      * @return number of files deleted
      */
     public int deleteOldestWhileTooLarge(List<File> dirs,
-                        long quota, boolean for_per_dir, Set<String> active_dirs) throws IOException {
+                        long quota, boolean forPerDir, Set<String> activeDirs) throws IOException {
         final int PQ_SIZE = 1024; // max number of files to delete for every round
         final int MAX_ROUNDS  = 512; // max rounds of scanning the dirs
         long totalSize = 0;
@@ -73,10 +73,17 @@ public class DirectoryCleaner {
             try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
                 for (Path path : stream) {
                     File file = path.toFile();
+
+                    if (isFileEligibleToSkipDelete(forPerDir, activeDirs, dir, file)) {
+                        continue; // skip adding length
+                    }
+
                     totalSize += file.length();
                 }
             }
         }
+
+        LOG.debug("totalSize: {} quota: {}", totalSize, quota);
         long toDeleteSize = totalSize - quota;
         if (toDeleteSize <= 0) {
             return deletedFiles;
@@ -100,20 +107,8 @@ public class DirectoryCleaner {
                 try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
                     for (Path path : stream) {
                         File file = path.toFile();
-                        if (for_per_dir) {
-                            if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
-                                continue; // skip active log files
-                            }
-                        } else { // for global cleanup
-                            if (active_dirs.contains(dir.getCanonicalPath())) { // for an active worker's dir, make sure for the last "/"
-                                if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
-                                    continue; // skip active log files
-                                }
-                            } else {
-                                if (META_LOG_PATTERN.matcher(file.getName()).matches()) {
-                                    continue; // skip yaml and pid files
-                                }
-                            }
+                        if (isFileEligibleToSkipDelete(forPerDir, activeDirs, dir, file)) {
+                            continue;
                         }
                         if (pq.size() < PQ_SIZE) {
                             pq.offer(file);
@@ -142,7 +137,7 @@ public class DirectoryCleaner {
             pq.clear();
             round++;
             if (round >= MAX_ROUNDS) {
-                if (for_per_dir) {
+                if (forPerDir) {
                     LOG.warn("Reach the MAX_ROUNDS: {} during per-dir deletion, you may have too many files in " +
                             "a single directory : {}, will delete the rest files in next interval.",
                             MAX_ROUNDS, dirs.get(0).getCanonicalPath());
@@ -154,6 +149,25 @@ public class DirectoryCleaner {
             }
         }
         return deletedFiles;
+    }
+
+    private boolean isFileEligibleToSkipDelete(boolean forPerDir, Set<String> activeDirs, File dir, File file) throws IOException {
+        if (forPerDir) {
+            if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
+                return true;
+            }
+        } else { // for global cleanup
+            if (activeDirs.contains(dir.getCanonicalPath())) { // for an active worker's dir, make sure for the last "/"
+                if (ACTIVE_LOG_PATTERN.matcher(file.getName()).matches()) {
+                    return true;
+                }
+            } else {
+                if (META_LOG_PATTERN.matcher(file.getName()).matches()) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     // Note that to avoid memory problem, we only return the first 1024 files in a directory

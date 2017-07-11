@@ -134,12 +134,12 @@
 
 (defn logviewer-link [host fname secure?]
   (if (and secure? (*STORM-CONF* LOGVIEWER-HTTPS-PORT))
-    (UIHelpers/urlFormat "https://%s:%s/log?file=%s"
+    (UIHelpers/urlFormat "https://%s:%s/api/v1/log?file=%s"
       (to-array
         [host
         (*STORM-CONF* LOGVIEWER-HTTPS-PORT)
         fname]))
-    (UIHelpers/urlFormat "http://%s:%s/log?file=%s"
+    (UIHelpers/urlFormat "http://%s:%s/api/v1/log?file=%s"
       (to-array
         [host
         (*STORM-CONF* LOGVIEWER-PORT)
@@ -156,10 +156,10 @@
       (logviewer-link host fname secure?))))
 
 (defn nimbus-log-link [host]
-  (UIHelpers/urlFormat "http://%s:%s/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
+  (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
 
 (defn supervisor-log-link [host]
-  (UIHelpers/urlFormat "http://%s:%s/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
+  (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
 
 (defn get-error-data
   [error]
@@ -185,7 +185,7 @@
     (.get_error_time_secs ^ErrorInfo error)))
 
 (defn worker-dump-link [host port topology-id]
-  (UIHelpers/urlFormat "http://%s:%s/dumps/%s/%s"
+  (UIHelpers/urlFormat "http://%s:%s/api/v1/dumps/%s/%s"
     (to-array [(URLEncoder/encode host)
               (*STORM-CONF* LOGVIEWER-PORT)
               (URLEncoder/encode topology-id)

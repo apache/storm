@@ -16,25 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.drpc.webapp;
+package org.apache.storm.daemon.wip.logviewer;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.ws.rs.core.Response;
-import javax.ws.rs.ext.ExceptionMapper;
-import javax.ws.rs.ext.Provider;
-
-import org.apache.storm.generated.AuthorizationException;
-import org.json.simple.JSONValue;
-
-@Provider
-public class AuthorizationExceptionMapper implements ExceptionMapper<AuthorizationException> {
-    @Override
-    public Response toResponse(AuthorizationException ex) {
-        Map<String, String> body = new HashMap<>();
-        body.put("error", "Not Authorized");
-        body.put("errorMessage", ex.get_msg());
-        return Response.status(403).entity(JSONValue.toJSONString(body)).type("application/json").build();
-    }
+public class LogviewerConstant {
+    public static final int DEFAULT_BYTES_PER_PAGE = 51200;
 }
