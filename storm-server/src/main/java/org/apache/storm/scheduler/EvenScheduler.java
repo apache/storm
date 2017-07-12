@@ -169,4 +169,9 @@ public class EvenScheduler implements IScheduler {
         scheduleTopologiesEvenly(topologies, cluster);
     }
 
+    @Override
+    public Map<String, Object> config() {
+        return new HashMap<>();
+    }
+
 }

@@ -37,4 +37,11 @@ public interface IScheduler {
      *       cluster.setAssignmentById()`
      */
     void schedule(Topologies topologies, Cluster cluster);
+
+    /**
+     * This function returns the scheduler's configuration.
+     *
+     * @return The scheduler's configuration.
+     */
+    Map<String, Object> config();
 }

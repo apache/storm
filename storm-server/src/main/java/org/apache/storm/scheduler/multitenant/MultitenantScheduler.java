@@ -58,6 +58,11 @@ public class MultitenantScheduler implements IScheduler {
     return ret;
   }
 
+
+  @Override
+  public Map<String, Object> config() {
+    return (Map) getUserConf();
+  }
  
   @Override
   public void schedule(Topologies topologies, Cluster cluster) {

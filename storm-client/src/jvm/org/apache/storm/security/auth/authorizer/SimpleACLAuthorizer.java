@@ -47,7 +47,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "fileUpload",
             "getNimbusConf",
             "getClusterInfo",
-            "getSupervisorPageInfo"));
+            "getSupervisorPageInfo",
+            "getOwnerResourceSummaries"));
     protected Set<String> _supervisorCommands = new HashSet<>(Arrays.asList("fileDownload"));
     protected Set<String> _topoReadOnlyCommands = new HashSet<>(Arrays.asList(
             "getTopologyConf",

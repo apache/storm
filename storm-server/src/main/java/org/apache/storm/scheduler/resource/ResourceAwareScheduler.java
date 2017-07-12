@@ -59,6 +59,11 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @Override
+    public Map<String, Object> config() {
+        return (Map) getUserResourcePools();
+    }
+
+    @Override
     public void schedule(Topologies topologies, Cluster cluster) {
         LOG.debug("\n\n\nRerunning ResourceAwareScheduler...");
         //initialize data structures

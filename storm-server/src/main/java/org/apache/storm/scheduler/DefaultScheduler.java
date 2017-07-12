@@ -108,4 +108,8 @@ public class DefaultScheduler implements IScheduler {
         defaultSchedule(topologies, cluster);
     }
 
+    @Override
+    public Map<String, Object> config() {
+        return new HashMap<>();
+    }
 }

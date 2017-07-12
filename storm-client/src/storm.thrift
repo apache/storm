@@ -615,6 +615,27 @@ struct TopologyHistoryInfo {
   1: list<string> topo_ids;
 }
 
+struct OwnerResourceSummary {
+  1: required string owner;
+  2: optional i32 total_topologies;
+  3: optional i32 total_executors;
+  4: optional i32 total_workers;
+  5: optional double memory_usage;
+  6: optional double cpu_usage;
+  7: optional double memory_guarantee;
+  8: optional double cpu_guarantee;
+  9: optional double memory_guarantee_remaining;
+  10: optional double cpu_guarantee_remaining;
+  11: optional i32 isolated_node_guarantee;
+  12: optional i32 total_tasks;
+  13: optional double requested_on_heap_memory;
+  14: optional double requested_off_heap_memory;
+  15: optional double requested_total_memory;
+  16: optional double requested_cpu;
+  17: optional double assigned_on_heap_memory;
+  18: optional double assigned_off_heap_memory;
+}
+
 service Nimbus {
   void submitTopology(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
   void submitTopologyWithOpts(1: string name, 2: string uploadedJarLocation, 3: string jsonConf, 4: StormTopology topology, 5: SubmitOptions options) throws (1: AlreadyAliveException e, 2: InvalidTopologyException ite, 3: AuthorizationException aze);
@@ -690,6 +711,7 @@ service Nimbus {
    */
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
+  list<OwnerResourceSummary> getOwnerResourceSummaries (1: string owner) throws (1: AuthorizationException aze);
 }
 
 struct DRPCRequest {

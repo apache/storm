@@ -56,6 +56,11 @@ public class IsolationScheduler implements IScheduler {
         Validate.notEmpty(isoMachines);
     }
 
+    @Override
+    public Map<String, Object> config() {
+        return new HashMap<>();
+    }
+
     // get host -> all assignable worker slots for non-blacklisted machines (assigned or not assigned)
     // will then have a list of machines that need to be assigned (machine -> [topology, list of list of executors])
     // match each spec to a machine (who has the right number of workers), free everything else on that machine and assign those slots (do one topology at a time)

@@ -28,13 +28,12 @@ public final class TopologyResources {
     public TopologyResources(Double requestedMemOnHeap, Double requestedMemOffHeap,
             Double requestedCpu, Double assignedMemOnHeap, Double assignedMemOffHeap,
             Double assignedCpu) {
-                this.requestedMemOnHeap = requestedMemOnHeap;
-                this.requestedMemOffHeap = requestedMemOffHeap;
-                this.requestedCpu = requestedCpu;
-                this.assignedMemOnHeap = assignedMemOnHeap;
-                this.assignedMemOffHeap = assignedMemOffHeap;
-                this.assignedCpu = assignedCpu;
-        
+        this.requestedMemOnHeap = requestedMemOnHeap;
+        this.requestedMemOffHeap = requestedMemOffHeap;
+        this.requestedCpu = requestedCpu;
+        this.assignedMemOnHeap = assignedMemOnHeap;
+        this.assignedMemOffHeap = assignedMemOffHeap;
+        this.assignedCpu = assignedCpu;
     }
 
     public Double getRequestedMemOnHeap() {
@@ -59,5 +58,14 @@ public final class TopologyResources {
 
     public Double getAssignedCpu() {
         return assignedCpu;
+    }
+
+    public TopologyResources add(TopologyResources other) {
+        return new TopologyResources(this.requestedMemOnHeap + other.requestedMemOnHeap,
+                this.requestedMemOffHeap + other.requestedMemOffHeap,
+                this.requestedCpu + other.requestedCpu,
+                this.assignedMemOnHeap + other.assignedMemOnHeap,
+                this.assignedMemOffHeap + other.assignedMemOffHeap,
+                this.assignedCpu + other.assignedCpu);
     }
 }
