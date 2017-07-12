@@ -16,16 +16,16 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.webapp;
+package org.apache.storm.daemon.logviewer.webapp;
 
 import com.codahale.metrics.Meter;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.daemon.common.JsonResponseBuilder;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogDownloadHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogPageHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogSearchHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.ui.InvalidRequestException;

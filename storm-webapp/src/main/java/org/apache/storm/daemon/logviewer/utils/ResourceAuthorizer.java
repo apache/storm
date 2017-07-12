@@ -16,8 +16,9 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.utils;
+package org.apache.storm.daemon.logviewer.utils;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
@@ -52,11 +53,7 @@ public class ResourceAuthorizer {
         return isUiFilterNotSet() || isAuthorizedLogUser(user, fileName);
     }
 
-    private boolean isUiFilterNotSet() {
-        return StringUtils.isBlank(ObjectReader.getString(stormConf.get(UI_FILTER), null));
-    }
-
-    private boolean isAuthorizedLogUser(String user, String fileName) {
+    public boolean isAuthorizedLogUser(String user, String fileName) {
         if (StringUtils.isEmpty(user) || StringUtils.isEmpty(fileName)
                 || getLogUserGroupWhitelist(fileName) == null) {
             return false;
@@ -74,8 +71,7 @@ public class ResourceAuthorizer {
             logsGroups.addAll(whitelist.getGroupWhitelist());
 
             return logsUsers.stream().anyMatch(u -> u.equals(user)) ||
-                    Sets.intersection(groups, new HashSet<>(logsGroups)).size() < 0;
-
+                    Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
         }
     }
 
@@ -95,7 +91,8 @@ public class ResourceAuthorizer {
         );
     }
 
-    private Set<String> getUserGroups(String user) {
+    @VisibleForTesting
+    Set<String> getUserGroups(String user) {
         try {
             if (StringUtils.isEmpty(user)) {
                 return new HashSet<>();
@@ -105,6 +102,10 @@ public class ResourceAuthorizer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private boolean isUiFilterNotSet() {
+        return StringUtils.isBlank(ObjectReader.getString(stormConf.get(UI_FILTER), null));
     }
 
     public static class LogUserGroupWhitelist {

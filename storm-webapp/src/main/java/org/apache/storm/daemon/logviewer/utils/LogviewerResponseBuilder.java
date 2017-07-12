@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.utils;
+package org.apache.storm.daemon.logviewer.utils;
 
 import com.google.common.io.ByteStreams;
 import org.apache.storm.daemon.common.JsonResponseBuilder;

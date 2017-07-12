@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.utils;
+package org.apache.storm.daemon.logviewer.utils;
 
 import javax.ws.rs.core.Response;
 import java.io.File;

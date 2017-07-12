@@ -16,13 +16,13 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.handler;
+package org.apache.storm.daemon.logviewer.handler;
 
 import j2html.tags.DomContent;
 import org.apache.commons.lang.StringUtils;
-import org.apache.storm.daemon.DirectoryCleaner;
-import org.apache.storm.daemon.wip.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.wip.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.utils.ServerUtils;
 
 import javax.ws.rs.core.Response;

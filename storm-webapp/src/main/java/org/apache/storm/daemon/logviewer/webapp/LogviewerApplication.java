@@ -16,18 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.webapp;
+package org.apache.storm.daemon.logviewer.webapp;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.core.Appender;
 import org.apache.logging.log4j.core.LoggerContext;
 import org.apache.logging.log4j.core.appender.RollingFileAppender;
 import org.apache.storm.daemon.common.AuthorizationExceptionMapper;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogDownloadHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogPageHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerLogSearchHandler;
-import org.apache.storm.daemon.wip.logviewer.handler.LogviewerProfileHandler;
-import org.apache.storm.daemon.wip.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.utils.ConfigUtils;

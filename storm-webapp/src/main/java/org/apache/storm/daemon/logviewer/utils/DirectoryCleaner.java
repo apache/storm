@@ -15,7 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.daemon;
+package org.apache.storm.daemon.logviewer.utils;
 
 import java.io.IOException;
 import java.io.File;
@@ -73,11 +73,6 @@ public class DirectoryCleaner {
             try (DirectoryStream<Path> stream = getStreamForDirectory(dir)) {
                 for (Path path : stream) {
                     File file = path.toFile();
-
-                    if (isFileEligibleToSkipDelete(forPerDir, activeDirs, dir, file)) {
-                        continue; // skip adding length
-                    }
-
                     totalSize += file.length();
                 }
             }

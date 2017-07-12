@@ -16,20 +16,22 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.handler;
+package org.apache.storm.daemon.logviewer.handler;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.daemon.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.common.JsonResponseBuilder;
+import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.URLBuilder;
-import org.apache.storm.daemon.wip.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.wip.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.daemon.wip.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.ui.InvalidRequestException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerUtils;
@@ -62,7 +64,6 @@ import static org.apache.storm.daemon.utils.ListFunctionalSupport.first;
 import static org.apache.storm.daemon.utils.ListFunctionalSupport.last;
 import static org.apache.storm.daemon.utils.ListFunctionalSupport.rest;
 import static org.apache.storm.daemon.utils.ListFunctionalSupport.takeLast;
-import static org.apache.storm.daemon.wip.logviewer.LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
 
 public class LogviewerLogSearchHandler {
     private final static Logger LOG = LoggerFactory.getLogger(LogviewerLogSearchHandler.class);
@@ -206,7 +207,23 @@ public class LogviewerLogSearchHandler {
         }
     }
 
-    private Map<String,Object> substringSearch(File file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
+    @VisibleForTesting
+    Map<String,Object> substringSearch(File file, String searchString) throws InvalidRequestException {
+        return substringSearch(file, searchString, false, 10, 0);
+    }
+
+    @VisibleForTesting
+    Map<String,Object> substringSearch(File file, String searchString, int numMatches) throws InvalidRequestException {
+        return substringSearch(file, searchString, false, numMatches, 0);
+    }
+
+    @VisibleForTesting
+    Map<String,Object> substringSearchDaemonLog(File file, String searchString) throws InvalidRequestException {
+        return substringSearch(file, searchString, true, 10, 0);
+    }
+
+    @VisibleForTesting
+    Map<String,Object> substringSearch(File file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
@@ -313,7 +330,8 @@ public class LogviewerLogSearchHandler {
     /**
      * Get the filtered, authorized, sorted log files for a port.
      */
-    private List<File> logsForPort(String user, File portDir) {
+    @VisibleForTesting
+    List<File> logsForPort(String user, File portDir) {
         try {
             List<File> workerLogs = DirectoryCleaner.getFilesForDir(portDir).stream()
                     .filter(file -> WORKER_LOG_FILENAME_PATTERN.asPredicate().test(file.getName()))
@@ -328,7 +346,8 @@ public class LogviewerLogSearchHandler {
         }
     }
 
-    private Matched findNMatches(List<File> logs, int numMatches, int fileOffset, int offset, String search) {
+    @VisibleForTesting
+    Matched findNMatches(List<File> logs, int numMatches, int fileOffset, int offset, String search) {
         logs = drop(logs, fileOffset);
 
         List<Map<String, Object>> matches = new ArrayList<>();
@@ -599,15 +618,16 @@ public class LogviewerLogSearchHandler {
         return ret;
     }
 
-    private String urlToMatchCenteredInLogPage(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
+    @VisibleForTesting
+    String urlToMatchCenteredInLogPage(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
         String host = Utils.hostname();
         String splittedFileName = String.join(Utils.FILE_PATH_SEPARATOR,
                 takeLast(Arrays.asList(fname.split(Utils.FILE_PATH_SEPARATOR)), 3));
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("file", splittedFileName);
-        parameters.put("start", Math.max(0, offset - (DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
-        parameters.put("length", DEFAULT_BYTES_PER_PAGE);
+        parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
+        parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
         return URLBuilder.build(String.format("http://%s:%d/api/v1/log", host, port), parameters);
     }
@@ -619,13 +639,14 @@ public class LogviewerLogSearchHandler {
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("file", splittedFileName);
-        parameters.put("start", Math.max(0, offset - (DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
-        parameters.put("length", DEFAULT_BYTES_PER_PAGE);
+        parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
+        parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
         return URLBuilder.build(String.format("http://%s:%d/api/v1/daemonlog", host, port), parameters);
     }
 
-    private static class Matched implements JSONAware {
+    @VisibleForTesting
+    public static class Matched implements JSONAware {
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
         private int fileOffset;

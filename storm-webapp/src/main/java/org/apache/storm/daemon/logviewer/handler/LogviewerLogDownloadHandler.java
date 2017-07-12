@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.handler;
+package org.apache.storm.daemon.logviewer.handler;
 
-import org.apache.storm.daemon.wip.logviewer.utils.LogFileDownloader;
-import org.apache.storm.daemon.wip.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.LogFileDownloader;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;

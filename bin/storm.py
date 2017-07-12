@@ -812,7 +812,7 @@ def logviewer():
     allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
     allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.wip.logviewer.LogviewerServer",
+        "org.apache.storm.daemon.logviewer.LogviewerServer",
         jvmtype="-server",
         daemonName="logviewer",
         jvmopts=jvmopts,

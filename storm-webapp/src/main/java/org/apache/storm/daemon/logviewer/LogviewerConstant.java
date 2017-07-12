@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer;
+package org.apache.storm.daemon.logviewer;
 
 public class LogviewerConstant {
     public static final int DEFAULT_BYTES_PER_PAGE = 51200;

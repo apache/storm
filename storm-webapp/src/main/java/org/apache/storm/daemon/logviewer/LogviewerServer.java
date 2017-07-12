@@ -16,25 +16,21 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer;
+package org.apache.storm.daemon.logviewer;
 
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.daemon.drpc.webapp.ReqContextFilter;
-import org.apache.storm.daemon.wip.logviewer.utils.LogCleaner;
-import org.apache.storm.daemon.wip.logviewer.webapp.LogviewerApplication;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.LogCleaner;
+import org.apache.storm.daemon.logviewer.webapp.LogviewerApplication;
 import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.ui.FilterConfiguration;
 import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.DefaultServlet;
-import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.util.resource.Resource;
@@ -162,8 +158,10 @@ public class LogviewerServer implements AutoCloseable {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
 
+        DirectoryCleaner directoryCleaner = new DirectoryCleaner();
+
         try (LogviewerServer server = new LogviewerServer(conf);
-             LogCleaner logCleaner = new LogCleaner(conf)) {
+             LogCleaner logCleaner = new LogCleaner(conf, directoryCleaner)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             logCleaner.start();
             StormMetricsRegistry.startMetricsReporters(conf);

@@ -16,17 +16,18 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.wip.logviewer.handler;
+package org.apache.storm.daemon.logviewer.handler;
 
 import j2html.TagCreator;
 import j2html.tags.DomContent;
 import org.apache.commons.lang.StringUtils;
-import org.apache.storm.daemon.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.utils.StreamUtil;
 import org.apache.storm.daemon.utils.URLBuilder;
-import org.apache.storm.daemon.wip.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.wip.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.daemon.wip.logviewer.utils.WorkerLogs;
 import org.apache.storm.ui.InvalidRequestException;
 import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ConfigUtils;
@@ -45,8 +46,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NavigableSet;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.regex.Matcher;
@@ -59,7 +58,6 @@ import static j2html.TagCreator.*;
 import static java.util.stream.Collectors.toCollection;
 import static java.util.stream.Collectors.toList;
 import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
-import static org.apache.storm.daemon.wip.logviewer.LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
 
 public class LogviewerLogPageHandler {
     private final String logRoot;
@@ -157,7 +155,7 @@ public class LogviewerLogPageHandler {
                 reorderedFilesStr.addAll(filesStrWithoutFileParam);
                 reorderedFilesStr.add(fileName);
 
-                length = length != null ? Math.min(10485760, length) : DEFAULT_BYTES_PER_PAGE;
+                length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
 
                 String logString;
                 if (isTxtFile(fileName)) {
@@ -227,7 +225,7 @@ public class LogviewerLogPageHandler {
             reorderedFilesStr.addAll(filesStrWithoutFileParam);
             reorderedFilesStr.add(fileName);
 
-            length = length != null ? Math.min(10485760, length) : DEFAULT_BYTES_PER_PAGE;
+            length = length != null ? Math.min(10485760, length) : LogviewerConstant.DEFAULT_BYTES_PER_PAGE;
 
             String logString;
             if (isTxtFile(fileName)) {
