@@ -162,6 +162,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 KafkaSpoutMessageId msgId = msgIdIterator.next();
                 if (!partitionsSet.contains(msgId.getTopicPartition())) {
                     msgIdIterator.remove();
+                    --numUncommittedOffsets;
                 }
             }
 
