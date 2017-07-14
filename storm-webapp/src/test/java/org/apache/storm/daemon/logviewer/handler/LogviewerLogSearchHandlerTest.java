@@ -117,7 +117,7 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                String actualUrl = handler.urlToMatchCenteredInLogPage(new byte[42], expectedFname, 27526, 8888);
+                String actualUrl = handler.urlToMatchCenteredInLogPageDaemonFile(new byte[42], expectedFname, 27526, 8888);
 
                 assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/daemonlog?file=" + expectedFname +
                         "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
@@ -167,7 +167,6 @@ public class LogviewerLogSearchHandlerTest {
                         "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
                         ));
 
-                // FIXME: currently fail on this...
                 matches.add(buildMatchData(134,
                         " needle000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000needle ",
                         "\n",
@@ -255,7 +254,6 @@ public class LogviewerLogSearchHandlerTest {
             }
         }
 
-        // FIXME: failing now
         @Test
         public void testNoOffsetReturnedWhenFileEndsOnBufferOffset() throws InvalidRequestException, UnknownHostException {
             Utils prevUtils = null;
@@ -339,7 +337,6 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("startByteOffset", 0);
                 expected.put("nextByteOffset", 6252);
 
-                // FIXME: currently failing on below...
                 List<Map<String, Object>> matches = new ArrayList<>();
 
                 matches.add(buildMatchData(5,
@@ -399,7 +396,6 @@ public class LogviewerLogSearchHandlerTest {
             }
         }
 
-        // FIXME: this is failing...
         @Test
         public void testCorrectMatchOffsetIsReturnedWhenSkippingBytes() throws InvalidRequestException, UnknownHostException {
             Utils prevUtils = null;
@@ -440,8 +436,6 @@ public class LogviewerLogSearchHandlerTest {
             }
         }
 
-        // FIXME: this is failing...
-        // java.lang.StringIndexOutOfBoundsException: String index out of range: -39
         @Test
         public void testAnotherPatterns1() throws UnknownHostException, InvalidRequestException {
             Utils prevUtils = null;
@@ -481,7 +475,7 @@ public class LogviewerLogSearchHandlerTest {
                         "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
                 ));
 
-                expected.put("matches", Collections.emptyList());
+                expected.put("matches", matches);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -489,7 +483,6 @@ public class LogviewerLogSearchHandlerTest {
             }
         }
 
-        // FIXME: this is failing...
         @Test
         public void testAnotherPatterns2() throws UnknownHostException, InvalidRequestException {
             Utils prevUtils = null;

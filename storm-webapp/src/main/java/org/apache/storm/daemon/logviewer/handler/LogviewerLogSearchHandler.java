@@ -490,10 +490,7 @@ public class LogviewerLogSearchHandler {
         String afterString;
 
         if (haystackOffset >= GREP_CONTEXT_SIZE) {
-            StringBuilder sb = new StringBuilder();
-            sb.append(new String(haystackBytes, (haystackOffset - GREP_CONTEXT_SIZE), GREP_CONTEXT_SIZE, "UTF-8"));
-            sb.append(new String(haystackBytes, 0, haystackOffset, "UTF-8"));
-            beforeString = sb.toString();
+            beforeString = new String(haystackBytes, (haystackOffset - GREP_CONTEXT_SIZE), GREP_CONTEXT_SIZE, "UTF-8");
         } else {
             int numDesired = Math.max(0, GREP_CONTEXT_SIZE - haystackOffset);
             int beforeSize = beforeBytes != null ? beforeBytes.length : 0;
@@ -501,7 +498,7 @@ public class LogviewerLogSearchHandler {
 
             if (numExpected > 0) {
                 StringBuilder sb = new StringBuilder();
-                sb.append(new String(beforeBytes, numExpected - beforeSize, numExpected, "UTF-8"));
+                sb.append(new String(beforeBytes, beforeSize - numExpected, numExpected, "UTF-8"));
                 sb.append(new String(haystackBytes, 0, haystackOffset, "UTF-8"));
                 beforeString = sb.toString();
             } else {
@@ -632,7 +629,8 @@ public class LogviewerLogSearchHandler {
         return URLBuilder.build(String.format("http://%s:%d/api/v1/log", host, port), parameters);
     }
 
-    private String urlToMatchCenteredInLogPageDaemonFile(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
+    @VisibleForTesting
+    String urlToMatchCenteredInLogPageDaemonFile(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
         String host = Utils.hostname();
         String splittedFileName = String.join(Utils.FILE_PATH_SEPARATOR,
                 takeLast(Arrays.asList(fname.split(Utils.FILE_PATH_SEPARATOR)), 1));
