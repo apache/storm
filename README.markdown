@@ -100,6 +100,7 @@ under the License.
 * Satish Duggana ([@satishd](https://github.com/satishd))
 * Xin Wang ([@vesense](https://github.com/vesense))
 * Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
+* Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
 
 ## Contributors
 
