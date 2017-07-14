@@ -22,12 +22,10 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.commons.io.IOUtils;
 import org.apache.storm.StormTimer;
 import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.jooq.lambda.Unchecked;
-import org.jooq.lambda.tuple.Tuple2;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,23 +60,23 @@ import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_M
 
 public class LogCleaner implements Runnable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
-    public static final String WORKER_YAML = "worker.yaml";
 
     private final Map<String, Object> stormConf;
     private final Integer intervalSecs;
-    private final String logRootDir;
+    private final File logRootDir;
     private final DirectoryCleaner directoryCleaner;
+    private final WorkerLogs workerLogs;
 
     private StormTimer logviewerCleanupTimer;
     private final long maxSumWorkerLogsSizeMb;
     private long maxPerWorkerLogsSizeMb;
 
-    public LogCleaner(Map<String, Object> stormConf, DirectoryCleaner directoryCleaner) {
-        String logRootDir = ConfigUtils.workerArtifactsRoot(stormConf);
-
+    public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
+                      File logRootDir) {
         this.stormConf = stormConf;
         this.intervalSecs = ObjectReader.getInt(stormConf.get(LOGVIEWER_CLEANUP_INTERVAL_SECS), null);
         this.logRootDir = logRootDir;
+        this.workerLogs = workerLogs;
         this.directoryCleaner = directoryCleaner;
 
         maxSumWorkerLogsSizeMb = ObjectReader.getInt(stormConf.get(LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_MB));
@@ -121,7 +119,7 @@ public class LogCleaner implements Runnable, Closeable {
     public void run() {
         try {
             int nowSecs = Time.currentTimeSecs();
-            Set<File> oldLogDirs = selectDirsForCleanup(nowSecs * 1000, logRootDir);
+            Set<File> oldLogDirs = selectDirsForCleanup(nowSecs * 1000);
 
             SortedSet<File> deadWorkerDirs = getDeadWorkerDirs(nowSecs, oldLogDirs);
 
@@ -141,8 +139,8 @@ public class LogCleaner implements Runnable, Closeable {
                 }
             }));
 
-            perWorkerDirCleanup(new File(logRootDir), maxPerWorkerLogsSizeMb * 1024 * 1024, directoryCleaner);
-            globalLogCleanup(new File(logRootDir), maxSumWorkerLogsSizeMb * 1024 * 1024, directoryCleaner);
+            perWorkerDirCleanup(maxPerWorkerLogsSizeMb * 1024 * 1024);
+            globalLogCleanup(maxSumWorkerLogsSizeMb * 1024 * 1024);
         } catch (Exception ex) {
             LOG.error("Exception while cleaning up old log.", ex);
         }
@@ -152,9 +150,9 @@ public class LogCleaner implements Runnable, Closeable {
      * Delete the oldest files in each overloaded worker log dir.
      */
     @VisibleForTesting
-    List<Integer> perWorkerDirCleanup(File rootDir, long size, DirectoryCleaner cleaner) {
-        return WorkerLogs.getAllWorkerDirs(rootDir).stream()
-                .map(Unchecked.function(dir -> cleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
+    List<Integer> perWorkerDirCleanup(long size) {
+        return workerLogs.getAllWorkerDirs().stream()
+                .map(Unchecked.function(dir -> directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
                 .collect(toList());
     }
 
@@ -162,53 +160,11 @@ public class LogCleaner implements Runnable, Closeable {
      * Delete the oldest files in overloaded worker-artifacts globally.
      */
     @VisibleForTesting
-    int globalLogCleanup(File rootDir, long size, DirectoryCleaner cleaner) throws Exception {
-        List<File> workerDirs = new ArrayList<>(WorkerLogs.getAllWorkerDirs(rootDir));
-        Set<String> aliveWorkerDirs = new HashSet<>(getAliveWorkerDirs(rootDir));
+    int globalLogCleanup(long size) throws Exception {
+        List<File> workerDirs = new ArrayList<>(workerLogs.getAllWorkerDirs());
+        Set<String> aliveWorkerDirs = new HashSet<>(workerLogs.getAliveWorkerDirs());
 
-        return cleaner.deleteOldestWhileTooLarge(workerDirs, size, false, aliveWorkerDirs);
-    }
-
-    /**
-     * Return a sorted set of java.io.Files that were written by workers that are now active.
-     */
-    @VisibleForTesting
-    SortedSet<String> getAliveWorkerDirs(File rootDir) throws Exception {
-        Set<String> aliveIds = getAliveIds(Time.currentTimeSecs());
-        Set<File> logDirs = WorkerLogs.getAllWorkerDirs(rootDir);
-        Map<String, File> idToDir = identifyWorkerLogDirs(logDirs);
-
-        return idToDir.entrySet().stream()
-                .filter(entry -> aliveIds.contains(entry.getKey()))
-                .map(Unchecked.function(entry -> entry.getValue().getCanonicalPath()))
-                .collect(toCollection(TreeSet::new));
-    }
-
-    @VisibleForTesting
-    Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
-        return logDirs.stream().map(Unchecked.function(logDir -> {
-            Optional<File> metaFile = getMetadataFileForWorkerLogDir(logDir);
-
-            return metaFile.map(Unchecked.function(m -> new Tuple2<>(getWorkerIdFromMetadataFile(m.getCanonicalPath()), logDir)))
-                    .orElse(new Tuple2<>("", logDir));
-        })).collect(toMap(Tuple2::v1, Tuple2::v2));
-    }
-
-    @VisibleForTesting
-    Optional<File> getMetadataFileForWorkerLogDir(File logDir) throws IOException {
-        File metaFile = new File(logDir, WORKER_YAML);
-        if (metaFile.exists()) {
-            return Optional.of(metaFile);
-        } else {
-            LOG.warn("Could not find {} to clean up for {}", metaFile.getCanonicalPath(), logDir);
-            return Optional.empty();
-        }
-    }
-
-    @VisibleForTesting
-    String getWorkerIdFromMetadataFile(String metaFile) {
-        Map<String, Object> map = (Map<String, Object>)  Utils.readYamlFile(metaFile);
-        return ObjectReader.getString(map.get("worker-id"), null);
+        return directoryCleaner.deleteOldestWhileTooLarge(workerDirs, size, false, aliveWorkerDirs);
     }
 
     private Set<String> getAliveIds(int nowSecs) throws Exception {
@@ -238,8 +194,8 @@ public class LogCleaner implements Runnable, Closeable {
         if (logDirs.isEmpty()) {
             return new TreeSet<>();
         } else {
-            Set<String> aliveIds = getAliveIds(nowSecs);
-            Map<String, File> idToDir = identifyWorkerLogDirs(logDirs);
+            Set<String> aliveIds = workerLogs.getAliveIds(nowSecs);
+            Map<String, File> idToDir = workerLogs.identifyWorkerLogDirs(logDirs);
 
             return idToDir.entrySet().stream()
                     .filter(entry -> !aliveIds.contains(entry.getKey()))
@@ -249,10 +205,10 @@ public class LogCleaner implements Runnable, Closeable {
     }
 
     @VisibleForTesting
-    Set<File> selectDirsForCleanup(long nowMillis, String rootDir) {
+    Set<File> selectDirsForCleanup(long nowMillis) {
         FileFilter fileFilter = mkFileFilterForLogCleanup(nowMillis);
 
-        return Arrays.stream(new File(rootDir).listFiles())
+        return Arrays.stream(logRootDir.listFiles())
                 .flatMap(topoDir -> Arrays.stream(topoDir.listFiles(fileFilter)))
                 .collect(toCollection(TreeSet::new));
     }

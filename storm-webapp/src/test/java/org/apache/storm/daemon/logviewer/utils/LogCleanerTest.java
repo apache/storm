@@ -80,10 +80,12 @@ public class LogCleanerTest {
         conf.put(LOGVIEWER_CLEANUP_AGE_MINS, 60);
         conf.put(LOGVIEWER_CLEANUP_INTERVAL_SECS, 300);
 
-        LogCleaner logCleaner = new LogCleaner(conf, mockDirectoryCleaner);
+        WorkerLogs workerLogs = new WorkerLogs(conf, null);
+
+        LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null);
 
         long nowMillis = Time.currentTimeMillis();
-        long cutoffMillis = new LogCleaner(conf, mockDirectoryCleaner).cleanupCutoffAgeMillis(nowMillis);
+        long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
         long oldMtimeMillis = cutoffMillis - 500;
         long newMtimeMillis = cutoffMillis + 500;
 
@@ -125,9 +127,6 @@ public class LogCleanerTest {
             when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(String.class)))
                     .thenCallRealMethod();
 
-            Map<String, Object> conf = Utils.readStormConfig();
-            LogCleaner logCleaner = new LogCleaner(conf, mockDirectoryCleaner);
-
             long nowMillis = Time.currentTimeMillis();
 
             List<File> files1 = Seq.range(0, 10).map(idx -> new MockFileBuilder().setFileName("A" + idx)
@@ -157,7 +156,11 @@ public class LogCleanerTest {
             File rootDir = new MockDirectoryBuilder().setDirName("/workers-artifacts")
                     .setFiles(rootFiles).build();
 
-            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(rootDir, 1200, mockDirectoryCleaner);
+            Map<String, Object> conf = Utils.readStormConfig();
+            WorkerLogs workerLogs = new WorkerLogs(conf, rootDir);
+            LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, rootDir);
+
+            List<Integer> deletedFiles = logCleaner.perWorkerDirCleanup(1200);
             assertEquals(Integer.valueOf(4), deletedFiles.get(0));
             assertEquals(Integer.valueOf(4), deletedFiles.get(1));
             assertEquals(Integer.valueOf(4), deletedFiles.get(deletedFiles.size() - 1));
@@ -181,15 +184,6 @@ public class LogCleanerTest {
             });
             when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(String.class)))
                     .thenCallRealMethod();
-
-            Map<String, Object> conf = Utils.readStormConfig();
-
-            LogCleaner logCleaner = new LogCleaner(conf, mockDirectoryCleaner) {
-                @Override
-                SortedSet<String> getAliveWorkerDirs(File rootDir) throws Exception {
-                    return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
-                }
-            };
 
             long nowMillis = Time.currentTimeMillis();
 
@@ -222,45 +216,19 @@ public class LogCleanerTest {
             File rootDir = new MockDirectoryBuilder().setDirName("/workers-artifacts")
                     .setFiles(rootFiles).build();
 
-            int deletedFiles = logCleaner.globalLogCleanup(rootDir, 2400, mockDirectoryCleaner);
-            assertEquals(18, deletedFiles);
-        } finally {
-            Utils.setInstance(prevUtils);
-        }
-    }
-
-    /**
-     * Build up workerid-workerlogdir map for the old workers' dirs.
-     */
-    @Test
-    public void testIdentifyWorkerLogDirs() throws Exception {
-        File port1Dir = new MockDirectoryBuilder().setDirName("/workers-artifacts/topo1/port1").build();
-        File mockMetaFile = new MockFileBuilder().setFileName("worker.yaml").build();
-
-        String expId = "id12345";
-        Map<String, File> expected = Collections.singletonMap(expId, port1Dir);
-
-        try {
-            SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
-            SupervisorUtils.setInstance(mockedSupervisorUtils);
-
-            Map<String, Object> stormConf = Utils.readStormConfig();
-            LogCleaner logCleaner = new LogCleaner(stormConf, new DirectoryCleaner()) {
+            Map<String, Object> conf = Utils.readStormConfig();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, rootDir) {
                 @Override
-                Optional<File> getMetadataFileForWorkerLogDir(File logDir) throws IOException {
-                    return Optional.of(mockMetaFile);
-                }
-
-                @Override
-                String getWorkerIdFromMetadataFile(String metaFile) {
-                    return expId;
+                public SortedSet<String> getAliveWorkerDirs() throws Exception {
+                    return new TreeSet<>(Collections.singletonList("/workers-artifacts/topo1/port1"));
                 }
             };
 
-            when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(null);
-            assertEquals(expected, logCleaner.identifyWorkerLogDirs(Collections.singleton(port1Dir)));
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, mockDirectoryCleaner, rootDir);
+            int deletedFiles = logCleaner.globalLogCleanup(2400);
+            assertEquals(18, deletedFiles);
         } finally {
-            SupervisorUtils.resetInstance();
+            Utils.setInstance(prevUtils);
         }
     }
 
@@ -286,9 +254,10 @@ public class LogCleanerTest {
             SupervisorUtils mockedSupervisorUtils = mock(SupervisorUtils.class);
             SupervisorUtils.setInstance(mockedSupervisorUtils);
 
-            LogCleaner logCleaner = new LogCleaner(stormConf, new DirectoryCleaner()) {
+            Map<String, Object> conf = Utils.readStormConfig();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null) {
                 @Override
-                Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
+                public Map<String, File> identifyWorkerLogDirs(Set<File> logDirs) {
                     Map<String, File> ret = new HashMap<>();
                     ret.put("42", unexpectedDir1);
                     ret.put("007", expectedDir2);
@@ -298,6 +267,8 @@ public class LogCleanerTest {
                     return ret;
                 }
             };
+
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null);
 
             when(mockedSupervisorUtils.readWorkerHeartbeatsImpl(anyMapOf(String.class, Object.class))).thenReturn(idToHb);
             assertEquals(Sets.newSet(expectedDir2, expectedDir3), logCleaner.getDeadWorkerDirs(nowSecs, logDirs));
@@ -326,9 +297,13 @@ public class LogCleanerTest {
                 return null;
             }).when(mockUtils).forceDelete(anyString());
 
-            LogCleaner logCleaner = new LogCleaner(Utils.readStormConfig(), new DirectoryCleaner()) {
+
+            Map<String, Object> conf = Utils.readStormConfig();
+            WorkerLogs stubbedWorkerLogs = new WorkerLogs(conf, null);
+
+            LogCleaner logCleaner = new LogCleaner(conf, stubbedWorkerLogs, new DirectoryCleaner(), null) {
                 @Override
-                Set<File> selectDirsForCleanup(long nowMillis, String rootDir) {
+                Set<File> selectDirsForCleanup(long nowMillis) {
                     return Collections.emptySet();
                 }
 

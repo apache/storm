@@ -62,12 +62,15 @@ import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 public class LogviewerLogPageHandler {
     private final String logRoot;
     private final String daemonLogRoot;
+    private final WorkerLogs workerLogs;
     private final ResourceAuthorizer resourceAuthorizer;
 
     public LogviewerLogPageHandler(String logRoot, String daemonLogRoot,
+                                   WorkerLogs workerLogs,
                                    ResourceAuthorizer resourceAuthorizer) {
         this.logRoot = logRoot;
         this.daemonLogRoot = daemonLogRoot;
+        this.workerLogs = workerLogs;
         this.resourceAuthorizer = resourceAuthorizer;
     }
 
@@ -75,7 +78,7 @@ public class LogviewerLogPageHandler {
         List<File> fileResults = null;
         if (topologyId == null) {
             if (port == null) {
-                fileResults = WorkerLogs.getAllLogsForRootDir(new File(logRoot));
+                fileResults = workerLogs.getAllLogsForRootDir();
             } else {
                 fileResults = new ArrayList<>();
 
@@ -130,6 +133,8 @@ public class LogviewerLogPageHandler {
     public Response logPage(String fileName, Integer start, Integer length, String grep, String user) throws IOException, InvalidRequestException {
         String rootDir = logRoot;
         if (resourceAuthorizer.isUserAllowedToAccessFile(fileName, user)) {
+            workerLogs.setLogFilePermission(fileName);
+
             File file = new File(rootDir, fileName).getCanonicalFile();
             String path = file.getCanonicalPath();
             boolean isZipFile = path.endsWith(".gz");

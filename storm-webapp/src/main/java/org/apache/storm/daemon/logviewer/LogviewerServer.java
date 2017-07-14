@@ -23,10 +23,12 @@ import com.google.common.annotations.VisibleForTesting;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.LogCleaner;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.daemon.logviewer.webapp.LogviewerApplication;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.ui.FilterConfiguration;
 import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
@@ -38,6 +40,7 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
@@ -158,10 +161,13 @@ public class LogviewerServer implements AutoCloseable {
         Utils.setupDefaultUncaughtExceptionHandler();
         Map<String, Object> conf = Utils.readStormConfig();
 
+        String logRoot = ConfigUtils.workerArtifactsRoot(conf);
+        File logRootFile = new File(logRoot);
+        WorkerLogs workerLogs = new WorkerLogs(conf, logRootFile);
         DirectoryCleaner directoryCleaner = new DirectoryCleaner();
 
         try (LogviewerServer server = new LogviewerServer(conf);
-             LogCleaner logCleaner = new LogCleaner(conf, directoryCleaner)) {
+             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootFile)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             logCleaner.start();
             StormMetricsRegistry.startMetricsReporters(conf);

@@ -28,6 +28,7 @@ import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
 import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IHttpCredentialsPlugin;
 import org.apache.storm.utils.ConfigUtils;
@@ -55,11 +56,12 @@ public class LogviewerApplication extends Application {
         String daemonLogRoot = logRootDir(ObjectReader.getString(stormConf.get(LOGVIEWER_APPENDER_NAME)));
 
         ResourceAuthorizer resourceAuthorizer = new ResourceAuthorizer(stormConf);
+        WorkerLogs workerLogs = new WorkerLogs(stormConf, new File(logRoot));
 
-        LogviewerLogPageHandler logviewer = new LogviewerLogPageHandler(logRoot, daemonLogRoot, resourceAuthorizer);
+        LogviewerLogPageHandler logviewer = new LogviewerLogPageHandler(logRoot, daemonLogRoot, workerLogs, resourceAuthorizer);
         LogviewerProfileHandler profileHandler = new LogviewerProfileHandler(logRoot, resourceAuthorizer);
         LogviewerLogDownloadHandler logDownloadHandler = new LogviewerLogDownloadHandler(logRoot, daemonLogRoot,
-                resourceAuthorizer);
+                workerLogs, resourceAuthorizer);
         LogviewerLogSearchHandler logSearchHandler = new LogviewerLogSearchHandler(stormConf, logRoot, daemonLogRoot,
                 resourceAuthorizer);
         IHttpCredentialsPlugin httpCredsHandler = AuthUtils.GetUiHttpCredentialsPlugin(stormConf);

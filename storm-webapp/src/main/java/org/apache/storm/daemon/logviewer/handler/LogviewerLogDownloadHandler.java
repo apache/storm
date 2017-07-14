@@ -20,19 +20,23 @@ package org.apache.storm.daemon.logviewer.handler;
 
 import org.apache.storm.daemon.logviewer.utils.LogFileDownloader;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 
 import javax.ws.rs.core.Response;
 import java.io.IOException;
 
 public class LogviewerLogDownloadHandler {
 
+    private WorkerLogs workerLogs;
     private final LogFileDownloader logFileDownloadHelper;
 
-    public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, ResourceAuthorizer resourceAuthorizer) {
+    public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, WorkerLogs workerLogs, ResourceAuthorizer resourceAuthorizer) {
+        this.workerLogs = workerLogs;
         this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, resourceAuthorizer);
     }
 
     public Response downloadLogFile(String fileName, String user) throws IOException {
+        workerLogs.setLogFilePermission(fileName);
         return logFileDownloadHelper.downloadFile(fileName, user, false);
     }
 

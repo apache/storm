@@ -21,6 +21,7 @@ package org.apache.storm.daemon.logviewer.handler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
 import org.apache.storm.utils.Utils;
 import org.assertj.core.util.Lists;
 import org.junit.Test;
@@ -31,6 +32,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,9 +58,9 @@ public class LogviewerLogPageHandlerTest {
         file3.createNewFile();
 
         String origin = "www.origin.server.net";
-
+        Map<String, Object> stormConf = Utils.readStormConfig();
         LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, null,
-                new ResourceAuthorizer(Utils.readStormConfig()));
+                new WorkerLogs(stormConf, new File(rootPath)), new ResourceAuthorizer(stormConf));
 
         Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
