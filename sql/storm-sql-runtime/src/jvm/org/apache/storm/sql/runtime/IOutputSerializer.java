@@ -15,17 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import java.nio.ByteBuffer;
 import java.util.List;
 
 public interface IOutputSerializer {
-  /**
-   * Serialize the data to a ByteBuffer. The caller can pass in a ByteBuffer so that the serializer can reuse the
-   * memory.
-   *
-   * @return A ByteBuffer contains the serialized result.
-   */
-  ByteBuffer write(List<Object> data, ByteBuffer buffer);
+    /**
+     * Serialize the data to a ByteBuffer. The caller can pass in a ByteBuffer so that the serializer can reuse the
+     * memory.
+     *
+     * @return A ByteBuffer contains the serialized result.
+     */
+    ByteBuffer write(List<Object> data, ByteBuffer buffer);
 }

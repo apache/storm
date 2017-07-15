@@ -16,7 +16,11 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.sql.runtime.trident.functions;
+
+import java.util.Collections;
+import java.util.Map;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
@@ -30,9 +34,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.Map;
-
 public class EvaluationCalc implements OperationAwareFlatMapFunction {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationCalc.class);
 
@@ -41,7 +42,15 @@ public class EvaluationCalc implements OperationAwareFlatMapFunction {
     private final Object[] outputValues;
     private final DataContext dataContext;
 
-    public EvaluationCalc(ExecutableExpression filterInstance, ExecutableExpression projectionInstance, int outputCount, DataContext dataContext) {
+    /**
+     * EvaluationCalc Constructor.
+     * @param filterInstance ExecutableExpression
+     * @param projectionInstance ExecutableExpression
+     * @param outputCount output count
+     * @param dataContext DataContext
+     */
+    public EvaluationCalc(ExecutableExpression filterInstance, ExecutableExpression projectionInstance,
+                          int outputCount, DataContext dataContext) {
         this.filterInstance = filterInstance;
         this.projectionInstance = projectionInstance;
         this.outputValues = new Object[outputCount];

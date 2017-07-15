@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.calcite.interpreter;
 
-import org.apache.calcite.DataContext;
-
 import java.io.Serializable;
+
+import org.apache.calcite.DataContext;
 
 /**
  * This is a hack to use Calcite Context.

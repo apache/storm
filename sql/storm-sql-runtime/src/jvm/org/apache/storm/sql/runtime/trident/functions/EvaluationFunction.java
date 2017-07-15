@@ -16,7 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.sql.runtime.trident.functions;
+
+import java.util.Map;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
@@ -30,8 +33,6 @@ import org.apache.storm.tuple.Values;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 public class EvaluationFunction implements OperationAwareMapFunction {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFunction.class);
 
@@ -39,6 +40,12 @@ public class EvaluationFunction implements OperationAwareMapFunction {
     private final Object[] outputValues;
     private final DataContext dataContext;
 
+    /**
+     * EvaluationFunction Constructor.
+     * @param projectionInstance ExecutableExpression
+     * @param outputCount output count
+     * @param dataContext DataContext
+     */
     public EvaluationFunction(ExecutableExpression projectionInstance, int outputCount, DataContext dataContext) {
         this.projectionInstance = projectionInstance;
         this.outputValues = new Object[outputCount];

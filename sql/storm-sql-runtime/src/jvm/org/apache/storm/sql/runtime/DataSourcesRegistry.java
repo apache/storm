@@ -15,10 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.sql.runtime;
 
 import java.net.URI;
 import java.util.HashMap;
@@ -27,50 +25,70 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class DataSourcesRegistry {
-  private static final Logger LOG = LoggerFactory.getLogger(
-      DataSourcesRegistry.class);
-  private static final Map<String, DataSourcesProvider> providers;
+    private static final Logger LOG = LoggerFactory.getLogger(
+            DataSourcesRegistry.class);
+    private static final Map<String, DataSourcesProvider> providers;
 
-  static {
-    providers = new HashMap<>();
-    ServiceLoader<DataSourcesProvider> loader = ServiceLoader.load(
-        DataSourcesProvider.class);
-    for (DataSourcesProvider p : loader) {
-      LOG.info("Registering scheme {} with {}", p.scheme(), p);
-      providers.put(p.scheme(), p);
-    }
-  }
-
-  private DataSourcesRegistry() {
-  }
-
-  public static DataSource construct(
-      URI uri, String inputFormatClass, String outputFormatClass,
-      List<FieldInfo> fields) {
-    DataSourcesProvider provider = providers.get(uri.getScheme());
-    if (provider == null) {
-      return null;
+    static {
+        providers = new HashMap<>();
+        ServiceLoader<DataSourcesProvider> loader = ServiceLoader.load(
+                DataSourcesProvider.class);
+        for (DataSourcesProvider p : loader) {
+            LOG.info("Registering scheme {} with {}", p.scheme(), p);
+            providers.put(p.scheme(), p);
+        }
     }
 
-    return provider.construct(uri, inputFormatClass, outputFormatClass, fields);
-  }
-
-  public static ISqlTridentDataSource constructTridentDataSource(
-          URI uri, String inputFormatClass, String outputFormatClass,
-          Properties properties, List<FieldInfo> fields) {
-    DataSourcesProvider provider = providers.get(uri.getScheme());
-    if (provider == null) {
-      return null;
+    private DataSourcesRegistry() {
     }
 
-    return provider.constructTrident(uri, inputFormatClass, outputFormatClass, properties, fields);
-  }
+    /**
+     * Construct a data source.
+     * @param uri data source uri
+     * @param inputFormatClass input format class
+     * @param outputFormatClass output format class
+     * @param fields fields info list
+     * @return DataSource object
+     */
+    public static DataSource construct(
+            URI uri, String inputFormatClass, String outputFormatClass,
+            List<FieldInfo> fields) {
+        DataSourcesProvider provider = providers.get(uri.getScheme());
+        if (provider == null) {
+            return null;
+        }
 
-  /**
-   * Allow unit tests to inject data sources.
-   */
-  public static Map<String, DataSourcesProvider> providerMap() {
-    return providers;
-  }
+        return provider.construct(uri, inputFormatClass, outputFormatClass, fields);
+    }
+
+    /**
+     * Construct a trident data source.
+     * @param uri data source uri
+     * @param inputFormatClass input format class
+     * @param outputFormatClass output format class
+     * @param properties Properties
+     * @param fields fields info list
+     * @return TridentDataSource object
+     */
+    public static ISqlTridentDataSource constructTridentDataSource(
+            URI uri, String inputFormatClass, String outputFormatClass,
+            Properties properties, List<FieldInfo> fields) {
+        DataSourcesProvider provider = providers.get(uri.getScheme());
+        if (provider == null) {
+            return null;
+        }
+
+        return provider.constructTrident(uri, inputFormatClass, outputFormatClass, properties, fields);
+    }
+
+    /**
+     * Allow unit tests to inject data sources.
+     */
+    public static Map<String, DataSourcesProvider> providerMap() {
+        return providers;
+    }
 }

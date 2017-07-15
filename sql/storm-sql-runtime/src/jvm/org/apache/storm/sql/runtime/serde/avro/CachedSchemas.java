@@ -15,20 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.serde.avro;
 
-import org.apache.avro.Schema;
+package org.apache.storm.sql.runtime.serde.avro;
 
 import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.apache.avro.Schema;
+
 // TODO this class is reserved for supporting messages with different schemas.
 // current only one schema in the cache
-public class CachedSchemas implements Serializable{
+public class CachedSchemas implements Serializable {
 
     private final Map<String, Schema> cache = new HashMap<>();
 
+    /**
+     * Get a schema based on schema string.
+     * @param schemaString schema string
+     * @return Schema object
+     */
     public Schema getSchema(String schemaString) {
         Schema schema = cache.get(schemaString);
         if (schema == null) {

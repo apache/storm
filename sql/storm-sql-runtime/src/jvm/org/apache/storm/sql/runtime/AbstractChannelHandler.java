@@ -15,38 +15,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import org.apache.storm.tuple.Values;
 
 public abstract class AbstractChannelHandler implements ChannelHandler {
-  @Override
-  public abstract void dataReceived(ChannelContext ctx, Values data);
-
-  @Override
-  public void channelInactive(ChannelContext ctx) {
-
-  }
-
-  @Override
-  public void exceptionCaught(Throwable cause) {
-
-  }
-
-  @Override
-  public void flush(ChannelContext ctx) {
-    ctx.flush();
-  }
-
-  @Override
-  public void setSource(ChannelContext ctx, Object source) {
-
-  }
-
-  public static final AbstractChannelHandler PASS_THROUGH = new AbstractChannelHandler() {
     @Override
-    public void dataReceived(ChannelContext ctx, Values data) {
-      ctx.emit(data);
+    public abstract void dataReceived(ChannelContext ctx, Values data);
+
+    @Override
+    public void channelInactive(ChannelContext ctx) {
+
     }
-  };
+
+    @Override
+    public void exceptionCaught(Throwable cause) {
+
+    }
+
+    @Override
+    public void flush(ChannelContext ctx) {
+        ctx.flush();
+    }
+
+    @Override
+    public void setSource(ChannelContext ctx, Object source) {
+
+    }
+
+    public static final AbstractChannelHandler PASS_THROUGH = new AbstractChannelHandler() {
+        @Override
+        public void dataReceived(ChannelContext ctx, Values data) {
+            ctx.emit(data);
+        }
+    };
 }

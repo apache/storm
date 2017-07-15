@@ -18,6 +18,10 @@
 
 package org.apache.storm.sql.runtime.datasource.socket;
 
+import java.net.URI;
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
@@ -34,14 +38,10 @@ import org.apache.storm.trident.spout.ITridentDataSource;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.state.StateUpdater;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Properties;
-
 /**
  * Create a Socket data source based on the URI and properties. The URI has the format of
  * socket://[host]:[port]. Both of host and port are mandatory.
- *
+ * <p/>
  * Note that it connects to given host and port, and receive the message if it's used for input source,
  * and send the message if it's used for output data source.
  */
@@ -84,7 +84,8 @@ public class SocketDataSourcesProvider implements DataSourcesProvider {
     }
 
     @Override
-    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass, Properties properties, List<FieldInfo> fields) {
+    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                  Properties properties, List<FieldInfo> fields) {
         String host = uri.getHost();
         int port = uri.getPort();
         if (port == -1) {

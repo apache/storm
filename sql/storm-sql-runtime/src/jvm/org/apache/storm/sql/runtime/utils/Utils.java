@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.utils;
 
 import java.util.LinkedList;
@@ -23,27 +24,27 @@ import java.util.List;
 public final class Utils {
 
     /**
-     * This method for splitting string into parts by a delimiter
-     * It has higher performance than String.split(String regex)
+     * This method for splitting string into parts by a delimiter.
+     * It has higher performance than String.split(String regex).
      *
-     * @param data
-     * @param delimiter
-     * @return
+     * @param data need split string
+     * @param delimiter the delimiter
+     * @return string list
      */
-    public static List<String> split(String data, char delimiter){
+    public static List<String> split(String data, char delimiter) {
         List<String> list = new LinkedList<>();
         //do not use .toCharArray avoid system copy
         StringBuilder sb = new StringBuilder(512);
         int len = data.length();
-        for (int i=0; i < len; i++) {
+        for (int i = 0; i < len; i++) {
             char ch = data.charAt(i);
-            if(ch == delimiter){
+            if (ch == delimiter) {
                 list.add(sb.toString());
                 sb.setLength(0);
-                if(i == len - 1){
+                if (i == len - 1) {
                     list.add("");
                 }
-            }else{
+            } else {
                 sb.append(ch);
             }
         }

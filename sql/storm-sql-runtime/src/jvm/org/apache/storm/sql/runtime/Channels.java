@@ -15,95 +15,96 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import org.apache.storm.tuple.Values;
 
 public class Channels {
-  private static final ChannelContext VOID_CTX = new ChannelContext() {
-    @Override
-    public void emit(Values data) {}
+    private static final ChannelContext VOID_CTX = new ChannelContext() {
+        @Override
+        public void emit(Values data) {}
 
-    @Override
-    public void fireChannelInactive() {}
+        @Override
+        public void fireChannelInactive() {}
 
-    @Override
-    public void flush() {
+        @Override
+        public void flush() {
 
+        }
+
+        @Override
+        public void setSource(java.lang.Object source) {
+
+        }
+    };
+
+    private static class ChannelContextAdapter implements ChannelContext {
+        private final ChannelHandler handler;
+        private final ChannelContext next;
+
+        public ChannelContextAdapter(
+                ChannelContext next, ChannelHandler handler) {
+            this.handler = handler;
+            this.next = next;
+        }
+
+        @Override
+        public void emit(Values data) {
+            handler.dataReceived(next, data);
+        }
+
+        @Override
+        public void fireChannelInactive() {
+            handler.channelInactive(next);
+        }
+
+        @Override
+        public void flush() {
+            handler.flush(next);
+        }
+
+        @Override
+        public void setSource(java.lang.Object source) {
+            handler.setSource(next, source);
+            next.setSource(source); // propagate through the chain
+        }
     }
 
-    @Override
-    public void setSource(java.lang.Object source) {
+    private static class ForwardingChannelContext implements ChannelContext {
+        private final ChannelContext next;
 
-    }
-  };
+        public ForwardingChannelContext(ChannelContext next) {
+            this.next = next;
+        }
 
-  private static class ChannelContextAdapter implements ChannelContext {
-    private final ChannelHandler handler;
-    private final ChannelContext next;
+        @Override
+        public void emit(Values data) {
+            next.emit(data);
+        }
 
-    public ChannelContextAdapter(
-        ChannelContext next, ChannelHandler handler) {
-      this.handler = handler;
-      this.next = next;
-    }
+        @Override
+        public void fireChannelInactive() {
+            next.fireChannelInactive();
+        }
 
-    @Override
-    public void emit(Values data) {
-      handler.dataReceived(next, data);
-    }
+        @Override
+        public void flush() {
+            next.flush();
+        }
 
-    @Override
-    public void fireChannelInactive() {
-      handler.channelInactive(next);
-    }
-
-    @Override
-    public void flush() {
-      handler.flush(next);
+        @Override
+        public void setSource(Object source) {
+            next.setSource(source);
+        }
     }
 
-    @Override
-    public void setSource(java.lang.Object source) {
-      handler.setSource(next, source);
-      next.setSource(source); // propagate through the chain
-    }
-  }
-
-  private static class ForwardingChannelContext implements ChannelContext {
-    private final ChannelContext next;
-
-    public ForwardingChannelContext(ChannelContext next) {
-      this.next = next;
+    public static ChannelContext chain(
+            ChannelContext next, ChannelHandler handler) {
+        return new ChannelContextAdapter(next, handler);
     }
 
-    @Override
-    public void emit(Values data) {
-      next.emit(data);
+    public static ChannelContext voidContext() {
+        return VOID_CTX;
     }
-
-    @Override
-    public void fireChannelInactive() {
-      next.fireChannelInactive();
-    }
-
-    @Override
-    public void flush() {
-      next.flush();
-    }
-
-    @Override
-    public void setSource(Object source) {
-      next.setSource(source);
-    }
-  }
-
-  public static ChannelContext chain(
-      ChannelContext next, ChannelHandler handler) {
-    return new ChannelContextAdapter(next, handler);
-  }
-
-  public static ChannelContext voidContext() {
-    return VOID_CTX;
-  }
 }
