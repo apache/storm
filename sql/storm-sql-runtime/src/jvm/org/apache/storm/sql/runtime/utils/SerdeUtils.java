@@ -15,11 +15,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.utils;
 
 import static org.apache.commons.lang.StringUtils.isNotEmpty;
 
 import com.google.common.base.Preconditions;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+
 import org.apache.avro.generic.GenericData;
 import org.apache.avro.util.Utf8;
 import org.apache.storm.spout.Scheme;
@@ -34,13 +42,14 @@ import org.apache.storm.sql.runtime.serde.tsv.TsvScheme;
 import org.apache.storm.sql.runtime.serde.tsv.TsvSerializer;
 import org.apache.storm.utils.ReflectionUtils;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
 public final class SerdeUtils {
+    /**
+     * Get a Scheme instance based on specific configurations.
+     * @param inputFormatClass input format class
+     * @param properties Properties
+     * @param fieldNames field names
+     * @return the Scheme instance
+     */
     public static Scheme getScheme(String inputFormatClass, Properties properties, List<String> fieldNames) {
         Scheme scheme;
         if (isNotEmpty(inputFormatClass)) {
@@ -65,6 +74,13 @@ public final class SerdeUtils {
         return scheme;
     }
 
+    /**
+     * Get a OutputSerializer instance based on specific configurations.
+     * @param outputFormatClass output format class
+     * @param properties Properties
+     * @param fieldNames field names
+     * @return the OutputSerializer instance
+     */
     public static IOutputSerializer getSerializer(String outputFormatClass, Properties properties, List<String> fieldNames) {
         IOutputSerializer serializer;
         if (isNotEmpty(outputFormatClass)) {
@@ -89,7 +105,12 @@ public final class SerdeUtils {
         return serializer;
     }
 
-    public static Object convertAvroUtf8(Object value){
+    /**
+     * Convert a Avro object to a Java object, changing the Avro Utf8 type to Java String.
+     * @param value Avro object
+     * @return Java object
+     */
+    public static Object convertAvroUtf8(Object value) {
         Object ret;
         if (value instanceof Utf8) {
             ret = value.toString();
@@ -103,7 +124,7 @@ public final class SerdeUtils {
         return ret;
     }
 
-    public static Object convertAvroUtf8Map(Map<Object,Object> value) {
+    private static Object convertAvroUtf8Map(Map<Object,Object> value) {
         Map<Object, Object> map = new HashMap<>(value.size());
         for (Map.Entry<Object, Object> entry : value.entrySet()) {
             Object k = convertAvroUtf8(entry.getKey());
@@ -113,9 +134,9 @@ public final class SerdeUtils {
         return map;
     }
 
-    public static Object convertAvroUtf8Array(GenericData.Array value){
+    private static Object convertAvroUtf8Array(GenericData.Array value) {
         List<Object> ls = new ArrayList<>(value.size());
-        for(Object o : value){
+        for (Object o : value) {
             ls.add(convertAvroUtf8(o));
         }
         return ls;

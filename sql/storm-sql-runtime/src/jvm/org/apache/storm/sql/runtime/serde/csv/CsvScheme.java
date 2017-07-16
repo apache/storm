@@ -15,21 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.serde.csv;
 
 import com.google.common.base.Preconditions;
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVParser;
-import org.apache.commons.csv.CSVRecord;
-import org.apache.storm.spout.Scheme;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 
 /**
  * CsvScheme uses the standard RFC4180 CSV Parser
@@ -39,32 +41,32 @@ import java.util.List;
  * @see <a href="https://tools.ietf.org/html/rfc4180">RFC4180</a>
  */
 public class CsvScheme implements Scheme {
-  private final List<String> fieldNames;
+    private final List<String> fieldNames;
 
-  public CsvScheme(List<String> fieldNames) {
-    this.fieldNames = fieldNames;
-  }
-
-  @Override
-  public List<Object> deserialize(ByteBuffer ser) {
-    try {
-      String data = new String(Utils.toByteArray(ser), StandardCharsets.UTF_8);
-      CSVParser parser = CSVParser.parse(data, CSVFormat.RFC4180);
-      CSVRecord record = parser.getRecords().get(0);
-      Preconditions.checkArgument(record.size() == fieldNames.size(), "Invalid schema");
-
-      ArrayList<Object> list = new ArrayList<>(fieldNames.size());
-      for (int i = 0; i < record.size(); i++) {
-        list.add(record.get(i));
-      }
-      return list;
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    public CsvScheme(List<String> fieldNames) {
+        this.fieldNames = fieldNames;
     }
-  }
 
-  @Override
-  public Fields getOutputFields() {
-    return new Fields(fieldNames);
-  }
+    @Override
+    public List<Object> deserialize(ByteBuffer ser) {
+        try {
+            String data = new String(Utils.toByteArray(ser), StandardCharsets.UTF_8);
+            CSVParser parser = CSVParser.parse(data, CSVFormat.RFC4180);
+            CSVRecord record = parser.getRecords().get(0);
+            Preconditions.checkArgument(record.size() == fieldNames.size(), "Invalid schema");
+
+            ArrayList<Object> list = new ArrayList<>(fieldNames.size());
+            for (int i = 0; i < record.size(); i++) {
+                list.add(record.get(i));
+            }
+            return list;
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return new Fields(fieldNames);
+    }
 }

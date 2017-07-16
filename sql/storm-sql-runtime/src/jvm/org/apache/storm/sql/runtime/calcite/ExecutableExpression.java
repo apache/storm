@@ -18,14 +18,15 @@
 
 package org.apache.storm.sql.runtime.calcite;
 
-import org.apache.calcite.interpreter.Context;
-
 import java.io.Serializable;
+
+import org.apache.calcite.interpreter.Context;
 
 /**
  * Compiled executable expression.
  */
 public interface ExecutableExpression extends Serializable {
     Object execute(Context context);
+
     void execute(Context context, Object[] results);
 }

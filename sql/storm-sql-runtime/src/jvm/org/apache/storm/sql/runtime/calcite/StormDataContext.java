@@ -15,9 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.calcite;
 
 import com.google.common.collect.ImmutableMap;
+
+import java.io.Serializable;
+import java.util.Calendar;
+import java.util.TimeZone;
+
 import org.apache.calcite.DataContext;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.linq4j.QueryProvider;
@@ -25,16 +31,15 @@ import org.apache.calcite.runtime.Hook;
 import org.apache.calcite.schema.SchemaPlus;
 import org.apache.calcite.util.Holder;
 
-import java.io.Serializable;
-import java.util.Calendar;
-import java.util.TimeZone;
-
 /**
  * This is based on SlimDataContext in Calcite, and borrow some from DataContextImpl in Calcite.
  */
 public class StormDataContext implements DataContext, Serializable {
     private final ImmutableMap<Object, Object> map;
 
+    /**
+     * StormDataContext Constructor.
+     */
     public StormDataContext() {
         // Store the time at which the query started executing. The SQL
         // standard says that functions such as CURRENT_TIMESTAMP return the

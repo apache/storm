@@ -15,33 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import java.io.Serializable;
 
 /**
- * Describe each column of the field
+ * Describe each column of the field.
  */
 public class FieldInfo implements Serializable {
-  private final String name;
-  private final Class<?> type;
-  private final boolean isPrimary;
+    private final String name;
+    private final Class<?> type;
+    private final boolean isPrimary;
 
-  public FieldInfo(String name, Class<?> type, boolean isPrimary) {
-    this.name = name;
-    this.type = type;
-    this.isPrimary = isPrimary;
-  }
+    /**
+     * FieldInfo Constructor.
+     * @param name field name
+     * @param type filed type
+     * @param isPrimary primary or not
+     */
+    public FieldInfo(String name, Class<?> type, boolean isPrimary) {
+        this.name = name;
+        this.type = type;
+        this.isPrimary = isPrimary;
+    }
 
-  public String name() {
-    return name;
-  }
+    public String name() {
+        return name;
+    }
 
-  public Class<?> type() {
-    return type;
-  }
+    public Class<?> type() {
+        return type;
+    }
 
-  public boolean isPrimary() {
-    return isPrimary;
-  }
+    public boolean isPrimary() {
+        return isPrimary;
+    }
 }

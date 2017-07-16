@@ -15,16 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import org.apache.storm.tuple.Values;
 
 public interface ChannelContext {
-  /**
-   * Emit data to the next stage of the data pipeline.
-   */
-  void emit(Values data);
-  void fireChannelInactive();
-  void flush();
-  void setSource(Object source);
+    /**
+     * Emit data to the next stage of the data pipeline.
+     */
+    void emit(Values data);
+
+    void fireChannelInactive();
+
+    void flush();
+
+    void setSource(Object source);
 }

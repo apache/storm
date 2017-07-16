@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 import org.apache.storm.tuple.Values;
@@ -24,18 +25,18 @@ import org.apache.storm.tuple.Values;
  * series of events.
  */
 public interface ChannelHandler {
-  void dataReceived(ChannelContext ctx, Values data);
+    void dataReceived(ChannelContext ctx, Values data);
 
-  /**
-   * The producer of the data has indicated that the channel is no longer
-   * active.
-   * @param ctx
-   */
-  void channelInactive(ChannelContext ctx);
+    /**
+     * The producer of the data has indicated that the channel is no longer
+     * active.
+     * @param ctx ChannelContext
+     */
+    void channelInactive(ChannelContext ctx);
 
-  void exceptionCaught(Throwable cause);
+    void exceptionCaught(Throwable cause);
 
-  void flush(ChannelContext ctx);
+    void flush(ChannelContext ctx);
 
-  void setSource(ChannelContext ctx, Object source);
+    void setSource(ChannelContext ctx, Object source);
 }

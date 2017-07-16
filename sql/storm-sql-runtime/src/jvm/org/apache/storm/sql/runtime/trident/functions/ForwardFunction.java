@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.sql.runtime.trident.functions;
 
 import org.apache.storm.trident.operation.BaseFunction;

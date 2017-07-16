@@ -16,7 +16,10 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.sql.runtime.trident.functions;
+
+import java.util.Map;
 
 import org.apache.calcite.DataContext;
 import org.apache.calcite.interpreter.Context;
@@ -29,8 +32,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
 public class EvaluationFilter extends BaseFilter {
     private static final Logger LOG = LoggerFactory.getLogger(EvaluationFilter.class);
 
@@ -38,6 +39,11 @@ public class EvaluationFilter extends BaseFilter {
     private final DataContext dataContext;
     private final Object[] outputValues;
 
+    /**
+     * EvaluationFilter Constructor.
+     * @param filterInstance ExecutableExpression
+     * @param dataContext DataContext
+     */
     public EvaluationFilter(ExecutableExpression filterInstance, DataContext dataContext) {
         this.filterInstance = filterInstance;
         this.dataContext = dataContext;

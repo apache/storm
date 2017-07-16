@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 /**
@@ -23,5 +24,5 @@ package org.apache.storm.sql.runtime;
  *
  */
 public interface DataSource {
-  void open(ChannelContext ctx);
+    void open(ChannelContext ctx);
 }

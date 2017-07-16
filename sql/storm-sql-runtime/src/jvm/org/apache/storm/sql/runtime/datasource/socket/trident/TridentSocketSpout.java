@@ -19,14 +19,6 @@
 package org.apache.storm.sql.runtime.datasource.socket.trident;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.storm.Config;
-import org.apache.storm.spout.Scheme;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.trident.operation.TridentCollector;
-import org.apache.storm.trident.spout.IBatchSpout;
-import org.apache.storm.tuple.Fields;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.Closeable;
@@ -41,6 +33,15 @@ import java.util.Map;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.LinkedBlockingDeque;
 
+import org.apache.storm.Config;
+import org.apache.storm.spout.Scheme;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.trident.operation.TridentCollector;
+import org.apache.storm.trident.spout.IBatchSpout;
+import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Trident Spout for Socket data. Only available for Storm SQL, and only use for test purposes.
  */
@@ -51,7 +52,7 @@ public class TridentSocketSpout implements IBatchSpout {
     private final int port;
     private final Scheme scheme;
 
-    private volatile boolean _running = true;
+    private volatile boolean running = true;
 
     private BlockingDeque<String> queue;
     private Socket socket;
@@ -61,6 +62,12 @@ public class TridentSocketSpout implements IBatchSpout {
 
     private Map<Long, List<List<Object>>> batches;
 
+    /**
+     * TridentSocketSpout Constructor.
+     * @param scheme Scheme
+     * @param host socket host
+     * @param port socket port
+     */
     public TridentSocketSpout(Scheme scheme, String host, int port) {
         this.scheme = scheme;
         this.host = host;
@@ -91,7 +98,7 @@ public class TridentSocketSpout implements IBatchSpout {
         if (batch == null) {
             batch = new ArrayList<>();
 
-            while(queue.peek() != null) {
+            while (queue.peek() != null) {
                 String line = queue.poll();
                 List<Object> values = convertLineToTuple(line);
                 if (values == null) {
@@ -120,7 +127,7 @@ public class TridentSocketSpout implements IBatchSpout {
 
     @Override
     public void close() {
-        _running = false;
+        running = false;
         readerThread.interrupt();
         queue.clear();
 
@@ -142,7 +149,7 @@ public class TridentSocketSpout implements IBatchSpout {
 
     private class SocketReaderRunnable implements Runnable {
         public void run() {
-            while (_running) {
+            while (running) {
                 try {
                     String line = in.readLine();
                     if (line == null) {
@@ -160,7 +167,7 @@ public class TridentSocketSpout implements IBatchSpout {
 
     private void die(Throwable t) {
         LOG.error("Halting process: TridentSocketSpout died.", t);
-        if (_running || (t instanceof Error)) { //don't exit if not running, unless it is an Error
+        if (running || (t instanceof Error)) { //don't exit if not running, unless it is an Error
             System.exit(11);
         }
     }

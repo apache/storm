@@ -15,17 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
-import org.apache.storm.tuple.Values;
-
 import java.util.Map;
+
+import org.apache.storm.tuple.Values;
 
 /**
  * Subclass of AbstractTupleProcessor provides a series of tuple. It
  * takes a series of iterators of {@link Values} and produces a stream of
  * tuple.
- *
+ * <p/>
  * The subclass implements the {@see next()} method to provide
  * the output of the stream. It can choose to return null in {@see next()} to
  * indicate that this particular iteration is a no-op. SQL processors depend
@@ -33,12 +34,12 @@ import java.util.Map;
  */
 public abstract class AbstractValuesProcessor {
 
-  /**
-   * Initialize the data sources.
-   *
-   * @param data a map from the table name to the iterators of the values.
-   *
-   */
-  public abstract void initialize(Map<String, DataSource> data, ChannelHandler
-      result);
+    /**
+     * Initialize the data sources.
+     *
+     * @param data a map from the table name to the iterators of the values.
+     *
+     */
+    public abstract void initialize(Map<String, DataSource> data, ChannelHandler
+            result);
 }
