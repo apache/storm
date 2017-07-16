@@ -1,4 +1,9 @@
 ﻿## 2.0.0
+ * STORM-2634: Apply new code style to storm-sql-runtime
+ * STORM-2633: Apply new code style to storm-sql-redis
+ * STORM-2632: Apply new code style to storm-sql-kafka
+ * STORM-2631: Apply new code style to storm-sql-mongodb
+ * STORM-2630: Apply new code style to storm-sql-hdfs
  * STORM-2589: Apply new code style to storm-mongodb
  * STORM-2594: Apply new code style to storm-rocketmq
  * STORM-2615: Add topology readonly user configuration
