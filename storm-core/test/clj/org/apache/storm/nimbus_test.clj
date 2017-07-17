@@ -965,13 +965,13 @@
                                        TOPOLOGY-EVENTLOGGER-EXECUTORS 0
                                        })))]
     (letlocals
-      ;test for 0-topology case
+      ;;test for 0-topology case
       (.advanceClusterTime cluster 11)
       (bind owner-resource-summaries (.getOwnerResourceSummaries (.getNimbus cluster) nil))
       (bind summary (first owner-resource-summaries))
       (is (nil? summary))
 
-      ;test for 1-topology case
+      ;;test for 1-topology case
       (bind topology (Thrift/buildTopology
                        {"1" (Thrift/prepareSpoutDetails
                               (TestPlannerSpout. true) (Integer. 3))}
@@ -988,7 +988,7 @@
       (is (= (.get_total_executors summary)) 3)
       (is (= (.get_total_topologies summary)) 1)
 
-      ;test for many-topology case
+      ;;test for many-topology case
       (bind topology2 (Thrift/buildTopology
                         {"2" (Thrift/prepareSpoutDetails
                                (TestPlannerSpout. true) (Integer. 4))}
@@ -1014,6 +1014,21 @@
       (is (= (.get_total_workers summary) 10))
       (is (= (.get_total_executors summary)) 12)
       (is (= (.get_total_topologies summary)) 3)
+
+      ;;test for specific owner
+      (bind owner-resource-summaries (.getOwnerResourceSummaries (.getNimbus cluster) (System/getProperty "user.name")))
+      (bind summary (first owner-resource-summaries))
+      (is (= (.get_total_workers summary) 10))
+      (is (= (.get_total_executors summary)) 12)
+      (is (= (.get_total_topologies summary)) 3)
+
+      ;;test for other user
+      (bind other-user (str "not-" (System/getProperty "user.name")))
+      (bind owner-resource-summaries (.getOwnerResourceSummaries (.getNimbus cluster) other-user))
+      (bind summary (first owner-resource-summaries))
+      (is (= (.get_total_workers summary) 0))
+      (is (= (.get_total_executors summary)) 0)
+      (is (= (.get_total_topologies summary)) 0)
       )))
 
 (deftest test-rebalance
