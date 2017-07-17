@@ -18,11 +18,10 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
-import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
-import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.utils.Utils;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.anyMapOf;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,10 +29,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
+import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
+import org.apache.storm.daemon.supervisor.SupervisorUtils;
+import org.apache.storm.utils.Utils;
+import org.junit.Test;
 
 public class WorkerLogsTest {
 

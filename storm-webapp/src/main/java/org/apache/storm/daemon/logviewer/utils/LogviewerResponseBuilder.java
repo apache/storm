@@ -18,13 +18,12 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import com.google.common.io.ByteStreams;
-import org.apache.storm.daemon.common.JsonResponseBuilder;
-import org.apache.storm.ui.UIHelpers;
+import static j2html.TagCreator.body;
+import static j2html.TagCreator.h2;
+import static javax.ws.rs.core.Response.Status.OK;
+import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
 
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.StreamingOutput;
+import com.google.common.io.ByteStreams;
 
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -35,26 +34,46 @@ import java.io.OutputStream;
 import java.util.HashMap;
 import java.util.Map;
 
-import static j2html.TagCreator.body;
-import static j2html.TagCreator.h2;
-import static javax.ws.rs.core.Response.Status.OK;
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+import javax.ws.rs.core.StreamingOutput;
+
+import org.apache.storm.daemon.common.JsonResponseBuilder;
+import org.apache.storm.ui.UIHelpers;
 
 public class LogviewerResponseBuilder {
 
     private LogviewerResponseBuilder() {
     }
 
+    /**
+     * Build a Response object representing success response with HTML entity.
+     *
+     * @param content HTML entity content, String type
+     */
     public static Response buildSuccessHtmlResponse(String content) {
         return Response.status(OK).entity(content)
                 .type(MediaType.TEXT_HTML_TYPE).build();
     }
 
+    /**
+     * Build a Response object representing success response with JSON entity.
+     *
+     * @param entity entity object to represent it as JSON
+     * @param callback callback for JSONP
+     * @param origin origin
+     * @see {@link JsonResponseBuilder}
+     */
     public static Response buildSuccessJsonResponse(Object entity, String callback, String origin) {
         return new JsonResponseBuilder().setData(entity).setCallback(callback)
                 .setHeaders(LogviewerResponseBuilder.getHeadersForSuccessResponse(origin)).build();
     }
 
+    /**
+     * Build a Response object representing download a file.
+     *
+     * @param file file to download
+     */
     public static Response buildDownloadFile(File file) throws IOException {
         // do not close this InputStream in method: it will be used from jetty server
         InputStream is = new FileInputStream(file);
@@ -65,6 +84,11 @@ public class LogviewerResponseBuilder {
                 .build();
     }
 
+    /**
+     * Build a Response object representing unauthorized user, with HTML response.
+     *
+     * @param user username
+     */
     public static Response buildResponseUnautohrizedUser(String user) {
         String entity = buildUnauthorizedUserHtml(user);
         return Response.status(OK)
@@ -73,6 +97,9 @@ public class LogviewerResponseBuilder {
                 .build();
     }
 
+    /**
+     * Build a Response object representing page not found.
+     */
     public static Response buildResponsePageNotFound() {
         return Response.status(404)
                 .entity("Page not found")
@@ -80,11 +107,23 @@ public class LogviewerResponseBuilder {
                 .build();
     }
 
+    /**
+     * Build a Response object representing unauthorized user, with JSON response.
+     *
+     * @param user username
+     * @param callback callback for JSONP
+     */
     public static Response buildUnauthorizedUserJsonResponse(String user, String callback) {
         return new JsonResponseBuilder().setData(UIHelpers.unauthorizedUserJson(user))
                 .setCallback(callback).setStatus(401).build();
     }
 
+    /**
+     * Build a Response object representing exception, with JSON response.
+     *
+     * @param ex Exception object
+     * @param callback callback for JSONP
+     */
     public static Response buildExceptionJsonResponse(Exception ex, String callback) {
         return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(ex))
                 .setCallback(callback).setStatus(500).build();

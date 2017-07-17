@@ -18,14 +18,6 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import org.apache.storm.daemon.logviewer.testsupport.ArgumentsVerifier;
-import org.apache.storm.utils.Utils;
-import org.junit.Test;
-
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-
 import static org.apache.storm.Config.NIMBUS_ADMINS;
 import static org.apache.storm.Config.TOPOLOGY_GROUPS;
 import static org.apache.storm.Config.TOPOLOGY_USERS;
@@ -37,6 +29,14 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.apache.storm.daemon.logviewer.testsupport.ArgumentsVerifier;
+import org.apache.storm.utils.Utils;
+import org.junit.Test;
 
 public class ResourceAuthorizerTest {
 
@@ -172,11 +172,11 @@ public class ResourceAuthorizerTest {
 
     private void verifyStubMethodsAreCalledProperly(ResourceAuthorizer authorizer) {
         ArgumentsVerifier.verifyFirstCallArgsForSingleArgMethod(
-                captor -> verify(authorizer, times(2)).getLogUserGroupWhitelist(captor.capture()),
-                String.class, "non-blank-fname");
+            captor -> verify(authorizer, times(2)).getLogUserGroupWhitelist(captor.capture()),
+            String.class, "non-blank-fname");
 
         ArgumentsVerifier.verifyFirstCallArgsForSingleArgMethod(
-                captor -> verify(authorizer).getUserGroups(captor.capture()),
-                String.class, "alice");
+            captor -> verify(authorizer).getUserGroups(captor.capture()),
+            String.class, "alice");
     }
 }

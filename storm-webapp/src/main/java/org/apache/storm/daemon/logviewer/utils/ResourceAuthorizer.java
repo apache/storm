@@ -18,16 +18,10 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
+import static org.apache.storm.DaemonConfig.UI_FILTER;
+
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Sets;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.IGroupMappingServiceProvider;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ServerConfigUtils;
-import org.apache.storm.utils.Utils;
 
 import java.io.File;
 import java.io.IOException;
@@ -37,28 +31,51 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.storm.DaemonConfig.UI_FILTER;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IGroupMappingServiceProvider;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
+import org.apache.storm.utils.Utils;
 
 public class ResourceAuthorizer {
 
     private final Map<String, Object> stormConf;
     private final IGroupMappingServiceProvider groupMappingServiceProvider;
 
+    /**
+     * Constuctor.
+     *
+     * @param stormConf storm configuration
+     */
     public ResourceAuthorizer(Map<String, Object> stormConf) {
         this.stormConf = stormConf;
         this.groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(stormConf);
     }
 
+    /**
+     * Checks whether user is allowed to access file via UI. Always true when UI filter is not set.
+     *
+     * @param fileName file name to access
+     * @param user username
+     */
     public boolean isUserAllowedToAccessFile(String fileName, String user) {
         return isUiFilterNotSet() || isAuthorizedLogUser(user, fileName);
     }
 
+    /**
+     * Checks whether user is authorized to access file. Checks regardless of UI filter.
+     *
+     * @param user username
+     * @param fileName file name to access
+     */
     public boolean isAuthorizedLogUser(String user, String fileName) {
         if (StringUtils.isEmpty(user) || StringUtils.isEmpty(fileName)
                 || getLogUserGroupWhitelist(fileName) == null) {
             return false;
         } else {
-            Set<String> groups = getUserGroups(user);
             LogUserGroupWhitelist whitelist = getLogUserGroupWhitelist(fileName);
 
             List<String> logsUsers = new ArrayList<>();
@@ -70,11 +87,18 @@ public class ResourceAuthorizer {
             logsGroups.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_GROUPS)));
             logsGroups.addAll(whitelist.getGroupWhitelist());
 
-            return logsUsers.stream().anyMatch(u -> u.equals(user)) ||
-                    Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
+            Set<String> groups = getUserGroups(user);
+
+            return logsUsers.stream().anyMatch(u -> u.equals(user))
+                    || Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
         }
     }
 
+    /**
+     * Get the whitelist of users and groups for given file.
+     *
+     * @param fileName file name to get the whitelist
+     */
     public LogUserGroupWhitelist getLogUserGroupWhitelist(String fileName) {
         File wlFile = ServerConfigUtils.getLogMetaDataFile(fileName);
         Map<String, Object> map = (Map<String, Object>) Utils.readYamlFile(wlFile.getAbsolutePath());

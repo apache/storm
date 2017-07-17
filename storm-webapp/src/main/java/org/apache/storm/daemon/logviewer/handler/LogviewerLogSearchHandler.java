@@ -18,29 +18,17 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import static java.util.stream.Collectors.toList;
+import static org.apache.storm.daemon.utils.ListFunctionalSupport.drop;
+import static org.apache.storm.daemon.utils.ListFunctionalSupport.first;
+import static org.apache.storm.daemon.utils.ListFunctionalSupport.last;
+import static org.apache.storm.daemon.utils.ListFunctionalSupport.rest;
+import static org.apache.storm.daemon.utils.ListFunctionalSupport.takeLast;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
-import org.apache.storm.daemon.common.JsonResponseBuilder;
-import org.apache.storm.daemon.logviewer.LogviewerConstant;
-import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
-import org.apache.storm.daemon.utils.StreamUtil;
-import org.apache.storm.daemon.utils.URLBuilder;
-import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.Utils;
-import org.json.simple.JSONAware;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-import javax.ws.rs.core.Response;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -58,15 +46,29 @@ import java.util.Map;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 
-import static java.util.stream.Collectors.toList;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.drop;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.first;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.last;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.rest;
-import static org.apache.storm.daemon.utils.ListFunctionalSupport.takeLast;
+import javax.ws.rs.core.Response;
+
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.DaemonConfig;
+import org.apache.storm.daemon.common.JsonResponseBuilder;
+import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.utils.StreamUtil;
+import org.apache.storm.daemon.utils.UrlBuilder;
+import org.apache.storm.ui.InvalidRequestException;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerUtils;
+import org.apache.storm.utils.Utils;
+import org.json.simple.JSONAware;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class LogviewerLogSearchHandler {
-    private final static Logger LOG = LoggerFactory.getLogger(LogviewerLogSearchHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(LogviewerLogSearchHandler.class);
 
     public static final int GREP_MAX_SEARCH_SIZE = 1024;
     public static final int GREP_BUF_SIZE = 2048;
@@ -79,6 +81,14 @@ public class LogviewerLogSearchHandler {
     private final ResourceAuthorizer resourceAuthorizer;
     private final Integer logviewerPort;
 
+    /**
+     * Constructor.
+     *
+     * @param stormConf storm configuration
+     * @param logRoot log root directory
+     * @param daemonLogRoot daemon log root directory
+     * @param resourceAuthorizer {@link ResourceAuthorizer}
+     */
     public LogviewerLogSearchHandler(Map<String, Object> stormConf, String logRoot, String daemonLogRoot,
                                      ResourceAuthorizer resourceAuthorizer) {
         this.stormConf = stormConf;
@@ -89,6 +99,19 @@ public class LogviewerLogSearchHandler {
         this.logviewerPort = ObjectReader.getInt(stormConf.get(DaemonConfig.LOGVIEWER_PORT));
     }
 
+    /**
+     * Search from a worker log file.
+     *
+     * @param fileName log file
+     * @param user username
+     * @param isDaemon whether the log file is regarding worker or daemon
+     * @param search search string
+     * @param numMatchesStr the count of maximum matches
+     * @param offsetStr start offset for log file
+     * @param callback callback for JSONP
+     * @param origin origin
+     * @return Response containing JSON content representing search result
+     */
     public Response searchLogFile(String fileName, String user, boolean isDaemon, String search,
                                   String numMatchesStr, String offsetStr, String callback, String origin)
             throws IOException, InvalidRequestException {
@@ -130,6 +153,21 @@ public class LogviewerLogSearchHandler {
         return response;
     }
 
+    /**
+     * Deep search across worker log files in a topology.
+     *
+     * @param topologyId topology ID
+     * @param user username
+     * @param search search string
+     * @param numMatchesStr the count of maximum matches
+     * @param portStr worker port, null or '*' if the request wants to search from all worker logs
+     * @param fileOffsetStr index (offset) of the log files
+     * @param offsetStr start offset for log file
+     * @param searchArchived true if the request wants to search also archived files, false if not
+     * @param callback callback for JSONP
+     * @param origin origin
+     * @return Response containing JSON content representing search result
+     */
     public Response deepSearchLogsForTopology(String topologyId, String user, String search,
                                               String numMatchesStr, String portStr, String fileOffsetStr, String offsetStr,
                                               Boolean searchArchived, String callback, String origin) {
@@ -178,8 +216,8 @@ public class LogviewerLogSearchHandler {
                 if (!containsPort) {
                     returnValue = new ArrayList<>();
                 } else {
-                    File portDir = new File(rootDir + Utils.FILE_PATH_SEPARATOR + topologyId +
-                            Utils.FILE_PATH_SEPARATOR + port);
+                    File portDir = new File(rootDir + Utils.FILE_PATH_SEPARATOR + topologyId
+                            + Utils.FILE_PATH_SEPARATOR + port);
 
                     if (!portDir.exists() || logsForPort(user, portDir).isEmpty()) {
                         returnValue = new ArrayList<>();
@@ -218,22 +256,19 @@ public class LogviewerLogSearchHandler {
     }
 
     @VisibleForTesting
-    Map<String,Object> substringSearchDaemonLog(File file, String searchString) throws InvalidRequestException {
-        return substringSearch(file, searchString, true, 10, 0);
-    }
-
-    @VisibleForTesting
     Map<String,Object> substringSearch(File file, String searchString, int numMatches, int startByteOffset) throws InvalidRequestException {
         return substringSearch(file, searchString, false, numMatches, startByteOffset);
     }
 
-    private Map<String,Object> substringSearch(File file, String searchString, boolean isDaemon, Integer numMatches, Integer startByteOffset) throws InvalidRequestException {
+    private Map<String,Object> substringSearch(File file, String searchString, boolean isDaemon, Integer numMatches,
+                                               Integer startByteOffset) throws InvalidRequestException {
         try {
             if (StringUtils.isEmpty(searchString)) {
                 throw new IllegalArgumentException("Precondition fails: search string should not be empty.");
             }
             if (searchString.getBytes("UTF-8").length > GREP_MAX_SEARCH_SIZE) {
-                throw new IllegalArgumentException("Precondition fails: the length of search string should be less than " + GREP_MAX_SEARCH_SIZE);
+                throw new IllegalArgumentException("Precondition fails: the length of search string should be less than "
+                        + GREP_MAX_SEARCH_SIZE);
             }
 
             boolean isZipFile = file.getName().endsWith(".gz");
@@ -255,9 +290,8 @@ public class LogviewerLogSearchHandler {
             }
 
             ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
-            byte[] bufArray = buf.array();
-            int totalBytesRead = 0;
-            byte[] searchBytes = searchString.getBytes("UTF-8");
+            final byte[] bufArray = buf.array();
+            final byte[] searchBytes = searchString.getBytes("UTF-8");
             numMatches = numMatches != null ? numMatches : 10;
             startByteOffset = startByteOffset != null ? startByteOffset : 0;
 
@@ -273,6 +307,7 @@ public class LogviewerLogSearchHandler {
 
             Arrays.fill(bufArray, (byte) 0);
 
+            int totalBytesRead = 0;
             int bytesRead = stream.read(bufArray, 0, Math.min((int) fileLength, GREP_BUF_SIZE));
             buf.limit(bytesRead);
             totalBytesRead += bytesRead;
@@ -295,7 +330,7 @@ public class LogviewerLogSearchHandler {
                     // The start index is positioned to find any possible
                     // occurrence search string that did not quite fit in the
                     // buffer on the previous read.
-                    int newBufOffset = Math.min(buf.limit(), GREP_MAX_SEARCH_SIZE) - searchBytes.length;
+                    final int newBufOffset = Math.min(buf.limit(), GREP_MAX_SEARCH_SIZE) - searchBytes.length;
 
                     totalBytesRead = rotateGrepBuffer(buf, stream, totalBytesRead, file, fileLength);
                     if (totalBytesRead < 0) {
@@ -326,6 +361,10 @@ public class LogviewerLogSearchHandler {
         }
     }
 
+    @VisibleForTesting
+    Map<String,Object> substringSearchDaemonLog(File file, String searchString) throws InvalidRequestException {
+        return substringSearch(file, searchString, true, 10, 0);
+    }
 
     /**
      * Get the filtered, authorized, sorted log files for a port.
@@ -370,7 +409,7 @@ public class LogviewerLogSearchHandler {
 
             String fileName = WorkerLogs.getTopologyPortWorkerLog(firstLog);
 
-            List<Map<String, Object>> newMatches = new ArrayList<>(matches);
+            final List<Map<String, Object>> newMatches = new ArrayList<>(matches);
             Map<String, Object> currentFileMatch = new HashMap<>(theseMatches);
             currentFileMatch.put("fileName", fileName);
             List<String> splitPath;
@@ -412,7 +451,8 @@ public class LogviewerLogSearchHandler {
     private SubstringSearchResult bufferSubstringSearch(boolean isDaemon, File file, int fileLength, int offsetToBuf,
                                                         int initBufOffset, BufferedInputStream stream, Integer bytesSkipped,
                                                         int bytesRead, ByteBuffer haystack, byte[] needle,
-                                                        List<Map<String, Object>> initialMatches, Integer numMatches, byte[] beforeBytes) throws IOException {
+                                                        List<Map<String, Object>> initialMatches, Integer numMatches, byte[] beforeBytes)
+            throws IOException {
         int bufOffset = initBufOffset;
         List<Map<String, Object>> matches = initialMatches;
 
@@ -422,8 +462,8 @@ public class LogviewerLogSearchHandler {
         while (true) {
             int offset = offsetOfBytes(haystack.array(), needle, bufOffset);
             if (matches.size() < numMatches && offset >= 0) {
-                int fileOffset = offsetToBuf + offset;
-                int bytesNeededAfterMatch = haystack.limit() - GREP_CONTEXT_SIZE - needle.length;
+                final int fileOffset = offsetToBuf + offset;
+                final int bytesNeededAfterMatch = haystack.limit() - GREP_CONTEXT_SIZE - needle.length;
 
                 byte[] beforeArg = null;
                 byte[] afterArg = null;
@@ -541,7 +581,8 @@ public class LogviewerLogSearchHandler {
      * Tries once to read ahead in the stream to fill the context and
      * resets the stream to its position before the call.
      */
-    private byte[] tryReadAhead(BufferedInputStream stream, ByteBuffer haystack, int offset, int fileLength, int bytesRead) throws IOException {
+    private byte[] tryReadAhead(BufferedInputStream stream, ByteBuffer haystack, int offset, int fileLength, int bytesRead)
+            throws IOException {
         int numExpected = Math.min(fileLength - bytesRead, GREP_CONTEXT_SIZE);
         byte[] afterBytes = new byte[numExpected];
         stream.mark(numExpected);
@@ -617,7 +658,7 @@ public class LogviewerLogSearchHandler {
 
     @VisibleForTesting
     String urlToMatchCenteredInLogPage(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
-        String host = Utils.hostname();
+        final String host = Utils.hostname();
         String splittedFileName = String.join(Utils.FILE_PATH_SEPARATOR,
                 takeLast(Arrays.asList(fname.split(Utils.FILE_PATH_SEPARATOR)), 3));
 
@@ -626,12 +667,12 @@ public class LogviewerLogSearchHandler {
         parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
         parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
-        return URLBuilder.build(String.format("http://%s:%d/api/v1/log", host, port), parameters);
+        return UrlBuilder.build(String.format("http://%s:%d/api/v1/log", host, port), parameters);
     }
 
     @VisibleForTesting
     String urlToMatchCenteredInLogPageDaemonFile(byte[] needle, String fname, int offset, Integer port) throws UnknownHostException {
-        String host = Utils.hostname();
+        final String host = Utils.hostname();
         String splittedFileName = String.join(Utils.FILE_PATH_SEPARATOR,
                 takeLast(Arrays.asList(fname.split(Utils.FILE_PATH_SEPARATOR)), 1));
 
@@ -640,7 +681,7 @@ public class LogviewerLogSearchHandler {
         parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
         parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
-        return URLBuilder.build(String.format("http://%s:%d/api/v1/daemonlog", host, port), parameters);
+        return UrlBuilder.build(String.format("http://%s:%d/api/v1/daemonlog", host, port), parameters);
     }
 
     @VisibleForTesting
@@ -651,6 +692,13 @@ public class LogviewerLogSearchHandler {
         private String searchString;
         private List<Map<String, Object>> matches;
 
+        /**
+         * Constructor.
+         *
+         * @param fileOffset offset (index) of the files
+         * @param searchString search string
+         * @param matches map representing matched search result
+         */
         public Matched(int fileOffset, String searchString, List<Map<String, Object>> matches) {
             this.fileOffset = fileOffset;
             this.searchString = searchString;

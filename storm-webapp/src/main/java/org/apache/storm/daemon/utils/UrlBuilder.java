@@ -18,15 +18,25 @@
 
 package org.apache.storm.daemon.utils;
 
+import static java.util.stream.Collectors.joining;
+
 import java.net.URLEncoder;
 import java.util.Map;
 
-import static java.util.stream.Collectors.joining;
-
-public class URLBuilder {
-    private URLBuilder() {
+/**
+ * Convenient utility class to build the URL.
+ */
+public class UrlBuilder {
+    private UrlBuilder() {
     }
 
+    /**
+     * Build the URL. the key and value of query parameters will be encoded.
+     *
+     * @param urlPath URL except query parameter
+     * @param parameters query parameter
+     * @return the url concatenating url path and query parameters
+     */
     public static String build(String urlPath, Map<String, Object> parameters) {
         StringBuilder sb = new StringBuilder();
         sb.append(urlPath);

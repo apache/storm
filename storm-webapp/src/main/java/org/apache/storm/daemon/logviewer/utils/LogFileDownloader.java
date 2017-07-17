@@ -18,9 +18,10 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import javax.ws.rs.core.Response;
 import java.io.File;
 import java.io.IOException;
+
+import javax.ws.rs.core.Response;
 
 public class LogFileDownloader {
 
@@ -28,12 +29,27 @@ public class LogFileDownloader {
     private final String daemonLogRoot;
     private final ResourceAuthorizer resourceAuthorizer;
 
+    /**
+     * Constructor.
+     *
+     * @param logRoot root worker log directory
+     * @param daemonLogRoot root daemon log directory
+     * @param resourceAuthorizer {@link ResourceAuthorizer}
+     */
     public LogFileDownloader(String logRoot, String daemonLogRoot, ResourceAuthorizer resourceAuthorizer) {
         this.logRoot = logRoot;
         this.daemonLogRoot = daemonLogRoot;
         this.resourceAuthorizer = resourceAuthorizer;
     }
 
+    /**
+     * Checks authorization for the log file and download
+     *
+     * @param fileName file to download
+     * @param user username
+     * @param isDaemon true if the file is a daemon log, false if the file is an worker log
+     * @return a Response which lets browsers download that file.
+     */
     public Response downloadFile(String fileName, String user, boolean isDaemon) throws IOException {
         String rootDir = isDaemon ? daemonLogRoot : logRoot;
         File file = new File(rootDir, fileName).getCanonicalFile();

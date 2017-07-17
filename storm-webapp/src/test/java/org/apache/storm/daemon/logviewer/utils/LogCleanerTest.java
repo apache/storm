@@ -18,33 +18,6 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
-import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
-import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
-import org.apache.storm.generated.LSWorkerHeartbeat;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Seq;
-import org.junit.Test;
-import org.mockito.internal.util.collections.Sets;
-
-import java.io.File;
-import java.io.FileFilter;
-import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import static java.util.stream.Collectors.toList;
 import static org.apache.storm.Config.SUPERVISOR_WORKER_TIMEOUT_SECS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
@@ -61,6 +34,32 @@ import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.FileFilter;
+import java.io.IOException;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.SortedSet;
+import java.util.TreeSet;
+
+import org.apache.storm.daemon.logviewer.testsupport.MockDirectoryBuilder;
+import org.apache.storm.daemon.logviewer.testsupport.MockFileBuilder;
+import org.apache.storm.daemon.supervisor.SupervisorUtils;
+import org.apache.storm.generated.LSWorkerHeartbeat;
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
+import org.jooq.lambda.Seq;
+import org.junit.Test;
+import org.mockito.internal.util.collections.Sets;
 
 public class LogCleanerTest {
     /**
@@ -84,10 +83,10 @@ public class LogCleanerTest {
 
         LogCleaner logCleaner = new LogCleaner(conf, workerLogs, mockDirectoryCleaner, null);
 
-        long nowMillis = Time.currentTimeMillis();
-        long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
-        long oldMtimeMillis = cutoffMillis - 500;
-        long newMtimeMillis = cutoffMillis + 500;
+        final long nowMillis = Time.currentTimeMillis();
+        final long cutoffMillis = logCleaner.cleanupCutoffAgeMillis(nowMillis);
+        final long oldMtimeMillis = cutoffMillis - 500;
+        final long newMtimeMillis = cutoffMillis + 500;
 
         List<File> matchingFiles = new ArrayList<>();
         matchingFiles.add(new MockDirectoryBuilder().setDirName("3031").setMtime(oldMtimeMillis).build());
@@ -278,7 +277,7 @@ public class LogCleanerTest {
     }
 
     /**
-     * cleanup function forceDeletes files of dead workers
+     * cleanup function forceDeletes files of dead workers.
      */
     @Test
     public void testCleanupFn() throws IOException {

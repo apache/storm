@@ -18,12 +18,15 @@
 
 package org.apache.storm.daemon.common;
 
-import org.apache.storm.ui.UIHelpers;
-
-import javax.ws.rs.core.Response;
 import java.util.Collections;
 import java.util.Map;
+import javax.ws.rs.core.Response;
 
+import org.apache.storm.ui.UIHelpers;
+
+/**
+ * Response builder for JSON. It utilizes {@link UIHelpers} to construct JSON body and headers.
+ */
 public class JsonResponseBuilder {
     private Object data;
     private String callback;
@@ -56,6 +59,11 @@ public class JsonResponseBuilder {
         return this;
     }
 
+    /**
+     * Build a Response based on given parameters.
+     *
+     * @return A Response.
+     */
     public Response build() {
         String body = UIHelpers.getJsonResponseBody(data, callback, needSerialize);
         Map<String, Object> respHeaders = UIHelpers.getJsonResponseHeaders(callback, headers);

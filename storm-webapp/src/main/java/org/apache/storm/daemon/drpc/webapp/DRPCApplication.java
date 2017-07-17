@@ -24,8 +24,8 @@ import java.util.Set;
 import javax.ws.rs.ApplicationPath;
 import javax.ws.rs.core.Application;
 
-import org.apache.storm.daemon.drpc.DRPC;
 import org.apache.storm.daemon.common.AuthorizationExceptionMapper;
+import org.apache.storm.daemon.drpc.DRPC;
 
 @ApplicationPath("")
 public class DRPCApplication extends Application {

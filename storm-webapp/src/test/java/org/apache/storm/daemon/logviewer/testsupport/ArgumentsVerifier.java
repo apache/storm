@@ -18,13 +18,22 @@
 
 package org.apache.storm.daemon.logviewer.testsupport;
 
-import org.mockito.ArgumentCaptor;
-
-import java.util.function.Consumer;
-
 import static org.junit.Assert.assertEquals;
 
+import java.util.function.Consumer;
+import org.mockito.ArgumentCaptor;
+
+/**
+ * Help verifying captured argument in Mockito.
+ */
 public class ArgumentsVerifier {
+    /**
+     * Asserting that method is called with expected first argument.
+     *
+     * @param verifyConsumer Consumer implementation that takes ArgumentCaptor and call 'Mockito.verify'
+     * @param argClazz Class type for argument
+     * @param expectedArg expected argument
+     */
     public static <T> void verifyFirstCallArgsForSingleArgMethod(Consumer<ArgumentCaptor<T>> verifyConsumer,
                                                                  Class<T> argClazz, T expectedArg) {
         ArgumentCaptor<T> captor = ArgumentCaptor.forClass(argClazz);

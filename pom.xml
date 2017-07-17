@@ -486,6 +486,12 @@
                                 <exclude>**/derby.log</exclude>
                                 <exclude>**/src/dev/**</exclude>
 
+                                <!-- webapp test resources -->
+                                <exclude>**/src/test/resources/test-3072.log.test</exclude>
+                                <exclude>**/src/test/resources/small-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/test-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/logviewer-search-context-tests.log.test</exclude>
+
                                 <!-- StormSQL -->
                                 <exclude>**/src/codegen/config.fmpp</exclude>
                                 <exclude>**/src/codegen/data/Parser.tdd</exclude>

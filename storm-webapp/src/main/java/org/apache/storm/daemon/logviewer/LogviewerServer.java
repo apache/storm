@@ -18,8 +18,17 @@
 
 package org.apache.storm.daemon.logviewer;
 
+import static org.apache.storm.DaemonConfig.UI_HEADER_BUFFER_BYTES;
+
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
 import org.apache.storm.daemon.logviewer.utils.LogCleaner;
@@ -40,14 +49,9 @@ import org.glassfish.jersey.servlet.ServletContainer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-
-import static org.apache.storm.DaemonConfig.UI_HEADER_BUFFER_BYTES;
-
+/**
+ * The main entry of Logviewer.
+ */
 public class LogviewerServer implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerServer.class);
     private static final Meter meterShutdownCalls = StormMetricsRegistry.registerMeter("drpc:num-shutdown-calls");

@@ -21,7 +21,17 @@ package org.apache.storm.daemon.utils;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * Implements missing sequence functions in Java compared to Clojure.
+ * To make thing simpler, it only supports List type.
+ */
 public class ListFunctionalSupport {
+    /**
+     * Get the first element in list.
+     *
+     * @param list list to get
+     * @return the first element. null if list is null or empty.
+     */
     public static <T> T first(List<T> list) {
         if (list == null || list.size() <= 0) {
             return null;
@@ -30,6 +40,28 @@ public class ListFunctionalSupport {
         return list.get(0);
     }
 
+    /**
+     * get the last element in list.
+     *
+     * @param list list to get
+     * @return the last element. null if list is null or empty.
+     */
+    public static <T> T last(List<T> list) {
+        if (list == null || list.size() <= 0) {
+            return null;
+        }
+
+        return list.get(list.size() - 1);
+    }
+
+    /**
+     * Get the last N elements as a new list.
+     *
+     * @param list list to get
+     * @param count element count to get
+     * @return the first element. null if list is null.
+     *         elements in a new list may be less than count if there're not enough elements in the list.
+     */
     public static <T> List<T> takeLast(List<T> list, int count) {
         if (list == null) {
             return null;
@@ -45,6 +77,13 @@ public class ListFunctionalSupport {
         }
     }
 
+    /**
+     * Drop the first N elements and create a new list.
+     *
+     * @param list the list
+     * @param count element count to drop
+     * @return newly created sublist that drops the first N elements from origin list. null if list is null.
+     */
     public static <T> List<T> drop(List<T> list, int count) {
         if (list == null) {
             return null;
@@ -55,15 +94,15 @@ public class ListFunctionalSupport {
                 .collect(Collectors.toList());
     }
 
+    /**
+     * Drop the only first element and create a new list. equivalent to drop(list, 1).
+     *
+     * @see {@link ListFunctionalSupport#drop(List, int)}
+     * @param list the list
+     * @return newly created sublist that drops the first element from origin list. null if list is null.
+     */
     public static <T> List<T> rest(List<T> list) {
         return drop(list, 1);
     }
 
-    public static <T> T last(List<T> list) {
-        if (list == null || list.size() <= 0) {
-            return null;
-        }
-
-        return list.get(list.size() - 1);
-    }
 }

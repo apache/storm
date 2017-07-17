@@ -18,6 +18,12 @@
 
 package org.apache.storm.daemon.logviewer;
 
-public class LogviewerConstant {
+/**
+ * Constants which are used across logviewer related classes.
+ */
+public final class LogviewerConstant {
+    private LogviewerConstant() {
+    }
+
     public static final int DEFAULT_BYTES_PER_PAGE = 51200;
 }

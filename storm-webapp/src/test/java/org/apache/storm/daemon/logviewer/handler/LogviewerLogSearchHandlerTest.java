@@ -18,6 +18,33 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.anyInt;
+import static org.mockito.Matchers.anyListOf;
+import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import static org.mockito.internal.verification.VerificationModeFactory.times;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import java.nio.file.Files;
+import java.nio.file.attribute.FileAttribute;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.logviewer.LogviewerConstant;
@@ -33,33 +60,6 @@ import org.junit.Test;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-
-import java.io.File;
-import java.io.IOException;
-import java.net.UnknownHostException;
-import java.nio.file.Files;
-import java.nio.file.attribute.FileAttribute;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-
-import static java.util.stream.Collectors.joining;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.doAnswer;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 @RunWith(Enclosed.class)
 public class LogviewerLogSearchHandlerTest {
@@ -98,8 +98,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 String actualUrl = handler.urlToMatchCenteredInLogPage(new byte[42], expectedFname, 27526, 8888);
 
-                assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/log?file=" + expectedFname +
-                        "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
+                assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/log?file=" + expectedFname
+                        + "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
             } finally {
                 Utils.setInstance(prevUtils);
             }
@@ -119,13 +119,14 @@ public class LogviewerLogSearchHandlerTest {
 
                 String actualUrl = handler.urlToMatchCenteredInLogPageDaemonFile(new byte[42], expectedFname, 27526, 8888);
 
-                assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/daemonlog?file=" + expectedFname +
-                        "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
+                assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/daemonlog?file=" + expectedFname
+                        + "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
             } finally {
                 Utils.setInstance(prevUtils);
             }
         }
 
+        @SuppressWarnings("checkstyle:LineLength")
         @Test
         public void testReturnsCorrectBeforeAndAfterContext() throws InvalidRequestException, UnknownHostException {
             Utils prevUtils = null;
@@ -135,11 +136,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                     "logviewer-search-context-tests.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -176,6 +174,9 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
@@ -191,11 +192,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "small-worker.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -212,6 +210,9 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
@@ -227,11 +228,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "small-worker.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearchDaemonLog(file, pattern);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "yes");
@@ -248,6 +246,9 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearchDaemonLog(file, pattern);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
@@ -263,12 +264,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "test-3072.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
-                Map<String, Object> searchResult2 = handler.substringSearch(file, pattern, 1);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -286,6 +283,10 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
+                Map<String, Object> searchResult2 = handler.substringSearch(file, pattern, 1);
+
                 assertEquals(expected, searchResult);
                 assertEquals(expected, searchResult2);
             } finally {
@@ -293,6 +294,7 @@ public class LogviewerLogSearchHandlerTest {
             }
         }
 
+        @SuppressWarnings("checkstyle:LineLength")
         @Test
         public void testNextByteOffsetsAreCorrectForEachMatch() throws UnknownHostException, InvalidRequestException {
             Utils prevUtils = null;
@@ -328,8 +330,6 @@ public class LogviewerLogSearchHandlerTest {
                     assertEquals(data.v3(), result.get("nextByteOffset"));
                     assertEquals(data.v2().intValue(), ((List) result.get("matches")).size());
                 }));
-
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 7);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -390,12 +390,15 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 7);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
             }
         }
 
+        @SuppressWarnings("checkstyle:LineLength")
         @Test
         public void testCorrectMatchOffsetIsReturnedWhenSkippingBytes() throws InvalidRequestException, UnknownHostException {
             Utils prevUtils = null;
@@ -405,13 +408,10 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "test-worker.log.test");
 
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-
                 int startByteOffset = 3197;
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1, startByteOffset);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -430,12 +430,16 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1, startByteOffset);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
             }
         }
 
+        @SuppressWarnings("checkstyle:LineLength")
         @Test
         public void testAnotherPatterns1() throws UnknownHostException, InvalidRequestException {
             Utils prevUtils = null;
@@ -445,13 +449,10 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "test-worker.log.test");
 
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-
                 String pattern = Seq.range(0, 1024).map(x -> "X").collect(joining());
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 2);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -477,12 +478,16 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 2);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
             }
         }
 
+        @SuppressWarnings("checkstyle:LineLength")
         @Test
         public void testAnotherPatterns2() throws UnknownHostException, InvalidRequestException {
             Utils prevUtils = null;
@@ -492,13 +497,9 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "test-worker.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-
                 String pattern = "𐄀𐄁𐄂";
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -517,6 +518,9 @@ public class LogviewerLogSearchHandlerTest {
 
                 expected.put("matches", matches);
 
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern, 1);
+
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
@@ -534,12 +538,8 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                File file = new File(String.join(File.separator, "src", "test", "resources"),
+                final File file = new File(String.join(File.separator, "src", "test", "resources"),
                         "test-worker.log.test");
-
-                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
-
-                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
 
                 Map<String, Object> expected = new HashMap<>();
                 expected.put("isDaemon", "no");
@@ -547,6 +547,9 @@ public class LogviewerLogSearchHandlerTest {
                 expected.put("startByteOffset", 0);
 
                 expected.put("matches", Collections.emptyList());
+
+                LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
+                Map<String, Object> searchResult = handler.substringSearch(file, pattern);
 
                 assertEquals(expected, searchResult);
             } finally {
@@ -578,11 +581,11 @@ public class LogviewerLogSearchHandlerTest {
             files.add(new File(String.join(File.separator, "src", "test", "resources"),
                     "logviewer-search-context-tests.log.gz"));
 
-            LogviewerLogSearchHandler handler = getSearchHandler();
+            final LogviewerLogSearchHandler handler = getSearchHandler();
 
-            List<Map<String, Object>> matches1 = handler.findNMatches(files, 20, 0, 0, "needle").getMatches();
-            List<Map<String, Object>> matches2 = handler.findNMatches(files, 20, 0, 126, "needle").getMatches();
-            List<Map<String, Object>> matches3 = handler.findNMatches(files, 20, 1, 0, "needle").getMatches();
+            final List<Map<String, Object>> matches1 = handler.findNMatches(files, 20, 0, 0, "needle").getMatches();
+            final List<Map<String, Object>> matches2 = handler.findNMatches(files, 20, 0, 126, "needle").getMatches();
+            final List<Map<String, Object>> matches3 = handler.findNMatches(files, 20, 1, 0, "needle").getMatches();
 
             assertEquals(2, matches1.size());
             assertEquals(4, ((List) matches1.get(0).get("matches")).size());
@@ -603,6 +606,9 @@ public class LogviewerLogSearchHandlerTest {
         private List<File> logFiles;
         private String topoPath;
 
+        /**
+         * Setup test environment for each test.
+         */
         @Before
         public void setUp() throws IOException {
             logFiles = new ArrayList<>();
@@ -619,6 +625,9 @@ public class LogviewerLogSearchHandlerTest {
             new File(topoPath, "6700").createNewFile();
         }
 
+        /**
+         * Clean up test environment.
+         */
         @After
         public void tearDown() {
             if (StringUtils.isNotEmpty(topoPath)) {

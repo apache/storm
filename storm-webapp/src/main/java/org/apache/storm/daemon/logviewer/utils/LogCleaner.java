@@ -18,16 +18,16 @@
 
 package org.apache.storm.daemon.logviewer.utils;
 
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
+
+import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
+import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
+import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_MB;
+import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_MB;
+
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.io.IOUtils;
-import org.apache.storm.StormTimer;
-import org.apache.storm.daemon.supervisor.SupervisorUtils;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Unchecked;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.File;
@@ -41,23 +41,24 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.function.BinaryOperator;
 import java.util.stream.StreamSupport;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toMap;
-import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
-import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
-import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_MB;
-import static org.apache.storm.DaemonConfig.LOGVIEWER_MAX_SUM_WORKER_LOGS_SIZE_MB;
+import org.apache.commons.io.IOUtils;
+import org.apache.storm.StormTimer;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
+import org.jooq.lambda.Unchecked;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+/**
+ * Cleans dead workers logs and directories.
+ */
 public class LogCleaner implements Runnable, Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(LogCleaner.class);
 
@@ -71,6 +72,14 @@ public class LogCleaner implements Runnable, Closeable {
     private final long maxSumWorkerLogsSizeMb;
     private long maxPerWorkerLogsSizeMb;
 
+    /**
+     * Constuctor.
+     *
+     * @param stormConf configuration map for Storm cluster
+     * @param workerLogs {@link WorkerLogs} instance
+     * @param directoryCleaner {@link DirectoryCleaner} instance
+     * @param logRootDir root log directory
+     */
     public LogCleaner(Map<String, Object> stormConf, WorkerLogs workerLogs, DirectoryCleaner directoryCleaner,
                       File logRootDir) {
         this.stormConf = stormConf;
@@ -87,6 +96,9 @@ public class LogCleaner implements Runnable, Closeable {
                 maxSumWorkerLogsSizeMb, maxPerWorkerLogsSizeMb);
     }
 
+    /**
+     * Start log cleanup thread.
+     */
     public void start() {
         if (intervalSecs != null) {
             LOG.debug("starting log cleanup thread at interval: {}", intervalSecs);
@@ -100,9 +112,9 @@ public class LogCleaner implements Runnable, Closeable {
         } else {
             LOG.warn("The interval for log cleanup is not set. Skip starting log cleanup thread.");
         }
-
     }
 
+    @Override
     public void close() {
         if (logviewerCleanupTimer != null) {
             try {
@@ -116,6 +128,7 @@ public class LogCleaner implements Runnable, Closeable {
     /**
      * Delete old log dirs for which the workers are no longer alive.
      */
+    @Override
     public void run() {
         try {
             int nowSecs = Time.currentTimeSecs();
@@ -152,7 +165,8 @@ public class LogCleaner implements Runnable, Closeable {
     @VisibleForTesting
     List<Integer> perWorkerDirCleanup(long size) {
         return workerLogs.getAllWorkerDirs().stream()
-                .map(Unchecked.function(dir -> directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
+                .map(Unchecked.function(dir ->
+                        directoryCleaner.deleteOldestWhileTooLarge(Collections.singletonList(dir), size, true, null)))
                 .collect(toList());
     }
 
@@ -165,14 +179,6 @@ public class LogCleaner implements Runnable, Closeable {
         Set<String> aliveWorkerDirs = new HashSet<>(workerLogs.getAliveWorkerDirs());
 
         return directoryCleaner.deleteOldestWhileTooLarge(workerDirs, size, false, aliveWorkerDirs);
-    }
-
-    private Set<String> getAliveIds(int nowSecs) throws Exception {
-        return SupervisorUtils.readWorkerHeartbeats(stormConf).entrySet().stream()
-                .filter(entry -> Objects.nonNull(entry.getValue())
-                        && !SupervisorUtils.isWorkerHbTimedOut(nowSecs, entry.getValue(), stormConf))
-                .map(Map.Entry::getKey)
-                .collect(toCollection(TreeSet::new));
     }
 
     /**

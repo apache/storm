@@ -18,15 +18,11 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
-import org.apache.storm.utils.Utils;
-import org.assertj.core.util.Lists;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
-import javax.ws.rs.core.Response;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -34,8 +30,14 @@ import java.nio.file.attribute.FileAttribute;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
+import javax.ws.rs.core.Response;
+
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.utils.Utils;
+import org.assertj.core.util.Lists;
+import org.junit.Test;
 
 public class LogviewerLogPageHandlerTest {
 
@@ -62,27 +64,27 @@ public class LogviewerLogPageHandlerTest {
         LogviewerLogPageHandler handler = new LogviewerLogPageHandler(rootPath, null,
                 new WorkerLogs(stormConf, new File(rootPath)), new ResourceAuthorizer(stormConf));
 
-        Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
+        final Response expectedAll = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoA/port2/worker.log", "topoB/port1/worker.log"),
                 null,
                 origin
         );
 
-        Response expectedFilterPort = LogviewerResponseBuilder.buildSuccessJsonResponse(
+        final Response expectedFilterPort = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoA/port1/worker.log", "topoB/port1/worker.log"),
                 null,
                 origin
         );
 
-        Response expectedFilterTopoId = LogviewerResponseBuilder.buildSuccessJsonResponse(
+        final Response expectedFilterTopoId = LogviewerResponseBuilder.buildSuccessJsonResponse(
                 Lists.newArrayList("topoB/port1/worker.log"),
                 null,
                 origin
         );
 
-        Response returnedAll = handler.listLogFiles("user", null, null, null, origin);
-        Response returnedFilterPort = handler.listLogFiles("user", 1111, null, null, origin);
-        Response returnedFilterTopoId = handler.listLogFiles("user", null, "topoB", null, origin);
+        final Response returnedAll = handler.listLogFiles("user", null, null, null, origin);
+        final Response returnedFilterPort = handler.listLogFiles("user", 1111, null, null, origin);
+        final Response returnedFilterTopoId = handler.listLogFiles("user", null, "topoB", null, origin);
 
         Utils.forceDelete(rootPath);
 

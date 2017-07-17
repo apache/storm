@@ -18,17 +18,20 @@
 
 package org.apache.storm.daemon.logviewer.testsupport;
 
-import java.io.File;
-import java.io.IOException;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
 
 public class MockDirectoryBuilder {
     private String dirName;
     private long mtime;
     private File[] files;
 
+    /**
+     * Constructor.
+     */
     public MockDirectoryBuilder() {
         this.dirName = "adir";
         this.mtime = 1;
@@ -50,6 +53,9 @@ public class MockDirectoryBuilder {
         return this;
     }
 
+    /**
+     * Build mocked File object with given (or default) attributes for a directory.
+     */
     public File build() {
         File mockFile = mock(File.class);
         when(mockFile.getName()).thenReturn(dirName);

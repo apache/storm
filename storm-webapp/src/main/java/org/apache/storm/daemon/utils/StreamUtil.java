@@ -21,12 +21,21 @@ package org.apache.storm.daemon.utils;
 import java.io.IOException;
 import java.io.InputStream;
 
+/**
+ * Utility class for (Input/Output)Stream.
+ */
 public class StreamUtil {
     private StreamUtil() {
     }
 
     /**
+     * Skips over and discards N bytes of data from the input stream.
+     * <p/>
      * FileInputStream#skip may not work the first time, so ensure it successfully skips the given number of bytes.
+     *
+     * @see {@link java.io.FileInputStream#skip(long)}
+     * @param stream the stream to skip
+     * @param n bytes to skip
      */
     public static void skipBytes(InputStream stream, Integer n) throws IOException {
         long skipped = 0;

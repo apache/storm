@@ -18,28 +18,52 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import java.io.IOException;
+import javax.ws.rs.core.Response;
+
 import org.apache.storm.daemon.logviewer.utils.LogFileDownloader;
 import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
 import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
-
-import javax.ws.rs.core.Response;
-import java.io.IOException;
 
 public class LogviewerLogDownloadHandler {
 
     private WorkerLogs workerLogs;
     private final LogFileDownloader logFileDownloadHelper;
 
+    /**
+     * Constructor.
+     *
+     * @param logRoot root worker log directory
+     * @param daemonLogRoot root daemon log directory
+     * @param workerLogs {@link WorkerLogs}
+     * @param resourceAuthorizer {@link ResourceAuthorizer}
+     */
     public LogviewerLogDownloadHandler(String logRoot, String daemonLogRoot, WorkerLogs workerLogs, ResourceAuthorizer resourceAuthorizer) {
         this.workerLogs = workerLogs;
         this.logFileDownloadHelper = new LogFileDownloader(logRoot, daemonLogRoot, resourceAuthorizer);
     }
 
+    /**
+     * Download an worker log.
+     *
+     * @param fileName file to download
+     * @param user username
+     * @return a Response which lets browsers download that file.
+     * @see {@link LogFileDownloader#downloadFile(String, String, boolean)}
+     */
     public Response downloadLogFile(String fileName, String user) throws IOException {
         workerLogs.setLogFilePermission(fileName);
         return logFileDownloadHelper.downloadFile(fileName, user, false);
     }
 
+    /**
+     * Download a daemon log.
+     *
+     * @param fileName file to download
+     * @param user username
+     * @return a Response which lets browsers download that file.
+     * @see {@link LogFileDownloader#downloadFile(String, String, boolean)}
+     */
     public Response downloadDaemonLogFile(String fileName, String user) throws IOException {
         return logFileDownloadHelper.downloadFile(fileName, user, true);
     }

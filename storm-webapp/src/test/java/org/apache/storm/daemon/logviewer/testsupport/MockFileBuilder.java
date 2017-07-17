@@ -18,17 +18,20 @@
 
 package org.apache.storm.daemon.logviewer.testsupport;
 
-import java.io.File;
-import java.io.IOException;
-
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
+
+import java.io.File;
+import java.io.IOException;
 
 public class MockFileBuilder {
     private String fileName;
     private long mtime;
     private long length;
 
+    /**
+     * Constructor.
+     */
     public MockFileBuilder() {
         this.fileName = "afile";
         this.mtime = 1;
@@ -50,6 +53,9 @@ public class MockFileBuilder {
         return this;
     }
 
+    /**
+     * Build mocked File object with given (or default) attributes for a file.
+     */
     public File build() {
         File mockFile = mock(File.class);
         when(mockFile.getName()).thenReturn(fileName);

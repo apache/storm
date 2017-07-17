@@ -18,22 +18,26 @@
 
 package org.apache.storm.daemon.logviewer.handler;
 
+import static j2html.TagCreator.a;
+import static j2html.TagCreator.body;
+import static j2html.TagCreator.div;
+import static j2html.TagCreator.form;
+import static j2html.TagCreator.h3;
+import static j2html.TagCreator.head;
+import static j2html.TagCreator.html;
+import static j2html.TagCreator.input;
+import static j2html.TagCreator.link;
+import static j2html.TagCreator.p;
+import static j2html.TagCreator.pre;
+import static j2html.TagCreator.select;
+import static j2html.TagCreator.text;
+import static j2html.TagCreator.title;
+import static java.util.stream.Collectors.toCollection;
+import static java.util.stream.Collectors.toList;
+import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+
 import j2html.TagCreator;
 import j2html.tags.DomContent;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
-import org.apache.storm.daemon.logviewer.LogviewerConstant;
-import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
-import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
-import org.apache.storm.daemon.utils.StreamUtil;
-import org.apache.storm.daemon.utils.URLBuilder;
-import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.Utils;
-import org.jooq.lambda.Unchecked;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -54,10 +58,20 @@ import java.util.zip.GZIPInputStream;
 
 import javax.ws.rs.core.Response;
 
-import static j2html.TagCreator.*;
-import static java.util.stream.Collectors.toCollection;
-import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang.StringEscapeUtils.escapeHtml;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.daemon.logviewer.LogviewerConstant;
+import org.apache.storm.daemon.logviewer.utils.DirectoryCleaner;
+import org.apache.storm.daemon.logviewer.utils.LogviewerResponseBuilder;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.daemon.utils.StreamUtil;
+import org.apache.storm.daemon.utils.UrlBuilder;
+import org.apache.storm.ui.InvalidRequestException;
+import org.apache.storm.ui.UIHelpers;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ServerUtils;
+import org.apache.storm.utils.Utils;
+import org.jooq.lambda.Unchecked;
 
 public class LogviewerLogPageHandler {
     private final String logRoot;
@@ -65,6 +79,14 @@ public class LogviewerLogPageHandler {
     private final WorkerLogs workerLogs;
     private final ResourceAuthorizer resourceAuthorizer;
 
+    /**
+     * Constructor.
+     *
+     * @param logRoot root worker log directory
+     * @param daemonLogRoot root daemon log directory
+     * @param workerLogs {@link WorkerLogs}
+     * @param resourceAuthorizer {@link ResourceAuthorizer}
+     */
     public LogviewerLogPageHandler(String logRoot, String daemonLogRoot,
                                    WorkerLogs workerLogs,
                                    ResourceAuthorizer resourceAuthorizer) {
@@ -74,6 +96,16 @@ public class LogviewerLogPageHandler {
         this.resourceAuthorizer = resourceAuthorizer;
     }
 
+    /**
+     * Enumerate worker log files for given criteria.
+     *
+     * @param user username
+     * @param port worker's port, null for all workers
+     * @param topologyId topology ID, null for all topologies
+     * @param callback callback for JSONP
+     * @param origin origin
+     * @return list of worker logs for given criteria
+     */
     public Response listLogFiles(String user, Integer port, String topologyId, String callback, String origin) throws IOException {
         List<File> fileResults = null;
         if (topologyId == null) {
@@ -130,7 +162,18 @@ public class LogviewerLogPageHandler {
         return LogviewerResponseBuilder.buildSuccessJsonResponse(files, callback, origin);
     }
 
-    public Response logPage(String fileName, Integer start, Integer length, String grep, String user) throws IOException, InvalidRequestException {
+    /**
+     * Provides a worker log file to view.
+     *
+     * @param fileName file to view
+     * @param start start offset, can be null
+     * @param length length to read in this page, can be null
+     * @param grep search string if request is a result of the search, can be null
+     * @param user username
+     * @return HTML view page of worker log
+     */
+    public Response logPage(String fileName, Integer start, Integer length, String grep, String user)
+            throws IOException, InvalidRequestException {
         String rootDir = logRoot;
         if (resourceAuthorizer.isUserAllowedToAccessFile(fileName, user)) {
             workerLogs.setLogFilePermission(fileName);
@@ -141,8 +184,6 @@ public class LogviewerLogPageHandler {
             File topoDir = file.getParentFile().getParentFile();
 
             if (file.exists() && new File(rootDir).getCanonicalFile().equals(topoDir.getParentFile())) {
-                long fileLength = isZipFile ? ServerUtils.zipFileSize(file) : file.length();
-
                 SortedSet<File> logFiles;
                 try {
                     logFiles = Arrays.stream(topoDir.listFiles())
@@ -169,6 +210,7 @@ public class LogviewerLogPageHandler {
                     logString = escapeHtml("This is a binary file and cannot display! You may download the full file.");
                 }
 
+                long fileLength = isZipFile ? ServerUtils.zipFileSize(file) : file.length();
                 start = start != null ? start : Long.valueOf(fileLength - length).intValue();
 
                 List<DomContent> bodyContents = new ArrayList<>();
@@ -209,15 +251,24 @@ public class LogviewerLogPageHandler {
         }
     }
 
-    public Response daemonLogPage(String fileName, Integer start, Integer length, String grep, String user) throws IOException, InvalidRequestException {
+    /**
+     * Provides a daemon log file to view.
+     *
+     * @param fileName file to view
+     * @param start start offset, can be null
+     * @param length length to read in this page, can be null
+     * @param grep search string if request is a result of the search, can be null
+     * @param user username
+     * @return HTML view page of daemon log
+     */
+    public Response daemonLogPage(String fileName, Integer start, Integer length, String grep, String user)
+            throws IOException, InvalidRequestException {
         String rootDir = daemonLogRoot;
         File file = new File(rootDir, fileName).getCanonicalFile();
         String path = file.getCanonicalPath();
         boolean isZipFile = path.endsWith(".gz");
 
         if (file.exists() && new File(rootDir).getCanonicalFile().equals(file.getParentFile())) {
-            long fileLength = isZipFile ? ServerUtils.zipFileSize(file) : file.length();
-
             // all types of files included
             List<File> logFiles = Arrays.stream(new File(rootDir).listFiles())
                     .filter(File::isFile)
@@ -239,6 +290,7 @@ public class LogviewerLogPageHandler {
                 logString = escapeHtml("This is a binary file and cannot display! You may download the full file.");
             }
 
+            long fileLength = isZipFile ? ServerUtils.zipFileSize(file) : file.length();
             start = start != null ? start : Long.valueOf(fileLength - length).intValue();
 
             List<DomContent> bodyContents = new ArrayList<>();
@@ -331,36 +383,36 @@ public class LogviewerLogPageHandler {
     }
 
     private DomContent pagerLinks(String fileName, Integer start, Integer length, Integer fileLength, String type) {
-        int prevStart = Math.max(0, start - length);
-        int nextStart = fileLength > 0 ? Math.min(Math.max(0, fileLength - length), start + length) : start + length;
-        List<DomContent> btnLinks = new ArrayList<>();
-
         Map<String, Object> urlQueryParams = new HashMap<>();
         urlQueryParams.put("file", fileName);
         urlQueryParams.put("start", Math.max(0, start - length));
         urlQueryParams.put("length", length);
 
-        btnLinks.add(toButtonLink(URLBuilder.build("/api/v1/" + type, urlQueryParams), "Prev", prevStart < start));
+        List<DomContent> btnLinks = new ArrayList<>();
+
+        int prevStart = Math.max(0, start - length);
+        btnLinks.add(toButtonLink(UrlBuilder.build("/api/v1/" + type, urlQueryParams), "Prev", prevStart < start));
 
         urlQueryParams.clear();
         urlQueryParams.put("file", fileName);
         urlQueryParams.put("start", 0);
         urlQueryParams.put("length", length);
 
-        btnLinks.add(toButtonLink(URLBuilder.build("/api/v1/" + type, urlQueryParams), "First"));
+        btnLinks.add(toButtonLink(UrlBuilder.build("/api/v1/" + type, urlQueryParams), "First"));
 
         urlQueryParams.clear();
         urlQueryParams.put("file", fileName);
         urlQueryParams.put("length", length);
 
-        btnLinks.add(toButtonLink(URLBuilder.build("/api/v1/" + type, urlQueryParams), "Last"));
+        btnLinks.add(toButtonLink(UrlBuilder.build("/api/v1/" + type, urlQueryParams), "Last"));
 
         urlQueryParams.clear();
         urlQueryParams.put("file", fileName);
         urlQueryParams.put("start", Math.min(Math.max(0, fileLength - length), start + length));
         urlQueryParams.put("length", length);
 
-        btnLinks.add(toButtonLink(URLBuilder.build("/api/v1/" + type, urlQueryParams), "Next", nextStart > start));
+        int nextStart = fileLength > 0 ? Math.min(Math.max(0, fileLength - length), start + length) : start + length;
+        btnLinks.add(toButtonLink(UrlBuilder.build("/api/v1/" + type, urlQueryParams), "Next", nextStart > start));
 
         return div(btnLinks.toArray(new DomContent[]{}));
     }

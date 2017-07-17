@@ -18,30 +18,31 @@
 
 package org.apache.storm.daemon.logviewer.webapp;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.core.Appender;
-import org.apache.logging.log4j.core.LoggerContext;
-import org.apache.logging.log4j.core.appender.RollingFileAppender;
-import org.apache.storm.daemon.common.AuthorizationExceptionMapper;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
-import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
-import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
-import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.IHttpCredentialsPlugin;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ObjectReader;
+import static org.apache.storm.DaemonConfig.LOGVIEWER_APPENDER_NAME;
 
-import javax.ws.rs.ApplicationPath;
-import javax.ws.rs.core.Application;
 import java.io.File;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
-import static org.apache.storm.DaemonConfig.LOGVIEWER_APPENDER_NAME;
+import javax.ws.rs.ApplicationPath;
+import javax.ws.rs.core.Application;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.RollingFileAppender;
+import org.apache.storm.daemon.common.AuthorizationExceptionMapper;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.daemon.logviewer.utils.ResourceAuthorizer;
+import org.apache.storm.daemon.logviewer.utils.WorkerLogs;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ObjectReader;
 
 @ApplicationPath("")
 public class LogviewerApplication extends Application {
@@ -75,6 +76,11 @@ public class LogviewerApplication extends Application {
         return singletons;
     }
 
+    /**
+     * Spot to inject storm configuration before initializing LogviewerApplication instance.
+     *
+     * @param stormConf storm configuration
+     */
     public static void setup(Map<String, Object> stormConf) {
         LogviewerApplication.stormConf = stormConf;
     }

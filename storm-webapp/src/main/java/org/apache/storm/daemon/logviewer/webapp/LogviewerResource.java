@@ -19,19 +19,10 @@
 package org.apache.storm.daemon.logviewer.webapp;
 
 import com.codahale.metrics.Meter;
-import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.daemon.common.JsonResponseBuilder;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
-import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
-import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
-import org.apache.storm.metric.StormMetricsRegistry;
-import org.apache.storm.security.auth.IHttpCredentialsPlugin;
-import org.apache.storm.ui.InvalidRequestException;
-import org.apache.storm.ui.UIHelpers;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
+import java.net.URLDecoder;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.GET;
@@ -39,18 +30,35 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.Response;
-import java.io.IOException;
-import java.net.URLDecoder;
-import java.util.Map;
 
+import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.daemon.common.JsonResponseBuilder;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogDownloadHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogPageHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerLogSearchHandler;
+import org.apache.storm.daemon.logviewer.handler.LogviewerProfileHandler;
+import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.security.auth.IHttpCredentialsPlugin;
+import org.apache.storm.ui.InvalidRequestException;
+import org.apache.storm.ui.UIHelpers;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ * Handles HTTP requests for Logviewer.
+ */
 @Path("/")
 public class LogviewerResource {
     private static final Logger LOG = LoggerFactory.getLogger(LogviewerResource.class);
 
     private static final Meter meterLogPageHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-log-page-http-requests");
-    private static final Meter meterDaemonLogPageHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-daemonlog-page-http-requests");
-    private static final Meter meterDownloadLogFileHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-download-log-file-http-requests");
-    private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-download-log-daemon-file-http-requests");
+    private static final Meter meterDaemonLogPageHttpRequests = StormMetricsRegistry.registerMeter(
+            "logviewer:num-daemonlog-page-http-requests");
+    private static final Meter meterDownloadLogFileHttpRequests = StormMetricsRegistry.registerMeter(
+            "logviewer:num-download-log-file-http-requests");
+    private static final Meter meterDownloadLogDaemonFileHttpRequests = StormMetricsRegistry.registerMeter(
+            "logviewer:num-download-log-daemon-file-http-requests");
     private static final Meter meterListLogsHttpRequests = StormMetricsRegistry.registerMeter("logviewer:num-list-logs-http-requests");
 
     private final LogviewerLogPageHandler logviewer;
@@ -59,6 +67,15 @@ public class LogviewerResource {
     private final LogviewerLogSearchHandler logSearchHandler;
     private final IHttpCredentialsPlugin httpCredsHandler;
 
+    /**
+     * Constructor.
+     *
+     * @param logviewerParam {@link LogviewerLogPageHandler}
+     * @param profileHandler {@link LogviewerProfileHandler}
+     * @param logDownloadHandler {@link LogviewerLogDownloadHandler}
+     * @param logSearchHandler {@link LogviewerLogSearchHandler}
+     * @param httpCredsHandler {@link IHttpCredentialsPlugin}
+     */
     public LogviewerResource(LogviewerLogPageHandler logviewerParam, LogviewerProfileHandler profileHandler,
                              LogviewerLogDownloadHandler logDownloadHandler, LogviewerLogSearchHandler logSearchHandler,
                              IHttpCredentialsPlugin httpCredsHandler) {
@@ -69,6 +86,9 @@ public class LogviewerResource {
         this.httpCredsHandler = httpCredsHandler;
     }
 
+    /**
+     * Handles '/log' request.
+     */
     @GET
     @Path("/log")
     public Response log(@Context HttpServletRequest request) throws IOException {
@@ -87,6 +107,9 @@ public class LogviewerResource {
         }
     }
 
+    /**
+     * Handles '/daemonlog' request.
+     */
     @GET
     @Path("/daemonlog")
     public Response daemonLog(@Context HttpServletRequest request) throws IOException {
@@ -105,6 +128,9 @@ public class LogviewerResource {
         }
     }
 
+    /**
+     * Handles '/searchLogs' request.
+     */
     @GET
     @Path("/searchLogs")
     public Response searchLogs(@Context HttpServletRequest request) throws IOException {
@@ -117,6 +143,9 @@ public class LogviewerResource {
         return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
     }
 
+    /**
+     * Handles '/listLogs' request.
+     */
     @GET
     @Path("/listLogs")
     public Response listLogs(@Context HttpServletRequest request) throws IOException {
@@ -131,6 +160,9 @@ public class LogviewerResource {
         return logviewer.listLogFiles(user, portStr != null ? Integer.parseInt(portStr) : null, topologyId, callback, origin);
     }
 
+    /**
+     * Handles '/dumps' (listing dump files) request.
+     */
     @GET
     @Path("/dumps/{topo-id}/{host-port}")
     public Response listDumpFiles(@PathParam("topo-id") String topologyId, @PathParam("host-port") String hostPort,
@@ -139,6 +171,9 @@ public class LogviewerResource {
         return profileHandler.listDumpFiles(topologyId, hostPort, user);
     }
 
+    /**
+     * Handles '/dumps' (downloading specific dump file) request.
+     */
     @GET
     @Path("/dumps/{topo-id}/{host-port}/{filename}")
     public Response downloadDumpFile(@PathParam("topo-id") String topologyId, @PathParam("host-port") String hostPort,
@@ -147,6 +182,9 @@ public class LogviewerResource {
         return profileHandler.downloadDumpFile(topologyId, hostPort, fileName, user);
     }
 
+    /**
+     * Handles '/download' (downloading specific log file) request.
+     */
     @GET
     @Path("/download")
     public Response downloadLogFile(@Context HttpServletRequest request) throws IOException {
@@ -158,6 +196,9 @@ public class LogviewerResource {
         return logDownloadHandler.downloadLogFile(decodedFileName, user);
     }
 
+    /**
+     * Handles '/daemondownload' (downloading specific daemon log file) request.
+     */
     @GET
     @Path("/daemondownload")
     public Response downloadDaemonLogFile(@Context HttpServletRequest request) throws IOException {
@@ -169,6 +210,9 @@ public class LogviewerResource {
         return logDownloadHandler.downloadDaemonLogFile(decodedFileName, user);
     }
 
+    /**
+     * Handles '/search' (searching from specific worker or daemon log file) request.
+     */
     @GET
     @Path("/search/{file}")
     public Response search(@PathParam("file") String file, @Context HttpServletRequest request) throws IOException {
@@ -191,6 +235,9 @@ public class LogviewerResource {
         }
     }
 
+    /**
+     * Handles '/deepSearch' request.
+     */
     @GET
     @Path("/deepSearch/{topoId}")
     public Response deepSearch(@PathParam("topoId") String topologyId,
