@@ -282,6 +282,7 @@ pacemaker.thread.timeout: 10
 pacemaker.childopts: "-Xmx1024m"
 pacemaker.auth.method: "NONE"
 pacemaker.kerberos.users: []
+pacemaker.thrift.message.size.max: 10485760
 
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:

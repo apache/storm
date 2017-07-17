@@ -17,7 +17,6 @@
  */
 package org.apache.storm.pacemaker.codec;
 
-import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.messaging.netty.ISaslServer;
 import org.apache.storm.messaging.netty.IServer;
@@ -52,7 +51,7 @@ public class ThriftNettyServerCodec {
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftNettyServerCodec.class);
 
-    public ThriftNettyServerCodec(IServer server, Map<String, Object> topoConf, AuthMethod authMethod) {
+    public ThriftNettyServerCodec(IServer server, Map<String, Object> topoConf, AuthMethod authMethod, int thriftMessageMaxSize) {
         this.server = server;
         this.authMethod = authMethod;
         this.topoConf = topoConf;
@@ -64,7 +63,7 @@ public class ThriftNettyServerCodec {
 
                 ChannelPipeline pipeline = Channels.pipeline();
                 pipeline.addLast("encoder", new ThriftEncoder());
-                pipeline.addLast("decoder", new ThriftDecoder());
+                pipeline.addLast("decoder", new ThriftDecoder(thriftMessageMaxSize));
                 if(authMethod == AuthMethod.DIGEST) {
                     try {
                         LOG.debug("Adding SaslStormServerHandler to pacemaker server pipeline.");
