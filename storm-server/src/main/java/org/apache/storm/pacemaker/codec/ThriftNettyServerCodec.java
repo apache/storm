@@ -47,6 +47,7 @@ public class ThriftNettyServerCodec {
     private IServer server;
     private AuthMethod authMethod;
     private Map<String, Object> topoConf;
+    private int thriftMessageMaxSize;
     
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftNettyServerCodec.class);
@@ -55,6 +56,7 @@ public class ThriftNettyServerCodec {
         this.server = server;
         this.authMethod = authMethod;
         this.topoConf = topoConf;
+        this.thriftMessageMaxSize = thriftMessageMaxSize;
     }
 
     public ChannelPipelineFactory pipelineFactory() {
