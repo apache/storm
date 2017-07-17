@@ -311,7 +311,7 @@
 
 (defn get-log-user-group-whitelist [fname]
   (let [wl-file (ServerConfigUtils/getLogMetaDataFile fname)
-        m (clojurify-structure (Utils/readYamlFile wl-file))]
+        m (clojurify-structure (Utils/readYamlFile (.toString wl-file)))]
     (if (not-nil? m)
       (do
         (let [user-wl (.get m LOGS-USERS)
