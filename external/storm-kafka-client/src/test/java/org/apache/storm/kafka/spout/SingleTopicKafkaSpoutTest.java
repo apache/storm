@@ -114,7 +114,7 @@ public class SingleTopicKafkaSpoutTest {
         Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
         assertThat("Expected commits for only one topic partition", commits.entrySet().size(), is(1));
         OffsetAndMetadata offset = commits.entrySet().iterator().next().getValue();
-        assertThat("Expected committed offset to cover all emitted messages", offset.offset(), is(messageCount - 1));
+        assertThat("Expected committed offset to cover all emitted messages", offset.offset(), is(messageCount));
     }
 
     @Test
