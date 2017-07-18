@@ -1,4 +1,5 @@
 ﻿## 1.2.0
+ * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
  * STORM-2491: Adding extra Cassandra configuration parameters
  * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
