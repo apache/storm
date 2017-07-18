@@ -16,6 +16,8 @@
 
 package org.apache.storm.kafka.spout;
 
+import org.apache.storm.kafka.spout.PatternTopicFilter;
+
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;

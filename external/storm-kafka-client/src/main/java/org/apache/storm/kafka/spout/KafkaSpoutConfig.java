@@ -28,6 +28,7 @@ import org.apache.storm.tuple.Fields;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -55,12 +56,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =
         new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
             DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
-    /**
-     * Retry in a tight loop (keep unit tests fasts) do not use in production.
-     */
-    public static final KafkaSpoutRetryService UNIT_TEST_RETRY_SERVICE =
-        new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(0),
-            DEFAULT_MAX_RETRIES, TimeInterval.milliSeconds(0));
 
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
@@ -128,7 +123,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static class Builder<K, V> {
 
         private final Map<String, Object> kafkaProps;
-        private Subscription subscription;
+        private final Subscription subscription;
         private final SerializableDeserializer<K> keyDes;
         private final Class<? extends Deserializer<K>> keyDesClazz;
         private final SerializableDeserializer<V> valueDes;
@@ -143,15 +138,16 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private boolean emitNullTuples = false;
 
         public Builder(String bootstrapServers, String... topics) {
-            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new NamedSubscription(topics));
+            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
         }
 
         public Builder(String bootstrapServers, Collection<String> topics) {
-            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new NamedSubscription(topics));
+            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(),
+                new NamedTopicFilter(new HashSet<String>(topics))));
         }
 
         public Builder(String bootstrapServers, Pattern topics) {
-            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new PatternSubscription(topics));
+            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new PatternTopicFilter(topics)));
         }
 
         /**
@@ -161,7 +157,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, String... topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
         }
 
         /**
@@ -171,7 +167,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, Collection<String> topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(new HashSet<String>(topics))));
         }
 
         /**
@@ -181,7 +177,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, Pattern topics) {
-            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new PatternTopicFilter(topics)));
         }
 
         /**
@@ -199,7 +195,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, String... topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
         }
 
         /**
@@ -207,7 +203,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, Collection<String> topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(new HashSet<String>(topics))));
         }
 
         /**
@@ -215,7 +211,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          */
         @Deprecated
         public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes, Class<? extends Deserializer<V>> valDes, Pattern topics) {
-            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
+            this(bootstrapServers, keyDes, valDes, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new PatternTopicFilter(topics)));
         }
 
         /**
@@ -479,7 +475,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          * documentation in {@link FirstPollOffsetStrategy}
          *
          * @param firstPollOffsetStrategy Offset used by Kafka spout first poll
-         *
          */
         public Builder<K, V> setFirstPollOffsetStrategy(FirstPollOffsetStrategy firstPollOffsetStrategy) {
             this.firstPollOffsetStrategy = firstPollOffsetStrategy;
