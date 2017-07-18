@@ -21,6 +21,7 @@ package org.apache.storm.kafka.spout.test;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
@@ -45,7 +46,7 @@ public class KafkaSpoutTopologyMainWildcardTopics extends KafkaSpoutTopologyMain
 
     protected KafkaSpoutConfig<String,String> getKafkaSpoutConfig() {
         return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
-                .setGroupId("kafkaSpoutTestGroup")
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
                 .setRetry(getRetryService())
                 .setRecordTranslator((r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
                         new Fields("topic", "partition", "offset", "key", "value"), STREAM)

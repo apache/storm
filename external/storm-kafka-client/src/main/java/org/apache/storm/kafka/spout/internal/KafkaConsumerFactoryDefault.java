@@ -23,8 +23,7 @@ public class KafkaConsumerFactoryDefault<K, V> implements KafkaConsumerFactory<K
 
     @Override
     public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        return new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
-                kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
+        return new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
     }
     
 }

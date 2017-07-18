@@ -27,7 +27,6 @@ import java.util.Properties;
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.tuple.Fields;
@@ -47,6 +46,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;    
     // 2s
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000; 
+    public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
     public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =  
             new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
                     DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
@@ -56,6 +56,37 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final KafkaSpoutRetryService UNIT_TEST_RETRY_SERVICE = 
         new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(0),
             DEFAULT_MAX_RETRIES, TimeInterval.milliSeconds(0));
+    
+    // Kafka consumer configuration
+    private final Map<String, Object> kafkaProps;
+    private final Subscription subscription;
+    private final long pollTimeoutMs;
+
+    // Kafka spout configuration
+    private final RecordTranslator<K, V> translator;
+    private final long offsetCommitPeriodMs;
+    private final int maxUncommittedOffsets;
+    private final FirstPollOffsetStrategy firstPollOffsetStrategy;
+    private final KafkaSpoutRetryService retryService;
+    private final long partitionRefreshPeriodMs;
+    private final boolean emitNullTuples;
+
+    /**
+     * Creates a new KafkaSpoutConfig using a Builder.
+     * @param builder The Builder to construct the KafkaSpoutConfig from
+     */
+    public KafkaSpoutConfig(Builder<K,V> builder) {
+        this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
+        this.subscription = builder.subscription;
+        this.translator = builder.translator;
+        this.pollTimeoutMs = builder.pollTimeoutMs;
+        this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
+        this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
+        this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
+        this.retryService = builder.retryService;
+        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
+        this.emitNullTuples = builder.emitNullTuples;
+    }
 
     /**
      * The offset used by the Kafka spout in the first poll to Kafka broker. The choice of this parameter will affect the number of consumer
@@ -77,163 +108,50 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         EARLIEST,
         LATEST,
         UNCOMMITTED_EARLIEST,
-        UNCOMMITTED_LATEST }
-    
-    public static Builder<String, String> builder(String bootstrapServers, String ... topics) {
-        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
-    }
-    
-    public static Builder<String, String> builder(String bootstrapServers, Collection<String> topics) {
-        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
-    }
-    
-    public static Builder<String, String> builder(String bootstrapServers, Pattern topics) {
-        return new Builder<>(bootstrapServers, StringDeserializer.class, StringDeserializer.class, topics);
-    }
-    
-    private static Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
-        // set defaults for properties not specified
-        if (!kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
-            kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
-        }
-        return kafkaProps;
+        UNCOMMITTED_LATEST 
     }
     
     public static class Builder<K,V> {
         private final Map<String, Object> kafkaProps;
         private Subscription subscription;
-        private final SerializableDeserializer<K> keyDes;
-        private final Class<? extends Deserializer<K>> keyDesClazz;
-        private final SerializableDeserializer<V> valueDes;
-        private final Class<? extends Deserializer<V>> valueDesClazz;
         private RecordTranslator<K, V> translator;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
-        private FirstPollOffsetStrategy firstPollOffsetStrategy = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+        private FirstPollOffsetStrategy firstPollOffsetStrategy = DEFAULT_FIRST_POLL_OFFSET_STRATEGY;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
 
         public Builder(String bootstrapServers, String ... topics) {
-            this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new NamedSubscription(topics));
-        }
-
-        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes, SerializableDeserializer<V> valDes, String ... topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+            this(bootstrapServers, new NamedSubscription(topics));
         }
         
-        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes,
-            SerializableDeserializer<V> valDes, Collection<String> topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
+        public Builder(String bootstrapServers, Collection<String> topics) {
+            this(bootstrapServers, new NamedSubscription(topics));
         }
         
-        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes,
-            SerializableDeserializer<V> valDes, Pattern topics) {
-            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
+        public Builder(String bootstrapServers, Pattern topics) {
+            this(bootstrapServers, new PatternSubscription(topics));
         }
         
-        public Builder(String bootstrapServers, SerializableDeserializer<K> keyDes,
-            SerializableDeserializer<V> valDes, Subscription subscription) {
-            this(bootstrapServers, keyDes, null, valDes, null, subscription);
-        }
-        
-        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes,
-                Class<? extends Deserializer<V>> valDes, String ... topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
-        }
-        
-        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes,
-                Class<? extends Deserializer<V>> valDes, Collection<String> topics) {
-            this(bootstrapServers, keyDes, valDes, new NamedSubscription(topics));
-        }
-        
-        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes,
-                Class<? extends Deserializer<V>> valDes, Pattern topics) {
-            this(bootstrapServers, keyDes, valDes, new PatternSubscription(topics));
-        }
-        
-        public Builder(String bootstrapServers, Class<? extends Deserializer<K>> keyDes,
-                Class<? extends Deserializer<V>> valDes, Subscription subscription) {
-            this(bootstrapServers, null, keyDes, null, valDes, subscription);
-        }
-        
-        private Builder(String bootstrapServers, SerializableDeserializer<K> keyDes,
-                Class<? extends Deserializer<K>> keyDesClazz,
-                SerializableDeserializer<V> valDes, Class<? extends Deserializer<V>> valDesClazz, Subscription subscription) {
+        /**
+         * Create a KafkaSpoutConfig builder with default property values and no key/value deserializers.
+         * @param bootstrapServers The bootstrap servers the consumer will use
+         * @param subscription The subscription defining which topics and partitions each spout instance will read.
+         */
+        public Builder(String bootstrapServers, Subscription subscription) {
             kafkaProps = new HashMap<>();
             if (bootstrapServers == null || bootstrapServers.isEmpty()) {
                 throw new IllegalArgumentException("bootstrap servers cannot be null");
             }
             kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            this.keyDes = keyDes;
-            this.keyDesClazz = keyDesClazz;
-            this.valueDes = valDes;
-            this.valueDesClazz = valDesClazz;
             this.subscription = subscription;
-            this.translator = new DefaultRecordTranslator<K,V>();
-        }
-
-        private Builder(Builder<?, ?> builder, SerializableDeserializer<K> keyDes, Class<? extends Deserializer<K>> keyDesClazz,
-                SerializableDeserializer<V> valueDes, Class<? extends Deserializer<V>> valueDesClazz) {
-            this.kafkaProps = new HashMap<>(builder.kafkaProps);
-            this.subscription = builder.subscription;
-            this.pollTimeoutMs = builder.pollTimeoutMs;
-            this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-            this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
-            this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
-            //this could result in a lot of class case exceptions at runtime,
-            // but because some translators will work no matter what the generics
-            // are I thought it best not to force someone to reset the translator
-            // when they change the key/value types.
-            this.translator = (RecordTranslator<K, V>) builder.translator;
-            this.retryService = builder.retryService;
-            this.keyDes = keyDes;
-            this.keyDesClazz = keyDesClazz;
-            this.valueDes = valueDes;
-            this.valueDesClazz = valueDesClazz;
-        }
-
-        /**
-         * Specifying this key deserializer overrides the property key.deserializer. If you have
-         * set a custom RecordTranslator before calling this it may result in class cast
-         * exceptions at runtime.
-         */
-        public <NewKeyT> Builder<NewKeyT,V> setKey(SerializableDeserializer<NewKeyT> keyDeserializer) {
-            return new Builder<>(this, keyDeserializer, null, valueDes, valueDesClazz);
+            this.translator = new DefaultRecordTranslator<>();
         }
         
         /**
-         * Specify a class that can be instantiated to create a key.deserializer
-         * This is the same as setting key.deserializer, but overrides it. If you have
-         * set a custom RecordTranslator before calling this it may result in class cast
-         * exceptions at runtime.
-         */
-        public <NewKeyT> Builder<NewKeyT, V> setKey(Class<? extends Deserializer<NewKeyT>> clazz) {
-            return new Builder<>(this, null, clazz, valueDes, valueDesClazz);
-        }
-
-        /**
-         * Specifying this value deserializer overrides the property value.deserializer.  If you have
-         * set a custom RecordTranslator before calling this it may result in class cast
-         * exceptions at runtime.
-         */
-        public <NewValueT> Builder<K,NewValueT> setValue(SerializableDeserializer<NewValueT> valueDeserializer) {
-            return new Builder<>(this, keyDes, keyDesClazz, valueDeserializer, null);
-        }
-        
-        /**
-         * Specify a class that can be instantiated to create a value.deserializer
-         * This is the same as setting value.deserializer, but overrides it.  If you have
-         * set a custom RecordTranslator before calling this it may result in class cast
-         * exceptions at runtime.
-         */
-        public <NewValueT> Builder<K,NewValueT> setValue(Class<? extends Deserializer<NewValueT>> clazz) {
-            return new Builder<>(this, keyDes, keyDesClazz, null, clazz);
-        }
-        
-        /**
-         * Set a Kafka property config.
+         * Set a {@link KafkaConsumer} property. 
          */
         public Builder<K,V> setProp(String key, Object value) {
             kafkaProps.put(key, value);
@@ -241,7 +159,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
         
         /**
-         * Set multiple Kafka property configs.
+         * Set multiple {@link KafkaConsumer} properties.
          */
         public Builder<K,V> setProp(Map<String, Object> props) {
             kafkaProps.putAll(props);
@@ -249,83 +167,17 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
         
         /**
-         * Set multiple Kafka property configs.
+         * Set multiple {@link KafkaConsumer} properties.
          */
         public Builder<K,V> setProp(Properties props) {
-            for (String name: props.stringPropertyNames()) {
-                kafkaProps.put(name, props.get(name));
-            }
+            props.forEach((key, value) -> {
+                if (key instanceof String) {
+                    kafkaProps.put((String)key, value);
+                } else {
+                    throw new IllegalArgumentException("Kafka Consumer property keys must be Strings");
+                }
+            });
             return this;
-        }
-        
-        /**
-         * Set the group.id for the consumers.
-         */
-        public Builder<K,V> setGroupId(String id) {
-            return setProp("group.id", id);
-        }
-        
-        /**
-         * reset the bootstrap servers for the Consumer.
-         */
-        public Builder<K,V> setBootstrapServers(String servers) {
-            return setProp(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, servers);
-        }
-        
-        /**
-         * The minimum amount of data the broker should return for a fetch request.
-         */
-        public Builder<K,V> setFetchMinBytes(int bytes) {
-            return setProp(ConsumerConfig.FETCH_MIN_BYTES_CONFIG, bytes);
-        }
-        
-        /**
-         * The maximum amount of data per-partition the broker will return.
-         */
-        public Builder<K,V> setMaxPartitionFectchBytes(int bytes) {
-            return setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, bytes);
-        }
-        
-        /**
-         * The maximum number of records a poll will return.
-         */
-        public Builder<K,V> setMaxPollRecords(int records) {
-            return setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, records);
-        }
-        
-        //Security Related Configs
-        
-        /**
-         * Configure the SSL Keystore for mutual authentication.
-         */
-        public Builder<K,V> setSSLKeystore(String location, String password) {
-            return setProp("ssl.keystore.location", location)
-                    .setProp("ssl.keystore.password", password);
-        }
-       
-        /**
-         * Configure the SSL Keystore for mutual authentication.
-         */
-        public Builder<K,V> setSSLKeystore(String location, String password, String keyPassword) {
-            return setProp("ssl.key.password", keyPassword)
-                    .setSSLKeystore(location, password);
-        }
-        
-        /**
-         * Configure the SSL Truststore to authenticate with the brokers.
-         */
-        public Builder<K,V> setSSLTruststore(String location, String password) {
-            return setSecurityProtocol("SSL")
-                    .setProp("ssl.truststore.location", location)
-                    .setProp("ssl.truststore.password", password);
-        }
-        
-        /**
-         * Protocol used to communicate with brokers. 
-         * Valid values are: PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL.
-         */
-        public Builder<K, V> setSecurityProtocol(String protocol) {
-            return setProp("security.protocol", protocol);
         }
 
         //Spout Settings
@@ -435,44 +287,50 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return new KafkaSpoutConfig<>(this);
         }
     }
-
-    // Kafka consumer configuration
-    private final Map<String, Object> kafkaProps;
-    private final Subscription subscription;
-    private final SerializableDeserializer<K> keyDes;
-    private final Class<? extends Deserializer<K>> keyDesClazz;
-    private final SerializableDeserializer<V> valueDes;
-    private final Class<? extends Deserializer<V>> valueDesClazz;
-    private final long pollTimeoutMs;
-
-    // Kafka spout configuration
-    private final RecordTranslator<K, V> translator;
-    private final long offsetCommitPeriodMs;
-    private final int maxUncommittedOffsets;
-    private final FirstPollOffsetStrategy firstPollOffsetStrategy;
-    private final KafkaSpoutRetryService retryService;
-    private final long partitionRefreshPeriodMs;
-    private final boolean emitNullTuples;
-
+    
+        
     /**
-     * Creates a new KafkaSpoutConfig using a Builder.
-     * @param builder The Builder to construct the KafkaSpoutConfig from
+     * Factory method that creates a Builder with String key/value deserializers.
+     * @param bootstrapServers The bootstrap servers for the consumer
+     * @param topics The topics to subscribe to
+     * @return The new builder
      */
-    public KafkaSpoutConfig(Builder<K,V> builder) {
-        this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
-        this.subscription = builder.subscription;
-        this.translator = builder.translator;
-        this.pollTimeoutMs = builder.pollTimeoutMs;
-        this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
-        this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
-        this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
-        this.retryService = builder.retryService;
-        this.keyDes = builder.keyDes;
-        this.keyDesClazz = builder.keyDesClazz;
-        this.valueDes = builder.valueDes;
-        this.valueDesClazz = builder.valueDesClazz;
-        this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
-        this.emitNullTuples = builder.emitNullTuples;
+    public static Builder<String, String> builder(String bootstrapServers, String ... topics) {
+        return setStringDeserializers(new Builder<>(bootstrapServers, topics));
+    }
+    
+    /**
+     * Factory method that creates a Builder with String key/value deserializers.
+     * @param bootstrapServers The bootstrap servers for the consumer
+     * @param topics The topics to subscribe to
+     * @return The new builder
+     */
+    public static Builder<String, String> builder(String bootstrapServers, Collection<String> topics) {
+        return setStringDeserializers(new Builder<>(bootstrapServers, topics));
+    }
+    
+    /**
+     * Factory method that creates a Builder with String key/value deserializers.
+     * @param bootstrapServers The bootstrap servers for the consumer
+     * @param topics The topic pattern to subscribe to
+     * @return The new builder
+     */
+    public static Builder<String, String> builder(String bootstrapServers, Pattern topics) {
+        return setStringDeserializers(new Builder<>(bootstrapServers, topics));
+    }
+    
+    private static Builder<String, String> setStringDeserializers(Builder<String, String> builder) {
+        builder.setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        builder.setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        return builder;
+    }
+    
+    private static Map<String, Object> setDefaultsAndGetKafkaProps(Map<String, Object> kafkaProps) {
+        // set defaults for properties not specified
+        if (!kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
+            kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        }
+        return kafkaProps;
     }
 
     /**
@@ -481,36 +339,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      */
     public Map<String, Object> getKafkaProps() {
         return kafkaProps;
-    }
-
-    /**
-     * Gets the Kafka record key deserializer.
-     * @return The key deserializer
-     */
-    public Deserializer<K> getKeyDeserializer() {
-        if (keyDesClazz != null) {
-            try {
-                return keyDesClazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Could not instantiate key deserializer " + keyDesClazz);
-            }
-        }
-        return keyDes;
-    }
-
-    /**
-     * Gets the Kafka record value deserializer.
-     * @return The value deserializer
-     */
-    public Deserializer<V> getValueDeserializer() {
-        if (valueDesClazz != null) {
-            try {
-                return valueDesClazz.newInstance();
-            } catch (InstantiationException | IllegalAccessException e) {
-                throw new RuntimeException("Could not instantiate value deserializer " + valueDesClazz);
-            }
-        }
-        return valueDes;
     }
     
     public Subscription getSubscription() {
@@ -562,8 +390,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public String toString() {
         return "KafkaSpoutConfig{"
                 + "kafkaProps=" + kafkaProps
-                + ", key=" + getKeyDeserializer()
-                + ", value=" + getValueDeserializer()
                 + ", pollTimeoutMs=" + pollTimeoutMs
                 + ", offsetCommitPeriodMs=" + offsetCommitPeriodMs
                 + ", maxUncommittedOffsets=" + maxUncommittedOffsets
