@@ -289,6 +289,7 @@
  * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.2.0
+ * STORM-2548: Simplify KafkaSpoutConfig to avoid duplicating KafkaConsumer configuration parameters
  * STORM-2491: Adding extra Cassandra configuration parameters
  * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2601: add the timeout parameter to the method of getting the nimbus client
