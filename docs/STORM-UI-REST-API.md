@@ -340,6 +340,63 @@ Sample response:
 }
 ```
 
+### /api/v1/owner-resources (GET)
+
+Returns summary information aggregated at the topology owner level. Pass an optional id for a specific owner (e.g. /api/v1/owner-resources/theowner)
+
+Response fields:
+
+|Field  |Value|Description|
+|---	|---	|---
+|owner  |String |Topology owner
+|totalTopologies|Integer|Total number of topologies owner is running
+|totalExecutors |Integer|Total number of executors used by owner
+|totalWorkers |Integer|Total number of workers used by owner
+|totalTasks|Integer|Total number of tasks used by owner
+|totalMemoryUsage|Double|Total Memory Assigned on behalf of owner in MB
+|totalCpuUsage|Double|Total CPU Resource Assigned on behalf of User. Every 100 means 1 core
+|memoryGuarantee|Double|The amount of memory resource (in MB) guaranteed to owner
+|cpuGuarantee|Double|The amount of CPU resource (every 100 means 1 core) guaranteed to owner
+|isolatedNodes|Integer|The amount of nodes that are guaranteed isolated to owner
+|memoryGuaranteeRemaining|Double|The amount of guaranteed memory resources (in MB) remaining
+|cpuGuaranteeRemaining|Double|The amount of guaranteed CPU resource (every 100 means 1 core) remaining
+|totalReqOnHeapMem|Double| Total On-Heap Memory Requested by User in MB
+|totalReqOffHeapMem|Double|Total Off-Heap Memory Requested by User in MB
+|totalReqMem|Double|Total Memory Requested by User in MB
+|totalReqCpu|Double|Total CPU Resource Requested by User. Every 100 means 1 core
+|totalAssignedOnHeapMem|Double|Total On-Heap Memory Assigned on behalf of owner in MB
+|totalAssignedOffHeapMem|Double|Total Off-Heap Memory Assigned on behalf of owner in MB
+
+Sample response:
+ 
+```json
+{
+    "owners": [
+        {
+            "totalReqOnHeapMem": 896,
+            "owner": "ownerA",
+            "totalExecutors": 7,
+            "cpuGuaranteeRemaining": 30,
+            "totalReqMem": 896,
+            "cpuGuarantee": 100,
+            "isolatedNodes": "N/A",
+            "memoryGuarantee": 4000,
+            "memoryGuaranteeRemaining": 3104,
+            "totalTasks": 7,
+            "totalMemoryUsage": 896,
+            "totalReqOffHeapMem": 0,
+            "totalReqCpu": 70,
+            "totalWorkers": 2,
+            "totalCpuUsage": 70,
+            "totalAssignedOffHeapMem": 0,
+            "totalAssignedOnHeapMem": 896,
+            "totalTopologies": 1
+        }
+    ],
+    "schedulerDisplayResource": true
+}
+```
+
 ### /api/v1/topology/summary (GET)
 
 Returns summary information for all topologies.
