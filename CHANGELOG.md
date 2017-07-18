@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
  * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
  * STORM-2622: Add owner resource summary on storm UI
  * STORM-2634: Apply new code style to storm-sql-runtime
