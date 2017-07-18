@@ -1,4 +1,5 @@
 ﻿## 1.2.0
+ * STORM-2548: Simplify KafkaSpoutConfig to avoid duplicating KafkaConsumer configuration parameters
  * STORM-2491: Adding extra Cassandra configuration parameters
  * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
