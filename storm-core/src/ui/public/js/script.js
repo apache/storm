@@ -581,3 +581,6 @@ var makeOwnerSummaryTable = function(response, elId, parentId) {
     $(elId + ' [data-toggle="tooltip"]').tooltip();
 };
 
+function getPageRenderedTimestamp(eId) {
+    document.getElementById(eId).innerHTML = "Page rendered at: " + Date();
+};

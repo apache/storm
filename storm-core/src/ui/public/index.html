@@ -94,6 +94,9 @@
       <div id="json-response-error"></div>
     </div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 <script>
@@ -198,5 +201,8 @@ $(document).ready(function() {
         });
     });
   });
+
+  getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>
 </html>
