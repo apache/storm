@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2622: Add owner resource summary on storm UI
  * STORM-2634: Apply new code style to storm-sql-runtime
  * STORM-2633: Apply new code style to storm-sql-redis
  * STORM-2632: Apply new code style to storm-sql-kafka
