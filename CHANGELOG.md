@@ -1,5 +1,4 @@
 ﻿## 1.2.0
- * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
  * STORM-2491: Adding extra Cassandra configuration parameters
  * STORM-2383: [storm-hbase] Support HBase as state backend
  * STORM-2506: Print mapping between Task ID and Kafka Partitions
@@ -17,6 +16,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
  * STORM-2618: Add TridentKafkaStateUpdater for storm-kafka-client
  * STORM-2608: Remove any pending offsets that are no longer valid
  * STORM-2503: Fix lgtm.com alerts on equality and comparison operations.
