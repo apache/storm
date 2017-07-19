@@ -74,6 +74,9 @@
       <p id="toggle-switch" style="display: block;" class="js-only"></p>
     </div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 <script>
 $(document).ajaxStop($.unblockUI);
 $(document).ajaxStart(function(){
@@ -350,6 +353,8 @@ $(document).ready(function() {
         });
     });
 });
+
+getPageRenderedTimestamp("page-rendered-at-timestamp");
 
 function start_profiling() {
     var topologyId = $.url("?topology_id");
