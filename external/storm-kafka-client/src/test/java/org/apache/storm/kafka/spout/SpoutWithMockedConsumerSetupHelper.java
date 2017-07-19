@@ -16,16 +16,16 @@
 
 package org.apache.storm.kafka.spout;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Matchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -48,19 +48,32 @@ public class SpoutWithMockedConsumerSetupHelper {
      * @return The spout
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
-        TopologyContext contextMock, SpoutOutputCollector collectorMock, KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {     
+        TopologyContext contextMock, SpoutOutputCollector collectorMock, final KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {     
 
-        Map<String, List<PartitionInfo>> partitionInfos = assignedPartitions.stream()
-            .map(tp -> new PartitionInfo(tp.topic(), tp.partition(), null, null, null))
-            .collect(Collectors.groupingBy(info -> info.topic()));
-        partitionInfos.keySet()
-            .forEach(key -> when(consumerMock.partitionsFor(key))
-                .thenReturn(partitionInfos.get(key)));
-        KafkaConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
+        Map<String, List<PartitionInfo>> partitionInfos = new HashMap<>();
+        for(TopicPartition tp : assignedPartitions) {
+            PartitionInfo info = new PartitionInfo(tp.topic(), tp.partition(), null, null, null);
+            List<PartitionInfo> infos = partitionInfos.get(tp.topic());
+            if(infos == null) {
+                infos = new ArrayList<>();
+                partitionInfos.put(tp.topic(), infos);
+            }
+            infos.add(info);
+        }
+        for(String topic : partitionInfos.keySet()) {
+            when(consumerMock.partitionsFor(topic))
+                .thenReturn(partitionInfos.get(topic));
+        }
+        KafkaConsumerFactory<K, V> consumerFactory = new KafkaConsumerFactory<K, V>() {
+            @Override
+            public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+                return consumerMock;
+            }
+        };
 
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory);
 
-        when(contextMock.getComponentTasks(any())).thenReturn(Collections.singletonList(0));
+        when(contextMock.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
         when(contextMock.getThisTaskIndex()).thenReturn(0);
         
         spout.open(topoConf, contextMock, collectorMock);

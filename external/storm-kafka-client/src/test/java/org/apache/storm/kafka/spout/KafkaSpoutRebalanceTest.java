@@ -17,7 +17,6 @@ package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.Matchers.any;
 import static org.hamcrest.Matchers.hasKey;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Matchers.any;
@@ -102,7 +101,7 @@ public class KafkaSpoutRebalanceTest {
         when(consumerMock.poll(anyLong()))
             .thenReturn(new ConsumerRecords<>(firstPartitionRecords))
             .thenReturn(new ConsumerRecords<>(secondPartitionRecords))
-            .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
+            .thenReturn(new ConsumerRecords<>(new HashMap<TopicPartition, List<ConsumerRecord<String, String>>>()));
 
         //Emit the messages
         spout.nextTuple();
@@ -131,7 +130,7 @@ public class KafkaSpoutRebalanceTest {
             Subscription subscriptionMock = mock(Subscription.class);
             doNothing()
                 .when(subscriptionMock)
-                .subscribe(any(), rebalanceListenerCapture.capture(), any());
+                .subscribe(any(KafkaConsumer.class), rebalanceListenerCapture.capture(), any(TopologyContext.class));
             KafkaSpout<String, String> spout = new KafkaSpout<>(getKafkaSpoutConfigBuilder(subscriptionMock, -1)
                 .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
                 .build(), consumerFactoryMock);
@@ -167,7 +166,7 @@ public class KafkaSpoutRebalanceTest {
             Subscription subscriptionMock = mock(Subscription.class);
             doNothing()
                 .when(subscriptionMock)
-                .subscribe(any(), rebalanceListenerCapture.capture(), any());
+                .subscribe(any(KafkaConsumer.class), rebalanceListenerCapture.capture(), any(TopologyContext.class));
         KafkaSpoutRetryService retryServiceMock = mock(KafkaSpoutRetryService.class);
         KafkaSpout<String, String> spout = new KafkaSpout<>(getKafkaSpoutConfigBuilder(subscriptionMock, -1)
             .setOffsetCommitPeriodMs(10)

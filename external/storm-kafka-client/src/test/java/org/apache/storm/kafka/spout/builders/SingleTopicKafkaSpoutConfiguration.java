@@ -61,7 +61,7 @@ public class SingleTopicKafkaSpoutConfiguration {
         return tp.createTopology();
     }
 
-private static Func<ConsumerRecord<String, String>, List<Object>> TOPIC_KEY_VALUE_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
+    private static Func<ConsumerRecord<String, String>, List<Object>> TOPIC_KEY_VALUE_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
         @Override
         public List<Object> apply(ConsumerRecord<String, String> r) {
             return new Values(r.topic(), r.key(), r.value());
@@ -73,13 +73,13 @@ private static Func<ConsumerRecord<String, String>, List<Object>> TOPIC_KEY_VALU
     }
 
     public static KafkaSpoutConfig.Builder<String, String> getKafkaSpoutConfigBuilder(Subscription subscription, int port) {
-        return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<>("127.0.0.1:" + port, subscription));
+        return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<String, String>("127.0.0.1:" + port, subscription));
     }
 
     private static KafkaSpoutConfig.Builder<String, String> setCommonSpoutConfig(KafkaSpoutConfig.Builder<String, String> config) {
         return config
             .setRecordTranslator(TOPIC_KEY_VALUE_FUNC,
-                        new Fields("topic", "key", "value"), STREAM)
+                new Fields("topic", "key", "value"), STREAM)
             .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
             .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 5)
             .setRetry(getRetryService())

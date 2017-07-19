@@ -99,7 +99,7 @@ public class MaxUncommittedOffsetTest {
     private void initializeSpout(int msgCount) throws Exception {
         populateTopicData(SingleTopicKafkaSpoutConfiguration.TOPIC, msgCount);
         when(topologyContext.getThisTaskIndex()).thenReturn(0);
-        when(topologyContext.getComponentTasks(any())).thenReturn(Collections.singletonList(0));
+        when(topologyContext.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
         spout.open(conf, topologyContext, collector);
         spout.activate();
     }
