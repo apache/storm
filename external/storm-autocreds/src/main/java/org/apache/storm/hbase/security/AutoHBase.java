@@ -18,6 +18,13 @@
 
 package org.apache.storm.hbase.security;
 
+import com.google.common.io.ByteArrayDataInput;
+import com.google.common.io.ByteStreams;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.security.token.AuthenticationTokenIdentifier;
+import org.apache.hadoop.io.DataInputByteBuffer;
+import org.apache.hadoop.io.DataOutputBuffer;
 import org.apache.storm.Config;
 import org.apache.storm.common.AbstractAutoCreds;
 import org.apache.storm.hdfs.security.HdfsSecurityUtil;
@@ -40,6 +47,8 @@ import javax.security.auth.Subject;
 import javax.xml.bind.DatatypeConverter;
 import java.io.*;
 import java.net.InetAddress;
+import java.nio.ByteBuffer;
+import java.security.PrivilegedExceptionAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -96,7 +105,7 @@ public class AutoHBase extends AbstractAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf) {
+    protected byte[] getHadoopCredentials(Map conf, final Configuration hbaseConf) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
@@ -111,20 +120,27 @@ public class AutoHBase extends AbstractAutoCreds {
                 }
                 provider.login(HBASE_KEYTAB_FILE_KEY, HBASE_PRINCIPAL_KEY, InetAddress.getLocalHost().getCanonicalHostName());
 
-                LOG.info("Logged into Hbase as principal = " + conf.get(HBASE_PRINCIPAL_KEY));
+                LOG.info("Logged into Hbase as principal = " + hbaseConf.get(HBASE_PRINCIPAL_KEY));
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
                 final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
 
-                User user = User.create(ugi);
+                User user = User.create(proxyUser);
 
                 if(user.isHBaseSecurityEnabled(hbaseConf)) {
-                    TokenUtil.obtainAndCacheToken(hbaseConf, proxyUser);
+                    final Connection connection = ConnectionFactory.createConnection(hbaseConf, user);
+                    TokenUtil.obtainAndCacheToken(connection, user);
 
                     LOG.info("Obtained HBase tokens, adding to user credentials.");
 
-                    Credentials credential= proxyUser.getCredentials();
+                    Credentials credential = proxyUser.getCredentials();
+
+                    for (Token<? extends TokenIdentifier> tokenForLog : credential.getAllTokens()) {
+                        LOG.debug("Obtained token info in credential: {} / {}",
+                            tokenForLog.toString(), tokenForLog.decodeIdentifier().getUser());
+                    }
+
                     ByteArrayOutputStream bao = new ByteArrayOutputStream();
                     ObjectOutputStream out = new ObjectOutputStream(bao);
                     credential.write(out);

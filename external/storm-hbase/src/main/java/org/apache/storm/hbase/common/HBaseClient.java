@@ -21,6 +21,10 @@ import com.google.common.collect.Lists;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hbase.client.*;
 import org.apache.hadoop.hbase.security.UserProvider;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.storm.Config;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
 import org.slf4j.Logger;
@@ -40,10 +44,28 @@ public class HBaseClient implements Closeable{
     public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
-            HBaseSecurityUtil.spawnReLoginThread(provider.getCurrent().getUGI());
-            this.table = provider.getCurrent().getUGI().doAs(new PrivilegedExceptionAction<HTable>() {
-                @Override
-                public HTable run() throws IOException {
+            UserGroupInformation ugi;
+            if (provider != null) {
+                ugi = provider.getCurrent().getUGI();
+                LOG.debug("Current USER for provider: {}", ugi.getUserName());
+            } else {
+                // autocreds puts delegation token into current user UGI
+                ugi = UserGroupInformation.getCurrentUser();
+
+                LOG.debug("UGI for current USER : {}", ugi.getUserName());
+                for (Token<? extends TokenIdentifier> token : ugi.getTokens()) {
+                    LOG.debug("Token in UGI (delegation token): {} / {}", token.toString(),
+                        token.decodeIdentifier().getUser());
+
+                    // use UGI from token
+                    ugi = token.decodeIdentifier().getUser();
+                    ugi.addToken(token);
+                }
+            }
+
+            HBaseSecurityUtil.spawnReLoginThread(ugi);
+            this.table = ugi.doAs(new PrivilegedExceptionAction<HTable>() {
+                @Override public HTable run() throws IOException {
                     return new HTable(configuration, tableName);
                 }
             });
