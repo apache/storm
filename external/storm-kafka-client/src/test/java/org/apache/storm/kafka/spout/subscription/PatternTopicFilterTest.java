@@ -14,56 +14,60 @@
  * limitations under the License.
  */
 
-package org.apache.storm.kafka.spout;
+package org.apache.storm.kafka.spout.subscription;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
-
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.junit.Before;
 import org.junit.Test;
 
-public class NamedTopicFilterTest {
+public class PatternTopicFilterTest {
 
     private KafkaConsumer<?, ?> consumerMock;
     
     @Before
-    public void setUp() {
+    public void setUp(){
         consumerMock = mock(KafkaConsumer.class);
     }
     
     @Test
     public void testFilter() {
+        Pattern pattern = Pattern.compile("test-\\d+");
+        PatternTopicFilter filter = new PatternTopicFilter(pattern);
+        
         String matchingTopicOne = "test-1";
         String matchingTopicTwo = "test-11";
         String unmatchedTopic = "unmatched";
         
-        NamedTopicFilter filter = new NamedTopicFilter(matchingTopicOne, matchingTopicTwo);
+        Map<String, List<PartitionInfo>> allTopics = new HashMap<>();
+        allTopics.put(matchingTopicOne, Collections.singletonList(createPartitionInfo(matchingTopicOne, 0)));
+        List<PartitionInfo> testTwoPartitions = new ArrayList<>();
+        testTwoPartitions.add(createPartitionInfo(matchingTopicTwo, 0));
+        testTwoPartitions.add(createPartitionInfo(matchingTopicTwo, 1));
+        allTopics.put(matchingTopicTwo, testTwoPartitions);
+        allTopics.put(unmatchedTopic, Collections.singletonList(createPartitionInfo(unmatchedTopic, 0)));
         
-        when(consumerMock.partitionsFor(matchingTopicOne)).thenReturn(Collections.singletonList(createPartitionInfo(matchingTopicOne, 0)));
-        List<PartitionInfo> partitionTwoPartitions = new ArrayList<>();
-        partitionTwoPartitions.add(createPartitionInfo(matchingTopicTwo, 0));
-        partitionTwoPartitions.add(createPartitionInfo(matchingTopicTwo, 1));
-        when(consumerMock.partitionsFor(matchingTopicTwo)).thenReturn(partitionTwoPartitions);
-        when(consumerMock.partitionsFor(unmatchedTopic)).thenReturn(Collections.singletonList(createPartitionInfo(unmatchedTopic, 0)));
+        when(consumerMock.listTopics()).thenReturn(allTopics);
         
         List<TopicPartition> matchedPartitions = filter.getFilteredTopicPartitions(consumerMock);
         
-        assertThat("Expected filter to pass only topics with exact name matches", matchedPartitions, 
+        assertThat("Expected topic partitions matching the pattern to be passed by the filter", matchedPartitions,
             containsInAnyOrder(new TopicPartition(matchingTopicOne, 0), new TopicPartition(matchingTopicTwo, 0), new TopicPartition(matchingTopicTwo, 1)));
-            
     }
     
     private PartitionInfo createPartitionInfo(String topic, int partition) {
         return new PartitionInfo(topic, partition, null, null, null);
     }
-    
 }
