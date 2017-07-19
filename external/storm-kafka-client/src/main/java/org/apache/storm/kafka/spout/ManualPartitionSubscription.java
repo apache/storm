@@ -15,33 +15,30 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
-import java.util.regex.Pattern;
-
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 
-public class ManualPartitionPatternSubscription extends PatternSubscription {
+public class ManualPartitionSubscription extends Subscription {
     private static final long serialVersionUID = 5633018073527583826L;
-    private final ManualPartitioner parter;
+    private final ManualPartitioner partitioner;
+    private final TopicFilter partitionFilter;
     private Set<TopicPartition> currentAssignment = null;
     private KafkaConsumer<?, ?> consumer = null;
     private ConsumerRebalanceListener listener = null;
     private TopologyContext context = null;
 
-    public ManualPartitionPatternSubscription(ManualPartitioner parter, Pattern pattern) {
-        super(pattern);
-        this.parter = parter;
+    public ManualPartitionSubscription(ManualPartitioner parter, TopicFilter partitionFilter) {
+        this.partitionFilter = partitionFilter;
+        this.partitioner = parter;
     }
     
     @Override
@@ -54,23 +51,21 @@ public class ManualPartitionPatternSubscription extends PatternSubscription {
     
     @Override
     public void refreshAssignment() {
-        List<TopicPartition> allPartitions = new ArrayList<>();
-        for(Map.Entry<String, List<PartitionInfo>> entry: consumer.listTopics().entrySet()) {
-            if (pattern.matcher(entry.getKey()).matches()) {
-                for (PartitionInfo partitionInfo: entry.getValue()) {
-                    allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));
-                }
-            }
-        }
+        List<TopicPartition> allPartitions = partitionFilter.getFilteredTopicPartitions(consumer);
         Collections.sort(allPartitions, TopicPartitionComparator.INSTANCE);
-        Set<TopicPartition> newAssignment = new HashSet<>(parter.partition(allPartitions, context));
+        Set<TopicPartition> newAssignment = new HashSet<>(partitioner.partition(allPartitions, context));
         if (!newAssignment.equals(currentAssignment)) {
+            consumer.assign(newAssignment);
             if (currentAssignment != null) {
                 listener.onPartitionsRevoked(currentAssignment);
-                listener.onPartitionsAssigned(newAssignment);
             }
             currentAssignment = newAssignment;
-            consumer.assign(currentAssignment);
+            listener.onPartitionsAssigned(newAssignment);
         }
+    }
+    
+    @Override
+    public String getTopicsString() {
+        return partitionFilter.getTopicsString();
     }
 }
