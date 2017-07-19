@@ -1,16 +1,19 @@
-﻿## 1.1.1
- * STORM-2518 Handles empty name for "USER type" ACL when normalizing
+﻿## 1.2.0
+ * STORM-2555: handle impersonation properly for HBase delegation token
  * STORM-2501: Auto populate Hive Credentials
+ * STORM-2512: Make constructor public and add one more builder constructor
+ * STORM-2482: Refactor the Storm auto credential plugins to be more usable	
+
+## 1.1.1
+ * STORM-2518 Handles empty name for "USER type" ACL when normalizing
  * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
  * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
  * STORM-2493: update documents to reflect the changes
  * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
- * STORM-2512: Make constructor public and add one more builder constructor
  * STORM-2505: Spout to support topic compaction
  * STORM-2498: Fix Download Full File link
  * STORM-2191: shorten classpaths by using wildcards
- * STORM-2482: Refactor the Storm auto credential plugins to be more usable	
  * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2488: The UI user Must be HTTP.
