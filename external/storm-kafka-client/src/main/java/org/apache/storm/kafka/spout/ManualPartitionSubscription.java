@@ -31,10 +31,10 @@ public class ManualPartitionSubscription extends Subscription {
     private static final long serialVersionUID = 5633018073527583826L;
     private final ManualPartitioner partitioner;
     private final TopicFilter partitionFilter;
-    private Set<TopicPartition> currentAssignment = null;
-    private KafkaConsumer<?, ?> consumer = null;
-    private ConsumerRebalanceListener listener = null;
-    private TopologyContext context = null;
+    private transient Set<TopicPartition> currentAssignment = null;
+    private transient KafkaConsumer<?, ?> consumer = null;
+    private transient ConsumerRebalanceListener listener = null;
+    private transient TopologyContext context = null;
 
     public ManualPartitionSubscription(ManualPartitioner parter, TopicFilter partitionFilter) {
         this.partitionFilter = partitionFilter;
