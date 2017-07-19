@@ -19,6 +19,7 @@ package org.apache.storm.kafka.spout;
 
 import java.util.List;
 
+import java.io.Serializable;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 
@@ -28,7 +29,7 @@ import org.apache.storm.task.TopologyContext;
  * The complete TopologyContext is passed in, but it is suggested that you use the index of the spout and the total
  * number of spouts to avoid missing partitions or double assigning partitions.
  */
-public interface ManualPartitioner {
+public interface ManualPartitioner extends Serializable {
     /**
      * Get the partitions for this assignment
      * @param allPartitions all of the partitions that the set of spouts want to subscribe to, in a strict ordering
