@@ -64,3 +64,5 @@ if(Test-Path $StormEnvPath) {
 }
 
 & ([io.path]::combine("$STORM_BIN_DIR", "storm.py")) $args;
+
+exit $LastExitCode

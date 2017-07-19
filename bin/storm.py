@@ -291,6 +291,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             ret = sub.check_output(all_args, stderr=sub.STDOUT)
             print(ret)
         except sub.CalledProcessError as e:
+            print(e.output)
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
