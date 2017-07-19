@@ -357,6 +357,7 @@ $(document).ready(function() {
 getPageRenderedTimestamp("page-rendered-at-timestamp");
 
 function start_profiling() {
+    if (!confirmAction("start profiling")) return false;
     var topologyId = $.url("?topology_id");
     var timeout = $("#timeout").val();
 
@@ -405,6 +406,7 @@ function start_profiling() {
 }
 
 function stop_profiling(id) {
+    if (!confirmAction("stop profiling")) return false;
     var topologyId = $.url("?topology_id");
     var url = "/api/v1/topology/"+topologyId+"/profiling/stop/" + id;
 
@@ -421,6 +423,7 @@ function stop_profiling(id) {
 }
 
 function dump_profile(id) {
+    if (!confirmAction("dump profile")) return false;
     var topologyId = $.url("?topology_id");
     var url = "/api/v1/topology/"+topologyId+"/profiling/dumpprofile/" + id;
 
@@ -437,8 +440,8 @@ function dump_profile(id) {
 
 // Create jstack output for all selected workers.
 function dump_jstacks() {
+    if (!confirmAction("dump jstack")) return false;
     var topologyId = $.url("?topology_id");
-
     var failed = {}
     var passed = {}
     Object.keys(workerActionSelected).forEach(function (id) {
@@ -465,6 +468,7 @@ function dump_jstacks() {
 
 // Create jstack output for the worker with the given id.
 function dump_jstack(id) {
+    if (!confirmAction("dump jstack")) return false;
     var topologyId = $.url("?topology_id");
     var url = "/api/v1/topology/"+topologyId+"/profiling/dumpjstack/" + id;
 
@@ -480,6 +484,7 @@ function dump_jstack(id) {
 }
 
 function restart_worker_jvms() {
+    if (!confirmAction("restart worker")) return false;
     var topologyId = $.url("?topology_id");
     var failed = {}
     var passed = {}
@@ -507,6 +512,7 @@ function restart_worker_jvms() {
 
 // Create java heap output for all selected workers.
 function dump_heaps() {
+    if (!confirmAction("dump heap")) return false;
     var topologyId = $.url("?topology_id");
     var failed = {}
     var passed = {}
@@ -534,6 +540,7 @@ function dump_heaps() {
 
 // Create java heap output for the worker with the given id.
 function dump_heap(id) {
+    if (!confirmAction("dump heap")) return false;
     var topologyId = $.url("?topology_id");
     var url = "/api/v1/topology/"+topologyId+"/profiling/dumpheap/" + id;
     var heap = $("#dump_heap_" + id);
@@ -546,6 +553,11 @@ function dump_heap(id) {
     .fail(function(response) {
         alert( "Dumping Heap for " + id + " failed: \n" + JSON.stringify(response));
     });
+}
+
+// Confirm an action
+function confirmAction(actionText){
+    return confirm('Do you really want to ' + actionText + '?');
 }
 
 </script>
