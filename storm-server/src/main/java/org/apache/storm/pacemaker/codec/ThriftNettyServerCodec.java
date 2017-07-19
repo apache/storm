@@ -47,16 +47,17 @@ public class ThriftNettyServerCodec {
     private IServer server;
     private AuthMethod authMethod;
     private Map<String, Object> topoConf;
-    private int thriftMessageMaxSize;
+    private final int thriftMessageMaxSize;
     
     private static final Logger LOG = LoggerFactory
         .getLogger(ThriftNettyServerCodec.class);
 
-    public ThriftNettyServerCodec(IServer server, Map<String, Object> topoConf, AuthMethod authMethod, int thriftMessageMaxSize) {
+    public ThriftNettyServerCodec(IServer server, Map<String, Object> topoConf,
+                                  AuthMethod authMethod, int thriftMessageMaxSizeBytes) {
         this.server = server;
         this.authMethod = authMethod;
         this.topoConf = topoConf;
-        this.thriftMessageMaxSize = thriftMessageMaxSize;
+        thriftMessageMaxSize = thriftMessageMaxSizeBytes;
     }
 
     public ChannelPipelineFactory pipelineFactory() {

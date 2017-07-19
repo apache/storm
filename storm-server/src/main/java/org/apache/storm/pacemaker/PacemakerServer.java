@@ -107,7 +107,9 @@ class PacemakerServer implements ISaslServer {
         bootstrap.setOption("sendBufferSize", FIVE_MB_IN_BYTES);
         bootstrap.setOption("keepAlive", true);
         int thriftMessageMaxSize = (Integer)config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
-        ChannelPipelineFactory pipelineFactory = new ThriftNettyServerCodec(this, config, authMethod, thriftMessageMaxSize).pipelineFactory();
+        ChannelPipelineFactory pipelineFactory =
+            new ThriftNettyServerCodec(this, config, authMethod, thriftMessageMaxSize)
+            .pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         Channel channel = bootstrap.bind(new InetSocketAddress(port));
         allChannels.add(channel);

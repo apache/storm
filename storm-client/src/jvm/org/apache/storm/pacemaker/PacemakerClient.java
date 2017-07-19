@@ -117,11 +117,9 @@ public class PacemakerClient implements ISaslClient {
         bootstrap.setOption("keepAlive", true);
 
         remote_addr = new InetSocketAddress(host, port);
-        int thriftMessageMaxSize =
-            (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
+        int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
         ChannelPipelineFactory pipelineFactory =
-            new ThriftNettyClientCodec(this, config, authMethod,
-                                       host, thriftMessageMaxSize)
+            new ThriftNettyClientCodec(this, config, authMethod, host, thriftMessageMaxSize)
             .pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.connect(remote_addr);
