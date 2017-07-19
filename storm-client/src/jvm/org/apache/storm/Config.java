@@ -804,7 +804,7 @@ public class Config extends HashMap<String, Object> {
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
 
     /**
-     * Pacemaker Thrift Max Message Size (bytes)
+     * Pacemaker Thrift Max Message Size (bytes).
      */
     @isInteger
     @isPositiveNumber
