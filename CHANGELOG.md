@@ -1,7 +1,6 @@
 ﻿## 2.0.0
  * STORM-2542: Remove storm-kafka-client KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2133: add page-rendered-at timestamp on the UI
- * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
  * STORM-2622: Add owner resource summary on storm UI
  * STORM-2634: Apply new code style to storm-sql-runtime
  * STORM-2633: Apply new code style to storm-sql-redis
@@ -291,6 +290,7 @@
  * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.2.0
+ * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
  * STORM-2548: Simplify KafkaSpoutConfig to avoid duplicating KafkaConsumer configuration parameters
  * STORM-2491: Adding extra Cassandra configuration parameters
  * STORM-2383: [storm-hbase] Support HBase as state backend
