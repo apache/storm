@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
  * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
  * STORM-2618: Add TridentKafkaStateUpdater for storm-kafka-client
  * STORM-2608: Remove any pending offsets that are no longer valid
