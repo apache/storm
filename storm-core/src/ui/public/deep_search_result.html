@@ -97,11 +97,26 @@ $(document).ready(function() {
             file.count = count;
             file.logviewerPort = logviewerPort;
             file.search_archived = search_archived;
+            if (file.matches == 0) {
+               file.resultNotFound = true;
+            }
             var searchTemplate = $(template).filter("#search-result-identified-template").html();
             var rendered = Mustache.render(searchTemplate, file);
             var elemId = elem_id_for_host(host);
             $("#"+elemId).remove();
-            $("#search-result-table > tbody").append(rendered);
+            if (file.resultNotFound) {
+                // if no result found,
+                // and there is no "aResult" or "noResult" element exists,
+                // append "resultNotFound" element
+                if (!$("#aResult").length && !$("#noResult").length) {
+                    $("#search-result-table > tbody").append(rendered);
+                }
+            } else {
+              // if a result found, remove "noResult" element,
+              // and append the result
+              $("#noResult").remove();
+              $("#search-result-table > tbody").append(rendered);
+            }
         }
 
 
