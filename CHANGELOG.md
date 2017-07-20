@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2638: Add in maximum object size for Pacemaker Thrift objects
  * STORM-2542: Remove storm-kafka-client KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2133: add page-rendered-at timestamp on the UI
  * STORM-2622: Add owner resource summary on storm UI
