@@ -804,6 +804,13 @@ public class Config extends HashMap<String, Object> {
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
 
     /**
+     * Pacemaker Thrift Max Message Size (bytes).
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String PACEMAKER_THRIFT_MESSAGE_SIZE_MAX = "pacemaker.thrift.message.size.max";
+
+    /**
      * Max no.of seconds group mapping service will cache user groups
      */
     @isInteger
