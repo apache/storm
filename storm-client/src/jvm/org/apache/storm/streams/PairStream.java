@@ -384,14 +384,14 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     }
 
     /**
-     * Does a right outer join of the values of this stream with the values having the same key from the other stream.
+     * group the values of this stream with the values having the same key from the other stream.
      * <p>
      * Note: The parallelism of this stream is carried forward to the joined stream.
      * </p>
      *
      * @param otherStream the other stream
-     * @param valueJoiner the {@link ValueJoiner}
-     * @param <R>         the type of the values resulting from the join
+     * @param valueJoiner the {@link PairValueJoiner}
+     * @param <R>         the type of the values resulting from the grouping
      * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
