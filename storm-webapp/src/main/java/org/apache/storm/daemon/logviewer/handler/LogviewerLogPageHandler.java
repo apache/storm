@@ -132,7 +132,7 @@ public class LogviewerLogPageHandler {
             if (port == null) {
                 fileResults = new ArrayList<>();
 
-                File topoDir = new File(logRoot + Utils.FILE_PATH_SEPARATOR + topologyId);
+                File topoDir = new File(logRoot, topologyId);
                 if (topoDir.exists()) {
                     File[] topoDirFiles = topoDir.listFiles();
                     if (topoDirFiles != null) {

@@ -80,7 +80,6 @@ public class LogviewerServer implements AutoCloseable {
             final Boolean httpsWantClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_WANT_CLIENT_AUTH));
             final Boolean httpsNeedClientAuth = (Boolean) (conf.get(DaemonConfig.LOGVIEWER_HTTPS_NEED_CLIENT_AUTH));
 
-            //TODO a better way to do this would be great.
             LogviewerApplication.setup(conf);
             ret = UIHelpers.jettyCreateServer(logviewerHttpPort, null, httpsPort);
 
@@ -147,15 +146,6 @@ public class LogviewerServer implements AutoCloseable {
 
             closed = true;
         }
-    }
-
-    /**
-     * @return The port the HTTP server is listening on. Not available until {@link #start() } has run.
-     */
-    public int getHttpServerPort() {
-        assert httpServer.getConnectors().length == 1;
-
-        return httpServer.getConnectors()[0].getLocalPort();
     }
 
     /**
