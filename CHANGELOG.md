@@ -1,4 +1,5 @@
 ﻿## 1.2.0
+ * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
  * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
  * STORM-2548: Simplify KafkaSpoutConfig to avoid duplicating KafkaConsumer configuration parameters
  * STORM-2491: Adding extra Cassandra configuration parameters
