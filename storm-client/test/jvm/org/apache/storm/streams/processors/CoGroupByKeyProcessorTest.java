@@ -21,7 +21,12 @@ import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.PairValueJoiner;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.Collection;
+import java.util.Arrays;
+
 
 import static org.junit.Assert.assertEquals;
 
