@@ -30,20 +30,11 @@ import org.apache.storm.streams.operations.Reducer;
 import org.apache.storm.streams.operations.StateUpdater;
 import org.apache.storm.streams.operations.ValueJoiner;
 import org.apache.storm.streams.operations.aggregators.Count;
-import org.apache.storm.streams.processors.AggregateByKeyProcessor;
-import org.apache.storm.streams.processors.FlatMapValuesProcessor;
-import org.apache.storm.streams.processors.JoinProcessor;
-import org.apache.storm.streams.processors.MapValuesProcessor;
-import org.apache.storm.streams.processors.MergeAggregateByKeyProcessor;
-import org.apache.storm.streams.processors.ReduceByKeyProcessor;
-import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
+import org.apache.storm.streams.processors.*;
 import org.apache.storm.streams.windowing.Window;
 import org.apache.storm.tuple.Fields;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Represents a stream of key-value pairs.
@@ -380,6 +371,25 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
         return partitionBy(KEY).updateStateByKeyPartition(stateUpdater);
     }
 
+    /**
+     * Does a right outer join of the values of this stream with the values having the same key from the other stream.
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param valueJoiner the {@link ValueJoiner}
+     * @param <R>         the type of the values resulting from the join
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <R, V1> PairStream<K, R> coGroupByKey(PairStream<K, V1> otherStream,
+                                                 PairValueJoiner<Collection<V>, Collection<V1>> valueJoiner) {
+        return partitionByKey().coGroupByKeyPartition(otherStream,valueJoiner);
+    }
+
+
+
     private <R> StreamState<K, R> updateStateByKeyPartition(StateUpdater<? super V, ? extends R> stateUpdater) {
         return new StreamState<>(
                 new PairStream<>(streamBuilder,
@@ -394,6 +404,18 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
         String rightStream = otherStream.stream;
         Node joinNode = addProcessorNode(
                 new JoinProcessor<>(leftStream, rightStream, valueJoiner, leftType, rightType),
+                KEY_VALUE,
+                true);
+        addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
+        return new PairStream<>(streamBuilder, joinNode);
+    }
+
+    private <R, V1> PairStream<K, R> coGroupByKeyPartition(PairStream<K, V1> otherStream,
+                                                           PairValueJoiner<Collection<V>, Collection<V1>> valueJoiner) {
+        String firstStream = stream;
+        String secondStream = otherStream.stream;
+        Node joinNode = addProcessorNode(
+                new CoGroupByKeyProcessor<>(firstStream, secondStream, valueJoiner),
                 KEY_VALUE,
                 true);
         addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
