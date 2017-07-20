@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,6 +24,8 @@ import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -107,15 +109,15 @@ public class NimbusClient extends ThriftClient {
             }
             asUser = (String) conf.get(Config.STORM_DO_AS_USER);
         }
+        ConfigValidation.validateFields(conf);
 
-        List<String> seeds;
+        List<String> seeds = Lists.newArrayList();
         if (conf.containsKey(Config.NIMBUS_HOST)) {
             LOG.warn("Using deprecated config {} for backward compatibility. Please update your storm.yaml so it only has config {}",
                     Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
             seeds = Lists.newArrayList(conf.get(Config.NIMBUS_HOST).toString());
-        } else {
-            Object nimbusSeeds = conf.get(Config.NIMBUS_SEEDS);
-            seeds = nimbusSeeds instanceof String[] ? Lists.newArrayList((String[]) nimbusSeeds) : Lists.newArrayList(nimbusSeeds.toString());
+        } else if(conf.containsKey(Config.NIMBUS_SEEDS)){
+            seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
         }
 
         for (String host : seeds) {
