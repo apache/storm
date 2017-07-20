@@ -33,6 +33,9 @@ You can subscribe to this list by sending an email to [dev-subscribe@storm.apach
 
 You can also [browse the archives of the storm-dev mailing list](http://mail-archives.apache.org/mod_mbox/storm-dev/).
 
+### Issue tracker
+In case you want to rise a bug/feature or propose an idea, please use [Apache Jira](https://issues.apache.org/jira/projects/STORM)
+
 ### Which list should I send/subscribe to?
 If you are using a pre-built binary distribution of Storm, then chances are you should send questions, comments, storm-related announcements, etc. to [user@storm.apache.org](mailto:user@storm.apache.org).
 
