@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2641: Make storm.py print output from subprocess on error on Windows, make storm.ps1 return the right exit code
  * STORM-2638: Add in maximum object size for Pacemaker Thrift objects
  * STORM-2542: Remove storm-kafka-client KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2133: add page-rendered-at timestamp on the UI
