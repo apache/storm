@@ -1,4 +1,6 @@
 ﻿## 2.0.0
+ * STORM-2644: Show message when result not found on deep search page
+ * STORM-2643: Add a confirmation dialog for profiling and debugging actions on Storm UI
  * STORM-2641: Make storm.py print output from subprocess on error on Windows, make storm.ps1 return the right exit code
  * STORM-2638: Add in maximum object size for Pacemaker Thrift objects
  * STORM-2542: Remove storm-kafka-client KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
