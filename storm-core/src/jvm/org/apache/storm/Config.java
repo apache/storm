@@ -384,7 +384,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_AUTH_PAYLOAD="storm.zookeeper.auth.payload";
 
     /**
-     * The topology Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication.
+     * The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it.
      */
     @isString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME="storm.zookeeper.topology.auth.scheme";
