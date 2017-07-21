@@ -51,7 +51,7 @@ import java.util.concurrent.Callable;
 import static org.apache.storm.sql.TestUtils.MockState.getCollectedValues;
 
 public class TestPlanCompiler {
-  private static LocalCluster cluster;
+  private static ILocalCluster cluster;
 
   @BeforeClass
   public static void staticSetup() throws Exception {

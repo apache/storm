@@ -69,13 +69,13 @@
         executor2 (ExecutorDetails. (int 6) (int 10))
         topology1 (TopologyDetails. "topology1" {TOPOLOGY-NAME "topology-name-1"} (StormTopology.) 1
                                    {executor1 "spout1"
-                                    executor2 "bolt1"})
+                                    executor2 "bolt1"} "user")
         ;; test topology.selectExecutorToComponent
         executor->comp (.selectExecutorToComponent topology1 (list executor1))
         _ (is (= (clojurify-executor->comp {executor1 "spout1"})
                  (clojurify-executor->comp executor->comp)))
         ;; test topologies.getById
-        topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"} (StormTopology.) 1 {})
+        topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"} (StormTopology.) 1 {} "user")
         topologies (Topologies. {"topology1" topology1 "topology2" topology2})
         _ (is (= "topology1" (->> "topology1"
                                   (.getById topologies)
@@ -104,19 +104,19 @@
                                     2
                                     {executor1 "spout1"
                                      executor2 "bolt1"
-                                     executor3 "bolt2"})
+                                     executor3 "bolt2"} "user")
         ;; topology2 is fully scheduled
         topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"}
                                     (StormTopology.)
                                     2
                                     {executor11 "spout11"
-                                     executor12 "bolt12"})
+                                     executor12 "bolt12"} "user")
         ;; topology3 needs scheduling, since the assignment is squeezed
         topology3 (TopologyDetails. "topology3" {TOPOLOGY-NAME "topology-name-3"}
                                     (StormTopology.)
                                     2
                                     {executor21 "spout21"
-                                     executor22 "bolt22"})
+                                     executor22 "bolt22"} "user")
         topologies (Topologies. {"topology1" topology1 "topology2" topology2 "topology3" topology3})
         executor->slot1 {executor1 (WorkerSlot. "supervisor1" (int 1))
                          executor2 (WorkerSlot. "supervisor2" (int 2))}

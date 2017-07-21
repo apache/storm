@@ -69,18 +69,18 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map conf) {
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf, final String topologyOwnerPrincipal) {
         try {
-            loadConfigKeys(conf);
+            loadConfigKeys(topoConf);
             if (!configKeys.isEmpty()) {
-                Map<String, Object> updatedConf = updateConfigs(conf);
+                Map<String, Object> updatedConf = updateConfigs(topoConf);
                 for (String configKey : configKeys) {
                     credentials.put(getCredentialKey(configKey),
-                            DatatypeConverter.printBase64Binary(getHadoopCredentials(updatedConf, configKey)));
+                            DatatypeConverter.printBase64Binary(getHadoopCredentials(updatedConf, configKey, topologyOwnerPrincipal)));
                 }
             } else {
                 credentials.put(getCredentialKey(StringUtils.EMPTY),
-                        DatatypeConverter.printBase64Binary(getHadoopCredentials(conf)));
+                        DatatypeConverter.printBase64Binary(getHadoopCredentials(topoConf, topologyOwnerPrincipal)));
             }
             LOG.info("Tokens added to credentials map.");
         } catch (Exception e) {
@@ -99,8 +99,8 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
     }
 
     @Override
-    public void renew(Map<String, String> credentials, Map topologyConf) {
-        doRenew(credentials, updateConfigs(topologyConf));
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {
+        doRenew(credentials, updateConfigs(topologyConf), ownerPrincipal);
     }
 
     @Override
@@ -187,11 +187,11 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
      */
     protected abstract String getCredentialKey(String configKey);
 
-    protected abstract byte[] getHadoopCredentials(Map conf, String configKey);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal);
 
-    protected abstract byte[] getHadoopCredentials(Map conf);
+    protected abstract byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal);
 
-    protected abstract void doRenew(Map<String, String> credentials, Map topologyConf);
+    protected abstract void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal);
 
     @SuppressWarnings("unchecked")
     private void addCredentialToSubject(Subject subject, Map<String, String> credentials) {

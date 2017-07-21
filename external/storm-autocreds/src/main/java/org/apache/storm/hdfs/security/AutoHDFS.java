@@ -29,6 +29,7 @@ import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
 import org.apache.storm.Config;
 import org.apache.storm.common.AbstractAutoCreds;
+import org.apache.storm.generated.StormTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -79,14 +80,14 @@ public class AutoHDFS extends AbstractAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
-        return getHadoopCredentials(conf, new Configuration());
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
+        return getHadoopCredentials(conf, new Configuration(), topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -96,19 +97,17 @@ public class AutoHDFS extends AbstractAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] getHadoopCredentials(Map conf, final Configuration configuration) {
+    private byte[] getHadoopCredentials(Map<String, Object> conf, final Configuration configuration, final String topologyOwnerPrincipal) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 login(configuration);
-
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
 
                 final URI nameNodeURI = conf.containsKey(TOPOLOGY_HDFS_URI) ? new URI(conf.get(TOPOLOGY_HDFS_URI).toString())
                         : FileSystem.getDefaultUri(configuration);
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
-                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
+                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologyOwnerPrincipal, ugi);
 
                 Credentials creds = (Credentials) proxyUser.doAs(new PrivilegedAction<Object>() {
                     @Override
@@ -122,7 +121,7 @@ public class AutoHDFS extends AbstractAutoCreds {
                             }
 
                             fileSystem.addDelegationTokens(configuration.get(STORM_USER_NAME_KEY), credential);
-                            LOG.info("Delegation tokens acquired for user {}", topologySubmitterUser);
+                            LOG.info("Delegation tokens acquired for user {}", topologyOwnerPrincipal);
                             return credential;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -152,7 +151,7 @@ public class AutoHDFS extends AbstractAutoCreds {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {
         for (Pair<String, Credentials> cred : getCredentials(credentials)) {
             try {
                 Configuration configuration = getHadoopConfiguration(topologyConf, cred.getFirst());
@@ -172,7 +171,7 @@ public class AutoHDFS extends AbstractAutoCreds {
             } catch (Exception e) {
                 LOG.warn("could not renew the credentials, one of the possible reason is tokens are beyond " +
                         "renewal period so attempting to get new tokens.", e);
-                populateCredentials(credentials, topologyConf);
+                populateCredentials(credentials, topologyConf, ownerPrincipal);
             }
         }
     }
@@ -196,8 +195,8 @@ public class AutoHDFS extends AbstractAutoCreds {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        Map<String, Object> conf = new HashMap();
+        final String topologyOwnerPrincipal = args[0]; //with realm e.g. storm@WITZEND.COM
         conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
         conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
 
@@ -205,16 +204,26 @@ public class AutoHDFS extends AbstractAutoCreds {
         AutoHDFS autoHDFS = new AutoHDFS();
         autoHDFS.prepare(conf);
 
-        Map<String,String> creds  = new HashMap<String, String>();
-        autoHDFS.populateCredentials(creds, conf);
+        Map<String,String> creds  = new HashMap<>();
+        autoHDFS.populateCredentials(creds, conf, topologyOwnerPrincipal);
         LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
 
         Subject s = new Subject();
         autoHDFS.populateSubject(s, creds);
         LOG.info("Got a Subject "+ s);
 
-        autoHDFS.renew(creds, conf);
+        autoHDFS.renew(creds, conf, topologyOwnerPrincipal);
         LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
+    }
+
+    @Override
+    public void populateCredentials(Map<String, String> credentials, Map topoConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
+    }
+
+    @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
     }
 }
 
