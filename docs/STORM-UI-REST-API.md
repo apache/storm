@@ -396,9 +396,10 @@ Sample response:
 }
 ```
 
-### /api/v1/topology-workers/:id (GET)
+### /api/v1/topology-workers/\<id\> (GET)
 
-Returns the worker' information (host and port) for a topology.
+Returns the worker' information (host and port) for a topology whose id is substituted for \<id\>. 
+The topology id is obtained by the above /topology/summary call. 
 
 Response fields:
 
@@ -429,9 +430,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id (GET)
+### /api/v1/topology/\<id\> (GET)
 
-Returns topology information and statistics.  Substitute id with topology id.
+Returns topology information and statistics.  Substitute \<id\> with the topology id.
 
 Request parameters:
 
@@ -690,9 +691,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id/metrics
+### /api/v1/topology/\<id\>/metrics
 
-Returns detailed metrics for topology. It shows metrics per component, which are aggregated by stream.
+Returns detailed metrics for topology for a topology whose id is substituted for \<id\>. It shows metrics per component, which are aggregated by stream.
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -967,9 +968,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id/component/:component (GET)
+### /api/v1/topology/\<id\>/component/\<component\> (GET)
 
-Returns detailed metrics and executor information
+Returns detailed metrics and executor information for a topology whose id is substituted for \<id\> and a component whose id is substituted for \<component\>
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1205,9 +1206,10 @@ Sample response:
 
 ## Profiling and Debugging GET Operations
 
-###  /api/v1/topology/:id/profiling/start/:host-port/:timeout (GET)
+###  /api/v1/topology/\<id\>/profiling/start/\<host-port\>/\<timeout\> (GET)
 
 Request to start profiler on worker with timeout. Returns status and link to profiler artifacts for worker.
+Substitute appropriate values for \<id\>, \<host-port\> and \<timeout\>.
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1243,9 +1245,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpprofile/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpprofile/\<host-port\> (GET)
 
 Request to dump profiler recording on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1274,9 +1277,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/stop/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/stop/\<host-port\> (GET)
 
 Request to stop profiler on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1305,9 +1309,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpjstack/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpjstack/\<host-port\> (GET)
 
 Request to dump jstack on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1336,9 +1341,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpheap/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpheap/\<host-port\> (GET)
 
 Request to dump heap (jmap) on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1367,9 +1373,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/restartworker/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/restartworker/\<host-port\> (GET)
 
 Request to request the worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1400,9 +1407,9 @@ Sample response:
 
 ## POST Operations
 
-### /api/v1/topology/:id/activate (POST)
+### /api/v1/topology/\<id\>/activate (POST)
 
-Activates a topology.
+Activates a topology. Substitute for \<id\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1415,9 +1422,9 @@ Sample Response:
 ```
 
 
-### /api/v1/topology/:id/deactivate (POST)
+### /api/v1/topology/\<id\>/deactivate (POST)
 
-Deactivates a topology.
+Deactivates a topology. Substitute for \<id\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1430,9 +1437,10 @@ Sample Response:
 ```
 
 
-### /api/v1/topology/:id/rebalance/:wait-time (POST)
+### /api/v1/topology/\<id\>/rebalance/\<wait-time\> (POST)
 
 Rebalances a topology.
+Substitute for \<id\> and \<wait-time\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1464,9 +1472,10 @@ Sample Response:
 
 
 
-### /api/v1/topology/:id/kill/:wait-time (POST)
+### /api/v1/topology/\<id\>/kill/\<wait-time\> (POST)
 
 Kills a topology.
+Substitute for \<id\> and \<wait-time\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
