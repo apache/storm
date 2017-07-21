@@ -35,6 +35,20 @@ public interface ICredentialsRenewer {
      * Renew any credentials that need to be renewed. (Update the credentials if needed)
      * @param credentials the credentials that may have something to renew.
      * @param topologyConf topology configuration.
-     */ 
-    public void renew(Map<String, String> credentials, Map topologyConf);
+     * @param topologyOwnerPrincipal the full principal name of the owner of the topology
+     */
+    @SuppressWarnings("deprecation")
+    void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal);
+
+    /**
+     * Renew any credentials that need to be renewed. (Update the credentials if needed)
+     * NOTE: THIS WILL BE CALLED THROUGH REFLECTION.  So if the newer renew exists it will be called instead,
+     * but if it does not exist this will be called.  That means that this is binary compatible but not source
+     * compatible with older version.  To make the compilation work this can become a noop when the new API
+     * is implemented.
+     * @param credentials the credentials that may have something to renew.
+     * @param topologyConf topology configuration.
+     */
+    @Deprecated
+    void renew(Map<String, String>  credentials, Map topologyConf);
 }

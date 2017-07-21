@@ -18,7 +18,6 @@
 
 package org.apache.storm.hdfs.common.security;
 
-import org.apache.storm.Config;
 import org.apache.storm.security.INimbusCredentialPlugin;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.security.auth.ICredentialsRenewer;
@@ -71,9 +70,9 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map conf) {
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf, String topologyOwnerPrincipal) {
         try {
-            credentials.put(getCredentialKey(), DatatypeConverter.printBase64Binary(getHadoopCredentials(conf)));
+            credentials.put(getCredentialKey(), DatatypeConverter.printBase64Binary(getHadoopCredentials(topoConf, topologyOwnerPrincipal)));
             LOG.info("HDFS tokens added to credentials map.");
         } catch (Exception e) {
             LOG.error("Could not populate HDFS credentials.", e);
@@ -85,8 +84,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
         credentials.put(HDFS_CREDENTIALS, DatatypeConverter.printBase64Binary("dummy place holder".getBytes()));
     }
 
-    /*
- *
+    /**
  * @param credentials map with creds.
  * @return instance of org.apache.hadoop.security.Credentials.
  * this class's populateCredentials must have been called before.
@@ -167,7 +165,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
      */
     @Override
     @SuppressWarnings("unchecked")
-    public void renew(Map<String, String> credentials, Map topologyConf) {
+    public void renew(Map<String, String> credentials,Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
         try {
             Credentials credential = getCredentials(credentials);
             if (credential != null) {
@@ -189,26 +187,24 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
         } catch (Exception e) {
             LOG.warn("could not renew the credentials, one of the possible reason is tokens are beyond " +
                     "renewal period so attempting to get new tokens.", e);
-            populateCredentials(credentials, topologyConf);
+            populateCredentials(credentials, topologyConf, topologyOwnerPrincipal);
         }
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf) {
+    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 final Configuration configuration = new Configuration();
 
                 login(configuration);
 
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
-
                 final URI nameNodeURI = conf.containsKey(TOPOLOGY_HDFS_URI) ? new URI(conf.get(TOPOLOGY_HDFS_URI).toString())
                         : FileSystem.getDefaultUri(configuration);
 
                 UserGroupInformation ugi = UserGroupInformation.getCurrentUser();
 
-                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, ugi);
+                final UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologyOwnerPrincipal, ugi);
 
                 Credentials creds = (Credentials) proxyUser.doAs(new PrivilegedAction<Object>() {
                     @Override
@@ -218,7 +214,7 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
                             Credentials credential= proxyUser.getCredentials();
 
                             fileSystem.addDelegationTokens(hdfsPrincipal, credential);
-                            LOG.info("Delegation tokens acquired for user {}", topologySubmitterUser);
+                            LOG.info("Delegation tokens acquired for user {}", topologyOwnerPrincipal);
                             return credential;
                         } catch (IOException e) {
                             throw new RuntimeException(e);
@@ -257,8 +253,8 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        Map<String, Object> conf = new HashMap();
+        final String topologyOwnerPrincipal = args[0]; //with realm e.g. storm@WITZEND.COM
         conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
         conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
 
@@ -266,16 +262,26 @@ public class AutoHDFS implements IAutoCredentials, ICredentialsRenewer, INimbusC
         AutoHDFS autoHDFS = new AutoHDFS();
         autoHDFS.prepare(conf);
 
-        Map<String,String> creds  = new HashMap<String, String>();
-        autoHDFS.populateCredentials(creds, conf);
+        Map<String,String> creds  = new HashMap<>();
+        autoHDFS.populateCredentials(creds, conf, topologyOwnerPrincipal);
         LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
 
         Subject s = new Subject();
         autoHDFS.populateSubject(s, creds);
         LOG.info("Got a Subject "+ s);
 
-        autoHDFS.renew(creds, conf);
+        autoHDFS.renew(creds, conf, topologyOwnerPrincipal);
         LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
+    }
+
+    @Override
+    public void populateCredentials(Map<String, String> credentials, Map topoConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
+    }
+
+    @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
     }
 }
 

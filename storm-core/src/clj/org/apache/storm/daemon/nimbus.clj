@@ -16,6 +16,7 @@
 (ns org.apache.storm.daemon.nimbus
   (:import [org.apache.thrift.server THsHaServer THsHaServer$Args])
   (:import [org.apache.storm.generated KeyNotFoundException])
+  (:import [org.apache.storm.security INimbusCredentialPlugin])
   (:import [org.apache.storm.blobstore LocalFsBlobStore])
   (:import [org.apache.thrift.protocol TBinaryProtocol TBinaryProtocol$Factory])
   (:import [org.apache.thrift.exception])
@@ -538,12 +539,23 @@
     (Utils/fromCompressedJsonConf
       (.readBlob blob-store (master-stormconf-key storm-id) nimbus-subject))))
 
+(defn fixup-storm-base
+  [storm-base topo-conf]
+  (assoc storm-base
+         :owner (.get topo-conf TOPOLOGY-SUBMITTER-USER)
+         :principal (.get topo-conf TOPOLOGY-SUBMITTER-PRINCIPAL)))
+
 (defn read-topology-details [nimbus storm-id]
   (let [blob-store (:blob-store nimbus)
         storm-base (or
                      (.storm-base (:storm-cluster-state nimbus) storm-id nil)
                      (throw (NotAliveException. storm-id)))
         topology-conf (read-storm-conf-as-nimbus storm-id blob-store)
+        storm-base (if (nil? (:principal storm-base))
+                      (let [new-sb (fixup-storm-base storm-base topology-conf)]
+                        (.update-storm! (:storm-cluster-state nimbus) storm-id new-sb)
+                        new-sb)
+                      storm-base)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
         executor->component (->> (compute-executor->component nimbus storm-id)
                                  (map-key (fn [[start-task end-task]]
@@ -553,7 +565,8 @@
                       topology
                       (:num-workers storm-base)
                       executor->component
-                      (:launch-time-secs storm-base))))
+                      (:launch-time-secs storm-base)
+                      (:owner storm-base))))
 
 ;; Does not assume that clocks are synchronized. Executor heartbeat is only used so that
 ;; nimbus knows when it's received a new heartbeat. All timing is done by nimbus and
@@ -889,6 +902,11 @@
 (defn- to-worker-slot [[node port]]
   (WorkerSlot. node port))
 
+(defn- fixup-assignment
+  [assignment td]
+  (assoc assignment
+         :owner (.getTopologySubmitter td)))
+
 ;; get existing assignment (just the executor->node+port map) -> default to {}
 ;; filter out ones which have a executor timeout
 ;; figure out available slots on cluster. add to that the used valid slots to get total slots. figure out how many executors should be in each slot (e.g., 4, 4, 4, 5)
@@ -901,9 +919,9 @@
         ^INimbus inimbus (:inimbus nimbus)
         ;; read all the topologies
         topology-ids (.active-storms storm-cluster-state)
-        topologies (into {} (for [tid topology-ids]
+        tds (into {} (for [tid topology-ids]
                               {tid (read-topology-details nimbus tid)}))
-        topologies (Topologies. topologies)
+        topologies (Topologies. tds)
         ;; read all the assignments
         assigned-topology-ids (.assignments storm-cluster-state nil)
         existing-assignments (into {} (for [tid assigned-topology-ids]
@@ -911,7 +929,15 @@
                                         ;; we exclude its assignment, meaning that all the slots occupied by its assignment
                                         ;; will be treated as free slot in the scheduler code.
                                         (when (or (nil? scratch-topology-id) (not= tid scratch-topology-id))
-                                          {tid (.assignment-info storm-cluster-state tid nil)})))
+                                          (let [assignment (.assignment-info storm-cluster-state tid nil)
+                                                td (.get tds tid)
+                                                assignment (if (and (not (:owner assignment)) (not (nil? td)))
+                                                             (let [new-assignment (fixup-assignment assignment td)]
+                                                               (.set-assignment! storm-cluster-state tid new-assignment)
+                                                               new-assignment)
+                                                             assignment)]
+                                            {tid assignment}))))
+
         ;; make the new assignments for topologies
         new-scheduler-assignments (compute-new-scheduler-assignments
                                        nimbus
@@ -949,7 +975,8 @@
                                                  (select-keys all-node->host all-nodes)
                                                  executor->node+port
                                                  start-times
-                                                 worker->resources)}))]
+                                                 worker->resources
+                                                (.getTopologySubmitter (.get tds topology-id)))}))]
 
     ;; tasks figure out what tasks to talk to by looking at topology at runtime
     ;; only log/set when there's been a change to the assignment
@@ -978,7 +1005,7 @@
         (catch Exception e
         (log-warn-error e "Ignoring exception from Topology action notifier for storm-Id " storm-id))))))
 
-(defn- start-storm [nimbus storm-name storm-id topology-initial-status]
+(defn- start-storm [nimbus storm-name storm-id topology-initial-status owner principal]
   {:pre [(#{:active :inactive} topology-initial-status)]}
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         conf (:conf nimbus)
@@ -994,17 +1021,12 @@
                                   {:type topology-initial-status}
                                   (storm-conf TOPOLOGY-WORKERS)
                                   num-executors
-                                  (storm-conf TOPOLOGY-SUBMITTER-USER)
+                                  owner
                                   nil
                                   nil
-                                  {}))
+                                  {}
+                                  principal))
     (notify-topology-action-listener nimbus storm-name "activate")))
-
-;; Master:
-;; job submit:
-;; 1. read which nodes are available
-;; 2. set assignments
-;; 3. start storm - necessary in case master goes down, when goes back up can remember to take down the storm (2 states: on or off)
 
 (defn storm-active? [storm-cluster-state storm-name]
   (not-nil? (get-storm-id storm-cluster-state storm-name)))
@@ -1299,12 +1321,18 @@
         (doseq [id assigned-ids]
           (locking update-lock
             (let [orig-creds (.credentials storm-cluster-state id nil)
+                  storm-base (.storm-base storm-cluster-state id nil)
                   topology-conf (try-read-storm-conf (:conf nimbus) id blob-store)]
               (if orig-creds
                 (let [new-creds (HashMap. orig-creds)]
                   (doseq [renewer renewers]
                     (log-message "Renewing Creds For " id " with " renewer)
-                    (.renew renewer new-creds (Collections/unmodifiableMap topology-conf)))
+                    ;;Instead of trying to use reflection to make this work, lets just catch the error
+                    ;; when it does not work
+                    (try
+                      (.renew renewer new-creds (Collections/unmodifiableMap topology-conf) (:principal storm-base))
+                      (catch clojure.lang.ArityException e
+                        (.renew renewer new-creds (Collections/unmodifiableMap topology-conf)))))
                   (when-not (= orig-creds new-creds)
                     (.set-credentials! storm-cluster-state id new-creds topology-conf)
                     ))))))))
@@ -1539,7 +1567,7 @@
               (notify-topology-action-listener nimbus storm-name "submitTopology")
               (let [thrift-status->kw-status {TopologyInitialStatus/INACTIVE :inactive
                                               TopologyInitialStatus/ACTIVE :active}]
-                (start-storm nimbus storm-name storm-id (thrift-status->kw-status (.get_initial_status submitOptions))))))
+                (start-storm nimbus storm-name storm-id (thrift-status->kw-status (.get_initial_status submitOptions)) submitter-user submitter-principal))))
           (catch Throwable e
             (log-warn-error e "Topology submission exception. (topology name='" storm-name "')")
             (throw e))))
