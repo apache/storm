@@ -29,12 +29,26 @@ public interface ICredentialsRenewer {
     * Called when initializing the service.
     * @param conf the storm cluster configuration.
     */ 
-   public void prepare(Map<String, Object> conf);
+   void prepare(Map<String, Object> conf);
 
     /**
      * Renew any credentials that need to be renewed. (Update the credentials if needed)
      * @param credentials the credentials that may have something to renew.
      * @param topologyConf topology configuration.
-     */ 
-    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf);
+     * @param topologyOwnerPrincipal the full principal name of the owner of the topology
+     */
+    @SuppressWarnings("deprecation")
+    default void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
+        renew(credentials, topologyConf);
+    }
+
+    /**
+     * Renew any credentials that need to be renewed. (Update the credentials if needed)
+     * @param credentials the credentials that may have something to renew.
+     * @param topologyConf topology configuration.
+     */
+    @Deprecated
+    default void renew(Map<String, String>  credentials, Map<String, Object> topologyConf) {
+        throw new IllegalStateException("At least one of the renew methods must be overridden");
+    }
 }

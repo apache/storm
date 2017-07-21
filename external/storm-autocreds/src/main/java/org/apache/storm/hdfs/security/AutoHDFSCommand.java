@@ -40,7 +40,6 @@ public final class AutoHDFSCommand {
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
     Map conf = new HashMap();
-    conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
     conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
     conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
 
@@ -50,14 +49,14 @@ public final class AutoHDFSCommand {
     autoHDFSNimbus.prepare(conf);
 
     Map<String,String> creds  = new HashMap<>();
-    autoHDFSNimbus.populateCredentials(creds, conf);
+    autoHDFSNimbus.populateCredentials(creds, conf, args[0]);
     LOG.info("Got HDFS credentials", autoHDFS.getCredentials(creds));
 
     Subject s = new Subject();
     autoHDFS.populateSubject(s, creds);
     LOG.info("Got a Subject "+ s);
 
-    autoHDFSNimbus.renew(creds, conf);
+    autoHDFSNimbus.renew(creds, conf, args[0]);
     LOG.info("renewed credentials", autoHDFS.getCredentials(creds));
   }
 

@@ -202,7 +202,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
     }
 
     @Override
-    public void renew(Map<String,String> credentials, Map<String, Object> topologyConf) {
+    public void renew(Map<String,String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             long refreshTime = getRefreshTime(tgt);

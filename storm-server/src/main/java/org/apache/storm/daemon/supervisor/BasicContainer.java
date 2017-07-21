@@ -402,7 +402,7 @@ public class BasicContainer extends Container {
      * Compute the classpath for the worker process
      * @param stormJar the topology jar
      * @param dependencyLocations any dependencies from the topology
-     * @param stormVerison the version of the storm framework to use
+     * @param topoVersion the version of the storm framework to use
      * @return the full classpath
      */
     protected String getWorkerClassPath(String stormJar, List<String> dependencyLocations, SimpleVersion topoVersion) {

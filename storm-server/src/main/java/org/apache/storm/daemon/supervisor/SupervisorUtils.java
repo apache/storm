@@ -19,6 +19,7 @@ package org.apache.storm.daemon.supervisor;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.LSWorkerHeartbeat;
+import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.localizer.LocalResource;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.utils.ConfigUtils;
@@ -95,16 +96,16 @@ public class SupervisorUtils {
     }
 
     /**
-     * For each of the downloaded topologies, adds references to the blobs that the topologies are using. This is used to reconstruct the cache on restart.
+     * For each of the downloaded topologies, adds references to the blobs that the topologies are using. This is used to reconstruct the
+     * cache on restart.
      * 
      * @param localizer
      * @param stormId
      * @param conf
      */
-    static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf) throws IOException {
+    static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf, String user) throws IOException {
         Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
         List<LocalResource> localresources = SupervisorUtils.blobstoreMapToLocalresources(blobstoreMap);
         if (blobstoreMap != null) {

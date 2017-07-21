@@ -40,7 +40,6 @@ public final class AutoHBaseCommand {
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
     Map conf = new HashMap();
-    conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
     conf.put(HBASE_PRINCIPAL_KEY, args[1]); // hbase principal storm-hbase@WITZEN.COM
     conf.put(HBASE_KEYTAB_FILE_KEY,
         args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab
@@ -51,14 +50,14 @@ public final class AutoHBaseCommand {
     autoHBaseNimbus.prepare(conf);
 
     Map<String, String> creds = new HashMap<>();
-    autoHBaseNimbus.populateCredentials(creds, conf);
+    autoHBaseNimbus.populateCredentials(creds, conf, args[0]); //with realm e.g. storm@WITZEND.COM
     LOG.info("Got HBase credentials" + autoHBase.getCredentials(creds));
 
     Subject s = new Subject();
     autoHBase.populateSubject(s, creds);
     LOG.info("Got a Subject " + s);
 
-    autoHBaseNimbus.renew(creds, conf);
+    autoHBaseNimbus.renew(creds, conf, args[0]);
     LOG.info("renewed credentials" + autoHBase.getCredentials(creds));
   }
 }

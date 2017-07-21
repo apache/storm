@@ -43,3 +43,4 @@ public class AutoHDFS extends AbstractHadoopAutoCreds {
         return HDFS_CREDENTIALS + configKey;
     }
 }
+

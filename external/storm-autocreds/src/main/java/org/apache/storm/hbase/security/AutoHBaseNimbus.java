@@ -66,14 +66,14 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
-        return getHadoopCredentials(conf, HBaseConfiguration.create());
+    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
+        return getHadoopCredentials(conf, HBaseConfiguration.create(), topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -83,11 +83,9 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf) {
+    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf, final String topologySubmitterUser) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
-
                 UserProvider provider = UserProvider.instantiate(hbaseConf);
                 provider.login(HBASE_KEYTAB_FILE_KEY, HBASE_PRINCIPAL_KEY, InetAddress.getLocalHost().getCanonicalHostName());
 
@@ -130,9 +128,9 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologySubmitterUser) {
         //HBASE tokens are not renewable so we always have to get new ones.
-        populateCredentials(credentials, topologyConf);
+        populateCredentials(credentials, topologyConf, topologySubmitterUser);
     }
 
     @Override

@@ -567,6 +567,10 @@ public class StormClusterStateImpl implements IStormClusterState {
         if (StringUtils.isBlank(newElems.get_owner())) {
             newElems.set_owner(stormBase.get_owner());
         }
+        if (StringUtils.isBlank(newElems.get_principal()) && stormBase.is_set_principal()) {
+            newElems.set_principal(stormBase.get_principal());
+        }
+
         if (newElems.get_topology_action_options() == null) {
             newElems.set_topology_action_options(stormBase.get_topology_action_options());
         }

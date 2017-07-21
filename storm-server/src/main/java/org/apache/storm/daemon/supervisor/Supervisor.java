@@ -211,8 +211,20 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.readState = new ReadClusterState(this);
         
         Set<String> downloadedTopoIds = SupervisorUtils.readDownloadedTopologyIds(conf);
-        for (String topoId : downloadedTopoIds) {
-            SupervisorUtils.addBlobReferences(localizer, topoId, conf);
+        Map<Integer, LocalAssignment> portToAssignments = localState.getLocalAssignmentsMap();
+        if (portToAssignments != null) {
+            Map<String, LocalAssignment> assignments = new HashMap<>();
+            for (LocalAssignment la : localState.getLocalAssignmentsMap().values()) {
+                assignments.put(la.get_topology_id(), la);
+            }
+            for (String topoId : downloadedTopoIds) {
+                LocalAssignment la = assignments.get(topoId);
+                if (la != null) {
+                    SupervisorUtils.addBlobReferences(localizer, topoId, conf, la.get_owner());
+                } else {
+                    LOG.warn("Could not find an owner for topo {}", topoId);
+                }
+            }
         }
         // do this after adding the references so we don't try to clean things being used
         localizer.startCleaner();

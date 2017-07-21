@@ -45,3 +45,4 @@ public class AutoHive extends AbstractHadoopAutoCreds {
     }
 
 }
+

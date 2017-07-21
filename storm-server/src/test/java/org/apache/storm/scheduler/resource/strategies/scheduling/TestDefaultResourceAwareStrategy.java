@@ -101,7 +101,7 @@ public class TestDefaultResourceAwareStrategy {
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
                 TestUtilsForResourceAwareScheduler.genExecsAndComps(stormToplogy)
-                , this.currentTime);
+                , this.currentTime, "user");
 
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
         topoMap.put(topo.getId(), topo);
@@ -228,8 +228,10 @@ public class TestDefaultResourceAwareStrategy {
 
         //generate topologies
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
-        TopologyDetails topo1 = TestUtilsForResourceAwareScheduler.getTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10);
-        TopologyDetails topo2 = TestUtilsForResourceAwareScheduler.getTopology("topo-2", config, 8, 0, 2, 0, currentTime - 2, 10);
+        TopologyDetails topo1 = TestUtilsForResourceAwareScheduler.getTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10,
+            "user");
+        TopologyDetails topo2 = TestUtilsForResourceAwareScheduler.getTopology("topo-2", config, 8, 0, 2, 0, currentTime - 2, 10,
+            "user");
 
         topoMap.put(topo1.getId(), topo1);
 

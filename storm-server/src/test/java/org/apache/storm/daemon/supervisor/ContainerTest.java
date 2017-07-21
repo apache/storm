@@ -162,8 +162,7 @@ public class ContainerTest {
         
         final List<String> topoGroups = Arrays.asList("t-group-a", "t-group-b");
         final List<String> logGroups = Arrays.asList("l-group-a", "l-group-b");
-        
-        topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, user);
+
         topoConf.put(DaemonConfig.LOGS_GROUPS, logGroups);
         topoConf.put(Config.TOPOLOGY_GROUPS, topoGroups);
         topoConf.put(DaemonConfig.LOGS_USERS, logUsers);
@@ -183,6 +182,7 @@ public class ContainerTest {
         
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
+        la.set_owner(user);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
                 "SUPERVISOR", 8080, la, null, workerId, topoConf, ops);
         
@@ -235,7 +235,6 @@ public class ContainerTest {
         final File workerPidsRoot = new File(workerRoot, "pids");
         
         final Map<String, Object> topoConf = new HashMap<>();
-        topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, user);
         
         final Map<String, Object> superConf = new HashMap<>();
         superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
@@ -252,6 +251,7 @@ public class ContainerTest {
         ResourceIsolationInterface iso = mock(ResourceIsolationInterface.class);
         
         LocalAssignment la = new LocalAssignment();
+        la.set_owner(user);
         la.set_topology_id(topoId);
         MockContainer mc = new MockContainer(ContainerType.LAUNCH, superConf, 
                 "SUPERVISOR", port, la, iso, workerId, topoConf, ops);
