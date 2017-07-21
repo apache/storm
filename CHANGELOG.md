@@ -1,4 +1,5 @@
 ﻿## 1.0.4
+ * STORM-2627: Update docs for storm.zookeeper.topology.auth.scheme
  * STORM-2597: Don't parse passed in class paths
  * STORM-2524: Set Kafka client.id with storm-kafka
  * STORM-2448: Add in Storm and JDK versions when submitting a topology
