@@ -241,6 +241,7 @@
  * STORM-1720: Support GEO in storm-redis
 
 ## 1.0.4
+ * STORM-2627: Update docs for storm.zookeeper.topology.auth.scheme
  * STORM-2038: No symlinks for local cluster 
 
 ## 1.0.3
