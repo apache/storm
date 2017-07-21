@@ -19,6 +19,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2621: add tuple_population metric
  * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
  * STORM-2544: Fixing issue in acking of tuples that hit retry limit under manual commit mode
  * STORM-2618: Add TridentKafkaStateUpdater for storm-kafka-client
