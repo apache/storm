@@ -20,6 +20,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2652: fix error in open method of JmsSpout
  * STORM-2645: Update storm.py to be python3 compatible
  * STORM-2621: add tuple_population metric
  * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
