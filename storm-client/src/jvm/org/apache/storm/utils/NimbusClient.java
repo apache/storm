@@ -17,13 +17,15 @@
  */
 package org.apache.storm.utils;
 
+import com.google.common.collect.Lists;
 import org.apache.storm.Config;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
-import com.google.common.collect.Lists;
+import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidationUtils;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -40,13 +42,13 @@ public class NimbusClient extends ThriftClient {
         public LocalOverride(Nimbus.Iface client) {
             _localOverrideClient = client;
         }
-        
+
         @Override
         public void close() throws Exception {
             _localOverrideClient = null;
         }
     }
-    
+
     /**
      * @return true of new clients will be overridden to connect to a local cluster
      * and not the configured remote cluster.
@@ -54,7 +56,7 @@ public class NimbusClient extends ThriftClient {
     public static boolean isLocalOverride() {
         return _localOverrideClient != null;
     }
-    
+
     private Nimbus.Iface _client;
     /**
      * Indicates if this is a special client that is overwritten for local mode.
@@ -82,11 +84,11 @@ public class NimbusClient extends ThriftClient {
     public static NimbusClient getConfiguredClient(Map<String, Object> conf) {
         return getConfiguredClientAs(conf, null);
     }
-    
+
     public static NimbusClient getConfiguredClient(Map<String, Object> conf, Integer timeout) {
         return getConfiguredClientAs(conf, null, timeout);
     }
-    
+
     public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
         return getConfiguredClientAs(conf, asUser, null);
     }
@@ -107,13 +109,14 @@ public class NimbusClient extends ThriftClient {
             }
             asUser = (String) conf.get(Config.STORM_DO_AS_USER);
         }
+        ConfigValidation.validateFields(conf);
 
-        List<String> seeds;
-        if(conf.containsKey(Config.NIMBUS_HOST)) {
+        List<String> seeds = Lists.newArrayList();
+        if (conf.containsKey(Config.NIMBUS_HOST)) {
             LOG.warn("Using deprecated config {} for backward compatibility. Please update your storm.yaml so it only has config {}",
-                     Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
+                    Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
             seeds = Lists.newArrayList(conf.get(Config.NIMBUS_HOST).toString());
-        } else {
+        } else if(conf.containsKey(Config.NIMBUS_SEEDS)){
             seeds = (List<String>) conf.get(Config.NIMBUS_SEEDS);
         }
 
@@ -140,7 +143,7 @@ public class NimbusClient extends ThriftClient {
                 }
             } catch (Exception e) {
                 LOG.warn("Ignoring exception while trying to get leader nimbus info from " + host
-                                 + ". will retry with a different seed host.", e);
+                        + ". will retry with a different seed host.", e);
                 continue;
             } finally {
                 if (client != null) {
@@ -148,7 +151,7 @@ public class NimbusClient extends ThriftClient {
                 }
             }
             throw new NimbusLeaderNotFoundException("Could not find a nimbus leader, please try " +
-                                                            "again after some time.");
+                    "again after some time.");
         }
         throw new NimbusLeaderNotFoundException(
                 "Could not find leader nimbus from seed hosts " + seeds + ". " +
@@ -177,7 +180,7 @@ public class NimbusClient extends ThriftClient {
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
-    
+
     private NimbusClient(Nimbus.Iface client) {
         super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null);
         _client = client;
