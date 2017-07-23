@@ -1,5 +1,4 @@
 ﻿## 2.0.0
- * STORM-2652: fix error in open method of JmsSpout
  * STORM-2644: Show message when result not found on deep search page
  * STORM-2643: Add a confirmation dialog for profiling and debugging actions on Storm UI
  * STORM-2641: Make storm.py print output from subprocess on error on Windows, make storm.ps1 return the right exit code
@@ -315,6 +314,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2652: fix error in open method of JmsSpout
  * STORM-2645: Update storm.py to be python3 compatible
  * STORM-2621: add tuple_population metric
  * STORM-2639: Kafka Spout incorrectly computes numCommittedOffsets due to voids in the topic (topic compaction)
