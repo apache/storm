@@ -36,7 +36,8 @@ public class DefaultPrincipalToLocal implements IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
-    public String toLocal(Principal principal) {
-      return principal == null ? null : principal.getName();
+    @Override
+    public String toLocal(String principal) {
+      return principal;
     }
 }
