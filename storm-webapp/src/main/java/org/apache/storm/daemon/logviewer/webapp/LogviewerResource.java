@@ -214,10 +214,11 @@ public class LogviewerResource {
      * Handles '/search' (searching from specific worker or daemon log file) request.
      */
     @GET
-    @Path("/search/{file}")
-    public Response search(@PathParam("file") String file, @Context HttpServletRequest request) throws IOException {
+    @Path("/search")
+    public Response search(@Context HttpServletRequest request) throws IOException {
         String user = httpCredsHandler.getUserName(request);
         boolean isDaemon = StringUtils.equals(request.getParameter("is-daemon"), "yes");
+        String file = request.getParameter("file");
         String decodedFileName = URLDecoder.decode(file);
         String searchString = request.getParameter("search-string");
         String numMatchesStr = request.getParameter("num-matches");

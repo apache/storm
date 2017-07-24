@@ -27,6 +27,7 @@ import static j2html.TagCreator.head;
 import static j2html.TagCreator.html;
 import static j2html.TagCreator.input;
 import static j2html.TagCreator.link;
+import static j2html.TagCreator.option;
 import static j2html.TagCreator.p;
 import static j2html.TagCreator.pre;
 import static j2html.TagCreator.select;
@@ -226,7 +227,7 @@ public class LogviewerLogPageHandler {
 
                     bodyContents.add(searchFileForm(fileName, "no"));
                     // list all files for this topology
-                    bodyContents.add(logFileSelectionForm(reorderedFilesStr, "log"));
+                    bodyContents.add(logFileSelectionForm(reorderedFilesStr, fileName, "log"));
                     if (pagerData != null) {
                         bodyContents.add(pagerData);
                     }
@@ -306,7 +307,7 @@ public class LogviewerLogPageHandler {
 
                 bodyContents.add(searchFileForm(fileName, "yes"));
                 // list all daemon logs
-                bodyContents.add(logFileSelectionForm(reorderedFilesStr, "daemonlog"));
+                bodyContents.add(logFileSelectionForm(reorderedFilesStr, fileName, "daemonlog"));
                 if (pagerData != null) {
                     bodyContents.add(pagerData);
                 }
@@ -360,16 +361,18 @@ public class LogviewerLogPageHandler {
         return a(content).withHref(url);
     }
 
-    private DomContent logFileSelectionForm(List<String> logFiles, String type) {
+    private DomContent logFileSelectionForm(List<String> logFiles, String selectedFile, String type) {
         return form(
-                dropDown("file", logFiles),
+                dropDown("file", logFiles, selectedFile),
                 input().withType("submit").withValue("Switch file")
         ).withAction(type).withId("list-of-files");
     }
 
-    private DomContent dropDown(String name, List<String> logFiles) {
-        List<DomContent> options = logFiles.stream().map(TagCreator::option).collect(toList());
-        return select(options.toArray(new DomContent[]{})).withName(name).withId(name);
+    private DomContent dropDown(String name, List<String> logFiles, String selectedFile) {
+        List<DomContent> options = logFiles.stream()
+                .map(file -> option(file).condAttr(file.equals(selectedFile), "selected", "selected"))
+                .collect(toList());
+        return select(options.toArray(new DomContent[]{})).withName(name).withId(name).withValue(selectedFile);
     }
 
     private DomContent searchFileForm(String fileName, String isDaemonValue) {

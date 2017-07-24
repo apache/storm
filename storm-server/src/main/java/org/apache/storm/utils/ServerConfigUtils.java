@@ -30,6 +30,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 public class ServerConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
@@ -161,7 +162,7 @@ public class ServerConfigUtils {
     }
 
     public static File getLogMetaDataFile(String fname) {
-        String[] subStrings = fname.split(FILE_SEPARATOR); // TODO: does this work well on windows?
+        String[] subStrings = fname.split(Pattern.quote(FILE_SEPARATOR)); // TODO: does this work well on windows?
         String id = subStrings[0];
         Integer port = Integer.parseInt(subStrings[1]);
         return getLogMetaDataFile(Utils.readStormConfig(), id, port);

@@ -119,7 +119,7 @@ public class LogviewerLogSearchHandler {
         File file = new File(rootDir, fileName).getCanonicalFile();
         Response response;
         if (file.exists()) {
-            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
+            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(fileName, user)) {
                 Integer numMatchesInt = numMatchesStr != null ? tryParseIntParam("num-matches", numMatchesStr) : null;
                 Integer offsetInt = offsetStr != null ? tryParseIntParam("start-byte-offset", offsetStr) : null;
 
