@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2626: Provided a template for drpc-auth-acl.yaml
  * STORM-1280: port backtype.storm.daemon.logviewer to java
  * STORM-2644: Show message when result not found on deep search page
  * STORM-2643: Add a confirmation dialog for profiling and debugging actions on Storm UI
