@@ -176,7 +176,7 @@ public class LogviewerLogPageHandler {
     public Response logPage(String fileName, Integer start, Integer length, String grep, String user)
             throws IOException, InvalidRequestException {
         String rootDir = logRoot;
-        if (resourceAuthorizer.isUserAllowedToAccessFile(fileName, user)) {
+        if (resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
             workerLogs.setLogFilePermission(fileName);
 
             File file = new File(rootDir, fileName).getCanonicalFile();

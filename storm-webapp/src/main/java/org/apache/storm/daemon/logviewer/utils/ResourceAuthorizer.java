@@ -61,7 +61,7 @@ public class ResourceAuthorizer {
      * @param fileName file name to access
      * @param user username
      */
-    public boolean isUserAllowedToAccessFile(String fileName, String user) {
+    public boolean isUserAllowedToAccessFile(String user, String fileName) {
         return isUiFilterNotSet() || isAuthorizedLogUser(user, fileName);
     }
 

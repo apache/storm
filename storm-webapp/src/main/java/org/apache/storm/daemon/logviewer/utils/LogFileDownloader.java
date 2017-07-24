@@ -54,7 +54,7 @@ public class LogFileDownloader {
         String rootDir = isDaemon ? daemonLogRoot : logRoot;
         File file = new File(rootDir, fileName).getCanonicalFile();
         if (file.exists()) {
-            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(fileName, user)) {
+            if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 return LogviewerResponseBuilder.buildDownloadFile(file);
             } else {
                 return LogviewerResponseBuilder.buildResponseUnautohrizedUser(user);
