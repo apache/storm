@@ -46,8 +46,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =  
             new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
                     DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
-    public static final long DEFAULT_CONSUMER_START_DELAY_MS = 60_000; // 60s
-
     /**
      * Retry in a tight loop (keep unit tests fasts) do not use in production.
      */
@@ -108,8 +106,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
-        private long consumerStartupDelayMs = DEFAULT_CONSUMER_START_DELAY_MS;
-
         private boolean emitNullTuples = false;
 
         public Builder(String bootstrapServers, String ... topics) {
@@ -410,17 +406,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
-
-      /**
-       * Sets consumer startup delay in milliseconds.
-       * @param consumerStartupDelayMs
-       * @return
-       */
-        public Builder<K, V> setConsumerStartDelayMs(long consumerStartupDelayMs) {
-            this.consumerStartupDelayMs = consumerStartupDelayMs;
-            return this;
-        }
-
         /**
          * Specifies if the spout should emit null tuples to the component downstream, or rather not emit and directly
          * ack them. By default this parameter is set to false, which means that null tuples are not emitted.
@@ -453,7 +438,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final KafkaSpoutRetryService retryService;
     private final long partitionRefreshPeriodMs;
     private final boolean emitNullTuples;
-    private final long consumerStartupDelayMs;
 
     public KafkaSpoutConfig(Builder<K,V> builder) {
         this.kafkaProps = setDefaultsAndGetKafkaProps(builder.kafkaProps);
@@ -470,7 +454,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDesClazz = builder.valueDesClazz;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
         this.emitNullTuples = builder.emitNullTuples;
-        this.consumerStartupDelayMs = builder.consumerStartupDelayMs;
     }
 
     public Map<String, Object> getKafkaProps() {
@@ -542,10 +525,6 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public boolean isEmitNullTuples() {
         return emitNullTuples;
-    }
-
-    public long getConsumerStartupDelayMs() {
-        return consumerStartupDelayMs;
     }
 
     @Override
