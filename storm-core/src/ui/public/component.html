@@ -185,7 +185,7 @@ $(document).ready(function() {
           var loc = $(row[3])[0]; // logviewer URL
           return '<input type="checkbox" class="workerActionCheckbox"'+
               'id="'+checkboxId+'" value="'+host_port+'"'+checkedString+'/> '+
-              '<a href="'+loc.protocol+'//'+loc.host+'/dumps/'+topologyId+'/'+
+              '<a href="'+loc.protocol+'//'+loc.host+'/api/v1/dumps/'+topologyId+'/'+
               encodeURIComponent(host_port)+'">files</a>';
           break;
         case 'sort':

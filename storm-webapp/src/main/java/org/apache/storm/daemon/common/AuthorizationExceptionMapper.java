@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.drpc.webapp;
+package org.apache.storm.daemon.common;
 
 import java.util.HashMap;
 import java.util.Map;

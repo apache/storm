@@ -138,7 +138,7 @@ $(document).ready(function() {
 
 
                 for (var host in distinct_hosts) {
-                    var searchURL = "http://"+host+":"+logviewerPort+"/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
+                    var searchURL = "http://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
                     if(search_archived)
                         searchURL += "&search-archived=" + search_archived;
                     
