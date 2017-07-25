@@ -45,7 +45,7 @@ topology.metrics.consumer.register:
     argument: "http://example.com:8080/metrics/my-topology/"
 ```
 
-Storm appends MetricsConsumerBolt to your topology per each registered metrics consumer internally, and each MetricsConsumerBolt subscribes to receive metrics from all tasks. The parallelism for that Bolt is set to `parallelism.hint` and `component id` for that Bolt is set to `__metrics_<metrics consumer class name>`. If you register the same class name more than once, postfix `#<sequence number>` is appended to component id.
+Storm adds a MetricsConsumerBolt to your topolology for each class in the `topology.metrics.consumer.register` list. Each MetricsConsumerBolt subscribes to receive metrics from all tasks in the topology. The parallelism for each Bolt is set to `parallelism.hint` and `component id` for that Bolt is set to `__metrics_<metrics consumer class name>`. If you register the same class name more than once, postfix `#<sequence number>` is appended to component id.
 
 Storm provides some built-in metrics consumers for you to try out to see which metrics are provided in your topology.
 
@@ -128,20 +128,19 @@ The [builtin metrics]({{page.git-blob-base}}/storm-client/src/jvm/org/apache/sto
 
 #### Reporting Rate
 
-The rate at which built in metrics are reported is configurable through the `topology.builtin.metrics.bucket.size.secs` metric.  If you set this too low it can overload the consumers
-and some metrics consumers expect metrics to show up at a fixed rate or the numbers could be off, so please use caution when modifying this.
-
+The rate at which built in metrics are reported is configurable through the `topology.builtin.metrics.bucket.size.secs` config.  If you set this too low it can overload the consumers,
+so please use caution when modifying it.
 
 #### Tuple Counting Metrics
 
 There are several different metrics related to counting what a bolt or spout does to a tuple. These include things like emitting, transferring, acking, and failing of tuples.
 
-In general all of these tuple count metrics are randomly sub-sampled unless otherwise state.  This means that the counts you see both on the UI and from the built in metrics are not necessarily exact.  In fact by default we sample only 5% of the events and estimate the total number of events from that.  The sampling percentage is configurable per topology through the `topology.stats.sample.rate` config.  Setting it to 1.0 will make the counts exact, but be aware that the more events we sample the slower your topology will run (as the metrics are counted on the critical path).  This is why we have a 5% sample rate as the default.
+In general all of these tuple count metrics are randomly sub-sampled unless otherwise stated.  This means that the counts you see both on the UI and from the built in metrics are not necessarily exact.  In fact by default we sample only 5% of the events and estimate the total number of events from that.  The sampling percentage is configurable per topology through the `topology.stats.sample.rate` config.  Setting it to 1.0 will make the counts exact, but be aware that the more events we sample the slower your topology will run (as the metrics are counted in the same code path as tuples are processed).  This is why we have a 5% sample rate as the default.
 
-The tuple counting metrics are generally reported as maps unless explicitly stated otherwise.  They break down each count for finer grained reporting.
-The keys to these maps fall into two categories `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The later is used for bolt metrics that deal with incoming tuples.
+The tuple counting metrics are generally reported to the metrics consumers as maps unless explicitly stated otherwise.  They break down each count for finer grained reporting.
+The keys to these maps fall into two categories `"${stream_name}"` or `"${upstream_component}:${stream_name}"`.  The former is used for all spout metrics and for outgoing bolt metrics (`__emit-count` and `__transfer-count`).  The latter is used for bolt metrics that deal with incoming tuples.
 
-So for a word count topology the count bolt might show something like the following for an `__ack-count` metrics
+So for a word count topology the count bolt might show something like the following for the `__ack-count` metric
 
 ```
 {
@@ -149,7 +148,7 @@ So for a word count topology the count bolt might show something like the follow
 }
 ```
 
-But the spout would show something more like for the same metric.
+But the spout instead would show something like the following for the `__ack-count` metric.
 
 ```
 {
@@ -160,11 +159,11 @@ But the spout would show something more like for the same metric.
 
 ##### `__ack-count`
 
-For bolts it is the number of incoming tuples that had the `ack` method called on them.  For spouts it is the number of tuples that were fully acked.  If acking is disabled this metric is still reported, but it is not really meaningful.
+For bolts it is the number of incoming tuples that had the `ack` method called on them.  For spouts it is the number of tuples trees that were fully acked. See Guaranteeing Message Processing[](Guaranteeing-message-processing.html) for more information about what a tuple tree is. If acking is disabled this metric is still reported, but it is not really meaningful.
 
 ##### `__fail-count`
 
-For bolts this is the number of incoming tuples that had the `fail` method called on them.  For spouts this is the number of tuples that failed.  It could be because of a tuple timing out or it could be because a bolt called fail on it.  The two are not separated out.
+For bolts this is the number of incoming tuples that had the `fail` method called on them.  For spouts this is the number of tuple trees that failed.  Tuple trees may fail from timing out or because a bolt called fail on it.  The two are not separated out by this metric.
 
 ##### `__emit-count`
 
@@ -176,7 +175,7 @@ This is the total number of tuples transferred to a downstream bolt/spout for pr
 
 ##### `__execute-count`
 
-This count metrics is bolt specific.  It counts the number of times that a bolt's `execute` method on a bolt was called.
+This count metric is bolt specific.  It counts the number of times that a bolt's `execute` method was called.
 
 #### Tuple Latency Metrics
 
@@ -184,11 +183,11 @@ Similar to the tuple counting metrics storm also collects average latency metric
 
 ##### `__complete-latency`
 
-The complete latency is just for spouts.  It is the average amount of time it took for `ack` or `fail` to be called for a tuple after it was emitted.  If acking is disabled this metric is likely to be blank or 0 for all values, but should be ignored.
+The complete latency is just for spouts.  It is the average amount of time it took for `ack` or `fail` to be called for a tuple after it was emitted.  If acking is disabled this metric is likely to be blank or 0 for all values, and should be ignored.
 
 ##### `__execute-latency`
 
-This is just for bolts.  It is the average amount of time that the bolt spent in the call to the `execute` method.  The longer this gets the fewer tuples a single bolt instance can process.
+This is just for bolts.  It is the average amount of time that the bolt spent in the call to the `execute` method.  The higher this gets, the lower the throughput of tuples per bolt instance.
 
 ##### `__process-latency`
 
@@ -224,19 +223,22 @@ They all have the form.
     "sojourn_time_ms": 2.440771591407277,
     "capacity": 1024,
     "population": 19
+    "tuple_population": 200
 }
 ```
+In storm we sometimes batch multiple tuples into a single entry in the disruptor queue. This batching is an optimization that has been in storm in some form since the beginning, but the metrics did not always reflect this so be careful with how you interpret the metrics and pay attention to which metrics are for tuples and which metrics are for entries in the disruptor queue. The `__receive` and `__transfer` queues can have batching but the `__sendqueue` should not.
 
-NOTE that in the `__receive` and `__transfer` queues a single entry may hold 1 or more tuples in it.  For the `__sendqueue` metrics each slot holds a single tuple.  The batching is an optimization that has been in storm since the beginning, so be careful with how you interpret the metrics.  In older versions of storm all of the metrics represent slots in the queue, and not tuples That has been updated so please be careful when trying to compare metrics between different versions of storm.
+`arrival_rate_secs` is an estimation of the number of tuples that are inserted into the queue in one second, although it is actually the dequeue rate.
+The `sojourn_time_ms` is calculated from the arrival rate and is an estimate of how many milliseconds each tuple sits in the queue before it is processed.
+Prior to STORM-2621 (v1.1.1, v1.2.0, and v2.0.0) these were the rate of entries, not of tuples.
 
-`arrival_rate_secs` is an estimation of the number of tuple that are inserted into the queue in one second, although it is actually the dequeue rate.
-The `sojourn_time_ms` is calculated from the arrival rate and is an estimate of how many milliseconds each entry sits in the queue before it is processed.
+A disruptor queue has a set maximum number of entries.  If the regular queue fills up an overflow queue takes over.  The number of tuple batches stored in this overflow section are represented by the `overflow` metric.  Storm also does some micro batching of tuples for performance/efficiency reasons so you may see the overflow with a very small number in it even if the queue is not full.
 
-A disruptor queue has a set number of slots.  If the regular queue fills up an overflow queue takes over.  The number of tuple batches stored in this overflow section are represented by the `overflow` metric.  Storm also does some micro batching of tuples for performance/efficiency reasons so you may see the overflow with a very small number in it even if the queue is not full.
+`read_pos` and `write_pos` are internal disruptor accounting numbers.  You can think of them almost as the total number of entries written (`write_pos`) or read (`read_pos`) since the queue was created.  They allow for integer overflow so if you use them please take that into account.
 
-`read_pos` and `write_pos` are internal disruptor accounting numbers.  You can think of them almost as the total number of tuple batches written (`write_pos`) or read (`read_pos`) since the queue was created.  They allow for integer overflow so if you use them please take that into account.
+`capacity` is the maximum number of entries in the disruptor queue. `population` is the number of entries currently filled in the queue.
 
-`capacity` is the total number of slots in the queue. `population` is the number of slots taken in the queue.
+`tuple_population` is the number of tuples currently in the queue as opposed to the number of entries.  This was added at the same time as STORM-2621 (v1.1.1, v1.2.0, and v2.0.0)
 
 #### System Bolt (Worker) Metrics
 
@@ -245,7 +247,7 @@ The System Bolt `__system` provides lots of metrics for different worker wide th
 Be aware that the `__system` bolt is an actual bolt so regular bolt metrics described above also will be reported for it.
 
 ##### Receive (NettyServer)
-`__recv-iconnection` under the `__system` bolt reports stats for the netty server on the worker.  This is what gets messages from other workers.  It is of the form
+`__recv-iconnection` reports stats for the netty server on the worker.  This is what gets messages from other workers.  It is of the form
 
 ```
 {
@@ -261,7 +263,7 @@ Be aware that the `__system` bolt is an actual bolt so regular bolt metrics desc
 
 ##### Send (Netty Client)
 
-The `__send-iconnection` metric of the `__system` bolt holds information about all of the clients for this worker that are sending metrics.  It is of the form
+The `__send-iconnection` metric holds information about all of the clients for this worker.  It is of the form
 
 ```
 {
@@ -278,41 +280,41 @@ The `__send-iconnection` metric of the `__system` bolt holds information about a
 
 The value is a map where the key is a NodeInfo class for the downstream worker it is sending messages to.  This is the SupervisorId + port.  The value is another map with the fields
 
-`src`  What host/port this client has used to connect to the receiving worker.
-`dest` What host/port this client has connected to.
-`reconnects` the number of reconnections that have happened.
-`pending` the number of messages that have not been sent.  (This corresponds to messages, not tuples)
-`sent` the number of messages that have been send.  (This is messages not tuples)
-`lostOnSend`.  This is the number of messages that were lost because of connection issues. (This is messages not tuples). 
+ * `src`  What host/port this client has used to connect to the receiving worker.
+ * `dest` What host/port this client has connected to.
+ * `reconnects` the number of reconnections that have happened.
+ * `pending` the number of messages that have not been sent.  (This corresponds to messages, not tuples)
+ * `sent` the number of messages that have been sent.  (This is messages not tuples)
+ * `lostOnSend`.  This is the number of messages that were lost because of connection issues. (This is messages not tuples). 
 
 ##### JVM Memory
 
-The JVM running the worker has several metrics relating to memory usage.  We pull them out of the JVM and report them here.  The relevant metrics are `memory/nonHeap` for off heap memory and `memory/heap` for on heap memory.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean for details.
+JVM memory usage is reported through `memory/nonHeap` for off heap memory and `memory/heap` for on heap memory.  These values come from the [MemoryUsage](https://docs.oracle.com/javase/8/docs/api/index.html?java/lang/management/MemoryUsage.html) mxbean.  Each of the metrics are reported as a map with the following keys, and values returned by the corresponding java code.
 
-The fields reported are
-
-`maxBytes`	`memUsage.getMax()`
-`committedBytes`	`memUsage.getCommitted()`
-`initBytes`	`memUsage.getInit()`
-`usedBytes`	`memUsage.getUsed()`
-`virtualFreeBytes`	`memUsage.getMax() - memUsage.getUsed()`
-`unusedBytes`	`memUsage.getCommitted() - memUsage.getUsed()`
+| Key | Corresponding Code |
+|--------|--------------------|
+| `maxBytes` | `memUsage.getMax()` |
+| `committedBytes` | `memUsage.getCommitted()` |
+| `initBytes` | `memUsage.getInit()` |
+| `usedBytes` | `memUsage.getUsed()` |
+| `virtualFreeBytes` | `memUsage.getMax() - memUsage.getUsed()` |
+| `unusedBytes` | `memUsage.getCommitted() - memUsage.getUsed()` |
 
 ##### JVM Garbage Collection
 
-The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is "GC/" followed by the name of the returned bean with white space removed.  The reported metrics are just
+The exact GC metric name depends on the garbage collector that your worker uses.  The data is all collected from `ManagementFactory.getGarbageCollectorMXBeans()` and the name of the metrics is `"GC/"` followed by the name of the returned bean with white space removed.  The reported metrics are just
 
-`count` the number of gc events that happened and
-`timeMs` the total number of milliseconds that were spent doing gc.  
+* `count` the number of gc events that happened and
+* `timeMs` the total number of milliseconds that were spent doing gc.  
 
 Please refer to the [JVM documentation](https://docs.oracle.com/javase/8/docs/api/java/lang/management/ManagementFactory.html#getGarbageCollectorMXBeans--) for more details.
 
 ##### JVM Misc
 
-`threadCount` is the number of threads currently in the JVM.
+* `threadCount` is the number of threads currently in the JVM.
 
 ##### Uptime
 
-`uptimeSecs` reports the number of seconds the worker has been up for
-`newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
-`startTimeSecs` is when the worker started in seconds since the epoch
+* `uptimeSecs` reports the number of seconds the worker has been up for
+* `newWorkerEvent` is 1 when a worker is first started and 0 all other times.  This can be used to tell when a worker has crashed and is restarted.
+* `startTimeSecs` is when the worker started in seconds since the epoch
