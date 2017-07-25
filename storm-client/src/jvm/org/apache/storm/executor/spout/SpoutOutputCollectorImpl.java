@@ -25,16 +25,19 @@ import org.apache.storm.spout.ISpoutOutputCollector;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.MutableLong;
 import org.apache.storm.utils.RotatingMap;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
-
+    private static final Logger LOG = LoggerFactory.getLogger(SpoutOutputCollectorImpl.class);
     private final SpoutExecutor executor;
     private final Task taskData;
     private final int taskId;
@@ -44,14 +47,15 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private final Boolean isEventLoggers;
     private final Boolean isDebug;
     private final RotatingMap<Long, TupleInfo> pending;
+    private TupleInfo globalTupleInfo = new TupleInfo();
 
     @SuppressWarnings("unused")
-    public SpoutOutputCollectorImpl(ISpout spout, SpoutExecutor executor, Task taskData, int taskId,
+    public SpoutOutputCollectorImpl(ISpout spout, SpoutExecutor executor, Task taskData,
                                     MutableLong emittedCount, boolean hasAckers, Random random,
                                     Boolean isEventLoggers, Boolean isDebug, RotatingMap<Long, TupleInfo> pending) {
         this.executor = executor;
         this.taskData = taskData;
-        this.taskId = taskId;
+        this.taskId = taskData.getTaskId();
         this.emittedCount = emittedCount;
         this.hasAckers = hasAckers;
         this.random = random;
@@ -62,13 +66,34 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
     @Override
     public List<Integer> emit(String streamId, List<Object> tuple, Object messageId) {
-        return sendSpoutMsg(streamId, tuple, messageId, null);
+        try {
+            return sendSpoutMsg(streamId, tuple, messageId, null);
+        } catch (InterruptedException e) {
+            LOG.warn("Spout thread interrupted during emit().");
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId) {
-        sendSpoutMsg(streamId, tuple, messageId, taskId);
+        try {
+            sendSpoutMsg(streamId, tuple, messageId, taskId);
+        } catch (InterruptedException e) {
+            LOG.warn("Spout thread interrupted during emitDirect().");
+            throw new RuntimeException(e);
+        }
     }
+
+    @Override
+    public void flush() {
+        try {
+            executor.getExecutorTransfer().flush();
+        } catch (InterruptedException e) {
+            LOG.warn("Spout thread interrupted during flush().");
+            throw new RuntimeException(e);
+        }
+    }
+
 
     @Override
     public long getPendingCount() {
@@ -81,7 +106,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
         executor.getReportError().report(error);
     }
 
-    private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) {
+    private List<Integer> sendSpoutMsg(String stream, List<Object> values, Object messageId, Integer outTaskId) throws InterruptedException {
         emittedCount.increment();
 
         List<Integer> outTasks;
@@ -91,58 +116,57 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             outTasks = taskData.getOutgoingTasks(stream, values);
         }
 
-        List<Long> ackSeq = new ArrayList<>();
-        boolean needAck = (messageId != null) && hasAckers;
+            final boolean needAck = (messageId != null) && hasAckers;
 
-        long rootId = MessageId.generateId(random);
-        for (Integer t : outTasks) {
-            MessageId msgId;
+            final List<Long> ackSeq = needAck ? new ArrayList<>() : null;
+
+            final long rootId = needAck ? MessageId.generateId(random) : 0;
+
+            for (int i = 0; i < outTasks.size(); i++) { // perf critical path. don't use iterators.
+                Integer t = outTasks.get(i);
+                MessageId msgId;
+                if (needAck) {
+                    long as = MessageId.generateId(random);
+                    msgId = MessageId.makeRootId(rootId, as);
+                    ackSeq.add(as);
+                } else {
+                    msgId = MessageId.makeUnanchored();
+                }
+
+                final TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
+                executor.getExecutorTransfer().transfer(t, tuple); // TODO: PERF: This is limiting emit() throughput. need to see why.
+            }
+            if (isEventLoggers) {
+                taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random);
+            }
+
             if (needAck) {
-                long as = MessageId.generateId(random);
-                msgId = MessageId.makeRootId(rootId, as);
-                ackSeq.add(as);
-            } else {
-                msgId = MessageId.makeUnanchored();
+                boolean sample = executor.samplerCheck();
+                TupleInfo info = new TupleInfo();
+                info.setTaskId(this.taskId);
+                info.setStream(stream);
+                info.setMessageId(messageId);
+                if (isDebug) {
+                    info.setValues(values);
+                }
+                if (sample) {
+                    info.setTimestamp(System.currentTimeMillis());
+                }
+
+                pending.put(rootId, info);
+                List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
+                taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer());
+            } else if (messageId != null) {
+                // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
+                globalTupleInfo.clear();
+                globalTupleInfo.setStream(stream);
+                globalTupleInfo.setValues(values);
+                globalTupleInfo.setMessageId(messageId);
+                globalTupleInfo.setTimestamp(0);
+                globalTupleInfo.setId("0:");
+                Long timeDelta = 0L;
+                executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
             }
-
-            TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, this.taskId, stream, msgId);
-            executor.getExecutorTransfer().transfer(t, tuple);
-        }
-        if (isEventLoggers) {
-            executor.sendToEventLogger(executor, taskData, values, executor.getComponentId(), messageId, random);
-        }
-
-        boolean sample = false;
-        try {
-            sample = executor.getSampler().call();
-        } catch (Exception ignored) {
-        }
-        if (needAck) {
-            TupleInfo info = new TupleInfo();
-            info.setTaskId(this.taskId);
-            info.setStream(stream);
-            info.setMessageId(messageId);
-            if (isDebug) {
-                info.setValues(values);
-            }
-            if (sample) {
-                info.setTimestamp(System.currentTimeMillis());
-            }
-
-            pending.put(rootId, info);
-            List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
-            executor.sendUnanchored(taskData, Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer());
-        } else if (messageId != null) {
-            TupleInfo info = new TupleInfo();
-            info.setStream(stream);
-            info.setValues(values);
-            info.setMessageId(messageId);
-            info.setTimestamp(0);
-            Long timeDelta = sample ? 0L : null;
-            info.setId("0:");
-            executor.ackSpoutMsg(executor, taskData, timeDelta, info);
-        }
-
         return outTasks;
     }
 }

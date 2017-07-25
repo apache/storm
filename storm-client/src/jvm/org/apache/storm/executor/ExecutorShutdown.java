@@ -34,17 +34,19 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorShutdown.class);
+
     private final Executor executor;
     private final List<Utils.SmartThread> threads;
-    private final Map<Integer, Task> taskDatas;
+    private final ArrayList<Task> taskDatas;
 
-    public ExecutorShutdown(Executor executor, List<Utils.SmartThread> threads, Map<Integer, Task> taskDatas) {
+    public ExecutorShutdown(Executor executor, List<Utils.SmartThread> threads, ArrayList<Task> taskDatas) {
         this.executor = executor;
         this.threads = threads;
         this.taskDatas = taskDatas;
@@ -60,17 +62,21 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
         return executor.getExecutorId();
     }
 
-    @Override
-    public void credentialsChanged(Credentials credentials) {
-        TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), new Values(credentials), (int) Constants.SYSTEM_TASK_ID,
-                Constants.CREDENTIALS_CHANGED_STREAM_ID);
-        List<AddressedTuple> addressedTuple = Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
-        executor.getReceiveQueue().publish(addressedTuple);
+    public Executor getExecutor() {
+        return executor;
     }
 
     @Override
-    public boolean getBackPressureFlag() {
-        return executor.getBackpressure();
+    public void credentialsChanged(Credentials credentials) {
+        TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), new Values(credentials),
+                Constants.SYSTEM_COMPONENT_ID, (int) Constants.SYSTEM_TASK_ID, Constants.CREDENTIALS_CHANGED_STREAM_ID);
+        AddressedTuple addressedTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+        try {
+            executor.getReceiveQueue().publish(addressedTuple);
+            executor.getReceiveQueue().flush();
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -78,7 +84,6 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
         try {
             LOG.info("Shutting down executor " + executor.getComponentId() + ":" + executor.getExecutorId());
             executor.getReceiveQueue().haltWithInterrupt();
-            executor.getTransferWorkerQueue().haltWithInterrupt();
             for (Utils.SmartThread t : threads) {
                 t.interrupt();
             }
@@ -87,7 +92,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
                 t.join();
             }
             executor.getStats().cleanupStats();
-            for (Task task : taskDatas.values()) {
+            for (Task task : taskDatas) {
                 TopologyContext userContext = task.getUserContext();
                 for (ITaskHook hook : userContext.getHooks()) {
                     hook.cleanup();
@@ -95,7 +100,7 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             }
             executor.getStormClusterState().disconnect();
             if (executor.getOpenOrPrepareWasCalled().get()) {
-                for (Task task : taskDatas.values()) {
+                for (Task task : taskDatas) {
                     Object object = task.getTaskObject();
                     if (object instanceof ISpout) {
                         ((ISpout) object).close();

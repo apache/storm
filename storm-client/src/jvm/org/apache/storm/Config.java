@@ -99,36 +99,6 @@ public class Config extends HashMap<String, Object> {
     public static final String TASK_CREDENTIALS_POLL_SECS = "task.credentials.poll.secs";
 
     /**
-     * How often to poll for changed topology backpressure flag from ZK
-     */
-    @isInteger
-    @isPositiveNumber
-    public static final String TASK_BACKPRESSURE_POLL_SECS = "task.backpressure.poll.secs";
-
-    /**
-     * Whether to enable backpressure in for a certain topology
-     */
-    @isBoolean
-    public static final String TOPOLOGY_BACKPRESSURE_ENABLE = "topology.backpressure.enable";
-
-    /**
-     * This signifies the tuple congestion in a disruptor queue.
-     * When the used ratio of a disruptor queue is higher than the high watermark,
-     * the backpressure scheme, if enabled, should slow down the tuple sending speed of
-     * the spouts until reaching the low watermark.
-     */
-    @isPositiveNumber
-    public static final String BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK="backpressure.disruptor.high.watermark";
-
-    /**
-     * This signifies a state that a disruptor queue has left the congestion.
-     * If the used ratio of a disruptor queue is lower than the low watermark,
-     * it will unset the backpressure flag.
-     */
-    @isPositiveNumber
-    public static final String BACKPRESSURE_DISRUPTOR_LOW_WATERMARK="backpressure.disruptor.low.watermark";
-
-    /**
      * A list of users that are allowed to interact with the topology.  To use this set
      * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
@@ -556,22 +526,14 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_AUTO_TASK_HOOKS="topology.auto.task.hooks";
 
     /**
-     * The size of the Disruptor receive queue for each executor. Must be a power of 2.
+     * The size of the receive queue for each executor.
      */
-    @isPowerOf2
     public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE="topology.executor.receive.buffer.size";
 
     /**
-     * The size of the Disruptor send queue for each executor. Must be a power of 2.
-     */
-    @isPowerOf2
-    public static final String TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE="topology.executor.send.buffer.size";
-
-    /**
-     * The size of the Disruptor transfer queue for each worker.
+     * The size of the transfer queue for each worker.
      */
     @isInteger
-    @isPowerOf2
     public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE="topology.transfer.buffer.size";
 
     /**
@@ -582,13 +544,21 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
     /**
-     * @deprecated this is no longer supported
-     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
-     * vs. throughput
+     * The number of tuples to batch before sending to the destination executor.
      */
-    @Deprecated
-    @isString
-    public static final String TOPOLOGY_DISRUPTOR_WAIT_STRATEGY="topology.disruptor.wait.strategy";
+    @isInteger
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_PRODUCER_BATCH_SIZE="topology.producer.batch.size";
+
+    /**
+     * How often to send flush tuple to the executors for flushing out batched events.
+     */
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    @NotNull
+    public static final String TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS="topology.flush.tuple.freq.millis";
+
 
     /**
      * The size of the shared thread pool for worker tasks to make use of. The thread pool can be accessed
@@ -750,13 +720,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DISRUPTOR_BATCH_SIZE="topology.disruptor.batch.size";
 
     /**
-     * The maximum age in milliseconds a batch can be before being sent to the next thread.  This number is just an
-     * initial suggestion and the code may adjust it as your topology runs.
+     * Check recvQ after every N invocations of Spout's nextTuple() [when ACKing is disabled].
+     * Spouts receive very few msgs if ACK is disabled. This avoids checking the recvQ after each nextTuple().
      */
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS="topology.disruptor.batch.timeout.millis";
+    public static final String TOPOLOGY_SPOUT_RECVQ_SKIPS = "topology.spout.recvq.skips";
 
     /**
      * Minimum number of nimbus hosts where the code must be replicated before leader nimbus
@@ -774,17 +744,6 @@ public class Config extends HashMap<String, Object> {
      */
     @isNumber
     public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "topology.max.replication.wait.time.sec";
-
-    /**
-     * This is a config that is not likely to be used.  Internally the disruptor queue will batch entries written
-     * into the queue.  A background thread pool will flush those batches if they get too old.  By default that
-     * pool can grow rather large, and sacrifice some CPU time to keep the latency low.  In some cases you may
-     * want the queue to be smaller so there is less CPU used, but the latency will increase in some situations.
-     * This configs is on a per cluster bases, if you want to control this on a per topology bases you need to set
-     * the java System property for the worker "num_flusher_pool_threads" to the value you want.
-     */
-    @isInteger
-    public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
 
     /**
      * The list of servers that Pacemaker is running on.

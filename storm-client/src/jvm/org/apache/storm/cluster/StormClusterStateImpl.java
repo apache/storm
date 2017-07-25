@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -47,8 +47,6 @@ public class StormClusterStateImpl implements IStormClusterState {
     private ConcurrentHashMap<String, Runnable> assignmentInfoWithVersionCallback;
     private ConcurrentHashMap<String, Runnable> assignmentVersionCallback;
     private AtomicReference<Runnable> supervisorsCallback;
-    // we want to reigister a topo directory getChildren callback for all workers of this dir
-    private ConcurrentHashMap<String, Runnable> backPressureCallback;
     private AtomicReference<Runnable> assignmentsCallback;
     private ConcurrentHashMap<String, Runnable> stormBaseCallback;
     private AtomicReference<Runnable> blobstoreCallback;
@@ -69,7 +67,6 @@ public class StormClusterStateImpl implements IStormClusterState {
         assignmentInfoWithVersionCallback = new ConcurrentHashMap<>();
         assignmentVersionCallback = new ConcurrentHashMap<>();
         supervisorsCallback = new AtomicReference<>();
-        backPressureCallback = new ConcurrentHashMap<>();
         assignmentsCallback = new AtomicReference<>();
         stormBaseCallback = new ConcurrentHashMap<>();
         credentialsCallback = new ConcurrentHashMap<>();
@@ -103,8 +100,6 @@ public class StormClusterStateImpl implements IStormClusterState {
                         issueMapCallback(credentialsCallback, toks.get(1));
                     } else if (root.equals(ClusterUtils.LOGCONFIG_ROOT) && size > 1) {
                         issueMapCallback(logConfigCallback, toks.get(1));
-                    } else if (root.equals(ClusterUtils.BACKPRESSURE_ROOT) && size > 1) {
-                        issueMapCallback(backPressureCallback, toks.get(1));
                     } else {
                         LOG.error("{} Unknown callback for subtree {}", new RuntimeException("Unknown callback for this path"), path);
                         Runtime.getRuntime().exit(30);
@@ -124,8 +119,7 @@ public class StormClusterStateImpl implements IStormClusterState {
                               ClusterUtils.ERRORS_SUBTREE, 
                               ClusterUtils.BLOBSTORE_SUBTREE, 
                               ClusterUtils.NIMBUSES_SUBTREE, 
-                              ClusterUtils.LOGCONFIG_SUBTREE,
-                              ClusterUtils.BACKPRESSURE_SUBTREE };
+                              ClusterUtils.LOGCONFIG_SUBTREE };
         for (String path : pathlist) {
             this.stateStorage.mkdirs(path, acls);
         }
@@ -384,11 +378,6 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public List<String> backpressureTopologies() {
-        return stateStorage.get_children(ClusterUtils.BACKPRESSURE_SUBTREE, false);
-    }
-
-    @Override
     public void setTopologyLogConfig(String stormId, LogConfig logConfig) {
         stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), acls);
     }
@@ -422,87 +411,18 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.set_ephemeral_node(path, Utils.serialize(info), acls);
     }
 
-    /**
-     * if znode exists and to be not on?, delete; if exists and on?, do nothing; if not exists and to be on?, create; if not exists and not on?, do nothing;
-     * 
-     * @param stormId
-     * @param node
-     * @param port
-     * @param on
-     */
-    @Override
-    public void workerBackpressure(String stormId, String node, Long port, boolean on) {
-        String path = ClusterUtils.backpressurePath(stormId, node, port);
-        boolean existed = stateStorage.node_exists(path, false);
-        if (existed) {
-            if (on == false)
-                stateStorage.delete_node(path);
-
-        } else {
-            if (on == true) {
-                stateStorage.set_ephemeral_node(path, null, acls);
-            }
-        }
-    }
-
-    /**
-     * Check whether a topology is in throttle-on status or not:
-     * if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
-     * 
-     * @param stormId
-     * @param callback
-     * @return
-     */
-    @Override
-    public boolean topologyBackpressure(String stormId, Runnable callback) {
-        if (callback != null) {
-            backPressureCallback.put(stormId, callback);
-        }
-        String path = ClusterUtils.backpressureStormRoot(stormId);
-        List<String> childrens = null;
-        if(stateStorage.node_exists(path, false)) {
-            childrens = stateStorage.get_children(path, callback != null);
-        } else {
-            childrens = new ArrayList<>();
-        }
-        return childrens.size() > 0;
-
-    }
-
-    @Override
-    public void setupBackpressure(String stormId) {
-        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), acls);
-    }
-
-    @Override
-    public void removeBackpressure(String stormId) {
-        try {
-            stateStorage.delete_node(ClusterUtils.backpressureStormRoot(stormId));
-        } catch (Exception e) {
-            if (Utils.exceptionCauseIsInstanceOf(KeeperException.class, e)) {
-                // do nothing
-                LOG.warn("Could not teardown backpressure node for {}.", stormId);
-            } else {
-                throw e;
-            }
-        }
-    }
-
-    @Override
-    public void removeWorkerBackpressure(String stormId, String node, Long port) {
-        String path = ClusterUtils.backpressurePath(stormId, node, port);
-        boolean existed = stateStorage.node_exists(path, false);
-        if (existed) {
-            stateStorage.delete_node(path);
-        }
-    }
-
     @Override
     public void activateStorm(String stormId, StormBase stormBase) {
         String path = ClusterUtils.stormPath(stormId);
         stateStorage.set_data(path, Utils.serialize(stormBase), acls);
     }
 
+    /**
+     * To update this function due to APersistentMap/APersistentSet is clojure's structure
+     * 
+     * @param stormId
+     * @param newElems
+     */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
 
@@ -734,7 +654,7 @@ public class StormClusterStateImpl implements IStormClusterState {
             stateStorage.close();
     }
 
-    private List<String> tokenizePath(String path) {
+    private static List<String> tokenizePath(String path) {
         String[] toks = path.split("/");
         java.util.ArrayList<String> rtn = new ArrayList<String>();
         for (String str : toks) {

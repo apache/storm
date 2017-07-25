@@ -54,10 +54,10 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,7 +104,7 @@ public class Testing {
     /**
      * Continue to execute body repeatedly until condition is true or TEST_TIMEOUT_MS has
      * passed
-     * @param the number of ms to wait before timing out.
+     * @param timeoutMs the number of ms to wait before timing out.
      * @param condition what we are waiting for
      * @param body what to run in the loop
      * @throws AssertionError if teh loop timed out.
@@ -694,7 +694,7 @@ public class Testing {
         Map<String, Fields> streamToFields = new HashMap<>();
         streamToFields.put(stream, new Fields(fields));
         compToStreamToFields.put(component, streamToFields);
-        
+
         TopologyContext context= new TopologyContext(null,
                 ConfigUtils.readStormConfig(),
                 taskToComp,
@@ -712,6 +712,6 @@ public class Testing {
                 new HashMap<>(),
                 new HashMap<>(),
                 new AtomicBoolean(false));
-        return new TupleImpl(context, values, 1, stream);
+        return new TupleImpl(context, values, "testSrc", 1, stream);
     }
 }

@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -47,7 +47,6 @@ public class ClusterUtils {
     public static final String STORMS_ROOT = "storms";
     public static final String SUPERVISORS_ROOT = "supervisors";
     public static final String WORKERBEATS_ROOT = "workerbeats";
-    public static final String BACKPRESSURE_ROOT = "backpressure";
     public static final String ERRORS_ROOT = "errors";
     public static final String BLOBSTORE_ROOT = "blobstore";
     public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT = "blobstoremaxkeysequencenumber";
@@ -60,7 +59,6 @@ public class ClusterUtils {
     public static final String STORMS_SUBTREE = ZK_SEPERATOR + STORMS_ROOT;
     public static final String SUPERVISORS_SUBTREE = ZK_SEPERATOR + SUPERVISORS_ROOT;
     public static final String WORKERBEATS_SUBTREE = ZK_SEPERATOR + WORKERBEATS_ROOT;
-    public static final String BACKPRESSURE_SUBTREE = ZK_SEPERATOR + BACKPRESSURE_ROOT;
     public static final String ERRORS_SUBTREE = ZK_SEPERATOR + ERRORS_ROOT;
     public static final String BLOBSTORE_SUBTREE = ZK_SEPERATOR + BLOBSTORE_ROOT;
     public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPERATOR + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
@@ -134,14 +132,6 @@ public class ClusterUtils {
 
     public static String workerbeatPath(String stormId, String node, Long port) {
         return workerbeatStormRoot(stormId) + ZK_SEPERATOR + node + "-" + port;
-    }
-
-    public static String backpressureStormRoot(String stormId) {
-        return BACKPRESSURE_SUBTREE + ZK_SEPERATOR + stormId;
-    }
-
-    public static String backpressurePath(String stormId, String node, Long port) {
-        return backpressureStormRoot(stormId) + ZK_SEPERATOR + node + "-" + port;
     }
 
     public static String errorStormRoot(String stormId) {

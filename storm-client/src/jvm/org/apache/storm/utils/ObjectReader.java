@@ -76,6 +76,32 @@ public class ObjectReader {
         throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
     }
 
+    public static Long getLong(Object o) {
+        return getLong(o, null);
+    }
+
+    public static Long getLong(Object o, Long defaultValue) {
+        if (null == o) {
+            return defaultValue;
+        }
+
+        if ( o instanceof Long ||
+                o instanceof Integer ||
+                o instanceof Short ||
+                o instanceof Byte) {
+            return ((Number) o).longValue();
+        } else if (o instanceof Double) {
+            final long l = (Long) o;
+            if (l <= Long.MAX_VALUE && l >= Long.MIN_VALUE) {
+                return (long) l;
+            }
+        } else if (o instanceof String) {
+            return Long.parseLong((String) o);
+        }
+
+        throw new IllegalArgumentException("Don't know how to convert " + o + " to long");
+    }
+
     public static Double getDouble(Object o) {
         Double result = getDouble(o, null);
         if (null == result) {

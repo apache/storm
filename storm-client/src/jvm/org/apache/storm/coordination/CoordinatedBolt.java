@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -124,10 +124,14 @@ public class CoordinatedBolt implements IRichBolt {
             _delegate.fail(tuple);
         }
 
+        public void flush() {
+            _delegate.flush();
+        }
+
         public void resetTimeout(Tuple tuple) {
             _delegate.resetTimeout(tuple);
         }
-        
+
         public void reportError(Throwable error) {
             _delegate.reportError(error);
         }

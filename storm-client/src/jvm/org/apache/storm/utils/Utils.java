@@ -323,20 +323,22 @@ public class Utils {
      * @return the newly created thread
      * @see Thread
      */
-    public static SmartThread asyncLoop(final Callable afn,
-            boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
-            int priority, final boolean isFactory, boolean startImmediately,
-            String threadName) {
+    public static SmartThread asyncLoop(final Callable afn, boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
+                                        int priority, final boolean isFactory, boolean startImmediately,
+                                        String threadName) {
         SmartThread thread = new SmartThread(new Runnable() {
             public void run() {
-                Object s;
                 try {
-                    Callable fn = isFactory ? (Callable) afn.call() : afn;
-                    while ((s = fn.call()) instanceof Long) {
-                        Time.sleepSecs((Long) s);
+                    final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
+                    while (true) {
+                        final Long s = fn.call();
+                        if (s==null) // then stop running it
+                            break;
+                        if (s>0)
+                            Thread.sleep(s);  // TODO: Roshan : need to do something about sleep strategy
                     }
                 } catch (Throwable t) {
-                    if (exceptionCauseIsInstanceOf(
+                    if (Utils.exceptionCauseIsInstanceOf(
                             InterruptedException.class, t)) {
                         LOG.info("Async loop interrupted!");
                         return;
@@ -352,7 +354,7 @@ public class Utils {
             thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
                     LOG.error("Async loop died!", e);
-                    exitProcess(1, "Async loop died!");
+                    Utils.exitProcess(1, "Async loop died!");
                 }
             });
         }
@@ -1458,5 +1460,16 @@ public class Utils {
             defaultsConf.putAll(stormConf);
         }
         return defaultsConf;
+    }
+
+    public static <V> ArrayList<V> convertToArray(Map<Integer, V> srcMap) {
+        Set<Integer> executorIds = srcMap.keySet();
+        Integer largestId = executorIds.stream().max(Integer::compareTo).get();
+        ArrayList<V> result = new ArrayList<>(Collections.nCopies(largestId+1 , null)); // creates array[largestId+1] filled with nulls
+        for( Map.Entry<Integer, V> entry : srcMap.entrySet() ) {
+            if (entry.getKey() >= 0) // don't need __system bolt (id=-1) here
+                result.set(entry.getKey(),  entry.getValue());
+        }
+        return result;
     }
 }

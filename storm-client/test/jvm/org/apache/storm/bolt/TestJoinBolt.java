@@ -291,7 +291,7 @@ public class TestJoinBolt {
         MockContext mockContext = new MockContext(fieldNames);
 
         for (Object[] record : data) {
-            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), 0, streamName);
+            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), "testSrc", 0, streamName);
             result.add( rec );
         }
 
@@ -313,7 +313,7 @@ public class TestJoinBolt {
 
             ArrayList<Object> tupleValues = new ArrayList<>(1);
             tupleValues.add(recordMap);
-            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, 0, streamName);
+            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, "testSrc", 0, streamName);
             result.add( tuple );
         }
 

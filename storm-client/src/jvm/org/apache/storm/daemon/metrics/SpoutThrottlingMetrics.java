@@ -35,10 +35,6 @@ public class SpoutThrottlingMetrics extends BuiltinMetrics {
         this.skippedMaxSpoutMs.incrBy(ms);
     }
 
-    public void skippedThrottleMs(long ms) {
-        this.skippedThrottleMs.incrBy(ms);
-    }
-
     public void skippedInactiveMs(long ms) {
         this.skippedInactiveMs.incrBy(ms);
     }

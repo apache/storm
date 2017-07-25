@@ -54,6 +54,8 @@ public class ConstSpoutOnlyTopo {
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
+        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+
         if (args.length > 0) {
             runTime = Integer.parseInt(args[0]);
         }

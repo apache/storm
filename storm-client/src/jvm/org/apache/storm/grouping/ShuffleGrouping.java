@@ -26,38 +26,25 @@ import java.util.Random;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.concurrent.atomic.AtomicInteger;
+
 
 public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
-    private Random random;
     private ArrayList<List<Integer>> choices;
-    private AtomicInteger current;
+    private int current = 0 ;
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
-        random = new Random();
         choices = new ArrayList<List<Integer>>(targetTasks.size());
         for (Integer i: targetTasks) {
             choices.add(Arrays.asList(i));
         }
-        Collections.shuffle(choices, random);
-        current = new AtomicInteger(0);
+        Collections.shuffle(choices, new Random());
     }
 
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
-        int rightNow;
-        int size = choices.size();
-        while (true) {
-            rightNow = current.incrementAndGet();
-            if (rightNow < size) {
-                return choices.get(rightNow);
-            } else if (rightNow == size) {
-                current.set(0);
-                return choices.get(0);
-            }
-            //race condition with another thread, and we lost
-            // try again
-        }
+        if(current==choices.size())
+            current=0;
+        return choices.get(current++);
     }
 }

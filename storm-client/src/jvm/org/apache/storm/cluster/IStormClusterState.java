@@ -87,8 +87,6 @@ public interface IStormClusterState {
 
     public List<String> errorTopologies();
 
-    public List<String> backpressureTopologies();
-
     public void setTopologyLogConfig(String stormId, LogConfig logConfig);
 
     public LogConfig topologyLogConfig(String stormId, Runnable cb);
@@ -98,16 +96,6 @@ public interface IStormClusterState {
     public void removeWorkerHeartbeat(String stormId, String node, Long port);
 
     public void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
-
-    public void workerBackpressure(String stormId, String node, Long port, boolean on);
-
-    public boolean topologyBackpressure(String stormId, Runnable callback);
-
-    public void setupBackpressure(String stormId);
-
-    public void removeBackpressure(String stormId);
-
-    public void removeWorkerBackpressure(String stormId, String node, Long port);
 
     public void activateStorm(String stormId, StormBase stormBase);
 
