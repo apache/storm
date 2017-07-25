@@ -15,21 +15,16 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package org.apache.storm.kafka.spout.builders;
+package org.apache.storm.kafka.spout.config.builder;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.DEFAULT_MAX_RETRIES;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.storm.Config;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.kafka.spout.KafkaSpout;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
 import org.apache.storm.kafka.spout.subscription.Subscription;
-import org.apache.storm.kafka.spout.test.KafkaSpoutTestBolt;
-import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
@@ -45,24 +40,11 @@ public class SingleTopicKafkaSpoutConfiguration {
         new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0),
             DEFAULT_MAX_RETRIES, KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0));
 
-    public static Config getConfig() {
-        Config config = new Config();
-        config.setDebug(true);
-        return config;
-    }
-
-    public static StormTopology getTopologyKafkaSpout(int port) {
-        final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfigBuilder(port).build()), 1);
-        tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
-        return tp.createTopology();
-    }
-
-    public static KafkaSpoutConfig.Builder<String, String> getKafkaSpoutConfigBuilder(int port) {
+    public static KafkaSpoutConfig.Builder<String, String> createKafkaSpoutConfigBuilder(int port) {
         return setCommonSpoutConfig(KafkaSpoutConfig.builder("127.0.0.1:" + port, TOPIC));
     }
 
-    public static KafkaSpoutConfig.Builder<String, String> getKafkaSpoutConfigBuilder(Subscription subscription, int port) {
+    public static KafkaSpoutConfig.Builder<String, String> createKafkaSpoutConfigBuilder(Subscription subscription, int port) {
         return setCommonSpoutConfig(new KafkaSpoutConfig.Builder<>("127.0.0.1:" + port, subscription));
     }
 
