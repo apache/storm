@@ -1,4 +1,5 @@
 ﻿## 1.1.1
+ * STORM-2659: Add daemon.name variable to storm.cmd to fix log4j logging
  * STORM-2652: fix error in open method of JmsSpout
  * STORM-2645: Update storm.py to be python3 compatible
  * STORM-2621: add tuple_population metric
