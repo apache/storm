@@ -1,4 +1,5 @@
 ﻿## 1.2.0
+ * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2650: Expand property substitution test for Flux to cover non-string properties
  * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
  * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
