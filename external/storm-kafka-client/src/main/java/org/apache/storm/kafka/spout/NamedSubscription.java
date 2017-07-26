@@ -30,8 +30,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Subscribe to all topics that follow a given list of values
+ * Subscribe to all topics that follow a given list of values.
+ * @deprecated Please use {@link ManualPartitionSubscription} with {@link NamedTopicFilter} instead
  */
+@Deprecated
 public class NamedSubscription extends Subscription {
     private static final Logger LOG = LoggerFactory.getLogger(NamedSubscription.class);
     private static final long serialVersionUID = 3438543305215813839L;

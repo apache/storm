@@ -25,6 +25,7 @@ import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.spout.TopicPartitionComparator;
 import org.apache.storm.task.TopologyContext;
 
 public class ManualPartitionSubscription extends Subscription {

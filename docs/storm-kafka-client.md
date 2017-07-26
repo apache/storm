@@ -247,12 +247,9 @@ streams.  If you are doing this for Trident a value must be in the List returned
 otherwise trident can throw exceptions.
 
 
-### Manual Partition Control (ADVANCED)
+### Manual Partition Assigment (ADVANCED)
 
-By default Kafka will automatically assign partitions to the current set of spouts.  It handles lots of things, but in some cases you may want to manually assign the partitions.
-This can cause less churn in the assignments when spouts go down and come back up, but it can result in a lot of issues if not done right.  This can all be handled by subclassing
-Subscription and we have a few implementations that you can look at for examples on how to do this.  ManualPartitionNamedSubscription and ManualPartitionPatternSubscription.  Again
-please be careful when using these or implementing your own.
+By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. The implementation can be passed to the `ManualPartitionSubscription` constructor, and the `Subscription` can then be set in the `KafkaSpoutConfig` via the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
 
 ## Use the Maven Shade Plugin to Build the Uber Jar
 
