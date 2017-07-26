@@ -296,6 +296,7 @@
  * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.2.0
+ * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2650: Expand property substitution test for Flux to cover non-string properties
  * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
  * STORM-2541: Fix storm-kafka-client manual subscription not being able to start consuming
@@ -316,6 +317,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.1
+ * STORM-2659: Add daemon.name variable to storm.cmd to fix log4j logging
  * STORM-2652: fix error in open method of JmsSpout
  * STORM-2645: Update storm.py to be python3 compatible
  * STORM-2621: add tuple_population metric
