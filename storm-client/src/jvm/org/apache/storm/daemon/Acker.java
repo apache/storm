@@ -67,7 +67,6 @@ public class Acker implements IBolt {
 
     @Override
     public void execute(Tuple input) {
-        long start = System.currentTimeMillis();
         if (TupleUtils.isTick(input)) {
             Map<Object, AckObject> tmp = pending.rotate();
             LOG.debug("Number of timeout tuples:{}", tmp.size());

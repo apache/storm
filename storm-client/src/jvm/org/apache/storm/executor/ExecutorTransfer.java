@@ -94,12 +94,12 @@ public class ExecutorTransfer  {
     }
 
     public boolean transferLocal(AddressedTuple tuple) throws InterruptedException {
-        workerData.checkSerialize(serializer, tuple);
         if(tuple.dest>=localReceiveQueues.size())
             return false;
         JCQueue queue = localReceiveQueues.get(tuple.dest);
         if (queue==null)
             return false;
+        workerData.checkSerialize(serializer, tuple);
         queue.publish(tuple);
         outboundQueues.set(tuple.dest, queue);
         return true;
