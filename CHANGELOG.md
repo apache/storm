@@ -1,4 +1,9 @@
 ﻿## 1.2.0
+ * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
+ * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
+ * STORM-2493: update documents to reflect the changes
+ * STORM-2191: shorten classpaths by using wildcards
+ * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2650: Expand property substitution test for Flux to cover non-string properties
  * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
@@ -50,7 +55,6 @@
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2505: Spout to support topic compaction
  * STORM-2498: Fix Download Full File link
- * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2488: The UI user Must be HTTP.
  * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
@@ -68,7 +72,6 @@
  * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
 
 ## 1.1.0
- * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy
  * STORM-2425: Storm Hive Bolt not closing open transactions
  * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
  * STORM-2423: Join Bolt should use explicit instead of default window anchoring for emitted tuples
