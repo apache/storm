@@ -45,13 +45,9 @@
  * STORM-2448: Add in Storm and JDK versions when submitting a topology.
  * STORM-2503: Fix lgtm.com alerts on equality and comparison operations.
  * STORM-2499: Add Serialization plugin for EventHub System Properties
- * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
- * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
- * STORM-2493: update documents to reflect the changes
  * STORM-2511: Submitting a topology with name containing unicode getting failed
  * STORM-2510: update checkstyle configuration to lower violations
  * STORM-2479: Fix port assignment race condition in storm-webapp tests
- * STORM-2191: shorten classpaths by using wildcards
  * STORM-2495: Integrate checkstyle check during build
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2468: Remove clojure from storm-client
@@ -79,7 +75,6 @@
  * STORM-2363: Provide configuration to set the number of RollingWindow
  * STORM-2058: Fix Maven warnings about missing reporting.plugins.plugin.version
  * STORM-1369: Add MapState implementation to storm-cassandra
- * STORM-2432: Storm-Kafka-Client Trident Spout Seeks Incorrect Offset With UNCOMMITTED_LATEST Strategy 
  * STORM-2427: Fix event logger enable disable UI buttons
  * STORM-2425: Storm Hive Bolt not closing open transactions
  * STORM-2409: Storm-Kafka-Client KafkaSpout Support for Failed and NullTuples
@@ -87,8 +82,7 @@
  * STORM-2411: Setting topology.eventlogger.executors=0 in defaults.yaml
  * STORM-2422: Reduce the size of a serialized trident topology
  * STORM-2412: Nimbus isLeader check while waiting for max replication
- * STORM-2240: PMML Bolt - Add Support to Load Models from Blob Store
- * STORM-2194: Stop ignoring socket timeout error from executor
+ * STORM-2240: PMML Bolt - Add Support to Load Models from Blob Store 
  * STORM-2333: CGroup memory and CPU metrics
  * STORM-2374: Storm Kafka Client Test Topologies Must be Serializable
  * STORM-2372: Pacemaker client doesn't clean up heartbeats properly
@@ -296,6 +290,11 @@
  * STORM-2379: ElasticSearch connector changes to use new APIs.
 
 ## 1.2.0
+ * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
+ * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
+ * STORM-2493: update documents to reflect the changes
+ * STORM-2191: shorten classpaths by using wildcards
+ * STORM-2194: Stop ignoring socket timeout error from executor
  * STORM-2640: Deprecate KafkaConsumer.subscribe API option, make KafkaConsumer.assign the default
  * STORM-2650: Expand property substitution test for Flux to cover non-string properties
  * STORM-2642: Storm-kafka-client spout cannot be serialized when using manual partition assignment
@@ -345,7 +344,6 @@
  * STORM-2496: Dependency artifacts should be uploaded to blobstore with READ permission for all
  * STORM-2505: Spout to support topic compaction
  * STORM-2498: Fix Download Full File link
- * STORM-2343: New Kafka spout can stop emitting tuples if more than maxUncommittedOffsets tuples fail at once.
  * STORM-2486: Prevent cd from printing target directory to avoid breaking classpath
  * STORM-2488: The UI user Must be HTTP.
  * STORM-2481: Upgrade Aether version to resolve Aether bug BUG-451566
