@@ -36,6 +36,7 @@ import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IGroupMappingServiceProvider;
+import org.apache.storm.security.auth.IPrincipalToLocal;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Utils;
@@ -44,6 +45,7 @@ public class ResourceAuthorizer {
 
     private final Map<String, Object> stormConf;
     private final IGroupMappingServiceProvider groupMappingServiceProvider;
+    private final IPrincipalToLocal principalToLocal;
 
     /**
      * Constuctor.
@@ -53,6 +55,7 @@ public class ResourceAuthorizer {
     public ResourceAuthorizer(Map<String, Object> stormConf) {
         this.stormConf = stormConf;
         this.groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(stormConf);
+        this.principalToLocal = AuthUtils.GetPrincipalToLocalPlugin(stormConf);
     }
 
     /**
@@ -87,9 +90,10 @@ public class ResourceAuthorizer {
             logsGroups.addAll(ObjectReader.getStrings(stormConf.get(DaemonConfig.LOGS_GROUPS)));
             logsGroups.addAll(whitelist.getGroupWhitelist());
 
-            Set<String> groups = getUserGroups(user);
+            String userName = principalToLocal.toLocal(user);
+            Set<String> groups = getUserGroups(userName);
 
-            return logsUsers.stream().anyMatch(u -> u.equals(user))
+            return logsUsers.stream().anyMatch(u -> u.equals(userName))
                     || Sets.intersection(groups, new HashSet<>(logsGroups)).size() > 0;
         }
     }
