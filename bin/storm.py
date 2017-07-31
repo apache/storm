@@ -66,6 +66,12 @@ def init_storm_env():
     for option in options:
         value = config.get('environment', option)
         os.environ[option] = value
+        
+def get_java_cmd():
+    cmd = 'java' if not is_windows() else 'java.exe'
+    if JAVA_HOME:
+        cmd = os.path.join(JAVA_HOME, 'bin', cmd)
+    return cmd
 
 normclasspath = cygpath if sys.platform == 'cygwin' else identity
 STORM_DIR = os.sep.join(os.path.realpath( __file__ ).split(os.sep)[:-2])
@@ -91,7 +97,7 @@ CONFIG_OPTS = []
 CONFFILE = ""
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
 JAVA_HOME = os.getenv('JAVA_HOME', None)
-JAVA_CMD = 'java' if not JAVA_HOME else os.path.join(JAVA_HOME, 'bin', 'java')
+JAVA_CMD = get_java_cmd(); 
 if JAVA_HOME and not os.path.exists(JAVA_CMD):
     print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
     sys.exit(1)
@@ -276,6 +282,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             ret = sub.check_output(all_args, stderr=sub.STDOUT)
             print(ret)
         except sub.CalledProcessError as e:
+            print(e.output)
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
