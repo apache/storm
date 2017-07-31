@@ -111,6 +111,13 @@ struct StateSpoutSpec {
   2: required ComponentCommon common;
 }
 
+struct SharedMemory {
+  1: required string name;
+  2: optional double on_heap;
+  3: optional double off_heap_worker;
+  4: optional double off_heap_node;
+}
+
 struct StormTopology {
   //ids must be unique across maps
   // #workers to use is in conf
@@ -122,6 +129,8 @@ struct StormTopology {
   6: optional list<string> dependency_artifacts;
   7: optional string storm_version;
   8: optional string jdk_version;
+  9: optional map<string, set<string>> component_to_shared_memory;
+  10: optional map<string, SharedMemory> shared_memory;
 }
 
 exception AlreadyAliveException {
@@ -363,6 +372,14 @@ struct TopologyPageInfo {
 524: optional double assigned_memonheap;
 525: optional double assigned_memoffheap;
 526: optional double assigned_cpu;
+527: optional double requested_regular_on_heap_memory;
+528: optional double requested_shared_on_heap_memory;
+529: optional double requested_regular_off_heap_memory;
+530: optional double requested_shared_off_heap_memory;
+531: optional double assigned_regular_on_heap_memory;
+532: optional double assigned_shared_on_heap_memory;
+533: optional double assigned_regular_off_heap_memory;
+534: optional double assigned_shared_off_heap_memory;
 }
 
 struct ExecutorAggregateStats {
@@ -469,6 +486,8 @@ struct WorkerResources {
     1: optional double mem_on_heap;
     2: optional double mem_off_heap;
     3: optional double cpu;
+    4: optional double shared_mem_on_heap; //This is just for accounting mem_on_heap should be used for enforcement
+    5: optional double shared_mem_off_heap; //This is just for accounting mem_off_heap should be used for enforcement
 }
 struct Assignment {
     1: required string master_code_dir;
@@ -476,7 +495,7 @@ struct Assignment {
     3: optional map<list<i64>, NodeInfo> executor_node_port = {};
     4: optional map<list<i64>, i64> executor_start_time_secs = {};
     5: optional map<NodeInfo, WorkerResources> worker_resources = {};
-    //6: from other pull request
+    6: optional map<string, double> total_shared_off_heap = {};
     7: optional string owner;
 }
 
@@ -525,7 +544,8 @@ struct LocalAssignment {
   1: required string topology_id;
   2: required list<ExecutorInfo> executors;
   3: optional WorkerResources resources;
-  //4: other pull request
+  //The total amount of memory shared between workers on this node and topology
+  4: optional double total_node_shared;
   5: optional string owner;
 }
 

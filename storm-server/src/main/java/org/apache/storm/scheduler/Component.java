@@ -1,0 +1,88 @@
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package org.apache.storm.scheduler;
+
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.storm.generated.ComponentType;
+
+public class Component {
+    private final String id;
+    private final List<ExecutorDetails> execs;
+    private final ComponentType type;
+    private final Set<String> parents = new HashSet<>();
+    private final Set<String> children = new HashSet<>();
+
+    /**
+     * Create a new component.
+     * @param type the type of component this is
+     * @param compId the id of the component
+     * @param execs the executors for this component.
+     */
+    public Component(ComponentType type, String compId, List<ExecutorDetails> execs) {
+        this.type = type;
+        this.id = compId;
+        this.execs = execs;
+    }
+
+    /**
+     * Add a child link.
+     *
+     * @param child a child the consumes from this
+     */
+    public void addChild(Component child) {
+        children.add(child.getId());
+        child.parents.add(id);
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public List<ExecutorDetails> getExecs() {
+        return execs;
+    }
+
+    public ComponentType getType() {
+        return type;
+    }
+
+    public Set<String> getParents() {
+        return parents;
+    }
+
+    public Set<String> getChildren() {
+        return children;
+    }
+
+    @Override
+    public String toString() {
+        return "{id: "
+            + getId()
+            + " Parents: "
+            + getParents()
+            + " Children: "
+            + getChildren()
+            + " Execs: "
+            + getExecs()
+            + "}";
+    }
+}

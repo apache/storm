@@ -17,37 +17,42 @@
  */
 package org.apache.storm;
 
-import com.google.common.collect.Sets;
-
 import java.io.File;
 import java.nio.ByteBuffer;
 import java.util.Collections;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.blobstore.NimbusBlobStore;
 import org.apache.storm.dependency.DependencyPropertiesParser;
 import org.apache.storm.dependency.DependencyUploader;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.Credentials;
+import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SubmitOptions;
+import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.hooks.SubmitterHookException;
-import org.apache.storm.scheduler.resource.ResourceUtils;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.utils.BufferFileInputStream;
+import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.commons.lang.StringUtils;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.generated.*;
-import org.apache.storm.utils.BufferFileInputStream;
-import org.apache.storm.utils.NimbusClient;
+import com.google.common.collect.Sets;
 
 /**
  * Use this class to submit topologies to run on the Storm cluster. You should run your program
@@ -558,37 +563,7 @@ public class StormSubmitter {
 
     private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException {
         ConfigValidation.validateFields(topoConf);
-        validateTopologyWorkerMaxHeapSizeMBConfigs(topoConf, topology);
         Utils.validateTopologyBlobStoreMap(topoConf, getListOfKeysFromBlobStore(topoConf));
-    }
-
-    private static void validateTopologyWorkerMaxHeapSizeMBConfigs(Map<String, Object> topoConf, StormTopology topology) {
-        double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, topoConf);
-        Double topologyWorkerMaxHeapSize = ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
-        if(topologyWorkerMaxHeapSize < largestMemReq) {
-            throw new IllegalArgumentException("Topology will not be able to be successfully scheduled: Config TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB="
-                    + ObjectReader.getDouble(topoConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB)) + " < "
-                    + largestMemReq + " (Largest memory requirement of a component in the topology). Perhaps set TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB to a larger amount");
-        }
-    }
-
-    private static double getMaxExecutorMemoryUsageForTopo(StormTopology topology, Map<String, Object> topologyConf) {
-        double largestMemoryOperator = 0.0;
-        for(Map<String, Double> entry : ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
-            double memoryRequirement = entry.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
-                    + entry.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-            if(memoryRequirement > largestMemoryOperator) {
-                largestMemoryOperator = memoryRequirement;
-            }
-        }
-        for(Map<String, Double> entry : ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
-            double memoryRequirement = entry.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
-                    + entry.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-            if(memoryRequirement > largestMemoryOperator) {
-                largestMemoryOperator = memoryRequirement;
-            }
-        }
-        return largestMemoryOperator;
     }
 
     private static Set<String> getListOfKeysFromBlobStore(Map<String, Object> topoConf) {

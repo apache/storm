@@ -25,6 +25,7 @@ import org.apache.storm.coordination.CoordinatedBolt.FinishedCallback;
 import org.apache.storm.coordination.CoordinatedBolt.IdStreamSpec;
 import org.apache.storm.coordination.CoordinatedBolt.SourceArgs;
 import org.apache.storm.coordination.IBatchBolt;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.grouping.CustomStreamGrouping;
@@ -40,8 +41,10 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 
 // Trident subsumes the functionality provided by this class, so it's deprecated
@@ -119,7 +122,11 @@ public class LinearDRPCTopologyBuilder {
                     boltId(i),
                     new CoordinatedBolt(component.bolt, source, idSpec),
                     component.parallelism);
-            
+
+            for (SharedMemory request: component.sharedMemory) {
+                declarer.addSharedMemory(request);
+            }
+
             for(Map<String, Object> conf: component.componentConfs) {
                 declarer.addConfigurations(conf);
             }
@@ -172,11 +179,12 @@ public class LinearDRPCTopologyBuilder {
     }
     
     private static class Component {
-        public IRichBolt bolt;
-        public int parallelism;
-        public List<Map<String, Object>> componentConfs = new ArrayList<>();
-        public List<InputDeclaration> declarations = new ArrayList<InputDeclaration>();
-        
+        public final IRichBolt bolt;
+        public final int parallelism;
+        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final List<InputDeclaration> declarations = new ArrayList<>();
+        public final Set<SharedMemory> sharedMemory = new HashSet<>();
+
         public Component(IRichBolt bolt, int parallelism) {
             this.bolt = bolt;
             this.parallelism = parallelism;
@@ -387,6 +395,12 @@ public class LinearDRPCTopologyBuilder {
         @Override
         public LinearDRPCInputDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
+            return this;
+        }
+
+        @Override
+        public LinearDRPCInputDeclarer addSharedMemory(SharedMemory request) {
+            _component.sharedMemory.add(request);
             return this;
         }
     }

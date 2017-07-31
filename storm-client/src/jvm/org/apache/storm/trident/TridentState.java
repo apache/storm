@@ -17,6 +17,7 @@
  */
 package org.apache.storm.trident;
 
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.topology.ResourceDeclarer;
 import org.apache.storm.trident.planner.Node;
 
@@ -54,6 +55,12 @@ public class TridentState implements ResourceDeclarer<TridentState> {
     @Override
     public TridentState setMemoryLoad(Number onHeap, Number offHeap) {
         _node.setMemoryLoad(onHeap, offHeap);
+        return this;
+    }
+
+    @Override
+    public TridentState addSharedMemory(SharedMemory request) {
+        _node.addSharedMemory(request);
         return this;
     }
 }

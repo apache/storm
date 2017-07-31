@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -144,8 +145,7 @@ public class StormCommon {
     }
 
     public static Map<String, Object> allComponents(StormTopology topology) {
-        Map<String, Object> components = new HashMap<>();
-        components.putAll(topology.get_bolts());
+        Map<String, Object> components = new HashMap<>(topology.get_bolts());
         components.putAll(topology.get_spouts());
         components.putAll(topology.get_state_spouts());
         return components;

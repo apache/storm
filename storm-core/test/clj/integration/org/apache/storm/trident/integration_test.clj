@@ -320,7 +320,7 @@
               (persistentAggregate (MemoryMapState$Factory.) (Count.) (Fields. ["count"]))
               (setCPULoad 100)
               (setMemoryLoad 2048)))
-        (with-open [storm-topo (.submitTopology cluster "testing" {} (.build topo))]
+        (with-open [storm-topo (.submitTopology cluster "testing" {TOPOLOGY-WORKER-MAX-HEAP-SIZE-MB 4096} (.build topo))]
 
           (let [parse-fn (fn [[k v]]
                            [k (clojurify-structure (. (JSONParser.) parse (.. v get_common get_json_conf)))])

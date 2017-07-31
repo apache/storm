@@ -17,12 +17,42 @@
  */
 package org.apache.storm.topology;
 
+import org.apache.storm.generated.SharedMemory;
+
 /**
  * This is a new base interface that can be used by anything that wants to mirror
  * RAS's basic API. Trident uses this to allow setting resources in the Stream API.
  */
 public interface ResourceDeclarer <T extends ResourceDeclarer> {
+    /**
+     * Set the amount of on heap memory for this component
+     * @param onHeap the amount of on heap memory
+     * @return this for chaining
+     */
     T setMemoryLoad(Number onHeap);
+
+    /**
+     * Set the amount of memory for this component on and off heap
+     * @param onHeap the amount of on heap memory
+     * @param offHeap the amount of off heap memory
+     * @return this for chaining
+     */
     T setMemoryLoad(Number onHeap, Number offHeap);
+
+    /**
+     * Set the amount of CPU load for this component
+     * @param amount the amount of CPU
+     * @return this for chaining
+     */
     T setCPULoad(Number amount);
+
+    /**
+     * Add in request for shared memory that this component will use.
+     * See {@link SharedOnHeap}, {@link SharedOffHeapWithinNode}, and 
+     * {@link SharedOffHeapWithinWorker} for convenient ways
+     * to create shared memory requests.
+     * @param request the shared memory request for this component
+     * @return this for chaining
+     */
+    T addSharedMemory(SharedMemory request);
 }

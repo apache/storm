@@ -6,35 +6,33 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.apache.storm.topology;
 
-package org.apache.storm.scheduler.resource;
+import org.apache.storm.generated.SharedMemory;
+import org.apache.storm.utils.Utils;
 
-import java.util.EnumSet;
+/**
+ * A request for a shared memory region on heap.
+ */
+public class SharedOnHeap extends SharedMemory {
+    private static final long serialVersionUID = 1L;
 
-public enum SchedulingStatus {
-    SUCCESS,
-    FAIL_NOT_ENOUGH_RESOURCES,
-    FAIL_INVALID_TOPOLOGY,
-    FAIL_OTHER;
-
-    public static EnumSet<SchedulingStatus> success = EnumSet.of(SUCCESS);
-    public static EnumSet<SchedulingStatus> failure = EnumSet.of(FAIL_INVALID_TOPOLOGY, FAIL_NOT_ENOUGH_RESOURCES, FAIL_OTHER);
-
-    public static boolean isStatusSuccess(SchedulingStatus status) {
-        return success.contains(status);
+    /**
+     * Create a new request for a shared memory region on heap
+     * @param amount the number of MB to share on heap
+     * @param name the name of the shared region (for tracking purposes)
+     */
+    public SharedOnHeap(double amount, String name) {
+        super(name == null ? Utils.uuid() : name);
+        set_on_heap(amount);
     }
-
-    public static boolean isStatusFailure(SchedulingStatus status) {
-        return failure.contains(status);
-    }
-
 }

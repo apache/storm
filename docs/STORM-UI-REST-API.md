@@ -290,7 +290,7 @@ Sample response:
     "supervisors": [{ 
         "totalMem": 4096.0, 
         "host":"192.168.10.237",
-        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "uptime":"7m 8s",
         "totalCpu":400.0,
         "usedCpu":495.0,
@@ -305,12 +305,12 @@ Sample response:
         "topologyName":"ras",
         "topologyId":"ras-4-1460229987",
         "host":"192.168.10.237",
-        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "assignedMemOnHeap":704.0,
         "uptime":"2m 47s",
         "uptimeSeconds":167,
         "port":6707,
-        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
+        "workerLogLink":"http:\/\/host:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
         "componentNumTasks": {
             "word":5
         },
@@ -322,11 +322,11 @@ Sample response:
         "topologyName":"ras",
         "topologyId":"ras-4-1460229987",
         "host":"192.168.10.237",
-        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "assignedMemOnHeap":904.0,
         "uptime":"2m 53s",
         "port":6706,
-        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
+        "workerLogLink":"http:\/\/host:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
         "componentNumTasks":{
             "exclaim2":2,
             "exclaim1":3,
@@ -602,6 +602,25 @@ Sample response:
     "msgTimeout": 30,
     "windowHint": "10m 0s",
     "schedulerDisplayResource": true,
+    "workers": [{
+        "topologyName": "WordCount3",
+        "topologyId": "WordCount3-1-1402960825",
+        "host": "my-host",
+        "supervisorId": "9124ca9a-42e8-481e-9bf3-a041d9595430",
+        "assignedMemOnHeap": 1452.0,
+        "uptime": "27m 26s",
+        "port": 6702,
+        "workerLogLink": "logs",
+        "componentNumTasks": {
+            "spout": 2,
+            "count": 3,
+            "split": 10
+        },
+        "executorsTotal": 15,
+        "uptimeSeconds": 1646,
+        "assignedCpu": 260.0,
+        "assignedMemOffHeap": 160.0
+    }]
     "topologyStats": [
         {
             "windowPretty": "10m 0s",

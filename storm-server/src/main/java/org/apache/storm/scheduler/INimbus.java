@@ -15,31 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
-import java.util.Map;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Set;
 
-
-public interface ISupervisor {
+public interface INimbus {
     void prepare(Map<String, Object> topoConf, String schedulerLocalDir);
-    // for mesos, this is {hostname}-{topologyid}
+
     /**
-     * The id used for writing metadata into ZK.
+     * Returns all slots that are available for the next round of scheduling. A slot is available for scheduling
+     * if it is free and can be assigned to, or if it is used and can be reassigned.
      */
-    String getSupervisorId();
+    Collection<WorkerSlot> allSlotsAvailableForScheduling(Collection<SupervisorDetails> existingSupervisors,
+                                                          Topologies topologies,
+                                                          Set<String> topologiesMissingAssignments);
+
     /**
-     * The id used in assignments. This combined with confirmAssigned decides what
-     * this supervisor is responsible for. The combination of this and getSupervisorId
-     * allows Nimbus to assign to a single machine and have multiple supervisors
-     * on that machine execute the assignment. This is important for achieving resource isolation.
+     * this is called after the assignment is changed in ZK.
      */
-    String getAssignmentId();
-    Object getMetadata();
+    void assignSlots(Topologies topologies, Map<String, Collection<WorkerSlot>> newSlotsByTopologyId);
+
+    /**
+     * map from node id to supervisor details.
+     */
+    String getHostName(Map<String, SupervisorDetails> existingSupervisors, String nodeId);
     
-    boolean confirmAssigned(int port);
-    // calls this before actually killing the worker locally...
-    // sends a "task finished" update
-    void killedWorker(int port);
-    void assigned(Collection<Integer> ports);
+    IScheduler getForcedScheduler(); 
 }
