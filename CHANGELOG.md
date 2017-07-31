@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2653: PaceMaker code improvement
  * STORM-2497: Let Supervisor enforce memory and add in support for shared memory regions
  * STORM-2626: Provided a template for drpc-auth-acl.yaml
  * STORM-1280: port backtype.storm.daemon.logviewer to java
