@@ -1,5 +1,4 @@
 ﻿## 1.2.0
- * STORM-2663: Add Powershell port of storm.sh and deprecate storm.cmd. Backports STORM-2558 and STORM-2641.
  * STORM-2520: AutoHDFS should prefer cluster-wise hdfs kerberos principal
  * STORM-2519: Modify AbstractAutoCreds to look for configKeys in both nimbus and topology configs
  * STORM-2493: update documents to reflect the changes
@@ -27,6 +26,7 @@
  * STORM-2482: Refactor the Storm auto credential plugins to be more usable
 
 ## 1.1.2
+ * STORM-2663: Add Powershell port of storm.sh and deprecate storm.cmd. Backports STORM-2558 and STORM-2641.
  * STORM-2616: Documentation for built in metrics
 
 ## 1.1.1
