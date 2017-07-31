@@ -14,7 +14,7 @@
 
 from datetime import datetime
 from github import mstr
-from jira import Jira
+from jira_github import Jira
 from formatter import Formatter, encode
 
 
