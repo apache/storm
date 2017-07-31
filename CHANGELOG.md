@@ -1,4 +1,5 @@
 ﻿## 1.1.2
+ * STORM-2663: Backport STORM-2558 and deprecate storm.cmd on 1.x-branch
  * STORM-2616: Documentation for built in metrics
 
 ## 1.1.1
