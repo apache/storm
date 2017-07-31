@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2655: Log user cannot view worker.log on Storm UI on secure cluster
  * STORM-2654: preserve the formatting of the exception stacktrace on UI
  * STORM-2653: PaceMaker code improvement
  * STORM-2497: Let Supervisor enforce memory and add in support for shared memory regions
