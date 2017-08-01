@@ -51,6 +51,7 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -354,19 +355,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 final boolean isScheduled = retryService.isScheduled(msgId);
                 // not scheduled <=> never failed (i.e. never emitted), or scheduled and ready to be retried
                 if (!isScheduled || retryService.isReady(msgId)) {
+                    String stream = tuple instanceof KafkaTuple ? ((KafkaTuple) tuple).getStream() : Utils.DEFAULT_STREAM_ID;
                     if (!isAtLeastOnce()) {
                         if (kafkaSpoutConfig.getForceEnableTupleTracking()) {
-                            if (tuple instanceof KafkaTuple) {
-                                collector.emit(((KafkaTuple) tuple).getStream(), tuple, msgId);
-                            } else {
-                                collector.emit(tuple, msgId);
-                            }
+                            collector.emit(stream, tuple, msgId);
                         } else {
-                            if (tuple instanceof KafkaTuple) {
-                                collector.emit(((KafkaTuple) tuple).getStream(), tuple);
-                            } else {
-                                collector.emit(tuple);
-                            }
+                            collector.emit(stream, tuple);
                         }
                     } else {
                         emitted.add(msgId);
@@ -376,12 +370,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                         } else {            //New tuple, hence increment the uncommitted offset counter
                             numUncommittedOffsets++;
                         }
-
-                        if (tuple instanceof KafkaTuple) {
-                            collector.emit(((KafkaTuple) tuple).getStream(), tuple, msgId);
-                        } else {
-                            collector.emit(tuple, msgId);
-                        }
+                        collector.emit(stream, tuple, msgId);
                         tupleListener.onEmit(tuple, msgId);
                     }
                     LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
