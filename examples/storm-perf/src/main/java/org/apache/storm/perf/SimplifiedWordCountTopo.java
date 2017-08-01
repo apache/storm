@@ -31,13 +31,13 @@ import java.util.Map;
 
 public class SimplifiedWordCountTopo {
 
-    public static final String SPOUT_ID =   "spout";
-    public static final String COUNT_ID =   "counter";
+    public static final String SPOUT_ID = "spout";
+    public static final String COUNT_ID = "counter";
     public static final String TOPOLOGY_NAME = "SimplifiedWordCountTopo";
 
     // Config settings
-    public static final String SPOUT_NUM =  "spout.count";
-    public static final String BOLT_NUM =  "counter.count";
+    public static final String SPOUT_NUM = "spout.count";
+    public static final String BOLT_NUM = "counter.count";
     public static final String INPUT_FILE = "input.file";
 
     public static final int DEFAULT_SPOUT_NUM = 1;
@@ -69,7 +69,7 @@ public class SimplifiedWordCountTopo {
             topoConf.put(INPUT_FILE, file);
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
-        if (args.length > 3 || args.length==0) {
+        if (args.length > 3 || args.length == 0) {
             System.err.println("args: file.txt [runDurationSec]  [optionalConfFile]");
             return;
         }

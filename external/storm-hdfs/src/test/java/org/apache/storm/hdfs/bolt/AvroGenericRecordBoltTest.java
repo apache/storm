@@ -224,7 +224,7 @@ public class AvroGenericRecordBoltTest {
                 return new Fields("record");
             }
         };
-        return new TupleImpl(topologyContext, new Values(record), "testSrc", 1, "");
+        return new TupleImpl(topologyContext, new Values(record), topologyContext.getComponentId(1), 1, "");
     }
 
     private void verifyAllAvroFiles(String path) throws IOException {

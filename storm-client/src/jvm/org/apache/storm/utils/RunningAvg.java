@@ -20,15 +20,14 @@ package org.apache.storm.utils;
 
 public class RunningAvg {
 
-    private long n =0;
+    private long n = 0;
     private double oldM, newM, oldS, newS;
     private String name;
     public static int printFreq = 20_000_000;
     private boolean disable;
-    private long count=0;
+    private long count = 0;
 
-    public RunningAvg(String name, boolean disable)
-    {
+    public RunningAvg(String name, boolean disable) {
         this(name, printFreq, disable);
     }
 
@@ -36,14 +35,13 @@ public class RunningAvg {
         this(name, printFreq, false);
     }
 
-    public RunningAvg(String name, int printFreq, boolean disable)
-    {
-        this.name = name + "_" + Thread.currentThread().getName() ;
+    public RunningAvg(String name, int printFreq, boolean disable) {
+        this.name = name + "_" + Thread.currentThread().getName();
         this.printFreq = printFreq;
         this.disable = disable;
     }
 
-    public void clear()  {
+    public void clear() {
         n = 0;
     }
 
@@ -51,39 +49,40 @@ public class RunningAvg {
         push(System.currentTimeMillis() - startMs);
     }
 
-    public void push(long x)  {
-        if(disable)
+    public void push(long x) {
+        if (disable) {
             return;
+        }
 
         n++;
 
-        if (n == 1)  {
+        if (n == 1) {
             oldM = newM = x;
             oldS = 0;
-        }  else  {
-            newM = oldM + (x - oldM)/ n;
-            newS = oldS + (x - oldM)*(x - newM);
+        } else {
+            newM = oldM + (x - oldM) / n;
+            newS = oldS + (x - oldM) * (x - newM);
 
             // set up for next iteration
             oldM = newM;
             oldS = newS;
         }
-        if(++count==printFreq) {
+        if (++count == printFreq) {
             System.err.printf("  ***> %s - %,.2f\n", name, mean());
-            count=0;
+            count = 0;
         }
     }
 
-    public long numDataValues()  {
+    public long numDataValues() {
         return n;
     }
 
-    public double mean()  {
+    public double mean() {
         return (n > 0) ? newM : 0.0;
     }
 
-    public double variance()  {
-        return ( (n > 1) ? newS /(n - 1) : 0.0 );
+    public double variance() {
+        return ((n > 1) ? newS / (n - 1) : 0.0);
     }
 
 }

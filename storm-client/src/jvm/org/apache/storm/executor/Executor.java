@@ -114,6 +114,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final Boolean hasEventLoggers;
     protected final boolean ackingEnabled;
     protected String hostname;
+    private final AddressedTuple flushTuple;
 
     protected final ErrorReportingMetrics errorReportingMetrics;
 
@@ -172,8 +173,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
-
         this.errorReportingMetrics = new ErrorReportingMetrics();
+        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(), Constants.SYSTEM_COMPONENT_ID,
+            (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
+        flushTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -353,15 +356,12 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     // Called by flush-tuple-timer thread
     public boolean publishFlushTuple() {
-        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(), Constants.SYSTEM_COMPONENT_ID,
-                (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
-        AddressedTuple flushTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
         if( receiveQueue.tryPublish(flushTuple) ) {
             LOG.debug("Published Flush tuple to: {} ", getComponentId());
             return true;
         }
         else {
-            LOG.debug("RecvQ is currently full, will retry later. Unable to publish Flush tuple to : ", getComponentId());
+            LOG.debug("RecvQ is currently full, will retry later. Unable to publish Flush tuple to : {}", getComponentId());
             return false;
         }
     }
@@ -370,7 +370,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
      * Returns map of stream id to component id to grouper
      */
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> outboundComponents(
-            WorkerTopologyContext workerTopologyContext, String componentId, Map topoConf) {
+            WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
         Map<String, Map<String, LoadAwareCustomStreamGrouping>> ret = new HashMap<>();
 
         Map<String, Map<String, Grouping>> outputGroupings = workerTopologyContext.getTargets(componentId);

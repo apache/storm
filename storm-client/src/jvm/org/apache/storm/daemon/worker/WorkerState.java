@@ -144,7 +144,9 @@ public class WorkerState implements JCQueue.Consumer {
         return componentToSortedTasks;
     }
 
-    public Map<String, Long> getBlobToLastKnownVersion() {return blobToLastKnownVersion;}
+    public Map<String, Long> getBlobToLastKnownVersion() {
+        return blobToLastKnownVersion;
+    }
 
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
@@ -154,7 +156,7 @@ public class WorkerState implements JCQueue.Consumer {
         return executorReceiveQueueMap;
     }
 
-    public Map<Integer,JCQueue> getShortExecutorReceiveQueueMap() {
+    public Map<Integer, JCQueue> getShortExecutorReceiveQueueMap() {
         return shortExecutorReceiveQueueMap;
     }
 
@@ -260,7 +262,7 @@ public class WorkerState implements JCQueue.Consumer {
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
+                       Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.transferQueue = new JCQueue("worker-transfer-queue",
@@ -415,8 +417,8 @@ public class WorkerState implements JCQueue.Consumer {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
         isTopologyActive.set(
             (null != base) &&
-            (base.get_status() == TopologyStatus.ACTIVE) &&
-            (isWorkerActive.get()));
+                (base.get_status() == TopologyStatus.ACTIVE) &&
+                (isWorkerActive.get()));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -439,7 +441,7 @@ public class WorkerState implements JCQueue.Consumer {
             (Function<Map.Entry<Integer, JCQueue>, Integer>) Map.Entry::getKey,
             (Function<Map.Entry<Integer, JCQueue>, Double>) entry -> {
                 JCQueue.QueueMetrics qMetrics = entry.getValue().getMetrics();
-                return ( (double) qMetrics.population()) / qMetrics.capacity();
+                return ((double) qMetrics.population()) / qMetrics.capacity();
             }));
 
         Map<Integer, Load> remoteLoad = new HashMap<>();
@@ -461,7 +463,8 @@ public class WorkerState implements JCQueue.Consumer {
         int delaySecs = 0;
         int recurSecs = 1;
         refreshActiveTimer.schedule(delaySecs, new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 if (areAllConnectionsReady()) {
                     LOG.info("All connections are ready for worker {}:{} with id", assignmentId, port, workerId);
                     isWorkerActive.set(Boolean.TRUE);
@@ -480,7 +483,7 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
 
-    private void transferLocalBatch(List<AddressedTuple> tupleBatch) {
+    private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
         try {
             for (int i = 0; i < tupleBatch.size(); i++) {
                 AddressedTuple tuple = tupleBatch.get(i);
@@ -509,7 +512,7 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     @Override
-    public void accept(Object tuple)  {
+    public void accept(Object tuple) {
         AddressedTuple addressedTuple = (AddressedTuple) tuple;
         TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
         drainer.add(tm);
@@ -579,7 +582,7 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,
-        int port) {
+                                                 int port) {
         LOG.info("Reading assignments");
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
@@ -594,22 +597,22 @@ public class WorkerState implements JCQueue.Consumer {
         return executorsAssignedToThisWorker;
     }
 
-    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map topologyConf, Set<List<Long>> executors) {
+    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
-                    ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE)),
-                    ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE)) ));
+                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE)),
+                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE))));
 
         }
         return receiveQueueMap;
     }
-    
+
     private Map<String, Object> makeDefaultResources() {
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
         return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, Executors.newFixedThreadPool(threadPoolSize));
     }
-    
+
     private Map<String, Object> makeUserResources() {
         /* TODO: need to invoke a hook provided by the topology, giving it a chance to create user resources.
         * this would be part of the initialization hook
@@ -627,7 +630,6 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     /**
-     *
      * @return seq of task ids that receive messages from this worker
      */
     private Set<Integer> workerOutboundTasks() {
@@ -650,6 +652,6 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     public interface ILocalTransferCallback {
-        void transfer(List<AddressedTuple> tupleBatch);
+        void transfer(ArrayList<AddressedTuple> tupleBatch);
     }
 }

@@ -165,7 +165,7 @@ public class TestSequenceFileBolt {
                 return new Fields("key", "value");
             }
         };
-        return new TupleImpl(topologyContext, new Values(key, value), "testSrc", 1, "");
+        return new TupleImpl(topologyContext, new Values(key, value), topologyContext.getComponentId(1), 1, "");
     }
 
     // Generally used to compare how files were actually written and compare to expectations based on total

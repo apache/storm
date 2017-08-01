@@ -437,16 +437,6 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ENVIRONMENT="topology.environment";
 
     /*
-     * Topology-specific option to disable/enable bolt's outgoing overflow buffer.
-     * Enabling this option ensures that the bolt can always clear the incoming messages,
-     * preventing live-lock for the topology with cyclic flow.
-     * The overflow buffer can fill degrading the performance gradually,
-     * eventually running out of memory.
-     */
-    @isBoolean
-    public static final String TOPOLOGY_BOLTS_OUTGOING_OVERFLOW_BUFFER_ENABLE="topology.bolts.outgoing.overflow.buffer.enable";
-
-    /*
      * Bolt-specific configuration for windowed bolts to specify the window length as a count of number of tuples
      * in the window.
      */
@@ -528,6 +518,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * The size of the receive queue for each executor.
      */
+    @isPositiveNumber
+    @isInteger
     public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE="topology.executor.receive.buffer.size";
 
     /**

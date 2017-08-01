@@ -38,6 +38,7 @@ import javax.security.auth.Subject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
@@ -268,7 +269,6 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     private void setupFlushTupleTimer(final List<IRunningExecutor> executors) {
-//                StormTimer timerTask = workerState.getUserTimer();
         Integer batchSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         final Long flushIntervalMs = ObjectReader.getLong( conf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS) );
         if(batchSize==1 || flushIntervalMs==0)
@@ -279,7 +279,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             public void run() {
                 for (int i = 0; i < executors.size(); i++) {
                     IRunningExecutor exec = executors.get(i);
-                    if(exec.getExecutorId().get(0) != -1) // dont send to system bolt
+                    if(exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID)
                         exec.getExecutor().publishFlushTuple();
                 }
             }

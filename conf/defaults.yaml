@@ -49,9 +49,6 @@ storm.nimbus.retry.times: 5
 storm.nimbus.retry.interval.millis: 2000
 storm.nimbus.retry.intervalceiling.millis: 60000
 storm.auth.simple-white-list.users: []
-storm.auth.simple-acl.users: []
-storm.auth.simple-acl.users.commands: []
-storm.auth.simple-acl.admins: []
 storm.cluster.state.store: "org.apache.storm.cluster.ZKStateStorageFactory"
 storm.meta.serialization.delegate: "org.apache.storm.serialization.GzipThriftSerializationDelegate"
 storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCodeDistributor"
@@ -230,7 +227,7 @@ topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
 topology.max.spout.pending: null  # TODO: We dont need this any more
 topology.state.synchronization.timeout.secs: 60
-topology.stats.sample.rate: 0.001
+topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
 topology.fall.back.on.java.serialization: true
 topology.worker.childopts: null
@@ -247,13 +244,12 @@ topology.trident.batch.emit.interval.millis: 500
 topology.testing.always.try.serialize: false
 topology.classpath: null
 topology.environment: null
-topology.bolts.outgoing.overflow.buffer.enable: false # TODO: Roshan : Whats this ?
 topology.disruptor.wait.timeout.millis: 1000  # TODO: Roshan: not used, but we may/not want this behavior
 topology.transfer.buffer.size: 50000
 topology.transfer.batch.size: 10
 topology.executor.receive.buffer.size: 50000
-topology.producer.batch.size: 1000  # TODO: Roshan:  rename
-topology.flush.tuple.freq.millis: 5000
+topology.producer.batch.size: 1000
+topology.flush.tuple.freq.millis: 100
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
 
 topology.disable.loadaware.messaging: true   # load aware messaging reduces throughput by ~20%.

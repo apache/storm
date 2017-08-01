@@ -39,29 +39,34 @@ public class ThroughputMeter {
     }
 
     public double stop() {
-        if(startTime==0)
+        if (startTime == 0) {
             return 0;
-        if(endTime==0)
+        }
+        if (endTime == 0) {
             this.endTime = System.currentTimeMillis();
+        }
         return calcThroughput(count, startTime, endTime);
     }
 
     // Returns the recorded throughput since the last call to getCurrentThroughput()
     //     or since this meter was instantiated if being called for fisrt time.
     public double getCurrentThroughput() {
-        if(startTime==0)
+        if (startTime == 0) {
             return 0;
-        long currTime = (endTime==0) ? System.currentTimeMillis() : endTime ;
+        }
+        long currTime = (endTime == 0) ? System.currentTimeMillis() : endTime;
 
         double result = calcThroughput(count, startTime, currTime) / 1000; // K/sec
         startTime = currTime;
-        count=0;
+        count = 0;
         return result;
     }
 
-    /** @return  events/sec    */
+    /**
+     * @return events/sec
+     */
     private static double calcThroughput(long count, long startTime, long endTime) {
-        long gap = (endTime-startTime);
+        long gap = (endTime - startTime);
         return (count / gap) * 1000;
     }
 }

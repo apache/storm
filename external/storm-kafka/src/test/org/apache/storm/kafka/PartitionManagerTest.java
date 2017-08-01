@@ -240,8 +240,8 @@ public class PartitionManagerTest {
         }
 
         @Override
-        public void flush()
-        { }
+        public void flush() {
+        }
     }
 
 }

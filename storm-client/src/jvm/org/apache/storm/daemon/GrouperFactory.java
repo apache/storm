@@ -137,7 +137,7 @@ public class GrouperFactory {
     public static class FieldsGrouper implements CustomStreamGrouping {
 
         private Fields outFields;
-        private ArrayList<List<Integer> > targetTasks;
+        private List<List<Integer> > targetTasks;
         private Fields groupFields;
         private int numTasks;
 
