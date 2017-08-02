@@ -826,16 +826,6 @@ public class DaemonConfig implements Validated {
     public static final String NIMBUS_CODE_SYNC_FREQ_SECS = "nimbus.code.sync.freq.secs";
 
     /**
-     * An implementation of @{link org.apache.storm.daemon.JarTransformer} that will can be used to transform a jar
-     * file before storm jar runs with it. Use with extreme caution.
-     * If you want to enable a transition between org.apache.storm and org.apache.storm to run older topologies
-     * you can set this to org.apache.storm.hack.StormShadeTransformer.  But this is likely to be deprecated in
-     * future releases.
-     */
-    @isString
-    public static final String CLIENT_JAR_TRANSFORMER = "client.jartransformer.class";
-
-    /**
      * The plugin to be used for resource isolation
      */
     @isImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
