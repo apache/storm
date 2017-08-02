@@ -106,6 +106,7 @@ public class SpoutExecutor extends Executor {
         });
 
         this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.values().iterator().next().getUserContext());
+        this.errorReportingMetrics.registerAll(topoConf, idToTask.values().iterator().next().getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();

@@ -41,6 +41,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.Task;
+import org.apache.storm.daemon.metrics.ErrorReportingMetrics;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.bolt.BoltExecutor;
 import org.apache.storm.executor.error.IReportError;
@@ -117,6 +118,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
     protected final Boolean hasEventLoggers;
     protected String hostname;
 
+    protected final ErrorReportingMetrics errorReportingMetrics;
+
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         this.workerData = workerData;
         this.executorId = executorId;
@@ -173,6 +176,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         } catch (UnknownHostException ignored) {
             this.hostname = "";
         }
+
+        this.errorReportingMetrics = new ErrorReportingMetrics();
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -512,6 +517,10 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
     public IReportError getReportError() {
         return reportError;
+    }
+
+    public ErrorReportingMetrics getErrorReportingMetrics() {
+        return errorReportingMetrics;
     }
 
     public WorkerTopologyContext getWorkerTopologyContext() {
