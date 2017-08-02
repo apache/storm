@@ -279,6 +279,11 @@
           </span>
         </th>
         <th>
+          <span data-toggle="tooltip" data-placement="left" title="The version of this topology">
+            Topology Version
+          </span>
+        </th>
+        <th>
           <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
             Storm Version
           </span>
@@ -301,6 +306,7 @@
         <td>{{assignedCpu}}</td>
         {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
+        <td>{{topologyVersion}}</td>
         <td>{{stormVersion}}</td>
       </tr>
       {{/topologies}}

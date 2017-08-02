@@ -1879,6 +1879,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         LOG.info("Activating {}: {}", topoName, topoId);
         StormBase base = new StormBase();
         base.set_name(topoName);
+        if (topoConf.containsKey(Config.TOPOLOGY_VERSION)) {
+            base.set_topology_version(ObjectReader.getString(topoConf.get(Config.TOPOLOGY_VERSION)));
+        }
         base.set_launch_time_secs(Time.currentTimeSecs());
         base.set_status(initStatus);
         base.set_num_workers(ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 0));
@@ -2261,9 +2264,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             } catch (NotAliveException e) {
                 //Ignored it is not set
             }
+
             if (base.is_set_owner()) {
                 summary.set_owner(base.get_owner());
             }
+
+            if (base.is_set_topology_version()) {
+                summary.set_topology_version(base.get_topology_version());
+            }
+
             String status = idToSchedStatus.get().get(topoId);
             if (status != null) {
                 summary.set_sched_status(status);
@@ -3531,6 +3540,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (base.is_set_owner()) {
                 topoPageInfo.set_owner(base.get_owner());
             }
+
+            if (base.is_set_topology_version()) {
+                topoPageInfo.set_topology_version(base.get_topology_version());
+            }
+
             String schedStatus = idToSchedStatus.get().get(topoId);
             if (schedStatus != null) {
                 topoPageInfo.set_sched_status(schedStatus);

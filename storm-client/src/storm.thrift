@@ -166,6 +166,7 @@ struct TopologySummary {
   6: required i32 uptime_secs;
   7: required string status;
   8: optional string storm_version;
+  9: optional string topology_version;
 513: optional string sched_status;
 514: optional string owner;
 515: optional i32 replication_count;
@@ -366,6 +367,7 @@ struct TopologyPageInfo {
 15: optional i32 replication_count;
 16: optional list<WorkerSummary> workers;
 17: optional string storm_version;
+18: optional string topology_version;
 521: optional double requested_memonheap;
 522: optional double requested_memoffheap;
 523: optional double requested_cpu;
@@ -522,6 +524,7 @@ struct StormBase {
     8: optional TopologyStatus prev_status;//currently only used during rebalance action.
     9: optional map<string, DebugOptions> component_debug; // topology/component level debug option.
    10: optional string principal;
+   11: optional string topology_version;
 }
 
 struct ClusterWorkerHeartbeat {
