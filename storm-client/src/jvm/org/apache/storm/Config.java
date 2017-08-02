@@ -695,21 +695,48 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
 
     /**
-     * Configure timeout milliseconds used for disruptor queue wait strategy. Can be used to tradeoff latency
-     * vs. CPU usage
+     * Selects the Bolt's Wait Strategy to use when there are no incoming msgs. Used to trade off latency vs CPU usage.
      */
-    @isInteger
-    @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS="topology.disruptor.wait.timeout.millis";
+    @isString
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY = "topology.bolt.wait.strategy";
 
     /**
-     * The number of tuples to batch before sending to the next thread.  This number is just an initial suggestion and
-     * the code may adjust it as your topology runs.
+     * Configures park time for WaitStrategyPark.
      */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PARK_MICROSEC = "topology.bolt.wait.strategy.park.microsec";
+
+    /**
+     * Configures park time for WaitStrategySleep. If set to 0, does not enter sleep and returns immediately (i.e busy wait).
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_SLEEP_MILLIS = "topology.bolt.wait.strategy.sleep.millis";
+
+    /**
+     * Configures park time for WaitStrategyProgressive.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MILLIS = "topology.bolt.wait.strategy.progressive.millis";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
+     */
+    @NotNull
     @isInteger
     @isPositiveNumber
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_STEP =  "topology.bolt.wait.strategy.progressive.step";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
+     */
     @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_BATCH_SIZE="topology.disruptor.batch.size";
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MULTIPLIER =  "topology.bolt.wait.strategy.progressive.multiplier";
+
 
     /**
      * Check recvQ after every N invocations of Spout's nextTuple() [when ACKing is disabled].

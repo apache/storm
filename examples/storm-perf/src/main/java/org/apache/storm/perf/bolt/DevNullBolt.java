@@ -23,21 +23,33 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.ThroughputMeter;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 
 public class DevNullBolt extends BaseRichBolt {
     private OutputCollector collector;
+    ThroughputMeter meter = null;
+    long count = 0;
+
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
+        this.meter = new ThroughputMeter("null bolt");
     }
 
     @Override
     public void execute(Tuple tuple) {
         collector.ack(tuple);
+        meter.record();
+        if (++count == 10_000_000) {
+            LOG.error("====> Throughput : {} k/s", meter.getCurrentThroughput());
+            count = 0;
+        }
     }
 
     @Override

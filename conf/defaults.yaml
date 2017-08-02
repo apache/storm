@@ -234,8 +234,19 @@ topology.worker.childopts: null
 topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null
 topology.worker.shared.thread.pool.size: 4
+
+# Spout Wait Strategy
 topology.spout.wait.strategy: "org.apache.storm.spout.SleepSpoutWaitStrategy"
 topology.sleep.spout.wait.strategy.time.ms: 1
+
+# Bolt Wait Strategy
+topology.bolt.wait.strategy : "org.apache.storm.bolt.WaitStrategyProgressive"
+topology.bolt.wait.strategy.sleep.millis : 1             # for WaitStrategySleep
+topology.bolt.wait.strategy.park.microsec : 100          # for WaitStrategyPark
+topology.bolt.wait.strategy.progressive.millis : 1  # for WaitStrategyProgressive
+topology.bolt.wait.strategy.progressive.step : 100      # used to control progression to next wait level. for WaitStrategyProgressive
+topology.bolt.wait.strategy.progressive.multiplier : 5  # used to control progression to next wait level. for WaitStrategyProgressive
+
 topology.error.throttle.interval.secs: 10
 topology.max.error.report.per.interval: 5
 topology.kryo.factory: "org.apache.storm.serialization.DefaultKryoFactory"
@@ -244,15 +255,14 @@ topology.trident.batch.emit.interval.millis: 500
 topology.testing.always.try.serialize: false
 topology.classpath: null
 topology.environment: null
-topology.disruptor.wait.timeout.millis: 1000  # TODO: Roshan: not used, but we may/not want this behavior
 topology.transfer.buffer.size: 50000
 topology.transfer.batch.size: 10
 topology.executor.receive.buffer.size: 50000
 topology.producer.batch.size: 1000
-topology.flush.tuple.freq.millis: 100
+topology.flush.tuple.freq.millis: 1
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
 
-topology.disable.loadaware.messaging: true   # load aware messaging reduces throughput by ~20%.
+topology.disable.loadaware.messaging: false   # load aware messaging reduces throughput by ~20%.
 topology.state.checkpoint.interval.ms: 1000
 
 # Configs for Resource Aware Scheduler

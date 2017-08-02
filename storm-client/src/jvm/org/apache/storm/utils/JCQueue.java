@@ -19,13 +19,12 @@
 package org.apache.storm.utils;
 
 // TODO: Add metrics to count how often consume() sees empty Q, publish() fails, avg consume count, avg batch size for flush() on flushTuple
-// TODO: Document topology.producer.batch.size, topology.flush.tuple.freq.millis & deprecations, topology.spout.recvq.skips
-// TODO: During back pressure... should update metrics
-// TODO: Remove return 1L in Worker.java. Need a yield strategy if recvQ is empty (topology.disruptor.wait.timeout.millis ?)
-// TODO: Need a yield strategy if outQ is full.
-// TODO: Remove max.spout.pending
-// TODO: In release notes, mention that users may not to retweak their topology.executor.receive.buffer.size & topology.producer.batch.size
-// TODO: Add perf tweaking notes: sampling rate, batch size (executor&transfer), spout skip count, sleep strategy, load aware,
+// TODO: Document topology.producer.batch.size, topology.flush.tuple.freq.millis & deprecations, topology.spout.recvq.skips, topo.wait.strategy.*
+// TODO: During back pressure... should update metrics. Need a yield strategy for BP.
+// TODO: Remove return 1L in Worker.java.
+// TODO: Remove max.spout.pending, fix netty
+// TODO: In release notes, mention that users may want to retweak their topology.executor.receive.buffer.size & topology.producer.batch.size
+// TODO: Add perf tweaking notes: sampling rate, batch size (executor&transfer), spout skip count, sleep strategy, load aware, wait.strategy
 
 
 import org.apache.storm.metric.api.IStatefulObject;

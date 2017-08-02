@@ -21,8 +21,11 @@ import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
+import org.apache.storm.bolt.IBoltWaitStrategy;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -34,6 +37,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.RunningAvg;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.JCQueue;
@@ -52,12 +56,15 @@ public class BoltExecutor extends Executor {
 
     private final BooleanSupplier executeSampler;
     private final boolean isSystemBoltExecutor;
+    private final IBoltWaitStrategy waitStrategy;
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
-        isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
+        this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
+        this.waitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
+        this.waitStrategy.prepare(topoConf);
     }
 
     public void init(ArrayList<Task> idToTask) {
@@ -105,9 +112,10 @@ public class BoltExecutor extends Executor {
             @Override
             public Long call() throws Exception {
                 int count = receiveQueue.consume(BoltExecutor.this);
-                long parkTimeNanoSec = isSystemBoltExecutor ? 5_000_000 : 1;
-                if(count==0)
-                    LockSupport.parkNanos(parkTimeNanoSec);
+                for(int idleCounter=0; count==0; ) {
+                    idleCounter = waitStrategy.idle(idleCounter);
+                    count = receiveQueue.consume(BoltExecutor.this);
+                }
                 avgConsumeCount.push(count);
                 return 0L;
             }
