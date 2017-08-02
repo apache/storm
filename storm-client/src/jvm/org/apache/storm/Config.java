@@ -262,6 +262,20 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
+     * A list of host names that this topology would prefer to be scheduled on (no guarantee is given though).
+     * This is intended for debugging only.
+     */
+    @isStringList
+    public static final String TOPOLOGY_SCHEDULER_FAVORED_NODES = "topology.scheduler.favored.nodes";
+
+    /**
+     * A list of host names that this topology would prefer to NOT be scheduled on (no guarantee is given though).
+     * This is intended for debugging only.
+     */
+    @isStringList
+    public static final String TOPOLOGY_SCHEDULER_UNFAVORED_NODES = "topology.scheduler.unfavored.nodes";
+
+    /**
      * How many executors to spawn for ackers.
      *
      * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors
