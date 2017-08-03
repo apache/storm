@@ -30,8 +30,9 @@ import org.apache.storm.tuple.Values;
 public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClientWordCountNamedTopics {
     private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
-    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
-        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
+    @Override
+    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig(String bootstrapServers) {
+        return KafkaSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
                 .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
                 .setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 200)
                 .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))

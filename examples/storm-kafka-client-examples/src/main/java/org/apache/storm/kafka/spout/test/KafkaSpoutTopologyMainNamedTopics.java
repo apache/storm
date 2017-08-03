@@ -25,7 +25,6 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.spout.ByTopicRecordTranslator;
@@ -34,45 +33,37 @@ import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
+import org.apache.storm.kafka.trident.KafkaProducerTopology;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class KafkaSpoutTopologyMainNamedTopics {
+
     private static final String TOPIC_2_STREAM = "test_2_stream";
     private static final String TOPIC_0_1_STREAM = "test_0_1_stream";
-    private static final String[] TOPICS = new String[]{"test","test1","test2"};
+    private static final String KAFKA_LOCAL_BROKER = "localhost:9092";
+    public static final String TOPIC_0 = "kafka-spout-test";
+    public static final String TOPIC_1 = "kafka-spout-test-1";
+    public static final String TOPIC_2 = "kafka-spout-test-2";
 
     public static void main(String[] args) throws Exception {
         new KafkaSpoutTopologyMainNamedTopics().runMain(args);
     }
 
     protected void runMain(String[] args) throws Exception {
-        if (args.length == 0) {
-            submitTopologyLocalCluster(getTopologyKafkaSpout(), getConfig());
-        } else {
-            submitTopologyRemoteCluster(args[0], getTopologyKafkaSpout(), getConfig());
-        }
-    }
+        final String brokerUrl = args.length > 0 ? args[0] : KAFKA_LOCAL_BROKER;
+        System.out.println("Running with broker url: " + brokerUrl);
 
-    protected void submitTopologyLocalCluster(StormTopology topology, Config config) throws Exception {
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("test", config, topology);
-        stopWaitingForInput();
-    }
+        Config tpConf = getConfig();
 
-    protected void submitTopologyRemoteCluster(String arg, StormTopology topology, Config config) throws Exception {
-        StormSubmitter.submitTopology(arg, config, topology);
-    }
+        // Producers. This is just to get some data in Kafka, normally you would be getting this data from elsewhere
+        StormSubmitter.submitTopology(TOPIC_0 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, TOPIC_0));
+        StormSubmitter.submitTopology(TOPIC_1 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, TOPIC_1));
+        StormSubmitter.submitTopology(TOPIC_2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, TOPIC_2));
 
-    protected void stopWaitingForInput() {
-        try {
-            System.out.println("PRESS ENTER TO STOP");
-            new BufferedReader(new InputStreamReader(System.in)).readLine();
-            System.exit(0);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        //Consumer. Sets up a topology that reads the given Kafka spouts and logs the received messages
+        StormSubmitter.submitTopology("storm-kafka-client-spout-test", tpConf, getTopologyKafkaSpout(getKafkaSpoutConfig(brokerUrl)));
     }
 
     protected Config getConfig() {
@@ -81,35 +72,35 @@ public class KafkaSpoutTopologyMainNamedTopics {
         return config;
     }
 
-    protected StormTopology getTopologyKafkaSpout() {
+    protected StormTopology getTopologyKafkaSpout(KafkaSpoutConfig<String, String> spoutConfig) {
         final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig()), 1);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(spoutConfig), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt())
-          .shuffleGrouping("kafka_spout", TOPIC_0_1_STREAM)
-          .shuffleGrouping("kafka_spout", TOPIC_2_STREAM);
+            .shuffleGrouping("kafka_spout", TOPIC_0_1_STREAM)
+            .shuffleGrouping("kafka_spout", TOPIC_2_STREAM);
         tp.setBolt("kafka_bolt_1", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", TOPIC_2_STREAM);
         return tp.createTopology();
     }
 
-    protected KafkaSpoutConfig<String,String> getKafkaSpoutConfig() {
+    protected KafkaSpoutConfig<String, String> getKafkaSpoutConfig(String bootstrapServers) {
         ByTopicRecordTranslator<String, String> trans = new ByTopicRecordTranslator<>(
-                (r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
-                new Fields("topic", "partition", "offset", "key", "value"), TOPIC_0_1_STREAM);
-        trans.forTopic(TOPICS[2], 
-                (r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
-                new Fields("topic", "partition", "offset", "key", "value"), TOPIC_2_STREAM);
-        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPICS)
-                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
-                .setRetry(getRetryService())
-                .setRecordTranslator(trans)
-                .setOffsetCommitPeriodMs(10_000)
-                .setFirstPollOffsetStrategy(EARLIEST)
-                .setMaxUncommittedOffsets(250)
-                .build();
+            (r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
+            new Fields("topic", "partition", "offset", "key", "value"), TOPIC_0_1_STREAM);
+        trans.forTopic(TOPIC_2,
+            (r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
+            new Fields("topic", "partition", "offset", "key", "value"), TOPIC_2_STREAM);
+        return KafkaSpoutConfig.builder(bootstrapServers, new String[]{TOPIC_0, TOPIC_1, TOPIC_2})
+            .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
+            .setRetry(getRetryService())
+            .setRecordTranslator(trans)
+            .setOffsetCommitPeriodMs(10_000)
+            .setFirstPollOffsetStrategy(EARLIEST)
+            .setMaxUncommittedOffsets(250)
+            .build();
     }
 
     protected KafkaSpoutRetryService getRetryService() {
-            return new KafkaSpoutRetryExponentialBackoff(TimeInterval.microSeconds(500),
-                    TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
+        return new KafkaSpoutRetryExponentialBackoff(TimeInterval.microSeconds(500),
+            TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
     }
 }
