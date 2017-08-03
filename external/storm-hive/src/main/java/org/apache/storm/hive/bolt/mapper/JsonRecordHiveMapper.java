@@ -38,7 +38,7 @@ import java.text.SimpleDateFormat;
 import java.io.IOException;
 
 public class JsonRecordHiveMapper implements HiveMapper {
-    private static final Logger LOG = LoggerFactory.getLogger(DelimitedRecordHiveMapper.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JsonRecordHiveMapper.class);
     private Fields columnFields;
     private Fields partitionFields;
     private String timeFormat;
