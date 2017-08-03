@@ -77,7 +77,9 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
     }
     @Override
     public boolean failed(KinesisMessageId messageId) {
-        LOG.debug("Handling failed message " + messageId);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Handling failed message " + messageId);
+        }
         // if maxRetries is 0, dont retry and return false as per interface contract
         if (maxRetries == 0) {
             LOG.warn("maxRetries set to 0. Hence not queueing " + messageId);
@@ -99,14 +101,18 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
         // if reached so far, add it to the set of messages waiting to be retried with next retry time based on how many times it failed
         retryTimes.put(messageId, getRetryTime(failCount));
         retryMessageSet.add(messageId);
-        LOG.debug("Scheduled " + messageId + " for retry at " + retryTimes.get(messageId) + " and retry attempt " + failCount);
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Scheduled " + messageId + " for retry at " + retryTimes.get(messageId) + " and retry attempt " + failCount);
+        }
         return true;
     }
 
     @Override
     public void acked(KinesisMessageId messageId) {
         // message was acked after being retried. so clear the state for that message
-        LOG.debug("Ack received for " + messageId + ". Hence cleaning state.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Ack received for " + messageId + ". Hence cleaning state.");
+        }
         failCounts.remove(messageId);
     }
 
@@ -120,7 +126,9 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
                 result = null;
             }
         }
-        LOG.debug("Returning " + result + " to spout for retrying.");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Returning " + result + " to spout for retrying.");
+        }
         return result;
     }
 
@@ -128,7 +136,9 @@ public class ExponentialBackoffRetrier implements FailedMessageRetryHandler, Ser
     public void failedMessageEmitted(KinesisMessageId messageId) {
         // spout notified that message returned by us for retrying was actually emitted. hence remove it from set and wait for its ack or fail
         // but still keep it in counts map to retry again on failure or remove on ack
-        LOG.debug("Spout says " + messageId + " emitted. Hence removing it from queue and wait for its ack or fail");
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Spout says " + messageId + " emitted. Hence removing it from queue and wait for its ack or fail");
+        }
         retryMessageSet.remove(messageId);
         retryTimes.remove(messageId);
     }
