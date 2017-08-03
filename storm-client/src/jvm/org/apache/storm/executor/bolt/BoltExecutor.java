@@ -25,7 +25,7 @@ import java.util.List;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
-import org.apache.storm.bolt.IBoltWaitStrategy;
+import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -47,7 +47,6 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.locks.LockSupport;
 import java.util.function.BooleanSupplier;
 
 public class BoltExecutor extends Executor {
@@ -56,15 +55,15 @@ public class BoltExecutor extends Executor {
 
     private final BooleanSupplier executeSampler;
     private final boolean isSystemBoltExecutor;
-    private final IBoltWaitStrategy waitStrategy;
+    private final IWaitStrategy consumeWaitStrategy;
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
-        this.waitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
-        this.waitStrategy.prepare(topoConf);
+        this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
+        this.consumeWaitStrategy.prepare(topoConf);
     }
 
     public void init(ArrayList<Task> idToTask) {
@@ -113,7 +112,10 @@ public class BoltExecutor extends Executor {
             public Long call() throws Exception {
                 int count = receiveQueue.consume(BoltExecutor.this);
                 for(int idleCounter=0; count==0; ) {
-                    idleCounter = waitStrategy.idle(idleCounter);
+                    idleCounter = consumeWaitStrategy.idle(idleCounter);
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
                     count = receiveQueue.consume(BoltExecutor.this);
                 }
                 avgConsumeCount.push(count);

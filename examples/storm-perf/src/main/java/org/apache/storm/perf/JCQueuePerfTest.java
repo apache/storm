@@ -18,6 +18,7 @@
 
 package org.apache.storm.perf;
 
+import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.MutableLong;
 
@@ -37,14 +38,16 @@ public class JCQueuePerfTest {
 
 //        ackingProducerSimulation(); // -- measurement 6
 
-        while(true)
+        while (true) {
             Thread.sleep(1000);
+        }
 
     }
 
     private static void ackingProducerSimulation() {
-        JCQueue spoutQ = new JCQueue("spoutQ", JCQueue.ProducerKind.MULTI, 1024, 100);
-        JCQueue ackQ = new JCQueue("ackQ", JCQueue.ProducerKind.MULTI, 1024, 100);
+        WaitStrategyPark ws = new WaitStrategyPark(100);
+        JCQueue spoutQ = new JCQueue("spoutQ", JCQueue.ProducerKind.MULTI, 1024, 100, ws);
+        JCQueue ackQ = new JCQueue("ackQ", JCQueue.ProducerKind.MULTI, 1024, 100, ws);
 
         final AckingProducer ackingProducer = new AckingProducer(spoutQ, ackQ);
         final Acker acker = new Acker(ackQ, spoutQ);
@@ -53,11 +56,12 @@ public class JCQueuePerfTest {
     }
 
     private static void producerFwdConsumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz);
-        JCQueue q2 = new JCQueue("q2", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz);
+        WaitStrategyPark ws = new WaitStrategyPark(100);
+        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz, ws);
+        JCQueue q2 = new JCQueue("q2", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz, ws);
 
         final Producer prod = new Producer(q1);
-        final Forwarder fwd = new Forwarder(q1,q2);
+        final Forwarder fwd = new Forwarder(q1, q2);
         final Consumer cons = new Consumer(q2);
 
         runAllThds(prod, fwd, cons);
@@ -65,7 +69,7 @@ public class JCQueuePerfTest {
 
 
     private static void oneProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz);
+        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz, new WaitStrategyPark(100));
 
         final Producer prod1 = new Producer(q1);
         final Consumer cons1 = new Consumer(q1);
@@ -74,7 +78,7 @@ public class JCQueuePerfTest {
     }
 
     private static void twoProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz);
+        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz, new WaitStrategyPark(100));
 
         final Producer prod1 = new Producer(q1);
         final Producer prod2 = new Producer(q1);
@@ -84,7 +88,7 @@ public class JCQueuePerfTest {
     }
 
     private static void threeProducer1Consumer(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz);
+        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 50_000, prodBatchSz, new WaitStrategyPark(100));
 
         final Producer prod1 = new Producer(q1);
         final Producer prod2 = new Producer(q1);
@@ -96,10 +100,11 @@ public class JCQueuePerfTest {
 
 
     private static void oneProducer2Consumers(int prodBatchSz) {
-        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz);
-        JCQueue q2 = new JCQueue("q2", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz);
+        WaitStrategyPark ws = new WaitStrategyPark(100);
+        JCQueue q1 = new JCQueue("q1", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz, ws);
+        JCQueue q2 = new JCQueue("q2", JCQueue.ProducerKind.MULTI, 1024, prodBatchSz, ws);
 
-        final Producer2 prod1 = new Producer2(q1,q2);
+        final Producer2 prod1 = new Producer2(q1, q2);
         final Consumer cons1 = new Consumer(q1);
         final Consumer cons2 = new Consumer(q2);
 
@@ -128,7 +133,7 @@ public class JCQueuePerfTest {
                 }
 
                 for (MyThread thread : threads) {
-                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(), thread.count, thread.throughput() );
+                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(), thread.count, thread.throughput());
                 }
             } catch (InterruptedException e) {
                 return;
@@ -140,9 +145,8 @@ public class JCQueuePerfTest {
 }
 
 
-
-abstract class MyThread extends Thread  {
-    public long count=0;
+abstract class MyThread extends Thread {
+    public long count = 0;
     public long runTime = 0;
 
     public MyThread(String thdName) {
@@ -152,11 +156,15 @@ abstract class MyThread extends Thread  {
     public long throughput() {
         return getCount() / (runTime / 1000);
     }
-    public long getCount() { return  count; }
+
+    public long getCount() {
+        return count;
+    }
 }
 
 class Producer extends MyThread {
     private final JCQueue q;
+
     public Producer(JCQueue q) {
         super("Producer");
         this.q = q;
@@ -286,6 +294,7 @@ class Acker extends MyThread {
 class Consumer extends MyThread {
     private final JCQueue q;
     public final MutableLong counter = new MutableLong(0);
+
     public Consumer(JCQueue q) {
         super("Consumer");
         this.q = q;
@@ -307,18 +316,20 @@ class Consumer extends MyThread {
     public void run() {
         Handler handler = new Handler();
         long start = System.currentTimeMillis();
-        while(!Thread.interrupted()) {
+        while (!Thread.interrupted()) {
             int x = q.consume(handler);
-            if(x==0)
+            if (x == 0) {
                 LockSupport.parkNanos(1);
+            }
         }
         runTime = System.currentTimeMillis() - start;
     }
 
     @Override
-    public long getCount() { return  counter.get(); }
+    public long getCount() {
+        return counter.get();
+    }
 }
-
 
 
 class Forwarder extends MyThread {
@@ -334,7 +345,7 @@ class Forwarder extends MyThread {
 
     private class Handler implements JCQueue.Consumer {
         @Override
-        public void accept(Object event)  {
+        public void accept(Object event) {
             try {
                 outq.publish(event);
                 counter.increment();
@@ -353,14 +364,17 @@ class Forwarder extends MyThread {
     public void run() {
         Handler handler = new Handler();
         long start = System.currentTimeMillis();
-        while(!Thread.interrupted()) {
+        while (!Thread.interrupted()) {
             int x = inq.consume(handler);
-            if(x==0)
+            if (x == 0) {
                 LockSupport.parkNanos(1);
+            }
         }
         runTime = System.currentTimeMillis() - start;
     }
 
     @Override
-    public long getCount() { return counter.get(); }
+    public long getCount() {
+        return counter.get();
+    }
 }

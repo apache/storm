@@ -16,7 +16,7 @@
  * limitations under the License
  */
 
-package org.apache.storm.bolt;
+package org.apache.storm.policy;
 
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
@@ -24,34 +24,30 @@ import org.apache.storm.utils.ObjectReader;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
-/**
- * Initially spins, then downgrades to LockSupport.parkNanos(), and eventually Thread.sleep()
- * Provides control over how to progress to the next wait level.
- * Larger the 'step' and 'multiplier', slower the progression.
- * Latency increases with every progression to the next wait level.
- */
-public class WaitStrategyProgressive implements IBoltWaitStrategy {
-    private long sleepMillis;
-    private int step;
-    private int multiplier;
+public class WaitStrategyPark implements IWaitStrategy {
+    private long parkTimeNanoSec;
 
     @Override
     public void prepare(Map<String, Object> conf) {
-        sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MILLIS));
-        step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_STEP));
-        multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MULTIPLIER));
+        long microsec = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
+        parkTimeNanoSec = microsec * 1_000;
     }
+
+    public WaitStrategyPark() { // required for instantiation via reflection. call prepare() thereafter
+    }
+
+    // Convenience alternative to prepare() for use in Tests
+    public WaitStrategyPark(long microsec) {
+        parkTimeNanoSec = microsec * 1_000;
+    }
+
+
 
     @Override
     public int idle(int idleCounter) throws InterruptedException {
-        if (idleCounter < step) {
-            ++idleCounter;
-        } else if (idleCounter < step * multiplier) {
-            ++idleCounter;
-            LockSupport.parkNanos(1L);
-        } else {
-            Thread.sleep(sleepMillis);
-        }
-        return idleCounter;
+        if(idleCounter==0)
+            return 0;
+        LockSupport.parkNanos(parkTimeNanoSec);
+        return idleCounter+1;
     }
 }

@@ -701,25 +701,18 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_BOLT_WAIT_STRATEGY = "topology.bolt.wait.strategy";
 
     /**
-     * Configures park time for WaitStrategyPark.
+     * Configures park time for WaitStrategyPark.  If set to 0, returns immediately (i.e busy wait).
      */
     @NotNull
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PARK_MICROSEC = "topology.bolt.wait.strategy.park.microsec";
+    public static final String TOPOLOGY_BOLT_WAIT_PARK_MICROSEC = "topology.bolt.wait.park.microsec";
 
     /**
-     * Configures park time for WaitStrategySleep. If set to 0, does not enter sleep and returns immediately (i.e busy wait).
+     * Configures sleep time for WaitStrategyProgressive.
      */
     @NotNull
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_SLEEP_MILLIS = "topology.bolt.wait.strategy.sleep.millis";
-
-    /**
-     * Configures park time for WaitStrategyProgressive.
-     */
-    @NotNull
-    @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MILLIS = "topology.bolt.wait.strategy.progressive.millis";
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS = "topology.bolt.wait.progressive.millis";
 
     /**
      * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
@@ -727,7 +720,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_STEP =  "topology.bolt.wait.strategy.progressive.step";
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP =  "topology.bolt.wait.progressive.step";
 
     /**
      * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
@@ -735,7 +728,48 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY_PROGRESSIVE_MULTIPLIER =  "topology.bolt.wait.strategy.progressive.multiplier";
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER =  "topology.bolt.wait.progressive.multiplier";
+
+
+    /**
+     * A class that implements a wait strategy for an upstream component (spout/bolt) trying to write to a downstream component
+     * whose recv queue is full
+     *
+     * 1. nextTuple emits no tuples
+     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     */
+    @isString
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY="topology.backpressure.wait.strategy";
+
+    /**
+     * Configures park time if using WaitStrategyPark for BackPressure. If set to 0, returns immediately (i.e busy wait).
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC = "topology.backpressure.wait.park.microsec";
+
+    /**
+     * Configures sleep time if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MILLIS = "topology.backpressure.wait.progressive.millis";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_STEP =  "topology.backpressure.wait.progressive.step";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MULTIPLIER =  "topology.backpressure.wait.progressive.multiplier";
 
 
     /**

@@ -16,29 +16,28 @@
  * limitations under the License
  */
 
-package org.apache.storm.bolt;
+package org.apache.storm.policy;
 
 import java.util.Map;
 
 
-public interface IBoltWaitStrategy {
+public interface IWaitStrategy {
     void prepare(Map<String, Object> conf);
 
     /**
+     * Implementations of this method should be thread-safe (preferably no side-effects and lock-free)
+     *
      * Supports static or dynamic backoff. Dynamic backoff relies on idleCounter to
      * estimate how long caller has been idling.
      * <p>
      * <pre>
      * <code>
-     * int idleCounter = 0;
-     * while(true) {
-     *   int consumeCount = consumeFromQ();
-     *   if (consumeCount==0) {
-     *      idleCounter = strategy.idle(idleCounter);
-     *   } else {
-     *      idleCounter = 0;
-     *   }
-     * }
+     *  int idleCounter = 0;
+     *  int consumeCount = consumeFromQ();
+     *  while (consumeCount==0) {
+     *     idleCounter = strategy.idle(idleCounter);
+     *     consumeCount = consumeFromQ();
+     *  }
      * </code>
      * </pre>
      *

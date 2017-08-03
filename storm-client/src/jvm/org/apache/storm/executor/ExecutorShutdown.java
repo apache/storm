@@ -93,6 +93,8 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             }
             executor.getStats().cleanupStats();
             for (Task task : taskDatas) {
+                if (task==null)
+                    continue;
                 TopologyContext userContext = task.getUserContext();
                 for (ITaskHook hook : userContext.getHooks()) {
                     hook.cleanup();
@@ -101,6 +103,8 @@ public class ExecutorShutdown implements Shutdownable, IRunningExecutor {
             executor.getStormClusterState().disconnect();
             if (executor.getOpenOrPrepareWasCalled().get()) {
                 for (Task task : taskDatas) {
+                    if (task==null)
+                        continue;
                     Object object = task.getTaskObject();
                     if (object instanceof ISpout) {
                         ((ISpout) object).close();

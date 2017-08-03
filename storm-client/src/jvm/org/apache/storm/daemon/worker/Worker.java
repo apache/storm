@@ -313,7 +313,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 .workerHeartbeat(workerState.topologyId, workerState.assignmentId, (long) workerState.port,
                     StatsUtil.thriftifyZkWorkerHb(zkHB));
         } catch (Exception ex) {
-            LOG.error("Worker failed to write heartbeats to ZK or Pacemaker...will retry", ex);
+            LOG.error("Worker failed to write heartbeats to ZK or Pacemaker...will retrying", ex);
         }
     }
 

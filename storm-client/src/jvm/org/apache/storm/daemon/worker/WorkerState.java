@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
+import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
@@ -52,6 +53,7 @@ import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
+import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
@@ -233,7 +235,7 @@ public class WorkerState implements JCQueue.Consumer {
         return userTimer;
     }
 
-    final JCQueue transferQueue; //TODO: Roshan: transferQueue also needs to avoid double batching
+    final JCQueue transferQueue;
 
     // Timers
     final StormTimer heartbeatTimer = mkHaltingTimer("heartbeat-timer");
@@ -265,9 +267,11 @@ public class WorkerState implements JCQueue.Consumer {
                        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
+        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
         this.transferQueue = new JCQueue("worker-transfer-queue",
             ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE)),
-            1); // TODO: Roshan: Is this the right batch size for transferQueue ?
+            1,  // TODO: Roshan: Is this the right batch size for transferQueue ?
+            backPressureWaitStrategy);
 
         this.conf = conf;
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
@@ -327,6 +331,12 @@ public class WorkerState implements JCQueue.Consumer {
         }
         this.serializer = new KryoTupleSerializer(topologyConf, getWorkerTopologyContext());
         this.drainer = new TransferDrainer();
+    }
+
+    private static IWaitStrategy createBackPressureWaitStrategy(Map<String, Object> topologyConf) {
+        IWaitStrategy producerWaitStrategy = ReflectionUtils.newInstance((String) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
+        producerWaitStrategy.prepare(topologyConf);
+        return producerWaitStrategy;
     }
 
     public void refreshConnections() {
@@ -598,11 +608,12 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
+        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
                 ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE)),
-                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE))));
+                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE)), backPressureWaitStrategy));
 
         }
         return receiveQueueMap;

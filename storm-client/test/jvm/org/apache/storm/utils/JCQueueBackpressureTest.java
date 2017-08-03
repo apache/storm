@@ -17,6 +17,7 @@
  */
 package org.apache.storm.utils;
 
+import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.Consumer;
 import org.apache.storm.utils.JCQueue.ProducerKind;
 import org.junit.Test;
@@ -52,9 +53,7 @@ public class JCQueueBackpressureTest extends TestCase {
 
     }
 
-
-
     private static JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, ProducerKind.MULTI, queueSize, 1);
+        return new JCQueue(name, ProducerKind.MULTI, queueSize, 1, new WaitStrategyPark(100));
     }
 }

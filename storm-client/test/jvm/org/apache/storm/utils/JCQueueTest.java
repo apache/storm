@@ -20,6 +20,8 @@ package org.apache.storm.utils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.apache.storm.policy.IWaitStrategy;
+import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue.ProducerKind;
 import org.junit.Assert;
 import org.junit.Test;
@@ -29,6 +31,7 @@ public class JCQueueTest extends TestCase {
 
     private final static int TIMEOUT = 5000; // MS
     private final static int PRODUCER_NUM = 4;
+    IWaitStrategy waitStrategy = new WaitStrategyPark(100);
 
     @Test
     public void testFirstMessageFirst() throws InterruptedException {
@@ -190,11 +193,11 @@ public class JCQueueTest extends TestCase {
         }
     }
 
-    private static JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, ProducerKind.MULTI, queueSize, 1);
+    private JCQueue createQueue(String name, int queueSize) {
+        return new JCQueue(name, ProducerKind.MULTI, queueSize, 1, waitStrategy);
     }
 
-    private static JCQueue createQueue(String name, int batchSize, int queueSize) {
-        return new JCQueue(name, ProducerKind.MULTI, queueSize, batchSize);
+    private JCQueue createQueue(String name, int batchSize, int queueSize) {
+        return new JCQueue(name, ProducerKind.MULTI, queueSize, batchSize, waitStrategy);
     }
 }
