@@ -329,7 +329,6 @@
         <module>storm-server</module>
         <module>storm-core</module>
         <module>storm-webapp</module>
-        <module>storm-rename-hack</module>
         <module>storm-clojure</module>
         <module>storm-clojure-test</module>
         <module>storm-submit-tools</module>
