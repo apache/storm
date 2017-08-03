@@ -46,6 +46,7 @@ public class JdbcClient {
     }
 
     public void executeInsertQuery(String query, List<List<Column>> columnLists) {
+        Exception insertException = null;
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
@@ -78,9 +79,11 @@ public class JdbcClient {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute insert query " + query, e);
+            insertException = new RuntimeException("Failed to execute insert query " + query, e);
+        } catch (RuntimeException e) {
+            insertException = e;
         } finally {
-            closeConnection(connection);
+            closeConnection(connection, insertException);
         }
     }
 
@@ -103,6 +106,7 @@ public class JdbcClient {
     }
 
     public List<List<Column>> select(String sqlQuery, List<Column> queryParams) {
+        Exception selectException = null;
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
@@ -151,13 +155,17 @@ public class JdbcClient {
             }
             return rows;
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute select query " + sqlQuery, e);
+            selectException = new RuntimeException("Failed to execute select query " + sqlQuery, e);
+        } catch (RuntimeException e) {
+            selectException = e;
         } finally {
-            closeConnection(connection);
+            closeConnection(connection, selectException);
         }
+        return null;
     }
 
     public List<Column> getColumnSchema(String tableName) {
+        Exception getSchemaException = null;
         Connection connection = null;
         List<Column> columns = new ArrayList<Column>();
         try {
@@ -169,22 +177,28 @@ public class JdbcClient {
             }
             return columns;
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to get schema for table " + tableName, e);
+            getSchemaException = new RuntimeException("Failed to get schema for table " + tableName, e);
+        } catch (RuntimeException e) {
+            getSchemaException = e;
         } finally {
-            closeConnection(connection);
+            closeConnection(connection, getSchemaException);
         }
+        return null;
     }
 
     public void executeSql(String sql) {
+        Exception execException = null;
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
             Statement statement = connection.createStatement();
             statement.execute(sql);
         } catch (SQLException e) {
-            throw new RuntimeException("Failed to execute SQL", e);
+            execException = new RuntimeException("Failed to execute SQL", e);
+        } catch (RuntimeException e) {
+            execException = e;
         } finally {
-            closeConnection(connection);
+            closeConnection(connection, execException);
         }
     }
 
@@ -223,13 +237,21 @@ public class JdbcClient {
         }
     }
 
-    private void closeConnection(Connection connection) {
+    private void closeConnection(Connection connection, Exception finalException) {
         if (connection != null) {
             try {
                 connection.close();
             } catch (SQLException e) {
-                throw new RuntimeException("Failed to close connection", e);
+                if (finalException != null) {
+                    LOG.error("Failed to close connection: " + e.getMessage());
+                } else {
+                    finalException = new RuntimeException("Failed to close connection", e);
+                }
             }
+        }
+
+        if (finalException != null) {
+            throw new IllegalStateException(finalException);
         }
     }
 }

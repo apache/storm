@@ -22,8 +22,13 @@ import com.google.common.collect.Maps;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+import org.junit.runners.model.MultipleFailureException;
 import org.junit.Test;
 
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
@@ -80,6 +85,24 @@ public class JdbcClientTest {
         Assert.assertEquals(rows, selectedRows);
     }
 
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Test
+    public void testInsertConnectionError() {
+
+        ConnectionProvider connectionProvider = new ThrowingConnectionProvider(null);
+        this.client = new JdbcClient(connectionProvider, 60);
+
+        List<Column> row = createRow(1, "frank");
+        List<List<Column>> rows  = new ArrayList<List<Column>>();
+        rows.add(row);
+        String query  = "insert into user_details values(?,?,?)";
+
+        thrown.expect(MultipleFailureException.class);
+        client.executeInsertQuery(query, rows);
+    }
+
     private List<Column> createRow(int id, String name) {
         return Lists.newArrayList(
                 new Column("ID", id, Types.INTEGER),
@@ -91,4 +114,24 @@ public class JdbcClientTest {
     public void cleanup() {
         client.executeSql("drop table " + tableName);
     }
+}
+
+class ThrowingConnectionProvider implements ConnectionProvider {
+
+    private Map<String, Object> configMap;
+
+    public ThrowingConnectionProvider(Map<String, Object> mockCPConfigMap) {
+        this.configMap = mockCPConfigMap;
+    }
+
+    @Override
+    public synchronized void prepare() {}
+
+    @Override
+    public Connection getConnection() {
+        throw new RuntimeException("connection error");
+    }
+
+    @Override
+    public void cleanup() {}
 }
