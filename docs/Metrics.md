@@ -206,6 +206,14 @@ This metric records how much time a spout was idle because back-pressure indicat
 
 This metric records how much time a spout was idle because the topology was deactivated.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
 
+#### Error Reporting Metrics
+
+Storm also collects error reporting metrics for bolts and spouts.
+
+##### `__reported-error-count`
+
+This metric records how many errors were reported by a spout/bolt. It is the total number of times the `reportError` method was called.
+
 #### Queue Metrics
 
 Each bolt or spout instance in a topology has a receive queue and a send queue.  Each worker also has a queue for sending messages to other workers.  All of these have metrics that are reported.

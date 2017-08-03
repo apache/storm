@@ -58,6 +58,8 @@ public class BoltExecutor extends Executor {
             Utils.sleep(100);
         }
 
+        this.errorReportingMetrics.registerAll(topoConf, idToTask.values().iterator().next().getUserContext());
+
         LOG.info("Preparing bolt {}:{}", componentId, idToTask.keySet());
         for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
             Task taskData = entry.getValue();
