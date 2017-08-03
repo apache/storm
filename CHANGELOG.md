@@ -1,4 +1,5 @@
 ﻿## 2.0.0
+ * STORM-2658: Extract storm-kafka-client examples to storm-kafka-client-examples
  * STORM-1347: display topology version on UI
  * STORM-2657: Update SECURITY.MD
  * STORM-2655: Log user cannot view worker.log on Storm UI on secure cluster
