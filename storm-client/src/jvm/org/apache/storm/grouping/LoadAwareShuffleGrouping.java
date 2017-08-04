@@ -20,30 +20,51 @@ package org.apache.storm.grouping;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
+    private static final int CAPACITY_TASK_MULTIPLICATION = 100;
+
     private Random random;
     private List<Integer>[] rets;
     private int[] targets;
-    private int[] loads;
-    private int total;
+    private ArrayList<List<Integer>> choices;
+    private AtomicInteger current;
+    private int actualCapacity = 0;
+
     private long lastUpdate = 0;
+    private AtomicBoolean isUpdating = new AtomicBoolean(false);
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         random = new Random();
+
         rets = (List<Integer>[])new List<?>[targetTasks.size()];
         targets = new int[targetTasks.size()];
         for (int i = 0; i < targets.length; i++) {
             rets[i] = Arrays.asList(targetTasks.get(i));
             targets[i] = targetTasks.get(i);
         }
-        loads = new int[targets.length];
+
+        actualCapacity = targets.length * CAPACITY_TASK_MULTIPLICATION;
+
+        // can't leave choices to be empty, so initiate it similar as ShuffleGrouping
+        choices = new ArrayList<>(actualCapacity);
+        int index = 0;
+        while (index < actualCapacity) {
+            choices.add(rets[index % targets.length]);
+            index++;
+        }
+
+        Collections.shuffle(choices, random);
+        current = new AtomicInteger(0);
     }
 
     @Override
@@ -53,24 +74,71 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
-        if ((lastUpdate + 1000) < System.currentTimeMillis()) {
-            int local_total = 0;
-            for (int i = 0; i < targets.length; i++) {
-                int val = (int)(101 - (load.get(targets[i]) * 100));
-                loads[i] = val;
-                local_total += val;
-            }
-            total = local_total;
+        if ((lastUpdate + 1000) < System.currentTimeMillis()
+            && isUpdating.compareAndSet(false, true)) {
+            // update time earlier to reduce chance to do CAS
+            // concurrent call can still rely on old choices
             lastUpdate = System.currentTimeMillis();
+            updateRing(load);
+            isUpdating.set(false);
         }
-        int selected = random.nextInt(total);
-        int sum = 0;
-        for (int i = 0; i < targets.length; i++) {
-            sum += loads[i];
-            if (selected < sum) {
-                return rets[i];
+
+        int rightNow;
+        int size = choices.size();
+        while (true) {
+            rightNow = current.incrementAndGet();
+            if (rightNow < size) {
+                return choices.get(rightNow);
+            } else if (rightNow == size) {
+                current.set(0);
+                return choices.get(0);
+            }
+            //race condition with another thread, and we lost
+            // try again
+        }
+    }
+
+    private void updateRing(LoadMapping load) {
+        int localTotal = 0;
+        int[] loads = new int[targets.length];
+        for (int i = 0 ; i < targets.length; i++) {
+            int val = (int)(101 - (load.get(targets[i]) * 100));
+            loads[i] = val;
+            localTotal += val;
+        }
+
+        // allocating enough memory doesn't hurt much, so assign aggressively
+        // we will cut out if actual size becomes bigger than actualCapacity
+        ArrayList<List<Integer>> newChoices = new ArrayList<>(actualCapacity + targets.length);
+        for (int i = 0 ; i < loads.length ; i++) {
+            int loadForTask = loads[i];
+            int amount = loadForTask * actualCapacity / localTotal;
+            // assign at least one for task
+            if (amount == 0) {
+                amount = 1;
+            }
+            for (int j = 0; j < amount; j++) {
+                newChoices.add(rets[i]);
             }
         }
-        return rets[rets.length-1];
+
+        Collections.shuffle(newChoices, random);
+
+        // make sure length of newChoices is same as actualCapacity, like current choices
+        // this ensures safety when requests and update occurs concurrently
+        if (newChoices.size() > actualCapacity) {
+            newChoices.subList(actualCapacity, newChoices.size()).clear();
+        } else if (newChoices.size() < actualCapacity) {
+            int remaining = actualCapacity - newChoices.size();
+            while (remaining > 0) {
+                newChoices.add(newChoices.get(remaining % newChoices.size()));
+                remaining--;
+            }
+        }
+
+        assert newChoices.size() == actualCapacity;
+
+        choices = newChoices;
+        current.set(0);
     }
 }
