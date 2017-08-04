@@ -10070,11 +10070,11 @@ class getOwnerResourceSummaries_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype731, _size728) = iprot.readListBegin()
-          for _i732 in xrange(_size728):
-            _elem733 = OwnerResourceSummary()
-            _elem733.read(iprot)
-            self.success.append(_elem733)
+          (_etype765, _size762) = iprot.readListBegin()
+          for _i766 in xrange(_size762):
+            _elem767 = OwnerResourceSummary()
+            _elem767.read(iprot)
+            self.success.append(_elem767)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -10097,8 +10097,8 @@ class getOwnerResourceSummaries_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter734 in self.success:
-        iter734.write(oprot)
+      for iter768 in self.success:
+        iter768.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.aze is not None:

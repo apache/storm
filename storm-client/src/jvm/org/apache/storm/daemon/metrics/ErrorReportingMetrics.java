@@ -16,26 +16,23 @@
  * limitations under the License.
  */
 
-package org.apache.storm.hack;
+package org.apache.storm.daemon.metrics;
 
-import java.io.*;
+import org.apache.storm.metric.api.CountMetric;
 
-public class IOUtil {
-    public static void copy(InputStream in, OutputStream out) throws IOException {
-        byte [] buffer = new byte[4096];
-        int read;
-        while ((read = in.read(buffer)) > 0) {
-            out.write(buffer, 0, read);
-        }
+public class ErrorReportingMetrics extends BuiltinMetrics {
+    private final CountMetric reportedErrorCount = new CountMetric();
+
+    public ErrorReportingMetrics() {
+        metricMap.put("reported-error-count", reportedErrorCount);
     }
 
-    public static String toString(Reader reader) throws IOException {
-        StringWriter ret = new StringWriter();
-        char [] buffer = new char[4096];
-        int read;
-        while ((read = reader.read(buffer)) > 0) {
-            ret.write(buffer, 0, read);
-        }
-        return ret.toString();
+    public void incrReportedErrorCountBy(long n) {
+        this.reportedErrorCount.incrBy(n);
     }
+
+    public void incrReportedErrorCount() {
+        this.reportedErrorCount.incr();
+    }
+
 }

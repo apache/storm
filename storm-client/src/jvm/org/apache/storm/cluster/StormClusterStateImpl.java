@@ -555,6 +555,11 @@ public class StormClusterStateImpl implements IStormClusterState {
         if (StringUtils.isBlank(newElems.get_name())) {
             newElems.set_name(stormBase.get_name());
         }
+
+        if (StringUtils.isBlank(newElems.get_topology_version()) && stormBase.is_set_topology_version()) {
+            newElems.set_topology_version(stormBase.get_topology_version());
+        }
+
         if (newElems.get_status() == null) {
             newElems.set_status(stormBase.get_status());
         }
@@ -656,7 +661,17 @@ public class StormClusterStateImpl implements IStormClusterState {
         });
 
         while (childrens.size() > 10) {
-            stateStorage.delete_node(path + ClusterUtils.ZK_SEPERATOR + childrens.remove(0));
+            String znodePath = path + ClusterUtils.ZK_SEPERATOR + childrens.remove(0);
+            try {
+                stateStorage.delete_node(znodePath);
+            } catch (Exception e) {
+                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
+                    // if the node is already deleted, do nothing
+                    LOG.warn("Could not find the znode: {}", znodePath);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 

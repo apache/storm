@@ -303,39 +303,18 @@ def run_client_jar(jarfile, klass, args, daemon=False, client=True, extrajvmopts
     local_jars = DEP_JARS_OPTS
     artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
-    transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
-    if (transform_class != None and transform_class != "null"):
-        tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
-        exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
-        extra_jars = [tmpjar, USER_CONF_DIR, STORM_BIN_DIR]
-        extra_jars.extend(local_jars)
-        extra_jars.extend(artifact_to_file_jars.values())
-        topology_runner_exit_code = exec_storm_class(
-                klass,
-                jvmtype="-client",
-                extrajars=extra_jars,
-                args=args,
-                daemon=daemon,
-                client=client,
-                fork=True,
-                jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + tmpjar] +
-                        ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                        ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
-        os.remove(tmpjar)
-        sys.exit(topology_runner_exit_code)
-    else:
-        extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
-        extra_jars.extend(local_jars)
-        extra_jars.extend(artifact_to_file_jars.values())
-        exec_storm_class(
-            klass,
-            jvmtype="-client",
-            extrajars=extra_jars,
-            args=args,
-            daemon=False,
-            jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
-                    ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                    ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
+    extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
+    extra_jars.extend(local_jars)
+    extra_jars.extend(artifact_to_file_jars.values())
+    exec_storm_class(
+        klass,
+        jvmtype="-client",
+        extrajars=extra_jars,
+        args=args,
+        daemon=False,
+        jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
+                ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
 def local(jarfile, klass, *args):
     """Syntax: [storm local topology-jar-path class ...]

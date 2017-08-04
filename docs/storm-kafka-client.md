@@ -217,6 +217,9 @@ final Stream spoutStream = tridentTopology.newStream("kafkaSpout",
 Trident does not support multiple streams and will ignore any streams set for output.  If however the Fields are not identical for each
 output topic it will throw an exception and not continue.
 
+#### Example topologies
+Example topologies using storm-kafka-client can be found in the examples/storm-kafka-client-examples directory included in the Storm source or binary distributions.
+
 ### Custom RecordTranslators (ADVANCED)
 
 In most cases the built in SimpleRecordTranslator and ByTopicRecordTranslator should cover your use case.  If you do run into a situation where you need a custom one
@@ -243,52 +246,6 @@ otherwise trident can throw exceptions.
 ### Manual Partition Assigment (ADVANCED)
 
 By default the KafkaSpout instances will be assigned partitions using a round robin strategy. If you need to customize partition assignment, you must implement the `ManualPartitioner` interface. The implementation can be passed to the `ManualPartitionSubscription` constructor, and the `Subscription` can then be set in the `KafkaSpoutConfig` via the `KafkaSpoutConfig.Builder` constructor. Please take care when supplying a custom implementation, since an incorrect `ManualPartitioner` implementation could leave some partitions unread, or concurrently read by multiple spout instances. See the `RoundRobinManualPartitioner` for an example of how to implement this functionality.
-
-## Use the Maven Shade Plugin to Build the Uber Jar
-
-Add the following to `REPO_HOME/storm/external/storm-kafka-client/pom.xml`
-
-```xml
-<plugin>
-    <groupId>org.apache.maven.plugins</groupId>
-    <artifactId>maven-shade-plugin</artifactId>
-    <version>2.4.1</version>
-    <executions>
-        <execution>
-            <phase>package</phase>
-            <goals>
-                <goal>shade</goal>
-            </goals>
-            <configuration>
-                <transformers>
-                    <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                        <mainClass>org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMain</mainClass>
-                    </transformer>
-                </transformers>
-            </configuration>
-        </execution>
-    </executions>
-</plugin>
-```
-
-create the uber jar by running the command:
-
-`mvn package -f REPO_HOME/storm/external/storm-kafka-client/pom.xml`
-
-This will create the uber jar file with the name and location matching the following pattern:
- 
-`REPO_HOME/storm/external/storm-kafka-client/target/storm-kafka-client-1.0.x.jar`
-
-### Run Storm Topology
-
-Copy the file `REPO_HOME/storm/external/storm-kafka-client/target/storm-kafka-client-*.jar` to `STORM_HOME/extlib`
-
-Using the Kafka command line tools create three topics [test, test1, test2] and use the Kafka console producer to populate the topics with some data 
-
-Execute the command `STORM_HOME/bin/storm jar REPO_HOME/storm/external/storm/target/storm-kafka-client-*.jar org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMain`
-
-With the debug level logs enabled it is possible to see the messages of each topic being redirected to the appropriate Bolt as defined 
-by the streams defined and choice of shuffle grouping.   
 
 ## Using storm-kafka-client with different versions of kafka
 

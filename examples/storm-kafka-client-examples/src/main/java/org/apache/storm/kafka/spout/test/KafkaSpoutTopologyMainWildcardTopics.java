@@ -30,29 +30,32 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
 public class KafkaSpoutTopologyMainWildcardTopics extends KafkaSpoutTopologyMainNamedTopics {
+
     private static final String STREAM = "test_wildcard_stream";
-    private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test[1|2]");
+    private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("kafka-spout-test-[1|2]");
 
     public static void main(String[] args) throws Exception {
         new KafkaSpoutTopologyMainWildcardTopics().runMain(args);
     }
 
-    protected StormTopology getTopologyKafkaSpout() {
+    @Override
+    protected StormTopology getTopologyKafkaSpout(KafkaSpoutConfig<String, String> spoutConfig) {
         final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig()), 1);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(spoutConfig), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
         return tp.createTopology();
     }
 
-    protected KafkaSpoutConfig<String,String> getKafkaSpoutConfig() {
-        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
-                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
-                .setRetry(getRetryService())
-                .setRecordTranslator((r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
-                        new Fields("topic", "partition", "offset", "key", "value"), STREAM)
-                .setOffsetCommitPeriodMs(10_000)
-                .setFirstPollOffsetStrategy(EARLIEST)
-                .setMaxUncommittedOffsets(250)
-                .build();
+    @Override
+    protected KafkaSpoutConfig<String, String> getKafkaSpoutConfig(String bootstrapServers) {
+        return KafkaSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
+            .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
+            .setRetry(getRetryService())
+            .setRecordTranslator((r) -> new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value()),
+                new Fields("topic", "partition", "offset", "key", "value"), STREAM)
+            .setOffsetCommitPeriodMs(10_000)
+            .setFirstPollOffsetStrategy(EARLIEST)
+            .setMaxUncommittedOffsets(250)
+            .build();
     }
 }

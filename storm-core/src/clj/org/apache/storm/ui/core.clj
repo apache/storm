@@ -546,6 +546,7 @@
                 "assignedMemOffHeap" (.get_assigned_memoffheap t)
                 "assignedTotalMem" (+ (.get_assigned_memonheap t) (.get_assigned_memoffheap t))
                 "assignedCpu" (.get_assigned_cpu t)
+                "topologyVersion" (.get_topology_version t)
                 "stormVersion" (.get_storm_version t)}]
       (if (not-nil? keys) (select-keys data keys) data))))
 
@@ -706,6 +707,7 @@
      "debug" (or debugEnabled false)
      "samplingPct" (or samplingPct 10)
      "replicationCount" (.get_replication_count topo-info)
+     "topologyVersion" (.get_topology_version topo-info)
      "stormVersion" (.get_storm_version topo-info)}))
 
 (defn exec-host-port

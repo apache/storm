@@ -57,7 +57,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // IPrincipalToLocal 
     @Override
-    public String toLocal(Principal principal) {
+    public String toLocal(String principal) {
         return null;
     }
 

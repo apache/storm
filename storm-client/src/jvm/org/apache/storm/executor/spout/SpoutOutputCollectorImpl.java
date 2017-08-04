@@ -77,6 +77,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
     @Override
     public void reportError(Throwable error) {
+        executor.getErrorReportingMetrics().incrReportedErrorCount();
         executor.getReportError().report(error);
     }
 
