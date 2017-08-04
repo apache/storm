@@ -250,6 +250,86 @@ public class LoadAwareShuffleGroupingTest {
         assertTrue(load2 <= max2PrCount);
     }
 
+    @Ignore
+    @Test
+    public void testBenchmarkLoadAwareShuffleGroupingEvenLoad() {
+        final int numTasks = 10;
+        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
+        runSimpleBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
+            buildLocalTasksEvenLoadMapping(availableTaskIds));
+    }
+
+    @Ignore
+    @Test
+    public void testBenchmarkLoadAwareShuffleGroupingUnevenLoad() {
+        final int numTasks = 10;
+        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
+        runSimpleBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
+            buildLocalTasksUnevenLoadMapping(availableTaskIds));
+    }
+
+    @Ignore
+    @Test
+    public void testBenchmarkLoadAwareShuffleGroupingEvenLoadAndMultiThreaded()
+        throws ExecutionException, InterruptedException {
+        final int numTasks = 10;
+        final int numThreads = 2;
+        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
+        runMultithreadedBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
+            buildLocalTasksEvenLoadMapping(availableTaskIds), numThreads);
+    }
+
+    @Ignore
+    @Test
+    public void testBenchmarkLoadAwareShuffleGroupingUnevenLoadAndMultiThreaded()
+        throws ExecutionException, InterruptedException {
+        final int numTasks = 10;
+        final int numThreads = 2;
+        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
+        runMultithreadedBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
+            buildLocalTasksUnevenLoadMapping(availableTaskIds), numThreads);
+    }
+
+    private List<Integer> getAvailableTaskIds(int numTasks) {
+        // this method should return sequential numbers starting at 0
+        final List<Integer> availableTaskIds = Lists.newArrayList();
+        for (int i = 0; i < numTasks; i++) {
+            availableTaskIds.add(i);
+        }
+        return availableTaskIds;
+    }
+
+    private LoadMapping buildLocalTasksEvenLoadMapping(List<Integer> availableTasks) {
+        LoadMapping loadMapping = new LoadMapping();
+        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
+        for (int i = 0; i < availableTasks.size(); i++) {
+            localLoadMap.put(availableTasks.get(i), 0.1);
+        }
+        loadMapping.setLocal(localLoadMap);
+        return loadMapping;
+    }
+
+    private LoadMapping buildLocalTasksUnevenLoadMapping(List<Integer> availableTasks) {
+        LoadMapping loadMapping = new LoadMapping();
+        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
+        for (int i = 0; i < availableTasks.size(); i++) {
+            localLoadMap.put(availableTasks.get(i), 0.1 * (i + 1));
+        }
+        loadMapping.setLocal(localLoadMap);
+        return loadMapping;
+    }
+
+    private LoadMapping buildLocalTasksRandomLoadMapping(List<Integer> availableTasks) {
+        LoadMapping loadMapping = new LoadMapping();
+        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
+        for (int i = 0; i < availableTasks.size(); i++) {
+            localLoadMap.put(availableTasks.get(i), Math.random());
+        }
+        loadMapping.setLocal(localLoadMap);
+        return loadMapping;
+    }
+
+
     private int[] runChooseTasksWithVerification(LoadAwareShuffleGrouping grouper, int totalEmits,
         int numTasks, LoadMapping loadMapping) {
         int[] taskCounts = new int[numTasks];
@@ -307,63 +387,6 @@ public class LoadAwareShuffleGroupingTest {
         }
     }
 
-    @Ignore
-    @Test
-    public void testBenchmarkLoadAwareShuffleGroupingEvenLoad() {
-        final int numTasks = 10;
-        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
-        runSimpleBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
-            buildLocalTasksEvenLoadMapping(availableTaskIds));
-    }
-
-    @Ignore
-    @Test
-    public void testBenchmarkLoadAwareShuffleGroupingUnevenLoad() {
-        final int numTasks = 10;
-        List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
-        runSimpleBenchmark(new LoadAwareShuffleGrouping(), availableTaskIds,
-            buildLocalTasksUnevenLoadMapping(availableTaskIds));
-    }
-
-    private List<Integer> getAvailableTaskIds(int numTasks) {
-        // this method should return sequential numbers starting at 0
-        final List<Integer> availableTaskIds = Lists.newArrayList();
-        for (int i = 0; i < numTasks; i++) {
-            availableTaskIds.add(i);
-        }
-        return availableTaskIds;
-    }
-
-    private LoadMapping buildLocalTasksEvenLoadMapping(List<Integer> availableTasks) {
-        LoadMapping loadMapping = new LoadMapping();
-        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
-        for (int i = 0; i < availableTasks.size(); i++) {
-            localLoadMap.put(availableTasks.get(i), 0.1);
-        }
-        loadMapping.setLocal(localLoadMap);
-        return loadMapping;
-    }
-
-    private LoadMapping buildLocalTasksUnevenLoadMapping(List<Integer> availableTasks) {
-        LoadMapping loadMapping = new LoadMapping();
-        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
-        for (int i = 0; i < availableTasks.size(); i++) {
-            localLoadMap.put(availableTasks.get(i), 0.1 * (i + 1));
-        }
-        loadMapping.setLocal(localLoadMap);
-        return loadMapping;
-    }
-
-    private LoadMapping buildLocalTasksRandomLoadMapping(List<Integer> availableTasks) {
-        LoadMapping loadMapping = new LoadMapping();
-        Map<Integer, Double> localLoadMap = new HashMap<>(availableTasks.size());
-        for (int i = 0; i < availableTasks.size(); i++) {
-            localLoadMap.put(availableTasks.get(i), Math.random());
-        }
-        loadMapping.setLocal(localLoadMap);
-        return loadMapping;
-    }
-
     private void runSimpleBenchmark(LoadAwareCustomStreamGrouping grouper,
         List<Integer> availableTaskIds, LoadMapping loadMapping) {
         // Task Id not used, so just pick a static value
@@ -394,6 +417,71 @@ public class LoadAwareShuffleGroupingTest {
             grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
         }
 
-        System.out.println("Duration: " + (System.currentTimeMillis() - current) + " ms");
+        LOG.info("Duration: {} ms", (System.currentTimeMillis() - current));
+    }
+
+    private void runMultithreadedBenchmark(LoadAwareCustomStreamGrouping grouper,
+        List<Integer> availableTaskIds, LoadMapping loadMapping, int numThreads)
+        throws InterruptedException, ExecutionException {
+        // Task Id not used, so just pick a static value
+        final int inputTaskId = 100;
+
+        final WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+
+        // Call prepare with our available taskIds
+        grouper.prepare(context, null, availableTaskIds);
+
+        // triggers building ring
+        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+
+        long current = System.currentTimeMillis();
+        int idx = 0;
+        while (true) {
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+
+            idx++;
+            if (idx % 100000 == 0) {
+                // warm up 60 seconds
+                if (System.currentTimeMillis() - current >= 60_000) {
+                    break;
+                }
+            }
+        }
+
+        final int groupingExecutionsPerThread = 2_000_000_000;
+
+        List<Callable<Long>> threadTasks = Lists.newArrayList();
+        for (int x = 0; x < numThreads; x++) {
+            Callable<Long> threadTask = new Callable<Long>() {
+                @Override
+                public Long call() throws Exception {
+                    long current = System.currentTimeMillis();
+                    for (int i = 1; i <= groupingExecutionsPerThread; i++) {
+                        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+                    }
+                    return System.currentTimeMillis() - current;
+                }
+            };
+
+            // Add to our collection.
+            threadTasks.add(threadTask);
+        }
+
+        ExecutorService executor = Executors.newFixedThreadPool(threadTasks.size());
+        List<Future<Long>> taskResults = executor.invokeAll(threadTasks);
+
+        // Wait for all tasks to complete
+        Long maxDurationMillis = 0L;
+        for (Future taskResult: taskResults) {
+            while (!taskResult.isDone()) {
+                Thread.sleep(100);
+            }
+            Long durationMillis = (Long) taskResult.get();
+            if (maxDurationMillis < durationMillis) {
+                maxDurationMillis = durationMillis;
+            }
+        }
+
+        LOG.info("Max duration among threads is : {} ms", maxDurationMillis);
     }
 }
