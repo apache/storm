@@ -66,12 +66,21 @@ public class TridentKafkaState implements State {
         LOG.debug("commit is Noop.");
     }
 
+    /**
+     * Prepare this State.
+     * @param options The KafkaProducer config.
+     */
     public void prepare(Properties options) {
         Objects.requireNonNull(mapper, "mapper can not be null");
         Objects.requireNonNull(topicSelector, "topicSelector can not be null");
         producer = new KafkaProducer(options);
     }
 
+    /**
+     * Write the given tuples to Kafka.
+     * @param tuples The tuples to write.
+     * @param collector Tbe Trident collector.
+     */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
         try {

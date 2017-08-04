@@ -30,12 +30,32 @@ import java.util.Map;
  * This defines a transactional spout which does *not* necessarily
  * replay the same batch every time it emits a batch for a transaction id.
  * 
+ * @param <M> The type of metadata object passed to the Emitter when emitting a new batch based on a previous batch. This type must be JSON
+ * serializable by json-simple.
+ * @param <Partitions> The type of metadata object used by the coordinator to describe partitions. This type must be JSON serializable by
+ * json-simple.
  */
 public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends ISpoutPartition, M>
     extends ITridentDataSource {
 
+    /**
+     * Coordinator for batches. Trident will only begin committing once at least one coordinator is ready.
+     * 
+     * @param <Partitions> The type of metadata object used by the coordinator to describe partitions. This type must be JSON serializable
+     * by json-simple.
+     */
     interface Coordinator<Partitions> {
+        /**
+         * Indicates whether this coordinator is ready to commit the given transaction.
+         * The master batch coordinator will only begin committing if at least one coordinator indicates it is ready to commit.
+         * @param txid The transaction id
+         * @return true if this coordinator is ready to commit, false otherwise.
+         */
         boolean isReady(long txid);
+        /**
+         * Gets the partitions for the following batches. The emitter will be asked to refresh partitions when this value changes.
+         * @return The partitions for the following batches.
+         */
         Partitions getPartitionsForBatch();
         void close();
     }
@@ -79,7 +99,7 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
     
     Emitter<Partitions, Partition, M> getEmitter(Map<String, Object> conf, TopologyContext context);
 
-    Coordinator getCoordinator(Map<String, Object> conf, TopologyContext context);
+    Coordinator<Partitions> getCoordinator(Map<String, Object> conf, TopologyContext context);
 
     Map<String, Object> getComponentConfiguration();
 
