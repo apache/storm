@@ -18,6 +18,7 @@
 
 package org.apache.storm.perf;
 
+import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.BrokerHosts;
 import org.apache.storm.kafka.KafkaSpout;
@@ -108,6 +109,8 @@ public class KafkaSpoutNullBoltTopo {
         }
         Integer durationSec = Integer.parseInt(args[0]);
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+
 
         //  Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

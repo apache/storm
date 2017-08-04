@@ -32,9 +32,6 @@ public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
     private ArrayList<List<Integer>> choices;
     private int current = 0 ;
 
-    public ShuffleGrouping() {
-        System.err.println("blah");
-    }
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         choices = new ArrayList<List<Integer>>(targetTasks.size());

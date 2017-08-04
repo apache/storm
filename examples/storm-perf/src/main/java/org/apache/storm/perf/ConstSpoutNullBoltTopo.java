@@ -30,7 +30,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
 /***
- * This topo helps measure the messaging speed between a spout and a bolt.
+ * This topo helps measure the messaging peak throughput between a spout and a bolt.
  *  Spout generates a stream of a fixed string.
  *  Bolt will simply ack and discard the tuple received
  */
@@ -79,7 +79,15 @@ public class ConstSpoutNullBoltTopo {
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
+        // configure for achieving max throughput in single worker mode (empirically found).
+        //    -- Expect ~7.8 mill/sec.  (4.8 mill/sec with batchSz=1)
+        //    -- ~1 mill/sec, lat= ~20 microsec  with acker=1 & batchSz=1
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+        topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
 
         if (args.length > 0) {
             runTime = Integer.parseInt(args[0]);

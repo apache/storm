@@ -62,6 +62,7 @@ public class SimplifiedWordCountTopo {
         int runTime = -1;
         Config topoConf = new Config();
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
 
         if (args.length > 2) {
             String file = args[0];

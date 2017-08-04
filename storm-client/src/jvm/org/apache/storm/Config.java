@@ -525,8 +525,16 @@ public class Config extends HashMap<String, Object> {
     /**
      * The size of the transfer queue for each worker.
      */
+    @isPositiveNumber
     @isInteger
     public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE="topology.transfer.buffer.size";
+
+    /**
+     * The size of the transfer queue for each worker.
+     */
+    @isPositiveNumber
+    @isInteger
+    public static final String TOPOLOGY_TRANSFER_BATCH_SIZE="topology.transfer.batch.size";
 
     /**
      * How often a tick tuple from the "__system" component and "__tick" stream should be sent

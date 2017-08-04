@@ -55,6 +55,8 @@ public class ConstSpoutOnlyTopo {
         int runTime = -1;
         Config topoConf = new Config();
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+        topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
 
         if (args.length > 0) {
             runTime = Integer.parseInt(args[0]);

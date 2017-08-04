@@ -31,7 +31,6 @@ import java.util.Map;
 
 public class DevNullBolt extends BaseRichBolt {
     private OutputCollector collector;
-    ThroughputMeter meter = null;
     long count = 0;
 
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
@@ -39,17 +38,11 @@ public class DevNullBolt extends BaseRichBolt {
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
-        this.meter = new ThroughputMeter("null bolt");
     }
 
     @Override
     public void execute(Tuple tuple) {
         collector.ack(tuple);
-        meter.record();
-        if (++count == 10_000_000) {
-            LOG.error("====> Throughput : {} k/s", meter.getCurrentThroughput());
-            count = 0;
-        }
     }
 
     @Override

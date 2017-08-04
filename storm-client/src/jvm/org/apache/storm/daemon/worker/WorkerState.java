@@ -270,7 +270,7 @@ public class WorkerState implements JCQueue.Consumer {
         IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
         this.transferQueue = new JCQueue("worker-transfer-queue",
             ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE)),
-            1,  // TODO: Roshan: Is this the right batch size for transferQueue ?
+            ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE)),
             backPressureWaitStrategy);
 
         this.conf = conf;

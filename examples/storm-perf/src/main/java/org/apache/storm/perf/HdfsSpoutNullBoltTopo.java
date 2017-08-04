@@ -18,6 +18,7 @@
 
 package org.apache.storm.perf;
 
+import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.spout.HdfsSpout;
 import org.apache.storm.hdfs.spout.TextFileReader;
@@ -94,6 +95,11 @@ public class HdfsSpoutNullBoltTopo {
 
         Integer durationSec = Integer.parseInt(args[0]);
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+        topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
 
         // Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

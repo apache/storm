@@ -248,9 +248,9 @@ topology.bolt.wait.progressive.multiplier : 5      # controls progression to dee
 
 # BackPressure Wait Strategy
 topology.backpressure.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"
-topology.backpressure.wait.park.microsec : 100          # for org.apache.storm.policy.WaitStrategyPark
+topology.backpressure.wait.park.microsec : 100          # for org.apache.storm.policy.WaitStrategyPark. Busy spin if set to 0.
 topology.backpressure.wait.progressive.millis : 1       # for org.apache.storm.policy.WaitStrategyProgressive
-topology.backpressure.wait.progressive.step : 100          # controls progression to deeper wait levels for WaitStrategyProgressive
+topology.backpressure.wait.progressive.step : 50          # controls progression to deeper wait levels for WaitStrategyProgressive
 topology.backpressure.wait.progressive.multiplier : 20     # controls progression to deeper wait levels for WaitStrategyProgressive
 
 
@@ -265,11 +265,11 @@ topology.environment: null
 topology.transfer.buffer.size: 50000
 topology.transfer.batch.size: 1
 topology.executor.receive.buffer.size: 50000
-topology.producer.batch.size: 1000
-topology.flush.tuple.freq.millis: 10  # used if topology.transfer.batch.size > 1
+topology.producer.batch.size: 1
+topology.flush.tuple.freq.millis: 5  # Disabled if set to 0 or if topology.transfer.batch.size=1 or topology.producer.batch.size=1.
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
 
-topology.disable.loadaware.messaging: false   # load aware messaging reduces throughput by ~20%.
+topology.disable.loadaware.messaging: false   # load aware messaging can degrade throughput
 topology.state.checkpoint.interval.ms: 1000
 
 # Configs for Resource Aware Scheduler

@@ -19,6 +19,7 @@
 package org.apache.storm.utils;
 
 // TODO: Remove max.spout.pending, fix netty issue
+// TODO: Flush tuple timer needs to check if topology.transfer.batch.size>1
 // DOCS: Document topology.producer.batch.size, topology.flush.tuple.freq.millis & deprecations, topology.spout.recvq.skips, topo.wait.strategy.*
 // DOCS: In release notes, mention that users may want to retweak their topology.executor.receive.buffer.size & topology.producer.batch.size
 // DOCS: Add perf tweaking notes: sampling rate, batch size (executor&transfer), spout skip count, sleep strategy, load aware, wait.strategy
