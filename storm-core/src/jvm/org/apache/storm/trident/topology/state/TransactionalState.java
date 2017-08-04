@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.simple.parser.ParseException;
 
 /**
  * Class that contains the logic to extract the transactional state info from zookeeper. All transactional state
@@ -168,10 +169,15 @@ public class TransactionalState {
         path = "/" + path;
         try {
             Object data;
-            if(_curator.checkExists().forPath(path)!=null) {
-                // intentionally using parse() instead of parseWithException() to handle error cases as null
-                // this have been used from the start of Trident so we could treat it as safer way
-                data = JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+            if(_curator.checkExists().forPath(path) != null) {
+                // Use parseWithException instead of parse so we can capture deserialization errors in the log.
+                // They are likely to be bugs in the spout code.
+                try {
+                    data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
+                } catch (ParseException e) {
+                    LOG.warn("Failed to deserialize zookeeper data for path {}", path, e);
+                    data = null;
+                }
             } else {
                 data = null;
             }
