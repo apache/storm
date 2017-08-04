@@ -45,6 +45,7 @@ import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 
 public class LoadAwareShuffleGroupingTest {
+    public static final double ACCEPTABLE_MARGIN = 0.015;
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGroupingTest.class);
 
     @Test
@@ -86,17 +87,19 @@ public class LoadAwareShuffleGroupingTest {
         final LoadMapping loadMapping = buildLocalTasksEvenLoadMapping(availableTaskIds);
 
         final WorkerTopologyContext context = mock(WorkerTopologyContext.class);
-
-        // Call prepare with our available taskIds
         grouper.prepare(context, null, availableTaskIds);
 
-        // triggers building ring
-        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+        // force triggers building ring
+        for (int i = 0 ; i < LoadAwareShuffleGrouping.CHECK_UPDATE_INDEX ; i++) {
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+        }
 
         // calling chooseTasks should be finished before refreshing ring
         // adjusting groupingExecutionsPerThread might be needed with really slow machine
         // we allow race condition between refreshing ring and choosing tasks
         // so it will not make exact even distribution, though diff is expected to be small
+        // given that all threadTasks are finished before refreshing ring,
+        // distribution should be exactly even
         final int groupingExecutionsPerThread = numTasks * 5000;
         final int numThreads = 10;
 
@@ -142,6 +145,19 @@ public class LoadAwareShuffleGroupingTest {
             }
         }
 
+        int[] loads = new int[numTasks];
+        int localTotal = 0;
+        List<Double> loadRate = new ArrayList<>();
+        for (int i = 0; i < numTasks; i++) {
+            int val = (int)(101 - (loadMapping.get(i) * 100));
+            loads[i] = val;
+            localTotal += val;
+        }
+
+        for (int i = 0; i < numTasks; i++) {
+            loadRate.add(loads[i] * 1.0 / localTotal);
+        }
+
         for (int i = 0; i < numTasks; i++) {
             int expected = numThreads * groupingExecutionsPerThread / numTasks;
             assertEquals("Distribution should be even for all nodes", expected, taskIdTotals[i]);
@@ -164,7 +180,7 @@ public class LoadAwareShuffleGroupingTest {
 
     @Test
     public void testLoadAwareShuffleGroupingWithRandomTasksAndRandomLoad() {
-        for (int trial = 0 ; trial < 100 ; trial++) {
+        for (int trial = 0 ; trial < 200 ; trial++) {
             // just pick arbitrary number in 5 ~ 100
             final int numTasks = new Random().nextInt(96) + 5;
             final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
@@ -185,8 +201,8 @@ public class LoadAwareShuffleGroupingTest {
             .mkGrouper(null, "comp", "stream", null, Grouping.shuffle(new NullStruct()),
                 Lists.newArrayList(1, 2), Collections.emptyMap());
         int numMessages = 100000;
-        int minPrCount = (int) (numMessages * 0.49);
-        int maxPrCount = (int) (numMessages * 0.51);
+        int minPrCount = (int) (numMessages * (0.5 - ACCEPTABLE_MARGIN));
+        int maxPrCount = (int) (numMessages * (0.5 + ACCEPTABLE_MARGIN));
         LoadMapping load = new LoadMapping();
         Map<Integer, Double> loadInfoMap = new HashMap<>();
         loadInfoMap.put(1, 0.0);
@@ -220,10 +236,10 @@ public class LoadAwareShuffleGroupingTest {
             .mkGrouper(null, "comp", "stream", null, Grouping.shuffle(new NullStruct()),
                 Lists.newArrayList(1, 2), Collections.emptyMap());
         int numMessages = 100000;
-        int min1PrCount = (int) (numMessages * 0.32);
-        int max1PrCount = (int) (numMessages * 0.34);
-        int min2PrCount = (int) (numMessages * 0.65);
-        int max2PrCount = (int) (numMessages * 0.67);
+        int min1PrCount = (int) (numMessages * (0.33 - ACCEPTABLE_MARGIN));
+        int max1PrCount = (int) (numMessages * (0.33 + ACCEPTABLE_MARGIN));
+        int min2PrCount = (int) (numMessages * (0.66 - ACCEPTABLE_MARGIN));
+        int max2PrCount = (int) (numMessages * (0.66 + ACCEPTABLE_MARGIN));
         LoadMapping load = new LoadMapping();
         Map<Integer, Double> loadInfoMap = new HashMap<>();
         loadInfoMap.put(1, 0.5);
@@ -337,8 +353,10 @@ public class LoadAwareShuffleGroupingTest {
         // Task Id not used, so just pick a static value
         int inputTaskId = 100;
 
-        // triggers building ring
-        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+        // force triggers building ring
+        for (int i = 0 ; i < LoadAwareShuffleGrouping.CHECK_UPDATE_INDEX ; i++) {
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+        }
 
         for (int i = 1; i <= totalEmits; i++) {
             List<Integer> taskIds = grouper
@@ -379,7 +397,7 @@ public class LoadAwareShuffleGroupingTest {
         int totalEmits = 5000 * numTasks;
         int[] taskCounts = runChooseTasksWithVerification(grouper, totalEmits, numTasks, loadMapping);
 
-        int delta = (int) (totalEmits * 0.01);
+        int delta = (int) (totalEmits * ACCEPTABLE_MARGIN);
         for (int i = 0; i < numTasks; i++) {
             int expected = (int) (totalEmits * loadRate.get(i));
             assertTrue("Distribution should respect the task load with small delta",
@@ -394,9 +412,6 @@ public class LoadAwareShuffleGroupingTest {
 
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
         grouper.prepare(context, null, availableTaskIds);
-
-        // triggers building distribution ring
-        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
 
         long current = System.currentTimeMillis();
         int idx = 0;
@@ -430,9 +445,6 @@ public class LoadAwareShuffleGroupingTest {
 
         // Call prepare with our available taskIds
         grouper.prepare(context, null, availableTaskIds);
-
-        // triggers building ring
-        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
 
         long current = System.currentTimeMillis();
         int idx = 0;
