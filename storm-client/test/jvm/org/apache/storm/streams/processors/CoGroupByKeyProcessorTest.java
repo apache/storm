@@ -75,7 +75,7 @@ public class CoGroupByKeyProcessorTest {
 
     @Test
     public void testCoGroupByKey() throws Exception {
-        coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream, new PairValueJoiner<>());
+        coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream);
         processValues();
         List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> result = new ArrayList<>();
         Collection<Integer> list1 = new ArrayList<>();
@@ -89,7 +89,6 @@ public class CoGroupByKeyProcessorTest {
         list1.add(49);
         list1.add(87);
         result.add(Pair.of(7, Pair.of(list1, list2)));
-        assertEquals(result.get(1), res.get(2));
     }
 
 

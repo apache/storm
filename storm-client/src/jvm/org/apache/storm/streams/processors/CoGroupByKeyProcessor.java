@@ -21,25 +21,18 @@ package org.apache.storm.streams.processors;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.storm.streams.Pair;
-import org.apache.storm.streams.operations.PairValueJoiner;
-import org.apache.storm.streams.tuple.Tuple3;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 
 /**
  * co-group by key implementation
  */
-public class CoGroupByKeyProcessor<K, V1, V2> extends BaseProcessor<Pair<K, ?>> implements BatchProcessor {
-    private final PairValueJoiner<Collection<V1>, Collection<V2>> valueJoiner;
+public class CoGroupByKeyProcessor<K,V1, V2> extends BaseProcessor<Pair<K, ?>> implements BatchProcessor {
     private final String firstStream;
     private final String secondStream;
-    private final List<Pair<K, V1>> firstRows = new ArrayList<>();
-    private final List<Pair<K, V2>> secondRows = new ArrayList<>();
+    private final Multimap<K, V1> firstMap = ArrayListMultimap.create();
+    private final Multimap<K, V2> secondMap = ArrayListMultimap.create();
 
-    public CoGroupByKeyProcessor(String firstStream, String secondStream, PairValueJoiner<Collection<V1>, Collection<V2>> valueJoiner) {
-        this.valueJoiner = valueJoiner;
+
+    public CoGroupByKeyProcessor(String firstStream, String secondStream) {
         this.firstStream = firstStream;
         this.secondStream = secondStream;
     }
@@ -49,57 +42,34 @@ public class CoGroupByKeyProcessor<K, V1, V2> extends BaseProcessor<Pair<K, ?>> 
         K key = input.getFirst();
         if (sourceStream.equals(firstStream)) {
             V1 val = (V1) input.getSecond();
-            Pair<K, V1> pair = Pair.of(key, val);
-            firstRows.add(pair);
+            firstMap.put(key, val);
         } else if (sourceStream.equals(secondStream)) {
             V2 val = (V2) input.getSecond();
-            Pair<K, V2> pair = Pair.of(key, val);
-            secondRows.add(pair);
+            secondMap.put(key, val);
         }
         if (!context.isWindowed()) {
-            joinAndForward(firstRows, secondRows);
+            forwardValues();
         }
 
     }
 
     @Override
     public void finish() {
-        joinAndForward(firstRows, secondRows);
-        firstRows.clear();
-        secondRows.clear();
+        forwardValues();
+        firstMap.clear();
+        secondMap.clear();
     }
 
-    private void joinAndForward(List<Pair<K, V1>> firstRows, List<Pair<K, V2>> secondRows) {
-        for (Tuple3<K, Collection<V1>, Collection<V2>> res : join(getJoinTable(firstRows), getJoinTable(secondRows))) {
-                context.forward(Pair.of(res._1, valueJoiner.apply(res._2, res._3)));
+    private void forwardValues() {
+        firstMap.asMap().forEach((key, values) -> {
+            context.forward(Pair.of(key, Pair.of(values, secondMap.removeAll(key))));
+        });
 
-        }
+        secondMap.asMap().forEach((key, values) -> {
+            context.forward(Pair.of(key, Pair.of(firstMap.removeAll(key), values)));
+        });
+
     }
 
-    /*
-     * returns list of Tuple3 (key, val from table, val from row)
-     */
-
-    private <T1, T2> List<Tuple3<K, Collection<T1>, Collection<T2>>> join(Multimap<K, T1> tab1, Multimap<K, T2> tab2) {
-        List<Tuple3<K, Collection<T1> ,Collection<T2> >> res = new ArrayList<>();
-        for (K key : tab1.keys()) {
-            Collection<T2> values = tab2.removeAll(key);
-            res.add(new Tuple3<>(key, tab1.get(key), values));
-        }
-        // whatever remains in the tab2 are non matching tab1.
-        for (K key2 : tab2.keys()) {
-            res.add(new Tuple3<>(key2, new ArrayList<T1>(), tab2.get(key2)));
-        }
-
-        return res;
-    }
-
-    private <T> Multimap<K, T> getJoinTable(List<Pair<K, T>> rows) {
-        Multimap<K, T> m = ArrayListMultimap.create();
-        for (Pair<K, T> v : rows) {
-            m.put(v.getFirst(), v.getSecond());
-        }
-        return m;
-    }
 
 }

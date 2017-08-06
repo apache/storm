@@ -386,18 +386,15 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     /**
      * group the values of this stream with the values having the same key from the other stream.
      * <p>
-     * Note: The parallelism of this stream is carried forward to the joined stream.
+     * Note: The parallelism of this stream is carried forward to the co-grouped stream.
      * </p>
      *
      * @param otherStream the other stream
-     * @param valueJoiner the {@link PairValueJoiner}
-     * @param <R>         the type of the values resulting from the grouping
      * @param <V1>        the type of the values in the other stream
      * @return the new stream
      */
-    public <R, V1> PairStream<K, R> coGroupByKey(PairStream<K, V1> otherStream,
-                                                 PairValueJoiner<Collection<V>, Collection<V1>> valueJoiner) {
-        return partitionByKey().coGroupByKeyPartition(otherStream,valueJoiner);
+    public <V1> PairStream<K,  Pair<Iterable<V>, Iterable<V1>>> coGroupByKey(PairStream<K, V1> otherStream) {
+        return partitionByKey().coGroupByKeyPartition(otherStream);
     }
 
 
@@ -422,16 +419,15 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
         return new PairStream<>(streamBuilder, joinNode);
     }
 
-    private <R, V1> PairStream<K, R> coGroupByKeyPartition(PairStream<K, V1> otherStream,
-                                                           PairValueJoiner<Collection<V>, Collection<V1>> valueJoiner) {
+    private <R, V1> PairStream<K,R> coGroupByKeyPartition(PairStream<K, V1> otherStream) {
         String firstStream = stream;
         String secondStream = otherStream.stream;
-        Node joinNode = addProcessorNode(
-                new CoGroupByKeyProcessor<>(firstStream, secondStream, valueJoiner),
+        Node coGroupNode = addProcessorNode(
+                new CoGroupByKeyProcessor<>(firstStream, secondStream),
                 KEY_VALUE,
                 true);
-        addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
-        return new PairStream<>(streamBuilder, joinNode);
+        addNode(otherStream.getNode(), coGroupNode, coGroupNode.getParallelism());
+        return new PairStream<>(streamBuilder, coGroupNode);
     }
 
     private PairStream<K, V> partitionByKey() {
