@@ -310,7 +310,7 @@ public class ServerUtils {
     public static String writeScript(String dir, List<String> command,
                                      Map<String,String> environment) throws IOException {
         String path = scriptFilePath(dir);
-        try(BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
             out.newLine();
             if (environment != null) {

@@ -178,7 +178,7 @@ public class BlobStoreTest {
     String key = "test";
     SettableBlobMeta metadata = new SettableBlobMeta(BlobStoreAclHandler
             .WORLD_EVERYTHING);
-    try(AtomicOutputStream out = store.createBlob(key, metadata, null)) {
+    try (AtomicOutputStream out = store.createBlob(key, metadata, null)) {
         out.write(1);
         File blobDir = store.getKeyDataDir(key);
         Files.createFile(blobDir.toPath().resolve("tempFile.tmp"));
