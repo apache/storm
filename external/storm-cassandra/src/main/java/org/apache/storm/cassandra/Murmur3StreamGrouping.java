@@ -117,7 +117,7 @@ public class Murmur3StreamGrouping implements CustomStreamGrouping {
     @VisibleForTesting
     public static long hashes(List<Object> values) throws IOException {
         byte[] keyBytes;
-        try(ByteArrayOutputStream bos = new ByteArrayOutputStream(); DataOutputStream out = new DataOutputStream(bos)) {
+        try (ByteArrayOutputStream bos = new ByteArrayOutputStream(); DataOutputStream out = new DataOutputStream(bos)) {
             for(Object key : values) {
                 byte[] arr = ((String)key).getBytes("UTF-8");
                 out.writeShort(arr.length);

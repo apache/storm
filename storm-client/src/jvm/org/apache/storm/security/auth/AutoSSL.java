@@ -99,8 +99,7 @@ public class AutoSSL implements IAutoCredentials {
     // Adds the serialized and base64 file to the credentials map as a string with the filename as
     // the key.
     public static void serializeSSLFile(String readFile, Map<String, String> credentials) {
-        try {
-            FileInputStream in = new FileInputStream(readFile);
+        try (FileInputStream in = new FileInputStream(readFile)) {
             LOG.debug("serializing ssl file: {}", readFile);
             ByteArrayOutputStream result = new ByteArrayOutputStream();
             byte[] buffer = new byte[4096];
@@ -133,8 +132,9 @@ public class AutoSSL implements IAutoCredentials {
             if (resultStr != null) {
                 byte[] decodedData = DatatypeConverter.parseBase64Binary(resultStr);
                 File f = new File(directory, credsKey);
-                FileOutputStream fout = new FileOutputStream(f);
-                fout.write(decodedData);
+                try (FileOutputStream fout = new FileOutputStream(f)) {
+                    fout.write(decodedData);
+                }
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
