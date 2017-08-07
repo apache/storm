@@ -18,10 +18,13 @@
 package org.apache.storm.grouping;
 
 import com.google.common.collect.Lists;
+import com.google.common.util.concurrent.MoreExecutors;
+import org.apache.storm.StormTimer;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.utils.Utils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -38,6 +41,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -90,9 +96,7 @@ public class LoadAwareShuffleGroupingTest {
         grouper.prepare(context, null, availableTaskIds);
 
         // force triggers building ring
-        for (int i = 0 ; i < LoadAwareShuffleGrouping.CHECK_UPDATE_INDEX ; i++) {
-            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
-        }
+        grouper.refreshLoad(loadMapping);
 
         // calling chooseTasks should be finished before refreshing ring
         // adjusting groupingExecutionsPerThread might be needed with really slow machine
@@ -209,6 +213,9 @@ public class LoadAwareShuffleGroupingTest {
         loadInfoMap.put(2, 0.0);
         load.setLocal(loadInfoMap);
 
+        // force triggers building ring
+        shuffler.refreshLoad(load);
+
         List<Object> data = Lists.newArrayList(1, 2);
         int[] frequencies = new int[3];
         for (int i = 0 ; i < numMessages ; i++) {
@@ -245,6 +252,9 @@ public class LoadAwareShuffleGroupingTest {
         loadInfoMap.put(1, 0.5);
         loadInfoMap.put(2, 0.0);
         load.setLocal(loadInfoMap);
+
+        // force triggers building ring
+        shuffler.refreshLoad(load);
 
         List<Object> data = Lists.newArrayList(1, 2);
         int[] frequencies = new int[3]; // task id starts from 1
@@ -354,9 +364,7 @@ public class LoadAwareShuffleGroupingTest {
         int inputTaskId = 100;
 
         // force triggers building ring
-        for (int i = 0 ; i < LoadAwareShuffleGrouping.CHECK_UPDATE_INDEX ; i++) {
-            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
-        }
+        grouper.refreshLoad(loadMapping);
 
         for (int i = 1; i <= totalEmits; i++) {
             List<Integer> taskIds = grouper
@@ -413,6 +421,11 @@ public class LoadAwareShuffleGroupingTest {
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
         grouper.prepare(context, null, availableTaskIds);
 
+        // periodically calls refreshLoad in 1 sec to simulate worker load update timer
+        ScheduledExecutorService refreshService = MoreExecutors.getExitingScheduledExecutorService(
+            new ScheduledThreadPoolExecutor(1));
+        refreshService.scheduleAtFixedRate(() -> grouper.refreshLoad(loadMapping), 1, 1, TimeUnit.SECONDS);
+
         long current = System.currentTimeMillis();
         int idx = 0;
         while (true) {
@@ -433,6 +446,8 @@ public class LoadAwareShuffleGroupingTest {
         }
 
         LOG.info("Duration: {} ms", (System.currentTimeMillis() - current));
+
+        refreshService.shutdownNow();
     }
 
     private void runMultithreadedBenchmark(LoadAwareCustomStreamGrouping grouper,
@@ -445,6 +460,11 @@ public class LoadAwareShuffleGroupingTest {
 
         // Call prepare with our available taskIds
         grouper.prepare(context, null, availableTaskIds);
+
+        // periodically calls refreshLoad in 1 sec to simulate worker load update timer
+        ScheduledExecutorService refreshService = MoreExecutors.getExitingScheduledExecutorService(
+            new ScheduledThreadPoolExecutor(1));
+        refreshService.scheduleAtFixedRate(() -> grouper.refreshLoad(loadMapping), 1, 1, TimeUnit.SECONDS);
 
         long current = System.currentTimeMillis();
         int idx = 0;
@@ -495,5 +515,7 @@ public class LoadAwareShuffleGroupingTest {
         }
 
         LOG.info("Max duration among threads is : {} ms", maxDurationMillis);
+
+        refreshService.shutdownNow();
     }
 }

@@ -33,19 +33,12 @@ import org.apache.storm.task.WorkerTopologyContext;
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
     private static final int CAPACITY_TASK_MULTIPLICATION = 100;
 
-    @VisibleForTesting
-    static final int CHECK_UPDATE_INDEX = 100;
-
     private Random random;
     private List<Integer>[] rets;
     private int[] targets;
     private ArrayList<List<Integer>> choices;
     private AtomicInteger current;
     private int actualCapacity = 0;
-
-    private AtomicInteger skipCheckingUpdateCount;
-    private AtomicBoolean isUpdating;
-    private long lastUpdate = 0;
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
@@ -70,8 +63,6 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
         Collections.shuffle(choices, random);
         current = new AtomicInteger(0);
-        skipCheckingUpdateCount = new AtomicInteger(0);
-        isUpdating = new AtomicBoolean(false);
     }
 
     @Override
@@ -80,21 +71,12 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     }
 
     @Override
+    public void refreshLoad(LoadMapping loadMapping) {
+        updateRing(loadMapping);
+    }
+
+    @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
-        if (skipCheckingUpdateCount.incrementAndGet() == CHECK_UPDATE_INDEX) {
-            skipCheckingUpdateCount.set(0);
-            if ((lastUpdate + 1000) < System.currentTimeMillis()
-                && isUpdating.compareAndSet(false, true)) {
-                // before finishing updateRing(), concurrent call will still rely on old choices
-                updateRing(load);
-
-                // update time and open a chance to update ring again
-                lastUpdate = System.currentTimeMillis();
-                skipCheckingUpdateCount.set(0);
-                isUpdating.set(false);
-            }
-        }
-
         int rightNow;
         int size = choices.size();
         while (true) {

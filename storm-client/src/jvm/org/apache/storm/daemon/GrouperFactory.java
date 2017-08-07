@@ -119,6 +119,11 @@ public class GrouperFactory {
         }
 
         @Override
+        public void refreshLoad(LoadMapping loadMapping) {
+
+        }
+
+        @Override
         public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
             return customStreamGrouping.chooseTasks(taskId, values);
         }
@@ -223,6 +228,11 @@ public class GrouperFactory {
 
     // A no-op grouper
     public static final LoadAwareCustomStreamGrouping DIRECT = new LoadAwareCustomStreamGrouping() {
+        @Override
+        public void refreshLoad(LoadMapping loadMapping) {
+
+        }
+
         @Override
         public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
             return null;

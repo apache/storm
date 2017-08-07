@@ -265,7 +265,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
                 // The jitter allows the clients to get the data at different times, and avoids thundering herd
                 if (!(Boolean) topologyConf.get(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING)) {
-                    workerState.refreshLoadTimer.scheduleRecurringWithJitter(0, 1, 500, workerState::refreshLoad);
+                    workerState.refreshLoadTimer.scheduleRecurringWithJitter(0, 1, 500, Worker.this::doRefreshLoad);
                 }
 
                 workerState.refreshConnectionsTimer.scheduleRecurring(0,
@@ -283,6 +283,15 @@ public class Worker implements Shutdownable, DaemonCommon {
             };
         });
 
+    }
+
+    public void doRefreshLoad() {
+        workerState.refreshLoad();
+
+        final List<IRunningExecutor> executors = executorsAtom.get();
+        for (IRunningExecutor executor : executors) {
+            executor.loadChanged(workerState.getLoadMapping());
+        }
     }
 
     public void doHeartBeat() throws IOException {
