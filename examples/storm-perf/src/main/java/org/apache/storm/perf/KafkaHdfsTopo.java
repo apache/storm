@@ -139,6 +139,11 @@ public class KafkaHdfsTopo {
         String confFile = args[1];
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+
 
         //  Submit topology to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));

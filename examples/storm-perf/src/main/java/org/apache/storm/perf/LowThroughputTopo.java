@@ -83,9 +83,6 @@ public class LowThroughputTopo {
 
         @Override
         public void ack(Object msgId) {
-            long now = System.currentTimeMillis();
-            Long then = (Long) msgId;
-//            System.err.printf("ACK lat = %d\n", now - then);
             super.ack(msgId);
         }
     }

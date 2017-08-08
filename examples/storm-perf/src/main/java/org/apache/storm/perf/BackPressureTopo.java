@@ -60,7 +60,7 @@ public class BackPressureTopo {
         @Override
         public void execute(Tuple tuple) {
             collector.ack(tuple);
-            LOG.info("Sleeping");
+            LOG.debug("Sleeping");
             try {
                 Thread.sleep(sleepMs);
             } catch (InterruptedException e) {

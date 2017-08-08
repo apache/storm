@@ -159,7 +159,6 @@ public final class JCQueue implements IStatefulObject {
 
             state.put("arrival_rate_secs", arrivalRateInSecs);
             state.put("sojourn_time_ms", sojournTime); //element sojourn time in milliseconds
-            state.put("overflow", 0);
             state.put("insert_failures", insertFailuresTracker.reportRate());
 
             return state;
@@ -216,9 +215,6 @@ public final class JCQueue implements IStatefulObject {
         return queueName;
     }
 
-    public boolean isFull() {
-        return (metrics.population() + 0) >= metrics.capacity();
-    }
 
     public void haltWithInterrupt() {
         if (tryPublishInternal(INTERRUPT)) {

@@ -75,6 +75,7 @@ public class FileReadWordCountTopo {
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
         topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
 
         if (args.length > 0) {
             runTime = Integer.parseInt(args[0]);

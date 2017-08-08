@@ -110,7 +110,10 @@ public class KafkaSpoutNullBoltTopo {
         Integer durationSec = Integer.parseInt(args[0]);
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
 
         //  Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
