@@ -55,7 +55,7 @@ else
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
     (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
-    zookeeper_version=3.3.5*
+    zookeeper_version=3.4.5*
 fi
 
 storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
