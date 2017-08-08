@@ -47,6 +47,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.task.ITaskNetworkDistanceCalculator;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -56,6 +57,7 @@ import org.apache.storm.utils.DisruptorQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.TransferDrainer;
+import org.apache.storm.utils.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,6 +201,8 @@ public class WorkerState {
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
+    final ConcurrentHashMap<Integer, ConcurrentHashMap<Integer, Double>> cachedTaskNetworkDistance;
+    final ITaskNetworkDistanceCalculator iTaskNetworkDistanceCalculator;
     final Map<List<Long>, DisruptorQueue> executorReceiveQueueMap;
     // executor id is in form [start_task_id end_task_id]
     // short executor id is start_task_id
@@ -313,6 +317,12 @@ public class WorkerState {
         this.endpointSocketLock = new ReentrantReadWriteLock();
         this.cachedNodeToPortSocket = new AtomicReference<>(new HashMap<>());
         this.cachedTaskToNodePort = new AtomicReference<>(new HashMap<>());
+
+        this.cachedTaskNetworkDistance = new ConcurrentHashMap<>();
+        this.iTaskNetworkDistanceCalculator =
+                ReflectionUtils.newInstance((String) topologyConf.get(Config.TASK_NETWORK_DISTANCE_CALCULATOR_PLUGIN));
+        this.iTaskNetworkDistanceCalculator.prepare(topologyConf, stormClusterState);
+
         this.taskToShortExecutor = new HashMap<>();
         for (List<Long> executor : this.executors) {
             for (Integer task : StormCommon.executorIdToTasks(executor)) {
@@ -412,6 +422,8 @@ public class WorkerState {
             return next;
         });
 
+        // calculate or update taskNetworkDistance
+        iTaskNetworkDistanceCalculator.calculateOrUpdate(cachedTaskToNodePort.get(), cachedTaskNetworkDistance);
     }
 
     public void refreshStormActive() {

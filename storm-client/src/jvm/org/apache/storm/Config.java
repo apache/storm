@@ -1523,6 +1523,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TASK_REFRESH_POLL_SECS = "task.refresh.poll.secs";
 
     /**
+     * The plugin that will calculate the network distance between tasks
+     */
+    @NotNull
+    @isImplementationOfClass(implementsClass = org.apache.storm.task.ITaskNetworkDistanceCalculator.class)
+    public static final String TASK_NETWORK_DISTANCE_CALCULATOR_PLUGIN = "task.network.distance.calculator";
+
+    /**
      * The Access Control List for the DRPC Authorizer.
      * @see org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer
      */
