@@ -25,6 +25,7 @@ import java.util.List;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
+import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
@@ -71,7 +72,9 @@ public class BoltExecutor extends Executor {
             Utils.sleep(100);
         }
 
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(0).getUserContext());
+        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesnt call reportError()
+            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
+        }
         LOG.info("Preparing bolt {}:{}", componentId, getTaskIds() );
         for (Task taskData :idToTask) {
             if(taskData==null)

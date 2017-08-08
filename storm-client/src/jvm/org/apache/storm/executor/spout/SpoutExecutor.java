@@ -108,7 +108,7 @@ public class SpoutExecutor extends Executor {
         });
 
         this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(0).getUserContext());
+        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (int i=0; i<idToTask.size(); ++i) {
             Task taskData = idToTask.get(i);
