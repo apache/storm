@@ -291,33 +291,32 @@ Depending on the structure of your Kafka cluster, distribution of the data, and 
 
 ### Default values
 
-Currently the Kafka spout has has the following default values, which have shown to give good performance in the test environment as described in this [blog post] (https://hortonworks.com/blog/microbenchmarking-storm-1-0-performance/)
+Currently the Kafka spout has has the following default values, which have been shown to give good performance in the test environment as described in this [blog post] (https://hortonworks.com/blog/microbenchmarking-storm-1-0-performance/)
 
 * poll.timeout.ms = 200
 * offset.commit.period.ms = 30000   (30s)
 * max.uncommitted.offsets = 10000000
 <br/>
 
-# Kafka AutoCommitMode 
+# Messaging reliability modes
 
-If reliability isn't important to you -- that is, you don't care about losing tuples in failure situations --, and want to remove the overhead of tuple tracking, then you can run a KafkaSpout with AutoCommitMode.
+In some cases you may not need or want the spout to guarantee at-least-once processing of messages. The spout also supports at-most-once and any-times modes. At-most-once guarantees that any tuple emitted to the topology will never be reemitted. Any-times makes no guarantees, but may reduce the overhead of committing offsets to Kafka in cases where you truly don't care how many times a message is processed.
 
-To enable it, you need to:
-
-* set Config.TOPOLOGY_ACKERS to 0;
-* enable *AutoCommitMode* in Kafka consumer configuration; 
-
-Here's one example to set AutoCommitMode in KafkaSpout:
-
+To set the processing guarantee, use the KafkaSpoutConfig.Builder.setProcessingGuarantee method, e.g.
 ```java
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
-		.builder(String bootstrapServers, String ... topics)
-		.setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
-		.setFirstPollOffsetStrategy(FirstPollOffsetStrategy.EARLIEST)
-		.build();
+  .builder(String bootstrapServers, String ... topics)
+  .setProcessingGuarantee(ProcessingGuarantee.AT_MOST_ONCE)
 ```
 
-*Note that it's not exactly At-Most-Once in Storm, as offset is committed periodically by Kafka consumer, some tuples could be replayed when KafkaSpout is crashed.*
+The spout will disable tuple tracking for emitted tuples by default when you use at-most-once or any-times. In some cases you may want to enable tracking anyway, because tuple tracking is necessary for some features of Storm, e.g. showing complete latency in Storm UI, or enabling backpressure through the `Config.TOPOLOGY_MAX_SPOUT_PENDING` parameter.
 
+If you need to enable tracking, use the KafkaSpoutConfig.Builder.setForceEnableTupleTracking method, e.g.
+```java
+KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
+  .builder(String bootstrapServers, String ... topics)
+  .setProcessingGuarantee(ProcessingGuarantee.AT_MOST_ONCE)
+  .setForceEnableTupleTracking(true)
+```
 
-
+Note that this setting has no effect in at-least-once mode, where tuple tracking is always enabled.
