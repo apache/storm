@@ -73,20 +73,21 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // Bookkeeping
     // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;
-    // Class that has the logic to handle tuple failure
+    // Class that has the logic to handle tuple failure.
     private transient KafkaSpoutRetryService retryService;
     // Handles tuple events (emit, ack etc.)
     private transient KafkaTupleListener tupleListener;
-    // timer == null for auto commit mode
+    // timer == null for modes other than at-least-once
     private transient Timer commitTimer;
     // Flag indicating that the spout is still undergoing initialization process.
     private transient boolean initialized;
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
     // Tuples that were successfully acked/emitted. These tuples will be committed periodically when the commit timer expires,
-    //or after a consumer rebalance, or during close/deactivate
+    //or after a consumer rebalance, or during close/deactivate. Always empty if not using at-least-once mode.
     private transient Map<TopicPartition, OffsetManager> offsetManagers;
-    // Tuples that have been emitted but that are "on the wire", i.e. pending being acked or failed. Not used if it's AutoCommitMode
+    // Tuples that have been emitted but that are "on the wire", i.e. pending being acked or failed.
+    // Always empty if not using at-least-once mode.
     private transient Set<KafkaSpoutMessageId> emitted;
     // Records that have been polled and are queued to be emitted in the nextTuple() call. One record is emitted per nextTuple()
     private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;
@@ -117,7 +118,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         // Offset management
         firstPollOffsetStrategy = kafkaSpoutConfig.getFirstPollOffsetStrategy();
-
+        
         // Retries management
         retryService = kafkaSpoutConfig.getRetryService();
 
@@ -187,7 +188,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             for (TopicPartition tp : partitions) {
                 final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
                 final long fetchOffset = doSeek(tp, committedOffset);
-                setAcked(tp, fetchOffset);
+                // Add offset managers for the new partitions.
+                // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
+                if (isAtLeastOnce() && !offsetManagers.containsKey(tp)) {
+                    offsetManagers.put(tp, new OffsetManager(tp, fetchOffset));
+                }
             }
             initialized = true;
             LOG.info("Initialization complete");
@@ -219,13 +224,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 fetchOffset = kafkaConsumer.position(tp);
             }
             return fetchOffset;
-        }
-    }
-
-    private void setAcked(TopicPartition tp, long fetchOffset) {
-        // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
-        if (isAtLeastOnce() && !offsetManagers.containsKey(tp)) {
-            offsetManagers.put(tp, new OffsetManager(tp, fetchOffset));
         }
     }
 
@@ -359,8 +357,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     if (!isAtLeastOnce()) {
                         if (kafkaSpoutConfig.getForceEnableTupleTracking()) {
                             collector.emit(stream, tuple, msgId);
+                            LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
                         } else {
                             collector.emit(stream, tuple);
+                            LOG.trace("Emitted tuple [{}] for record [{}]", tuple, record);
                         }
                     } else {
                         emitted.add(msgId);
@@ -372,8 +372,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                         }
                         collector.emit(stream, tuple, msgId);
                         tupleListener.onEmit(tuple, msgId);
+                        LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
                     }
-                    LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
                     return true;
                 }
             } else {

@@ -423,7 +423,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private static void setAutoCommitMode(Builder<?, ?> builder) {
         if (builder.kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
             throw new IllegalArgumentException("Do not set " + ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + " manually."
-                + " Instead use Builder.setProcessingGuarantee");
+                + " Instead use KafkaSpoutConfig.Builder.setProcessingGuarantee");
         }
         if (builder.processingGuarantee == ProcessingGuarantee.ANY_TIMES) {
             builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
