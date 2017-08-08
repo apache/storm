@@ -71,12 +71,14 @@ public class LoadAwareShuffleGroupingTest {
         // distribution should be even for all nodes when loads are even
         int desiredTaskCountPerTask = 5000;
         int totalEmits = numTasks * desiredTaskCountPerTask;
+        int minPrCount = (int) (totalEmits * ((1.0 / numTasks) - ACCEPTABLE_MARGIN));
+        int maxPrCount = (int) (totalEmits * ((1.0 / numTasks) + ACCEPTABLE_MARGIN));
 
         int[] taskCounts = runChooseTasksWithVerification(grouper, totalEmits, numTasks, loadMapping);
 
         for (int i = 0; i < numTasks; i++) {
-            assertEquals("Distribution should be even for all nodes", desiredTaskCountPerTask,
-                taskCounts[i]);
+            assertTrue("Distribution should be even for all nodes with small delta",
+                taskCounts[i] >= minPrCount && taskCounts[i] <= maxPrCount);
         }
     }
 
@@ -106,6 +108,7 @@ public class LoadAwareShuffleGroupingTest {
         // distribution should be exactly even
         final int groupingExecutionsPerThread = numTasks * 5000;
         final int numThreads = 10;
+        int totalEmits = groupingExecutionsPerThread * numThreads;
 
         List<Callable<int[]>> threadTasks = Lists.newArrayList();
         for (int x = 0; x < numThreads; x++) {
@@ -149,22 +152,12 @@ public class LoadAwareShuffleGroupingTest {
             }
         }
 
-        int[] loads = new int[numTasks];
-        int localTotal = 0;
-        List<Double> loadRate = new ArrayList<>();
-        for (int i = 0; i < numTasks; i++) {
-            int val = (int)(101 - (loadMapping.get(i) * 100));
-            loads[i] = val;
-            localTotal += val;
-        }
+        int minPrCount = (int) (totalEmits * ((1.0 / numTasks) - ACCEPTABLE_MARGIN));
+        int maxPrCount = (int) (totalEmits * ((1.0 / numTasks) + ACCEPTABLE_MARGIN));
 
         for (int i = 0; i < numTasks; i++) {
-            loadRate.add(loads[i] * 1.0 / localTotal);
-        }
-
-        for (int i = 0; i < numTasks; i++) {
-            int expected = numThreads * groupingExecutionsPerThread / numTasks;
-            assertEquals("Distribution should be even for all nodes", expected, taskIdTotals[i]);
+            assertTrue("Distribution should be even for all nodes with small delta",
+                taskIdTotals[i] >= minPrCount && taskIdTotals[i] <= maxPrCount);
         }
     }
 
@@ -441,7 +434,7 @@ public class LoadAwareShuffleGroupingTest {
         }
 
         current = System.currentTimeMillis();
-        for (int i = 1; i <= 2_000_000_000 ; i++) {
+        for (int i = 1; i <= 2_000_000_000; i++) {
             grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
         }
 

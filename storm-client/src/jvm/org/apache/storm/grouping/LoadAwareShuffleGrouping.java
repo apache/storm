@@ -27,18 +27,21 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import com.google.common.annotations.VisibleForTesting;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
-    private static final int CAPACITY_TASK_MULTIPLICATION = 100;
+    private static final int CAPACITY = 1000;
 
     private Random random;
     private List<Integer>[] rets;
     private int[] targets;
-    private ArrayList<List<Integer>> choices;
+    private int[] loads;
+    private int[] unassigned;
+    private int[] choices;
+    private int[] prepareChoices;
     private AtomicInteger current;
-    private int actualCapacity = 0;
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
@@ -51,18 +54,22 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             targets[i] = targetTasks.get(i);
         }
 
-        actualCapacity = targets.length * CAPACITY_TASK_MULTIPLICATION;
-
         // can't leave choices to be empty, so initiate it similar as ShuffleGrouping
-        choices = new ArrayList<>(actualCapacity);
-        int index = 0;
-        while (index < actualCapacity) {
-            choices.add(rets[index % targets.length]);
-            index++;
+        choices = new int[CAPACITY];
+
+        for (int i = 0 ; i < CAPACITY ; i++) {
+            choices[i] = i % rets.length;
         }
 
-        Collections.shuffle(choices, random);
+        shuffleArray(choices);
         current = new AtomicInteger(0);
+
+        // allocate another array to be switched
+        prepareChoices = new int[CAPACITY];
+
+        // allocating only once
+        loads = new int[targets.length];
+        unassigned = new int[targets.length];
     }
 
     @Override
@@ -78,14 +85,13 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
         int rightNow;
-        int size = choices.size();
         while (true) {
             rightNow = current.incrementAndGet();
-            if (rightNow < size) {
-                return choices.get(rightNow);
-            } else if (rightNow == size) {
+            if (rightNow < CAPACITY) {
+                return rets[choices[rightNow]];
+            } else if (rightNow == CAPACITY) {
                 current.set(0);
-                return choices.get(0);
+                return rets[choices[0]];
             }
             //race condition with another thread, and we lost
             // try again
@@ -94,45 +100,70 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
     private void updateRing(LoadMapping load) {
         int localTotal = 0;
-        int[] loads = new int[targets.length];
         for (int i = 0 ; i < targets.length; i++) {
             int val = (int)(101 - (load.get(targets[i]) * 100));
             loads[i] = val;
             localTotal += val;
         }
 
-        // allocating enough memory doesn't hurt much, so assign aggressively
-        // we will cut out if actual size becomes bigger than actualCapacity
-        ArrayList<List<Integer>> newChoices = new ArrayList<>(actualCapacity + targets.length);
+        int currentIdx = 0;
+        int unassignedIdx = 0;
         for (int i = 0 ; i < loads.length ; i++) {
+            if (currentIdx == CAPACITY) {
+                break;
+            }
+
             int loadForTask = loads[i];
-            int amount = loadForTask * actualCapacity / localTotal;
+            int amount = Math.round(loadForTask * 1.0f * CAPACITY / localTotal);
             // assign at least one for task
             if (amount == 0) {
-                amount = 1;
+                unassigned[unassignedIdx++] = i;
             }
             for (int j = 0; j < amount; j++) {
-                newChoices.add(rets[i]);
+                if (currentIdx == CAPACITY) {
+                    break;
+                }
+
+                prepareChoices[currentIdx++] = i;
             }
         }
 
-        Collections.shuffle(newChoices, random);
-
-        // make sure length of newChoices is same as actualCapacity, like current choices
-        // this ensures safety when requests and update occurs concurrently
-        if (newChoices.size() > actualCapacity) {
-            newChoices.subList(actualCapacity, newChoices.size()).clear();
-        } else if (newChoices.size() < actualCapacity) {
-            int remaining = actualCapacity - newChoices.size();
-            while (remaining > 0) {
-                newChoices.add(newChoices.get(remaining % newChoices.size()));
-                remaining--;
+        if (currentIdx < CAPACITY) {
+            // if there're some rooms, give unassigned tasks a chance to be included
+            // this should be really small amount, so just add them sequentially
+            if (unassignedIdx > 0) {
+                for (int i = currentIdx ; i < CAPACITY ; i++) {
+                    prepareChoices[i] = unassigned[(i - currentIdx) % unassignedIdx];
+                }
+            } else {
+                // just pick random
+                for (int i = currentIdx ; i < CAPACITY ; i++) {
+                    prepareChoices[i] = random.nextInt(loads.length);
+                }
             }
         }
 
-        assert newChoices.size() == actualCapacity;
+        shuffleArray(prepareChoices);
 
-        choices = newChoices;
+        // swapping two arrays
+        int[] tempForSwap = choices;
+        choices = prepareChoices;
+        prepareChoices = tempForSwap;
+
         current.set(0);
     }
+
+    private void shuffleArray(int[] arr) {
+        int size = arr.length;
+        for (int i = size; i > 1; i--) {
+            swap(arr, i - 1, random.nextInt(i));
+        }
+    }
+
+    private void swap(int[] arr, int i, int j) {
+        int tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
+
 }
