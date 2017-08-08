@@ -75,6 +75,7 @@ public class Helper {
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
+                    System.out.println("Killing...");
                     Helper.kill(client, topoName);
                     System.out.println("Killed Topology");
                 } catch (Exception e) {

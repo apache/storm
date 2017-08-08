@@ -54,9 +54,9 @@ public class BasicMetricsCollector implements AutoCloseable {
     public static final String SPOUT_ACKED = "spout_acks";
     public static final String SPOUT_THROUGHPUT = "spout_throughput (acks/s)";
     public static final String SPOUT_AVG_COMPLETE_LATENCY = "spout_avg_complete_latency(ms)";
-    public static final String SPOUT_AVG_LATENCY_FORMAT = "%.1f";
+    public static final String SPOUT_AVG_LATENCY_FORMAT = "%.3f";
     public static final String SPOUT_MAX_COMPLETE_LATENCY = "spout_max_complete_latency(ms)";
-    public static final String SPOUT_MAX_LATENCY_FORMAT = "%.1f";
+    public static final String SPOUT_MAX_LATENCY_FORMAT = "%.3f";
     private static final Logger LOG = Logger.getLogger(BasicMetricsCollector.class);
     final MetricsCollectorConfig config;
     //    final StormTopology topology;

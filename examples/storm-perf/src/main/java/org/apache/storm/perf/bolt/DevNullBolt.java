@@ -23,12 +23,17 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.ThroughputMeter;
+import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 
 
 public class DevNullBolt extends BaseRichBolt {
     private OutputCollector collector;
+    long count = 0;
+
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {

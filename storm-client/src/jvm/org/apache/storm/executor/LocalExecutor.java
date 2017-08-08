@@ -33,10 +33,9 @@ public class LocalExecutor {
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> initialCredentials)
         throws Exception {
         Executor executor = Executor.mkExecutor(workerState, executorId, initialCredentials);
-        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getTransferWorkerQueue(),
-            executor.getStormConf()) {
+        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getStormConf()) {
             @Override
-            public void transfer(int task, Tuple tuple) {
+            public void transfer(int task, Tuple tuple) throws InterruptedException {
                 if (null != trackId) {
                     ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId)).get("transferred")).incrementAndGet();
                 }

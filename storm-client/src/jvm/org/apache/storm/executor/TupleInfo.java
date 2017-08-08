@@ -23,7 +23,7 @@ import org.apache.commons.lang.builder.ToStringStyle;
 import java.io.Serializable;
 import java.util.List;
 
-public class TupleInfo implements Serializable {
+public final class TupleInfo implements Serializable {
 
     private static final long serialVersionUID = -3348670497595864118L;
 
@@ -86,5 +86,13 @@ public class TupleInfo implements Serializable {
 
     public void setTaskId(int taskId) {
         this.taskId = taskId;
+    }
+
+    public void clear() {
+        messageId = null;
+        stream = null;
+        values = null;
+        timestamp = 0;
+        id = null;
     }
 }

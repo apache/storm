@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
+import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
@@ -51,8 +52,9 @@ import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.JCQueue;
+import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.DisruptorQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.TransferDrainer;
@@ -73,7 +75,7 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class WorkerState {
+public class WorkerState implements JCQueue.Consumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
 
@@ -144,14 +146,20 @@ public class WorkerState {
         return componentToSortedTasks;
     }
 
-    public Map<String, Long> getBlobToLastKnownVersion() {return blobToLastKnownVersion;}
+    public Map<String, Long> getBlobToLastKnownVersion() {
+        return blobToLastKnownVersion;
+    }
 
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
     }
 
-    public Map<List<Long>, DisruptorQueue> getExecutorReceiveQueueMap() {
+    public Map<List<Long>, JCQueue> getExecutorReceiveQueueMap() {
         return executorReceiveQueueMap;
+    }
+
+    public Map<Integer, JCQueue> getShortExecutorReceiveQueueMap() {
+        return shortExecutorReceiveQueueMap;
     }
 
     public Runnable getSuicideCallback() {
@@ -199,10 +207,10 @@ public class WorkerState {
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
-    final Map<List<Long>, DisruptorQueue> executorReceiveQueueMap;
+    final Map<List<Long>, JCQueue> executorReceiveQueueMap;
     // executor id is in form [start_task_id end_task_id]
     // short executor id is start_task_id
-    final Map<Integer, DisruptorQueue> shortExecutorReceiveQueueMap;
+    final Map<Integer, JCQueue> shortExecutorReceiveQueueMap;
     final Map<Integer, Integer> taskToShortExecutor;
     final Runnable suicideCallback;
     final Utils.UptimeComputer uptime;
@@ -210,14 +218,6 @@ public class WorkerState {
     final Map<String, Object> userSharedResources;
     final LoadMapping loadMapping;
     final AtomicReference<Map<String, VersionedData<Assignment>>> assignmentVersions;
-    // Whether this worker is going slow
-    final AtomicBoolean backpressure = new AtomicBoolean(false);
-    // If the transfer queue is backed-up
-    final AtomicBoolean transferBackpressure = new AtomicBoolean(false);
-    // a trigger for synchronization with executors
-    final AtomicBoolean backpressureTrigger = new AtomicBoolean(false);
-    // whether the throttle is activated for spouts
-    final AtomicBoolean throttleOn = new AtomicBoolean(false);
 
     public LoadMapping getLoadMapping() {
         return loadMapping;
@@ -227,15 +227,7 @@ public class WorkerState {
         return assignmentVersions;
     }
 
-    public AtomicBoolean getBackpressureTrigger() {
-        return backpressureTrigger;
-    }
-
-    public AtomicBoolean getThrottleOn() {
-        return throttleOn;
-    }
-
-    public DisruptorQueue getTransferQueue() {
+    public JCQueue getTransferQueue() {
         return transferQueue;
     }
 
@@ -243,7 +235,7 @@ public class WorkerState {
         return userTimer;
     }
 
-    final DisruptorQueue transferQueue;
+    final JCQueue transferQueue;
 
     // Timers
     final StormTimer heartbeatTimer = mkHaltingTimer("heartbeat-timer");
@@ -254,26 +246,32 @@ public class WorkerState {
     final StormTimer resetLogLevelsTimer = mkHaltingTimer("reset-log-levels-timer");
     final StormTimer refreshActiveTimer = mkHaltingTimer("refresh-active-timer");
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
-    final StormTimer refreshBackpressureTimer = mkHaltingTimer("refresh-backpressure-timer");
+    final StormTimer flushTupleTimer = mkHaltingTimer("flush-tuple-timer");
     final StormTimer userTimer = mkHaltingTimer("user-timer");
 
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
     private final AtomicLong nextUpdate = new AtomicLong(0);
+
+    public boolean isTrySerializeLocal() {
+        return trySerializeLocal;
+    }
+
     private final boolean trySerializeLocal;
+    private final KryoTupleSerializer serializer;
     private final TransferDrainer drainer;
 
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
+                       Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
-        this.transferQueue = new DisruptorQueue("worker-transfer-queue",
+        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
+        this.transferQueue = new JCQueue("worker-transfer-queue",
             ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE)),
-            (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS),
-            ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE)),
-            (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
+            ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE)),
+            backPressureWaitStrategy);
 
         this.conf = conf;
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
@@ -291,7 +289,7 @@ public class WorkerState {
         this.shortExecutorReceiveQueueMap = new HashMap<>();
         this.taskIds = new ArrayList<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
-        for (Map.Entry<List<Long>, DisruptorQueue> entry : executorReceiveQueueMap.entrySet()) {
+        for (Map.Entry<List<Long>, JCQueue> entry : executorReceiveQueueMap.entrySet()) {
             this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
             this.taskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
         }
@@ -331,7 +329,14 @@ public class WorkerState {
         if (trySerializeLocal) {
             LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production", Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
         }
+        this.serializer = new KryoTupleSerializer(topologyConf, getWorkerTopologyContext());
         this.drainer = new TransferDrainer();
+    }
+
+    private static IWaitStrategy createBackPressureWaitStrategy(Map<String, Object> topologyConf) {
+        IWaitStrategy producerWaitStrategy = ReflectionUtils.newInstance((String) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
+        producerWaitStrategy.prepare(topologyConf);
+        return producerWaitStrategy;
     }
 
     public void refreshConnections() {
@@ -422,8 +427,8 @@ public class WorkerState {
         StormBase base = stormClusterState.stormBase(topologyId, callback);
         isTopologyActive.set(
             (null != base) &&
-            (base.get_status() == TopologyStatus.ACTIVE) &&
-            (isWorkerActive.get()));
+                (base.get_status() == TopologyStatus.ACTIVE) &&
+                (isWorkerActive.get()));
         if (null != base) {
             Map<String, DebugOptions> debugOptionsMap = new HashMap<>(base.get_component_debug());
             for (DebugOptions debugOptions : debugOptionsMap.values()) {
@@ -439,19 +444,14 @@ public class WorkerState {
         }
     }
 
-    public void refreshThrottle() {
-        boolean backpressure = stormClusterState.topologyBackpressure(topologyId, this::refreshThrottle);
-        this.throttleOn.set(backpressure);
-    }
-
     public void refreshLoad() {
         Set<Integer> remoteTasks = Sets.difference(new HashSet<Integer>(outboundTasks), new HashSet<>(taskIds));
         Long now = System.currentTimeMillis();
         Map<Integer, Double> localLoad = shortExecutorReceiveQueueMap.entrySet().stream().collect(Collectors.toMap(
-            (Function<Map.Entry<Integer, DisruptorQueue>, Integer>) Map.Entry::getKey,
-            (Function<Map.Entry<Integer, DisruptorQueue>, Double>) entry -> {
-                DisruptorQueue.QueueMetrics qMetrics = entry.getValue().getMetrics();
-                return ( (double) qMetrics.population()) / qMetrics.capacity();
+            (Function<Map.Entry<Integer, JCQueue>, Integer>) Map.Entry::getKey,
+            (Function<Map.Entry<Integer, JCQueue>, Double>) entry -> {
+                JCQueue.QueueMetrics qMetrics = entry.getValue().getMetrics();
+                return ((double) qMetrics.population()) / qMetrics.capacity();
             }));
 
         Map<Integer, Load> remoteLoad = new HashMap<>();
@@ -473,7 +473,8 @@ public class WorkerState {
         int delaySecs = 0;
         int recurSecs = 1;
         refreshActiveTimer.schedule(delaySecs, new Runnable() {
-            @Override public void run() {
+            @Override
+            public void run() {
                 if (areAllConnectionsReady()) {
                     LOG.info("All connections are ready for worker {}:{} with id", assignmentId, port, workerId);
                     isWorkerActive.set(Boolean.TRUE);
@@ -488,84 +489,55 @@ public class WorkerState {
         LOG.info("Registering IConnectionCallbacks for {}:{}", assignmentId, port);
         receiver.registerRecv(new DeserializingConnectionCallback(topologyConf,
             getWorkerTopologyContext(),
-            this::transferLocal));
+            this::transferLocalBatch));
     }
 
-    public void transferLocal(List<AddressedTuple> tupleBatch) {
-        Map<Integer, List<AddressedTuple>> grouped = new HashMap<>();
-        for (AddressedTuple tuple : tupleBatch) {
-            Integer executor = taskToShortExecutor.get(tuple.dest);
-            if (null == executor) {
-                LOG.warn("Received invalid messages for unknown tasks. Dropping... ");
-                continue;
-            }
-            List<AddressedTuple> current = grouped.get(executor);
-            if (null == current) {
-                current = new ArrayList<>();
-                grouped.put(executor, current);
-            }
-            current.add(tuple);
-        }
 
-        for (Map.Entry<Integer, List<AddressedTuple>> entry : grouped.entrySet()) {
-            DisruptorQueue queue = shortExecutorReceiveQueueMap.get(entry.getKey());
-            if (null != queue) {
-                queue.publish(entry.getValue());
-            } else {
-                LOG.warn("Received invalid messages for unknown tasks. Dropping... ");
+    private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
+        try {
+            for (int i = 0; i < tupleBatch.size(); i++) {
+                AddressedTuple tuple = tupleBatch.get(i);
+                JCQueue queue = shortExecutorReceiveQueueMap.get(tuple.dest);
+                queue.publish(tuple);
             }
+        } catch (InterruptedException e) {
+            LOG.warn("Thread interrupted : transferLocalBatch(). Setting interrupt flag.");
+            Thread.currentThread().interrupt();
         }
     }
 
-    public void transfer(KryoTupleSerializer serializer, List<AddressedTuple> tupleBatch) {
+    /* Blocking call, can be interrupted with Thread.interrupt() */
+    public void transferRemote(AddressedTuple tuple) throws InterruptedException {
+        transferQueue.publish(tuple);
+    }
+
+    public void flushRemotes() throws InterruptedException {
+        transferQueue.flush();
+    }
+
+    public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
         if (trySerializeLocal) {
-            assertCanSerialize(serializer, tupleBatch);
-        }
-        List<AddressedTuple> local = new ArrayList<>();
-        Map<Integer, List<TaskMessage>> remoteMap = new HashMap<>();
-        for (AddressedTuple addressedTuple : tupleBatch) {
-            int destTask = addressedTuple.getDest();
-            if (taskIds.contains(destTask)) {
-                // Local task
-                local.add(addressedTuple);
-            } else {
-                // Using java objects directly to avoid performance issues in java code
-                if (! remoteMap.containsKey(destTask)) {
-                    remoteMap.put(destTask, new ArrayList<>());
-                }
-                remoteMap.get(destTask).add(new TaskMessage(destTask, serializer.serialize(addressedTuple.getTuple())));
-            }
-        }
-
-        if (!local.isEmpty()) {
-            transferLocal(local);
-        }
-        if (!remoteMap.isEmpty()) {
-            transferQueue.publish(remoteMap);
+            serializer.serialize(tuple.getTuple());
         }
     }
 
-    // TODO: consider having a max batch size besides what disruptor does automagically to prevent latency issues
-    public void sendTuplesToRemoteWorker(HashMap<Integer, ArrayList<TaskMessage>> packets, long seqId, boolean batchEnd) {
-        drainer.add(packets);
-        if (batchEnd) {
-            ReentrantReadWriteLock.ReadLock readLock = endpointSocketLock.readLock();
-            try {
-                readLock.lock();
-                drainer.send(cachedTaskToNodePort.get(), cachedNodeToPortSocket.get());
-            } finally {
-                readLock.unlock();
-            }
-            drainer.clear();
-        }
+    @Override
+    public void accept(Object tuple) {
+        AddressedTuple addressedTuple = (AddressedTuple) tuple;
+        TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
+        drainer.add(tm);
     }
 
-
-    private void assertCanSerialize(KryoTupleSerializer serializer, List<AddressedTuple> tuples) {
-        // Check that all of the tuples can be serialized by serializing them
-        for (AddressedTuple addressedTuple : tuples) {
-            serializer.serialize(addressedTuple.getTuple());
+    @Override
+    public void flush() {
+        ReentrantReadWriteLock.ReadLock readLock = endpointSocketLock.readLock();
+        try {
+            readLock.lock();
+            drainer.send(cachedTaskToNodePort.get(), cachedNodeToPortSocket.get());
+        } finally {
+            readLock.unlock();
         }
+        drainer.clear();
     }
 
     public WorkerTopologyContext getWorkerTopologyContext() {
@@ -620,7 +592,7 @@ public class WorkerState {
     }
 
     private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,
-        int port) {
+                                                 int port) {
         LOG.info("Reading assignments");
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
@@ -635,23 +607,23 @@ public class WorkerState {
         return executorsAssignedToThisWorker;
     }
 
-    private Map<List<Long>, DisruptorQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
-        Map<List<Long>, DisruptorQueue> receiveQueueMap = new HashMap<>();
+    private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
+        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
+        Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
-            receiveQueueMap.put(executor, new DisruptorQueue("receive-queue",
+            receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
                 ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE)),
-                (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS),
-                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE)),
-                (long) topologyConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS)));
+                ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE)), backPressureWaitStrategy));
+
         }
         return receiveQueueMap;
     }
-    
+
     private Map<String, Object> makeDefaultResources() {
         int threadPoolSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_WORKER_SHARED_THREAD_POOL_SIZE));
         return ImmutableMap.of(WorkerTopologyContext.SHARED_EXECUTOR, Executors.newFixedThreadPool(threadPoolSize));
     }
-    
+
     private Map<String, Object> makeUserResources() {
         /* TODO: need to invoke a hook provided by the topology, giving it a chance to create user resources.
         * this would be part of the initialization hook
@@ -669,7 +641,6 @@ public class WorkerState {
     }
 
     /**
-     *
      * @return seq of task ids that receive messages from this worker
      */
     private Set<Integer> workerOutboundTasks() {
@@ -692,6 +663,6 @@ public class WorkerState {
     }
 
     public interface ILocalTransferCallback {
-        void transfer(List<AddressedTuple> tupleBatch);
+        void transfer(ArrayList<AddressedTuple> tupleBatch);
     }
 }

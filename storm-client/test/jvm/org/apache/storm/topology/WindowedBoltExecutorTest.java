@@ -51,7 +51,7 @@ import static org.junit.Assert.fail;
  * Unit tests for {@link WindowedBoltExecutor}
  */
 public class WindowedBoltExecutorTest {
-    
+
     private WindowedBoltExecutor executor;
     private TestWindowedBolt testWindowedBolt;
 
@@ -78,7 +78,7 @@ public class WindowedBoltExecutorTest {
     }
 
     private Tuple getTuple(String streamId, final Fields fields, Values values) {
-        return new TupleImpl(getContext(fields), values, 1, streamId) {
+        return new TupleImpl(getContext(fields), values, "testSrc", 1, streamId) {
             @Override
             public GlobalStreamId getSourceGlobalStreamId() {
                 return new GlobalStreamId("s1", "default");
@@ -219,10 +219,10 @@ public class WindowedBoltExecutorTest {
             Tuple tuple = getTuple("s1", new Fields("ts"), new Values(ts));
             tuples.add(tuple);
             executor.execute(tuple);
-            
+
             //Update the watermark to this timestamp
             executor.waterMarkEventGenerator.run();
-        } 
+        }
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
         Mockito.verify(outputCollector).emit("$late", Arrays.asList(tuple), new Values(tuple));

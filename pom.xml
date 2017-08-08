@@ -258,6 +258,7 @@
         <snakeyaml.version>1.11</snakeyaml.version>
         <httpclient.version>4.3.3</httpclient.version>
         <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
+        <jctools.version>2.0.1</jctools.version>
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
@@ -875,6 +876,11 @@
                 <groupId>org.clojure</groupId>
                 <artifactId>tools.cli</artifactId>
                 <version>${clojure.tools.cli.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>${jctools.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.lmax</groupId>

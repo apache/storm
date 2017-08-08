@@ -194,7 +194,12 @@ public class RichSpoutBatchExecutor implements ITridentSpout<Object> {
         public void emitDirect(int task, String stream, List<Object> values, Object id) {
             throw new UnsupportedOperationException("Trident does not support direct streams");
         }
-        
+
+        @Override
+        public void flush() {
+            //NOOP   //TODO: Roshan: validate if this is OK
+        }
+
         @Override
         public long getPendingCount() {
             return pendingCount;

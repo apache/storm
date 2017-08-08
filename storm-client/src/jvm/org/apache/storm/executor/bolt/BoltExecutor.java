@@ -18,9 +18,15 @@
 package org.apache.storm.executor.bolt;
 
 import com.google.common.collect.ImmutableMap;
+
+import java.util.ArrayList;
 import java.util.List;
+
+import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
+import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -28,41 +34,51 @@ import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IBolt;
-import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.RunningAvg;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.DisruptorQueue;
+import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.function.BooleanSupplier;
 
 public class BoltExecutor extends Executor {
 
     private static final Logger LOG = LoggerFactory.getLogger(BoltExecutor.class);
 
-    private final Callable<Boolean> executeSampler;
+    private final BooleanSupplier executeSampler;
+    private final boolean isSystemBoltExecutor;
+    private final IWaitStrategy consumeWaitStrategy;
+    private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
+        this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
+        this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
+        this.consumeWaitStrategy.prepare(topoConf);
     }
 
-    public void init(Map<Integer, Task> idToTask) {
+    public void init(ArrayList<Task> idToTask) {
         while (!stormActive.get()) {
             Utils.sleep(100);
         }
 
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.values().iterator().next().getUserContext());
-
-        LOG.info("Preparing bolt {}:{}", componentId, idToTask.keySet());
-        for (Map.Entry<Integer, Task> entry : idToTask.entrySet()) {
-            Task taskData = entry.getValue();
+        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesnt call reportError()
+            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
+        }
+        LOG.info("Preparing bolt {}:{}", componentId, getTaskIds() );
+        for (Task taskData :idToTask) {
+            if(taskData==null)
+                continue;
             IBolt boltObject = (IBolt) taskData.getTaskObject();
             TopologyContext userContext = taskData.getUserContext();
             taskData.getBuiltInMetrics().registerAll(topoConf, userContext);
@@ -70,34 +86,42 @@ public class BoltExecutor extends Executor {
                 ((ICredentialsListener) boltObject).setCredentials(credentials);
             }
             if (Constants.SYSTEM_COMPONENT_ID.equals(componentId)) {
-                Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue,
-                        "transfer", workerData.getTransferQueue());
+                Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue, "transfer", workerData.getTransferQueue());
                 BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
 
-                Map cachedNodePortToSocket = (Map) workerData.getCachedNodeToPortSocket().get();
+                Map cachedNodePortToSocket = workerData.getCachedNodeToPortSocket().get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
             } else {
-                Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", transferQueue, "receive", receiveQueue);
+                Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue);
                 BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
             }
 
-            IOutputCollector outputCollector = new BoltOutputCollectorImpl(this, taskData, entry.getKey(), rand, hasEventLoggers, isDebug);
+            this.outputCollector = new BoltOutputCollectorImpl(this, taskData, rand, hasEventLoggers, ackingEnabled, isDebug);
             boltObject.prepare(topoConf, userContext, new OutputCollector(outputCollector));
         }
         openOrPrepareWasCalled.set(true);
-        LOG.info("Prepared bolt {}:{}", componentId, idToTask.keySet());
+        LOG.info("Prepared bolt {}:{}", componentId, taskIds);
         setupMetrics();
     }
 
     @Override
-    public Callable<Object> call() throws Exception {
+    public Callable<Long> call() throws Exception {
         init(idToTask);
 
-        return new Callable<Object>() {
+        return new Callable<Long>() {
+            RunningAvg avgConsumeCount = new RunningAvg("BOLT Avg consume count", 10_000_000, true);
             @Override
-            public Object call() throws Exception {
-                receiveQueue.consumeBatchWhenAvailable(BoltExecutor.this);
+            public Long call() throws Exception {
+                int count = receiveQueue.consume(BoltExecutor.this);
+                for(int idleCounter=0; count==0; ) {
+                    idleCounter = consumeWaitStrategy.idle(idleCounter);
+                    if (Thread.interrupted()) {
+                        throw new InterruptedException();
+                    }
+                    count = receiveQueue.consume(BoltExecutor.this);
+                }
+                avgConsumeCount.push(count);
                 return 0L;
             }
         };
@@ -106,17 +130,19 @@ public class BoltExecutor extends Executor {
     @Override
     public void tupleActionFn(int taskId, TupleImpl tuple) throws Exception {
         String streamId = tuple.getSourceStreamId();
-        if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
+        if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
+            outputCollector.flush();
+        } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
+            metricsTick(idToTask.get(taskId), tuple);
+        } else if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
             Object taskObject = idToTask.get(taskId).getTaskObject();
             if (taskObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) taskObject).setCredentials((Map<String, String>) tuple.getValue(0));
             }
-        } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
-            metricsTick(idToTask.get(taskId), tuple);
         } else {
             IBolt boltObject = (IBolt) idToTask.get(taskId).getTaskObject();
-            boolean isSampled = sampler.call();
-            boolean isExecuteSampler = executeSampler.call();
+            boolean isSampled = sampler.getAsBoolean();
+            boolean isExecuteSampler = executeSampler.getAsBoolean();
             Long now = (isSampled || isExecuteSampler) ? Time.currentTimeMillis() : null;
             if (isSampled) {
                 tuple.setProcessSampleStartTime(now);
@@ -131,7 +157,9 @@ public class BoltExecutor extends Executor {
             if (isDebug) {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
-            new BoltExecuteInfo(tuple, taskId, delta).applyOn(idToTask.get(taskId).getUserContext());
+            TopologyContext topologyContext = idToTask.get(taskId).getUserContext();
+            if (!topologyContext.getHooks().isEmpty()) // perf critical check to avoid unnecessary allocation
+                new BoltExecuteInfo(tuple, taskId, delta).applyOn(topologyContext);
             if (delta >= 0) {
                 ((BoltExecutorStats) stats).boltExecuteTuple(tuple.getSourceComponent(), tuple.getSourceStreamId(), delta);
             }

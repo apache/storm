@@ -20,7 +20,7 @@ package org.apache.storm.tuple;
 /**
  * A Tuple that is addressed to a destination.
  */
-public class AddressedTuple {
+public final class AddressedTuple {
     /**
      * Destination used when broadcasting a tuple.
      */
