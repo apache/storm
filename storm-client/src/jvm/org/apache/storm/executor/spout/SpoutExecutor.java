@@ -82,7 +82,7 @@ public class SpoutExecutor extends Executor {
         this.spoutThrottlingMetrics = new SpoutThrottlingMetrics();
     }
 
-    public void init(final ArrayList<Task> idToTask) {
+    public void init(final ArrayList<Task> idToTask, int idToTaskBase) {
         latencySampled = new RunningAvg("[SAMPLED] Latency", 10_000_000);
         while (!stormActive.get()) {
             Utils.sleep(100);
@@ -103,17 +103,18 @@ public class SpoutExecutor extends Executor {
                 if (tupleInfo.getTimestamp() != 0) {
                     timeDelta = Time.deltaMs(tupleInfo.getTimestamp());
                 }
-                failSpoutMsg(SpoutExecutor.this, idToTask.get(tupleInfo.getTaskId()), timeDelta, tupleInfo, "TIMEOUT");
+                failSpoutMsg(SpoutExecutor.this, idToTask.get(tupleInfo.getTaskId() - idToTaskBase), timeDelta, tupleInfo, "TIMEOUT");
             }
         });
 
-        this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
-        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
+        this.spoutThrottlingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
+        this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
         this.outputCollectors = new ArrayList<>();
         for (int i=0; i<idToTask.size(); ++i) {
             Task taskData = idToTask.get(i);
-            if (taskData==null)
+            if (taskData==null) {
                 continue;
+            }
             ISpout spoutObject = (ISpout) taskData.getTaskObject();
             spoutOutputCollector = new SpoutOutputCollectorImpl(
                     spoutObject, this, taskData, emittedCount,
@@ -137,7 +138,7 @@ public class SpoutExecutor extends Executor {
 
     @Override
     public Callable<Long> call() throws Exception {
-        init(idToTask);
+        init(idToTask, idToTaskBase);
         return new Callable<Long>() {
             int i=0;
             final int recvqCheckSkipCount = getSpoutRecvqCheckSkipCount();
@@ -197,9 +198,9 @@ public class SpoutExecutor extends Executor {
         } else if (streamId.equals(Constants.SYSTEM_TICK_STREAM_ID)) {
             pending.rotate();
         } else if (streamId.equals(Constants.METRICS_TICK_STREAM_ID)) {
-            metricsTick(idToTask.get(taskId), tuple);
+            metricsTick(idToTask.get(taskId - idToTaskBase), tuple);
         } else if (streamId.equals(Constants.CREDENTIALS_CHANGED_STREAM_ID)) {
-            Object spoutObj = idToTask.get(taskId).getTaskObject();
+            Object spoutObj = idToTask.get(taskId - idToTaskBase).getTaskObject();
             if (spoutObj instanceof ICredentialsListener) {
                 ((ICredentialsListener) spoutObj).setCredentials((Map<String, String>) tuple.getValue(0));
             }
@@ -223,9 +224,9 @@ public class SpoutExecutor extends Executor {
                     timeDelta = timeDeltaMs;
                 }
                 if (streamId.equals(Acker.ACKER_ACK_STREAM_ID)) {
-                    ackSpoutMsg(this, idToTask.get(taskId), timeDelta, tupleInfo);
+                    ackSpoutMsg(this, idToTask.get(taskId - idToTaskBase), timeDelta, tupleInfo);
                 } else if (streamId.equals(Acker.ACKER_FAIL_STREAM_ID)) {
-                    failSpoutMsg(this, idToTask.get(taskId), timeDelta, tupleInfo, "FAIL-STREAM");
+                    failSpoutMsg(this, idToTask.get(taskId - idToTaskBase), timeDelta, tupleInfo, "FAIL-STREAM");
                 }
             }
         }

@@ -67,18 +67,20 @@ public class BoltExecutor extends Executor {
         this.consumeWaitStrategy.prepare(topoConf);
     }
 
-    public void init(ArrayList<Task> idToTask) {
+    public void init(ArrayList<Task> idToTask, int idToTaskBase) {
         while (!stormActive.get()) {
             Utils.sleep(100);
         }
 
-        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesnt call reportError()
-            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0)).getUserContext());
+        if (!componentId.equals(StormCommon.SYSTEM_STREAM_ID)) { // System bolt doesn't call reportError()
+            this.errorReportingMetrics.registerAll(topoConf, idToTask.get(taskIds.get(0) - idToTaskBase).getUserContext());
         }
-        LOG.info("Preparing bolt {}:{}", componentId, getTaskIds() );
-        for (Task taskData :idToTask) {
-            if(taskData==null)
+        LOG.info("Preparing bolt {}:{}", componentId, getTaskIds());
+        for (Task taskData : idToTask) {
+            if (taskData == null) {
+                //This happens if the min id is too small
                 continue;
+            }
             IBolt boltObject = (IBolt) taskData.getTaskObject();
             TopologyContext userContext = taskData.getUserContext();
             taskData.getBuiltInMetrics().registerAll(topoConf, userContext);
@@ -107,7 +109,7 @@ public class BoltExecutor extends Executor {
 
     @Override
     public Callable<Long> call() throws Exception {
-        init(idToTask);
+        init(idToTask, idToTaskBase);
 
         return new Callable<Long>() {
             RunningAvg avgConsumeCount = new RunningAvg("BOLT Avg consume count", 10_000_000, true);
@@ -133,14 +135,14 @@ public class BoltExecutor extends Executor {
         if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
             outputCollector.flush();
         } else if (Constants.METRICS_TICK_STREAM_ID.equals(streamId)) {
-            metricsTick(idToTask.get(taskId), tuple);
+            metricsTick(idToTask.get(taskId - idToTaskBase), tuple);
         } else if (Constants.CREDENTIALS_CHANGED_STREAM_ID.equals(streamId)) {
-            Object taskObject = idToTask.get(taskId).getTaskObject();
+            Object taskObject = idToTask.get(taskId - idToTaskBase).getTaskObject();
             if (taskObject instanceof ICredentialsListener) {
                 ((ICredentialsListener) taskObject).setCredentials((Map<String, String>) tuple.getValue(0));
             }
         } else {
-            IBolt boltObject = (IBolt) idToTask.get(taskId).getTaskObject();
+            IBolt boltObject = (IBolt) idToTask.get(taskId - idToTaskBase).getTaskObject();
             boolean isSampled = sampler.getAsBoolean();
             boolean isExecuteSampler = executeSampler.getAsBoolean();
             Long now = (isSampled || isExecuteSampler) ? Time.currentTimeMillis() : null;
@@ -157,7 +159,7 @@ public class BoltExecutor extends Executor {
             if (isDebug) {
                 LOG.info("Execute done TUPLE {} TASK: {} DELTA: {}", tuple, taskId, delta);
             }
-            TopologyContext topologyContext = idToTask.get(taskId).getUserContext();
+            TopologyContext topologyContext = idToTask.get(taskId - idToTaskBase).getUserContext();
             if (!topologyContext.getHooks().isEmpty()) // perf critical check to avoid unnecessary allocation
                 new BoltExecuteInfo(tuple, taskId, delta).applyOn(topologyContext);
             if (delta >= 0) {

@@ -109,6 +109,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     protected final JCQueue receiveQueue;
 
     protected ArrayList<Task> idToTask;
+    protected int idToTaskBase;
     protected final Map<String, String> credentials;
     protected final Boolean isDebug;
     protected final Boolean hasEventLoggers;
@@ -195,8 +196,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             executor.stats = new BoltExecutorStats(ConfigUtils.samplingRate(executor.getStormConf()),ObjectReader.getInt(executor.getStormConf().get(Config.NUM_STAT_BUCKETS)));
         }
 
+        int minId = Integer.MAX_VALUE;
         Map<Integer, Task> idToTask = new HashMap<>();
         for (Integer taskId : taskIds) {
+            minId = Math.min(minId, taskId);
             try {
                 Task task = new Task(executor, taskId);
                 task.sendUnanchored( StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer()); // TODO: Roshan: does this get delivered/handled anywhere ?
@@ -206,7 +209,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             }
         }
 
-        executor.idToTask = Utils.convertToArray(idToTask);
+        executor.idToTaskBase = minId;
+        executor.idToTask = Utils.convertToArray(idToTask, minId);
         return executor;
     }
 

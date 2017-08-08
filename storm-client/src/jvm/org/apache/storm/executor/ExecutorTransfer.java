@@ -49,7 +49,7 @@ public class ExecutorTransfer  {
         this.serializer = new KryoTupleSerializer(topoConf, workerData.getWorkerTopologyContext());
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
         this.producerBatchSz = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
-        this.localReceiveQueues = Utils.convertToArray(workerData.getShortExecutorReceiveQueueMap());
+        this.localReceiveQueues = Utils.convertToArray(workerData.getShortExecutorReceiveQueueMap(), 0);
         this.outboundQueues = new ArrayList<JCQueue>(Collections.nCopies(localReceiveQueues.size(), null) );
     }
 
