@@ -54,6 +54,7 @@ else
         ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
     fi
     (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
+    zookeeper_version=3.4.5*
 fi
 
 storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
@@ -64,7 +65,7 @@ echo "Using storm version:" ${STORM_VERSION}
 # setup storm cluster
 list_storm_processes || true
 sudo bash "${SCRIPT_DIR}/config/common.sh"
-sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh"
+sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
 sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
 export JAVA_HOME="${JAVA_HOME}"
 env
