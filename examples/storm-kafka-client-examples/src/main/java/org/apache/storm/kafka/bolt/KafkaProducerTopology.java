@@ -16,21 +16,20 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.trident;
-
-import org.apache.kafka.clients.producer.ProducerConfig;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.kafka.bolt.KafkaBolt;
-import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
-import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
-import org.apache.storm.topology.TopologyBuilder;
+package org.apache.storm.kafka.bolt;
 
 import java.util.Properties;
 import java.util.UUID;
+import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
+import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
 import org.apache.storm.lambda.LambdaSpout;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
 public class KafkaProducerTopology {
+
     /**
      * Create a new topology that writes random UUIDs to Kafka.
      *
@@ -60,16 +59,17 @@ public class KafkaProducerTopology {
     }
 
     /**
-     * @return the Storm config for the topology that publishes sentences to kafka using a kafka bolt.
+     * Create the Storm config.
+     * @return the Storm config for the topology that publishes random UUIDs to Kafka using a Kafka bolt.
      */
     private static Properties newProps(final String brokerUrl, final String topicName) {
-        return new Properties() {{
-            put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
-            put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-            put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
-            put(ProducerConfig.CLIENT_ID_CONFIG, topicName);
-        }};
+        return new Properties() {
+            {
+                put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, brokerUrl);
+                put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+                put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, "org.apache.kafka.common.serialization.StringSerializer");
+                put(ProducerConfig.CLIENT_ID_CONFIG, topicName);
+            }
+        };
     }
 }
-
-

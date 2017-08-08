@@ -14,18 +14,18 @@
  * limitations under the License.
  */
 
-package org.apache.storm.kafka.spout.test;
+package org.apache.storm.kafka.spout;
 
-import static org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMainNamedTopics.TOPIC_0;
-import static org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMainNamedTopics.TOPIC_1;
-import static org.apache.storm.kafka.spout.test.KafkaSpoutTopologyMainNamedTopics.TOPIC_2;
+import static org.apache.storm.kafka.spout.KafkaSpoutTopologyMainNamedTopics.TOPIC_0;
+import static org.apache.storm.kafka.spout.KafkaSpoutTopologyMainNamedTopics.TOPIC_1;
+import static org.apache.storm.kafka.spout.KafkaSpoutTopologyMainNamedTopics.TOPIC_2;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import org.apache.storm.Config;
 import org.apache.storm.LocalCluster;
-import org.apache.storm.kafka.trident.KafkaProducerTopology;
+import org.apache.storm.kafka.bolt.KafkaProducerTopology;
 
 public class KafkaSpoutTopologyMainNamedTopicsLocal {
 

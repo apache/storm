@@ -22,65 +22,23 @@ import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.kafka.ZkHosts;
-import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.trident.testing.MemoryMapState;
 
 import java.io.Serializable;
-import java.util.concurrent.TimeUnit;
 
 /**
- * A sample word count trident topology using transactional kafka spout that has the following components.
- * <ol>
- * <li> {@link KafkaBolt}
- * that receives random sentences from {@link RandomSentenceSpout} and
- * publishes the sentences to a kafka "test" topic.
- * </li>
- * <li> {@link TransactionalTridentKafkaSpout}
- * that consumes sentences from the "test" topic, splits it into words, aggregates
- * and stores the word count in a {@link MemoryMapState}.
- * </li>
- * <li> DRPC query
- * that returns the word counts by querying the trident state (MemoryMapState).
- * </li>
- * </ol>
- * <p>
- *     For more background read the <a href="https://storm.apache.org/documentation/Trident-tutorial.html">trident tutorial</a>,
- *     <a href="https://storm.apache.org/documentation/Trident-state">trident state</a> and
- *     <a href="https://github.com/apache/storm/tree/master/external/storm-kafka"> Storm Kafka </a>.
- * </p>
+ * This example sets up a few topologies to put random strings in the "test" Kafka topic via the KafkaBolt,
+ * and shows how to set up a Trident topology that reads from the "test" topic using the KafkaSpout.
+ * Please ensure you have a Kafka instance running on localhost:9092 before you deploy this example.
  */
-public class TridentKafkaWordCount implements Serializable {
-    /**
-     * <p>
-     * To run this topology it is required that you have a kafka broker running.
-     * </p>
-     * Create a topic 'test' with command line,
-     * <pre>
-     * kafka-topics.sh --create --zookeeper localhost:2181 --replication-factor 1 --partition 1 --topic test
-     * </pre>
-     * To run in local mode,
-     * <pre>
-     * storm jar storm-starter-topologies-{version}.jar org.apache.storm.starter.trident.TridentKafkaWordCount
-     * </pre>
-     * This will also run a local DRPC query and print the word counts.
-     * <p>
-     * To run in distributed mode, run it with a topology name. You will also need to start a drpc server and
-     * specify the drpc server details storm.yaml before submitting the topology.
-     * </p>
-     * <pre>
-     * storm jar storm-starter-topologies-{version}.jar org.apache.storm.starter.trident.TridentKafkaWordCount zkhost:port broker:port wordcount
-     * </pre>
-     * This will submit two topologies, one for the producer and another for the consumer. You can query the results
-     * (word counts) by running an external drpc query against the drpc server.
-     */
+public class TridentKafkaRandomStrings implements Serializable {
     public static void main(String[] args) throws Exception {
         final String[] zkBrokerUrl = parseUrl(args);
         final String topicName = "test";
         Config tpConf = new Config();
         tpConf.setMaxSpoutPending(20);
         String prodTpName = "kafkaBolt";
-        String consTpName = "wordCounter";
+        String consTpName = "kafka-topology-random-strings";
 
         if (args.length == 3)  {
             prodTpName = args[2] + "-producer";
@@ -91,10 +49,6 @@ public class TridentKafkaWordCount implements Serializable {
         // Consumer
         StormSubmitter.submitTopology(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
                 new TransactionalTridentKafkaSpout(newTridentKafkaConfig(zkBrokerUrl[0]))));
-
-        // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
-        Thread.sleep(2000);
-        DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
     }
 
     private static String[] parseUrl(String[] args) {
