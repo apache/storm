@@ -17,20 +17,28 @@
  */
 package org.apache.storm.windowing;
 
+import org.apache.storm.streams.Pair;
+
+import java.util.concurrent.atomic.AtomicLong;
+
 /**
  * An eviction policy that tracks count based on watermark ts and
  * evicts events up to the watermark based on a threshold count.
  *
  * @param <T> the type of event tracked by this policy.
  */
-public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
-    private long processed = 0L;
+public class WatermarkCountEvictionPolicy<T> implements EvictionPolicy<T, Pair<Long, Long>> {
+    protected final int threshold;
+    protected final AtomicLong currentCount;
+    private EvictionContext context;
+
+    private volatile long processed;
 
     public WatermarkCountEvictionPolicy(int count) {
-        super(count);
+        threshold = count;
+        currentCount = new AtomicLong();
     }
 
-    @Override
     public Action evict(Event<T> event) {
         if(getContext() == null) {
             //It is possible to get asked about eviction before we have a context, due to WindowManager.compactWindow.
@@ -41,7 +49,7 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
         
         Action action;
         if (event.getTimestamp() <= getContext().getReferenceTime() && processed < currentCount.get()) {
-            action = super.evict(event);
+            action = doEvict(event);
             if (action == Action.PROCESS) {
                 ++processed;
             }
@@ -51,14 +59,37 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
         return action;
     }
 
+    private Action doEvict(Event<T> event) {
+        /*
+         * atomically decrement the count if its greater than threshold and
+         * return if the event should be evicted
+         */
+        while (true) {
+            long curVal = currentCount.get();
+            if (curVal > threshold) {
+                if (currentCount.compareAndSet(curVal, curVal - 1)) {
+                    return Action.EXPIRE;
+                }
+            } else {
+                break;
+            }
+        }
+        return Action.PROCESS;
+    }
+
     @Override
     public void track(Event<T> event) {
         // NOOP
     }
 
     @Override
+    public EvictionContext getContext() {
+        return context;
+    }
+
+    @Override
     public void setContext(EvictionContext context) {
-        super.setContext(context);
+        this.context = context;
         if (context.getCurrentCount() != null) {
             currentCount.set(context.getCurrentCount());
         } else {
@@ -68,8 +99,24 @@ public class WatermarkCountEvictionPolicy<T> extends CountEvictionPolicy<T> {
     }
 
     @Override
+    public void reset() {
+        processed = 0;
+    }
+
+    @Override
+    public Pair<Long, Long> getState() {
+        return Pair.of(currentCount.get(), processed);
+    }
+
+    @Override
+    public void restoreState(Pair<Long, Long> state) {
+        currentCount.set(state.getFirst());
+        processed = state.getSecond();
+    }
+
+    @Override
     public String toString() {
         return "WatermarkCountEvictionPolicy{" +
-                "} " + super.toString();
+            "} " + super.toString();
     }
 }

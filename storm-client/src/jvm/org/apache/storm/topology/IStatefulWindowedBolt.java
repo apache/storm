@@ -15,12 +15,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.topology;
 
 import org.apache.storm.state.State;
 
 /**
- * A windowed bolt abstraction for supporting windowing operation with state
+ * A windowed bolt abstraction for supporting windowing operation with state.
  */
 public interface IStatefulWindowedBolt<T extends State> extends IStatefulComponent<T>, IWindowedBolt {
+    /**
+     * If the stateful windowed bolt should have its windows persisted in state and maintain a subset
+     * of events in memory.
+     * <p>
+     * The default is to keep all the window events in memory.
+     * </p>
+     *
+     * @return true if the windows should be persisted
+     */
+    default boolean isPersistent() {
+        return false;
+    }
+
+    /**
+     * The maximum number of window events to keep in memory.
+     */
+    default long maxEventsInMemory() {
+        return 1_000_000L; // default
+    }
 }

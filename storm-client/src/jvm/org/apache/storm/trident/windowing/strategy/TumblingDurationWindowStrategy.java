@@ -44,7 +44,7 @@ public final class TumblingDurationWindowStrategy<T> extends BaseWindowStrategy<
      * @return
      */
     @Override
-    public TriggerPolicy<T> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T> evictionPolicy) {
+    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy) {
         return new TimeTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler, evictionPolicy);
     }
 
@@ -54,7 +54,7 @@ public final class TumblingDurationWindowStrategy<T> extends BaseWindowStrategy<
      * @return
      */
     @Override
-    public EvictionPolicy<T> getEvictionPolicy() {
+    public EvictionPolicy<T, ?> getEvictionPolicy() {
         return new TimeEvictionPolicy<>(windowConfig.getWindowLength());
     }
 }

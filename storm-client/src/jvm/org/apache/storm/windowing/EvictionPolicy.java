@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.windowing;
 
 /**
@@ -23,30 +24,31 @@ package org.apache.storm.windowing;
  *
  * @param <T> the type of event that is tracked.
  */
-public interface EvictionPolicy<T> {
+public interface EvictionPolicy<T, S> {
     /**
      * The action to be taken when {@link EvictionPolicy#evict(Event)} is invoked.
      */
     public enum Action {
         /**
-         * expire the event and remove it from the queue
+         * expire the event and remove it from the queue.
          */
         EXPIRE,
         /**
-         * process the event in the current window of events
+         * process the event in the current window of events.
          */
         PROCESS,
         /**
          * don't include in the current window but keep the event
-         * in the queue for evaluating as a part of future windows
+         * in the queue for evaluating as a part of future windows.
          */
         KEEP,
         /**
          * stop processing the queue, there cannot be anymore events
-         * satisfying the eviction policy
+         * satisfying the eviction policy.
          */
         STOP
     }
+
     /**
      * Decides if an event should be expired from the window, processed in the current
      * window or kept for later processing.
@@ -68,15 +70,34 @@ public interface EvictionPolicy<T> {
      * Sets a context in the eviction policy that can be used while evicting the events.
      * E.g. For TimeEvictionPolicy, this could be used to set the reference timestamp.
      *
-     * @param context
+     * @param context the eviction context
      */
     void setContext(EvictionContext context);
 
     /**
-     * Returns the current context that is part of this eviction policy
+     * Returns the current context that is part of this eviction policy.
      *
      * @return the eviction context
      */
     EvictionContext getContext();
 
+    /**
+     * Resets the eviction policy.
+     */
+    void reset();
+
+    /**
+     * Return runtime state to be checkpointed by the framework for restoring the eviction policy
+     * in case of failures.
+     *
+     * @return the state
+     */
+    S getState();
+
+    /**
+     * Restore the eviction policy from the state that was earlier checkpointed by the framework.
+     *
+     * @param state the state
+     */
+    void restoreState(S state);
 }
