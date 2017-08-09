@@ -659,7 +659,17 @@ public class StormClusterStateImpl implements IStormClusterState {
         });
 
         while (childrens.size() > 10) {
-            stateStorage.delete_node(path + ClusterUtils.ZK_SEPERATOR + childrens.remove(0));
+            String znodePath = path + ClusterUtils.ZK_SEPERATOR + childrens.remove(0);
+            try {
+                stateStorage.delete_node(znodePath);
+            } catch (Exception e) {
+                if (Utils.exceptionCauseIsInstanceOf(KeeperException.NoNodeException.class, e)) {
+                    // if the node is already deleted, do nothing
+                    LOG.warn("Could not find the znode: {}", znodePath);
+                } else {
+                    throw e;
+                }
+            }
         }
     }
 
