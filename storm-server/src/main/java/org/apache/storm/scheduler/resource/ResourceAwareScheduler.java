@@ -32,6 +32,7 @@ import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -90,6 +91,7 @@ public class ResourceAwareScheduler implements IScheduler {
         }
     }
 
+
     public void scheduleTopology(TopologyDetails td, Cluster cluster, final User topologySubmitter,
                                  Map<String, User> userMap) {
         //A copy of cluster that we can modify, but does not get committed back to cluster unless scheduling succeeds
@@ -97,8 +99,14 @@ public class ResourceAwareScheduler implements IScheduler {
         IStrategy rasStrategy = null;
         String strategyConf = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
         try {
-            rasStrategy = (IStrategy) ReflectionUtils.newInstance(strategyConf);
+            rasStrategy = (IStrategy) ReflectionUtils.newSchedulerStrategyInstance((String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY), conf);
             rasStrategy.prepare(conf);
+        } catch (DisallowedStrategyException e) {
+            topologySubmitter.markTopoUnsuccess(td);
+            cluster.setStatus(td.getId(), "Unsuccessful in scheduling - " + e.getAttemptedClass()
+                              + " is not an allowed strategy. Please make sure your " + Config.TOPOLOGY_SCHEDULER_STRATEGY
+                              + " config is one of the allowed strategies: " + e.getAllowedStrategies().toString());
+            return;
         } catch (RuntimeException e) {
             LOG.error("failed to create instance of IStrategy: {} Topology {} will not be scheduled.",
                     strategyConf, td.getName(), e);

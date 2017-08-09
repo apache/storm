@@ -1349,6 +1349,13 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
 
     /**
+     * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names
+     * or null to allow all.
+     */
+    @isStringList
+    public static final String NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST = "nimbus.scheduler.strategy.class.whitelist";
+
+    /**
      * Full path to the worker-laucher executable that will be used to lauch workers when
      * SUPERVISOR_RUN_WORKER_AS_USER is set to true.
      */

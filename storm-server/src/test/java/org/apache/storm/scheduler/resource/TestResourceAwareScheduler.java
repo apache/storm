@@ -37,12 +37,19 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.DisallowedStrategyException;
+
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -928,5 +935,38 @@ public class TestResourceAwareScheduler {
 
         Assert.assertTrue("Topo scheduled?", cluster.getAssignmentById(topo.getId()) != null);
         Assert.assertEquals("Topo all executors scheduled?", 25, cluster.getAssignmentById(topo.getId()).getExecutorToSlot().size());
+    }
+
+    @Rule
+    public final ExpectedException schedulerException = ExpectedException.none();
+
+    @Test
+    public void testSchedulerStrategyWhitelist() {
+        Map<String, Object> config = ConfigUtils.readStormConfig();
+        String allowed = "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy";
+        config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Arrays.asList(allowed));
+
+        Object sched = ReflectionUtils.newSchedulerStrategyInstance(allowed, config);
+        Assert.assertEquals(sched.getClass().getName(), allowed);
+    }
+
+    @Test
+    public void testSchedulerStrategyWhitelistException() {
+        Map<String, Object> config = ConfigUtils.readStormConfig();
+        String allowed = "org.apache.storm.scheduler.resource.strategies.scheduling.SomeNonExistantStrategy";
+        String notAllowed = "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy";
+        config.put(Config.NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST, Arrays.asList(allowed));
+
+        schedulerException.expect(DisallowedStrategyException.class);
+        ReflectionUtils.newSchedulerStrategyInstance(notAllowed, config);
+    }
+
+    @Test
+    public void testSchedulerStrategyEmptyWhitelist() {
+        Map<String, Object> config = ConfigUtils.readStormConfig();
+        String allowed = "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy";
+
+        Object sched = ReflectionUtils.newSchedulerStrategyInstance(allowed, config);
+        Assert.assertEquals(sched.getClass().getName(), allowed);
     }
 }
