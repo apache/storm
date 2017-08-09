@@ -56,25 +56,26 @@ public class JdbcClient {
 
             LOG.debug("Executing query {}", query);
 
-            PreparedStatement preparedStatement = connection.prepareStatement(query);
-            if(queryTimeoutSecs > 0) {
-                preparedStatement.setQueryTimeout(queryTimeoutSecs);
-            }
+            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
+                if (queryTimeoutSecs > 0) {
+                    preparedStatement.setQueryTimeout(queryTimeoutSecs);
+                }
 
-            for(List<Column> columnList : columnLists) {
-                setPreparedStatementParams(preparedStatement, columnList);
-                preparedStatement.addBatch();
-            }
+                for (List<Column> columnList : columnLists) {
+                    setPreparedStatementParams(preparedStatement, columnList);
+                    preparedStatement.addBatch();
+                }
 
-            int[] results = preparedStatement.executeBatch();
-            if(Arrays.asList(results).contains(Statement.EXECUTE_FAILED)) {
-                connection.rollback();
-                throw new RuntimeException("failed at least one sql statement in the batch, operation rolled back.");
-            } else {
-                try {
-                    connection.commit();
-                } catch (SQLException e) {
-                    throw new RuntimeException("Failed to commit insert query " + query, e);
+                int[] results = preparedStatement.executeBatch();
+                if (Arrays.asList(results).contains(Statement.EXECUTE_FAILED)) {
+                    connection.rollback();
+                    throw new RuntimeException("failed at least one sql statement in the batch, operation rolled back.");
+                } else {
+                    try {
+                        connection.commit();
+                    } catch (SQLException e) {
+                        throw new RuntimeException("Failed to commit insert query " + query, e);
+                    }
                 }
             }
         } catch (SQLException e) {
@@ -106,50 +107,52 @@ public class JdbcClient {
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
-            PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery);
-            if(queryTimeoutSecs > 0) {
-                preparedStatement.setQueryTimeout(queryTimeoutSecs);
-            }
-            setPreparedStatementParams(preparedStatement, queryParams);
-            ResultSet resultSet = preparedStatement.executeQuery();
-            List<List<Column>> rows = Lists.newArrayList();
-            while(resultSet.next()){
-                ResultSetMetaData metaData = resultSet.getMetaData();
-                int columnCount = metaData.getColumnCount();
-                List<Column> row = Lists.newArrayList();
-                for(int i=1 ; i <= columnCount; i++) {
-                    String columnLabel = metaData.getColumnLabel(i);
-                    int columnType = metaData.getColumnType(i);
-                    Class columnJavaType = Util.getJavaType(columnType);
-                    if (columnJavaType.equals(String.class)) {
-                        row.add(new Column<String>(columnLabel, resultSet.getString(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Integer.class)) {
-                        row.add(new Column<Integer>(columnLabel, resultSet.getInt(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Double.class)) {
-                        row.add(new Column<Double>(columnLabel, resultSet.getDouble(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Float.class)) {
-                        row.add(new Column<Float>(columnLabel, resultSet.getFloat(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Short.class)) {
-                        row.add(new Column<Short>(columnLabel, resultSet.getShort(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Boolean.class)) {
-                        row.add(new Column<Boolean>(columnLabel, resultSet.getBoolean(columnLabel), columnType));
-                    } else if (columnJavaType.equals(byte[].class)) {
-                        row.add(new Column<byte[]>(columnLabel, resultSet.getBytes(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Long.class)) {
-                        row.add(new Column<Long>(columnLabel, resultSet.getLong(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Date.class)) {
-                        row.add(new Column<Date>(columnLabel, resultSet.getDate(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Time.class)) {
-                        row.add(new Column<Time>(columnLabel, resultSet.getTime(columnLabel), columnType));
-                    } else if (columnJavaType.equals(Timestamp.class)) {
-                        row.add(new Column<Timestamp>(columnLabel, resultSet.getTimestamp(columnLabel), columnType));
-                    } else {
-                        throw new RuntimeException("type =  " + columnType + " for column " + columnLabel + " not supported.");
-                    }
+            try (PreparedStatement preparedStatement = connection.prepareStatement(sqlQuery)) {
+                if (queryTimeoutSecs > 0) {
+                    preparedStatement.setQueryTimeout(queryTimeoutSecs);
                 }
-                rows.add(row);
+                setPreparedStatementParams(preparedStatement, queryParams);
+                try (ResultSet resultSet = preparedStatement.executeQuery()) {
+                    List<List<Column>> rows = Lists.newArrayList();
+                    while (resultSet.next()) {
+                        ResultSetMetaData metaData = resultSet.getMetaData();
+                        int columnCount = metaData.getColumnCount();
+                        List<Column> row = Lists.newArrayList();
+                        for (int i = 1; i <= columnCount; i++) {
+                            String columnLabel = metaData.getColumnLabel(i);
+                            int columnType = metaData.getColumnType(i);
+                            Class columnJavaType = Util.getJavaType(columnType);
+                            if (columnJavaType.equals(String.class)) {
+                                row.add(new Column<String>(columnLabel, resultSet.getString(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Integer.class)) {
+                                row.add(new Column<Integer>(columnLabel, resultSet.getInt(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Double.class)) {
+                                row.add(new Column<Double>(columnLabel, resultSet.getDouble(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Float.class)) {
+                                row.add(new Column<Float>(columnLabel, resultSet.getFloat(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Short.class)) {
+                                row.add(new Column<Short>(columnLabel, resultSet.getShort(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Boolean.class)) {
+                                row.add(new Column<Boolean>(columnLabel, resultSet.getBoolean(columnLabel), columnType));
+                            } else if (columnJavaType.equals(byte[].class)) {
+                                row.add(new Column<byte[]>(columnLabel, resultSet.getBytes(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Long.class)) {
+                                row.add(new Column<Long>(columnLabel, resultSet.getLong(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Date.class)) {
+                                row.add(new Column<Date>(columnLabel, resultSet.getDate(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Time.class)) {
+                                row.add(new Column<Time>(columnLabel, resultSet.getTime(columnLabel), columnType));
+                            } else if (columnJavaType.equals(Timestamp.class)) {
+                                row.add(new Column<Timestamp>(columnLabel, resultSet.getTimestamp(columnLabel), columnType));
+                            } else {
+                                throw new RuntimeException("type =  " + columnType + " for column " + columnLabel + " not supported.");
+                            }
+                        }
+                        rows.add(row);
+                    }
+                    return rows;
+                }
             }
-            return rows;
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute select query " + sqlQuery, e);
         } finally {
@@ -179,8 +182,9 @@ public class JdbcClient {
         Connection connection = null;
         try {
             connection = connectionProvider.getConnection();
-            Statement statement = connection.createStatement();
-            statement.execute(sql);
+            try (Statement statement = connection.createStatement()) {
+                statement.execute(sql);
+            }
         } catch (SQLException e) {
             throw new RuntimeException("Failed to execute SQL", e);
         } finally {

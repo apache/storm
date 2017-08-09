@@ -36,7 +36,7 @@ public class LocalStateTest {
 
     @Test
     public void testLocalState() throws Exception{
-        try(TmpPath dir1_tmp = new TmpPath();  TmpPath dir2_tmp = new TmpPath() ) {
+        try (TmpPath dir1_tmp = new TmpPath();  TmpPath dir2_tmp = new TmpPath() ) {
             GlobalStreamId globalStreamId_a = new GlobalStreamId("a", "a");
             GlobalStreamId globalStreamId_b = new GlobalStreamId("b", "b");
             GlobalStreamId globalStreamId_c = new GlobalStreamId("c", "c");

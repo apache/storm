@@ -96,11 +96,12 @@ public class FluxParser {
         // properties file substitution
         if(propsFile != null){
             LOG.info("Performing property substitution.");
-            InputStream propsIn = new FileInputStream(propsFile);
-            Properties props = new Properties();
-            props.load(propsIn);
-            for(Object key : props.keySet()){
-                str = str.replace("${" + key + "}", props.getProperty((String)key));
+            try (InputStream propsIn = new FileInputStream(propsFile)) {
+                Properties props = new Properties();
+                props.load(propsIn);
+                for (Object key : props.keySet()) {
+                    str = str.replace("${" + key + "}", props.getProperty((String) key));
+                }
             }
         } else {
             LOG.info("Not performing property substitution.");
