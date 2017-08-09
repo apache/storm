@@ -43,3 +43,4 @@ public class AutoHBase extends AbstractHadoopAutoCreds {
         return HBASE_CREDENTIALS + configKey;
     }
 }
+

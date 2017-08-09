@@ -22,6 +22,7 @@ import org.apache.storm.ILocalDRPC;
 import org.apache.storm.drpc.DRPCSpout;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.topology.BoltDeclarer;
@@ -513,6 +514,10 @@ public class TridentTopology {
 
                 if(cpuLoad != null) {
                     d.setCPULoad(cpuLoad);
+                }
+                
+                for (SharedMemory request: g.getSharedMemory()) {
+                    d.addSharedMemory(request);
                 }
 
                 Collection<PartitionNode> inputs = uniquedSubscriptions(externalGroupInputs(g));

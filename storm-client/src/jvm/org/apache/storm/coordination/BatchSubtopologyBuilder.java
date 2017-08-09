@@ -21,6 +21,7 @@ import org.apache.storm.Constants;
 import org.apache.storm.coordination.CoordinatedBolt.SourceArgs;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.topology.BaseConfigurationDeclarer;
@@ -108,6 +109,9 @@ public class BatchSubtopologyBuilder {
                                                                       coordinatedArgs,
                                                                       null),
                                                   component.parallelism);
+            for (SharedMemory request: component.sharedMemory) {
+                input.addSharedMemory(request);
+            }
             for(Map<String, Object> conf: component.componentConfs) {
                 input.addConfigurations(conf);
             }
@@ -129,10 +133,11 @@ public class BatchSubtopologyBuilder {
     }
 
     private static class Component {
-        public IRichBolt bolt;
-        public Integer parallelism;
-        public List<InputDeclaration> declarations = new ArrayList<InputDeclaration>();
-        public List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final IRichBolt bolt;
+        public final Integer parallelism;
+        public final List<InputDeclaration> declarations = new ArrayList<>();
+        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Set<SharedMemory> sharedMemory = new HashSet<>();
         
         public Component(IRichBolt bolt, Integer parallelism) {
             this.bolt = bolt;
@@ -441,6 +446,12 @@ public class BatchSubtopologyBuilder {
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
+            return this;
+        }
+
+        @Override
+        public BoltDeclarer addSharedMemory(SharedMemory request) {
+            _component.sharedMemory.add(request);
             return this;
         }
     }

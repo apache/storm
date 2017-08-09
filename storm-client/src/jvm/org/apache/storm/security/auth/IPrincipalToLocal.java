@@ -37,5 +37,9 @@ public interface IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
-    public String toLocal(Principal principal);
+    default public String toLocal(Principal principal) {
+        return principal == null ? null : toLocal(principal.getName());
+    }
+
+    public String toLocal(String principalName);
 }

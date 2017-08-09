@@ -15,13 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common.mapper;
-
-import org.apache.storm.tuple.ITuple;
-import org.bson.Document;
-
-import java.io.Serializable;
-import java.util.List;
 
 /**
  * MongoUpdateMapper is for defining spec. which is used for converting Tuple/ trident keys to an MongoDB document.

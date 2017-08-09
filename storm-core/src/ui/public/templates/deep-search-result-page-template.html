@@ -29,11 +29,17 @@
 </script>
 <script id="search-result-identified-template" type="text/html">
     {{#matches}}
-    <tr>
+    <tr id="aResult">
       <td><a href="http://{{host}}:{{logviewerPort}}/logviewer_search.html?file={{fileName}}&search={{searchString}}">{{host}}:{{port}}</a></td>
       <td><pre>{{beforeString}}<b><a href="{{logviewerURL}}">{{matchString}}</a></b>{{afterString}}</pre></td>
     </tr>
     {{/matches}}
+    {{#resultNotFound}}
+    <tr id="noResult">
+      <td>Result Not Found</td>
+      <td></td>
+    </tr>
+    {{/resultNotFound}}
 </script>
 <script id="search-form-template" type="text/html">
   <div id="search-form-container" class="search-box">

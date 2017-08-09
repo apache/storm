@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
-import org.apache.rocketmq.common.message.MessageExt;
-import org.apache.storm.utils.Utils;
-import org.junit.Before;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Map;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import org.apache.rocketmq.common.message.MessageExt;
+import org.apache.storm.utils.Utils;
+import org.junit.Before;
+import org.junit.Test;
 
 public class TestMessageRetryManager {
     MessageRetryManager messageRetryManager;

@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.cassandra;
 
 import com.datastax.driver.core.BatchStatement;

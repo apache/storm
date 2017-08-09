@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common;
 
 import java.io.ByteArrayOutputStream;
@@ -23,14 +24,19 @@ import java.util.List;
 
 public final class MongoUtils {
 
-    public static byte[] getID(List<Object> keys) {
+    /**
+     * Create Mongo _id based on input keys.
+     * @param keys keys
+     * @return Mongo _id
+     */
+    public static byte[] getId(List<Object> keys) {
         ByteArrayOutputStream bos = new ByteArrayOutputStream();
         try {
             for (Object key : keys) {
                 bos.write(String.valueOf(key).getBytes());
             }
             bos.close();
-        } catch (IOException e){
+        } catch (IOException e) {
             throw new RuntimeException("IOException creating Mongo document _id.", e);
         }
         return bos.toByteArray();

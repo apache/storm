@@ -15,11 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.sql.runtime.serde.csv;
 
-import org.apache.commons.csv.CSVFormat;
-import org.apache.commons.csv.CSVPrinter;
-import org.apache.storm.sql.runtime.IOutputSerializer;
+package org.apache.storm.sql.runtime.serde.csv;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -27,6 +24,10 @@ import java.io.StringWriter;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.apache.storm.sql.runtime.IOutputSerializer;
 
 /**
  * CsvSerializer uses the standard RFC4180 CSV Parser
@@ -36,24 +37,24 @@ import java.util.List;
  * @see <a href="https://tools.ietf.org/html/rfc4180">RFC4180</a>
  */
 public class CsvSerializer implements IOutputSerializer, Serializable {
-  private final List<String> fields; //reserved for future
+    private final List<String> fields; //reserved for future
 
-  public CsvSerializer(List<String> fields) {
+    public CsvSerializer(List<String> fields) {
         this.fields = fields;
     }
 
-  @Override
-  public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
-    try {
-      StringWriter writer = new StringWriter();
-      CSVPrinter printer = new CSVPrinter(writer, CSVFormat.RFC4180);
-      for (Object o : data) {
-        printer.print(o);
-      }
-      //since using StringWriter, we do not need to close it.
-      return ByteBuffer.wrap(writer.getBuffer().toString().getBytes(StandardCharsets.UTF_8));
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    @Override
+    public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
+        try {
+            StringWriter writer = new StringWriter();
+            CSVPrinter printer = new CSVPrinter(writer, CSVFormat.RFC4180);
+            for (Object o : data) {
+                printer.print(o);
+            }
+            //since using StringWriter, we do not need to close it.
+            return ByteBuffer.wrap(writer.getBuffer().toString().getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
-  }
 }

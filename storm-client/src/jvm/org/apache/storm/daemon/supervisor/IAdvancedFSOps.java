@@ -83,19 +83,19 @@ public interface IAdvancedFSOps {
 
     /**
      * Setup the permissions for the storm code dir
-     * @param topologyConf the config of the Topology
+     * @param user the owner of the topology
      * @param path the directory to set the permissions on
      * @throws IOException on any error
      */
-    void setupStormCodeDir(Map<String, Object> topologyConf, File path) throws IOException;
+    void setupStormCodeDir(String user, File path) throws IOException;
 
     /**
      * Setup the permissions for the worker artifacts dirs
-     * @param topologyConf the config of the Topology
+     * @param user the owner of the topology
      * @param path the directory to set the permissions on
      * @throws IOException on any error
      */
-    void setupWorkerArtifactsDir(Map<String, Object> topologyConf, File path) throws IOException;
+    void setupWorkerArtifactsDir(String user, File path) throws IOException;
 
     /**
      * Sanity check if everything the topology needs is there for it to run.
@@ -157,7 +157,7 @@ public interface IAdvancedFSOps {
 
     /**
      * Read the contents of a file into a byte array.
-     * @param localtion the file to read
+     * @param location the file to read
      * @return the contents of the file
      * @throws IOException on any error
      */

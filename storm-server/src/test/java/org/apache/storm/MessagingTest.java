@@ -62,7 +62,4 @@ public class MessagingTest {
             Assert.assertEquals(6 * 4, Testing.readTuples(results, "2").size());
         }
     }
-
-
-
 }

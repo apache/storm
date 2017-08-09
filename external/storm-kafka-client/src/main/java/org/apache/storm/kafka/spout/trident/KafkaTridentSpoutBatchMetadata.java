@@ -37,7 +37,7 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
     // first offset of this batch
     private long firstOffset;               
     // last offset of this batch
-    private long lastOffset;                
+    private long lastOffset;
 
     public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, long firstOffset, long lastOffset) {
         this.topicPartition = topicPartition;

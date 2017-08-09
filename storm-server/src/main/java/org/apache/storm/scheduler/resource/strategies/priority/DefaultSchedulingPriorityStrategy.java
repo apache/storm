@@ -18,55 +18,46 @@
 
 package org.apache.storm.scheduler.resource.strategies.priority;
 
-import org.apache.storm.scheduler.Cluster;
+import java.util.Map;
+
+import org.apache.storm.scheduler.ISchedulingState;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.SchedulingState;
 import org.apache.storm.scheduler.resource.User;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
 
 public class DefaultSchedulingPriorityStrategy implements ISchedulingPriorityStrategy {
     private static final Logger LOG = LoggerFactory
             .getLogger(DefaultSchedulingPriorityStrategy.class);
 
-    private Cluster cluster;
-    private Map<String, User> userMap;
-
     @Override
-    public void prepare(SchedulingState schedulingState) {
-        this.cluster = schedulingState.cluster;
-        this.userMap = schedulingState.userMap;
-    }
-
-    @Override
-    public TopologyDetails getNextTopologyToSchedule() {
-        User nextUser = this.getNextUser();
+    public TopologyDetails getNextTopologyToSchedule(ISchedulingState schedulingState, Map<String, User> userMap) {
+        User nextUser = getNextUser(schedulingState, userMap);
         if (nextUser == null) {
             return null;
         }
-        return nextUser.getNextTopologyToSchedule();
+        return nextUser.getNextTopologyToSchedule(schedulingState);
     }
 
-    public User getNextUser() {
-        Double least = Double.POSITIVE_INFINITY;
+    public User getNextUser(ISchedulingState cluster, Map<String, User> userMap) {
+        double least = Double.POSITIVE_INFINITY;
         User ret = null;
-        for (User user : this.userMap.values()) {
-            if (user.hasTopologyNeedSchedule()) {
-                Double userResourcePoolAverageUtilization = user.getResourcePoolAverageUtilization();
+        final double totalCpu = cluster.getClusterTotalCpuResource();
+        final double totalMem = cluster.getClusterTotalMemoryResource();
+        for (User user : userMap.values()) {
+            if (user.hasTopologyNeedSchedule(cluster)) {
+                double userResourcePoolAverageUtilization = user.getResourcePoolAverageUtilization(cluster);
                 if (least > userResourcePoolAverageUtilization) {
                     ret = user;
                     least = userResourcePoolAverageUtilization;
-                }
-                // if ResourcePoolAverageUtilization is equal to the user that is being compared
-                else if (Math.abs(least - userResourcePoolAverageUtilization) < 0.0001) {
-                    double currentCpuPercentage = ret.getCPUResourceGuaranteed() / this.cluster.getClusterTotalCPUResource();
-                    double currentMemoryPercentage = ret.getMemoryResourceGuaranteed() / this.cluster.getClusterTotalMemoryResource();
+                } else if (Math.abs(least - userResourcePoolAverageUtilization) < 0.0001) {
+                    // if ResourcePoolAverageUtilization is equal to the user that is being compared
+                    double currentCpuPercentage = ret.getCpuResourceGuaranteed() / totalCpu;
+                    double currentMemoryPercentage = ret.getMemoryResourceGuaranteed() / totalMem;
                     double currentAvgPercentage = (currentCpuPercentage + currentMemoryPercentage) / 2.0;
 
-                    double userCpuPercentage = user.getCPUResourceGuaranteed() / this.cluster.getClusterTotalCPUResource();
-                    double userMemoryPercentage = user.getMemoryResourceGuaranteed() / this.cluster.getClusterTotalMemoryResource();
+                    double userCpuPercentage = user.getCpuResourceGuaranteed() / totalCpu;
+                    double userMemoryPercentage = user.getMemoryResourceGuaranteed() / totalMem;
                     double userAvgPercentage = (userCpuPercentage + userMemoryPercentage) / 2.0;
                     if (userAvgPercentage > currentAvgPercentage) {
                         ret = user;

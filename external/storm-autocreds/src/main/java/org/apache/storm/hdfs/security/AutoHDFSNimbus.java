@@ -74,14 +74,14 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected  byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
-        return getHadoopCredentials(conf, new Configuration());
+    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
+        return getHadoopCredentials(conf, new Configuration(), topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -91,12 +91,10 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    private byte[] getHadoopCredentials(Map conf, final Configuration configuration) {
+    private byte[] getHadoopCredentials(Map conf, final Configuration configuration, final String topologySubmitterUser) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 login(configuration);
-
-                final String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
 
                 final URI nameNodeURI = conf.containsKey(TOPOLOGY_HDFS_URI) ? new URI(conf.get(TOPOLOGY_HDFS_URI).toString())
                         : FileSystem.getDefaultUri(configuration);
@@ -147,7 +145,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
      */
     @Override
     @SuppressWarnings("unchecked")
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologyOwnerPrincipal) {
         List<String> confKeys = getConfigKeys(topologyConf);
         for (Pair<String, Credentials> cred : getCredentials(credentials, confKeys)) {
             try {
@@ -168,7 +166,7 @@ public class AutoHDFSNimbus extends AbstractHadoopNimbusPluginAutoCreds {
             } catch (Exception e) {
                 LOG.warn("could not renew the credentials, one of the possible reason is tokens are beyond " +
                         "renewal period so attempting to get new tokens.", e);
-                populateCredentials(credentials, topologyConf);
+                populateCredentials(credentials, topologyConf, topologyOwnerPrincipal);
             }
         }
     }

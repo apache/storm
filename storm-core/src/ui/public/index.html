@@ -67,6 +67,12 @@
   </div>
   <div class="row">
     <div class="col-md-12">
+      <h2>Owner Summary</h2>
+      <div id="owner-summary"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
       <h2>Topology Summary</h2>
       <div id="topology-summary"></div>
     </div>
@@ -87,6 +93,9 @@
     <div class="col-md-12">
       <div id="json-response-error"></div>
     </div>
+  </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
   </div>
 </div>
 </body>
@@ -115,6 +124,7 @@ $(document).ready(function() {
     var clusterSummary = $("#cluster-summary");
     var clusterResources = $("#cluster-resources");
     var nimbusSummary = $("#nimbus-summary");
+    var ownerSummary = $("#owner-summary");
     var topologySummary = $("#topology-summary");
     var supervisorSummary = $("#supervisor-summary");
     var config = $("#nimbus-configuration");
@@ -152,6 +162,11 @@ $(document).ready(function() {
             $('#nimbus-summary [data-toggle="tooltip"]').tooltip();
         });
 
+        $.getJSON("/api/v1/owner-resources", function(response, status, jqXHR) {
+            ownerSummary.append(Mustache.render($(indexTemplate).filter("#owner-summary-template").html(), response));
+            makeOwnerSummaryTable(response, '#owner-summary-table', '#owner-summary');
+        });
+
         $.getJSON("/api/v1/topology/summary",function(response,status,jqXHR) {
             topologySummary.append(Mustache.render($(indexTemplate).filter("#topology-summary-template").html(),response));
             //name, owner, status, uptime, num workers, num executors, num tasks, replication count, assigned total mem, assigned total cpu, scheduler info
@@ -186,5 +201,8 @@ $(document).ready(function() {
         });
     });
   });
+
+  getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>
 </html>

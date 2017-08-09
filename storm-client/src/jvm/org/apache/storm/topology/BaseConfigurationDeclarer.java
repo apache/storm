@@ -52,18 +52,20 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         return addConfiguration(Config.TOPOLOGY_TASKS, val);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T setMemoryLoad(Number onHeap) {
         if (onHeap != null) {
             onHeap = onHeap.doubleValue();
             return addConfiguration(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
         }
-        return null;
+        return (T) this;
     }
 
     @Override
     public T setMemoryLoad(Number onHeap, Number offHeap) {
-        T ret = null;
+        @SuppressWarnings("unchecked")
+        T ret = (T) this;
         ret = setMemoryLoad(onHeap);
 
         if (offHeap!=null) {
@@ -73,11 +75,12 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         return ret;
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     public T setCPULoad(Number amount) {
         if(amount != null) {
             return addConfiguration(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, amount);
         }
-        return null;
+        return (T) this;
     }
 }

@@ -48,6 +48,7 @@ public class PacemakerClient implements ISaslClient {
     private String client_name;
     private String secret;
     private AtomicBoolean ready;
+    private AtomicBoolean shutdown;
     private final ClientBootstrap bootstrap;
     private AtomicReference<Channel> channelRef;
     private InetSocketAddress remote_addr;
@@ -103,6 +104,7 @@ public class PacemakerClient implements ISaslClient {
         }
 
         ready = new AtomicBoolean(false);
+        shutdown = new AtomicBoolean(false);
         channelRef = new AtomicReference<Channel>(null);
         setupMessaging();
 
@@ -117,7 +119,10 @@ public class PacemakerClient implements ISaslClient {
         bootstrap.setOption("keepAlive", true);
 
         remote_addr = new InetSocketAddress(host, port);
-        ChannelPipelineFactory pipelineFactory = new ThriftNettyClientCodec(this, config, authMethod, host).pipelineFactory();
+        int thriftMessageMaxSize = (Integer) config.get(Config.PACEMAKER_THRIFT_MESSAGE_SIZE_MAX);
+        ChannelPipelineFactory pipelineFactory =
+            new ThriftNettyClientCodec(this, config, authMethod, host, thriftMessageMaxSize)
+            .pipelineFactory();
         bootstrap.setPipelineFactory(pipelineFactory);
         bootstrap.connect(remote_addr);
     }
@@ -173,11 +178,15 @@ public class PacemakerClient implements ISaslClient {
                 messages[next] = m;
                 LOG.debug("Put message in slot: {}", Integer.toString(next));
                 do {
-                    waitUntilReady();
-                    Channel channel = channelRef.get();
-                    if(channel != null) {
-                        channel.write(m);
-                        m.wait(1000);
+                    try {
+                        waitUntilReady();
+                        Channel channel = channelRef.get();
+                        if (channel != null) {
+                            channel.write(m);
+                            m.wait(1000);
+                        }
+                    } catch (Exception exp) {
+                        LOG.error("error attempting to write to a channel {}", exp);
                     }
                 } while (messages[next] == m);
             }
@@ -253,11 +262,14 @@ public class PacemakerClient implements ISaslClient {
 
     public synchronized void doReconnect() {
         close_channel();
-        bootstrap.connect(remote_addr);
+        if (!shutdown.get()) {
+            bootstrap.connect(remote_addr);
+        }
     }
 
     public void shutdown() {
-        bootstrap.shutdown();
+        shutdown.set(true);
+        bootstrap.releaseExternalResources();
     }
 
     private synchronized void close_channel() {

@@ -37,9 +37,10 @@ public class KerberosPrincipalToLocal implements IPrincipalToLocal {
      * @param principal the principal to convert
      * @return The local user name.
      */
-    public String toLocal(Principal principal) {
+    @Override
+    public String toLocal(String principal) {
       //This technically does not conform with rfc1964, but should work so
       // long as you don't have any really odd names in your KDC.
-      return principal == null ? null : principal.getName().split("[/@]")[0];
+      return principal == null ? null : principal.split("[/@]")[0];
     }
 }

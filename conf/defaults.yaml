@@ -282,6 +282,7 @@ pacemaker.thread.timeout: 10
 pacemaker.childopts: "-Xmx1024m"
 pacemaker.auth.method: "NONE"
 pacemaker.kerberos.users: []
+pacemaker.thrift.message.size.max: 10485760
 
 #default storm daemon metrics reporter plugins
 storm.daemon.metrics.reporter.plugins:
@@ -294,6 +295,7 @@ storm.resource.isolation.plugin: "org.apache.storm.container.cgroup.CgroupManage
 # Also determines whether the unit tests for cgroup runs.  
 # If storm.resource.isolation.plugin.enable is set to false the unit tests for cgroups will not run
 storm.resource.isolation.plugin.enable: false
+storm.cgroup.memory.enforcement.enable: false
 
 # Configs for CGroup support
 storm.cgroup.hierarchy.dir: "/cgroup/storm_resources"
@@ -303,7 +305,13 @@ storm.cgroup.resources:
 storm.cgroup.hierarchy.name: "storm"
 storm.supervisor.cgroup.rootdir: "storm"
 storm.cgroup.cgexec.cmd: "/bin/cgexec"
-storm.cgroup.memory.limit.tolerance.margin.mb: 128.0
+storm.cgroup.memory.limit.tolerance.margin.mb: 0.0
+storm.supervisor.memory.limit.tolerance.margin.mb: 128.0
+storm.supervisor.hard.memory.limit.multiplier: 2.0
+storm.supervisor.hard.memory.limit.overage.mb: 2024
+storm.supervisor.low.memory.threshold.mb: 1024
+storm.supervisor.medium.memory.threshold.mb: 1536
+storm.supervisor.medium.memory.grace.period.ms: 30000
 storm.topology.classpath.beginning.enabled: false
 worker.metrics:
     "CGroupMemory": "org.apache.storm.metric.cgroup.CGroupMemoryUsage"

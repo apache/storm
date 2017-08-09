@@ -24,16 +24,16 @@ import org.slf4j.LoggerFactory;
  * Handles watermark events and triggers {@link TriggerHandler#onTrigger()} for each window
  * interval that has events to be processed up to the watermark ts.
  */
-public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T> {
+public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T, Long> {
     private static final Logger LOG = LoggerFactory.getLogger(WatermarkTimeTriggerPolicy.class);
     private final long slidingIntervalMs;
     private final TriggerHandler handler;
-    private final EvictionPolicy<T> evictionPolicy;
+    private final EvictionPolicy<T, ?> evictionPolicy;
     private final WindowManager<T> windowManager;
-    private long nextWindowEndTs = 0;
+    private volatile long nextWindowEndTs;
     private boolean started;
 
-    public WatermarkTimeTriggerPolicy(long slidingIntervalMs, TriggerHandler handler, EvictionPolicy<T> evictionPolicy,
+    public WatermarkTimeTriggerPolicy(long slidingIntervalMs, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy,
                                       WindowManager<T> windowManager) {
         this.slidingIntervalMs = slidingIntervalMs;
         this.handler = handler;
@@ -116,11 +116,21 @@ public class WatermarkTimeTriggerPolicy<T> implements TriggerPolicy<T> {
     }
 
     @Override
+    public Long getState() {
+        return nextWindowEndTs;
+    }
+
+    @Override
+    public void restoreState(Long state) {
+        nextWindowEndTs = state;
+    }
+
+    @Override
     public String toString() {
         return "WatermarkTimeTriggerPolicy{" +
-                "slidingIntervalMs=" + slidingIntervalMs +
-                ", nextWindowEndTs=" + nextWindowEndTs +
-                ", started=" + started +
-                '}';
+            "slidingIntervalMs=" + slidingIntervalMs +
+            ", nextWindowEndTs=" + nextWindowEndTs +
+            ", started=" + started +
+            '}';
     }
 }

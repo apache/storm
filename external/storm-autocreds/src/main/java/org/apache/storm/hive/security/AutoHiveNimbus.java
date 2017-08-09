@@ -79,15 +79,15 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
+    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
         Configuration configuration = new Configuration();
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -107,10 +107,9 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, final Configuration configuration) {
+    protected byte[] getHadoopCredentials(Map conf, final Configuration configuration, final String topologySubmitterUser) {
         try {
             if (UserGroupInformation.isSecurityEnabled()) {
-                String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
                 String hiveMetaStoreURI = getMetaStoreURI(configuration);
                 String hiveMetaStorePrincipal = getMetaStorePrincipal(configuration);
                 HiveConf hcatConf = createHiveConf(hiveMetaStoreURI, hiveMetaStorePrincipal);
@@ -193,7 +192,7 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologyOwnerPrincipal) {
         List<String> configKeys = getConfigKeys(topologyConf);
         for (Pair<String, Credentials> cred : getCredentials(credentials, configKeys)) {
             try {

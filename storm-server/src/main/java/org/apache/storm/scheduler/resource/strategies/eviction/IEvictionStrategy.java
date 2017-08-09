@@ -18,25 +18,20 @@
 
 package org.apache.storm.scheduler.resource.strategies.eviction;
 
+import java.util.Map;
+
+import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.TopologyDetails;
-import org.apache.storm.scheduler.resource.SchedulingState;
+import org.apache.storm.scheduler.resource.User;
 
 public interface IEvictionStrategy {
-
-    /**
-     * Initialization
-     */
-    public void prepare(SchedulingState schedulingState);
-
     /**
      * This method when invoked should attempt to make space on the cluster so that the topology specified can be scheduled
      * @param td the topology to make space for
      * @return return true to indicate that space has been made for topology and try schedule topology td again.
-     * Return false to inidcate that no space could be made for the topology on the cluster and the scheduler should give up
+     * Return false to indicate that no space could be made for the topology on the cluster and the scheduler should give up
      * trying to schedule the topology for this round of scheduling.  This method will be invoked until the topology indicated
      * could be scheduled or the method returns false
      */
-    public boolean makeSpaceForTopo(TopologyDetails td);
-
-
+    public boolean makeSpaceForTopo(TopologyDetails td, Cluster schedulingState, Map<String, User> userMap);
 }

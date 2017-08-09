@@ -18,15 +18,15 @@
 
 package org.apache.storm.sql.runtime.datasource.socket.trident;
 
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.state.StateFactory;
-
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.Map;
+
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
 
 /**
  * Trident State implementation of Socket. It only supports writing.
@@ -64,8 +64,8 @@ public class SocketState implements State {
                 Socket socket = new Socket(host, port);
                 out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
             } catch (IOException e) {
-                throw new RuntimeException("Exception while initializing socket for State. host " +
-                        host + " port " + port, e);
+                throw new RuntimeException("Exception while initializing socket for State. host "
+                        + host + " port " + port, e);
             }
 
             // State doesn't have close() and Storm actually doesn't guarantee so we can't release socket resource anyway

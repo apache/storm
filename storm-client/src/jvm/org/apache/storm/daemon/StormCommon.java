@@ -24,6 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 
@@ -52,10 +53,8 @@ import org.apache.storm.task.IBolt;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ThriftTopologyUtils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -146,8 +145,7 @@ public class StormCommon {
     }
 
     public static Map<String, Object> allComponents(StormTopology topology) {
-        Map<String, Object> components = new HashMap<>();
-        components.putAll(topology.get_bolts());
+        Map<String, Object> components = new HashMap<>(topology.get_bolts());
         components.putAll(topology.get_spouts());
         components.putAll(topology.get_state_spouts());
         return components;

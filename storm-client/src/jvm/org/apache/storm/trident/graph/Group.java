@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import org.jgrapht.DirectedGraph;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.trident.planner.Node;
 import org.apache.storm.trident.util.IndexedEdge;
 import org.apache.storm.trident.util.TridentUtils;
@@ -66,6 +67,17 @@ public class Group {
         return ret;        
     }
 
+    /**
+     * @return the shared memory requests for the entire group
+     */
+    public Set<SharedMemory> getSharedMemory() {
+        Set<SharedMemory> ret = new HashSet<>();
+        for (Node n: nodes) {
+            ret.addAll(n.getSharedMemory());
+        }
+        return ret;
+    }
+    
     /**
      * In case no resources are specified, returns empty map.
      * In case differing types of resources are specified, throw.

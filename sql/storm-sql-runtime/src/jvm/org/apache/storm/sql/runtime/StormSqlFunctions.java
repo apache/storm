@@ -15,20 +15,34 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime;
 
 public class StormSqlFunctions {
-  public static Boolean eq(Object b0, Object b1) {
-    if (b0 == null || b1 == null) {
-      return null;
-    }
-    return b0.equals(b1);
-  }
 
-  public static Boolean ne(Object b0, Object b1) {
-    if (b0 == null || b1 == null) {
-      return null;
+    /**
+     * Whether the object equals the other one.
+     * @param b0 one object
+     * @param b1 the other object
+     * @return true if the object equals the other one
+     */
+    public static Boolean eq(Object b0, Object b1) {
+        if (b0 == null || b1 == null) {
+            return null;
+        }
+        return b0.equals(b1);
     }
-    return !b0.equals(b1);
-  }
+
+    /**
+     * Whether the object dose not equals the other one.
+     * @param b0 one object
+     * @param b1 the other object
+     * @return true if the object dose not equals the other one
+     */
+    public static Boolean ne(Object b0, Object b1) {
+        if (b0 == null || b1 == null) {
+            return null;
+        }
+        return !b0.equals(b1);
+    }
 }

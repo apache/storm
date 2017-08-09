@@ -291,6 +291,7 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
             ret = sub.check_output(all_args, stderr=sub.STDOUT)
             print(ret)
         except sub.CalledProcessError as e:
+            print(e.output)
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
@@ -302,39 +303,18 @@ def run_client_jar(jarfile, klass, args, daemon=False, client=True, extrajvmopts
     local_jars = DEP_JARS_OPTS
     artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS, DEP_PROXY_URL, DEP_PROXY_USERNAME, DEP_PROXY_PASSWORD)
 
-    transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
-    if (transform_class != None and transform_class != "null"):
-        tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
-        exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
-        extra_jars = [tmpjar, USER_CONF_DIR, STORM_BIN_DIR]
-        extra_jars.extend(local_jars)
-        extra_jars.extend(artifact_to_file_jars.values())
-        topology_runner_exit_code = exec_storm_class(
-                klass,
-                jvmtype="-client",
-                extrajars=extra_jars,
-                args=args,
-                daemon=daemon,
-                client=client,
-                fork=True,
-                jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + tmpjar] +
-                        ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                        ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
-        os.remove(tmpjar)
-        sys.exit(topology_runner_exit_code)
-    else:
-        extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
-        extra_jars.extend(local_jars)
-        extra_jars.extend(artifact_to_file_jars.values())
-        exec_storm_class(
-            klass,
-            jvmtype="-client",
-            extrajars=extra_jars,
-            args=args,
-            daemon=False,
-            jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
-                    ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
-                    ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
+    extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
+    extra_jars.extend(local_jars)
+    extra_jars.extend(artifact_to_file_jars.values())
+    exec_storm_class(
+        klass,
+        jvmtype="-client",
+        extrajars=extra_jars,
+        args=args,
+        daemon=False,
+        jvmopts=JAR_JVM_OPTS + extrajvmopts + ["-Dstorm.jar=" + jarfile] +
+                ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
 def local(jarfile, klass, *args):
     """Syntax: [storm local topology-jar-path class ...]
@@ -457,12 +437,12 @@ def kill(*args):
 
 
 def upload_credentials(*args):
-    """Syntax: [storm upload_credentials topology-name [credkey credvalue]*]
+    """Syntax: [storm upload-credentials topology-name [credkey credvalue]*]
 
     Uploads a new set of credentials to a running topology
     """
     if not args:
-        print_usage(command="upload_credentials")
+        print_usage(command="upload-credentials")
         sys.exit(2)
     exec_storm_class(
         "org.apache.storm.command.UploadCredentials",
@@ -618,7 +598,7 @@ def get_errors(*args):
     The result is returned in json format.
     """
     if not args:
-        print_usage(command="get_errors")
+        print_usage(command="get-errors")
         sys.exit(2)
     exec_storm_class(
         "org.apache.storm.command.GetErrors",
@@ -808,12 +788,16 @@ def logviewer():
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml")
     ]
+
+    allextrajars = get_wildcard_dir(STORM_WEBAPP_LIB_DIR)
+    allextrajars.append(CLUSTER_CONF_DIR)
     exec_storm_class(
-        "org.apache.storm.daemon.logviewer",
+        "org.apache.storm.daemon.logviewer.LogviewerServer",
         jvmtype="-server",
         daemonName="logviewer",
         jvmopts=jvmopts,
-        extrajars=[STORM_DIR, CLUSTER_CONF_DIR])
+        extrajars=allextrajars)
+
 
 def drpcclient(*args):
     """Syntax: [storm drpc-client [options] ([function argument]*)|(argument*)]

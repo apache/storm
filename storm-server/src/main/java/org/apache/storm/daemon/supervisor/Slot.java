@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
+
+import com.codahale.metrics.Meter;
 
 import java.io.IOException;
 import java.util.Collections;
@@ -38,17 +41,30 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.localizer.ILocalizer;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Slot extends Thread implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(Slot.class);
-    
+    private static final Meter numWorkersLaunched =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-launched");
+    private static final Meter numWorkersKilledProcessExit =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-process-exit");
+    private static final Meter numWorkersKilledMemoryViolation =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-memory-violation");
+    private static final Meter numWorkersKilledHBTimeout =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-hb-timeout");
+    private static final Meter numWorkersKilledHBNull =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-killed-hb-null");
+    private static final Meter numForceKill =
+        StormMetricsRegistry.registerMeter("supervisor:num-workers-force-kill");
+
     static enum MachineState {
         EMPTY,
         RUNNING,
@@ -57,7 +73,7 @@ public class Slot extends Thread implements AutoCloseable {
         KILL,
         WAITING_FOR_BASIC_LOCALIZATION,
         WAITING_FOR_BLOB_LOCALIZATION;
-    };
+    }
     
     static class StaticState {
         public final ILocalizer localizer;
@@ -203,21 +219,33 @@ public class Slot extends Thread implements AutoCloseable {
                     pendingStopProfileActions);
         }
     };
-    
+
+    //In some cases the new LocalAssignment may be equivalent to the old, but
+    // It is not equal.  In those cases we want to update the current assignment to
+    // be the same as the new assignment
+    private static DynamicState updateAssignmentIfNeeded(DynamicState dynamicState) {
+        if (dynamicState.newAssignment != null
+            && !dynamicState.newAssignment.equals(dynamicState.currentAssignment)) {
+            dynamicState =
+                dynamicState.withCurrentAssignment(dynamicState.container, dynamicState.newAssignment);
+        }
+        return dynamicState;
+    }
+
     static class TopoProfileAction {
         public final String topoId;
         public final ProfileRequest request;
-        
+
         public TopoProfileAction(String topoId, ProfileRequest request) {
             this.topoId = topoId;
             this.request = request;
         }
-        
+
         @Override
         public int hashCode() {
-            return (37 * topoId.hashCode()) + request.hashCode(); 
+            return (37 * topoId.hashCode()) + request.hashCode();
         }
-        
+
         @Override
         public boolean equals(Object other) {
             if (!(other instanceof TopoProfileAction)) {
@@ -226,7 +254,7 @@ public class Slot extends Thread implements AutoCloseable {
             TopoProfileAction o = (TopoProfileAction) other;
             return topoId.equals(o.topoId) && request.equals(o.request);
         }
-        
+
         @Override
         public String toString() {
             return "{ " + topoId + ": " + request + " }";
@@ -386,6 +414,8 @@ public class Slot extends Thread implements AutoCloseable {
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
                 return prepareForNewAssignmentNoWorkersRunning(dynamicState, staticState);
             }
+            dynamicState = updateAssignmentIfNeeded(dynamicState);
+            numWorkersLaunched.mark();
             Container c = staticState.containerLauncher.launchContainer(staticState.port, dynamicState.pendingLocalization, staticState.localState);
             return dynamicState.withCurrentAssignment(c, dynamicState.pendingLocalization).withState(MachineState.WAITING_FOR_WORKER_START).withPendingLocalization(null, null);
         } catch (TimeoutException e) {
@@ -440,6 +470,7 @@ public class Slot extends Thread implements AutoCloseable {
         }
 
         LOG.warn("SLOT {} force kill and wait...", staticState.port);
+        numForceKill.mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -471,6 +502,7 @@ public class Slot extends Thread implements AutoCloseable {
         if ((Time.currentTimeMillis() - dynamicState.startTime) > 120_000) {
             throw new RuntimeException("Not all processes in " + dynamicState.container + " exited after 120 seconds");
         }
+        numForceKill.mark();
         dynamicState.container.forceKill();
         Time.sleep(staticState.killSleepMs);
         return dynamicState;
@@ -501,7 +533,8 @@ public class Slot extends Thread implements AutoCloseable {
             LOG.warn("SLOT {}: Assignment Changed from {} to {}", staticState.port, dynamicState.currentAssignment, dynamicState.newAssignment);
             return killContainerForChangedAssignment(dynamicState, staticState);
         }
-        
+        dynamicState = updateAssignmentIfNeeded(dynamicState);
+
         long timeDiffms = (Time.currentTimeMillis() - dynamicState.startTime);
         if (timeDiffms > staticState.firstHbTimeoutMs) {
             LOG.warn("SLOT {}: Container {} failed to launch in {} ms.", staticState.port, dynamicState.container, staticState.firstHbTimeoutMs);
@@ -528,13 +561,23 @@ public class Slot extends Thread implements AutoCloseable {
             //Scheduling changed while running...
             return killContainerForChangedAssignment(dynamicState, staticState);
         }
+        dynamicState = updateAssignmentIfNeeded(dynamicState);
+
         if (dynamicState.container.didMainProcessExit()) {
+            numWorkersKilledProcessExit.mark();
             LOG.warn("SLOT {}: main process has exited", staticState.port);
+            return killAndRelaunchContainer(dynamicState, staticState);
+        }
+
+        if (dynamicState.container.isMemoryLimitViolated(dynamicState.currentAssignment)) {
+            numWorkersKilledMemoryViolation.mark();
+            LOG.warn("SLOT {}: violated memory limits", staticState.port);
             return killAndRelaunchContainer(dynamicState, staticState);
         }
         
         LSWorkerHeartbeat hb = dynamicState.container.readHeartbeat();
         if (hb == null) {
+            numWorkersKilledHBNull.mark();
             LOG.warn("SLOT {}: HB returned as null", staticState.port);
             //This can happen if the supervisor crashed after launching a
             // worker that never came up.
@@ -543,6 +586,7 @@ public class Slot extends Thread implements AutoCloseable {
         
         long timeDiffMs = (Time.currentTimeSecs() - hb.get_time_secs()) * 1000;
         if (timeDiffMs > staticState.hbTimeoutMs) {
+            numWorkersKilledHBTimeout.mark();
             LOG.warn("SLOT {}: HB is too old {} > {}", staticState.port, timeDiffMs, staticState.hbTimeoutMs);
             return killAndRelaunchContainer(dynamicState, staticState);
         }
@@ -603,6 +647,8 @@ public class Slot extends Thread implements AutoCloseable {
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             return prepareForNewAssignmentNoWorkersRunning(dynamicState, staticState);
         }
+        dynamicState = updateAssignmentIfNeeded(dynamicState);
+        
         //Both assignments are null, just wait
         if (dynamicState.profileActions != null && !dynamicState.profileActions.isEmpty()) {
             //Nothing is scheduled here so throw away all of the profileActions
@@ -612,7 +658,7 @@ public class Slot extends Thread implements AutoCloseable {
         Time.sleep(1000);
         return dynamicState;
     }
-    
+
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling =
             new AtomicReference<Set<TopoProfileAction>>(new HashSet<TopoProfileAction>());
@@ -747,7 +793,8 @@ public class Slot extends Thread implements AutoCloseable {
                     LOG.info("STATE {} -> {}", dynamicState, nextState);
                 }
                 //Save the current state for recovery
-                if (!equivalent(nextState.currentAssignment, dynamicState.currentAssignment)) {
+                if ((nextState.currentAssignment != null && !nextState.currentAssignment.equals(dynamicState.currentAssignment)) ||
+                        (dynamicState.currentAssignment != null && !dynamicState.currentAssignment.equals(nextState.currentAssignment))) {
                     LOG.info("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
                     saveNewAssignment(nextState.currentAssignment);
                 }

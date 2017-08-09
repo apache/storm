@@ -22,6 +22,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
 import org.junit.Test;
 
@@ -34,8 +36,10 @@ public class KafkaSpoutConfigTest {
         assertNull(conf.getConsumerGroupId());
         assertTrue(conf.getTranslator() instanceof DefaultRecordTranslator);
         HashMap<String, Object> expected = new HashMap<>();
-        expected.put("bootstrap.servers", "localhost:1234");
-        expected.put("enable.auto.commit", "false");
+        expected.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:1234");
+        expected.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        expected.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
+        expected.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         assertEquals(expected, conf.getKafkaProps());
     }
 

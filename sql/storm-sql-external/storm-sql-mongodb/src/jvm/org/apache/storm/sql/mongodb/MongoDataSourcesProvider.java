@@ -15,9 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.mongodb;
 
 import com.google.common.base.Preconditions;
+
+import java.net.URI;
+import java.util.List;
+import java.util.Properties;
+
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
 import org.apache.storm.mongodb.trident.state.MongoState;
 import org.apache.storm.mongodb.trident.state.MongoStateFactory;
@@ -36,10 +42,6 @@ import org.apache.storm.trident.state.StateUpdater;
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;
 
-import java.net.URI;
-import java.util.List;
-import java.util.Properties;
-
 /**
  * Create a MongoDB sink based on the URI and properties. The URI has the format of
  * mongodb://[username:password@]host1[:port1][,host2[:port2],...[,hostN[:portN]]][/[database][?options]].
@@ -47,80 +49,80 @@ import java.util.Properties;
  */
 public class MongoDataSourcesProvider implements DataSourcesProvider {
 
-  private static class MongoTridentDataSource implements ISqlTridentDataSource {
-    private final String url;
-    private final Properties props;
-    private final IOutputSerializer serializer;
+    private static class MongoTridentDataSource implements ISqlTridentDataSource {
+        private final String url;
+        private final Properties props;
+        private final IOutputSerializer serializer;
 
-    private MongoTridentDataSource(String url, Properties props, IOutputSerializer serializer) {
-      this.url = url;
-      this.props = props;
-      this.serializer = serializer;
+        private MongoTridentDataSource(String url, Properties props, IOutputSerializer serializer) {
+            this.url = url;
+            this.props = props;
+            this.serializer = serializer;
+        }
+
+        @Override
+        public ITridentDataSource getProducer() {
+            throw new UnsupportedOperationException(this.getClass().getName() + " doesn't provide Producer");
+        }
+
+        @Override
+        public SqlTridentConsumer getConsumer() {
+            Preconditions.checkArgument(!props.isEmpty(), "Writable MongoDB must contain collection config");
+            String serField = props.getProperty("trident.ser.field", "tridentSerField");
+            MongoMapper mapper = new TridentMongoMapper(serField, serializer);
+
+            MongoState.Options options = new MongoState.Options()
+                    .withUrl(url)
+                    .withCollectionName(props.getProperty("collection.name"))
+                    .withMapper(mapper);
+
+            StateFactory stateFactory = new MongoStateFactory(options);
+            StateUpdater stateUpdater = new MongoStateUpdater();
+
+            return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
+        }
+    }
+
+    private static class TridentMongoMapper implements MongoMapper {
+        private final String serField;
+        private final IOutputSerializer serializer;
+
+        private TridentMongoMapper(String serField, IOutputSerializer serializer) {
+            this.serField = serField;
+            this.serializer = serializer;
+        }
+
+        @Override
+        public Document toDocument(ITuple tuple) {
+            Document document = new Document();
+            byte[] array = serializer.write(tuple.getValues(), null).array();
+            document.append(serField, array);
+            return document;
+        }
+
+        @Override
+        public Document toDocumentByKeys(List<Object> keys) {
+            return null;
+        }
     }
 
     @Override
-    public ITridentDataSource getProducer() {
-      throw new UnsupportedOperationException(this.getClass().getName() + " doesn't provide Producer");
+    public String scheme() {
+        return "mongodb";
     }
 
     @Override
-    public SqlTridentConsumer getConsumer() {
-      Preconditions.checkArgument(!props.isEmpty(), "Writable MongoDB must contain collection config");
-      String serField = props.getProperty("trident.ser.field", "tridentSerField");
-      MongoMapper mapper = new TridentMongoMapper(serField, serializer);
-
-      MongoState.Options options = new MongoState.Options()
-          .withUrl(url)
-          .withCollectionName(props.getProperty("collection.name"))
-          .withMapper(mapper);
-
-      StateFactory stateFactory = new MongoStateFactory(options);
-      StateUpdater stateUpdater = new MongoStateUpdater();
-
-      return new SimpleSqlTridentConsumer(stateFactory, stateUpdater);
-    }
-  }
-
-  private static class TridentMongoMapper implements MongoMapper {
-    private final String serField;
-    private final IOutputSerializer serializer;
-
-    private TridentMongoMapper(String serField, IOutputSerializer serializer) {
-      this.serField = serField;
-      this.serializer = serializer;
+    public DataSource construct(URI uri, String inputFormatClass, String outputFormatClass,
+                                List<FieldInfo> fields) {
+        throw new UnsupportedOperationException();
     }
 
     @Override
-    public Document toDocument(ITuple tuple) {
-      Document document = new Document();
-      byte[] array = serializer.write(tuple.getValues(), null).array();
-      document.append(serField, array);
-      return document;
+    public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
+                                                  Properties properties, List<FieldInfo> fields) {
+        List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
+        IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
+        return new MongoTridentDataSource(uri.toString(), properties, serializer);
     }
-
-    @Override
-    public Document toDocumentByKeys(List<Object> keys) {
-      return null;
-    }
-  }
-
-  @Override
-  public String scheme() {
-    return "mongodb";
-  }
-
-  @Override
-  public DataSource construct(URI uri, String inputFormatClass, String outputFormatClass,
-                              List<FieldInfo> fields) {
-    throw new UnsupportedOperationException();
-  }
-
-  @Override
-  public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                Properties properties, List<FieldInfo> fields) {
-    List<String> fieldNames = FieldInfoUtils.getFieldNames(fields);
-    IOutputSerializer serializer = SerdeUtils.getSerializer(outputFormatClass, properties, fieldNames);
-    return new MongoTridentDataSource(uri.toString(), properties, serializer);
-  }
 
 }

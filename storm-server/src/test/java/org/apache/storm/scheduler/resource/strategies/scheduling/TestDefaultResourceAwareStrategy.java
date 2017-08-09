@@ -19,32 +19,34 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.Cluster.SupervisorResources;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
-import org.apache.storm.scheduler.SchedulerAssignmentImpl;
 import org.apache.storm.scheduler.SchedulerAssignment;
+import org.apache.storm.scheduler.SchedulerAssignmentImpl;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RAS_Node;
-import org.apache.storm.scheduler.resource.RAS_Nodes;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.ObjectResources;
-import org.apache.storm.scheduler.resource.SchedulingState;
-import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
-import org.apache.storm.scheduler.resource.User;
+import org.apache.storm.topology.SharedOffHeapWithinNode;
+import org.apache.storm.topology.SharedOffHeapWithinWorker;
+import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.junit.Assert.*;
+import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -55,10 +57,10 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.TreeSet;
 
 public class TestDefaultResourceAwareStrategy {
-
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultResourceAwareStrategy.class);
 
     private static int currentTime = 1450418597;
@@ -67,46 +69,107 @@ public class TestDefaultResourceAwareStrategy {
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
      */
     @Test
+    public void testDefaultResourceAwareStrategySharedMemory() {
+        int spoutParallelism = 2;
+        int boltParallelism = 2;
+        int numBolts = 3;
+        double cpuPercent = 10;
+        double memoryOnHeap = 10;
+        double memoryOffHeap = 10;
+        double sharedOnHeap = 500;
+        double sharedOffHeapNode = 700;
+        double sharedOffHeapWorker = 500;
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout("spout", new TestSpout(),
+                spoutParallelism);
+        builder.setBolt("bolt-1", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinWorker(sharedOffHeapWorker, "bolt-1 shared off heap worker")).shuffleGrouping("spout");
+        builder.setBolt("bolt-2", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOffHeapWithinNode(sharedOffHeapNode, "bolt-2 shared node")).shuffleGrouping("bolt-1");
+        builder.setBolt("bolt-3", new TestBolt(),
+                boltParallelism).addSharedMemory(new SharedOnHeap(sharedOnHeap, "bolt-3 shared worker")).shuffleGrouping("bolt-2");
+
+        StormTopology stormToplogy = builder.createTopology();
+
+        INimbus iNimbus = new INimbusTest();
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 500, 2000);
+        Config conf = createClusterConfig(cpuPercent, memoryOnHeap, memoryOffHeap, null);
+        
+        conf.put(Config.TOPOLOGY_PRIORITY, 0);
+        conf.put(Config.TOPOLOGY_NAME, "testTopology");
+        conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 2000);
+        TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
+                genExecsAndComps(stormToplogy), currentTime, "user");
+
+        Topologies topologies = new Topologies(topo);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, conf);
+
+        ResourceAwareScheduler rs = new ResourceAwareScheduler();
+
+        rs.prepare(conf);
+        rs.schedule(topologies, cluster);
+        
+        for (Entry<String, SupervisorResources> entry: cluster.getSupervisorsResourcesMap().entrySet()) {
+            String supervisorId = entry.getKey();
+            SupervisorResources resources = entry.getValue();
+            assertTrue(supervisorId, resources.getTotalCpu() >= resources.getUsedCpu());
+            assertTrue(supervisorId, resources.getTotalMem() >= resources.getUsedMem());
+        }
+
+        // Everything should fit in a single slot
+        int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
+        double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
+        double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeap;
+        double totalExpectedWorkerOffHeap = (totalNumberOfTasks * memoryOffHeap) + sharedOffHeapWorker;
+        
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo.getId());
+        assertEquals(1, assignment.getSlots().size());
+        WorkerSlot ws = assignment.getSlots().iterator().next();
+        String nodeId = ws.getNodeId();
+        assertEquals(1, assignment.getNodeIdToTotalSharedOffHeapMemory().size());
+        assertEquals(sharedOffHeapNode, assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId), 0.01);
+        assertEquals(1, assignment.getScheduledResources().size());
+        WorkerResources resources = assignment.getScheduledResources().get(ws);
+        assertEquals(totalExpectedCPU, resources.get_cpu(), 0.01);
+        assertEquals(totalExpectedOnHeap, resources.get_mem_on_heap(), 0.01);
+        assertEquals(totalExpectedWorkerOffHeap, resources.get_mem_off_heap(), 0.01);
+        assertEquals(sharedOnHeap, resources.get_shared_mem_on_heap(), 0.01);
+        assertEquals(sharedOffHeapWorker, resources.get_shared_mem_off_heap(), 0.01);
+    }
+    
+    
+    /**
+     * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
+     */
+    @Test
     public void testDefaultResourceAwareStrategy() {
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new TestUtilsForResourceAwareScheduler.TestSpout(),
+        builder.setSpout("spout", new TestSpout(),
                 spoutParallelism);
-        builder.setBolt("bolt-1", new TestUtilsForResourceAwareScheduler.TestBolt(),
+        builder.setBolt("bolt-1", new TestBolt(),
                 boltParallelism).shuffleGrouping("spout");
-        builder.setBolt("bolt-2", new TestUtilsForResourceAwareScheduler.TestBolt(),
+        builder.setBolt("bolt-2", new TestBolt(),
                 boltParallelism).shuffleGrouping("bolt-1");
-        builder.setBolt("bolt-3", new TestUtilsForResourceAwareScheduler.TestBolt(),
+        builder.setBolt("bolt-3", new TestBolt(),
                 boltParallelism).shuffleGrouping("bolt-2");
 
         StormTopology stormToplogy = builder.createTopology();
 
-        Config conf = new Config();
-        INimbus iNimbus = new TestUtilsForResourceAwareScheduler.INimbusTest();
-        Map<String, Number> resourceMap = new HashMap<String, Number>();
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 150.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1500.0);
-        Map<String, SupervisorDetails> supMap = TestUtilsForResourceAwareScheduler.genSupervisors(4, 4, resourceMap);
-        conf.putAll(Utils.readDefaultConfig());
-        conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
-        conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
-        conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class.getName());
-        conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 50.0);
-        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 250);
-        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 250);
+        INimbus iNimbus = new INimbusTest();
+        Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 150, 1500);
+        Config conf = createClusterConfig(50, 250, 250, null);
         conf.put(Config.TOPOLOGY_PRIORITY, 0);
         conf.put(Config.TOPOLOGY_NAME, "testTopology");
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
+        conf.put(Config.TOPOLOGY_SUBMITTER_USER, "user");
 
         TopologyDetails topo = new TopologyDetails("testTopology-id", conf, stormToplogy, 0,
-                TestUtilsForResourceAwareScheduler.genExecsAndComps(stormToplogy)
-                , this.currentTime);
+                genExecsAndComps(stormToplogy), currentTime, "user");
 
-        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
-        topoMap.put(topo.getId(), topo);
-        Topologies topologies = new Topologies(topoMap);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), conf);
+        Topologies topologies = new Topologies(topo);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -139,32 +202,18 @@ public class TestDefaultResourceAwareStrategy {
     public void testMultipleRacks() {
 
         final Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
-        Map<String, Number> resourceMap = new HashMap<String, Number>();
-        //generate a rack of supervisors
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 8000.0);
-        final Map<String, SupervisorDetails> supMapRack1 = TestUtilsForResourceAwareScheduler.genSupervisors(10, 4, 0, resourceMap);
-
+        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 200.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 4000.0);
-        final Map<String, SupervisorDetails> supMapRack2 = TestUtilsForResourceAwareScheduler.genSupervisors(10, 4, 10, resourceMap);
+        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 10, 200, 4000);
 
         //generate some supervisors that are depleted of one resource
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 0.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 8000.0);
-        final Map<String, SupervisorDetails> supMapRack3 = TestUtilsForResourceAwareScheduler.genSupervisors(10, 4, 20, resourceMap);
+        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 20, 0, 8000);
 
         //generate some that has alot of memory but little of cpu
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 10.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 8000.0 *2 + 4000.0);
-        final Map<String, SupervisorDetails> supMapRack4 = TestUtilsForResourceAwareScheduler.genSupervisors(10, 4, 30, resourceMap);
+        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
 
         //generate some that has alot of cpu but little of memory
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, 400.0 + 200.0 + 10.0);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1000.0);
-        final Map<String, SupervisorDetails> supMapRack5 = TestUtilsForResourceAwareScheduler.genSupervisors(10, 4, 40, resourceMap);
-
+        final Map<String, SupervisorDetails> supMapRack5 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
 
         supMap.putAll(supMapRack1);
         supMap.putAll(supMapRack2);
@@ -172,17 +221,9 @@ public class TestDefaultResourceAwareStrategy {
         supMap.putAll(supMapRack4);
         supMap.putAll(supMapRack5);
 
-        Config config = new Config();
-        config.putAll(Utils.readDefaultConfig());
-        config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy.class.getName());
-        config.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy.class.getName());
-        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.class.getName());
-        config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 100.0);
-        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 500);
-        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 500);
+        Config config = createClusterConfig(100, 500, 500, null);
         config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
-        INimbus iNimbus = new TestUtilsForResourceAwareScheduler.INimbusTest();
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), config);
+        INimbus iNimbus = new INimbusTest();
 
         //create test DNSToSwitchMapping plugin
         DNSToSwitchMapping TestNetworkTopographyPlugin = new DNSToSwitchMapping() {
@@ -208,6 +249,13 @@ public class TestDefaultResourceAwareStrategy {
             }
         };
 
+        //generate topologies
+        TopologyDetails topo1 = genTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10, "user");
+        TopologyDetails topo2 = genTopology("topo-2", config, 8, 0, 2, 0, currentTime - 2, 10, "user");
+        
+        Topologies topologies = new Topologies(topo1, topo2);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+        
         List<String> supHostnames = new LinkedList<>();
         for (SupervisorDetails sup : supMap.values()) {
             supHostnames.add(sup.getHost());
@@ -226,19 +274,10 @@ public class TestDefaultResourceAwareStrategy {
         }
         cluster.setNetworkTopography(rackToNodes);
 
-        //generate topologies
-        Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
-        TopologyDetails topo1 = TestUtilsForResourceAwareScheduler.getTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10);
-        TopologyDetails topo2 = TestUtilsForResourceAwareScheduler.getTopology("topo-2", config, 8, 0, 2, 0, currentTime - 2, 10);
-
-        topoMap.put(topo1.getId(), topo1);
-
-        Topologies topologies = new Topologies(topoMap);
-
         DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
 
-        rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
-        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(topo1.getId(), new HashMap<WorkerSlot, Collection<ExecutorDetails>>());
+        rs.prepare(cluster);
+        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(topo1.getId());
 
         Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
         Iterator<ObjectResources> it = sortedRacks.iterator();
@@ -253,48 +292,35 @@ public class TestDefaultResourceAwareStrategy {
         //Ranked last since rack-2 has not cpu resources
         Assert.assertEquals("rack-2 should be ordered fifth", "rack-2", it.next().id);
 
-        SchedulingResult schedulingResult = rs.schedule(topo1);
-        for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> entry : schedulingResult.getSchedulingResultMap().entrySet()) {
-            WorkerSlot ws = entry.getKey();
-            Collection<ExecutorDetails> execs = entry.getValue();
+        SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
+        assert(schedulingResult.isSuccess());
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-0
             Assert.assertEquals("assert worker scheduled on rack-0", "rack-0", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
-            // make actual assignments
-            cluster.assign(ws, topo1.getId(), execs);
         }
         Assert.assertEquals("All executors in topo-1 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
 
         //Test if topology is already partially scheduled on one rack
-
-        topoMap.put(topo2.getId(), topo2);
-        topologies = new Topologies(topoMap);
-        RAS_Nodes nodes = new RAS_Nodes(cluster, topologies);
         Iterator<ExecutorDetails> executorIterator = topo2.getExecutors().iterator();
         List<String> nodeHostnames = rackToNodes.get("rack-1");
-        for (int i=0 ; i< topo2.getExecutors().size()/2; i++) {
+        for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
             String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
-            RAS_Node node = rs.idToNode(rs.NodeHostnameToId(nodeHostname));
+            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
             WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
             ExecutorDetails targetExec = executorIterator.next();
             // to keep track of free slots
             node.assign(targetSlot, topo2, Arrays.asList(targetExec));
-            // to actually assign
-            cluster.assign(targetSlot, topo2.getId(), Arrays.asList(targetExec));
         }
 
         rs = new DefaultResourceAwareStrategy();
-        rs.prepare(new SchedulingState(new HashMap<String, User>(), cluster, topologies, config));
         // schedule topo2
-        schedulingResult = rs.schedule(topo2);
-
-        // checking assignments
-        for (Map.Entry<WorkerSlot, Collection<ExecutorDetails>> entry : schedulingResult.getSchedulingResultMap().entrySet()) {
-            WorkerSlot ws = entry.getKey();
-            Collection<ExecutorDetails> execs = entry.getValue();
+        schedulingResult = rs.schedule(cluster, topo2);
+        assert(schedulingResult.isSuccess());
+        assignment = cluster.getAssignmentById(topo2.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-1
             Assert.assertEquals("assert worker scheduled on rack-1", "rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
-            // make actual assignments
-            cluster.assign(ws, topo2.getId(), execs);
         }
         Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
     }

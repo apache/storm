@@ -17,7 +17,6 @@
  */
 package org.apache.storm;
 
-import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidation;
@@ -144,6 +143,20 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_GROUPS = "topology.groups";
 
     /**
+     * A list of readonly users that are allowed to interact with the topology.  To use this set
+     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
+     */
+    @isStringList
+    public static final String TOPOLOGY_READONLY_USERS="topology.readonly.users";
+
+    /**
+     * A list of readonly groups that are allowed to interact with the topology.  To use this set
+     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
+     */
+    @isStringList
+    public static final String TOPOLOGY_READONLY_GROUPS = "topology.readonly.groups";
+
+    /**
      * True if Storm should timeout messages or not. Defaults to true. This is meant to be used
      * in unit tests to prevent tuples from being accidentally timed out during the test.
      */
@@ -155,6 +168,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isBoolean
     public static final String TOPOLOGY_DEBUG = "topology.debug";
+
+    /**
+     * User defined version of this topology
+     */
+    @isString
+    public static final String TOPOLOGY_VERSION = "topology.version";
 
     /**
      * The serializer for communication between shell components and non-JVM
@@ -242,7 +261,10 @@ public class Config extends HashMap<String, Object> {
      * The strategy to use when scheduling a topology with Resource Aware Scheduler
      */
     @NotNull
-    @isImplementationOfClass(implementsClass = IStrategy.class)
+    @isString
+    //NOTE: @isImplementationOfClass(implementsClass = IStrategy.class) is enforced in DaemonConf, so
+    // an error will be thrown by nimbus on topology submission and not by the client prior to submitting
+    // the topology.
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
@@ -318,6 +340,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isBoolean
     public static final String TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS= "topology.skip.missing.kryo.registrations";
+
+    /**
+     * List of classes to register during state serialization
+     */
+    @isStringList
+    public static final String TOPOLOGY_STATE_KRYO_REGISTER = "topology.state.kryo.register";
 
     /**
      * A list of classes implementing IMetricsConsumer (See storm.yaml.example for exact config format).
@@ -790,6 +818,13 @@ public class Config extends HashMap<String, Object> {
     public static final String PACEMAKER_AUTH_METHOD = "pacemaker.auth.method";
 
     /**
+     * Pacemaker Thrift Max Message Size (bytes).
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String PACEMAKER_THRIFT_MESSAGE_SIZE_MAX = "pacemaker.thrift.message.size.max";
+
+    /**
      * Max no.of seconds group mapping service will cache user groups
      */
     @isInteger
@@ -953,7 +988,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_SUPERACL = "storm.zookeeper.superACL";
 
     /**
-     * The topology Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication.
+     * The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it.
      */
     @isString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME="storm.zookeeper.topology.auth.scheme";
@@ -1565,6 +1600,14 @@ public class Config extends HashMap<String, Object> {
         setDebug(this, isOn);
     }
 
+    public static void setTopologyVersion(Map<String, Object> conf, String version) {
+        conf.put(Config.TOPOLOGY_VERSION, version);
+    }
+
+    public void setTopologyVersion(String version) {
+        setTopologyVersion(this, version);
+    }
+
     public static void setNumWorkers(Map<String, Object> conf, int workers) {
         conf.put(Config.TOPOLOGY_WORKERS, workers);
     }
@@ -1744,14 +1787,8 @@ public class Config extends HashMap<String, Object> {
         this.put(Config.TOPOLOGY_PRIORITY, priority);
     }
 
-    /**
-     * Takes as input the strategy class name. Strategy must implement the IStrategy interface
-     * @param clazz class of the strategy to use
-     */
-    public void setTopologyStrategy(Class<? extends IStrategy> clazz) {
-        if (clazz != null) {
-            this.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, clazz.getName());
-        }
+    public void setTopologyStrategy(String strategy) {
+        this.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, strategy);
     }
 
 }

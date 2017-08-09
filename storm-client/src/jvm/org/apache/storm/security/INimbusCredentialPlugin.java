@@ -20,6 +20,7 @@ package org.apache.storm.security;
 import org.apache.storm.daemon.Shutdownable;
 
 import java.util.Map;
+import org.apache.storm.generated.StormTopology;
 
 /**
  * Nimbus auto credential plugin that will be called on nimbus host
@@ -29,8 +30,8 @@ import java.util.Map;
 public interface INimbusCredentialPlugin extends Shutdownable {
 
     /**
-     * this method will be called when nimbus initializes.
-     * @param conf
+     * This method will be called when nimbus initializes.
+     * @param conf the cluster config
      */
     void prepare(Map<String, Object> conf);
 
@@ -41,7 +42,23 @@ public interface INimbusCredentialPlugin extends Shutdownable {
      * and stored in zookeeper.
      * @param credentials credentials map where more credentials will be added.
      * @param topologyConf topology configuration
-     * @return
      */
-    void populateCredentials(Map<String, String> credentials, Map<String, Object> topologyConf);
+    @Deprecated
+    default void populateCredentials(Map<String, String> credentials, Map<String, Object> topologyConf) {
+        throw new IllegalStateException("One of the populateCredentials methods must be overridden");
+    }
+
+    /**
+     * Method that will be called on nimbus as part of submit topology. This plugin will be called
+     * at least once during the submit Topology action. It will be not be called during activate instead
+     * the credentials return by this method will be merged with the other credentials in the topology
+     * and stored in zookeeper.
+     * @param credentials credentials map where more credentials will be added.
+     * @param topoConf topology configuration
+     * @param topologyOwnerPrincipal the full principal name of the owner of the topology
+     */
+    @SuppressWarnings("deprecation")
+    default void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf, final String topologyOwnerPrincipal) {
+        populateCredentials(credentials, topoConf);
+    }
 }

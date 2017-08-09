@@ -31,7 +31,7 @@
         <developer>
             <id>vesense</id>
             <name>Xin Wang</name>
-            <email>data.xinwang@gmail.com</email>
+            <email>xinwang@apache.org</email>
         </developer>
     </developers>
 
@@ -85,9 +85,6 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
                 <!--Note - the version would be inherited-->
-                <configuration>
-                    <maxAllowedViolations>54</maxAllowedViolations>
-                </configuration>
             </plugin>
         </plugins>
     </build>

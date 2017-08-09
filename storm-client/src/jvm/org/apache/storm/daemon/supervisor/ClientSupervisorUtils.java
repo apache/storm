@@ -145,23 +145,23 @@ public class ClientSupervisorUtils {
         return process;
     }
 
-    public static void setupStormCodeDir(Map<String, Object> conf, Map<String, Object> topoConf, String dir) throws IOException {
+    public static void setupStormCodeDir(Map<String, Object> conf, String user, String dir) throws IOException {
         if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Storm Code Dir Setup for " + dir;
             List<String> commands = new ArrayList<>();
             commands.add("code-dir");
             commands.add(dir);
-            processLauncherAndWait(conf, (String) (topoConf.get(Config.TOPOLOGY_SUBMITTER_USER)), commands, null, logPrefix);
+            processLauncherAndWait(conf, user, commands, null, logPrefix);
         }
     }
 
-    public static void setupWorkerArtifactsDir(Map<String, Object> conf, Map<String, Object> topoConf, String dir) throws IOException {
+    public static void setupWorkerArtifactsDir(Map<String, Object> conf, String user, String dir) throws IOException {
         if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Worker Artifacts Setup for " + dir;
             List<String> commands = new ArrayList<>();
             commands.add("artifacts-dir");
             commands.add(dir);
-            processLauncherAndWait(conf, (String) (topoConf.get(Config.TOPOLOGY_SUBMITTER_USER)), commands, null, logPrefix);
+            processLauncherAndWait(conf, user, commands, null, logPrefix);
         }
     }
 }

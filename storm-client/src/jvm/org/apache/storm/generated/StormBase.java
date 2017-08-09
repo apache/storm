@@ -64,6 +64,8 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
   private static final org.apache.thrift.protocol.TField TOPOLOGY_ACTION_OPTIONS_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_action_options", org.apache.thrift.protocol.TType.STRUCT, (short)7);
   private static final org.apache.thrift.protocol.TField PREV_STATUS_FIELD_DESC = new org.apache.thrift.protocol.TField("prev_status", org.apache.thrift.protocol.TType.I32, (short)8);
   private static final org.apache.thrift.protocol.TField COMPONENT_DEBUG_FIELD_DESC = new org.apache.thrift.protocol.TField("component_debug", org.apache.thrift.protocol.TType.MAP, (short)9);
+  private static final org.apache.thrift.protocol.TField PRINCIPAL_FIELD_DESC = new org.apache.thrift.protocol.TField("principal", org.apache.thrift.protocol.TType.STRING, (short)10);
+  private static final org.apache.thrift.protocol.TField TOPOLOGY_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_version", org.apache.thrift.protocol.TType.STRING, (short)11);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -80,6 +82,8 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
   private TopologyActionOptions topology_action_options; // optional
   private TopologyStatus prev_status; // optional
   private Map<String,DebugOptions> component_debug; // optional
+  private String principal; // optional
+  private String topology_version; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -99,7 +103,9 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
      * @see TopologyStatus
      */
     PREV_STATUS((short)8, "prev_status"),
-    COMPONENT_DEBUG((short)9, "component_debug");
+    COMPONENT_DEBUG((short)9, "component_debug"),
+    PRINCIPAL((short)10, "principal"),
+    TOPOLOGY_VERSION((short)11, "topology_version");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -132,6 +138,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           return PREV_STATUS;
         case 9: // COMPONENT_DEBUG
           return COMPONENT_DEBUG;
+        case 10: // PRINCIPAL
+          return PRINCIPAL;
+        case 11: // TOPOLOGY_VERSION
+          return TOPOLOGY_VERSION;
         default:
           return null;
       }
@@ -175,7 +185,7 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
   private static final int __NUM_WORKERS_ISSET_ID = 0;
   private static final int __LAUNCH_TIME_SECS_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.COMPONENT_EXECUTORS,_Fields.LAUNCH_TIME_SECS,_Fields.OWNER,_Fields.TOPOLOGY_ACTION_OPTIONS,_Fields.PREV_STATUS,_Fields.COMPONENT_DEBUG};
+  private static final _Fields optionals[] = {_Fields.COMPONENT_EXECUTORS,_Fields.LAUNCH_TIME_SECS,_Fields.OWNER,_Fields.TOPOLOGY_ACTION_OPTIONS,_Fields.PREV_STATUS,_Fields.COMPONENT_DEBUG,_Fields.PRINCIPAL,_Fields.TOPOLOGY_VERSION};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -201,6 +211,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, DebugOptions.class))));
+    tmpMap.put(_Fields.PRINCIPAL, new org.apache.thrift.meta_data.FieldMetaData("principal", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.TOPOLOGY_VERSION, new org.apache.thrift.meta_data.FieldMetaData("topology_version", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(StormBase.class, metaDataMap);
   }
@@ -261,6 +275,12 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       }
       this.component_debug = __this__component_debug;
     }
+    if (other.is_set_principal()) {
+      this.principal = other.principal;
+    }
+    if (other.is_set_topology_version()) {
+      this.topology_version = other.topology_version;
+    }
   }
 
   public StormBase deepCopy() {
@@ -280,6 +300,8 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
     this.topology_action_options = null;
     this.prev_status = null;
     this.component_debug = null;
+    this.principal = null;
+    this.topology_version = null;
   }
 
   public String get_name() {
@@ -525,6 +547,52 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
     }
   }
 
+  public String get_principal() {
+    return this.principal;
+  }
+
+  public void set_principal(String principal) {
+    this.principal = principal;
+  }
+
+  public void unset_principal() {
+    this.principal = null;
+  }
+
+  /** Returns true if field principal is set (has been assigned a value) and false otherwise */
+  public boolean is_set_principal() {
+    return this.principal != null;
+  }
+
+  public void set_principal_isSet(boolean value) {
+    if (!value) {
+      this.principal = null;
+    }
+  }
+
+  public String get_topology_version() {
+    return this.topology_version;
+  }
+
+  public void set_topology_version(String topology_version) {
+    this.topology_version = topology_version;
+  }
+
+  public void unset_topology_version() {
+    this.topology_version = null;
+  }
+
+  /** Returns true if field topology_version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topology_version() {
+    return this.topology_version != null;
+  }
+
+  public void set_topology_version_isSet(boolean value) {
+    if (!value) {
+      this.topology_version = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case NAME:
@@ -599,6 +667,22 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       }
       break;
 
+    case PRINCIPAL:
+      if (value == null) {
+        unset_principal();
+      } else {
+        set_principal((String)value);
+      }
+      break;
+
+    case TOPOLOGY_VERSION:
+      if (value == null) {
+        unset_topology_version();
+      } else {
+        set_topology_version((String)value);
+      }
+      break;
+
     }
   }
 
@@ -631,6 +715,12 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
     case COMPONENT_DEBUG:
       return get_component_debug();
 
+    case PRINCIPAL:
+      return get_principal();
+
+    case TOPOLOGY_VERSION:
+      return get_topology_version();
+
     }
     throw new IllegalStateException();
   }
@@ -660,6 +750,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       return is_set_prev_status();
     case COMPONENT_DEBUG:
       return is_set_component_debug();
+    case PRINCIPAL:
+      return is_set_principal();
+    case TOPOLOGY_VERSION:
+      return is_set_topology_version();
     }
     throw new IllegalStateException();
   }
@@ -758,6 +852,24 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
         return false;
     }
 
+    boolean this_present_principal = true && this.is_set_principal();
+    boolean that_present_principal = true && that.is_set_principal();
+    if (this_present_principal || that_present_principal) {
+      if (!(this_present_principal && that_present_principal))
+        return false;
+      if (!this.principal.equals(that.principal))
+        return false;
+    }
+
+    boolean this_present_topology_version = true && this.is_set_topology_version();
+    boolean that_present_topology_version = true && that.is_set_topology_version();
+    if (this_present_topology_version || that_present_topology_version) {
+      if (!(this_present_topology_version && that_present_topology_version))
+        return false;
+      if (!this.topology_version.equals(that.topology_version))
+        return false;
+    }
+
     return true;
   }
 
@@ -809,6 +921,16 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
     list.add(present_component_debug);
     if (present_component_debug)
       list.add(component_debug);
+
+    boolean present_principal = true && (is_set_principal());
+    list.add(present_principal);
+    if (present_principal)
+      list.add(principal);
+
+    boolean present_topology_version = true && (is_set_topology_version());
+    list.add(present_topology_version);
+    if (present_topology_version)
+      list.add(topology_version);
 
     return list.hashCode();
   }
@@ -911,6 +1033,26 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_principal()).compareTo(other.is_set_principal());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_principal()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.principal, other.principal);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_topology_version()).compareTo(other.is_set_topology_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_topology_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topology_version, other.topology_version);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -1006,6 +1148,26 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       }
       first = false;
     }
+    if (is_set_principal()) {
+      if (!first) sb.append(", ");
+      sb.append("principal:");
+      if (this.principal == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.principal);
+      }
+      first = false;
+    }
+    if (is_set_topology_version()) {
+      if (!first) sb.append(", ");
+      sb.append("topology_version:");
+      if (this.topology_version == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.topology_version);
+      }
+      first = false;
+    }
     sb.append(")");
     return sb.toString();
   }
@@ -1090,15 +1252,15 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           case 4: // COMPONENT_EXECUTORS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map674 = iprot.readMapBegin();
-                struct.component_executors = new HashMap<String,Integer>(2*_map674.size);
-                String _key675;
-                int _val676;
-                for (int _i677 = 0; _i677 < _map674.size; ++_i677)
+                org.apache.thrift.protocol.TMap _map712 = iprot.readMapBegin();
+                struct.component_executors = new HashMap<String,Integer>(2*_map712.size);
+                String _key713;
+                int _val714;
+                for (int _i715 = 0; _i715 < _map712.size; ++_i715)
                 {
-                  _key675 = iprot.readString();
-                  _val676 = iprot.readI32();
-                  struct.component_executors.put(_key675, _val676);
+                  _key713 = iprot.readString();
+                  _val714 = iprot.readI32();
+                  struct.component_executors.put(_key713, _val714);
                 }
                 iprot.readMapEnd();
               }
@@ -1143,20 +1305,36 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           case 9: // COMPONENT_DEBUG
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map678 = iprot.readMapBegin();
-                struct.component_debug = new HashMap<String,DebugOptions>(2*_map678.size);
-                String _key679;
-                DebugOptions _val680;
-                for (int _i681 = 0; _i681 < _map678.size; ++_i681)
+                org.apache.thrift.protocol.TMap _map716 = iprot.readMapBegin();
+                struct.component_debug = new HashMap<String,DebugOptions>(2*_map716.size);
+                String _key717;
+                DebugOptions _val718;
+                for (int _i719 = 0; _i719 < _map716.size; ++_i719)
                 {
-                  _key679 = iprot.readString();
-                  _val680 = new DebugOptions();
-                  _val680.read(iprot);
-                  struct.component_debug.put(_key679, _val680);
+                  _key717 = iprot.readString();
+                  _val718 = new DebugOptions();
+                  _val718.read(iprot);
+                  struct.component_debug.put(_key717, _val718);
                 }
                 iprot.readMapEnd();
               }
               struct.set_component_debug_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 10: // PRINCIPAL
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.principal = iprot.readString();
+              struct.set_principal_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 11: // TOPOLOGY_VERSION
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.topology_version = iprot.readString();
+              struct.set_topology_version_isSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -1192,10 +1370,10 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           oprot.writeFieldBegin(COMPONENT_EXECUTORS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, struct.component_executors.size()));
-            for (Map.Entry<String, Integer> _iter682 : struct.component_executors.entrySet())
+            for (Map.Entry<String, Integer> _iter720 : struct.component_executors.entrySet())
             {
-              oprot.writeString(_iter682.getKey());
-              oprot.writeI32(_iter682.getValue());
+              oprot.writeString(_iter720.getKey());
+              oprot.writeI32(_iter720.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1233,13 +1411,27 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
           oprot.writeFieldBegin(COMPONENT_DEBUG_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, struct.component_debug.size()));
-            for (Map.Entry<String, DebugOptions> _iter683 : struct.component_debug.entrySet())
+            for (Map.Entry<String, DebugOptions> _iter721 : struct.component_debug.entrySet())
             {
-              oprot.writeString(_iter683.getKey());
-              _iter683.getValue().write(oprot);
+              oprot.writeString(_iter721.getKey());
+              _iter721.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.principal != null) {
+        if (struct.is_set_principal()) {
+          oprot.writeFieldBegin(PRINCIPAL_FIELD_DESC);
+          oprot.writeString(struct.principal);
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.topology_version != null) {
+        if (struct.is_set_topology_version()) {
+          oprot.writeFieldBegin(TOPOLOGY_VERSION_FIELD_DESC);
+          oprot.writeString(struct.topology_version);
           oprot.writeFieldEnd();
         }
       }
@@ -1282,14 +1474,20 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       if (struct.is_set_component_debug()) {
         optionals.set(5);
       }
-      oprot.writeBitSet(optionals, 6);
+      if (struct.is_set_principal()) {
+        optionals.set(6);
+      }
+      if (struct.is_set_topology_version()) {
+        optionals.set(7);
+      }
+      oprot.writeBitSet(optionals, 8);
       if (struct.is_set_component_executors()) {
         {
           oprot.writeI32(struct.component_executors.size());
-          for (Map.Entry<String, Integer> _iter684 : struct.component_executors.entrySet())
+          for (Map.Entry<String, Integer> _iter722 : struct.component_executors.entrySet())
           {
-            oprot.writeString(_iter684.getKey());
-            oprot.writeI32(_iter684.getValue());
+            oprot.writeString(_iter722.getKey());
+            oprot.writeI32(_iter722.getValue());
           }
         }
       }
@@ -1308,12 +1506,18 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       if (struct.is_set_component_debug()) {
         {
           oprot.writeI32(struct.component_debug.size());
-          for (Map.Entry<String, DebugOptions> _iter685 : struct.component_debug.entrySet())
+          for (Map.Entry<String, DebugOptions> _iter723 : struct.component_debug.entrySet())
           {
-            oprot.writeString(_iter685.getKey());
-            _iter685.getValue().write(oprot);
+            oprot.writeString(_iter723.getKey());
+            _iter723.getValue().write(oprot);
           }
         }
+      }
+      if (struct.is_set_principal()) {
+        oprot.writeString(struct.principal);
+      }
+      if (struct.is_set_topology_version()) {
+        oprot.writeString(struct.topology_version);
       }
     }
 
@@ -1326,18 +1530,18 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       struct.set_status_isSet(true);
       struct.num_workers = iprot.readI32();
       struct.set_num_workers_isSet(true);
-      BitSet incoming = iprot.readBitSet(6);
+      BitSet incoming = iprot.readBitSet(8);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TMap _map686 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
-          struct.component_executors = new HashMap<String,Integer>(2*_map686.size);
-          String _key687;
-          int _val688;
-          for (int _i689 = 0; _i689 < _map686.size; ++_i689)
+          org.apache.thrift.protocol.TMap _map724 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
+          struct.component_executors = new HashMap<String,Integer>(2*_map724.size);
+          String _key725;
+          int _val726;
+          for (int _i727 = 0; _i727 < _map724.size; ++_i727)
           {
-            _key687 = iprot.readString();
-            _val688 = iprot.readI32();
-            struct.component_executors.put(_key687, _val688);
+            _key725 = iprot.readString();
+            _val726 = iprot.readI32();
+            struct.component_executors.put(_key725, _val726);
           }
         }
         struct.set_component_executors_isSet(true);
@@ -1361,19 +1565,27 @@ public class StormBase implements org.apache.thrift.TBase<StormBase, StormBase._
       }
       if (incoming.get(5)) {
         {
-          org.apache.thrift.protocol.TMap _map690 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.component_debug = new HashMap<String,DebugOptions>(2*_map690.size);
-          String _key691;
-          DebugOptions _val692;
-          for (int _i693 = 0; _i693 < _map690.size; ++_i693)
+          org.apache.thrift.protocol.TMap _map728 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.component_debug = new HashMap<String,DebugOptions>(2*_map728.size);
+          String _key729;
+          DebugOptions _val730;
+          for (int _i731 = 0; _i731 < _map728.size; ++_i731)
           {
-            _key691 = iprot.readString();
-            _val692 = new DebugOptions();
-            _val692.read(iprot);
-            struct.component_debug.put(_key691, _val692);
+            _key729 = iprot.readString();
+            _val730 = new DebugOptions();
+            _val730.read(iprot);
+            struct.component_debug.put(_key729, _val730);
           }
         }
         struct.set_component_debug_isSet(true);
+      }
+      if (incoming.get(6)) {
+        struct.principal = iprot.readString();
+        struct.set_principal_isSet(true);
+      }
+      if (incoming.get(7)) {
+        struct.topology_version = iprot.readString();
+        struct.set_topology_version_isSet(true);
       }
     }
   }

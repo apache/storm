@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq;
 
 import java.util.Map;
@@ -24,14 +25,20 @@ import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * An implementation of MessageRetryManager
+ * An implementation of MessageRetryManager.
  */
-public class DefaultMessageRetryManager implements MessageRetryManager{
+public class DefaultMessageRetryManager implements MessageRetryManager {
     private Map<String,ConsumerMessage> cache = new ConcurrentHashMap<>(500);
     private BlockingQueue<ConsumerMessage> queue;
     private int maxRetry;
     private int ttl;
 
+    /**
+     * DefaultMessageRetryManager Constructor.
+     * @param queue messages BlockingQueue
+     * @param maxRetry max retry times
+     * @param ttl TTL
+     */
     public DefaultMessageRetryManager(BlockingQueue<ConsumerMessage> queue, int maxRetry, int ttl) {
         this.queue = queue;
         this.maxRetry = maxRetry;
@@ -53,10 +60,12 @@ public class DefaultMessageRetryManager implements MessageRetryManager{
         }, period, period);
     }
 
+    @Override
     public void ack(String id) {
         cache.remove(id);
     }
 
+    @Override
     public void fail(String id) {
         ConsumerMessage message = cache.remove(id);
         if (message == null) {
@@ -70,16 +79,13 @@ public class DefaultMessageRetryManager implements MessageRetryManager{
         }
     }
 
+    @Override
     public void mark(ConsumerMessage message) {
         message.setTimestamp(System.currentTimeMillis());
         cache.put(message.getId(), message);
     }
 
-    /**
-     * Whether the message need retry.
-     * @param message
-     * @return
-     */
+    @Override
     public boolean needRetry(ConsumerMessage message) {
         return message.getRetries() < maxRetry;
     }

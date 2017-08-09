@@ -18,7 +18,16 @@
 package org.apache.storm.topology;
 
 import org.apache.storm.Config;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.ComponentObject;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.NullStruct;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StateSpoutSpec;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.hooks.IWorkerHook;
@@ -35,6 +44,7 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.windowing.TupleWindow;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
 
@@ -47,7 +57,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.storm.windowing.TupleWindow;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
 
@@ -104,12 +113,12 @@ import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
  * the inputs for that component.
  */
 public class TopologyBuilder {
-    private Map<String, IRichBolt> _bolts = new HashMap<>();
-    private Map<String, IRichSpout> _spouts = new HashMap<>();
-    private Map<String, ComponentCommon> _commons = new HashMap<>();
+    private final Map<String, IRichBolt> _bolts = new HashMap<>();
+    private final Map<String, IRichSpout> _spouts = new HashMap<>();
+    private final Map<String, ComponentCommon> _commons = new HashMap<>();
+    private final Map<String, Set<String>> _componentToSharedMemory = new HashMap<>();
+    private final Map<String, SharedMemory> _sharedMemory = new HashMap<>();
     private boolean hasStatefulBolt = false;
-
-//    private Map<String, Map<GlobalStreamId, Grouping>> _inputs = new HashMap<String, Map<GlobalStreamId, Grouping>>();
 
     private Map<String, StateSpoutSpec> _stateSpouts = new HashMap<>();
     private List<ByteBuffer> _workerHooks = new ArrayList<>();
@@ -154,11 +163,16 @@ public class TopologyBuilder {
 
         StormTopology stormTopology = new StormTopology(spoutSpecs,
                 boltSpecs,
-                new HashMap<String, StateSpoutSpec>());
+                new HashMap<>());
 
         stormTopology.set_worker_hooks(_workerHooks);
 
-        return Utils.addVersions(stormTopology);
+	if (!_componentToSharedMemory.isEmpty()) {
+            stormTopology.set_component_to_shared_memory(_componentToSharedMemory);
+            stormTopology.set_shared_memory(_sharedMemory);
+        }
+
+	return Utils.addVersions(stormTopology);
     }
 
     /**
@@ -318,7 +332,13 @@ public class TopologyBuilder {
      */
     public <T extends State> BoltDeclarer setBolt(String id, IStatefulWindowedBolt<T> bolt, Number parallelism_hint) throws IllegalArgumentException {
         hasStatefulBolt = true;
-        return setBolt(id, new StatefulBoltExecutor<T>(new StatefulWindowedBoltExecutor<T>(bolt)), parallelism_hint);
+        IStatefulBolt<T> executor;
+        if (bolt.isPersistent()) {
+            executor = new PersistentWindowedBoltExecutor<>(bolt);
+        } else {
+            executor = new StatefulWindowedBoltExecutor<T>(bolt);
+        }
+        return setBolt(id, new StatefulBoltExecutor<T>(executor), parallelism_hint);
     }
 
     /**
@@ -550,6 +570,7 @@ public class TopologyBuilder {
             _id = id;
         }
         
+        @SuppressWarnings("unchecked")
         @Override
         public T addConfigurations(Map<String, Object> conf) {
             if(conf!=null && conf.containsKey(Config.TOPOLOGY_KRYO_REGISTER)) {
@@ -557,6 +578,19 @@ public class TopologyBuilder {
             }
             String currConf = _commons.get(_id).get_json_conf();
             _commons.get(_id).set_json_conf(mergeIntoJson(parseJson(currConf), conf));
+            return (T) this;
+        }
+        
+        @SuppressWarnings("unchecked")
+        @Override
+        public T addSharedMemory(SharedMemory request) {
+            SharedMemory found = _sharedMemory.get(request.get_name());
+            if (found != null && !found.equals(request)) {
+                throw new IllegalArgumentException("Cannot have multiple different shared memory regions with the same name");
+            }
+            _sharedMemory.put(request.get_name(), request);
+            Set<String> mems = _componentToSharedMemory.computeIfAbsent(_id, (k) -> new HashSet<>());
+            mems.add(request.get_name());
             return (T) this;
         }
     }

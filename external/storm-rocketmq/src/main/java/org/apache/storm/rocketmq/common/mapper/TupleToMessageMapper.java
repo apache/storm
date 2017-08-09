@@ -15,16 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.rocketmq.common.mapper;
 
-import org.apache.storm.tuple.ITuple;
-
 import java.io.Serializable;
+import org.apache.storm.tuple.ITuple;
 
 /**
  * Interface defining a mapping from storm tuple to rocketmq key and message.
  */
 public interface TupleToMessageMapper extends Serializable {
+
     String getKeyFromTuple(ITuple tuple);
+
     byte[] getValueFromTuple(ITuple tuple);
 }

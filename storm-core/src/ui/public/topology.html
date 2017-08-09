@@ -92,6 +92,9 @@
   <div class="row">
     <div id="json-response-error" class="col-md-12"></div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 <script>
@@ -353,6 +356,7 @@ $(document).ready(function() {
                 errorCells[i].style.color = "#9d261d";
                 errorCells[i].style.borderBottomColor = "#9d261d";
               }
+              errorCells[i].style.whiteSpace = "pre";
             }
             
             var errorTime = document.getElementsByClassName("errorTime");
@@ -448,6 +452,9 @@ $(document).ready(function() {
       }});
     });
  });
+
+getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>
 </html>
 

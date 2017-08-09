@@ -19,7 +19,7 @@ package org.apache.storm.sql.mongodb;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
-import org.apache.storm.mongodb.common.MongoDBClient;
+import org.apache.storm.mongodb.common.MongoDbClient;
 import org.apache.storm.mongodb.trident.state.MongoState;
 import org.apache.storm.mongodb.trident.state.MongoStateFactory;
 import org.apache.storm.mongodb.trident.state.MongoStateUpdater;
@@ -77,7 +77,7 @@ public class TestMongoDataSourcesProvider {
     MongoState state = (MongoState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
     StateUpdater stateUpdater = consumer.getStateUpdater();
 
-    MongoDBClient mongoClient = mock(MongoDBClient.class);
+    MongoDbClient mongoClient = mock(MongoDbClient.class);
     Whitebox.setInternalState(state, "mongoClient", mongoClient);
 
     List<TridentTuple> tupleList = mockTupleList();

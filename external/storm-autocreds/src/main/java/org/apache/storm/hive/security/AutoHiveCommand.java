@@ -41,7 +41,6 @@ public final class AutoHiveCommand {
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
     Map conf = new HashMap();
-    conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
     conf.put(HIVE_PRINCIPAL_KEY, args[1]); // hive principal storm-hive@WITZEN.COM
     conf.put(HIVE_KEYTAB_FILE_KEY, args[2]); // storm hive keytab /etc/security/keytabs/storm-hive.keytab
     conf.put(HiveConf.ConfVars.METASTOREURIS.varname, args[3]); // hive.metastore.uris : "thrift://pm-eng1-cluster1.field.hortonworks.com:9083"
@@ -52,14 +51,14 @@ public final class AutoHiveCommand {
     autoHiveNimbus.prepare(conf);
 
     Map<String, String> creds = new HashMap<>();
-    autoHiveNimbus.populateCredentials(creds, conf);
+    autoHiveNimbus.populateCredentials(creds, conf, args[0]);
     LOG.info("Got Hive credentials" + autoHive.getCredentials(creds));
 
     Subject subject = new Subject();
     autoHive.populateSubject(subject, creds);
     LOG.info("Got a Subject " + subject);
 
-    autoHiveNimbus.renew(creds, conf);
+    autoHiveNimbus.renew(creds, conf, args[0]);
     LOG.info("Renewed credentials" + autoHive.getCredentials(creds));
   }
 

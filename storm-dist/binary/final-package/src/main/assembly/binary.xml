@@ -58,6 +58,7 @@
                 <include>storm*</include>
                 <include>flight.bash</include>
             </includes>
+            <lineEnding>unix</lineEnding>
             <fileMode>0755</fileMode>
         </fileSet>
         <!--
@@ -332,6 +333,7 @@
             <source>${project.basedir}/../../../conf/storm-env.sh</source>
             <outputDirectory>/conf</outputDirectory>
             <destName>storm-env.sh</destName>
+            <lineEnding>unix</lineEnding>
             <fileMode>0755</fileMode>
         </file>
         <file>
@@ -370,10 +372,6 @@
         </file>
         <file>
             <source>${project.basedir}/../../../README.markdown</source>
-            <outputDirectory>/</outputDirectory>
-        </file>
-        <file>
-            <source>${project.basedir}/../../../CHANGELOG.md</source>
             <outputDirectory>/</outputDirectory>
         </file>
 

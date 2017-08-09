@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
 
 import java.util.ArrayList;
@@ -250,7 +251,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
     }
     
-    protected Map<Integer, LocalAssignment> readMyExecutors(String stormId, String assignmentId, Assignment assignment) {
+    protected Map<Integer, LocalAssignment> readMyExecutors(String topoId, String assignmentId, Assignment assignment) {
         Map<Integer, LocalAssignment> portTasks = new HashMap<>();
         Map<Long, WorkerResources> slotsResources = new HashMap<>();
         Map<NodeInfo, WorkerResources> nodeInfoWorkerResourcesMap = assignment.get_worker_resources();
@@ -264,6 +265,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 }
             }
         }
+        boolean hasShared = false;
+        double amountShared = 0.0;
+        if (assignment.is_set_total_shared_off_heap()) {
+            Double d = assignment.get_total_shared_off_heap().get(assignmentId);
+            if (d != null) {
+                amountShared = d;
+                hasShared = true;
+            }
+        }
         Map<List<Long>, NodeInfo> executorNodePort = assignment.get_executor_node_port();
         if (executorNodePort != null) {
             for (Map.Entry<List<Long>, NodeInfo> entry : executorNodePort.entrySet()) {
@@ -272,9 +282,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                         LocalAssignment localAssignment = portTasks.get(port.intValue());
                         if (localAssignment == null) {
                             List<ExecutorInfo> executors = new ArrayList<>();
-                            localAssignment = new LocalAssignment(stormId, executors);
+                            localAssignment = new LocalAssignment(topoId, executors);
                             if (slotsResources.containsKey(port)) {
                                 localAssignment.set_resources(slotsResources.get(port));
+                            }
+                            if (hasShared) {
+                                localAssignment.set_total_node_shared(amountShared);
+			    }
+                            if (assignment.is_set_owner()) {
+                                localAssignment.set_owner(assignment.get_owner());
                             }
                             portTasks.put(port.intValue(), localAssignment);
                         }

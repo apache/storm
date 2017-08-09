@@ -20,6 +20,7 @@ package org.apache.storm.trident.topology;
 import org.apache.storm.Config;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.PartialKeyGrouping;
@@ -161,7 +162,9 @@ public class TridentTopologyBuilder {
                       builder.setBolt(spoutCoordinator(id), new TridentSpoutCoordinator(c.commitStateId, (ITridentSpout) c.spout))
                         .globalGrouping(masterCoordinator(c.batchGroupId), MasterBatchCoordinator.BATCH_STREAM_ID)
                         .globalGrouping(masterCoordinator(c.batchGroupId), MasterBatchCoordinator.SUCCESS_STREAM_ID);
-                
+                for (SharedMemory request: c.sharedMemory) {
+                    scd.addSharedMemory(request);
+                }
                 for(Map<String, Object> m: c.componentConfs) {
                     scd.addConfigurations(m);
                 }
@@ -242,6 +245,9 @@ public class TridentTopologyBuilder {
             }
             
             BoltDeclarer d = builder.setBolt(id, new TridentBoltExecutor(c.bolt, batchIdsForBolts, specs), c.parallelism);
+            for (SharedMemory request: c.sharedMemory) {
+                d.addSharedMemory(request);
+            }
             for(Map<String, Object> conf: c.componentConfs) {
                 d.addConfigurations(conf);
             }
@@ -273,12 +279,13 @@ public class TridentTopologyBuilder {
     
     
     private static class SpoutComponent {
-        public Object spout;
-        public Integer parallelism;
-        public List<Map<String, Object>> componentConfs = new ArrayList<>();
-        String batchGroupId;
-        String streamName;
-        
+        public final Object spout;
+        public final Integer parallelism;
+        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        final String batchGroupId;
+        final String streamName;
+        final Set<SharedMemory> sharedMemory = new HashSet<>();
+
         public SpoutComponent(Object spout, String streamName, Integer parallelism, String batchGroupId) {
             this.spout = spout;
             this.streamName = streamName;
@@ -307,12 +314,13 @@ public class TridentTopologyBuilder {
     }    
     
     private static class Component {
-        public ITridentBatchBolt bolt;
-        public Integer parallelism;
-        public List<InputDeclaration> declarations = new ArrayList<>();
-        public List<Map<String, Object>> componentConfs = new ArrayList<>();
-        public Set<String> committerBatches;
-        
+        public final ITridentBatchBolt bolt;
+        public final Integer parallelism;
+        public final List<InputDeclaration> declarations = new ArrayList<>();
+        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Set<String> committerBatches;
+        public final Set<SharedMemory> sharedMemory = new HashSet<>();
+
         public Component(ITridentBatchBolt bolt, Integer parallelism,Set<String> committerBatches) {
             this.bolt = bolt;
             this.parallelism = parallelism;
@@ -360,6 +368,12 @@ public class TridentTopologyBuilder {
         @Override
         public SpoutDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
+            return this;
+        }
+
+        @Override
+        public SpoutDeclarer addSharedMemory(SharedMemory request) {
+            _component.sharedMemory.add(request);
             return this;
         }        
     }
@@ -745,6 +759,12 @@ public class TridentTopologyBuilder {
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
+            return this;
+        }
+
+        @Override
+        public BoltDeclarer addSharedMemory(SharedMemory request) {
+            _component.sharedMemory.add(request);
             return this;
         }
     }    

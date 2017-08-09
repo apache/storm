@@ -43,35 +43,41 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleACLAuthorizer.class);
 
     protected Set<String> _userCommands = new HashSet<>(Arrays.asList(
-            "submitTopology", 
-            "fileUpload", 
-            "getNimbusConf", 
+            "submitTopology",
+            "fileUpload",
+            "getNimbusConf",
             "getClusterInfo",
-            "getSupervisorPageInfo"));
+            "getSupervisorPageInfo",
+            "getOwnerResourceSummaries"));
     protected Set<String> _supervisorCommands = new HashSet<>(Arrays.asList("fileDownload"));
-    protected Set<String> _topoCommands = new HashSet<>(Arrays.asList(
-            "killTopology",
-            "rebalance",
-            "activate",
-            "deactivate",
+    protected Set<String> _topoReadOnlyCommands = new HashSet<>(Arrays.asList(
             "getTopologyConf",
             "getTopology",
             "getUserTopology",
             "getTopologyInfo",
             "getTopologyPageInfo",
             "getComponentPageInfo",
+            "getWorkerProfileActionExpiry",
+            "getComponentPendingProfileActions",
+            "getLogConfig"));
+    protected Set<String> _topoCommands = new HashSet<>(Arrays.asList(
+            "killTopology",
+            "rebalance",
+            "activate",
+            "deactivate",
             "uploadNewCredentials",
             "setLogConfig",
             "setWorkerProfiler",
-            "getWorkerProfileActionExpiry",
-            "getComponentPendingProfileActions",
             "startProfiling",
             "stopProfiling",
             "dumpProfile",
             "dumpJstack",
             "dumpHeap",
-            "debug",
-            "getLogConfig"));
+            "debug"));
+
+    {
+        _topoCommands.addAll(_topoReadOnlyCommands);
+    }
 
     protected Set<String> _admins;
     protected Set<String> _supervisors;
@@ -142,23 +148,36 @@ public class SimpleACLAuthorizer implements IAuthorizer {
         }
 
         if (_topoCommands.contains(operation)) {
-            Set topoUsers = new HashSet<String>();
-            if (topoConf.containsKey(Config.TOPOLOGY_USERS)) {
-                topoUsers.addAll((Collection<String>)topoConf.get(Config.TOPOLOGY_USERS));
-            }
-
-            if (topoUsers.contains(principal) || topoUsers.contains(user)) {
+            if (checkTopoPermission(principal, user, userGroups, topoConf, Config.TOPOLOGY_USERS, Config.TOPOLOGY_GROUPS)) {
                 return true;
             }
 
-            Set<String> topoGroups = new HashSet<>();
-            if (topoConf.containsKey(Config.TOPOLOGY_GROUPS) && topoConf.get(Config.TOPOLOGY_GROUPS) != null) {
-                topoGroups.addAll((Collection<String>)topoConf.get(Config.TOPOLOGY_GROUPS));
+            if (_topoReadOnlyCommands.contains(operation) && checkTopoPermission(principal, user, userGroups,
+                    topoConf, Config.TOPOLOGY_READONLY_USERS, Config.TOPOLOGY_READONLY_GROUPS)) {
+                return true;
             }
-
-            if (checkUserGroupAllowed(userGroups, topoGroups)) return true;
         }
         return false;
+    }
+
+    private Boolean checkTopoPermission(String principal, String user, Set<String> userGroups,
+                                        Map<String, Object> topoConf, String userConfigKey, String groupConfigKey){
+        Set<String> configuredUsers = new HashSet<>();
+
+        if (topoConf.containsKey(userConfigKey)) {
+            configuredUsers.addAll((Collection<String>)topoConf.get(userConfigKey));
+        }
+
+        if (configuredUsers.contains(principal) || configuredUsers.contains(user)) {
+            return true;
+        }
+
+        Set<String> configuredGroups = new HashSet<>();
+        if (topoConf.containsKey(groupConfigKey) && topoConf.get(groupConfigKey) != null) {
+            configuredGroups.addAll((Collection<String>)topoConf.get(groupConfigKey));
+        }
+
+        return checkUserGroupAllowed(userGroups, configuredGroups);
     }
 
     private Boolean checkUserGroupAllowed(Set<String> userGroups, Set<String> configuredGroups) {

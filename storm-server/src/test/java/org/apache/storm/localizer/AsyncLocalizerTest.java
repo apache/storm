@@ -47,8 +47,10 @@ public class AsyncLocalizerTest {
     @Test
     public void testRequestDownloadBaseTopologyBlobs() throws Exception {
         final String topoId = "TOPO";
+        final String user = "user";
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
+        la.set_owner(user);
         ExecutorInfo ei = new ExecutorInfo();
         ei.set_task_start(1);
         ei.set_task_end(1);
@@ -96,7 +98,7 @@ public class AsyncLocalizerTest {
             //Extracting the dir from the jar
             verify(mockedU).extractDirFromJarImpl(endsWith("stormjar.jar"), eq("resources"), any(File.class));
             verify(ops).moveDirectoryPreferAtomic(any(File.class), eq(fStormRoot));
-            verify(ops).setupStormCodeDir(topoConf, fStormRoot);
+            verify(ops).setupStormCodeDir(user, fStormRoot);
             
             verify(ops, never()).deleteIfExists(any(File.class));
         } finally {
@@ -110,15 +112,16 @@ public class AsyncLocalizerTest {
     @Test
     public void testRequestDownloadTopologyBlobs() throws Exception {
         final String topoId = "TOPO-12345";
+        final String user = "user";
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
+        la.set_owner(user);
         ExecutorInfo ei = new ExecutorInfo();
         ei.set_task_start(1);
         ei.set_task_end(1);
         la.add_to_executors(ei);
         final String topoName = "TOPO";
         final int port = 8080;
-        final String user = "user";
         final String simpleLocalName = "simple.txt";
         final String simpleKey = "simple";
         
@@ -149,7 +152,6 @@ public class AsyncLocalizerTest {
 
         Map<String, Object> topoConf = new HashMap<>(conf);
         topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topoBlobMap);
-        topoConf.put(Config.TOPOLOGY_SUBMITTER_USER, user);
         topoConf.put(Config.TOPOLOGY_NAME, topoName);
         
         List<LocalizedResource> localizedList = new ArrayList<>();

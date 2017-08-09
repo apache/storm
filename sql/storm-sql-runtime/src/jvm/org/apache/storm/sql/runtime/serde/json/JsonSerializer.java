@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.serde.json;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.google.common.base.Preconditions;
-import org.apache.storm.sql.runtime.IOutputSerializer;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -29,29 +29,31 @@ import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import org.apache.storm.sql.runtime.IOutputSerializer;
+
 public class JsonSerializer implements IOutputSerializer, Serializable {
-  private final List<String> fieldNames;
-  private final JsonFactory jsonFactory;
+    private final List<String> fieldNames;
+    private final JsonFactory jsonFactory;
 
-  public JsonSerializer(List<String> fieldNames) {
-    this.fieldNames = fieldNames;
-    jsonFactory = new JsonFactory();
-  }
-
-  @Override
-  public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
-    Preconditions.checkArgument(data != null && data.size() == fieldNames.size(), "Invalid schema");
-    StringWriter sw = new StringWriter();
-    try (JsonGenerator jg = jsonFactory.createGenerator(sw)) {
-      jg.writeStartObject();
-      for (int i = 0; i < fieldNames.size(); ++i) {
-        jg.writeFieldName(fieldNames.get(i));
-        jg.writeObject(data.get(i));
-      }
-      jg.writeEndObject();
-    } catch (IOException e) {
-      throw new RuntimeException(e);
+    public JsonSerializer(List<String> fieldNames) {
+        this.fieldNames = fieldNames;
+        jsonFactory = new JsonFactory();
     }
-    return ByteBuffer.wrap(sw.toString().getBytes(StandardCharsets.UTF_8));
-  }
+
+    @Override
+    public ByteBuffer write(List<Object> data, ByteBuffer buffer) {
+        Preconditions.checkArgument(data != null && data.size() == fieldNames.size(), "Invalid schema");
+        StringWriter sw = new StringWriter();
+        try (JsonGenerator jg = jsonFactory.createGenerator(sw)) {
+            jg.writeStartObject();
+            for (int i = 0; i < fieldNames.size(); ++i) {
+                jg.writeFieldName(fieldNames.get(i));
+                jg.writeObject(data.get(i));
+            }
+            jg.writeEndObject();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return ByteBuffer.wrap(sw.toString().getBytes(StandardCharsets.UTF_8));
+    }
 }

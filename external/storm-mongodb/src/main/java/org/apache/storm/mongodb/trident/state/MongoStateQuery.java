@@ -15,14 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.trident.state;
+
+import java.util.List;
 
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseQueryFunction;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.tuple.Values;
-
-import java.util.List;
 
 public class MongoStateQuery extends BaseQueryFunction<MongoState, List<Values>> {
 

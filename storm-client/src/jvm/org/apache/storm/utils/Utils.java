@@ -1208,7 +1208,7 @@ public class Utils {
      */
     public static int getAvailablePort(int preferredPort) {
         int localPort = -1;
-        try(ServerSocket socket = new ServerSocket(preferredPort)) {
+        try (ServerSocket socket = new ServerSocket(preferredPort)) {
             localPort = socket.getLocalPort();
         } catch(IOException exp) {
             if (preferredPort > 0) {

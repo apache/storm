@@ -58,6 +58,11 @@ public class MultitenantScheduler implements IScheduler {
     return ret;
   }
 
+
+  @Override
+  public Map<String, Object> config() {
+    return (Map) getUserConf();
+  }
  
   @Override
   public void schedule(Topologies topologies, Cluster cluster) {
@@ -80,7 +85,7 @@ public class MultitenantScheduler implements IScheduler {
     defaultPool.init(cluster, nodeIdToNode);
     
     for (TopologyDetails td: topologies.getTopologies()) {
-      String user = (String)td.getConf().get(Config.TOPOLOGY_SUBMITTER_USER);
+      String user = td.getTopologySubmitter();
       LOG.debug("Found top {} run by user {}",td.getId(), user);
       NodePool pool = userPools.get(user);
       if (pool == null || !pool.canAdd(td)) {

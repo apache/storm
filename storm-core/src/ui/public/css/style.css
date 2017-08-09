@@ -236,3 +236,28 @@ div#visualization summary {
     display: list-item;
     outline: none;
 }
+
+.warning {
+    width: 100%;
+    height: 150px;
+    display: none;
+}
+
+#ras-warning-fixed-buffer {
+    background: #FF0000;
+    float:left;
+    position:fixed;
+    z-index:999999 !important;
+    text-align:center;
+    color:#FFFFFF;
+}
+
+.resource-guarantee-remaining-positive {
+    color: green;
+    font-weight: bold;
+}
+
+.resource-guarantee-remaining-negative {
+    color: red;
+    font-weight: bold;
+}

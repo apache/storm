@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -38,6 +39,7 @@ import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
@@ -77,6 +79,51 @@ public abstract class Container implements Killable {
         public boolean isOnlyKillable() {
             return _onlyKillable;
         }
+    }
+
+    private static class TopoAndMemory {
+        public final String topoId;
+        public final long memory;
+
+        public TopoAndMemory(String id, long mem) {
+            topoId = id;
+            memory = mem;
+        }
+
+        @Override
+        public String toString() {
+            return "{TOPO: " + topoId + " at " + memory + " MB}";
+        }
+    }
+
+    private static final ConcurrentHashMap<Integer, TopoAndMemory> _usedMemory =
+        new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<Integer, TopoAndMemory> _reservedMemory =
+        new ConcurrentHashMap<>();
+
+    static {
+        StormMetricsRegistry.registerGauge(
+            "supervisor:current-used-memory-mb",
+            () -> {
+                Long val =
+                    _usedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
+                int ret = val.intValue();
+                if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
+                    ret = Integer.MAX_VALUE;
+                }
+                return ret;
+            });
+        StormMetricsRegistry.registerGauge(
+            "supervisor:current-reserved-memory-mb",
+            () -> {
+                Long val =
+                    _reservedMemory.values().stream().mapToLong((topoAndMem) -> topoAndMem.memory).sum();
+                int ret = val.intValue();
+                if (val > Integer.MAX_VALUE) { // Would only happen at 2 PB so we are OK for now
+                    ret = Integer.MAX_VALUE;
+                }
+                return ret;
+            });
     }
     
     protected final Map<String, Object> _conf;
@@ -295,6 +342,8 @@ public abstract class Container implements Killable {
 
     @Override
     public void cleanUp() throws IOException {
+        _usedMemory.remove(_port);
+        _reservedMemory.remove(_port);
         cleanUpForRestart();
     }
     
@@ -321,7 +370,7 @@ public abstract class Container implements Killable {
         File workerArtifacts = new File(ConfigUtils.workerArtifactsRoot(_conf, _topologyId, _port));
         if (!_ops.fileExists(workerArtifacts)) {
             _ops.forceMkdir(workerArtifacts);
-            _ops.setupWorkerArtifactsDir(_topoConf, workerArtifacts);
+            _ops.setupWorkerArtifactsDir(_assignment.get_owner(), workerArtifacts);
         }
     
         String user = getWorkerUser();
@@ -454,7 +503,7 @@ public abstract class Container implements Killable {
         }
         
         if (_resourceIsolationManager != null) {
-            Set<Long> morePids = _resourceIsolationManager.getRunningPIDs(_workerId);
+            Set<Long> morePids = _resourceIsolationManager.getRunningPids(_workerId);
             assert(morePids != null);
             ret.addAll(morePids);
         }
@@ -472,8 +521,8 @@ public abstract class Container implements Killable {
 
         if (_ops.fileExists(file)) {
             return _ops.slurpString(file).trim();
-        } else if (_topoConf != null) { 
-            return (String) _topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+        } else if (_assignment != null && _assignment.is_set_owner()) {
+            return _assignment.get_owner();
         }
         if (ConfigUtils.isLocalMode(_conf)) {
             return System.getProperty("user.name");
@@ -528,28 +577,108 @@ public abstract class Container implements Killable {
         deleteSavedWorkerUser();
         _workerId = null;
     }
-    
+
     /**
-     * Launch the process for the first time
+     * Check if the container is over its memory limit AND needs to be killed. This does not necessarily mean
+     * that it just went over the limit.
+     * @throws IOException on any error
+     */
+    public boolean isMemoryLimitViolated(LocalAssignment withUpdatedLimits) throws IOException {
+        updateMemoryAccounting();
+        return false;
+    }
+
+    protected void updateMemoryAccounting() {
+        _type.assertFull();
+        long used = getMemoryUsageMb();
+        long reserved = getMemoryReservationMb();
+        _usedMemory.put(_port, new TopoAndMemory(_topologyId, used));
+        _reservedMemory.put(_port, new TopoAndMemory(_topologyId, reserved));
+    }
+
+    /**
+     * Get the total memory used (on and off heap).
+     */
+    public long getTotalTopologyMemoryUsed() {
+        updateMemoryAccounting();
+        return _usedMemory
+            .values()
+            .stream()
+            .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
+            .mapToLong((topoAndMem) -> topoAndMem.memory)
+            .sum();
+    }
+
+    /**
+     * Get the total memory reserved.
+     *
+     * @param withUpdatedLimits the local assignment with shared memory
+     * @return the total memory reserved.
+     */
+    public long getTotalTopologyMemoryReserved(LocalAssignment withUpdatedLimits) {
+        updateMemoryAccounting();
+        long ret =
+            _reservedMemory
+                .values()
+                .stream()
+                .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
+                .mapToLong((topoAndMem) -> topoAndMem.memory)
+                .sum();
+        if (withUpdatedLimits.is_set_total_node_shared()) {
+            ret += withUpdatedLimits.get_total_node_shared();
+        }
+        return ret;
+    }
+
+    /**
+     * Get the number of workers for this topology.
+     */
+    public long getTotalWorkersForThisTopology() {
+        return _usedMemory
+            .values()
+            .stream()
+            .filter((topoAndMem) -> _topologyId.equals(topoAndMem.topoId))
+            .count();
+    }
+
+    /**
+     * Get the current memory usage of this container.
+     */
+    public long getMemoryUsageMb() {
+        return 0;
+    }
+
+    /**
+     * Get the current memory reservation of this container.
+     */
+    public long getMemoryReservationMb() {
+        return 0;
+    }
+
+    /**
+     * Launch the process for the first time.
      * PREREQUISITE: setup has run and passed
+     *
      * @throws IOException on any error
      */
     public abstract void launch() throws IOException;
-    
+
     /**
-     * Restart the processes in this container
+     * Restart the processes in this container.
      * PREREQUISITE: cleanUpForRestart has run and passed
+     *
      * @throws IOException on any error
      */
     public abstract void relaunch() throws IOException;
 
     /**
-     * @return true if the main process exited, else false. This is just best effort return false if unknown.
+     * Return true if the main process exited, else false. This is just best effort return false if unknown.
      */
     public abstract boolean didMainProcessExit();
 
     /**
-     * Run a profiling request
+     * Run a profiling request.
+     *
      * @param request the request to run
      * @param stop is this a stop request?
      * @return true if it succeeded, else false
@@ -559,7 +688,7 @@ public abstract class Container implements Killable {
     public abstract boolean runProfiling(ProfileRequest request, boolean stop) throws IOException, InterruptedException;
 
     /**
-     * @return the id of the container or null if there is no worker id right now.
+     * Get the id of the container or null if there is no worker id right now.
      */
     public String getWorkerId() {
         return _workerId;

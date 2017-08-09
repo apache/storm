@@ -22,14 +22,14 @@ import org.apache.storm.LocalCluster;
 import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.rocketmq.RocketMQConfig;
+import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.SpoutConfig;
-import org.apache.storm.rocketmq.bolt.RocketMQBolt;
+import org.apache.storm.rocketmq.bolt.RocketMqBolt;
 import org.apache.storm.rocketmq.common.mapper.FieldNameBasedTupleToMessageMapper;
 import org.apache.storm.rocketmq.common.mapper.TupleToMessageMapper;
 import org.apache.storm.rocketmq.common.selector.DefaultTopicSelector;
 import org.apache.storm.rocketmq.common.selector.TopicSelector;
-import org.apache.storm.rocketmq.spout.RocketMQSpout;
+import org.apache.storm.rocketmq.spout.RocketMqSpout;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
@@ -49,7 +49,7 @@ public class WordCountTopology {
         properties.setProperty(SpoutConfig.CONSUMER_GROUP, CONSUMER_GROUP);
         properties.setProperty(SpoutConfig.CONSUMER_TOPIC, CONSUMER_TOPIC);
 
-        RocketMQSpout spout = new RocketMQSpout(properties);
+        RocketMqSpout spout = new RocketMqSpout(properties);
 
         WordCounter bolt = new WordCounter();
 
@@ -57,9 +57,9 @@ public class WordCountTopology {
         TopicSelector selector = new DefaultTopicSelector(topic);
 
         properties = new Properties();
-        properties.setProperty(RocketMQConfig.NAME_SERVER_ADDR, nameserverAddr);
+        properties.setProperty(RocketMqConfig.NAME_SERVER_ADDR, nameserverAddr);
 
-        RocketMQBolt insertBolt = new RocketMQBolt()
+        RocketMqBolt insertBolt = new RocketMqBolt()
                 .withMapper(mapper)
                 .withSelector(selector)
                 .withProperties(properties);

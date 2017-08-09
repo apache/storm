@@ -36,9 +36,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 
 import static org.apache.storm.spout.CheckPointState.Action;
 import static org.apache.storm.spout.CheckPointState.Action.COMMIT;
+import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
 import static org.apache.storm.spout.CheckPointState.Action.PREPARE;
 import static org.apache.storm.spout.CheckPointState.Action.ROLLBACK;
-import static org.apache.storm.spout.CheckPointState.Action.INITSTATE;
 /**
  * Wraps a {@link IStatefulBolt} and manages the state of the bolt.
  */
@@ -123,6 +123,11 @@ public class StatefulBoltExecutor<T extends State> extends BaseStatefulBoltExecu
                 }
                 pendingTuples.clear();
             } else {
+                /*
+                 * If a worker crashes, the states of all workers are rolled back and an initState message is sent across
+                 * the topology so that crashed workers can initialize their state.
+                 * The bolts that have their state already initialized need not be re-initialized.
+                 */
                 LOG.debug("Bolt state is already initialized, ignoring tuple {}, action {}, txid {}",
                           checkpointTuple, action, txid);
             }

@@ -15,7 +15,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
+
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -32,11 +36,10 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Sets;
-
 public class EvenScheduler implements IScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(EvenScheduler.class);
 
+    @VisibleForTesting
     public static List<WorkerSlot> sortSlots(List<WorkerSlot> availableSlots) {
         //For example, we have a three nodes(supervisor1, supervisor2, supervisor3) cluster:
         //slots before sort:
@@ -51,15 +54,15 @@ public class EvenScheduler implements IScheduler {
 
         if (availableSlots != null && availableSlots.size() > 0) {
             // group by node
-            Map<String, List<WorkerSlot>> slotGroups = new TreeMap<String, List<WorkerSlot>>();
+            Map<String, List<WorkerSlot>> slotGroups = new TreeMap<>();
             for (WorkerSlot slot : availableSlots) {
                 String node = slot.getNodeId();
                 List<WorkerSlot> slots = null;
-                if(slotGroups.containsKey(node)){
-                   slots = slotGroups.get(node);
-                }else{
-                   slots = new ArrayList<WorkerSlot>();
-                   slotGroups.put(node, slots);
+                if (slotGroups.containsKey(node)) {
+                    slots = slotGroups.get(node);
+                } else {
+                    slots = new ArrayList<WorkerSlot>();
+                    slotGroups.put(node, slots);
                 }
                 slots.add(slot);
             }
@@ -112,7 +115,8 @@ public class EvenScheduler implements IScheduler {
         }
 
         //allow requesting slots number bigger than available slots
-        int toIndex = (totalSlotsToUse - aliveAssigned.size()) > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
+        int toIndex = (totalSlotsToUse - aliveAssigned.size())
+            > sortedList.size() ? sortedList.size() : (totalSlotsToUse - aliveAssigned.size());
         List<WorkerSlot> reassignSlots = sortedList.subList(0, toIndex);
 
         Set<ExecutorDetails> aliveExecutors = new HashSet<ExecutorDetails>();
@@ -145,8 +149,7 @@ public class EvenScheduler implements IScheduler {
     }
 
     public static void scheduleTopologiesEvenly(Topologies topologies, Cluster cluster) {
-        List<TopologyDetails> needsSchedulingTopologies = cluster.needsSchedulingTopologies(topologies);
-        for (TopologyDetails topology : needsSchedulingTopologies) {
+        for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
             String topologyId = topology.getId();
             Map<ExecutorDetails, WorkerSlot> newAssignment = scheduleTopology(topology, cluster);
             Map<WorkerSlot, List<ExecutorDetails>> nodePortToExecutors = Utils.reverseMap(newAssignment);
@@ -167,6 +170,11 @@ public class EvenScheduler implements IScheduler {
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
         scheduleTopologiesEvenly(topologies, cluster);
+    }
+
+    @Override
+    public Map<String, Object> config() {
+        return new HashMap<>();
     }
 
 }

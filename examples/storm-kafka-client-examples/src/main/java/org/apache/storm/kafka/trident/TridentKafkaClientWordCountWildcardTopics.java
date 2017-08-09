@@ -21,6 +21,7 @@ package org.apache.storm.kafka.trident;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.tuple.Fields;
@@ -29,10 +30,11 @@ import org.apache.storm.tuple.Values;
 public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClientWordCountNamedTopics {
     private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
-    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
-        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
-                .setGroupId("kafkaSpoutTestGroup")
-                .setMaxPartitionFectchBytes(200)
+    @Override
+    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig(String bootstrapServers) {
+        return KafkaSpoutConfig.builder(bootstrapServers, TOPIC_WILDCARD_PATTERN)
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup")
+                .setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 200)
                 .setRecordTranslator((r) -> new Values(r.value()), new Fields("str"))
                 .setRetry(newRetryService())
                 .setOffsetCommitPeriodMs(10_000)

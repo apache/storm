@@ -42,7 +42,7 @@ public class MockAutoCred implements INimbusCredentialPlugin, IAutoCredentials, 
     }
 
     @Override
-    public void populateCredentials(Map<String, String> credentials, Map<String, Object> conf) {
+    public void populateCredentials(Map<String, String> credentials, Map<String, Object> topoConf) {
         credentials.put(NIMBUS_CRED_KEY, NIMBUS_CRED_VAL);
     }
 
@@ -58,7 +58,7 @@ public class MockAutoCred implements INimbusCredentialPlugin, IAutoCredentials, 
     }
 
     @Override
-    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf) {
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {
         credentials.put(NIMBUS_CRED_KEY, NIMBUS_CRED_RENEW_VAL);
         credentials.put(GATEWAY_CRED_KEY, GATEWAY_CRED_RENEW_VAL);
     }

@@ -139,11 +139,12 @@ public class OffsetManager {
      */
     public long commit(OffsetAndMetadata committedOffset) {
         final long preCommitCommittedOffsets = this.committedOffset;
-        final long numCommittedOffsets = committedOffset.offset() - this.committedOffset;
+        long numCommittedOffsets = 0;
         this.committedOffset = committedOffset.offset();
         for (Iterator<KafkaSpoutMessageId> iterator = ackedMsgs.iterator(); iterator.hasNext();) {
             if (iterator.next().offset() <= committedOffset.offset()) {
                 iterator.remove();
+                numCommittedOffsets++;
             } else {
                 break;
             }
@@ -159,8 +160,8 @@ public class OffsetManager {
 
         LOG.trace("{}", this);
         
-        LOG.debug("Committed offsets [{}-{} = {}] for topic-partition [{}].",
-                    preCommitCommittedOffsets + 1, this.committedOffset, numCommittedOffsets, tp);
+        LOG.debug("Committed [{}] offsets in the range [{}-{}] for topic-partition [{}].",
+                numCommittedOffsets, preCommitCommittedOffsets + 1, this.committedOffset, tp);
         
         return numCommittedOffsets;
     }

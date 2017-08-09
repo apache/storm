@@ -40,6 +40,9 @@
   <div class="row">
     <div id="result"></div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 <script>
@@ -68,9 +71,9 @@ $(document).ready(function() {
              var port = response.hostPortList[index].port;
              var elemId = response.hostPortList[index].elemId;
              var file = id+"/"+port+"/worker.log";
-             var searchURL = "http://"+host+":"+logviewerPort+"/search/"+encodeURIComponent(file)+"?search-string="+search+"&num-matches="+count;
+             var searchURL = "http://"+host+":"+logviewerPort+"/api/v1/search?file="+encodeURIComponent(file)+"&search-string="+search+"&num-matches="+count;
              if (searchArchived != "") {
-               searchURL = "http://"+host+":"+logviewerPort+"/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&search-archived=true&port="+port;
+               searchURL = "http://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&search-archived=true&port="+port;
              }
 
              $.ajax({dataType: "json",
@@ -96,5 +99,8 @@ $(document).ready(function() {
        });
     });
   });
+
+  getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>
 </html>

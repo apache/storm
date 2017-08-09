@@ -310,6 +310,10 @@
         <qpid.version>0.32</qpid.version>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.24.1</jersey.version>
+        <dropwizard.version>1.1.2</dropwizard.version>
+        <j2html.version>1.0.0</j2html.version>
+        <jool.version>0.9.12</jool.version>
+        <caffeine.version>2.3.5</caffeine.version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
@@ -326,7 +330,6 @@
         <module>storm-server</module>
         <module>storm-core</module>
         <module>storm-webapp</module>
-        <module>storm-rename-hack</module>
         <module>storm-clojure</module>
         <module>storm-clojure-test</module>
         <module>storm-submit-tools</module>
@@ -482,6 +485,12 @@
                                 <exclude>**/.git/**</exclude>
                                 <exclude>**/derby.log</exclude>
                                 <exclude>**/src/dev/**</exclude>
+
+                                <!-- webapp test resources -->
+                                <exclude>**/src/test/resources/test-3072.log.test</exclude>
+                                <exclude>**/src/test/resources/small-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/test-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/logviewer-search-context-tests.log.test</exclude>
 
                                 <!-- StormSQL -->
                                 <exclude>**/src/codegen/config.fmpp</exclude>
@@ -1042,6 +1051,11 @@
                 <groupId>uk.org.lidalia</groupId>
                 <artifactId>sysout-over-slf4j</artifactId>
                 <version>${sysout-over-slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

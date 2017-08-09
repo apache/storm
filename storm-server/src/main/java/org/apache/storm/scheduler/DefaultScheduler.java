@@ -70,8 +70,7 @@ public class DefaultScheduler implements IScheduler {
     }
 
     public static void defaultSchedule(Topologies topologies, Cluster cluster) {
-        List<TopologyDetails> needsSchedulingTopologies = cluster.needsSchedulingTopologies(topologies);
-        for (TopologyDetails topology : needsSchedulingTopologies) {
+        for (TopologyDetails topology : cluster.needsSchedulingTopologies()) {
             List<WorkerSlot> availableSlots = cluster.getAvailableSlots();
             Set<ExecutorDetails> allExecutors = topology.getExecutors();
 
@@ -89,12 +88,10 @@ public class DefaultScheduler implements IScheduler {
                 badSlots = badSlots(aliveAssigned, allExecutors.size(), totalSlotsToUse);                
             }
             if (badSlots != null) {
-                cluster.freeSlots(badSlots);                
+                cluster.freeSlots(badSlots);
             }
 
-            Map<String, TopologyDetails> _topologies = new HashMap<String, TopologyDetails>();
-            _topologies.put(topology.getId(), topology);
-            EvenScheduler.scheduleTopologiesEvenly(new Topologies(_topologies), cluster);
+            EvenScheduler.scheduleTopologiesEvenly(new Topologies(topology), cluster);
         }
     }
 
@@ -108,4 +105,8 @@ public class DefaultScheduler implements IScheduler {
         defaultSchedule(topologies, cluster);
     }
 
+    @Override
+    public Map<String, Object> config() {
+        return new HashMap<>();
+    }
 }

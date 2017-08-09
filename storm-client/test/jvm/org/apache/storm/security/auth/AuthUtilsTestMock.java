@@ -57,7 +57,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // IPrincipalToLocal 
     @Override
-    public String toLocal(Principal principal) {
+    public String toLocal(String principal) {
         return null;
     }
 
@@ -69,7 +69,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // ICredentialsRenewer
     @Override
-    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf) {}
+    public void renew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {}
 
     // IAutoCredentials
     @Override
@@ -85,7 +85,7 @@ public class AuthUtilsTestMock implements IAutoCredentials,
 
     // INimbusCredentialPlugin
     @Override
-    public void populateCredentials(Map<String,String> credentials, Map<String, Object> conf) {}
+    public void populateCredentials(Map<String,String> credentials, Map<String, Object> topoConf) {}
 
     // Shutdownable via INimbusCredentailPlugin
     @Override

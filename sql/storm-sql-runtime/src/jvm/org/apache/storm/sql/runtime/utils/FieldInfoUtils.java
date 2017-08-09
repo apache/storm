@@ -15,14 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.sql.runtime.utils;
 
 import com.google.common.base.Function;
 import com.google.common.collect.Lists;
-import org.apache.storm.sql.runtime.FieldInfo;
 
 import java.io.Serializable;
 import java.util.List;
+
+import org.apache.storm.sql.runtime.FieldInfo;
 
 public final class FieldInfoUtils {
 

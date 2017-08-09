@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @param <T> the type of event tracked by this policy.
  */
-public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
+public class CountEvictionPolicy<T> implements EvictionPolicy<T, Long> {
     protected final int threshold;
     protected final AtomicLong currentCount;
     private EvictionContext context;
@@ -77,5 +77,20 @@ public class CountEvictionPolicy<T> implements EvictionPolicy<T> {
                 "threshold=" + threshold +
                 ", currentCount=" + currentCount +
                 '}';
+    }
+
+    @Override
+    public void reset() {
+        // NOOP
+    }
+
+    @Override
+    public Long getState() {
+        return currentCount.get();
+    }
+
+    @Override
+    public void restoreState(Long state) {
+        currentCount.set(state);
     }
 }

@@ -40,7 +40,7 @@
   (let [executor->slot {(ExecutorDetails. (int 1) (int 5)) (WorkerSlot. "supervisor1" (int 1))
                         (ExecutorDetails. (int 6) (int 10)) (WorkerSlot. "supervisor2" (int 2))}
         topology-id "topology1"
-        assignment (SchedulerAssignmentImpl. topology-id executor->slot)]
+        assignment (SchedulerAssignmentImpl. topology-id executor->slot nil nil)]
     ;; test assign
     (.assign assignment (WorkerSlot. "supervisor1" 1)
              (list (ExecutorDetails. (int 11) (int 15)) (ExecutorDetails. (int 16) (int 20))))
@@ -69,13 +69,13 @@
         executor2 (ExecutorDetails. (int 6) (int 10))
         topology1 (TopologyDetails. "topology1" {TOPOLOGY-NAME "topology-name-1"} (StormTopology.) 1
                                    {executor1 "spout1"
-                                    executor2 "bolt1"})
+                                    executor2 "bolt1"} "user")
         ;; test topology.selectExecutorToComponent
         executor->comp (.selectExecutorToComponent topology1 (list executor1))
         _ (is (= (clojurify-executor->comp {executor1 "spout1"})
                  (clojurify-executor->comp executor->comp)))
         ;; test topologies.getById
-        topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"} (StormTopology.) 1 {})
+        topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"} (StormTopology.) 1 {} "user")
         topologies (Topologies. {"topology1" topology1 "topology2" topology2})
         _ (is (= "topology1" (->> "topology1"
                                   (.getById topologies)
@@ -104,19 +104,19 @@
                                     2
                                     {executor1 "spout1"
                                      executor2 "bolt1"
-                                     executor3 "bolt2"})
+                                     executor3 "bolt2"} "user")
         ;; topology2 is fully scheduled
         topology2 (TopologyDetails. "topology2" {TOPOLOGY-NAME "topology-name-2"}
                                     (StormTopology.)
                                     2
                                     {executor11 "spout11"
-                                     executor12 "bolt12"})
+                                     executor12 "bolt12"} "user")
         ;; topology3 needs scheduling, since the assignment is squeezed
         topology3 (TopologyDetails. "topology3" {TOPOLOGY-NAME "topology-name-3"}
                                     (StormTopology.)
                                     2
                                     {executor21 "spout21"
-                                     executor22 "bolt22"})
+                                     executor22 "bolt22"} "user")
         topologies (Topologies. {"topology1" topology1 "topology2" topology2 "topology3" topology3})
         executor->slot1 {executor1 (WorkerSlot. "supervisor1" (int 1))
                          executor2 (WorkerSlot. "supervisor2" (int 2))}
@@ -124,13 +124,14 @@
                          executor12 (WorkerSlot. "supervisor2" (int 4))}
         executor->slot3 {executor21 (WorkerSlot. "supervisor1" (int 5))
                          executor22 (WorkerSlot. "supervisor1" (int 5))}
-        assignment1 (SchedulerAssignmentImpl. "topology1" executor->slot1)
-        assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2)
-        assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3)
+        assignment1 (SchedulerAssignmentImpl. "topology1" executor->slot1 nil nil)
+        assignment2 (SchedulerAssignmentImpl. "topology2" executor->slot2 nil nil)
+        assignment3 (SchedulerAssignmentImpl. "topology3" executor->slot3 nil nil)
         cluster (Cluster. (Nimbus$StandaloneINimbus.)
                           {"supervisor1" supervisor1 "supervisor2" supervisor2}
                           {"topology1" assignment1 "topology2" assignment2 "topology3" assignment3}
-                  nil)]
+                          topologies
+                  {})]
     ;; test Cluster constructor
     (is (= #{"supervisor1" "supervisor2"}
            (->> cluster
@@ -157,7 +158,7 @@
     (is (= true (.needsScheduling cluster topology3)))
     ;; test Cluster.needsSchedulingTopologies
     (is (= #{"topology1" "topology3"}
-           (->> (.needsSchedulingTopologies cluster topologies)
+           (->> (.needsSchedulingTopologies cluster)
                 (map (fn [topology] (.getId topology)))
                 set)))
 
@@ -209,9 +210,9 @@
     (is (= false (.isSlotOccupied cluster (WorkerSlot. "supervisor2" (int 8)))))
     (is (= false (.isSlotOccupied cluster (WorkerSlot. "supervisor2" (int 10)))))
     ;; test Cluster.getAssignmentById
-    (is (= assignment1 (.getAssignmentById cluster "topology1")))
-    (is (= assignment2 (.getAssignmentById cluster "topology2")))
-    (is (= assignment3 (.getAssignmentById cluster "topology3")))
+    (is (.equalsIgnoreResources assignment1 (.getAssignmentById cluster "topology1")))
+    (is (.equalsIgnoreResources assignment2 (.getAssignmentById cluster "topology2")))
+    (is (.equalsIgnoreResources assignment3 (.getAssignmentById cluster "topology3")))
     ;; test Cluster.getSupervisorById
     (is (= supervisor1 (.getSupervisorById cluster "supervisor1")))
     (is (= supervisor2 (.getSupervisorById cluster "supervisor2")))
