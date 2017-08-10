@@ -52,7 +52,6 @@ Trident is an alternative interface to Storm. It provides exactly-once processin
 * [Running topologies on a production cluster](Running-topologies-on-a-production-cluster.html)
 * [Building Storm](Maven.html) with Maven
 * [Setting up a Secure Cluster](SECURITY.html)
-* [CGroup Enforcement](cgroups_in_storm.html)
 * [Pacemaker reduces load on zookeeper for large clusters](Pacemaker.html)
 * [Resource Aware Scheduler](Resource_Aware_Scheduler_overview.html)
 * [Daemon Metrics/Monitoring](storm-metrics-profiling-internal-actions.html)
