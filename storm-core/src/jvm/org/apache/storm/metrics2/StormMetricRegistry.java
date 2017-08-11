@@ -43,9 +43,9 @@ public class StormMetricRegistry {
 
     private static String hostName = null;
 
-    public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, Integer port){
+    public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, String componentId, Integer port){
         SimpleGauge<T> gauge = new SimpleGauge<>(initialValue);
-        String metricName = metricName(name, topologyId, null, port);
+        String metricName = metricName(name, topologyId, componentId, port);
             if(REGISTRY.getGauges().containsKey(metricName)){
                 return (SimpleGauge)REGISTRY.getGauges().get(metricName);
         } else {
@@ -53,16 +53,16 @@ public class StormMetricRegistry {
         }
     }
 
-    public static DisruptorMetrics disruptorMetrics(String name, String topologyId, Integer port){
+    public static DisruptorMetrics disruptorMetrics(String name, String topologyId, String componentId, Integer port){
         return new DisruptorMetrics(
-                StormMetricRegistry.gauge(0L, name + "-capacity", topologyId, port),
-                StormMetricRegistry.gauge(0L, name + "-population", topologyId, port),
-                StormMetricRegistry.gauge(0L, name + "-write-position", topologyId, port),
-                StormMetricRegistry.gauge(0L, name + "-read-position", topologyId, port),
-                StormMetricRegistry.gauge(0.0, name + "-arrival-rate", topologyId, port),
-                StormMetricRegistry.gauge(0.0, name + "-sojourn-time-ms", topologyId, port),
-                StormMetricRegistry.gauge(0L, name + "-overflow", topologyId, port),
-                StormMetricRegistry.gauge(0.0F, name + "-percent-full", topologyId, port)
+                StormMetricRegistry.gauge(0L, name + "-capacity", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0L, name + "-population", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0L, name + "-write-position", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0L, name + "-read-position", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0.0, name + "-arrival-rate", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0.0, name + "-sojourn-time-ms", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0L, name + "-overflow", topologyId, componentId, port),
+                StormMetricRegistry.gauge(0.0F, name + "-percent-full", topologyId, componentId, port)
         );
     }
 
