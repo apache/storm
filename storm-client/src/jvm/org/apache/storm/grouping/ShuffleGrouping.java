@@ -42,9 +42,10 @@ public class ShuffleGrouping implements CustomStreamGrouping, Serializable {
     }
 
     @Override
-    public List<Integer> chooseTasks(int taskId, List<Object> values) {
-        if(current==choices.size())
-            current=0;
+    public synchronized List<Integer> chooseTasks(int taskId, List<Object> values) {
+        if (current==choices.size()) {
+            current = 0;
+	}
         return choices.get(current++);
     }
 }

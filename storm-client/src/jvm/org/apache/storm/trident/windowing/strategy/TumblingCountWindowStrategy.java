@@ -44,7 +44,7 @@ public final class TumblingCountWindowStrategy<T> extends BaseWindowStrategy<T> 
      * @return
      */
     @Override
-    public TriggerPolicy<T> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T> evictionPolicy) {
+    public TriggerPolicy<T, ?> getTriggerPolicy(TriggerHandler triggerHandler, EvictionPolicy<T, ?> evictionPolicy) {
         return new CountTriggerPolicy<>(windowConfig.getSlidingLength(), triggerHandler, evictionPolicy);
     }
 
@@ -54,7 +54,7 @@ public final class TumblingCountWindowStrategy<T> extends BaseWindowStrategy<T> 
      * @return
      */
     @Override
-    public EvictionPolicy<T> getEvictionPolicy() {
+    public EvictionPolicy<T, ?> getEvictionPolicy() {
         return new CountEvictionPolicy<>(windowConfig.getWindowLength());
     }
 }

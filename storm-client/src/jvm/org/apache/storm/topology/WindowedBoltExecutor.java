@@ -23,18 +23,20 @@ import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.task.IOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.CountEvictionPolicy;
 import org.apache.storm.windowing.CountTriggerPolicy;
+import org.apache.storm.windowing.Event;
 import org.apache.storm.windowing.EvictionPolicy;
+import org.apache.storm.windowing.StatefulWindowManager;
 import org.apache.storm.windowing.TimeEvictionPolicy;
 import org.apache.storm.windowing.TimeTriggerPolicy;
 import org.apache.storm.windowing.TimestampExtractor;
 import org.apache.storm.windowing.TriggerPolicy;
 import org.apache.storm.windowing.TupleWindowImpl;
+import org.apache.storm.windowing.TupleWindowIterImpl;
 import org.apache.storm.windowing.WaterMarkEventGenerator;
 import org.apache.storm.windowing.WatermarkCountEvictionPolicy;
 import org.apache.storm.windowing.WatermarkCountTriggerPolicy;
@@ -45,11 +47,17 @@ import org.apache.storm.windowing.WindowManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collection;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 import static org.apache.storm.topology.base.BaseWindowedBolt.Duration;
@@ -69,8 +77,8 @@ public class WindowedBoltExecutor implements IRichBolt {
     private transient int maxLagMs;
     private TimestampExtractor timestampExtractor;
     private transient String lateTupleStream;
-    private transient TriggerPolicy<Tuple> triggerPolicy;
-    private transient EvictionPolicy<Tuple> evictionPolicy;
+    private transient TriggerPolicy<Tuple, ?> triggerPolicy;
+    private transient EvictionPolicy<Tuple,?> evictionPolicy;
     private transient Duration windowLengthDuration;
     // package level for unit tests
     transient WaterMarkEventGenerator<Tuple> waterMarkEventGenerator;
@@ -80,7 +88,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         timestampExtractor = bolt.getTimestampExtractor();
     }
 
-    private int getTopologyTimeoutMillis(Map<String, Object> topoConf) {
+    protected int getTopologyTimeoutMillis(Map<String, Object> topoConf) {
         if (topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS) != null) {
             boolean timeOutsEnabled = (boolean) topoConf.get(Config.TOPOLOGY_ENABLE_MESSAGE_TIMEOUTS);
             if (!timeOutsEnabled) {
@@ -118,8 +126,8 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
     }
 
-    private void validate(Map<String, Object> topoConf, Count windowLengthCount, Duration windowLengthDuration,
-                          Count slidingIntervalCount, Duration slidingIntervalDuration) {
+    protected void validate(Map<String, Object> topoConf, Count windowLengthCount, Duration windowLengthDuration,
+                            Count slidingIntervalCount, Duration slidingIntervalDuration) {
 
         int topologyTimeout = getTopologyTimeoutMillis(topoConf);
         int maxSpoutPending = getMaxSpoutPending(topoConf);
@@ -145,8 +153,12 @@ public class WindowedBoltExecutor implements IRichBolt {
     }
 
     private WindowManager<Tuple> initWindowManager(WindowLifecycleListener<Tuple> lifecycleListener, Map<String, Object> topoConf,
-                                                   TopologyContext context) {
-        WindowManager<Tuple> manager = new WindowManager<>(lifecycleListener);
+                                                   TopologyContext context, Collection<Event<Tuple>> queue, boolean stateful) {
+
+        WindowManager<Tuple> manager = stateful ?
+            new StatefulWindowManager<>(lifecycleListener, queue)
+            : new WindowManager<>(lifecycleListener, queue);
+
         Count windowLengthCount = null;
         Duration slidingIntervalDuration = null;
         Count slidingIntervalCount = null;
@@ -207,6 +219,14 @@ public class WindowedBoltExecutor implements IRichBolt {
         return manager;
     }
 
+    protected void restoreState(Map<String, Optional<?>> state) {
+        windowManager.restoreState(state);
+    }
+
+    protected Map<String, Optional<?>> getState() {
+        return windowManager.getState();
+    }
+
     private Set<GlobalStreamId> getComponentStreams(TopologyContext context) {
         Set<GlobalStreamId> streams = new HashSet<>();
         for (GlobalStreamId streamId : context.getThisSources().keySet()) {
@@ -233,8 +253,8 @@ public class WindowedBoltExecutor implements IRichBolt {
         return timestampExtractor != null;
     }
 
-    private TriggerPolicy<Tuple> getTriggerPolicy(Count slidingIntervalCount, Duration slidingIntervalDuration,
-                                                  WindowManager<Tuple> manager, EvictionPolicy<Tuple> evictionPolicy) {
+    private TriggerPolicy<Tuple, ?> getTriggerPolicy(Count slidingIntervalCount, Duration slidingIntervalDuration,
+                                                  WindowManager<Tuple> manager, EvictionPolicy<Tuple, ?> evictionPolicy) {
         if (slidingIntervalCount != null) {
             if (isTupleTs()) {
                 return new WatermarkCountTriggerPolicy<>(slidingIntervalCount.value, manager, evictionPolicy, manager);
@@ -250,7 +270,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
     }
 
-    private EvictionPolicy<Tuple> getEvictionPolicy(Count windowLengthCount, Duration windowLengthDuration) {
+    private EvictionPolicy<Tuple, ?> getEvictionPolicy(Count windowLengthCount, Duration windowLengthDuration) {
         if (windowLengthCount != null) {
             if (isTupleTs()) {
                 return new WatermarkCountEvictionPolicy<>(windowLengthCount.value);
@@ -268,10 +288,20 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        doPrepare(topoConf, context, collector, new ConcurrentLinkedQueue<>(), false);
+    }
+
+    // NOTE: the queue has to be thread safe.
+    protected void doPrepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector,
+                             Collection<Event<Tuple>> queue, boolean stateful) {
+        Objects.requireNonNull(topoConf);
+        Objects.requireNonNull(context);
+        Objects.requireNonNull(collector);
+        Objects.requireNonNull(queue);
         this.windowedOutputCollector = new WindowedOutputCollector(collector);
         bolt.prepare(topoConf, context, windowedOutputCollector);
         this.listener = newWindowLifecycleListener();
-        this.windowManager = initWindowManager(listener, topoConf, context);
+        this.windowManager = initWindowManager(listener, topoConf, context, queue, stateful);
         start();
         LOG.info("Initialized window manager {} ", windowManager);
     }
@@ -301,6 +331,11 @@ public class WindowedBoltExecutor implements IRichBolt {
         bolt.cleanup();
     }
 
+    // for unit tests
+    WindowManager<Tuple> getWindowManager() {
+        return windowManager;
+    }
+
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         String lateTupleStream = (String) getComponentConfiguration().get(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
@@ -327,17 +362,28 @@ public class WindowedBoltExecutor implements IRichBolt {
             @Override
             public void onActivation(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
                 windowedOutputCollector.setContext(tuples);
-                bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+                boltExecute(tuples, newTuples, expiredTuples, timestamp);
             }
 
-            private Long getWindowStartTs(Long endTs) {
-                Long res = null;
-                if (endTs != null && windowLengthDuration != null) {
-                    res = endTs - windowLengthDuration.value;
-                }
-                return res;
-            }
         };
+    }
+
+    protected void boltExecute(List<Tuple> tuples, List<Tuple> newTuples, List<Tuple> expiredTuples, Long timestamp) {
+        bolt.execute(new TupleWindowImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+    }
+
+    protected void boltExecute(Supplier<Iterator<Tuple>> tuples,
+                               Supplier<Iterator<Tuple>> newTuples,
+                               Supplier<Iterator<Tuple>> expiredTuples, Long timestamp) {
+        bolt.execute(new TupleWindowIterImpl(tuples, newTuples, expiredTuples, getWindowStartTs(timestamp), timestamp));
+    }
+
+    private Long getWindowStartTs(Long endTs) {
+        Long res = null;
+        if (endTs != null && windowLengthDuration != null) {
+            res = endTs - windowLengthDuration.value;
+        }
+        return res;
     }
 
     /**

@@ -1462,13 +1462,18 @@ public class Utils {
         return defaultsConf;
     }
 
-    public static <V> ArrayList<V> convertToArray(Map<Integer, V> srcMap) {
+    public static <V> ArrayList<V> convertToArray(Map<Integer, V> srcMap, int start) {
         Set<Integer> executorIds = srcMap.keySet();
         Integer largestId = executorIds.stream().max(Integer::compareTo).get();
-        ArrayList<V> result = new ArrayList<>(Collections.nCopies(largestId+1 , null)); // creates array[largestId+1] filled with nulls
+        int end = largestId - start;
+        ArrayList<V> result = new ArrayList<>(Collections.nCopies(end+1 , null)); // creates array[largestId+1] filled with nulls
         for( Map.Entry<Integer, V> entry : srcMap.entrySet() ) {
-            if (entry.getKey() >= 0) // don't need __system bolt (id=-1) here
-                result.set(entry.getKey(),  entry.getValue());
+            int id = entry.getKey();
+            if (id < start) {
+                LOG.debug("Entry {} will be skipped it is too small {} ...", id, start);
+            } else {
+                result.set(id - start, entry.getValue());
+            }
         }
         return result;
     }

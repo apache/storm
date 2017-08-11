@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.topology.base;
 
 import org.apache.storm.Config;
@@ -23,6 +24,12 @@ import org.apache.storm.topology.IStatefulWindowedBolt;
 import org.apache.storm.windowing.TimestampExtractor;
 
 public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWindowedBolt implements IStatefulWindowedBolt<T> {
+    // if the windows should be persisted in state
+    private boolean persistent;
+
+    // max number of window events in memory
+    private long maxEventsInMemory;
+
     /**
      * {@inheritDoc}
      */
@@ -149,6 +156,38 @@ public abstract class BaseStatefulWindowedBolt<T extends State> extends BaseWind
     public BaseStatefulWindowedBolt<T> withMessageIdField(String fieldName) {
         windowConfiguration.put(Config.TOPOLOGY_BOLTS_MESSAGE_ID_FIELD_NAME, fieldName);
         return this;
+    }
+
+    /**
+     * If set, the stateful windowed bolt would use the backend state for window persistence and
+     * only keep a sub-set of events in memory as specified by {@link #withMaxEventsInMemory(long)}.
+     */
+    public BaseStatefulWindowedBolt<T> withPersistence() {
+        persistent = true;
+        return this;
+    }
+
+    /**
+     * The maximum number of window events to keep in memory. This is meaningful only if
+     * {@link #withPersistence()} is also set. As the number of events in memory grows close
+     * to the maximum, the events that are less likely to be used again are evicted and persisted.
+     * The default value for this is {@code 1,000,000}.
+     *
+     * @param maxEventsInMemory the maximum number of window events to keep in memory
+     */
+    public BaseStatefulWindowedBolt<T> withMaxEventsInMemory(long maxEventsInMemory) {
+        this.maxEventsInMemory = maxEventsInMemory;
+        return this;
+    }
+
+    @Override
+    public boolean isPersistent() {
+        return persistent;
+    }
+
+    @Override
+    public long maxEventsInMemory() {
+        return maxEventsInMemory > 0 ? maxEventsInMemory : IStatefulWindowedBolt.super.maxEventsInMemory();
     }
 
     @Override

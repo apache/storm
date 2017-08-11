@@ -37,7 +37,6 @@
 
     <properties>
         <hdfs.version>${hadoop.version}</hdfs.version>
-        <caffeine.version>2.3.5</caffeine.version>
     </properties>
 
     <dependencies>
@@ -91,7 +90,6 @@
         <dependency>
             <groupId>com.github.ben-manes.caffeine</groupId>
             <artifactId>caffeine</artifactId>
-            <version>${caffeine.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>

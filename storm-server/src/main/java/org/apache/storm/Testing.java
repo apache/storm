@@ -712,6 +712,6 @@ public class Testing {
                 new HashMap<>(),
                 new HashMap<>(),
                 new AtomicBoolean(false));
-        return new TupleImpl(context, values, "testSrc", 1, stream);
+        return new TupleImpl(context, values, "component", 1, stream);
     }
 }

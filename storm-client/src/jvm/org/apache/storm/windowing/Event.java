@@ -22,7 +22,7 @@ package org.apache.storm.windowing;
  *
  * @param <T> the type of the object thats wrapped. E.g Tuple
  */
-interface Event<T> {
+public interface Event<T> {
     /**
      * The event timestamp in millis. This could be the time
      * when the source generated the tuple or the time
