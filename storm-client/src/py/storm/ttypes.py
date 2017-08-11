@@ -602,6 +602,7 @@ class Grouping:
    - custom_object
    - custom_serialized
    - local_or_shuffle
+   - locality_aware
   """
 
   thrift_spec = (
@@ -614,9 +615,10 @@ class Grouping:
     (6, TType.STRUCT, 'custom_object', (JavaObject, JavaObject.thrift_spec), None, ), # 6
     (7, TType.STRING, 'custom_serialized', None, None, ), # 7
     (8, TType.STRUCT, 'local_or_shuffle', (NullStruct, NullStruct.thrift_spec), None, ), # 8
+    (9, TType.STRUCT, 'locality_aware', (NullStruct, NullStruct.thrift_spec), None, ), # 9
   )
 
-  def __init__(self, fields=None, shuffle=None, all=None, none=None, direct=None, custom_object=None, custom_serialized=None, local_or_shuffle=None,):
+  def __init__(self, fields=None, shuffle=None, all=None, none=None, direct=None, custom_object=None, custom_serialized=None, local_or_shuffle=None, locality_aware=None,):
     self.fields = fields
     self.shuffle = shuffle
     self.all = all
@@ -625,6 +627,7 @@ class Grouping:
     self.custom_object = custom_object
     self.custom_serialized = custom_serialized
     self.local_or_shuffle = local_or_shuffle
+    self.locality_aware = locality_aware
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -686,6 +689,12 @@ class Grouping:
           self.local_or_shuffle.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 9:
+        if ftype == TType.STRUCT:
+          self.locality_aware = NullStruct()
+          self.locality_aware.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -731,6 +740,10 @@ class Grouping:
       oprot.writeFieldBegin('local_or_shuffle', TType.STRUCT, 8)
       self.local_or_shuffle.write(oprot)
       oprot.writeFieldEnd()
+    if self.locality_aware is not None:
+      oprot.writeFieldBegin('locality_aware', TType.STRUCT, 9)
+      self.locality_aware.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -748,6 +761,7 @@ class Grouping:
     value = (value * 31) ^ hash(self.custom_object)
     value = (value * 31) ^ hash(self.custom_serialized)
     value = (value * 31) ^ hash(self.local_or_shuffle)
+    value = (value * 31) ^ hash(self.locality_aware)
     return value
 
   def __repr__(self):

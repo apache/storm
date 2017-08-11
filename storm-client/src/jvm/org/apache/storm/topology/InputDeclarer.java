@@ -95,6 +95,22 @@ public interface InputDeclarer<T extends InputDeclarer> {
     public T localOrShuffleGrouping(String componentId, String streamId);
 
     /**
+     * Tuples are distributed in favor of tasks with closet network distance.
+     * @param componentId
+     * @return
+     */
+    public T localityAwareShuffleGrouping(String componentId);
+
+    /**
+     * Tuples are distributed in favor of tasks with closet network distance.
+     * @param componentId
+     * @param streamId
+     * @return
+     */
+    public T localityAwareShuffleGrouping(String componentId, String streamId);
+
+
+    /**
      * This grouping specifies that you don't care how the stream is grouped.
      * @param componentId
      * @return

@@ -28,6 +28,7 @@ import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadAwareShuffleGrouping;
 import org.apache.storm.grouping.LoadMapping;
+import org.apache.storm.grouping.LocalityAwareShuffleGrouping;
 import org.apache.storm.grouping.ShuffleGrouping;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
@@ -78,6 +79,9 @@ public class GrouperFactory {
                 } else {
                     result = new LoadAwareShuffleGrouping();
                 }
+                break;
+            case LOCALITY_AWARE:
+                result = new LocalityAwareShuffleGrouping();
                 break;
             case NONE:
                 result = new NoneGrouper();

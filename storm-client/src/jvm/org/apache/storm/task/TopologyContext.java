@@ -17,7 +17,16 @@
  */
 package org.apache.storm.task;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import org.apache.commons.lang.NotImplementedException;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
@@ -30,16 +39,6 @@ import org.apache.storm.metric.api.CombinedMetric;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
-
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.apache.commons.lang.NotImplementedException;
 import org.json.simple.JSONValue;
 
 /**
@@ -77,17 +76,39 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
                            Map<String, Object> executorData,
                            Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
                            AtomicBoolean openOrPrepareWasCalled) {
+        this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields,
+                blobToLastKnownVersionShared, stormId, codeDir, pidDir, taskId, workerPort, workerTasks,
+                defaultResources, userResources,executorData, registeredMetrics,
+                openOrPrepareWasCalled, null);
+    }
+
+    public TopologyContext(StormTopology topology,
+                           Map<String, Object> topoConf,
+                           Map<Integer, String> taskToComponent,
+                           Map<String, List<Integer>> componentToSortedTasks,
+                           Map<String, Map<String, Fields>> componentToStreamToFields,
+                           Map<String, Long> blobToLastKnownVersionShared,
+                           String stormId,
+                           String codeDir,
+                           String pidDir,
+                           Integer taskId,
+                           Integer workerPort,
+                           List<Integer> workerTasks,
+                           Map<String, Object> defaultResources,
+                           Map<String, Object> userResources,
+                           Map<String, Object> executorData,
+                           Map<Integer, Map<Integer, Map<String, IMetric>>> registeredMetrics,
+                           AtomicBoolean openOrPrepareWasCalled,
+                           ConcurrentMap<Integer, ConcurrentMap<Integer, Double>> taskNetworkDistance) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, stormId, codeDir, pidDir,
-                workerPort, workerTasks, defaultResources, userResources);
+                workerPort, workerTasks, defaultResources, userResources, taskNetworkDistance);
         _taskId = taskId;
         _executorData = executorData;
         _registeredMetrics = registeredMetrics;
         _openOrPrepareWasCalled = openOrPrepareWasCalled;
         blobToLastKnownVersion = blobToLastKnownVersionShared;
     }
-
-
 
     /**
      * All state from all subscribed state spouts streams will be synced with

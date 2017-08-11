@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
@@ -34,7 +35,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     private String _pidDir;
     Map<String, Object> _userResources;
     Map<String, Object> _defaultResources;
-    
+    private ConcurrentMap<Integer, ConcurrentMap<Integer, Double>> _taskNetworkDistance;
+
     public WorkerTopologyContext(
             StormTopology topology,
             Map<String, Object> topoConf,
@@ -48,6 +50,25 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
             List<Integer> workerTasks,
             Map<String, Object> defaultResources,
             Map<String, Object> userResources
+            ) {
+        this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId,
+                codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null);
+    }
+
+    public WorkerTopologyContext(
+            StormTopology topology,
+            Map<String, Object> topoConf,
+            Map<Integer, String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks,
+            Map<String, Map<String, Fields>> componentToStreamToFields,
+            String stormId,
+            String codeDir,
+            String pidDir,
+            Integer workerPort,
+            List<Integer> workerTasks,
+            Map<String, Object> defaultResources,
+            Map<String, Object> userResources,
+            ConcurrentMap<Integer, ConcurrentMap<Integer, Double>> taskNetworkDistance
             ) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
         _codeDir = codeDir;
@@ -64,6 +85,7 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         }
         _workerPort = workerPort;
         _workerTasks = workerTasks;
+        _taskNetworkDistance = taskNetworkDistance;
     }
 
     /**
@@ -72,6 +94,17 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
      */
     public List<Integer> getThisWorkerTasks() {
         return _workerTasks;
+    }
+
+    /**
+     * Get network distance between tasks.
+     * The result could null.
+     * Null result means that no network distance data available.
+     * Empty result means that the network distance data is available but it is empty.
+     * @return The map from taskId to targetTaskId to distance. Could be null.
+     */
+    public ConcurrentMap<Integer, ConcurrentMap<Integer, Double>> getTaskNetworkDistance() {
+        return _taskNetworkDistance;
     }
     
     public Integer getThisWorkerPort() {
@@ -103,4 +136,5 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     public ExecutorService getSharedExecutor() {
         return (ExecutorService) _defaultResources.get(SHARED_EXECUTOR);
     }
+
 }

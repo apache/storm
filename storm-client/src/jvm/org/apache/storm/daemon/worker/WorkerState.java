@@ -47,6 +47,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
 import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.task.ITaskNetworkDistanceCalculator;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -56,6 +57,7 @@ import org.apache.storm.utils.DisruptorQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.TransferDrainer;
+import org.apache.storm.utils.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -199,6 +201,8 @@ public class WorkerState {
     final ReentrantReadWriteLock endpointSocketLock;
     final AtomicReference<Map<Integer, NodeInfo>> cachedTaskToNodePort;
     final AtomicReference<Map<NodeInfo, IConnection>> cachedNodeToPortSocket;
+    final ConcurrentMap<Integer, ConcurrentMap<Integer, Double>> cachedTaskNetworkDistance;
+    final ITaskNetworkDistanceCalculator iTaskNetworkDistanceCalculator;
     final Map<List<Long>, DisruptorQueue> executorReceiveQueueMap;
     // executor id is in form [start_task_id end_task_id]
     // short executor id is start_task_id
@@ -259,6 +263,7 @@ public class WorkerState {
 
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
+    private final Map<Integer, Set<Integer>> localTaskToOutboundTasks;
     private final AtomicLong nextUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final TransferDrainer drainer;
@@ -325,7 +330,15 @@ public class WorkerState {
         this.userSharedResources = makeUserResources();
         this.loadMapping = new LoadMapping();
         this.assignmentVersions = new AtomicReference<>(new HashMap<>());
-        this.outboundTasks = workerOutboundTasks();
+        this.localTaskToOutboundTasks = workerLocalTaskToOutboundTasks();
+        this.outboundTasks = workerOutboundTasks(this.localTaskToOutboundTasks);
+
+        this.cachedTaskNetworkDistance = new ConcurrentHashMap<>();
+        this.iTaskNetworkDistanceCalculator =
+                ReflectionUtils.newInstance((String) topologyConf.get(Config.TASK_NETWORK_DISTANCE_CALCULATOR_PLUGIN));
+        this.iTaskNetworkDistanceCalculator.prepare(topologyConf, stormClusterState,
+                new NodeInfo(assignmentId, Sets.newHashSet((long) port)), localTaskToOutboundTasks);
+
         this.trySerializeLocal = topologyConf.containsKey(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE)
             && (Boolean) topologyConf.get(Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
         if (trySerializeLocal) {
@@ -412,6 +425,8 @@ public class WorkerState {
             return next;
         });
 
+        // calculate or update taskNetworkDistance
+        iTaskNetworkDistanceCalculator.calculateOrUpdate(cachedTaskToNodePort.get(), cachedTaskNetworkDistance);
     }
 
     public void refreshStormActive() {
@@ -575,7 +590,7 @@ public class WorkerState {
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, topologyId, codeDir, pidDir, port, taskIds,
                 defaultSharedResources,
-                userSharedResources);
+                userSharedResources, cachedTaskNetworkDistance);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -672,23 +687,38 @@ public class WorkerState {
      *
      * @return seq of task ids that receive messages from this worker
      */
-    private Set<Integer> workerOutboundTasks() {
+    private Set<Integer> workerOutboundTasks(Map<Integer, Set<Integer>> localTaskToOutboundTasks) {
+        Set<Integer> outboundTasks = new HashSet<>();
+
+        for (Map.Entry<Integer, Set<Integer>> entry : localTaskToOutboundTasks.entrySet()) {
+            outboundTasks.addAll(entry.getValue());
+        }
+        return outboundTasks;
+    }
+
+    /**
+     * Get the map from task in this worker to outbound tasks
+     * @return The map from task in this worker to outbound tasks
+     */
+    private Map<Integer, Set<Integer>> workerLocalTaskToOutboundTasks() {
+        Map<Integer, Set<Integer>> localTaskToOutboundTasks = new HashMap<>();
         WorkerTopologyContext context = getWorkerTopologyContext();
         Set<String> components = new HashSet<>();
         for (Integer taskId : taskIds) {
             for (Map<String, Grouping> value : context.getTargets(context.getComponentId(taskId)).values()) {
                 components.addAll(value.keySet());
             }
-        }
-
-        Set<Integer> outboundTasks = new HashSet<>();
-
-        for (Map.Entry<String, List<Integer>> entry : Utils.reverseMap(taskToComponent).entrySet()) {
-            if (components.contains(entry.getKey())) {
-                outboundTasks.addAll(entry.getValue());
+            Set<Integer> outboundTasks = new HashSet<>();
+            for (Map.Entry<String, List<Integer>> entry : Utils.reverseMap(taskToComponent).entrySet()) {
+                if (components.contains(entry.getKey())) {
+                    outboundTasks.addAll(entry.getValue());
+                }
             }
+            localTaskToOutboundTasks.put(taskId, outboundTasks);
+            components.clear();
         }
-        return outboundTasks;
+
+        return localTaskToOutboundTasks;
     }
 
     public interface ILocalTransferCallback {
