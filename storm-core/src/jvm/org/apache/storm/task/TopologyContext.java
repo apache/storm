@@ -390,23 +390,23 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     public Timer registerTimer(String name){
-        return StormMetricRegistry.registtry().timer(metricName(name));
+        return StormMetricRegistry.registry().timer(metricName(name));
     }
 
     public Histogram registerHistogram(String name){
-        return StormMetricRegistry.registtry().histogram(metricName(name));
+        return StormMetricRegistry.registry().histogram(metricName(name));
     }
 
     public Meter registerMeter(String name){
-        return StormMetricRegistry.registtry().meter(metricName(name));
+        return StormMetricRegistry.registry().meter(metricName(name));
     }
 
     public Counter registerCounter(String name){
-        return StormMetricRegistry.registtry().counter(metricName(name));
+        return StormMetricRegistry.registry().counter(metricName(name));
     }
 
     public Gauge registerGauge(String name, Gauge gauge){
-        return StormMetricRegistry.registtry().register(metricName(name), gauge);
+        return StormMetricRegistry.registry().register(metricName(name), gauge);
     }
 
     private String metricName(String name){

@@ -707,10 +707,6 @@
                           <pattern>org.eclipse.jetty</pattern>
                           <shadedPattern>org.apache.storm.shade.org.eclipse.jetty</shadedPattern>
                         </relocation>
-                        <!--<relocation>-->
-                            <!--<pattern>com.codahale.metrics</pattern>-->
-                            <!--<shadedPattern>org.apache.storm.shade.com.codahale.metrics</shadedPattern>-->
-                        <!--</relocation>-->
                         <relocation>
                             <pattern>metrics.core</pattern>
                             <shadedPattern>org.apache.storm.shade.metrics.core</shadedPattern>

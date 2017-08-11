@@ -45,9 +45,9 @@ public class StormMetricRegistry {
 
     public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, Integer port){
         SimpleGauge<T> gauge = new SimpleGauge<>(initialValue);
-        String metricName = String.format("storm.worker.%s.%s-%s", topologyId, port, name);
-        if(REGISTRY.getGauges().containsKey(metricName)){
-            return (SimpleGauge)REGISTRY.getGauges().get(metricName);
+        String metricName = metricName(name, topologyId, null, port);
+            if(REGISTRY.getGauges().containsKey(metricName)){
+                return (SimpleGauge)REGISTRY.getGauges().get(metricName);
         } else {
             return REGISTRY.register(metricName, gauge);
         }
@@ -67,9 +67,7 @@ public class StormMetricRegistry {
     }
 
     public static Meter meter(String name, WorkerTopologyContext context, String componentId){
-        // storm.worker.{topology}.{host}.{port}
-        String metricName = String.format("storm.worker.%s.%s.%s.%s-%s", context.getStormId(), hostName,
-                componentId, context.getThisWorkerPort(), name);
+        String metricName = metricName(name, context.getStormId(), componentId, context.getThisWorkerPort());
         return REGISTRY.meter(metricName);
     }
 
@@ -99,7 +97,7 @@ public class StormMetricRegistry {
         }
     }
 
-    public static MetricRegistry registtry(){
+    public static MetricRegistry registry(){
         return REGISTRY;
     }
 
@@ -130,4 +128,10 @@ public class StormMetricRegistry {
             sr.stop();
         }
     }
+
+    public static String metricName(String name, String stormId, String componentId, Integer workerPort){
+        return String.format("storm.worker.%s.%s.%s.%s-%s", stormId, hostName, componentId, workerPort, name);
+    }
+
+
 }
