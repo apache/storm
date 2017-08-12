@@ -32,6 +32,7 @@ import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
+import org.apache.storm.policy.WaitStrategyProgressive;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
@@ -63,7 +64,10 @@ public class BoltExecutor extends Executor {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
-        this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
+        if (isSystemBoltExecutor)
+            this.consumeWaitStrategy = new WaitStrategyProgressive();
+        else
+            this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
         this.consumeWaitStrategy.prepare(topoConf);
     }
 
