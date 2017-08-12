@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -55,6 +54,11 @@ import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.eq;
+
+import java.util.HashSet;
+import java.util.Set;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 
 public class KafkaSpoutRebalanceTest {
 
@@ -181,7 +185,7 @@ public class KafkaSpoutRebalanceTest {
         when(retryServiceMock.getMessageId(Mockito.any(ConsumerRecord.class)))
             .thenReturn(new KafkaSpoutMessageId(partitionThatWillBeRevoked, 0))
             .thenReturn(new KafkaSpoutMessageId(assignedPartition, 0));
-        
+
         //Emit a message on each partition and revoke the first partition
         List<KafkaSpoutMessageId> emittedMessageIds = emitOneMessagePerPartitionThenRevokeOnePartition(
             spout, partitionThatWillBeRevoked, assignedPartition, rebalanceListenerCapture);
@@ -196,5 +200,53 @@ public class KafkaSpoutRebalanceTest {
         //Check that only the tuple on the currently assigned partition is retried
         verify(retryServiceMock, never()).schedule(emittedMessageIds.get(0));
         verify(retryServiceMock).schedule(emittedMessageIds.get(1));
+    }
+
+    @Test
+    public void testReassignPartitionSeeksForOnlyNewPartitions() {
+        /*
+         * When partitions are reassigned, the spout should seek with the first poll offset strategy for new partitions.
+         * Previously assigned partitions should be left alone, since the spout keeps the emitted and acked state for those.
+         */
+
+        ArgumentCaptor<ConsumerRebalanceListener> rebalanceListenerCapture = ArgumentCaptor.forClass(ConsumerRebalanceListener.class);
+        Subscription subscriptionMock = mock(Subscription.class);
+        doNothing()
+            .when(subscriptionMock)
+            .subscribe(any(), rebalanceListenerCapture.capture(), any());
+        KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(subscriptionMock, -1)
+            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
+            .build(), consumerFactory);
+        String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
+        TopicPartition assignedPartition = new TopicPartition(topic, 1);
+        TopicPartition newPartition = new TopicPartition(topic, 2);
+
+        //Setup spout with mock consumer so we can get at the rebalance listener   
+        spout.open(conf, contextMock, collectorMock);
+        spout.activate();
+
+        //Assign partitions to the spout
+        ConsumerRebalanceListener consumerRebalanceListener = rebalanceListenerCapture.getValue();
+        Set<TopicPartition> assignedPartitions = new HashSet<>();
+        assignedPartitions.add(assignedPartition);
+        consumerRebalanceListener.onPartitionsAssigned(assignedPartitions);
+        reset(consumerMock);
+        
+        //Set up committed so it looks like some messages have been committed on each partition
+        long committedOffset = 500;
+        when(consumerMock.committed(assignedPartition)).thenReturn(new OffsetAndMetadata(committedOffset));
+        when(consumerMock.committed(newPartition)).thenReturn(new OffsetAndMetadata(committedOffset));
+
+        //Now rebalance and add a new partition
+        consumerRebalanceListener.onPartitionsRevoked(assignedPartitions);
+        Set<TopicPartition> newAssignedPartitions = new HashSet<>();
+        newAssignedPartitions.add(assignedPartition);
+        newAssignedPartitions.add(newPartition);
+        consumerRebalanceListener.onPartitionsAssigned(newAssignedPartitions);
+        
+        //This partition was previously assigned, so the consumer position shouldn't change
+        verify(consumerMock, never()).seek(eq(assignedPartition), anyLong());
+        //This partition is new, and should start at the committed offset
+        verify(consumerMock).seek(newPartition, committedOffset + 1);
     }
 }

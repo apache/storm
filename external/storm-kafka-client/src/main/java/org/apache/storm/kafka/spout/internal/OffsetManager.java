@@ -92,7 +92,7 @@ public class OffsetManager {
                         first element after committedOffset in the ascending ordered emitted set.
                      */
                     LOG.debug("Processed non contiguous offset. (committedOffset+1) is no longer part of the topic. Committed: [{}], Processed: [{}]", committedOffset, currOffset);
-                    final Long nextEmittedOffset = emittedOffsets.ceiling(nextCommitOffset);
+                    final Long nextEmittedOffset = emittedOffsets.ceiling(nextCommitOffset + 1);
                     if (nextEmittedOffset != null && currOffset == nextEmittedOffset) {
                         found = true;
                         nextCommitMsg = currAckedMsg;
@@ -103,9 +103,9 @@ public class OffsetManager {
                     }
                 }
             } else {
-                //Received a redundant ack. Ignore and continue processing.
-                LOG.warn("topic-partition [{}] has unexpected offset [{}]. Current committed Offset [{}]",
-                    tp, currOffset, committedOffset);
+                throw new IllegalStateException("The offset [" + currOffset + "] is below the current committed "
+                    + "offset [" + committedOffset + "] for [" + tp + "]."
+                    + " This should not be possible, and likely indicates a bug in the spout's acking or emit logic.");
             }
         }
 
