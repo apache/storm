@@ -53,6 +53,11 @@ import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.anyList;
+import static org.mockito.Matchers.anyString;
+
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.hamcrest.Matchers;
 
 public class SingleTopicKafkaSpoutTest {
 
@@ -69,6 +74,7 @@ public class SingleTopicKafkaSpoutTest {
     private final int maxRetries = 3;
     private KafkaConsumer<String, String> consumerSpy;
     private KafkaSpout<String, String> spout;
+    private final int maxPollRecords = 10;
 
     @Before
     public void setUp() {
@@ -77,6 +83,7 @@ public class SingleTopicKafkaSpoutTest {
             .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
             .setRetry(new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0),
                 maxRetries, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0)))
+            .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
             .build();
         this.consumerSpy = spy(new KafkaConsumerFactoryDefault<String, String>().createConsumer(spoutConfig));
         this.spout = new KafkaSpout<>(spoutConfig, (ignored) -> consumerSpy);
@@ -98,6 +105,59 @@ public class SingleTopicKafkaSpoutTest {
         assertThat("Expected commits for only one topic partition", commits.entrySet().size(), is(1));
         OffsetAndMetadata offset = commits.entrySet().iterator().next().getValue();
         assertThat("Expected committed offset to cover all emitted messages", offset.offset(), is(messageCount - 1));
+    }
+
+    @Test
+    public void testSeekToCommittedOffsetIfConsumerPositionIsBehindWhenCommitting() throws Exception {
+        try (SimulatedTime simulatedTime = new SimulatedTime()) {
+            int messageCount = maxPollRecords * 2;
+            prepareSpout(messageCount);
+
+            //Emit all messages and fail the first one while acking the rest
+            for (int i = 0; i < messageCount; i++) {
+                spout.nextTuple();
+            }
+            ArgumentCaptor<KafkaSpoutMessageId> messageIdCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+            verify(collector, times(messageCount)).emit(anyObject(), anyObject(), messageIdCaptor.capture());
+            List<KafkaSpoutMessageId> messageIds = messageIdCaptor.getAllValues();
+            for (int i = 1; i < messageIds.size(); i++) {
+                spout.ack(messageIds.get(i));
+            }
+            KafkaSpoutMessageId failedTuple = messageIds.get(0);
+            spout.fail(failedTuple);
+
+            //Advance the time and replay the failed tuple. 
+            reset(collector);
+            spout.nextTuple();
+            ArgumentCaptor<KafkaSpoutMessageId> failedIdReplayCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+            verify(collector).emit(anyObject(), anyObject(), failedIdReplayCaptor.capture());
+
+            assertThat("Expected replay of failed tuple", failedIdReplayCaptor.getValue(), is(failedTuple));
+
+            /* Ack the tuple, and commit.
+             * Since the tuple is more than max poll records behind the most recent emitted tuple, the consumer won't catch up in this poll.
+             */
+            Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + commitOffsetPeriodMs);
+            spout.ack(failedIdReplayCaptor.getValue());
+            spout.nextTuple();
+            verify(consumerSpy).commitSync(commitCapture.capture());
+            
+            Map<TopicPartition, OffsetAndMetadata> capturedCommit = commitCapture.getValue();
+            TopicPartition expectedTp = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
+            assertThat("Should have committed to the right topic", capturedCommit, Matchers.hasKey(expectedTp));
+            assertThat("Should have committed all the acked messages", capturedCommit.get(expectedTp).offset(), is((long)messageCount - 1));
+
+            /* Verify that the following acked (now committed) tuples are not emitted again
+             * Since the consumer position was somewhere in the middle of the acked tuples when the commit happened,
+             * this verifies that the spout keeps the consumer position ahead of the committed offset when committing
+             */
+            reset(collector);
+            //Just do a few polls to check that nothing more is emitted
+            for(int i = 0; i < 3; i++) {
+                spout.nextTuple();
+            }
+            verify(collector, never()).emit(anyString(), anyList(), anyObject());
+        }
     }
 
     @Test
@@ -251,7 +311,7 @@ public class SingleTopicKafkaSpoutTest {
             verifyAllMessagesCommitted(messageCount);
         }
     }
-    
+
     @Test
     public void shouldReplayAllFailedTuplesWhenFailedOutOfOrder() throws Exception {
         //The spout must reemit retriable tuples, even if they fail out of order.
