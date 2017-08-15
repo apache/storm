@@ -137,7 +137,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         }
         BoltAckInfo boltAckInfo = new BoltAckInfo(input, taskId, delta);
         boltAckInfo.applyOn(task.getUserContext());
-        if (delta != 0) {
+        if (delta >= 0) {
             ((BoltExecutorStats) executor.getStats()).boltAckedTuple(
                     input.getSourceComponent(), input.getSourceStreamId(), delta);
         }

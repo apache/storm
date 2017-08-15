@@ -335,7 +335,7 @@ public class Utils {
                         if (s==null) // then stop running it
                             break;
                         if (s>0)
-                            Thread.sleep(s);  // TODO: Roshan : need to do something about sleep strategy
+                            Thread.sleep(s);
                     }
                 } catch (Throwable t) {
                     if (Utils.exceptionCauseIsInstanceOf(
