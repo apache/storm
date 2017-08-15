@@ -17,6 +17,8 @@
  */
 package org.apache.storm.streams.processors;
 
+import org.apache.curator.shaded.com.google.common.collect.ImmutableBiMap;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMultimap;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.PairValueJoiner;
 import org.junit.Test;
@@ -84,11 +86,14 @@ public class CoGroupByKeyProcessorTest {
         list2.add(125);
         list2.add(50);
         result.add(Pair.of(5, Pair.of(list1, list2)));
+        assertEquals(result.get(0), res.get(1));
         list1.clear();
         list2.clear();
         list1.add(49);
         list1.add(87);
+        result.clear();
         result.add(Pair.of(7, Pair.of(list1, list2)));
+        assertEquals(result.get(0), res.get(2));
     }
 
 
