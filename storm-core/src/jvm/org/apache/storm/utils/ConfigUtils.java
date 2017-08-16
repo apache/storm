@@ -26,13 +26,13 @@ import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -532,5 +532,32 @@ public class ConfigUtils {
         List<String> ret = new ArrayList<String>(mergedGroups);
         Collections.sort(ret);
         return ret;
+    }
+
+    /**
+     * Get the given config value as a List &lt;String&gt;, if possible.
+     * @param name - the config key
+     * @param conf - the config map
+     * @return - the config value converted to a List &lt;String&gt; if found, otherwise null.
+     * @throws IllegalArgumentException if conf is null
+     * @throws NullPointerException if name is null and the conf map doesn't support null keys
+     */
+    public static List<String> getValueAsList(String name, Map<String, Object> conf) {
+        if (null == conf) {
+            throw new IllegalArgumentException("Conf is required");
+        }
+        Object value = conf.get(name);
+        List<String> listValue;
+        if (value == null) {
+            listValue = null;
+        } else if (value instanceof Collection) {
+            listValue = new ArrayList<>(((Collection<?>)value).size());
+            for (Object o : (Collection<?>)value) {
+                listValue.add(ObjectReader.getString(o));
+            }
+        } else {
+            listValue = Arrays.asList(ObjectReader.getString(value).split("\\s+"));
+        }
+        return listValue;
     }
 }

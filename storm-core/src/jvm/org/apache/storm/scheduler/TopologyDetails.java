@@ -91,7 +91,7 @@ public class TopologyDetails {
         return (String) this.topologyConf.get(Config.TOPOLOGY_NAME);
     }
 
-    public Map getConf() {
+    public Map<String, Object> getConf() {
         return this.topologyConf;
     }
 

@@ -20,5 +20,7 @@
 
 (defn -main [^String name]
   (let [conf (read-storm-config)]
-    (println "VALUE:" (conf name))
-    ))
+    (if (coll? (conf name)) 
+      (println "VALUE:" (clojure.string/join " " (conf name))) 
+      (println "VALUE:" (conf name))
+    )))
