@@ -38,6 +38,7 @@ import org.apache.storm.kafka.KafkaUnitRule;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
@@ -84,7 +85,7 @@ public class KafkaSpoutReactivationTest {
         when(consumerFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy)
             .thenReturn(postReactivationConsumerSpy);
-        this.spout = new KafkaSpout<>(spoutConfig, consumerFactoryMock);
+        this.spout = new KafkaSpout<>(spoutConfig, consumerFactoryMock, new TopicAssigner());
     }
 
     private void prepareSpout(int messageCount) throws Exception {

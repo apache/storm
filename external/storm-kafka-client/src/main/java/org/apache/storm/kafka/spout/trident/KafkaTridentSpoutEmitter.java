@@ -32,15 +32,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.RecordTranslator;
-import org.apache.storm.kafka.spout.internal.Timer;
+import org.apache.storm.kafka.spout.TopicPartitionComparator;
+import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
+import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
@@ -59,47 +62,37 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     // Kafka
     private final KafkaConsumer<K, V> kafkaConsumer;
-
-    // Bookkeeping
-    private final KafkaTridentSpoutManager<K, V> kafkaManager;
+    private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
+    private final TopicAssigner topicAssigner;
+    
     // set of topic-partitions for which first poll has already occurred, and the first polled txid
     private final Map<TopicPartition, Long> firstPollTransaction = new HashMap<>(); 
 
-    // Declare some KafkaTridentSpoutManager references for convenience
     private final long pollTimeoutMs;
     private final KafkaSpoutConfig.FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final RecordTranslator<K, V> translator;
-    private final Timer refreshSubscriptionTimer;
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
-
-    private TopologyContext topologyContext;
+    private final TopologyContext topologyContext;
 
     /**
      * Create a new Kafka spout emitter.
-     * @param kafkaManager The Kafka consumer manager to use
+     * @param kafkaSpoutConfig The kafka spout config
      * @param topologyContext The topology context
-     * @param refreshSubscriptionTimer The timer for deciding when to recheck the subscription
      */
-    public KafkaTridentSpoutEmitter(KafkaTridentSpoutManager<K, V> kafkaManager, TopologyContext topologyContext,
-            Timer refreshSubscriptionTimer) {
-        this.kafkaConsumer = kafkaManager.createAndSubscribeKafkaConsumer(topologyContext);
-        this.kafkaManager = kafkaManager;
+    public KafkaTridentSpoutEmitter(KafkaSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext) {
+        this(kafkaSpoutConfig, topologyContext, new KafkaConsumerFactoryDefault<>(), new TopicAssigner());
+    }
+    
+    KafkaTridentSpoutEmitter(KafkaSpoutConfig<K, V> kafkaSpoutConfig, TopologyContext topologyContext,
+        KafkaConsumerFactory<K, V> consumerFactory, TopicAssigner topicAssigner) {
+        this.kafkaSpoutConfig = kafkaSpoutConfig;
+        this.kafkaConsumer = consumerFactory.createConsumer(kafkaSpoutConfig);
         this.topologyContext = topologyContext;
-        this.refreshSubscriptionTimer = refreshSubscriptionTimer;
-        this.translator = kafkaManager.getKafkaSpoutConfig().getTranslator();
-
-        final KafkaSpoutConfig<K, V> kafkaSpoutConfig = kafkaManager.getKafkaSpoutConfig();
+        this.translator = kafkaSpoutConfig.getTranslator();
+        this.topicAssigner = topicAssigner;
         this.pollTimeoutMs = kafkaSpoutConfig.getPollTimeoutMs();
         this.firstPollOffsetStrategy = kafkaSpoutConfig.getFirstPollOffsetStrategy();
         LOG.debug("Created {}", this.toString());
-    }
-
-    /**
-     * Creates instance of this class with default 500 millisecond refresh subscription timer.
-     */
-    public KafkaTridentSpoutEmitter(KafkaTridentSpoutManager<K, V> kafkaManager, TopologyContext topologyContext) {
-        this(kafkaManager, topologyContext, new Timer(500,
-                kafkaManager.getKafkaSpoutConfig().getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS));
     }
 
     @Override
@@ -115,11 +108,10 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
         KafkaTridentSpoutBatchMetadata currentBatch = lastBatchMeta;
         Collection<TopicPartition> pausedTopicPartitions = Collections.emptySet();
 
-        if (assignments == null || !assignments.contains(currBatchPartition.getTopicPartition())) {
-            LOG.warn("SKIPPING processing batch [transaction = {}], [currBatchPartition = {}], [lastBatchMetadata = {}], "
-                            + "[collector = {}] because it is not part of the assignments {} of consumer instance [{}] "
-                            + "of consumer group [{}]", tx, currBatchPartition, lastBatch, collector, assignments,
-                    kafkaConsumer, kafkaManager.getKafkaSpoutConfig().getConsumerGroupId());
+        if (!assignments.contains(currBatchPartition.getTopicPartition())) {
+            throw new IllegalStateException("The spout is asked to emit tuples on a partition it is not assigned."
+                + " This indicates a bug in the TopicFilter or ManualPartitioner implementations."
+                + " The current partition is [" + currBatchPartition + "], the assigned partitions are [" + assignments + "].");
         } else {
             try {
                 // pause other topic-partitions to only poll from current topic-partition
@@ -127,18 +119,13 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
                 seek(currBatchTp, lastBatchMeta, tx.getTransactionId());
 
-                // poll
-                if (refreshSubscriptionTimer.isExpiredResetOnTrue()) {
-                    kafkaManager.getKafkaSpoutConfig().getSubscription().refreshAssignment();
-                }
-
                 final ConsumerRecords<K, V> records = kafkaConsumer.poll(pollTimeoutMs);
                 LOG.debug("Polled [{}] records from Kafka.", records.count());
 
                 if (!records.isEmpty()) {
                     emitTuples(collector, records);
                     // build new metadata
-                    currentBatch = new KafkaTridentSpoutBatchMetadata(currBatchTp, records);
+                    currentBatch = new KafkaTridentSpoutBatchMetadata(records.records(currBatchTp));
                 }
             } finally {
                 kafkaConsumer.resume(pausedTopicPartitions);
@@ -196,7 +183,7 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
         }
 
         final long fetchOffset = kafkaConsumer.position(tp);
-        LOG.debug("Set [fetchOffset = {}]", fetchOffset);
+        LOG.debug("Set [fetchOffset = {}] for partition [{}]", fetchOffset, tp);
         return fetchOffset;
     }
 
@@ -216,24 +203,12 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
     }
 
     @Override
-    public void refreshPartitions(List<KafkaTridentSpoutTopicPartition> partitionResponsibilities) {
-        LOG.trace("Refreshing of topic-partitions handled by Kafka. "
-                + "No action taken by this method for topic partitions {}", partitionResponsibilities);
-    }
-
-    /**
-     * Computes ordered list of topic-partitions for this task taking into consideration that topic-partitions
-     * for this task must be assigned to the Kafka consumer running on this task.
-     *
-     * @param allPartitionInfo list of all partitions as returned by {@link KafkaTridentSpoutOpaqueCoordinator}
-     * @return ordered list of topic partitions for this task
-     */
-    @Override
     public List<KafkaTridentSpoutTopicPartition> getOrderedPartitions(final List<Map<String, Object>> allPartitionInfo) {
-        List<TopicPartition> allTopicPartitions = allPartitionInfo.stream()
+        List<TopicPartition> sortedPartitions = allPartitionInfo.stream()
             .map(map -> tpSerializer.fromMap(map))
+            .sorted(TopicPartitionComparator.INSTANCE)
             .collect(Collectors.toList());
-        final List<KafkaTridentSpoutTopicPartition> allPartitions = newKafkaTridentSpoutTopicPartitions(allTopicPartitions);
+        final List<KafkaTridentSpoutTopicPartition> allPartitions = newKafkaTridentSpoutTopicPartitions(sortedPartitions);
         LOG.debug("Returning all topic-partitions {} across all tasks. Current task index [{}]. Total tasks [{}] ",
                 allPartitions, topologyContext.getThisTaskIndex(), getNumTasks());
         return allPartitions;
@@ -241,21 +216,31 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
 
     @Override
     public List<KafkaTridentSpoutTopicPartition> getPartitionsForTask(int taskId, int numTasks,
-        List<Map<String, Object>> allPartitionInfo) {
-        final Set<TopicPartition> assignedTps = kafkaConsumer.assignment();
+        List<KafkaTridentSpoutTopicPartition> allPartitionInfoSorted) {
+        List<TopicPartition> tps = allPartitionInfoSorted.stream()
+            .map(kttp -> kttp.getTopicPartition())
+            .collect(Collectors.toList());
+        final Set<TopicPartition> assignedTps = kafkaSpoutConfig.getTopicPartitioner().getPartitionsForThisTask(tps, topologyContext);
         LOG.debug("Consumer [{}], running on task with index [{}], has assigned topic-partitions {}", kafkaConsumer, taskId, assignedTps);
         final List<KafkaTridentSpoutTopicPartition> taskTps = newKafkaTridentSpoutTopicPartitions(assignedTps);
-        LOG.debug("Returning topic-partitions {} for task with index [{}]", taskTps, taskId);
         return taskTps;
+    }
+    
+    
+    @Override
+    public void refreshPartitions(List<KafkaTridentSpoutTopicPartition> partitionResponsibilities) {
+        Set<TopicPartition> assignedTps = partitionResponsibilities.stream()
+            .map(kttp -> kttp.getTopicPartition())
+            .collect(Collectors.toSet());
+        topicAssigner.assignPartitions(kafkaConsumer, assignedTps, new KafkaSpoutConsumerRebalanceListener());
+        LOG.debug("Assigned partitions [{}] to this task", assignedTps);
     }
 
     private List<KafkaTridentSpoutTopicPartition> newKafkaTridentSpoutTopicPartitions(Collection<TopicPartition> tps) {
-        final List<KafkaTridentSpoutTopicPartition> kttp = new ArrayList<>(tps == null ? 0 : tps.size());
-        if (tps != null) {
-            for (TopicPartition tp : tps) {
-                LOG.trace("Added topic-partition [{}]", tp);
-                kttp.add(new KafkaTridentSpoutTopicPartition(tp));
-            }
+        final List<KafkaTridentSpoutTopicPartition> kttp = new ArrayList<>(tps.size());
+        for (TopicPartition tp : tps) {
+            LOG.trace("Added topic-partition [{}]", tp);
+            kttp.add(new KafkaTridentSpoutTopicPartition(tp));
         }
         return kttp;
     }
@@ -273,7 +258,24 @@ public class KafkaTridentSpoutEmitter<K, V> implements IOpaquePartitionedTrident
     @Override
     public final String toString() {
         return super.toString()
-                + "{kafkaManager=" + kafkaManager
+                + "{kafkaSpoutConfig=" + kafkaSpoutConfig
                 + '}';
+    }
+    
+    /**
+     * Just logs reassignments.
+     */
+    private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
+        @Override
+        public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+            LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
+                    kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
+        }
+
+        @Override
+        public void onPartitionsAssigned(Collection<TopicPartition> partitions) {
+            LOG.info("Partitions reassignment. [consumer-group={}, consumer={}, topic-partitions={}]",
+                    kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
+        }
     }
 }

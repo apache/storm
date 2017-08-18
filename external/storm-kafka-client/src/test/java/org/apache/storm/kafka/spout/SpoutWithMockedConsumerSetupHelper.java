@@ -21,6 +21,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -41,7 +42,9 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.subscription.Subscription;
+import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
+import org.apache.storm.kafka.spout.subscription.TopicAssigner;
+import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.mockito.ArgumentCaptor;
@@ -49,8 +52,8 @@ import org.mockito.ArgumentCaptor;
 public class SpoutWithMockedConsumerSetupHelper {
 
     /**
-     * Creates, opens and activates a KafkaSpout using a mocked consumer. The subscription should be a mock object, since this method skips
-     * the subscription and instead just configures the mocked consumer to act as if the specified partitions are assigned to it.
+     * Creates, opens and activates a KafkaSpout using a mocked consumer. The TopicFilter and ManualPartitioner should be mock objects,
+     * since this method shortcircuits the TopicPartition assignment process and just calls onPartitionsAssigned on the rebalance listener.
      *
      * @param <K> The Kafka key type
      * @param <V> The Kafka value type
@@ -64,22 +67,24 @@ public class SpoutWithMockedConsumerSetupHelper {
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
         TopologyContext contextMock, SpoutOutputCollector collectorMock, KafkaConsumer<K, V> consumerMock, TopicPartition... assignedPartitions) {
-        Subscription subscriptionMock = spoutConfig.getSubscription();
-        if (!mockingDetails(subscriptionMock).isMock()) {
-            throw new IllegalStateException("Use a mocked subscription when using this method, it helps avoid complex stubbing");
+        TopicFilter topicFilter = spoutConfig.getTopicFilter();
+        ManualPartitioner topicPartitioner = spoutConfig.getTopicPartitioner();
+        if (!mockingDetails(topicFilter).isMock() || !mockingDetails(topicPartitioner).isMock()) {
+            throw new IllegalStateException("Use a mocked TopicFilter and a mocked ManualPartitioner when using this method, it helps avoid complex stubbing");
         }
         
         Set<TopicPartition> assignedPartitionsSet = new HashSet<>(Arrays.asList(assignedPartitions));
         
-        when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
+        TopicAssigner assigner = mock(TopicAssigner.class);
         doAnswer(invocation -> {
-            ConsumerRebalanceListener listener = invocation.getArgument(1);
+            ConsumerRebalanceListener listener = invocation.getArgument(2);
             listener.onPartitionsAssigned(assignedPartitionsSet);
             return null;
-        }).when(subscriptionMock).subscribe(any(), any(ConsumerRebalanceListener.class), any());
+        }).when(assigner).assignPartitions(any(), any(), any());
+        when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
         
         KafkaConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
-        KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory);
+        KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory, assigner);
         
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();

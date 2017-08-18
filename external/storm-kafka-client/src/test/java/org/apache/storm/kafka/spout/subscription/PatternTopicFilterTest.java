@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
@@ -61,7 +62,7 @@ public class PatternTopicFilterTest {
         
         when(consumerMock.listTopics()).thenReturn(allTopics);
         
-        List<TopicPartition> matchedPartitions = filter.getFilteredTopicPartitions(consumerMock);
+        Set<TopicPartition> matchedPartitions = filter.getAllSubscribedPartitions(consumerMock);
         
         assertThat("Expected topic partitions matching the pattern to be passed by the filter", matchedPartitions,
             containsInAnyOrder(new TopicPartition(matchingTopicOne, 0), new TopicPartition(matchingTopicTwo, 0), new TopicPartition(matchingTopicTwo, 1)));

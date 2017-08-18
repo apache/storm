@@ -17,6 +17,7 @@
 package org.apache.storm.kafka.spout.subscription;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -25,6 +26,7 @@ import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.kafka.spout.TopicPartitionComparator;
 
 /**
  * Filter that returns all partitions for topics matching the given {@link Pattern}.
@@ -44,9 +46,9 @@ public class PatternTopicFilter implements TopicFilter {
     }
 
     @Override
-    public List<TopicPartition> getFilteredTopicPartitions(KafkaConsumer<?, ?> consumer) {
+    public Set<TopicPartition> getAllSubscribedPartitions(KafkaConsumer<?, ?> consumer) {
         topics.clear();
-        List<TopicPartition> allPartitions = new ArrayList<>();
+        Set<TopicPartition> allPartitions = new HashSet<>();
         for (Map.Entry<String, List<PartitionInfo>> entry : consumer.listTopics().entrySet()) {
             if (pattern.matcher(entry.getKey()).matches()) {
                 for (PartitionInfo partitionInfo : entry.getValue()) {

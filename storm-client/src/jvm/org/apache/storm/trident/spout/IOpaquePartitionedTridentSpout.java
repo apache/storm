@@ -72,23 +72,30 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
         /**
          * This method is called when this task is responsible for a new set of partitions. Should be used
          * to manage things like connections to brokers.
+         * @param partitionResponsibilities The partitions assigned to this task
          */        
         void refreshPartitions(List<Partition> partitionResponsibilities);
 
         /**
-         * @return The oredered list of partitions being processed by all the tasks
+         * Sorts the partition info to produce an ordered list of partition.
+         * @param allPartitionInfo The partition info for all partitions being processed by all spout tasks
+         * @return The ordered list of partitions being processed by all the tasks. The ordering must be consistent for all tasks.
          */
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
 
         /**
+         * Get the partitions assigned to this task.
+         * @param taskId The id of this task
+         * @param numTasks The number of tasks for this spout
+         * @param allPartitionInfoSorted The partition info for all partitions being processed by all spout tasks,
+         *     sorted according to {@link #getOrderedPartitions(java.lang.Object)}
          * @return The list of partitions that are to be processed by the task with id {@code taskId}
          */
-        default List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo){
-            final List<Partition> orderedPartitions = getOrderedPartitions(allPartitionInfo);
-            final List<Partition> taskPartitions = new ArrayList<>(orderedPartitions == null ? 0 : orderedPartitions.size());
-            if (orderedPartitions != null) {
-                for (int i = taskId; i < orderedPartitions.size(); i += numTasks) {
-                    taskPartitions.add(orderedPartitions.get(i));
+        default List<Partition> getPartitionsForTask(int taskId, int numTasks, List<Partition> allPartitionInfoSorted){
+            final List<Partition> taskPartitions = new ArrayList<>(allPartitionInfoSorted == null ? 0 : allPartitionInfoSorted.size());
+            if (allPartitionInfoSorted != null) {
+                for (int i = taskId; i < allPartitionInfoSorted.size(); i += numTasks) {
+                    taskPartitions.add(allPartitionInfoSorted.get(i));
                 }
             }
             return taskPartitions;
