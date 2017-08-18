@@ -68,7 +68,7 @@ key “key1” having a local file name mapping named “blob_file” and it is 
 
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar 
-org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ```
 
 ### Blob Creation Process
@@ -99,7 +99,7 @@ end, the supervisor and localizer talks to HdfsBlobStore through “HdfsClientBl
 ## Additional Features and Documentation
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo 
--c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+-c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ```
  
 ### Compression
@@ -381,7 +381,7 @@ following format. A shortcut is to add the configuration item on the command
 line when starting a topology by using the **-c** command:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--c topology.blobstore.map='{"[KEY]":{"localname":"[VALUE]", "uncompress":"[true|false]"}}'
+-c topology.blobstore.map='{"[KEY]":{"localname":"[VALUE]", "uncompress":[true|false]}}'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note: Please take care of the quotes.
@@ -397,7 +397,7 @@ file-name-like format and extension, so it can be uncompressed correctly.
 ###### Example:  
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note: Please take care of the quotes.
