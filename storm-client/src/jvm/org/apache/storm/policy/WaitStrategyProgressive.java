@@ -52,12 +52,12 @@ public class WaitStrategyProgressive implements IWaitStrategy {
 
     @Override
     public int idle(int idleCounter) throws InterruptedException {
-        if (idleCounter < step) {
+        if (idleCounter < step) {                     // level 1 - no waiting
             ++idleCounter;
-        } else if (idleCounter < step * multiplier) {
+        } else if (idleCounter < step * multiplier) { // level 2 - parkNanos(1L)
             ++idleCounter;
             LockSupport.parkNanos(1L);
-        } else {
+        } else {                                      // level 3 - longer Thread.sleep()
             Thread.sleep(sleepMillis);
         }
         return idleCounter;

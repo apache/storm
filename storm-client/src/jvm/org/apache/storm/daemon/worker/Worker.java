@@ -157,7 +157,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     }
 
-    private Object loadWorker(Map topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState, Map<String, String> initCreds, Credentials initialCredentials)
+    private Object loadWorker(Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState, Map<String, String> initCreds, Credentials initialCredentials)
             throws Exception {
         workerState =
                 new WorkerState(conf, context, topologyId, assignmentId, port, workerId, topologyConf, stateStorage,
@@ -261,17 +261,17 @@ public class Worker implements Shutdownable, DaemonCommon {
         workerState.refreshActiveTimer.scheduleRecurring(0, (Integer) conf.get(Config.TASK_REFRESH_POLL_SECS),
                 workerState::refreshStormActive);
 
-        setupFlushTupleTimer(newExecutors);
+        setupFlushTupleTimer(topologyConf, newExecutors);
 
         LOG.info("Worker has topology config {}", Utils.redactValue(topologyConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
         LOG.info("Worker {} for storm {} on {}:{}  has finished loading", workerId, topologyId, assignmentId, port);
         return this;
     }
 
-    private void setupFlushTupleTimer(final List<IRunningExecutor> executors) {
-        Integer batchSize = ObjectReader.getInt(conf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
-        final Long flushIntervalMs = ObjectReader.getLong( conf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS) );
-        if(batchSize==1 || flushIntervalMs==0) {
+    private void setupFlushTupleTimer(final Map<String, Object> topologyConf, final List<IRunningExecutor> executors) {
+        Integer batchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
+        final Long flushIntervalMs = ObjectReader.getLong( topologyConf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS) );
+        if (batchSize==1 || flushIntervalMs==0) {
             LOG.info("Flush Tuple generation disabled. batchSize={}, flushIntervalMs={}", batchSize, flushIntervalMs);
             return;
         }
@@ -281,7 +281,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             public void run() {
                 for (int i = 0; i < executors.size(); i++) {
                     IRunningExecutor exec = executors.get(i);
-                    if(exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID)
+                    if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID)
                         exec.getExecutor().publishFlushTuple();
                 }
             }
