@@ -798,6 +798,17 @@ public class Slot extends Thread implements AutoCloseable {
                     LOG.info("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
                     saveNewAssignment(nextState.currentAssignment);
                 }
+
+                if (equivalent(nextState.newAssignment, nextState.currentAssignment)
+                    && nextState.currentAssignment != null && nextState.currentAssignment.get_owner() == null
+                    && nextState.newAssignment != null && nextState.newAssignment.get_owner() != null) {
+                    //This is an odd case for a rolling upgrade where the user on the old assignment may be null,
+                    // but not on the new one.  Although in all other ways they are the same.
+                    // If this happens we want to use the assignment with the owner.
+                    LOG.info("Updating assignment to save owner {}", nextState.newAssignment.get_owner());
+                    saveNewAssignment(nextState.newAssignment);
+                    nextState = nextState.withCurrentAssignment(nextState.container, nextState.newAssignment);
+                }
                 
                 // clean up the profiler actions that are not being processed
                 removed.removeAll(dynamicState.profileActions);

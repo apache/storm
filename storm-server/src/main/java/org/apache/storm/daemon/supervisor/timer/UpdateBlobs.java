@@ -67,9 +67,14 @@ public class UpdateBlobs implements Runnable {
             for (String stormId : downloadedStormIds) {
                 LocalAssignment la = assignedStormIds.get(stormId);
                 if (la != null) {
-                    String stormRoot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
-                    LOG.debug("Checking Blob updates for storm topology id {} With target_dir: {}", stormId, stormRoot);
-                    updateBlobsForTopology(conf, stormId, supervisor.getLocalizer(), la.get_owner());
+                    if (la.get_owner() == null) {
+                        //We got a case where the local assignment is not up to date, no point in going on...
+                        LOG.warn("The blobs will not be updated for {} until the local assignment is updated...", stormId);
+                    } else {
+                        String stormRoot = ConfigUtils.supervisorStormDistRoot(conf, stormId);
+                        LOG.debug("Checking Blob updates for storm topology id {} With target_dir: {}", stormId, stormRoot);
+                        updateBlobsForTopology(conf, stormId, supervisor.getLocalizer(), la.get_owner());
+                    }
                 }
             }
         } catch (Exception e) {
