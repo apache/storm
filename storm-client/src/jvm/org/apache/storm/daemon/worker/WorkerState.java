@@ -47,6 +47,7 @@ import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
+import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
@@ -335,7 +336,7 @@ public class WorkerState implements JCQueue.Consumer {
 
     private static IWaitStrategy createBackPressureWaitStrategy(Map<String, Object> topologyConf) {
         IWaitStrategy producerWaitStrategy = ReflectionUtils.newInstance((String) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
-        producerWaitStrategy.prepare(topologyConf);
+        producerWaitStrategy.prepare(topologyConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
         return producerWaitStrategy;
     }
 

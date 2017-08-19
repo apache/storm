@@ -22,11 +22,13 @@ import java.util.Map;
 
 
 public interface IWaitStrategy {
-    void prepare(Map<String, Object> conf);
+    enum WAIT_SITUATION {BOLT_WAIT, BACK_PRESSURE_WAIT}
+
+    void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation);
 
     /**
      * Implementations of this method should be thread-safe (preferably no side-effects and lock-free)
-     *
+     * <p>
      * Supports static or dynamic backoff. Dynamic backoff relies on idleCounter to
      * estimate how long caller has been idling.
      * <p>

@@ -28,12 +28,17 @@ public class WaitStrategyPark implements IWaitStrategy {
     private long parkTimeNanoSec;
 
     @Override
-    public void prepare(Map<String, Object> conf) {
-        long microsec = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
-        parkTimeNanoSec = microsec * 1_000;
+    public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
+        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
+        } else if (waitSituation == WAIT_SITUATION.BACK_PRESSURE_WAIT) {
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC));
+        } else {
+            throw new IllegalArgumentException("Unknown wait situation : " + waitSituation);
+        }
     }
 
-    public WaitStrategyPark() { // required for instantiation via reflection. call prepare() thereafter
+    public WaitStrategyPark() { // required for instantiation via reflection. must call prepare() thereafter
     }
 
     // Convenience alternative to prepare() for use in Tests
@@ -42,12 +47,12 @@ public class WaitStrategyPark implements IWaitStrategy {
     }
 
 
-
     @Override
     public int idle(int idleCounter) throws InterruptedException {
-        if(idleCounter==0)
+        if (idleCounter == 0) {
             return 0;
+        }
         LockSupport.parkNanos(parkTimeNanoSec);
-        return idleCounter+1;
+        return idleCounter + 1;
     }
 }

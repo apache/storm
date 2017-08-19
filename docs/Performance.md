@@ -17,7 +17,7 @@ sometimes it may take a little time for the buffer to fill up, before it is flus
 will take longer to become visible to the downstream consumer who is waiting to process them. This can increase the average end-to-end latency for
 these messages. The latency can get very bad if the batch sizes are large and the topology is not experiencing high traffic.
 
-`topology.producer.batch.size` : The batch size for writes into the receive queues of any spout/bolt are controlled via this setting. This setting
+`topology.producer.batch.size` : The batch size for writes into the receive queue of any spout/bolt is controlled via this setting. This setting
 impacts the communication within a worker process. Each upstream producer maintains a separate batch to a component's receive queue. So if two spout
 instances are writing to the same downstream bolt instance, each of the spout instances will have maintain a separate batch.
 
@@ -45,17 +45,19 @@ latencies when batching is enabled.
 When batching has been enabled, special messages called *flush tuples* are inserted periodically into the receive queues of all spout and bolt instances.
 This causes each spout/bolt instance to flush all its outstanding batches to their respective downstream components.
 
-`topology.flush.tuple.freq.millis` : This setting controls how often the flush tuples are generated. This is ignored if batching is disabled.
+`topology.flush.tuple.freq.millis` : This setting controls how often the flush tuples are generated. Flush tuples are not generated if this configuration is
+set to 0 or if `topology.producer.batch.size=1`=1.
+
 
 #### Guidance
-Flushing interval can be used as tool to retain the higher throughput benefits of batching but not get stuck
-Preferably this value should be larger than the average execute latencies of the bolts in the topology. Trying to flush the queues more frequently than the amount
-of time it takes to produce the messages may hurt performance. Understanding the average execute latencies of each bolt will help determine the average number of
-messages in the queues between two flushes.
+Flushing interval can be used as tool to retain the higher throughput benefits of batching and avoid batched messages getting stuck for too long waiting for their.
+batch to fill. Preferably this value should be larger than the average execute latencies of the bolts in the topology. Trying to flush the queues more frequently than
+the amount of time it takes to produce the messages may hurt performance. Understanding the average execute latencies of each bolt will help determine the average
+number of messages in the queues between two flushes.
 
 **For Low latency:** A smaller value helps achieve tighter latency SLAs.
-**For High throughput:**  When trying to maximize throughput under high traffic situations, the batches are likely to get filled and flushed automatically. To optimize
-for such cases, this value can be set to a higher number.
+**For High throughput:**  When trying to maximize throughput under high traffic situations, the batches are likely to get filled and flushed automatically.
+To optimize for such cases, this value can be set to a higher number.
 **Varying throughput:** If latency is not a concern, a larger value will optimize for high traffic situations. For meeting tighter SLAs set this to lower
 values.
 
@@ -77,13 +79,14 @@ conserving CPU. The chosen strategy can be further configured using the `topolog
 
 
 #### Built-in wait strategies:
-**SleepSpoutWaitStrategy** : This is the only built-in strategy available for Spout Wait. It cannot be applied to other Wait situations. It is a simple static strategy that
+
+- **SleepSpoutWaitStrategy** : This is the only built-in strategy available for Spout Wait. It cannot be applied to other Wait situations. It is a simple static strategy that
 calls Thread.sleep() each time. Set `topology.spout.wait.strategy` to `org.apache.storm.spout.SleepSpoutWaitStrategy` for using this. `topology.sleep.spout.wait.strategy.time.ms`
 configures the sleep time.
 
-**ProgressiveWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyProgressive' to
+- **ProgressiveWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyProgressive' to
 select this wait strategy. This is a dynamic wait strategy that enters into progressively deeper states of CPU conservation if the Backpressure Wait or Bolt Wait situations persist.
-It has 3 levels of idling and allow configuring how switch to each :
+It has 3 levels of idling and allows configuring how long to stay at each level :
 
   1. No Waiting - The first few times it will return immediately. This does not conserve any CPU. The number of times it remains in this state is configured using
   `topology.bolt.wait.progressive.step` or `topology.backpressure.wait.progressive.step` depending which situation it is being used.
@@ -95,15 +98,31 @@ It has 3 levels of idling and allow configuring how switch to each :
    based on the Wait situation it is used in. This is the most CPU conserving state and it remains in this level for the remaining iterations.
 
 
-**ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyPark' to use this.
+- **ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyPark' to use this.
 This strategy disables the current thread for thread scheduling purposes by calling LockSupport.parkNanos(). The amount of park time is configured using either
-`topology.bolt.wait.park.microsec` or `topology.backpressure.wait.park.microsec` based on the wait situation it is used.
+`topology.bolt.wait.park.microsec` or `topology.backpressure.wait.park.microsec` based on the wait situation it is used. Setting the park time to 0, effectively disables
+invocation of LockSupport.parkNanos and this mode can be used to achieve busy polling (if targeting best throughput & latency without regard for CPU utilization).
 
 
 ## Max.spout.pending
 This is only used for ACK-mode. For single worker mode, disable this. For multi-worker mode set to a large number like maybe .... (TODO: ROSHAN revisit this).
+This should not be less than the `topology.producer.batch.size`.
+
 
 ## 4. Sampling Rate
 Sampling rate is used to control how often certain metrics are computed on the Spout and Bolt executors. This is configured using `topology.stats.sample.rate`
-Setting it to 1 means, the stats are computed for every emitted message. To sample once every 1000 messages it can be set to  0.001. It may be possible to improve throughput and
-latency by reducing the sampling rate.
+Setting it to 1 means, the stats are computed for every emitted message. As an example, to sample once every 1000 messages it can be set to  0.001. It may be
+possible to improve throughput and latency by reducing the sampling rate.
+
+
+# Budgeting CPU cores for Executors
+There are three main types of executors (i.e threads) to take into account when budgeting CPU cores for them. Spout Executors, Bolt Executors and Worker Transfer Thread.
+(WHAT ABOUT THREADS HANDLING INCOMING MESSAGES TO A WORKER ? TODO: ROSHAN revisit this)
+The first two are used to run spout, bolt and acker instances. The Worker Transfer thread is used to serialize and send messages to other workers (in multi-worker mode).
+
+Executors that are expected to remain busy, either because they are handling a lot of messages, or because their processing is inherently CPU intensive, should be allocated
+1 physical core each. Allocating logical cores (instead of physical) or less than 1 physical core for CPU intensive executors increases CPU contention and performance can suffer.
+Executors that are not expected to be busy can be allocated a smaller fraction of the physical core (or even logical cores). It maybe not be economical to allocate a full physical
+core for executors that are not likely to saturate the CPU.
+
+The *system bolt* generally processes very few messages per second, and so requires very little cpu (typically less than 10% of a physical core).

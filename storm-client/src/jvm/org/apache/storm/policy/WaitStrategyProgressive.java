@@ -25,18 +25,17 @@ import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- *               A Simple Progressive Wait Strategy
- *
+ * A Simple Progressive Wait Strategy
+ * <p>
  * Initially spins, then downgrades to LockSupport.parkNanos(1), and eventually Thread.sleep()
- *
+ * <p>
  * The initial spin can be useful to prevent downstream bolt from repeatedly sleeping/parking when
  * the upstream component is a bit relatively slower. Allows downstream bolt can enter deeper wait states only
  * if the traffic to it appears to have reduced.
- *
+ * <p>
  * Provides control over how quickly to progress to the deeper wait level.
  * Larger the 'step' and 'multiplier', slower the progression.
  * Latency spike increases with every progression into the deeper wait level.
- *
  */
 public class WaitStrategyProgressive implements IWaitStrategy {
     private long sleepMillis;
@@ -44,10 +43,18 @@ public class WaitStrategyProgressive implements IWaitStrategy {
     private int multiplier;
 
     @Override
-    public void prepare(Map<String, Object> conf) {
-        sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS));
-        step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP));
-        multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER));
+    public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
+        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+            sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS));
+            step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP));
+            multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER));
+        } else if (waitSituation == WAIT_SITUATION.BACK_PRESSURE_WAIT) {
+            sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MILLIS));
+            step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_STEP));
+            multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MULTIPLIER));
+        } else {
+            throw new IllegalArgumentException("Unknown wait situation : " + waitSituation);
+        }
     }
 
     @Override
