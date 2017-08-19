@@ -64,7 +64,6 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final ContainerLauncher launcher;
     private final String host;
     private final LocalState localState;
-    private final IStormClusterState clusterState;
     private final AtomicReference<Map<Long, LocalAssignment>> cachedAssignments;
     
     public ReadClusterState(Supervisor supervisor) throws Exception {
@@ -77,7 +76,6 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.localizer = supervisor.getAsyncLocalizer();
         this.host = supervisor.getHostName();
         this.localState = supervisor.getLocalState();
-        this.clusterState = supervisor.getStormClusterState();
         this.cachedAssignments = supervisor.getCurrAssignment();
         
         this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisor.getSharedContext());
@@ -117,7 +115,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
     private Slot mkSlot(int port) throws Exception {
         return new Slot(localizer, superConf, launcher, host, port,
-                localState, clusterState, iSuper, cachedAssignments);
+                localState, stormClusterState, iSuper, cachedAssignments);
     }
     
     @Override
