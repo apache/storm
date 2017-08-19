@@ -267,7 +267,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             //Accounting for retriable tuples this way still guarantees that the limit is followed on a per partition basis,
             //and prevents locking up the spout when there are too many retriable tuples
             && (numUncommittedOffsets - readyMessageCount < maxUncommittedOffsets
-            || consumerAutoCommitMode);
+            || consumerAutoCommitMode || readyMessageCount >= maxUncommittedOffsets);
         
         if (!poll) {
             if (waitingToEmit()) {
