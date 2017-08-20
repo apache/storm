@@ -24,15 +24,15 @@
         <version>2.0.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
+    
+    <properties>
+        <!-- Override with -Dkafka.dependency.scope=provided to generate a jar without dependencies -->
+        <kafka.dependency.scope>compile</kafka.dependency.scope>
+    </properties>
 
     <artifactId>storm-kafka-examples</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-starter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-client</artifactId>
@@ -43,19 +43,19 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka</artifactId>
             <version>${project.version}</version>
-            <scope>${provided.scope}</scope>
+            <scope>${kafka.dependency.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>${storm.kafka.artifact.id}</artifactId>
             <version>${storm.kafka.version}</version>
-            <scope>${provided.scope}</scope>
+            <scope>${kafka.dependency.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${storm.kafka.version}</version>
-            <scope>${provided.scope}</scope>
+            <scope>${kafka.dependency.scope}</scope>
         </dependency>
     </dependencies>
 

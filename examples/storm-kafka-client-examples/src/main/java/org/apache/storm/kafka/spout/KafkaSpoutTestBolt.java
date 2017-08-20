@@ -16,7 +16,7 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout.test;
+package org.apache.storm.kafka.spout;
 
 import java.util.Map;
 import org.apache.storm.task.OutputCollector;

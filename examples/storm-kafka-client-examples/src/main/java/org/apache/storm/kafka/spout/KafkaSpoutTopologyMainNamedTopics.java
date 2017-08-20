@@ -16,28 +16,24 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout.test;
+package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.kafka.spout.ByTopicRecordTranslator;
-import org.apache.storm.kafka.spout.KafkaSpout;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
+import org.apache.storm.kafka.bolt.KafkaProducerTopology;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
-import org.apache.storm.kafka.trident.KafkaProducerTopology;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+/**
+ * This example sets up 3 topologies to put data in Kafka via the KafkaBolt,
+ * and shows how to set up a topology that reads from some Kafka topics using the KafkaSpout.
+ */
 public class KafkaSpoutTopologyMainNamedTopics {
 
     private static final String TOPIC_2_STREAM = "test_2_stream";
