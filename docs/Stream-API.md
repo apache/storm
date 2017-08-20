@@ -283,13 +283,13 @@ PairStream<String, Iterable<Integer>> userScores =  scores.window(...).groupByKe
 
 ```java
 // a stream of (key, value) pairs e.g. (k1, v1), (k2, v2), (k2, v3)
-PairStream<String, Double> stream1 = ...
+PairStream<String, String> stream1 = ...
 
 // another stream of (key, value) pairs e.g. (k1, x1), (k1, x2), (k3, x3)
-PairStream<String, Double> stream2 = ...
+PairStream<String, String> stream2 = ...
 
 // the co-grouped values per key in the last window, e.g. (k1, ([v1], [x1, x2]), (k2, ([v2, v3], [])), (k3, ([], [x3]))
-PairStream<String, Iterable<Integer>> userScores =  stream1.window(...).coGroupByKey(stream2);
+PairStream<String, Iterable<String>> userScores =  stream1.window(...).coGroupByKey(stream2);
 ```
  
 ###  <a name="countbykey"></a> countByKey

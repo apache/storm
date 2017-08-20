@@ -79,21 +79,21 @@ public class CoGroupByKeyProcessorTest {
     public void testCoGroupByKey() throws Exception {
         coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream);
         processValues();
-        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> result = new ArrayList<>();
+        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> expected = new ArrayList<>();
         Collection<Integer> list1 = new ArrayList<>();
         list1.add(25);
         Collection<Integer> list2 = new ArrayList<>();
         list2.add(125);
         list2.add(50);
-        result.add(Pair.of(5, Pair.of(list1, list2)));
-        assertEquals(result.get(0), res.get(1));
+        expected.add(Pair.of(5, Pair.of(list1, list2)));
+        assertEquals(expected.get(0), res.get(1));
         list1.clear();
         list2.clear();
         list1.add(49);
         list1.add(87);
-        result.clear();
-        result.add(Pair.of(7, Pair.of(list1, list2)));
-        assertEquals(result.get(0), res.get(2));
+        expected.clear();
+        expected.add(Pair.of(7, Pair.of(list1, list2)));
+        assertEquals(expected.get(0), res.get(2));
     }
 
 
