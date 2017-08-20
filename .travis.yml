@@ -23,7 +23,7 @@ sudo: required
 
 language: java
 jdk:
-  - oraclejdk7
+  - openjdk7
   - oraclejdk8
 before_install:
   - rvm use 2.1.5 --install
