@@ -35,7 +35,9 @@ import static org.mockito.internal.verification.VerificationModeFactory.times;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.attribute.FileAttribute;
 import java.util.ArrayList;
@@ -65,10 +67,10 @@ import org.mockito.ArgumentCaptor;
 public class LogviewerLogSearchHandlerTest {
 
     public static class SearchViaRestApi {
-        private String pattern = "needle";
-        private String expectedHost = "dev.null.invalid";
-        private Integer expectedPort = 8888;
-        private String logviewerUrlPrefix = "http://" + expectedHost + ":" + expectedPort;
+        private final String pattern = "needle";
+        private final String expectedHost = "dev.null.invalid";
+        private final Integer expectedPort = 8888;
+        private final String logviewerUrlPrefix = "http://" + expectedHost + ":" + expectedPort;
 
         /*
          When we click a link to the logviewer, we expect the match line to
@@ -76,7 +78,7 @@ public class LogviewerLogSearchHandlerTest {
          the default page length from the offset at which we found the
          match.
          */
-        private Function<Integer, Integer> expOffsetFn = arg -> (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2 - arg);
+        private final Function<Integer, Integer> expOffsetFn = arg -> (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2 - arg);
 
         @Test(expected = RuntimeException.class)
         public void testSearchViaRestApiThrowsIfBogusFileIsGiven() throws InvalidRequestException {
@@ -96,7 +98,7 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                String actualUrl = handler.urlToMatchCenteredInLogPage(new byte[42], expectedFname, 27526, 8888);
+                String actualUrl = handler.urlToMatchCenteredInLogPage(new byte[42], new File(expectedFname).toPath(), 27526, 8888);
 
                 assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/log?file=" + expectedFname
                         + "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
@@ -117,7 +119,7 @@ public class LogviewerLogSearchHandlerTest {
 
                 when(mockedUtil.hostname()).thenReturn(expectedHost);
 
-                String actualUrl = handler.urlToMatchCenteredInLogPageDaemonFile(new byte[42], expectedFname, 27526, 8888);
+                String actualUrl = handler.urlToMatchCenteredInLogPageDaemonFile(new byte[42], new File(expectedFname).toPath(), 27526, 8888);
 
                 assertEquals("http://" + expectedHost + ":" + expectedPort + "/api/v1/daemonlog?file=" + expectedFname
                         + "&start=1947&length=" + LogviewerConstant.DEFAULT_BYTES_PER_PAGE, actualUrl);
@@ -128,7 +130,7 @@ public class LogviewerLogSearchHandlerTest {
 
         @SuppressWarnings("checkstyle:LineLength")
         @Test
-        public void testReturnsCorrectBeforeAndAfterContext() throws InvalidRequestException, UnknownHostException {
+        public void testReturnsCorrectBeforeAndAfterContext() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -149,27 +151,31 @@ public class LogviewerLogSearchHandlerTest {
                 matches.add(buildMatchData(0, "",
                         " needle000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000needle ",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() +"resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                         ));
 
                 matches.add(buildMatchData(7, "needle ",
                         "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000needle needle\n",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                         ));
 
                 matches.add(buildMatchData(127,
                         "needle needle000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
                         " needle\n",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                         ));
 
                 matches.add(buildMatchData(134,
                         " needle000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000needle ",
                         "\n",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                         ));
 
                 expected.put("matches", matches);
@@ -184,7 +190,7 @@ public class LogviewerLogSearchHandlerTest {
         }
 
         @Test
-        public void testAreallySmallLogFile() throws InvalidRequestException, UnknownHostException {
+        public void testAreallySmallLogFile() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -205,14 +211,15 @@ public class LogviewerLogSearchHandlerTest {
                 matches.add(buildMatchData(7, "000000 ",
                         " 000000\n",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
 
                 LogviewerLogSearchHandler handler = getSearchHandlerWithPort(expectedPort);
                 Map<String, Object> searchResult = handler.substringSearch(file, pattern);
-
+                
                 assertEquals(expected, searchResult);
             } finally {
                 Utils.setInstance(prevUtils);
@@ -256,7 +263,7 @@ public class LogviewerLogSearchHandlerTest {
         }
 
         @Test
-        public void testNoOffsetReturnedWhenFileEndsOnBufferOffset() throws InvalidRequestException, UnknownHostException {
+        public void testNoOffsetReturnedWhenFileEndsOnBufferOffset() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -278,7 +285,8 @@ public class LogviewerLogSearchHandlerTest {
                         Seq.range(0, 128).map(x -> ".").collect(joining()),
                         "",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
@@ -296,7 +304,7 @@ public class LogviewerLogSearchHandlerTest {
 
         @SuppressWarnings("checkstyle:LineLength")
         @Test
-        public void testNextByteOffsetsAreCorrectForEachMatch() throws UnknownHostException, InvalidRequestException {
+        public void testNextByteOffsetsAreCorrectForEachMatch() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -343,49 +351,56 @@ public class LogviewerLogSearchHandlerTest {
                         "Test ",
                         " is near the beginning of the file.\nThis file assumes a buffer size of 2048 bytes, a max search string size of 1024 bytes, and a",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(2036,
                         "ng 146\npadding 147\npadding 148\npadding 149\npadding 150\npadding 151\npadding 152\npadding 153\nNear the end of a 1024 byte block, a ",
                         ".\nA needle that straddles a 1024 byte boundary should also be detected.\n\npadding 157\npadding 158\npadding 159\npadding 160\npadding",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(2046,
                         "ding 147\npadding 148\npadding 149\npadding 150\npadding 151\npadding 152\npadding 153\nNear the end of a 1024 byte block, a needle.\nA ",
                         " that straddles a 1024 byte boundary should also be detected.\n\npadding 157\npadding 158\npadding 159\npadding 160\npadding 161\npaddi",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(3072,
                         "adding 226\npadding 227\npadding 228\npadding 229\npadding 230\npadding 231\npadding 232\npadding 233\npadding 234\npadding 235\n\n\nHere a ",
                         " occurs just after a 1024 byte boundary.  It should have the correct context.\n\nText with two adjoining matches: needleneedle\n\npa",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(3190,
                         "\n\n\nHere a needle occurs just after a 1024 byte boundary.  It should have the correct context.\n\nText with two adjoining matches: ",
                         "needle\n\npadding 243\npadding 244\npadding 245\npadding 246\npadding 247\npadding 248\npadding 249\npadding 250\npadding 251\npadding 252\n",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(3196,
                         "e a needle occurs just after a 1024 byte boundary.  It should have the correct context.\n\nText with two adjoining matches: needle",
                         "\n\npadding 243\npadding 244\npadding 245\npadding 246\npadding 247\npadding 248\npadding 249\npadding 250\npadding 251\npadding 252\npaddin",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(6246,
                         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n\nHere are four non-ascii 1-byte UTF-8 characters: αβγδε\n\n",
                         "\n\nHere are four printable 2-byte UTF-8 characters: ¡¢£¤¥\n\nneedle\n\n\n\nHere are four printable 3-byte UTF-8 characters: ऄअ",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
@@ -400,7 +415,7 @@ public class LogviewerLogSearchHandlerTest {
 
         @SuppressWarnings("checkstyle:LineLength")
         @Test
-        public void testCorrectMatchOffsetIsReturnedWhenSkippingBytes() throws InvalidRequestException, UnknownHostException {
+        public void testCorrectMatchOffsetIsReturnedWhenSkippingBytes() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -425,7 +440,8 @@ public class LogviewerLogSearchHandlerTest {
                         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\n\nHere are four non-ascii 1-byte UTF-8 characters: αβγδε\n\n",
                         "\n\nHere are four printable 2-byte UTF-8 characters: ¡¢£¤¥\n\nneedle\n\n\n\nHere are four printable 3-byte UTF-8 characters: ऄअ",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
@@ -441,7 +457,7 @@ public class LogviewerLogSearchHandlerTest {
 
         @SuppressWarnings("checkstyle:LineLength")
         @Test
-        public void testAnotherPatterns1() throws UnknownHostException, InvalidRequestException {
+        public void testAnotherPatterns1() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -465,15 +481,17 @@ public class LogviewerLogSearchHandlerTest {
                 matches.add(buildMatchData(4075,
                         "\n\nThe following match of 1024 bytes completely fills half the byte buffer.  It is a search substring of the maximum size......\n\n",
                         "\nThe following max-size match straddles a 1024 byte buffer.\nXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX",
-                        pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                    pattern,
+                    "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                    + "&start=0&length=51200"
                 ));
 
                 matches.add(buildMatchData(5159,
                         "XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX\nThe following max-size match straddles a 1024 byte buffer.\n",
                         "\n\nHere are four non-ascii 1-byte UTF-8 characters: αβγδε\n\nneedle\n\nHere are four printable 2-byte UTF-8 characters: ¡¢£¤",
-                        pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                    pattern,
+                    "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                    + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
@@ -489,7 +507,7 @@ public class LogviewerLogSearchHandlerTest {
 
         @SuppressWarnings("checkstyle:LineLength")
         @Test
-        public void testAnotherPatterns2() throws UnknownHostException, InvalidRequestException {
+        public void testAnotherPatterns2() throws Exception {
             Utils prevUtils = null;
             try {
                 Utils mockedUtil = mock(Utils.class);
@@ -513,7 +531,8 @@ public class LogviewerLogSearchHandlerTest {
                         "padding 372\npadding 373\npadding 374\npadding 375\n\nThe following tests multibyte UTF-8 Characters straddling the byte boundary:   ",
                         "\n\nneedle",
                         pattern,
-                        "/api/v1/log?file=test%2Fresources%2F" + file.getName() + "&start=0&length=51200"
+                        "/api/v1/log?file=test" + encodedFileSeparator() + "resources" + encodedFileSeparator() + file.getName()
+                            + "&start=0&length=51200"
                 ));
 
                 expected.put("matches", matches);
@@ -567,6 +586,10 @@ public class LogviewerLogSearchHandlerTest {
             match.put("logviewerURL", logviewerUrlPrefix + logviewerUrlPath);
             return match;
         }
+        
+        private String encodedFileSeparator() throws Exception {
+            return URLEncoder.encode(File.separator, StandardCharsets.UTF_8.name());
+        }
     }
 
     public static class FindNMatchesTest {
@@ -590,8 +613,8 @@ public class LogviewerLogSearchHandlerTest {
             assertEquals(2, matches1.size());
             assertEquals(4, ((List) matches1.get(0).get("matches")).size());
             assertEquals(4, ((List) matches1.get(1).get("matches")).size());
-            assertEquals("test/resources/logviewer-search-context-tests.log.test", matches1.get(0).get("fileName"));
-            assertEquals("test/resources/logviewer-search-context-tests.log.gz", matches1.get(1).get("fileName"));
+            assertEquals(String.join(File.separator, "test", "resources", "logviewer-search-context-tests.log.test"), matches1.get(0).get("fileName"));
+            assertEquals(String.join(File.separator, "test", "resources", "logviewer-search-context-tests.log.gz"), matches1.get(1).get("fileName"));
 
             assertEquals(2, ((List) matches2.get(0).get("matches")).size());
             assertEquals(4, ((List) matches2.get(1).get("matches")).size());
