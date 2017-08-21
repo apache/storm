@@ -90,11 +90,6 @@
     </dependency>
       <dependency>
           <groupId>org.apache.storm</groupId>
-          <artifactId>storm-client-misc</artifactId>
-          <version>${project.version}</version>
-      </dependency>
-      <dependency>
-          <groupId>org.apache.storm</groupId>
           <artifactId>storm-client</artifactId>
           <version>${project.version}</version>
           <type>test-jar</type>
