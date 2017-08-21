@@ -40,10 +40,6 @@
         </developer>
     </developers>
 
-    <properties>
-        <jedis.version>2.9.0</jedis.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>

@@ -69,13 +69,13 @@
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-core</artifactId>
-            <version>5.2.1</version>
+            <version>${solr.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.solr</groupId>
             <artifactId>solr-test-framework</artifactId>
-            <version>5.2.1</version>
+            <version>${solr.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>

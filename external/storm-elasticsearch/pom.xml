@@ -42,7 +42,6 @@
     </developers>
 
     <properties>
-        <elasticsearch.version>5.2.2</elasticsearch.version>
         <elasticsearch.test.version>2.4.4</elasticsearch.test.version>
     </properties>
 

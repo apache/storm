@@ -41,10 +41,6 @@
         </developer>
     </developers>
 
-    <properties>
-        <jpmml.version>1.0.22</jpmml.version>
-    </properties>
-
     <dependencies>
         <!--parent module dependency-->
         <dependency>

@@ -38,7 +38,6 @@
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
         <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
-        <cassandra.version>2.1.7</cassandra.version>
     </properties>
 
     <developers>

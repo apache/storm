@@ -39,10 +39,6 @@
         </developer>
     </developers>
 
-    <properties>
-        <rocketmq.version>4.0.0-incubating</rocketmq.version>
-    </properties>
-
     <dependencies>
         <!--parent module dependency-->
         <dependency>
