@@ -15,114 +15,67 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.starter;
 
-import java.util.Collection;
+package org.apache.storm.loadgen;
+
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicLong;
 
-import org.HdrHistogram.Histogram;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.DefaultParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.ExecutorSummary;
-import org.apache.storm.generated.KillOptions;
-import org.apache.storm.generated.Nimbus;
-import org.apache.storm.generated.SpoutStats;
-import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.metric.api.IMetricsConsumer.DataPoint;
-import org.apache.storm.metric.api.IMetricsConsumer.TaskInfo;
-import org.apache.storm.metrics.hdrhistogram.HistogramMetric;
-import org.apache.storm.misc.metric.HttpForwardingMetricsServer;
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
+import org.apache.storm.metric.LoggingMetricsConsumer;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseBasicBolt;
-import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.NimbusClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WordCount but the spout goes at a predefined rate and we collect
  * proper latency statistics.
  */
 public class ThroughputVsLatency {
-    private static class SentWithTime {
-        public final String sentence;
-        public final long time;
+    private static final Logger LOG = LoggerFactory.getLogger(GenLoad.class);
+    private static final int TEST_EXECUTE_TIME_DEFAULT = 5;
+    private static final long DEFAULT_RATE_PER_SECOND = 500;
+    private static final String DEFAULT_TOPO_NAME = "wc-test";
+    private static final int DEFAULT_NUM_SPOUTS = 1;
+    private static final int DEFAULT_NUM_SPLITS = 1;
+    private static final int DEFAULT_NUM_COUNTS = 1;
 
-        SentWithTime(String sentence, long time) {
-            this.sentence = sentence;
-            this.time = time;
-        }
-    }
+    public static class FastRandomSentenceSpout extends LoadSpout {
+        static final String[] SENTENCES = new String[] {
+            "the cow jumped over the moon",
+            "an apple a day keeps the doctor away",
+            "four score and seven years ago",
+            "snow white and the seven dwarfs",
+            "i am at two with nature"
+        };
 
-    public static class FastRandomSentenceSpout extends BaseRichSpout {
-        static final String[] SENTENCES = new String[]{ "the cow jumped over the moon", "an apple a day keeps the doctor away",
-                "four score and seven years ago", "snow white and the seven dwarfs", "i am at two with nature" };
-
-        SpoutOutputCollector _collector;
-        long _periodNano;
-        long _emitAmount;
-        Random _rand;
-        long _nextEmitTime;
-        long _emitsLeft;
-        HistogramMetric _histo;
-
+        /**
+         * Constructor.
+         * @param ratePerSecond the rate to emite tuples at.
+         */
         public FastRandomSentenceSpout(long ratePerSecond) {
-            if (ratePerSecond > 0) {
-                _periodNano = Math.max(1, 1000000000/ratePerSecond);
-                _emitAmount = Math.max(1, (long)((ratePerSecond / 1000000000.0) * _periodNano));
-            } else {
-                _periodNano = Long.MAX_VALUE - 1;
-                _emitAmount = 1;
-            }
+            super(ratePerSecond);
         }
 
         @Override
-        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-            _collector = collector;
-            _rand = ThreadLocalRandom.current();
-            _nextEmitTime = System.nanoTime();
-            _emitsLeft = _emitAmount;
-            _histo = new HistogramMetric(3600000000000L, 3);
-            context.registerMetric("comp-lat-histo", _histo, 10); //Update every 10 seconds, so we are not too far behind
-        }
-
-        @Override
-        public void nextTuple() {
-            if (_emitsLeft <= 0 && _nextEmitTime <= System.nanoTime()) {
-                _emitsLeft = _emitAmount;
-                _nextEmitTime = _nextEmitTime + _periodNano;
-            }
-
-            if (_emitsLeft > 0) {
-                String sentence = SENTENCES[_rand.nextInt(SENTENCES.length)];
-                _collector.emit(new Values(sentence), new SentWithTime(sentence, _nextEmitTime - _periodNano));
-                _emitsLeft--;
-            }
-        }
-
-        @Override
-        public void ack(Object id) {
-            long end = System.nanoTime();
-            SentWithTime st = (SentWithTime)id;
-            _histo.recordValue(end-st.time);
-        }
-
-        @Override
-        public void fail(Object id) {
-            SentWithTime st = (SentWithTime)id;
-            _collector.emit(new Values(st.sentence), id);
+        protected Values getNextValues(OutputStreamEngine se) {
+            String sentence = SENTENCES[se.nextInt(SENTENCES.length)];
+            return new Values(sentence);
         }
 
         @Override
@@ -147,14 +100,15 @@ public class ThroughputVsLatency {
     }
 
     public static class WordCount extends BaseBasicBolt {
-        Map<String, Integer> counts = new HashMap<String, Integer>();
+        Map<String, Integer> counts = new HashMap<>();
 
         @Override
         public void execute(Tuple tuple, BasicOutputCollector collector) {
             String word = tuple.getString(0);
             Integer count = counts.get(word);
-            if (count == null)
+            if (count == null) {
                 count = 0;
+            }
             count++;
             counts.put(word, count);
             collector.emit(new Values(word, count));
@@ -166,184 +120,103 @@ public class ThroughputVsLatency {
         }
     }
 
-    private static class MemMeasure {
-        private long _mem = 0;
-        private long _time = 0;
-
-        public synchronized void update(long mem) {
-            _mem = mem;
-            _time = System.currentTimeMillis();
-        }
-
-        public synchronized long get() {
-            return isExpired() ? 0l : _mem;
-        }
-
-        public synchronized boolean isExpired() {
-            return (System.currentTimeMillis() - _time) >= 20000;
-        }
-    }
-
-    private static final Histogram _histo = new Histogram(3600000000000L, 3);
-    private static final AtomicLong _systemCPU = new AtomicLong(0);
-    private static final AtomicLong _userCPU = new AtomicLong(0);
-    private static final AtomicLong _gcCount = new AtomicLong(0);
-    private static final AtomicLong _gcMs = new AtomicLong(0);
-    private static final ConcurrentHashMap<String, MemMeasure> _memoryBytes = new ConcurrentHashMap<String, MemMeasure>();
-
-    private static long readMemory() {
-        long total = 0;
-        for (MemMeasure mem: _memoryBytes.values()) {
-            total += mem.get();
-        }
-        return total;
-    }
-
-    private static long _prev_acked = 0;
-    private static long _prev_uptime = 0;
-
-    public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
-        ClusterSummary summary = client.getClusterInfo();
-        String id = null;
-        for (TopologySummary ts: summary.get_topologies()) {
-            if (name.equals(ts.get_name())) {
-                id = ts.get_id();
-            }
-        }
-        if (id == null) {
-            throw new Exception("Could not find a topology named "+name);
-        }
-        TopologyInfo info = client.getTopologyInfo(id);
-        int uptime = info.get_uptime_secs();
-        long acked = 0;
-        long failed = 0;
-        for (ExecutorSummary exec: info.get_executors()) {
-            if ("spout".equals(exec.get_component_id()) && exec.get_stats() != null && exec.get_stats().get_specific() != null) {
-                SpoutStats stats = exec.get_stats().get_specific().get_spout();
-                Map<String, Long> failedMap = stats.get_failed().get(":all-time");
-                Map<String, Long> ackedMap = stats.get_acked().get(":all-time");
-                if (ackedMap != null) {
-                    for (String key: ackedMap.keySet()) {
-                        if (failedMap != null) {
-                            Long tmp = failedMap.get(key);
-                            if (tmp != null) {
-                                failed += tmp;
-                            }
-                        }
-                        long ackVal = ackedMap.get(key);
-                        acked += ackVal;
-                    }
-                }
-            }
-        }
-        long ackedThisTime = acked - _prev_acked;
-        long thisTime = uptime - _prev_uptime;
-        long nnpct, nnnpct, min, max;
-        double mean, stddev;
-        synchronized(_histo) {
-            nnpct = _histo.getValueAtPercentile(99.0);
-            nnnpct = _histo.getValueAtPercentile(99.9);
-            min = _histo.getMinValue();
-            max = _histo.getMaxValue();
-            mean = _histo.getMean();
-            stddev = _histo.getStdDeviation();
-            _histo.reset();
-        }
-        long user = _userCPU.getAndSet(0);
-        long sys = _systemCPU.getAndSet(0);
-        long gc = _gcMs.getAndSet(0);
-        double memMB = readMemory() / (1024.0 * 1024.0);
-        System.out.printf("uptime: %,4d acked: %,9d acked/sec: %,10.2f failed: %,8d " +
-                "99%%: %,15d 99.9%%: %,15d min: %,15d max: %,15d mean: %,15.2f " +
-                "stddev: %,15.2f user: %,10d sys: %,10d gc: %,10d mem: %,10.2f\n",
-                uptime, ackedThisTime, (((double)ackedThisTime)/thisTime), failed, nnpct, nnnpct,
-                min, max, mean, stddev, user, sys, gc, memMB);
-        _prev_uptime = uptime;
-        _prev_acked = acked;
-    }
-
-    public static void kill(Nimbus.Iface client, String name) throws Exception {
-        KillOptions opts = new KillOptions();
-        opts.set_wait_secs(0);
-        client.killTopologyWithOpts(name, opts);
-    }
-
+    /**
+     * The main entry point for ThroughputVsLatency.
+     * @param args the command line args
+     * @throws Exception on any error.
+     */
     public static void main(String[] args) throws Exception {
-        long ratePerSecond = 500;
-        if (args != null && args.length > 0) {
-            ratePerSecond = Long.valueOf(args[0]);
+        Options options = new Options();
+        options.addOption(Option.builder("h")
+            .longOpt("help")
+            .desc("Print a help message")
+            .build());
+        options.addOption(Option.builder("t")
+            .longOpt("test-time")
+            .argName("MINS")
+            .hasArg()
+            .desc("How long to run the tests for in mins (defaults to " + TEST_EXECUTE_TIME_DEFAULT + ")")
+            .build());
+        options.addOption(Option.builder()
+            .longOpt("rate")
+            .argName("SENTENCES/SEC")
+            .hasArg()
+            .desc("How many sentences per second to run. (defaults to " + DEFAULT_RATE_PER_SECOND + ")")
+            .build());
+        options.addOption(Option.builder()
+            .longOpt("name")
+            .argName("TOPO_NAME")
+            .hasArg()
+            .desc("Name of the topology to run (defaults to " + DEFAULT_TOPO_NAME + ")")
+            .build());
+        options.addOption(Option.builder()
+            .longOpt("spouts")
+            .argName("NUM")
+            .hasArg()
+            .desc("Number of spouts to use (defaults to " + DEFAULT_NUM_SPOUTS + ")")
+            .build());
+        options.addOption(Option.builder()
+            .longOpt("splitters")
+            .argName("NUM")
+            .hasArg()
+            .desc("Number of splitter bolts to use (defaults to " + DEFAULT_NUM_SPLITS + ")")
+            .build());
+        options.addOption(Option.builder()
+            .longOpt("counters")
+            .argName("NUM")
+            .hasArg()
+            .desc("Number of counter bolts to use (defaults to " + DEFAULT_NUM_COUNTS + ")")
+            .build());
+        LoadMetricsServer.addCommandLineOptions(options);
+        CommandLineParser parser = new DefaultParser();
+        CommandLine cmd = null;
+        Exception commandLineException = null;
+        double numMins = TEST_EXECUTE_TIME_DEFAULT;
+        double ratePerSecond = DEFAULT_RATE_PER_SECOND;
+        String name = DEFAULT_TOPO_NAME;
+        int numSpouts = DEFAULT_NUM_SPOUTS;
+        int numSplits = DEFAULT_NUM_SPLITS;
+        int numCounts = DEFAULT_NUM_COUNTS;
+        try {
+            cmd = parser.parse(options, args);
+            if (cmd.hasOption("t")) {
+                numMins = Double.valueOf(cmd.getOptionValue("t"));
+            }
+            if (cmd.hasOption("rate")) {
+                ratePerSecond = Double.parseDouble(cmd.getOptionValue("rate"));
+            }
+            if (cmd.hasOption("name")) {
+                name = cmd.getOptionValue("name");
+            }
+            if (cmd.hasOption("spouts")) {
+                numSpouts = Integer.parseInt(cmd.getOptionValue("spouts"));
+            }
+            if (cmd.hasOption("splitters")) {
+                numSplits = Integer.parseInt(cmd.getOptionValue("splitters"));
+            }
+            if (cmd.hasOption("counters")) {
+                numCounts = Integer.parseInt(cmd.getOptionValue("counters"));
+            }
+        } catch (ParseException | NumberFormatException e) {
+            commandLineException = e;
         }
-
-        int parallelism = 4;
-        if (args != null && args.length > 1) {
-            parallelism = Integer.valueOf(args[1]);
-        }
-
-        int numMins = 5;
-        if (args != null && args.length > 2) {
-            numMins = Integer.valueOf(args[2]);
-        }
-
-        String name = "wc-test";
-        if (args != null && args.length > 3) {
-            name = args[3];
+        if (commandLineException != null || cmd.hasOption('h')) {
+            if (commandLineException != null) {
+                System.err.println("ERROR " + commandLineException.getMessage());
+            }
+            new HelpFormatter().printHelp("ThroughputVsLatency [options]", options);
+            return;
         }
 
         Config conf = new Config();
-        HttpForwardingMetricsServer metricServer = new HttpForwardingMetricsServer(conf) {
-            @Override
-            public void handle(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
-                String worker = taskInfo.srcWorkerHost + ":" + taskInfo.srcWorkerPort;
-                for (DataPoint dp: dataPoints) {
-                    if ("comp-lat-histo".equals(dp.name) && dp.value instanceof Histogram) {
-                        synchronized(_histo) {
-                            _histo.add((Histogram)dp.value);
-                        }
-                    } else if ("CPU".equals(dp.name) && dp.value instanceof Map) {
-                        Map<Object, Object> m = (Map<Object, Object>)dp.value;
-                        Object sys = m.get("sys-ms");
-                        if (sys instanceof Number) {
-                            _systemCPU.getAndAdd(((Number)sys).longValue());
-                        }
-                        Object user = m.get("user-ms");
-                        if (user instanceof Number) {
-                            _userCPU.getAndAdd(((Number)user).longValue());
-                        }
-                    } else if (dp.name.startsWith("GC/") && dp.value instanceof Map) {
-                        Map<Object, Object> m = (Map<Object, Object>)dp.value;
-                        Object count = m.get("count");
-                        if (count instanceof Number) {
-                            _gcCount.getAndAdd(((Number)count).longValue());
-                        }
-                        Object time = m.get("timeMs");
-                        if (time instanceof Number) {
-                            _gcMs.getAndAdd(((Number)time).longValue());
-                        }
-                    } else if (dp.name.startsWith("memory/") && dp.value instanceof Map) {
-                        Map<Object, Object> m = (Map<Object, Object>)dp.value;
-                        Object val = m.get("usedBytes");
-                        if (val instanceof Number) {
-                            MemMeasure mm = _memoryBytes.get(worker);
-                            if (mm == null) {
-                                mm = new MemMeasure();
-                                MemMeasure tmp = _memoryBytes.putIfAbsent(worker, mm);
-                                mm = tmp == null ? mm : tmp; 
-                            }
-                            mm.update(((Number)val).longValue());
-                        }
-                    }
-                }
-            }
-        };
-
+        LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd);
         metricServer.serve();
         String url = metricServer.getUrl();
 
         NimbusClient client = NimbusClient.getConfiguredClient(conf);
-        conf.setNumWorkers(parallelism);
-        conf.registerMetricsConsumer(org.apache.storm.metric.LoggingMetricsConsumer.class);
-        conf.registerMetricsConsumer(org.apache.storm.misc.metric.HttpForwardingMetricsConsumer.class, url, 1);
-        Map<String, String> workerMetrics = new HashMap<String, String>();
+        conf.registerMetricsConsumer(LoggingMetricsConsumer.class);
+        conf.registerMetricsConsumer(HttpForwardingMetricsConsumer.class, url, 1);
+        Map<String, String> workerMetrics = new HashMap<>();
         if (!NimbusClient.isLocalOverride()) {
             //sigar uses JNI and does not work in local mode
             workerMetrics.put("CPU", "org.apache.storm.metrics.sigar.CPUMetric");
@@ -351,27 +224,27 @@ public class ThroughputVsLatency {
         conf.put(Config.TOPOLOGY_WORKER_METRICS, workerMetrics);
         conf.put(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS, 10);
         conf.put(Config.TOPOLOGY_WORKER_GC_CHILDOPTS,
-                "-XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC -XX:NewSize=128m -XX:CMSInitiatingOccupancyFraction=70 -XX:-CMSConcurrentMTEnabled");
+            "-XX:+UseConcMarkSweepGC -XX:+UseParNewGC -XX:+UseConcMarkSweepGC "
+                + "-XX:NewSize=128m -XX:CMSInitiatingOccupancyFraction=70 -XX:-CMSConcurrentMTEnabled");
         conf.put(Config.TOPOLOGY_WORKER_CHILDOPTS, "-Xmx2g");
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        int numEach = 4 * parallelism;
-        builder.setSpout("spout", new FastRandomSentenceSpout(ratePerSecond/numEach), numEach);
+        builder.setSpout("spout", new FastRandomSentenceSpout((long) ratePerSecond / numSpouts), numSpouts);
+        builder.setBolt("split", new SplitSentence(), numSplits).shuffleGrouping("spout");
+        builder.setBolt("count", new WordCount(), numCounts).fieldsGrouping("split", new Fields("word"));
 
-        builder.setBolt("split", new SplitSentence(), numEach).shuffleGrouping("spout");
-        builder.setBolt("count", new WordCount(), numEach).fieldsGrouping("split", new Fields("word"));
-
-        try {
+        int exitStatus = -1;
+        try (ScopedTopologySet topologyNames = new ScopedTopologySet(client.getClient())) {
             StormSubmitter.submitTopology(name, conf, builder.createTopology());
+            topologyNames.add(name);
 
-            for (int i = 0; i < numMins * 2; i++) {
-                Thread.sleep(30 * 1000);
-                printMetrics(client.getClient(), name);
-            }
+            metricServer.monitorFor(numMins, client.getClient(), topologyNames);
+            exitStatus = 0;
+        } catch (Exception e) {
+            LOG.error("Error while running test", e);
         } finally {
-            kill(client.getClient(), name);
-            System.exit(0);
+            System.exit(exitStatus);
         }
     }
 }
