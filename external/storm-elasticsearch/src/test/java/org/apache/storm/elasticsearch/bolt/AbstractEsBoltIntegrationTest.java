@@ -17,27 +17,15 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.testing.IntegrationTest;
-import org.apache.commons.io.FileUtils;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthResponse;
-import org.elasticsearch.action.admin.cluster.health.ClusterHealthStatus;
-import org.elasticsearch.client.Requests;
-import org.elasticsearch.cluster.ClusterName;
-import org.elasticsearch.cluster.metadata.IndexMetaData;
-import org.elasticsearch.common.Priority;
-import org.elasticsearch.common.settings.ImmutableSettings;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.common.util.concurrent.EsExecutors;
+import org.elasticsearch.action.admin.indices.create.CreateIndexRequest;
 import org.elasticsearch.node.Node;
-import org.elasticsearch.node.NodeBuilder;
+import org.junit.After;
 import org.junit.AfterClass;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
-
-import java.io.File;
-
-import static org.hamcrest.CoreMatchers.equalTo;
-import static org.hamcrest.MatcherAssert.assertThat;
 
 @Category(IntegrationTest.class)
 public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt> extends AbstractEsBoltTest<Bolt> {
@@ -46,49 +34,23 @@ public abstract class AbstractEsBoltIntegrationTest<Bolt extends AbstractEsBolt>
 
     @BeforeClass
     public static void startElasticSearchNode() throws Exception {
-        node = NodeBuilder.nodeBuilder().data(true).settings(createSettings()).build();
-        node.start();
-        ensureEsGreen(node);
-        ClusterHealthResponse clusterHealth = node.client()
-                                                  .admin()
-                                                  .cluster()
-                                                  .health(Requests.clusterHealthRequest()
-                                                                  .timeout(TimeValue.timeValueSeconds(30))
-                                                                  .waitForGreenStatus()
-                                                                  .waitForRelocatingShards(0))
-                                                  .actionGet();
-        Thread.sleep(1000);
-    }
-
-    private static ImmutableSettings.Builder createSettings() {
-        return ImmutableSettings.builder()
-                                .put(ClusterName.SETTING, "test-cluster")
-                                .put(IndexMetaData.SETTING_NUMBER_OF_SHARDS, 1)
-                                .put(IndexMetaData.SETTING_NUMBER_OF_REPLICAS, 0)
-                                .put(EsExecutors.PROCESSORS, 1)
-                                .put("http.enabled", false)
-                                .put("index.percolator.map_unmapped_fields_as_string", true)
-                                .put("index.store.type", "memory");
+        node = EsTestUtil.startEsNode();
+        EsTestUtil.ensureEsGreen(node);
     }
 
     @AfterClass
     public static void closeElasticSearchNode() throws Exception {
-        node.stop();
-        node.close();
-        FileUtils.deleteDirectory(new File("./data"));
+        EsTestUtil.stopEsNode(node);
     }
 
-    private static void ensureEsGreen(Node node) {
-        ClusterHealthResponse chr = node.client()
-                                        .admin()
-                                        .cluster()
-                                        .health(Requests.clusterHealthRequest()
-                                                        .timeout(TimeValue.timeValueSeconds(30))
-                                                        .waitForGreenStatus()
-                                                        .waitForEvents(Priority.LANGUID)
-                                                        .waitForRelocatingShards(0))
-                                        .actionGet();
-        assertThat("cluster status is green", chr.getStatus(), equalTo(ClusterHealthStatus.GREEN));
+    @Before
+    public void createIndex() {
+        node.client().admin().indices().create(new CreateIndexRequest(index)).actionGet();
     }
 
+    @After
+    public void clearIndex() throws Exception {
+        EsTestUtil.clearIndex(node, index);
+        EsTestUtil.clearIndex(node, "missing");
+    }
 }
