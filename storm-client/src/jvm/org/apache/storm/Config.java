@@ -1228,6 +1228,28 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
 
     /**
+     * Netty based messaging: The netty write buffer high watermark in bytes.
+     * <p>
+     * If the number of bytes queued in the netty's write buffer exceeds this value, the netty {@code Channel.isWritable()}
+     * will start to return {@code false}. The client will wait until the value falls below the {@linkplain #STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATERMARK low water mark}.
+     * </p>
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATERMARK = "storm.messaging.netty.buffer.high.watermark";
+
+    /**
+     * Netty based messaging: The netty write buffer low watermark in bytes.
+     * <p>
+     * Once the number of bytes queued in the write buffer exceeded the {@linkplain #STORM_MESSAGING_NETTY_WRITE_BUFFER_HIGH_WATERMARK high water mark} and then
+     * dropped down below this value, the netty {@code Channel.isWritable()} will start to return true.
+     * </p>
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_WRITE_BUFFER_LOW_WATERMARK = "storm.messaging.netty.buffer.low.watermark";
+
+    /**
      * Netty based messaging: Sets the backlog value to specify when the channel binds to a local address
      */
     @isInteger
