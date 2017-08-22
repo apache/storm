@@ -31,9 +31,7 @@ import java.io.InputStreamReader;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.OutputStreamWriter;
-import java.io.PrintWriter;
 import java.io.Serializable;
-import java.io.StringWriter;
 import java.lang.management.ManagementFactory;
 import java.net.InetAddress;
 import java.net.ServerSocket;
@@ -69,11 +67,14 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.NimbusBlobStore;
+import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
@@ -1005,21 +1006,21 @@ public class Utils {
         return null;
     }
 
-    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf, Set<String> blobStoreKeys) throws InvalidTopologyException {
-        @SuppressWarnings("unchecked")
+    public static void validateTopologyBlobStoreMap(Map<String, Object> topoConf) throws InvalidTopologyException, AuthorizationException {
         Map<String, Object> blobStoreMap = (Map<String, Object>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobStoreMap != null) {
-            Set<String> mapKeys = blobStoreMap.keySet();
-            Set<String> missingKeys = new HashSet<>();
-
-            for (String key : mapKeys) {
-                if (!blobStoreKeys.contains(key)) {
-                    missingKeys.add(key);
+            try (NimbusBlobStore client = new NimbusBlobStore()) {
+                client.prepare(topoConf);
+                for (String key : blobStoreMap.keySet()) {
+                    // try to get BlobMeta
+                    // This will check if the key exists and if the subject has authorization
+                    try {
+                        client.getBlobMeta(key);
+                    } catch (KeyNotFoundException keyNotFound) {
+                        // wrap KeyNotFoundException in an InvalidTopologyException
+                        throw new InvalidTopologyException("Key not found: " + keyNotFound.get_msg());
+                    }
                 }
-            }
-            if (!missingKeys.isEmpty()) {
-                throw new InvalidTopologyException("The topology blob store map does not " +
-                        "contain the valid keys to launch the topology " + missingKeys);
             }
         }
     }

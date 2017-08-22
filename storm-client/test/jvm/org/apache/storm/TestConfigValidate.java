@@ -20,7 +20,6 @@ package org.apache.storm;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
-import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.ConfigValidation.*;
@@ -34,11 +33,11 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+
 
 public class TestConfigValidate {
 
@@ -82,21 +81,6 @@ public class TestConfigValidate {
         conf.put(Config.STORM_MESSAGING_NETTY_AUTHENTICATION, "invalid");
 
         ConfigValidation.validateFields(conf);
-    }
-
-    @Test(expected = InvalidTopologyException.class)
-    public void testValidateTopologyBlobStoreMap() throws InvalidTopologyException {
-        Map<String, Object> topoConf = new HashMap<>();
-        Map<String,Map> topologyMap = new HashMap<>();
-        topologyMap.put("key1", new HashMap<String,String>());
-        topologyMap.put("key2", new HashMap<String,String>());
-        topoConf.put(Config.TOPOLOGY_BLOBSTORE_MAP, topologyMap);
-        HashSet<String> keySet = new HashSet<>();
-        keySet.add("key1");
-        keySet.add("key2");
-        Utils.validateTopologyBlobStoreMap(topoConf, keySet);
-        keySet.remove("key2");
-        Utils.validateTopologyBlobStoreMap(topoConf, keySet);
     }
 
     @Test

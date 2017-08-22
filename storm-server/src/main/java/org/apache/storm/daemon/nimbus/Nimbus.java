@@ -2529,7 +2529,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             validateTopologyWorkerMaxHeapSizeConfigs(topoConf, topology);
-            Utils.validateTopologyBlobStoreMap(topoConf, Sets.newHashSet(blobStore.listKeys()));
+            Utils.validateTopologyBlobStoreMap(topoConf);
             long uniqueNum = submittedCount.incrementAndGet();
             String topoId = topoName + "-" + uniqueNum + "-" + Time.currentTimeSecs();
             Map<String, String> creds = null;
