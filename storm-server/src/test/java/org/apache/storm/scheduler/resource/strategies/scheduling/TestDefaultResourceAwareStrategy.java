@@ -35,11 +35,13 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
+import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.ObjectResources;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -320,6 +322,153 @@ public class TestDefaultResourceAwareStrategy {
         assignment = cluster.getAssignmentById(topo2.getId());
         for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
             //make sure all workers on scheduled in rack-1
+            Assert.assertEquals("assert worker scheduled on rack-1", "rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
+        }
+        Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
+    }
+
+    /**
+     * Test whether strategy will choose correct rack
+     */
+    @Test
+    public void testMultipleRacksWithFavoritism() {
+        final Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
+        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 0, 400, 8000);
+        //generate another rack of supervisors with less resources
+        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 10, 200, 4000);
+
+        //generate some supervisors that are depleted of one resource
+        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 20, 0, 8000);
+
+        //generate some that has alot of memory but little of cpu
+        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
+
+        //generate some that has alot of cpu but little of memory
+        final Map<String, SupervisorDetails> supMapRack5 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
+
+        supMap.putAll(supMapRack1);
+        supMap.putAll(supMapRack2);
+        supMap.putAll(supMapRack3);
+        supMap.putAll(supMapRack4);
+        supMap.putAll(supMapRack5);
+
+        Config config = createClusterConfig(100, 500, 500, null);
+        config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
+        INimbus iNimbus = new INimbusTest();
+
+        //create test DNSToSwitchMapping plugin
+        DNSToSwitchMapping TestNetworkTopographyPlugin = new DNSToSwitchMapping() {
+            @Override
+            public Map<String, String> resolve(List<String> names) {
+                Map<String, String> ret = new HashMap<>();
+                for (SupervisorDetails sup : supMapRack1.values()) {
+                    ret.put(sup.getHost(), "rack-0");
+                }
+                for (SupervisorDetails sup : supMapRack2.values()) {
+                    ret.put(sup.getHost(), "rack-1");
+                }
+                for (SupervisorDetails sup : supMapRack3.values()) {
+                    ret.put(sup.getHost(), "rack-2");
+                }
+                for (SupervisorDetails sup : supMapRack4.values()) {
+                    ret.put(sup.getHost(), "rack-3");
+                }
+                for (SupervisorDetails sup : supMapRack5.values()) {
+                    ret.put(sup.getHost(), "rack-4");
+                }
+                return ret;
+            }
+        };
+
+        Config t1Conf = new Config();
+        t1Conf.putAll(config);
+        final List<String> t1FavoredHostNames = Arrays.asList("host-41", "host-42", "host-43");
+        t1Conf.put(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES, t1FavoredHostNames);
+        final List<String> t1UnfavoredHostIds = Arrays.asList("host-1", "host-2", "host-3");
+        t1Conf.put(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES, t1UnfavoredHostIds);
+        //generate topologies
+        TopologyDetails topo1 = genTopology("topo-1", t1Conf, 8, 0, 2, 0, currentTime - 2, 10, "user");
+
+
+        Config t2Conf = new Config();
+        t2Conf.putAll(config);
+        t2Conf.put(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES, Arrays.asList("host-31", "host-32", "host-33"));
+        t2Conf.put(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES, Arrays.asList("host-11", "host-12", "host-13"));
+        TopologyDetails topo2 = genTopology("topo-2", t2Conf, 8, 0, 2, 0, currentTime - 2, 10, "user");
+
+        Topologies topologies = new Topologies(topo1, topo2);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
+
+        List<String> supHostnames = new LinkedList<>();
+        for (SupervisorDetails sup : supMap.values()) {
+            supHostnames.add(sup.getHost());
+        }
+        Map<String, List<String>> rackToNodes = new HashMap<>();
+        Map<String, String> resolvedSuperVisors =  TestNetworkTopographyPlugin.resolve(supHostnames);
+        for (Map.Entry<String, String> entry : resolvedSuperVisors.entrySet()) {
+            String hostName = entry.getKey();
+            String rack = entry.getValue();
+            List<String> nodesForRack = rackToNodes.get(rack);
+            if (nodesForRack == null) {
+                nodesForRack = new ArrayList<String>();
+                rackToNodes.put(rack, nodesForRack);
+            }
+            nodesForRack.add(hostName);
+        }
+        cluster.setNetworkTopography(rackToNodes);
+
+        DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
+
+        rs.prepare(cluster);
+        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(topo1.getId());
+
+        Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
+        Iterator<ObjectResources> it = sortedRacks.iterator();
+        // Ranked first since rack-0 has the most balanced set of resources
+        Assert.assertEquals("rack-0 should be ordered first", "rack-0", it.next().id);
+        // Ranked second since rack-1 has a balanced set of resources but less than rack-0
+        Assert.assertEquals("rack-1 should be ordered second", "rack-1", it.next().id);
+        // Ranked third since rack-4 has a lot of cpu but not a lot of memory
+        Assert.assertEquals("rack-4 should be ordered third", "rack-4", it.next().id);
+        // Ranked fourth since rack-3 has alot of memory but not cpu
+        Assert.assertEquals("rack-3 should be ordered fourth", "rack-3", it.next().id);
+        //Ranked last since rack-2 has not cpu resources
+        Assert.assertEquals("rack-2 should be ordered fifth", "rack-2", it.next().id);
+
+        SchedulingResult schedulingResult = rs.schedule(cluster, topo1);
+        assert(schedulingResult.isSuccess());
+        SchedulerAssignment assignment = cluster.getAssignmentById(topo1.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            String hostName = rs.idToNode(ws.getNodeId()).getHostname();
+            String rackId = resolvedSuperVisors.get(hostName);
+            Assert.assertTrue(ws + " is neither on a favored node " + t1FavoredHostNames + " nor the highest priority rack (rack-0)",
+                t1FavoredHostNames.contains(hostName) || "rack-0".equals(rackId));
+            Assert.assertFalse(ws + " is a part of an unfavored node " + t1UnfavoredHostIds,
+                t1UnfavoredHostIds.contains(hostName));
+        }
+        Assert.assertEquals("All executors in topo-1 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
+
+        //Test if topology is already partially scheduled on one rack
+        Iterator<ExecutorDetails> executorIterator = topo2.getExecutors().iterator();
+        List<String> nodeHostnames = rackToNodes.get("rack-1");
+        for (int i = 0; i< topo2.getExecutors().size()/2; i++) {
+            String nodeHostname = nodeHostnames.get(i % nodeHostnames.size());
+            RAS_Node node = rs.idToNode(rs.nodeHostnameToId(nodeHostname));
+            WorkerSlot targetSlot = node.getFreeSlots().iterator().next();
+            ExecutorDetails targetExec = executorIterator.next();
+            // to keep track of free slots
+            node.assign(targetSlot, topo2, Arrays.asList(targetExec));
+        }
+
+        rs = new DefaultResourceAwareStrategy();
+        // schedule topo2
+        schedulingResult = rs.schedule(cluster, topo2);
+        assert(schedulingResult.isSuccess());
+        assignment = cluster.getAssignmentById(topo2.getId());
+        for (WorkerSlot ws : assignment.getSlotToExecutors().keySet()) {
+            //make sure all workers on scheduled in rack-1
+            // The favored nodes would have put it on a different rack, but because that rack does not have free space to run the
+            // topology it falls back to this rack
             Assert.assertEquals("assert worker scheduled on rack-1", "rack-1", resolvedSuperVisors.get(rs.idToNode(ws.getNodeId()).getHostname()));
         }
         Assert.assertEquals("All executors in topo-2 scheduled", 0, cluster.getUnassignedExecutors(topo1).size());
