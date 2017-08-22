@@ -59,7 +59,7 @@ public class CoGroupByKeyProcessorTest {
         }
     };
 
-    private List<Pair<Integer, Integer>> firstKeyValeus = Arrays.asList(
+    private List<Pair<Integer, Integer>> firstKeyValues = Arrays.asList(
             Pair.of(2, 4),
             Pair.of(5, 25),
             Pair.of(7, 49),
@@ -100,7 +100,7 @@ public class CoGroupByKeyProcessorTest {
     private void processValues() {
         res.clear();
         coGroupByKeyProcessor.init(context);
-        for (Pair<Integer, Integer> kv : firstKeyValeus) {
+        for (Pair<Integer, Integer> kv : firstKeyValues) {
             coGroupByKeyProcessor.execute(kv, firstStream);
         }
         for (Pair<Integer, Integer> kv : secondKeyValues) {

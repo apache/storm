@@ -23,6 +23,8 @@ import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.storm.streams.Pair;
 
+import java.util.ArrayList;
+
 /**
  * co-group by key implementation
  */
@@ -62,14 +64,12 @@ public class CoGroupByKeyProcessor<K,V1, V2> extends BaseProcessor<Pair<K, ?>> i
     }
 
     private void forwardValues() {
-        Multimap<K, V1> immutableFirstMap = ImmutableMultimap.copyOf(firstMap);
-        immutableFirstMap.asMap().forEach((key, values) -> {
-            context.forward(Pair.of(key, Pair.of(values, secondMap.removeAll(key))));
+        firstMap.asMap().forEach((key, values) -> {
+            context.forward(Pair.of(key, Pair.of(new ArrayList<>(values), secondMap.removeAll(key))));
         });
 
-        Multimap<K, V2> immutableSecondMap = ImmutableMultimap.copyOf(secondMap);
-        immutableSecondMap.asMap().forEach((key, values) -> {
-            context.forward(Pair.of(key, Pair.of(immutableFirstMap.get(key), values)));
+        secondMap.asMap().forEach((key, values) -> {
+            context.forward(Pair.of(key, Pair.of(firstMap.removeAll(key), new ArrayList<>(values))));
         });
 
     }
