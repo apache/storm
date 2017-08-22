@@ -525,8 +525,13 @@ public class WorkerState implements JCQueue.Consumer {
     @Override
     public void accept(Object tuple) {
         AddressedTuple addressedTuple = (AddressedTuple) tuple;
-        TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
-        drainer.add(tm);
+        String streamId = addressedTuple.getTuple().getSourceStreamId();
+        if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
+            flush();
+        } else {
+            TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
+            drainer.add(tm);
+        }
     }
 
     @Override

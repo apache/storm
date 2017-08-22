@@ -46,7 +46,7 @@ When batching has been enabled, special messages called *flush tuples* are inser
 This causes each spout/bolt instance to flush all its outstanding batches to their respective downstream components.
 
 `topology.flush.tuple.freq.millis` : This setting controls how often the flush tuples are generated. Flush tuples are not generated if this configuration is
-set to 0 or if `topology.producer.batch.size=1`=1.
+set to 0 or if (`topology.producer.batch.size`=1 and `topology.transfer.batch.size`=1).
 
 
 #### Guidance

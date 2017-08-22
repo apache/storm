@@ -175,9 +175,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             this.hostname = "";
         }
         this.errorReportingMetrics = new ErrorReportingMetrics();
-        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(), Constants.SYSTEM_COMPONENT_ID,
-            (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
-        flushTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
+        flushTuple = AddressedTuple.createFlushTuple(workerTopologyContext);
     }
 
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> credentials) {
@@ -365,7 +363,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             return true;
         }
         else {
-            LOG.debug("RecvQ is currently full, will retry later. Unable to publish Flush tuple to : {}", getComponentId());
+            LOG.debug("RecvQ is currently full, will retry publishing Flush Tuple later to : {}", getComponentId());
             return false;
         }
     }

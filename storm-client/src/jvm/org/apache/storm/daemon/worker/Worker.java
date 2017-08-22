@@ -61,6 +61,7 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
@@ -269,20 +270,32 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     private void setupFlushTupleTimer(final Map<String, Object> topologyConf, final List<IRunningExecutor> executors) {
-        Integer batchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
-        final Long flushIntervalMs = ObjectReader.getLong( topologyConf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS) );
-        if (batchSize==1 || flushIntervalMs==0) {
-            LOG.info("Flush Tuple generation disabled. batchSize={}, flushIntervalMs={}", batchSize, flushIntervalMs);
+        final Integer producerBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
+        final Integer xferBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
+        final Long flushIntervalMicros = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS));
+        if ((producerBatchSize == 1 && xferBatchSize == 1) || flushIntervalMicros == 0) {
+            LOG.info("Flush Tuple generation disabled. producerBatchSize={}, xferBatchSize={}, flushIntervalMicros={}", producerBatchSize, xferBatchSize, flushIntervalMicros);
             return;
         }
 
-        workerState.flushTupleTimer.scheduleRecurringMs(flushIntervalMs, flushIntervalMs, new Runnable() {
+        workerState.flushTupleTimer.scheduleRecurringMs(flushIntervalMicros, flushIntervalMicros, new Runnable() {
+            AddressedTuple flushTuple = AddressedTuple.createFlushTuple(null);
             @Override
             public void run() {
-                for (int i = 0; i < executors.size(); i++) {
-                    IRunningExecutor exec = executors.get(i);
-                    if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID)
-                        exec.getExecutor().publishFlushTuple();
+                if (producerBatchSize > 1) {    // 1 - send flush tuple to all executors
+                    for (int i = 0; i < executors.size(); i++) {
+                        IRunningExecutor exec = executors.get(i);
+                        if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
+                            exec.getExecutor().publishFlushTuple();
+                        }
+                    }
+                }
+                if (xferBatchSize > 1) {        // 2 - send flush tuple to workerTransferThread
+                    if (workerState.transferQueue.tryPublish(flushTuple)) {
+                        LOG.debug("Published Flush tuple to: workerTransferThread");
+                    } else {
+                        LOG.debug("RecvQ is currently full, will retry publishing Flush Tuple later to : workerTransferThread");
+                    }
                 }
             }
         });
