@@ -561,15 +561,8 @@ public class StormSubmitter {
         public void onCompleted(String srcFile, String targetFile, long totalBytes);
     }
 
-    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException {
+    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException, AuthorizationException {
         ConfigValidation.validateFields(topoConf);
-        Utils.validateTopologyBlobStoreMap(topoConf, getListOfKeysFromBlobStore(topoConf));
-    }
-
-    private static Set<String> getListOfKeysFromBlobStore(Map<String, Object> topoConf) {
-        try (NimbusBlobStore client = new NimbusBlobStore()) {
-            client.prepare(topoConf);
-            return Sets.newHashSet(client.listKeys());
-        }
+        Utils.validateTopologyBlobStoreMap(topoConf);
     }
 }
