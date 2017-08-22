@@ -17,6 +17,8 @@
  */
 package org.apache.storm.streams.processors;
 
+import org.apache.curator.shaded.com.google.common.collect.ImmutableBiMap;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableMultimap;
 import org.apache.storm.streams.Pair;
 import org.apache.storm.streams.operations.PairValueJoiner;
 import org.junit.Test;
@@ -57,7 +59,7 @@ public class CoGroupByKeyProcessorTest {
         }
     };
 
-    private List<Pair<Integer, Integer>> firstKeyValeus = Arrays.asList(
+    private List<Pair<Integer, Integer>> firstKeyValues = Arrays.asList(
             Pair.of(2, 4),
             Pair.of(5, 25),
             Pair.of(7, 49),
@@ -77,25 +79,28 @@ public class CoGroupByKeyProcessorTest {
     public void testCoGroupByKey() throws Exception {
         coGroupByKeyProcessor = new CoGroupByKeyProcessor<>(firstStream, secondStream);
         processValues();
-        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> result = new ArrayList<>();
+        List<Pair<Integer, Pair<Collection<Integer>, Collection<Integer>>>> expected = new ArrayList<>();
         Collection<Integer> list1 = new ArrayList<>();
         list1.add(25);
         Collection<Integer> list2 = new ArrayList<>();
         list2.add(125);
         list2.add(50);
-        result.add(Pair.of(5, Pair.of(list1, list2)));
+        expected.add(Pair.of(5, Pair.of(list1, list2)));
+        assertEquals(expected.get(0), res.get(1));
         list1.clear();
         list2.clear();
         list1.add(49);
         list1.add(87);
-        result.add(Pair.of(7, Pair.of(list1, list2)));
+        expected.clear();
+        expected.add(Pair.of(7, Pair.of(list1, list2)));
+        assertEquals(expected.get(0), res.get(2));
     }
 
 
     private void processValues() {
         res.clear();
         coGroupByKeyProcessor.init(context);
-        for (Pair<Integer, Integer> kv : firstKeyValeus) {
+        for (Pair<Integer, Integer> kv : firstKeyValues) {
             coGroupByKeyProcessor.execute(kv, firstStream);
         }
         for (Pair<Integer, Integer> kv : secondKeyValues) {
