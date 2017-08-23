@@ -21,6 +21,7 @@ package org.apache.storm.loadgen;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -117,8 +118,13 @@ public class GenLoad {
             new HelpFormatter().printHelp("GenLoad [options] [captured_file]*", options);
             return;
         }
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("parallel_adjust", parallel);
+        metrics.put("throughput_adjust", throughput);
+        metrics.put("local_or_shuffle", cmd.hasOption("local-or-shuffle"));
+
         Config conf = new Config();
-        LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd);
+        LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd, metrics);
 
         metricServer.serve();
         String url = metricServer.getUrl();

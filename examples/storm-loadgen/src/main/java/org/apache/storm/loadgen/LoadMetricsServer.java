@@ -29,6 +29,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -50,6 +51,8 @@ import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.VersionInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -96,6 +99,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private long acked;
         private long failed;
         private Set<String> topologyIds;
+        private long workers;
+        private long executors;
+        private long hosts;
 
         /**
          * Constructor.
@@ -105,7 +111,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
          * @param gcMs GC CPU in ms.
          */
         public Measurements(long uptimeSecs, long acked, long timeWindow, long failed, Histogram histo,
-                            double userMs, double sysMs, double gcMs, long memBytes, Set<String> topologyIds) {
+                            double userMs, double sysMs, double gcMs, long memBytes, Set<String> topologyIds,
+                            long workers, long executors, long hosts) {
             this.uptimeSecs = uptimeSecs;
             this.acked = acked;
             this.timeWindow = timeWindow;
@@ -116,6 +123,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             this.histo = histo;
             this.memBytes = memBytes;
             this.topologyIds = topologyIds;
+            this.workers = workers;
+            this.executors = executors;
+            this.hosts = hosts;
         }
 
         /**
@@ -132,6 +142,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             acked = 0;
             failed = 0;
             topologyIds = new HashSet<>();
+            workers = 0;
+            executors = 0;
+            hosts = 0;
         }
 
         /**
@@ -149,6 +162,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             uptimeSecs = Math.max(uptimeSecs, other.uptimeSecs);
             timeWindow += other.timeWindow;
             topologyIds.addAll(other.topologyIds);
+            workers = Math.max(workers, other.workers);
+            executors = Math.max(executors, other.executors);
+            hosts = Math.max(hosts, other.hosts);
         }
 
         public double getLatencyAtPercentile(double percential, TimeUnit unit) {
@@ -227,6 +243,18 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             return topologyIds;
         }
 
+        public long getWorkers() {
+            return workers;
+        }
+
+        public long getHosts() {
+            return hosts;
+        }
+
+        public long getExecutors() {
+            return executors;
+        }
+
         static Measurements combine(List<Measurements> measurements, Integer start, Integer count) {
             if (count == null) {
                 count = measurements.size();
@@ -257,12 +285,14 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     abstract static class FileReporter implements MetricResultsReporter {
         protected final PrintStream out;
         private final boolean needsClose;
+        protected final Map<String, MetricExtractor> allExtractors;
 
-        public FileReporter() throws FileNotFoundException {
-            this(null, null);
+        public FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+            this(null, Collections.emptyMap(), allExtractors);
         }
 
-        public FileReporter(String path, Map<String, String> query) throws FileNotFoundException {
+        public FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
+            throws FileNotFoundException {
             boolean append = Boolean.parseBoolean(query.getOrDefault("append", "false"));
 
             if (path == null || "/dev/stdout".equals(path)) {
@@ -275,6 +305,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 out = new PrintStream(new FileOutputStream(path, append));
                 needsClose = true;
             }
+            //Copy it in case we want to modify it
+            this.allExtractors = new LinkedHashMap<>(allExtractors);
         }
 
         @Override
@@ -337,31 +369,42 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     static {
         //Perhaps there is a better way to do this???
-        HashMap<String, MetricExtractor> tmp = new HashMap<>();
+        LinkedHashMap<String, MetricExtractor> tmp = new LinkedHashMap<>();
+        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(),"s"));
+        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(), "s"));
+        tmp.put("completion_rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
+        tmp.put("mean", new MetricExtractor((m, unit) -> m.getMeanLatency(unit)));
         tmp.put("99%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.0, unit)));
         tmp.put("99.9%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.9, unit)));
+        tmp.put("cores", new MetricExtractor(
+            (m, unit) -> (m.getSysTime(TimeUnit.SECONDS) + m.getUserTime(TimeUnit.SECONDS)) / m.getTimeWindow(),
+            ""));
+        tmp.put("mem",  new MetricExtractor((m, unit) -> m.getMemMb(), "MB"));
+        tmp.put("failed",  new MetricExtractor((m, unit) -> m.getFailed(), ""));
         tmp.put("median", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(50, unit)));
-        tmp.put("mean", new MetricExtractor((m, unit) -> m.getMeanLatency(unit)));
         tmp.put("min", new MetricExtractor((m, unit) -> m.getMinLatency(unit)));
         tmp.put("max", new MetricExtractor((m, unit) -> m.getMaxLatency(unit)));
         tmp.put("stddev", new MetricExtractor((m, unit) -> m.getLatencyStdDeviation(unit)));
         tmp.put("user_cpu", new MetricExtractor((m, unit) -> m.getUserTime(unit)));
         tmp.put("sys_cpu", new MetricExtractor((m, unit) -> m.getSysTime(unit)));
         tmp.put("gc_cpu", new MetricExtractor((m, unit) -> m.getGc(unit)));
-        tmp.put("cores", new MetricExtractor(
-            (m, unit) -> (m.getSysTime(TimeUnit.SECONDS) + m.getUserTime(TimeUnit.SECONDS)) / m.getTimeWindow(),
-            ""));
-        tmp.put("uptime",  new MetricExtractor((m, unit) -> m.getUptimeSecs(), "s"));
         tmp.put("acked",  new MetricExtractor((m, unit) -> m.getAcked(), ""));
-        tmp.put("rate",  new MetricExtractor((m, unit) -> m.getAckedPerSec(), "tuple/s"));
+        tmp.put("acked_rate",  new MetricExtractor((m, unit) -> m.getAckedPerSec(), "tuple/s"));
         tmp.put("completed",  new MetricExtractor((m, unit) -> m.getCompleted(), ""));
-        tmp.put("completion_rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
-        tmp.put("mem",  new MetricExtractor((m, unit) -> m.getMemMb(), "MB"));
-        tmp.put("failed",  new MetricExtractor((m, unit) -> m.getFailed(), ""));
-        tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(),"s"));
-        tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(), "s"));
+        tmp.put("uptime",  new MetricExtractor((m, unit) -> m.getUptimeSecs(), "s"));
         tmp.put("time_window",  new MetricExtractor((m, unit) -> m.getTimeWindow(), "s"));
         tmp.put("ids",  new MetricExtractor((m, unit) -> m.getTopologyIds(), ""));
+        tmp.put("workers",  new MetricExtractor((m, unit) -> m.getWorkers(), ""));
+        tmp.put("hosts",  new MetricExtractor((m, unit) -> m.getHosts(), ""));
+        tmp.put("executors",  new MetricExtractor((m, unit) -> m.getExecutors(), ""));
+        String buildVersion = VersionInfo.getBuildVersion();
+        tmp.put("storm_version", new MetricExtractor((m, unit) -> buildVersion, ""));
+        tmp.put("java_version", new MetricExtractor((m, unit) -> System.getProperty("java.vendor")
+            + " " + System.getProperty("java.version"),""));
+        tmp.put("os_arch", new MetricExtractor((m, unit) -> System.getProperty("os.arch"), ""));
+        tmp.put("os_name", new MetricExtractor((m, unit) -> System.getProperty("os.name"), ""));
+        tmp.put("os_version", new MetricExtractor((m, unit) -> System.getProperty("os.version"), ""));
+        tmp.put("config_override", new MetricExtractor((m, unit) -> Utils.readCommandLineOpts(), ""));
         NAMED_EXTRACTORS = Collections.unmodifiableMap(tmp);
     }
 
@@ -405,20 +448,23 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private final List<String> extractors;
         private final String meta;
 
-        public SepValReporter(String separator, String path, Map<String, String> query) throws FileNotFoundException {
-            super(path, query);
+        public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+            throws FileNotFoundException {
+            super(path, query, extractorsMap);
             this.separator = separator;
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
             if (targetUnit == null) {
                 throw new IllegalArgumentException(query.get("time") + " is not a supported time unit");
             }
             if (query.containsKey("columns")) {
-                extractors = Arrays.asList(query.get("columns").split("\\s*,\\s*"));
+                List<String> extractors = handleExtractorCleanup(Arrays.asList(query.get("columns").split("\\s*,\\s*")));
+
                 HashSet<String> notFound = new HashSet<>(extractors);
-                notFound.removeAll(NAMED_EXTRACTORS.keySet());
+                notFound.removeAll(allExtractors.keySet());
                 if (notFound.size() > 0) {
                     throw new IllegalArgumentException(notFound + " columns are not supported");
                 }
+                this.extractors = extractors;
             } else {
                 //Wrapping it makes it mutable
                 extractors = new ArrayList<>(Arrays.asList("start_time", "end_time", "completion_rate",
@@ -426,9 +472,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             }
 
             if (query.containsKey("extraColumns")) {
-                List<String> moreExtractors = Arrays.asList(query.get("extraColumns").split("\\s*,\\s*"));
+                List<String> moreExtractors =
+                    handleExtractorCleanup(Arrays.asList(query.get("extraColumns").split("\\s*,\\s*")));
                 for (String extractor: moreExtractors) {
-                    if (!NAMED_EXTRACTORS.containsKey(extractor)) {
+                    if (!allExtractors.containsKey(extractor)) {
                         throw new IllegalArgumentException(extractor + " is not a supported column");
                     }
                     if (!extractors.contains(extractor)) {
@@ -440,6 +487,28 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             meta = query.get("meta");
         }
 
+        private List<String> handleExtractorCleanup(List<String> orig) {
+            Map<String, Object> stormConfig = Utils.readStormConfig();
+            List<String> ret = new ArrayList<>(orig.size());
+            for (String extractor: orig) {
+                if (extractor.startsWith("conf:")) {
+                    String confKey = extractor.substring("conf:".length());
+                    Object confValue = stormConfig.get(confKey);
+                    allExtractors.put(extractor, new MetricExtractor((m, t) -> confValue, ""));
+                    ret.add(extractor);
+                } else if (extractor.endsWith("%ile")) {
+                    double number = Double.valueOf(extractor.substring(0, extractor.length() - "%ile".length()));
+                    allExtractors.put(extractor, new MetricExtractor((m, t) -> m.getLatencyAtPercentile(number, t)));
+                    ret.add(extractor);
+                } else if ("*".equals(extractor)) {
+                    ret.addAll(allExtractors.keySet());
+                } else {
+                    ret.add(extractor);
+                }
+            }
+            return ret;
+        }
+
         @Override
         public void start() {
             boolean first = true;
@@ -448,7 +517,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     out.print(separator);
                 }
                 first = false;
-                out.print(NAMED_EXTRACTORS.get(name).formatName(name, targetUnit));
+                out.print(allExtractors.get(name).formatName(name, targetUnit));
             }
             if (meta != null) {
                 out.print(separator);
@@ -465,7 +534,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     out.print(separator);
                 }
                 first = false;
-                Object value = NAMED_EXTRACTORS.get(name).get(m, targetUnit);
+                Object value = allExtractors.get(name).get(m, targetUnit);
                 String svalue = value == null ? "" : value.toString();
                 out.print(escape(svalue));
             }
@@ -484,13 +553,14 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     static class LegacyReporter extends FileReporter {
         private final TimeUnit targetUnitOverride;
 
-        public LegacyReporter() throws FileNotFoundException {
-            super();
+        public LegacyReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+            super(allExtractors);
             targetUnitOverride = null;
         }
 
-        public LegacyReporter(String path, Map<String, String> query) throws FileNotFoundException {
-            super(path, query);
+        public LegacyReporter(String path, Map<String, String> query, Map<String, MetricExtractor> allExtractors)
+            throws FileNotFoundException {
+            super(path, query, allExtractors);
             if (query.containsKey("time")) {
                 targetUnitOverride = UNIT_MAP.get(query.get("time").toUpperCase());
                 if (targetUnitOverride == null) {
@@ -540,7 +610,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         options.addOption(Option.builder("r")
             .longOpt("report-interval")
             .hasArg()
-            .argName("INTERVAL_SECS")
+            .argName("SECS")
             .desc("How long in between reported metrics.  Will be rounded up to the next 10 sec boundary.\n"
                 + "default " + DEFAULT_REPORT_INTERVAL)
             .build());
@@ -548,7 +618,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         options.addOption(Option.builder("w")
             .longOpt("report-window")
             .hasArg()
-            .argName("INTERVAL_SECS")
+            .argName("SECS")
             .desc("How long of a rolling window should be in each report.  Will be rounded up to the next report interval boundary.\n"
                 + "default " + DEFAULT_WINDOW_INTERVAL)
             .build());
@@ -585,8 +655,14 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     private final LinkedList<Measurements> allCombined = new LinkedList<>();
 
-    LoadMetricsServer(Map<String, Object> conf, CommandLine commandLine) throws URISyntaxException, FileNotFoundException {
+    LoadMetricsServer(Map<String, Object> conf, CommandLine commandLine, Map<String, Object> parameterMetrics) throws URISyntaxException,
+        FileNotFoundException {
         super(conf);
+        Map<String, MetricExtractor> allExtractors = new LinkedHashMap<>(NAMED_EXTRACTORS);
+        for (Map.Entry<String, Object> entry: parameterMetrics.entrySet()) {
+            final Object value = entry.getValue();
+            allExtractors.put(entry.getKey(), new MetricExtractor((m, unit) -> value, ""));
+        }
         if (commandLine.hasOption("r")) {
             reportIntervalSecs = Long.parseLong(commandLine.getOptionValue("r"));
             reportIntervalSecs = ((reportIntervalSecs + 1) / 10) * 10;
@@ -600,7 +676,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             for (String reporterString: commandLine.getOptionValues("reporter")) {
                 Matcher m = REPORTER_PATTERN.matcher(reporterString);
                 if (!m.matches()) {
-                    throw new IllegalArgumentException(reporterString + " does nto look like it is a reporter");
+                    throw new IllegalArgumentException(reporterString + " does not look like it is a reporter");
                 }
                 String type = m.group("type");
                 String path = m.group("path");
@@ -617,20 +693,20 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 type = type.toUpperCase();
                 switch (type) {
                     case "LEGACY":
-                        reporters.add(new LegacyReporter(path, query));
+                        reporters.add(new LegacyReporter(path, query, allExtractors));
                         break;
                     case "TSV":
-                        reporters.add(new SepValReporter("\t", path, query));
+                        reporters.add(new SepValReporter("\t", path, query, allExtractors));
                         break;
                     case "CSV":
-                        reporters.add(new SepValReporter(",", path, query));
+                        reporters.add(new SepValReporter(",", path, query, allExtractors));
                         break;
                     default:
                         throw new RuntimeException(type + " is not a supported reporter type");
                 }
             }
         } else {
-            reporters.add(new LegacyReporter());
+            reporters.add(new LegacyReporter(allExtractors));
         }
     }
 
@@ -682,6 +758,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         if (ids.size() != names.size()) {
             throw new Exception("Could not find all topologies: " + names);
         }
+        HashSet<String> workers = new HashSet<>();
+        HashSet<String> hosts = new HashSet<>();
+        int executors = 0;
         int uptime = 0;
         long acked = 0;
         long failed = 0;
@@ -689,6 +768,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             TopologyInfo info = client.getTopologyInfo(id);
             uptime = Math.max(uptime, info.get_uptime_secs());
             for (ExecutorSummary exec : info.get_executors()) {
+                hosts.add(exec.get_host());
+                workers.add(exec.get_host() + exec.get_port());
+                executors++;
                 if (exec.get_stats() != null && exec.get_stats().get_specific() != null
                     && exec.get_stats().get_specific().is_set_spout()) {
                     SpoutStats stats = exec.get_stats().get_specific().get_spout();
@@ -729,7 +811,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long gc = gcMs.getAndSet(0);
         long memBytes = readMemory();
 
-        allCombined.add(new Measurements(uptime, ackedThisTime, thisTime, failedThisTime, copy, user, sys, gc, memBytes, ids));
+        allCombined.add(new Measurements(uptime, ackedThisTime, thisTime, failedThisTime, copy, user, sys, gc, memBytes,
+            ids, workers.size(), executors, hosts.size()));
         Measurements inWindow = Measurements.combine(allCombined, null, windowLength);
         for (MetricResultsReporter reporter: reporters) {
             reporter.reportWindow(inWindow, allCombined);

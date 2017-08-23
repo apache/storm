@@ -19,6 +19,7 @@
 package org.apache.storm.loadgen;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.apache.commons.cli.CommandLine;
@@ -208,8 +209,14 @@ public class ThroughputVsLatency {
             return;
         }
 
+        Map<String, Object> metrics = new LinkedHashMap<>();
+        metrics.put("target_rate", ratePerSecond);
+        metrics.put("spout_parallel", numSpouts);
+        metrics.put("split_parallel", numSplits);
+        metrics.put("count_parallel", numCounts);
+
         Config conf = new Config();
-        LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd);
+        LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd, metrics);
         metricServer.serve();
         String url = metricServer.getUrl();
 

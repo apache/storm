@@ -81,36 +81,57 @@ Not all options are supported by all reporters.
 |Reporter Option| Description | Supported Reporters|
 |---------------|-------------|--------------------|
 |time | Set the time unit that you want latency and CPU reported in.  This can be from nanoseconds up to seconds.  Most names are supported for the types| legacy, csv, tsv|
-|columns | A comma separated list of columns to output (see below for the metrics supported).  Defaults to "start_time", "end_time", "completion_rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed" | csv, tsv |
-|extraColumns | Like columns but ones that should be added to the defaults instead of replacing them (this is mostly for convenience) | csv, tsv |
+|columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "completion_rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed" | csv, tsv |
+|extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv |
 |meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv|
 
 There are a lot of different metrics supported
 
-|Metrics Name| Description|
-|------------|------------|
-|99%ile| 99th percentile completion latency. |
-|99.9%ile| 99.9th percentile completion latency. |
-|median| Median completion latency. |
-|mean| Mean completion latency. |
-|min| Minimum completion latency. |
-|max| Maximum completion latency. |
-|stddev| Standard Deviation of completion latency. |
-|user_cpu| User space CPU time.|
-|sys_cpu| System space CPU time. |
-|gc_cpu| Amount of CPU time spent in GC as reported by the JVM. |
-|cores| The number of CPU cores used. `(user_cpu + sys_cpu) / time_window`|
-|uptime| The amount of time the oldest topology has been up for. |
-|acked| The number of tuples fully acked as reported by Storm's metrics. |
-|rate| The rate of tuples fully acked as reported by Storm's metrics. |
-|completed| The number of tuples fully acked as reported by the latency histogram metrics. |
-|completion_rate| The rate of tuples fully acked as reported by the latency histogram metrics. |
-|mem| The amount of memory used by the topology in MB, as reported by the JVM. |
-|failed| The number of failed tuples as reported by Storm's metrics. |
-|start_time| The starting time of the metrics window from when the first topology was launched.
-|end_time| The ending time of the metrics window from the the first topology was launched.
-|time_window| the length in seconds for the time window. |
-|ids| The topology ids that are being tracked |
+|Metrics Name| Description| In |
+|------------|------------|----|
+|99%ile| 99th percentile completion latency. | all
+|99.9%ile| 99.9th percentile completion latency. | all
+|median| Median completion latency. | all
+|mean| Mean completion latency. | all
+|min| Minimum completion latency. | all
+|max| Maximum completion latency. | all
+|stddev| Standard Deviation of completion latency. | all
+|user_cpu| User space CPU time.| all
+|sys_cpu| System space CPU time. | all
+|gc_cpu| Amount of CPU time spent in GC as reported by the JVM. | all
+|cores| The number of CPU cores used. `(user_cpu + sys_cpu) / time_window`| all
+|uptime| The amount of time the oldest topology has been up for. | all
+|acked| The number of tuples fully acked as reported by Storm's metrics. | all
+|acked_rate| The rate of tuples fully acked as reported by Storm's metrics. | all
+|completed| The number of tuples fully acked as reported by the latency histogram metrics. | all
+|completion_rate| The rate of tuples fully acked as reported by the latency histogram metrics. | all
+|mem| The amount of memory used by the topology in MB, as reported by the JVM. | all
+|failed| The number of failed tuples as reported by Storm's metrics. | all
+|start_time| The starting time of the metrics window from when the first topology was launched. | all
+|end_time| The ending time of the metrics window from the the first topology was launched. | all
+|time_window| the length in seconds for the time window. | all
+|ids| The topology ids that are being tracked | all
+|storm_version| The version of storm as reported by the client | all
+|java_version| The version of java as reported by the client | all
+|os_arch| The OS architecture as reported by the client | all
+|os_name| The name of the OS as reported by the client | all
+|os_version| The version of the OS as reported by the client | all
+|config_override| And command line overrides to storm config values | all
+|hosts| The number of hosts the monitored topologies are running on| all
+|executors| The number of running executors in the monitored topologies | all
+|workers| The number of workers the monitored topologies are running on | all
+|target_rate| The target rate in sentenses per second for the ThroughputVsLatency topology | ThroughputVsLatency
+|spout_parallel| The parallelism of the spout for the `ThroughputVsLatency` topology. | ThroughputVsLatency
+|split_parallel| The parallelism of the split bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
+|count_parallel| The parallelism of the count bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
+|parallel\_adjust| The adjustment to the parallelism in `GenLoad`. | GenLoad
+|throughput_adjust| The adjustment to the throughput in `GenLoad`. | GenLoad
+|local\_or\_shuffle| true if shuffles were replaced with local or shuffle in GenLoad. | GenLoad
+
+There are also some generic rules that you can use for some metrics.  Any metric that starts with `"conf:"` will be the config for that.  It does not include config overrides from the `GenLoad` file.
+
+In addition any metric that ends with `"%ile"` will be the latency at that percentile.
+
 
 # Captured Load File Format
 The file format used with `CaptureLoad` and `GenLoad` is based off of the flux file format, but with some extensions and omissions.
