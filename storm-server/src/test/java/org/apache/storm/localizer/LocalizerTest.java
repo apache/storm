@@ -508,6 +508,8 @@ public class LocalizerTest {
     Map<String, Object> conf = new HashMap();
     // set clean time really high so doesn't kick in
     conf.put(DaemonConfig.SUPERVISOR_LOCALIZER_CACHE_CLEANUP_INTERVAL_MS, 60 * 60 * 1000);
+    // enable blobstore acl validation
+    conf.put(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED, true);
 
     String topo1 = "topo1";
     String key1 = "key1";
