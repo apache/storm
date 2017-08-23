@@ -19,7 +19,6 @@
 package org.apache.storm.streams.processors;
 
 import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import org.apache.storm.streams.Pair;
 

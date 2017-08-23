@@ -385,10 +385,12 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
     /**
      * Groups the values of this stream with the values having the same key from
      * the other stream.
-     * If stream1 has values - (k1, v1), (k2, v2), (k2, v3)
-     * and stream2 has values - (k1, x1), (k1, x2), (k3, x3)
+     * <p>
+     * If stream1 has values - (k1, v1), (k2, v2), (k2, v3) <br/>
+     * and stream2 has values - (k1, x1), (k1, x2), (k3, x3) <br/>
      * The the co-grouped stream would contain -
      * (k1, ([v1], [x1, x2]), (k2, ([v2, v3], [])), (k3, ([], [x3]))
+     * </p>
      * <p>
      * Note: The parallelism of this stream is carried forward to the co-grouped stream.
      * </p>

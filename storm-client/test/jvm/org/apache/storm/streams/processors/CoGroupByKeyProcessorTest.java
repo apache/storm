@@ -17,10 +17,7 @@
  */
 package org.apache.storm.streams.processors;
 
-import org.apache.curator.shaded.com.google.common.collect.ImmutableBiMap;
-import org.apache.curator.shaded.com.google.common.collect.ImmutableMultimap;
 import org.apache.storm.streams.Pair;
-import org.apache.storm.streams.operations.PairValueJoiner;
 import org.junit.Test;
 
 import java.util.ArrayList;
