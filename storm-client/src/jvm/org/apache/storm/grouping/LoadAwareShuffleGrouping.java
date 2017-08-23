@@ -62,7 +62,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         }
 
         shuffleArray(choices);
-        current = new AtomicInteger(0);
+        current = new AtomicInteger(-1);
 
         // allocate another array to be switched
         prepareChoices = new int[CAPACITY];
@@ -150,7 +150,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         choices = prepareChoices;
         prepareChoices = tempForSwap;
 
-        current.set(0);
+        current.set(-1);
     }
 
     private void shuffleArray(int[] arr) {
