@@ -972,6 +972,15 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                             "receive " + pop + "/" + cap);
                     }
                 }
+            } else if (dp.name.equals("__skipped-max-spout-ms")) {
+                if (dp.value instanceof Number) {
+                    double full = ((Number) dp.value).doubleValue() / 10_000.0; //The frequency of reporting
+                    if (full >= 0.8) {
+                        congested.get().put(
+                            topologyId + ":" + taskInfo.srcComponentId + ":" + taskInfo.srcTaskId,
+                            "max.spout.pending " + (int)(full * 100) + "%");
+                    }
+                }
             }
         }
     }
