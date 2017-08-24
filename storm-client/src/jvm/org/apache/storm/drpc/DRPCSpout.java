@@ -186,7 +186,6 @@ public class DRPCSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        boolean gotRequest = false;
         if(_local_drpc_id==null) {
             int size = 0;
             synchronized (_clients) {
@@ -209,7 +208,6 @@ public class DRPCSpout extends BaseRichSpout {
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", client.getHost());
                         returnInfo.put("port", client.getPort());
-                        gotRequest = true;
                         _collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)), new DRPCMessageId(req.get_request_id(), i));
                         break;
                     }
@@ -234,7 +232,6 @@ public class DRPCSpout extends BaseRichSpout {
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", _local_drpc_id);
                         returnInfo.put("port", 0);
-                        gotRequest = true;
                         _collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)), 
                                         new DRPCMessageId(req.get_request_id(), 0));
                     }
@@ -244,9 +241,6 @@ public class DRPCSpout extends BaseRichSpout {
                     throw new RuntimeException(e);
                 }
             }
-        }
-        if(!gotRequest) {
-            Utils.sleep(1);
         }
     }
 
