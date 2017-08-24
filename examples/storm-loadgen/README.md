@@ -72,9 +72,12 @@ storm jar storm-loadgen.jar org.apache.storm.loadgen.ThroughputVsLatency [option
 # Reporters
 Reporters provide a way to store various statistics about a running topology. There are currently a few supported reporters
 
- * legacy - report values like ThroughputVsLatency has done in the past
- * TSV - tab separated values
- * CSV - comma separated values
+ * `legacy` - report values like ThroughputVsLatency has done in the past
+ * `tsv` - tab separated values
+ * `csv` - comma separated values
+ * `fixed` - a human readable fixed width format
+
+A `fixed` reporter to stdout will be added if no other reporters are writing to stdout or stderr.
 
 All of these types can have their data written out to a file.  To do this add a path after the type.  For example `legacy:./legacy_data` or `tsv:my_run.tsv`. By default the file will be over written unless an option is given to append instead. Options are in a URL like format, with a `?` separating the type:path from the options, and all of the options separated by a `&`.  To append to the file you can do something like `csv:./my_run.csv?append` or  `csv:./my_run.csv?append=true`
 
@@ -82,10 +85,12 @@ Not all options are supported by all reporters.
 
 |Reporter Option| Description | Supported Reporters|
 |---------------|-------------|--------------------|
-|time | Set the time unit that you want latency and CPU reported in.  This can be from nanoseconds up to seconds.  Most names are supported for the types| legacy, csv, tsv|
-|columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "completion_rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed" | csv, tsv |
-|extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv |
-|meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv|
+|time | Set the time unit that you want latency and CPU reported in.  This can be from nanoseconds up to seconds.  Most names are supported for the types| legacy, csv, tsv, fixed|
+|columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids" | csv, tsv, fixed |
+|extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv, fixed |
+|meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv, fixed|
+|columnWidth | The width of each field | fixed|
+|precision | The number of places after the decimal point to print out | fixed|
 
 There are a lot of different metrics supported
 
@@ -106,7 +111,7 @@ There are a lot of different metrics supported
 |acked| The number of tuples fully acked as reported by Storm's metrics. | all
 |acked_rate| The rate of tuples fully acked as reported by Storm's metrics. | all
 |completed| The number of tuples fully acked as reported by the latency histogram metrics. | all
-|completion_rate| The rate of tuples fully acked as reported by the latency histogram metrics. | all
+|rate| The rate of tuples fully acked as reported by the latency histogram metrics. | all
 |mem| The amount of memory used by the topology in MB, as reported by the JVM. | all
 |failed| The number of failed tuples as reported by Storm's metrics. | all
 |start_time| The starting time of the metrics window from when the first topology was launched. | all

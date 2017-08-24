@@ -19,9 +19,11 @@
 package org.apache.storm.loadgen;
 
 import com.google.common.annotations.VisibleForTesting;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
+import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -372,7 +374,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         LinkedHashMap<String, MetricExtractor> tmp = new LinkedHashMap<>();
         tmp.put("start_time",  new MetricExtractor((m, unit) -> m.startTime(),"s"));
         tmp.put("end_time",  new MetricExtractor((m, unit) -> m.endTime(), "s"));
-        tmp.put("completion_rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
+        tmp.put("rate",  new MetricExtractor((m, unit) -> m.getCompletedPerSec(), "tuple/s"));
         tmp.put("mean", new MetricExtractor((m, unit) -> m.getMeanLatency(unit)));
         tmp.put("99%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.0, unit)));
         tmp.put("99.9%ile", new MetricExtractor((m, unit) -> m.getLatencyAtPercentile(99.9, unit)));
@@ -442,16 +444,14 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
     }
 
-    static class SepValReporter extends  FileReporter {
-        private final TimeUnit targetUnit;
-        private final String separator;
-        private final List<String> extractors;
-        private final String meta;
+    abstract static class ColumnsFileReporter extends FileReporter {
+        protected final TimeUnit targetUnit;
+        protected final List<String> extractors;
+        protected final String meta;
 
-        public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
             super(path, query, extractorsMap);
-            this.separator = separator;
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
             if (targetUnit == null) {
                 throw new IllegalArgumentException(query.get("time") + " is not a supported time unit");
@@ -467,8 +467,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 this.extractors = extractors;
             } else {
                 //Wrapping it makes it mutable
-                extractors = new ArrayList<>(Arrays.asList("start_time", "end_time", "completion_rate",
-                    "mean", "99%ile", "99.9%ile", "cores", "mem", "failed"));
+                extractors = new ArrayList<>(Arrays.asList("start_time", "end_time", "rate",
+                    "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids"));
             }
 
             if (query.containsKey("extraColumns")) {
@@ -487,7 +487,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             meta = query.get("meta");
         }
 
-        private List<String> handleExtractorCleanup(List<String> orig) {
+        protected List<String> handleExtractorCleanup(List<String> orig) {
             Map<String, Object> stormConfig = Utils.readStormConfig();
             List<String> ret = new ArrayList<>(orig.size());
             for (String extractor: orig) {
@@ -507,6 +507,81 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 }
             }
             return ret;
+        }
+    }
+
+
+    static class FixedWidthReporter extends  ColumnsFileReporter {
+        public final String doubleFormat;
+        public final String longFormat;
+        public final String stringFormat;
+
+        public FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+            throws FileNotFoundException {
+            super(path, query, extractorsMap);
+            int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
+            int precision = Integer.parseInt(query.getOrDefault("precision", "3"));
+            doubleFormat = "%," + columnWidth + "." + precision + "f";
+            longFormat = "%," + columnWidth + "d";
+            stringFormat = "%" + columnWidth + "s";
+        }
+
+        public FixedWidthReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
+            this(null, Collections.emptyMap(), allExtractors);
+        }
+
+        private String format(Object o) {
+            if (o instanceof Double || o instanceof Float) {
+                return String.format(doubleFormat, o);
+            } else if (o instanceof Integer || o instanceof Long) {
+                return String.format(longFormat, o);
+            } else {
+                return String.format(stringFormat, o);
+            }
+        }
+
+        @Override
+        public void start() {
+            boolean first = true;
+            for (String name: extractors) {
+                if (!first) {
+                    out.print(" ");
+                }
+                first = false;
+                out.print(format(allExtractors.get(name).formatName(name, targetUnit)));
+            }
+            if (meta != null) {
+                out.print(" ");
+                out.print(format("meta"));
+            }
+            out.println();
+        }
+
+        @Override
+        public void reportWindow(Measurements m, List<Measurements> allTime) {
+            boolean first = true;
+            for (String name: extractors) {
+                if (!first) {
+                    out.print(" ");
+                }
+                first = false;
+                out.print(format(allExtractors.get(name).get(m, targetUnit)));
+            }
+            if (meta != null) {
+                out.print(" ");
+                out.print(format(meta));
+            }
+            out.println();
+        }
+    }
+
+    static class SepValReporter extends  ColumnsFileReporter {
+        private final String separator;
+
+        public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
+            throws FileNotFoundException {
+            super(path, query, extractorsMap);
+            this.separator = separator;
         }
 
         @Override
@@ -628,6 +703,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             .hasArg()
             .argName("TYPE:PATH?OPTIONS")
             .desc("Provide the config for a reporter to run.  Supported types are:\n"
+                + "FIXED - a fixed width format that should be more human readable\n"
                 + "LEGACY - (write things out in the legacy format)\n"
                 + "TSV - tab separated values\n"
                 + "CSV - comma separated values\n"
@@ -693,6 +769,9 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 }
                 type = type.toUpperCase();
                 switch (type) {
+                    case "FIXED":
+                        reporters.add(new FixedWidthReporter(path, query, allExtractors));
+                        break;
                     case "LEGACY":
                         reporters.add(new LegacyReporter(path, query, allExtractors));
                         break;
@@ -706,8 +785,19 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                         throw new RuntimeException(type + " is not a supported reporter type");
                 }
             }
-        } else {
-            reporters.add(new LegacyReporter(allExtractors));
+        }
+        boolean foundStdOutOrErr = false;
+        for (MetricResultsReporter rep : reporters) {
+            if (rep instanceof FileReporter) {
+                PrintStream ps = ((FileReporter) rep).out;
+                if (ps == System.out || ps == System.err) {
+                    foundStdOutOrErr = true;
+                    break;
+                }
+            }
+        }
+        if (!foundStdOutOrErr) {
+            reporters.add(new FixedWidthReporter(allExtractors));
         }
     }
 
