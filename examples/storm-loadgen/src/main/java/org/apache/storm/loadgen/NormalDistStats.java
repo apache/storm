@@ -123,7 +123,7 @@ public class NormalDistStats implements Serializable {
     }
 
     /**
-     * Generate a random number that follows the statistical distribution
+     * Generate a random number that follows the statistical distribution.
      * @param rand the random number generator to use
      * @return the next number that should follow the statistical distribution.
      */

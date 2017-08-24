@@ -28,8 +28,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.LockSupport;
 import java.util.stream.Collectors;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.OutputCollector;
@@ -47,20 +45,16 @@ import org.slf4j.LoggerFactory;
  */
 public class LoadBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(LoadBolt.class);
-    private static final long NANO_IN_MS = TimeUnit.NANOSECONDS.convert(1, TimeUnit.MILLISECONDS);
     private final List<OutputStream> outputStreamStats;
     private List<OutputStreamEngine> outputStreams;
     private final Map<GlobalStreamId, InputStream> inputStreams = new HashMap<>();
     private OutputCollector collector;
-    private Random rand;
-    private ScheduledExecutorService timer;
-
-    private static long toNano(double ms) {
-        return (long)(ms * NANO_IN_MS);
-    }
+    private final ExecAndProcessLatencyEngine sleep;
+    private int executorIndex;
 
     public LoadBolt(LoadCompConf conf) {
         this.outputStreamStats = Collections.unmodifiableList(new ArrayList<>(conf.streams));
+        sleep = new ExecAndProcessLatencyEngine(conf.slp);
     }
 
     public void add(InputStream inputStream) {
@@ -73,33 +67,8 @@ public class LoadBolt extends BaseRichBolt {
         outputStreams = Collections.unmodifiableList(outputStreamStats.stream()
             .map((ss) -> new OutputStreamEngine(ss)).collect(Collectors.toList()));
         this.collector = collector;
-        this.rand = ThreadLocalRandom.current();
-        this.timer = Executors.newSingleThreadScheduledExecutor();
-    }
-
-    private final AtomicLong parkOffset = new AtomicLong(0);
-
-    private void mySleep(long endTime) {
-        //There are some different levels of accuracy here, and we want to deal with all of them
-        long start = System.nanoTime();
-        long newEnd = endTime - parkOffset.get();
-        long diff = newEnd - start;
-        if (diff <= 1_000) {
-            //We are done, nothing that short is going to work here
-        } else if (diff < NANO_IN_MS) {
-            //Busy wait...
-            long sum = 0;
-            while (System.nanoTime() < newEnd) {
-                for (long i = 0; i < 1_000_000; i++) {
-                    sum += i;
-                }
-            }
-        } else {
-            //More accurate that thread.sleep, but still not great
-            LockSupport.parkNanos(newEnd - System.nanoTime() - parkOffset.get());
-            // A small control algorithm to adjust the amount of time that we sleep to make it more accurate
-        }
-        parkOffset.addAndGet((System.nanoTime() - endTime) / 2);
+        executorIndex = context.getThisTaskIndex();
+        sleep.prepare();
     }
 
     private void emitTuples(Tuple input) {
@@ -114,27 +83,11 @@ public class LoadBolt extends BaseRichBolt {
     @Override
     public void execute(final Tuple input) {
         long startTimeNs = System.nanoTime();
-        InputStream in = inputStreams.get(input.getSourceGlobalStreamId());
-        if (in == null) {
+        InputStream in = inputStreams.get(input.getSourceGlobalStreamid());
+        sleep.simulateProcessAndExecTime(executorIndex, startTimeNs, in, () -> {
             emitTuples(input);
             collector.ack(input);
-        } else {
-            long endExecNs = startTimeNs + toNano(in.execTime.nextRandom(rand));
-            long endProcNs = startTimeNs + toNano(in.processTime.nextRandom(rand));
-
-            if ((endProcNs - 1_000_000) < endExecNs) {
-                mySleep(endProcNs);
-                emitTuples(input);
-                collector.ack(input);
-            } else {
-                timer.schedule(() -> {
-                    emitTuples(input);
-                    collector.ack(input);
-                }, Math.max(0, endProcNs - System.nanoTime()), TimeUnit.NANOSECONDS);
-            }
-
-            mySleep(endExecNs);
-        }
+        });
     }
 
     @Override

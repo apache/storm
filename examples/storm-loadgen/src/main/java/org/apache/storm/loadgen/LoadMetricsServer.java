@@ -586,7 +586,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     }
 
 
-    static class FixedWidthReporter extends  ColumnsFileReporter {
+    static class FixedWidthReporter extends ColumnsFileReporter {
         public final String longFormat;
         public final String stringFormat;
 
@@ -649,7 +649,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         }
     }
 
-    static class SepValReporter extends  ColumnsFileReporter {
+    static class SepValReporter extends ColumnsFileReporter {
         private final String separator;
 
         public SepValReporter(String separator, String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
