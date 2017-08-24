@@ -159,6 +159,8 @@ Spouts and bolts have the same format.
 | id | The id of the bolt or spout.  This should be unique within the topology |
 | parallelism | How many instances of this component should be a part of the topology |
 | streams | The streams that are produced by this bolt or spout |
+| cpuLoad | The number of cores this component needs for resource aware scheduling |
+| memoryLoad | The amount of memory in MB that this component needs for resource aware scheduling |
 
 ### Output Streams
 

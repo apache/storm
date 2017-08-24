@@ -40,6 +40,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.metric.LoggingMetricsConsumer;
 import org.apache.storm.topology.BoltDeclarer;
+import org.apache.storm.topology.SpoutDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.NimbusClient;
 import org.slf4j.Logger;
@@ -227,7 +228,7 @@ public class GenLoad {
         return tlc;
     }
 
-    static int uniquifier = 0;
+    private static int uniquifier = 0;
 
     private static String parseAndSubmit(TopologyLoadConf tlc, String url) throws IOException, InvalidTopologyException,
         AuthorizationException, AlreadyAliveException {
@@ -260,7 +261,13 @@ public class GenLoad {
         TopologyBuilder builder = new TopologyBuilder();
         for (LoadCompConf spoutConf : tlc.spouts) {
             System.out.println("ADDING SPOUT " + spoutConf.id);
-            builder.setSpout(spoutConf.id, new LoadSpout(spoutConf), spoutConf.parallelism);
+            SpoutDeclarer sd = builder.setSpout(spoutConf.id, new LoadSpout(spoutConf), spoutConf.parallelism);
+            if (spoutConf.memoryLoad > 0) {
+                sd.setMemoryLoad(spoutConf.memoryLoad);
+            }
+            if (spoutConf.cpuLoad > 0) {
+                sd.setCPULoad(spoutConf.cpuLoad);
+            }
         }
 
         Map<String, BoltDeclarer> boltDeclarers = new HashMap<>();
@@ -270,7 +277,14 @@ public class GenLoad {
                 System.out.println("ADDING BOLT " + boltConf.id);
                 LoadBolt lb = new LoadBolt(boltConf);
                 bolts.put(boltConf.id, lb);
-                boltDeclarers.put(boltConf.id, builder.setBolt(boltConf.id, lb, boltConf.parallelism));
+                BoltDeclarer bd = builder.setBolt(boltConf.id, lb, boltConf.parallelism);
+                if (boltConf.memoryLoad > 0) {
+                    bd.setMemoryLoad(boltConf.memoryLoad);
+                }
+                if (boltConf.cpuLoad > 0) {
+                    bd.setCPULoad(boltConf.cpuLoad);
+                }
+                boltDeclarers.put(boltConf.id, bd);
             }
         }
 

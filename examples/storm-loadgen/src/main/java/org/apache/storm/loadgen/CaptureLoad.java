@@ -49,7 +49,10 @@ import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.ObjectReader;
+import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
+import org.json.simple.parser.JSONParser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -150,6 +153,22 @@ public class CaptureLoad {
                     .withId(boltComp);
                 boltBuilders.put(boltComp, builder);
             }
+
+            Map<String, Map<String, Double>> boltResources = getBoltsResources(topo, topoConf);
+            for (Map.Entry<String, Map<String, Double>> entry: boltResources.entrySet()) {
+                LoadCompConf.Builder bd = boltBuilders.get(entry.getKey());
+                if (bd != null) {
+                    Map<String, Double> resources = entry.getValue();
+                    Double cpu = resources.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
+                    if (cpu != null) {
+                        bd.withCpuLoad(cpu);
+                    }
+                    Double mem = resources.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+                    if (mem != null) {
+                        bd.withMemoryLoad(mem);
+                    }
+                }
+            }
         }
 
         //Spouts
@@ -174,6 +193,22 @@ public class CaptureLoad {
                     .withParallelism(common.get_parallelism_hint())
                     .withId(spoutComp);
                 spoutBuilders.put(spoutComp, builder);
+            }
+
+            Map<String, Map<String, Double>> spoutResources = getSpoutsResources(topo, topoConf);
+            for (Map.Entry<String, Map<String, Double>> entry: spoutResources.entrySet()) {
+                LoadCompConf.Builder sd = spoutBuilders.get(entry.getKey());
+                if (sd != null) {
+                    Map<String, Double> resources = entry.getValue();
+                    Double cpu = resources.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
+                    if (cpu != null) {
+                        sd.withCpuLoad(cpu);
+                    }
+                    Double mem = resources.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+                    if (mem != null) {
+                        sd.withMemoryLoad(mem);
+                    }
+                }
             }
         }
 
@@ -247,8 +282,6 @@ public class CaptureLoad {
                 }
             }
             builder.withRate(new NormalDistStats(emittedRate));
-            //TODO to know if the output keys are skewed we have to guess by looking
-            // at the down stream executed stats, but for now we are going to ignore it
 
             //The OutputStream is done
             LoadCompConf.Builder comp = boltBuilders.get(id.get_componentId());
@@ -336,6 +369,100 @@ public class CaptureLoad {
             LOG.error("Error trying to capture topologies...", e);
         } finally {
             System.exit(exitStatus);
+        }
+    }
+
+    //ResourceUtils.java is not a available on the classpath to let us parse out the resources we want.
+    // So we have copied and pasted some of the needed methods here. (with a few changes to logging)
+    static Map<String, Map<String, Double>> getBoltsResources(StormTopology topology,
+                                                                     Map<String, Object> topologyConf) {
+        Map<String, Map<String, Double>> boltResources = new HashMap<>();
+        if (topology.get_bolts() != null) {
+            for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
+                Map<String, Double> topologyResources = parseResources(bolt.getValue().get_common().get_json_conf());
+                checkIntialization(topologyResources, bolt.getValue().toString(), topologyConf);
+                boltResources.put(bolt.getKey(), topologyResources);
+            }
+        }
+        return boltResources;
+    }
+
+    static Map<String, Map<String, Double>> getSpoutsResources(StormTopology topology,
+                                                                      Map<String, Object> topologyConf) {
+        Map<String, Map<String, Double>> spoutResources = new HashMap<>();
+        if (topology.get_spouts() != null) {
+            for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
+                Map<String, Double> topologyResources = parseResources(spout.getValue().get_common().get_json_conf());
+                checkIntialization(topologyResources, spout.getValue().toString(), topologyConf);
+                spoutResources.put(spout.getKey(), topologyResources);
+            }
+        }
+        return spoutResources;
+    }
+
+    static Map<String, Double> parseResources(String input) {
+        Map<String, Double> topologyResources = new HashMap<>();
+        JSONParser parser = new JSONParser();
+        LOG.debug("Input to parseResources {}", input);
+        try {
+            if (input != null) {
+                Object obj = parser.parse(input);
+                JSONObject jsonObject = (JSONObject) obj;
+                if (jsonObject.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
+                    Double topoMemOnHeap = ObjectReader
+                        .getDouble(jsonObject.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), null);
+                    topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, topoMemOnHeap);
+                }
+                if (jsonObject.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)) {
+                    Double topoMemOffHeap = ObjectReader
+                        .getDouble(jsonObject.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB), null);
+                    topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, topoMemOffHeap);
+                }
+                if (jsonObject.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
+                    Double topoCpu = ObjectReader.getDouble(jsonObject.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT),
+                        null);
+                    topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, topoCpu);
+                }
+                LOG.debug("Topology Resources {}", topologyResources);
+            }
+        } catch (org.json.simple.parser.ParseException e) {
+            LOG.error("Failed to parse component resources is:" + e.toString(), e);
+            return null;
+        }
+        return topologyResources;
+    }
+
+    static void checkIntialization(Map<String, Double> topologyResources, String com,
+                                          Map<String, Object> topologyConf) {
+        checkInitMem(topologyResources, com, topologyConf);
+        checkInitCpu(topologyResources, com, topologyConf);
+    }
+
+    static void checkInitMem(Map<String, Double> topologyResources, String com,
+                                     Map<String, Object> topologyConf) {
+        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
+            Double onHeap = ObjectReader.getDouble(
+                topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), null);
+            if (onHeap != null) {
+                topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
+            }
+        }
+        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)) {
+            Double offHeap = ObjectReader.getDouble(
+                topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB), null);
+            if (offHeap != null) {
+                topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);
+            }
+        }
+    }
+
+    static void checkInitCpu(Map<String, Double> topologyResources, String com,
+                                     Map<String, Object> topologyConf) {
+        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
+            Double cpu = ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), null);
+            if (cpu != null) {
+                topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, cpu);
+            }
         }
     }
 }

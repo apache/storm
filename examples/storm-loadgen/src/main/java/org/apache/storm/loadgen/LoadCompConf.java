@@ -33,7 +33,8 @@ public class LoadCompConf {
     public final String id;
     public final int parallelism;
     public final List<OutputStream> streams;
-    public final CompStats stats;
+    public final double cpuLoad;
+    public final double memoryLoad;
 
     /**
      * Parse the LoadCompConf from a config Map.
@@ -50,8 +51,10 @@ public class LoadCompConf {
                 streams.add(OutputStream.fromConf(streamInfo));
             }
         }
+        double memoryMb = ObjectReader.getDouble(conf.get("memoryLoad"), 0.0);
+        double cpuPercent = ObjectReader.getDouble(conf.get("cpuLoad"), 0.0);
 
-        return new LoadCompConf(id, parallelism, streams, CompStats.fromConf(conf));
+        return new LoadCompConf(id, parallelism, streams, memoryMb, cpuPercent);
     }
 
     /**
@@ -62,6 +65,12 @@ public class LoadCompConf {
         Map<String, Object> ret = new HashMap<>();
         ret.put("id", id);
         ret.put("parallelism", parallelism);
+        if (memoryLoad > 0) {
+            ret.put("memoryLoad", memoryLoad);
+        }
+        if (cpuLoad > 0) {
+            ret.put("cpuLoad", cpuLoad);
+        }
 
         if (streams != null) {
             List<Map<String, Object>> streamData = new ArrayList<>();
@@ -69,9 +78,6 @@ public class LoadCompConf {
                 streamData.add(out.toConf());
             }
             ret.put("streams", streamData);
-        }
-        if (stats != null) {
-            stats.addToConf(ret);
         }
         return ret;
     }
@@ -89,7 +95,7 @@ public class LoadCompConf {
                 .map((orig) -> orig.remap(id, remappedStreams))
                 .collect(Collectors.toList());
 
-        return new LoadCompConf(remappedId, parallelism, remappedOutStreams, stats);
+        return new LoadCompConf(remappedId, parallelism, remappedOutStreams, cpuLoad, memoryLoad);
     }
 
     /**
@@ -110,7 +116,7 @@ public class LoadCompConf {
     public LoadCompConf setParallel(int newParallelism) {
         //We need to adjust the throughput accordingly (so that it stays the same in aggregate)
         double throughputAdjustment = ((double)parallelism) / newParallelism;
-        return new LoadCompConf(id, newParallelism, streams, stats).scaleThroughput(throughputAdjustment);
+        return new LoadCompConf(id, newParallelism, streams, cpuLoad, memoryLoad).scaleThroughput(throughputAdjustment);
     }
 
     /**
@@ -121,7 +127,7 @@ public class LoadCompConf {
     public LoadCompConf scaleThroughput(double v) {
         if (streams != null) {
             List<OutputStream> newStreams = streams.stream().map((s) -> s.scaleThroughput(v)).collect(Collectors.toList());
-            return new LoadCompConf(id, parallelism, newStreams, stats);
+            return new LoadCompConf(id, parallelism, newStreams, cpuLoad, memoryLoad);
         } else {
             return this;
         }
@@ -147,7 +153,8 @@ public class LoadCompConf {
         private String id;
         private int parallelism = 1;
         private List<OutputStream> streams;
-        private CompStats stats;
+        private double cpuLoad = 0.0;
+        private double memoryLoad = 0.0;
 
         public String getId() {
             return id;
@@ -189,17 +196,18 @@ public class LoadCompConf {
             return this;
         }
 
-        public CompStats getStats() {
-            return stats;
+        public Builder withCpuLoad(double cpuLoad) {
+            this.cpuLoad = cpuLoad;
+            return this;
         }
 
-        public Builder withStats(CompStats stats) {
-            this.stats = stats;
+        public Builder withMemoryLoad(double memoryLoad) {
+            this.memoryLoad = memoryLoad;
             return this;
         }
 
         public LoadCompConf build() {
-            return new LoadCompConf(id, parallelism, streams, stats);
+            return new LoadCompConf(id, parallelism, streams, cpuLoad, memoryLoad);
         }
     }
 
@@ -208,15 +216,15 @@ public class LoadCompConf {
      * @param id the id of the component.
      * @param parallelism tha parallelism of the component.
      * @param streams the output streams of the component.
-     * @param stats the stats of the component.
      */
-    public LoadCompConf(String id, int parallelism, List<OutputStream> streams, CompStats stats) {
+    public LoadCompConf(String id, int parallelism, List<OutputStream> streams, double cpuLoad, double memoryLoad) {
         this.id = id;
         if (id == null) {
             throw new IllegalArgumentException("A spout ID cannot be null");
         }
         this.parallelism = parallelism;
         this.streams = streams;
-        this.stats = stats;
+        this.cpuLoad = cpuLoad;
+        this.memoryLoad = memoryLoad;
     }
 }
