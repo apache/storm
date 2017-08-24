@@ -117,8 +117,7 @@ public class LoadAwareShuffleGroupingTest {
                 public int[] call() throws Exception {
                     int[] taskCounts = new int[availableTaskIds.size()];
                     for (int i = 1; i <= groupingExecutionsPerThread; i++) {
-                        List<Integer> taskIds = grouper.chooseTasks(inputTaskId,
-                            Lists.newArrayList(), loadMapping);
+                        List<Integer> taskIds = grouper.chooseTasks(inputTaskId, Lists.newArrayList());
 
                         // Validate a single task id return
                         assertNotNull("Not null taskId list returned", taskIds);
@@ -212,7 +211,7 @@ public class LoadAwareShuffleGroupingTest {
         List<Object> data = Lists.newArrayList(1, 2);
         int[] frequencies = new int[3];
         for (int i = 0 ; i < numMessages ; i++) {
-            List<Integer> tasks = shuffler.chooseTasks(1, data, load);
+            List<Integer> tasks = shuffler.chooseTasks(1, data);
             for (int task : tasks) {
                 frequencies[task]++;
             }
@@ -252,7 +251,7 @@ public class LoadAwareShuffleGroupingTest {
         List<Object> data = Lists.newArrayList(1, 2);
         int[] frequencies = new int[3]; // task id starts from 1
         for (int i = 0 ; i < numMessages ; i++) {
-            List<Integer> tasks = shuffler.chooseTasks(1, data, load);
+            List<Integer> tasks = shuffler.chooseTasks(1, data);
             for (int task : tasks) {
                 frequencies[task]++;
             }
@@ -361,7 +360,7 @@ public class LoadAwareShuffleGroupingTest {
 
         for (int i = 1; i <= totalEmits; i++) {
             List<Integer> taskIds = grouper
-                .chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+                .chooseTasks(inputTaskId, Lists.newArrayList());
 
             // Validate a single task id return
             assertNotNull("Not null taskId list returned", taskIds);
@@ -422,7 +421,7 @@ public class LoadAwareShuffleGroupingTest {
         long current = System.currentTimeMillis();
         int idx = 0;
         while (true) {
-            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList());
 
             idx++;
             if (idx % 100000 == 0) {
@@ -435,7 +434,7 @@ public class LoadAwareShuffleGroupingTest {
 
         current = System.currentTimeMillis();
         for (int i = 1; i <= 2_000_000_000; i++) {
-            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList());
         }
 
         LOG.info("Duration: {} ms", (System.currentTimeMillis() - current));
@@ -462,7 +461,7 @@ public class LoadAwareShuffleGroupingTest {
         long current = System.currentTimeMillis();
         int idx = 0;
         while (true) {
-            grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+            grouper.chooseTasks(inputTaskId, Lists.newArrayList());
 
             idx++;
             if (idx % 100000 == 0) {
@@ -482,7 +481,7 @@ public class LoadAwareShuffleGroupingTest {
                 public Long call() throws Exception {
                     long current = System.currentTimeMillis();
                     for (int i = 1; i <= groupingExecutionsPerThread; i++) {
-                        grouper.chooseTasks(inputTaskId, Lists.newArrayList(), loadMapping);
+                        grouper.chooseTasks(inputTaskId, Lists.newArrayList());
                     }
                     return System.currentTimeMillis() - current;
                 }

@@ -137,7 +137,7 @@ public class Task {
                 if (grouper == GrouperFactory.DIRECT) {
                     throw new IllegalArgumentException("Cannot do regular emit to direct stream");
                 }
-                List<Integer> compTasks = grouper.chooseTasks(taskId, values, loadMapping);
+                List<Integer> compTasks = grouper.chooseTasks(taskId, values);
                 outTasks.addAll(compTasks);
             }
         }

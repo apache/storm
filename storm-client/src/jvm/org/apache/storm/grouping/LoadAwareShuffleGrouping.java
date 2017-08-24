@@ -74,16 +74,6 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
     @Override
     public List<Integer> chooseTasks(int taskId, List<Object> values) {
-        throw new RuntimeException("NOT IMPLEMENTED");
-    }
-
-    @Override
-    public void refreshLoad(LoadMapping loadMapping) {
-        updateRing(loadMapping);
-    }
-
-    @Override
-    public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
         int rightNow;
         while (true) {
             rightNow = current.incrementAndGet();
@@ -96,6 +86,11 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
             //race condition with another thread, and we lost
             // try again
         }
+    }
+
+    @Override
+    public void refreshLoad(LoadMapping loadMapping) {
+        updateRing(loadMapping);
     }
 
     private void updateRing(LoadMapping load) {

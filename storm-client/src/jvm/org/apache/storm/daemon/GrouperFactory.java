@@ -124,11 +124,6 @@ public class GrouperFactory {
         }
 
         @Override
-        public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
-            return customStreamGrouping.chooseTasks(taskId, values);
-        }
-
-        @Override
         public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
             customStreamGrouping.prepare(context, stream, targetTasks);
         }
@@ -231,11 +226,6 @@ public class GrouperFactory {
         @Override
         public void refreshLoad(LoadMapping loadMapping) {
 
-        }
-
-        @Override
-        public List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load) {
-            return null;
         }
 
         @Override

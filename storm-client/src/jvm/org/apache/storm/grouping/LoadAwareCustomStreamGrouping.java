@@ -17,9 +17,6 @@
  */
 package org.apache.storm.grouping;
 
-import java.util.List;
-
 public interface LoadAwareCustomStreamGrouping extends CustomStreamGrouping {
    void refreshLoad(LoadMapping loadMapping);
-   List<Integer> chooseTasks(int taskId, List<Object> values, LoadMapping load);
 }
