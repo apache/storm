@@ -86,7 +86,7 @@ Not all options are supported by all reporters.
 |Reporter Option| Description | Supported Reporters|
 |---------------|-------------|--------------------|
 |time | Set the time unit that you want latency and CPU reported in.  This can be from nanoseconds up to seconds.  Most names are supported for the types| legacy, csv, tsv, fixed|
-|columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids" | csv, tsv, fixed |
+|columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids", "congested" | csv, tsv, fixed |
 |extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv, fixed |
 |meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv, fixed|
 |columnWidth | The width of each field | fixed|
@@ -118,6 +118,7 @@ There are a lot of different metrics supported
 |end_time| The ending time of the metrics window from the the first topology was launched. | all
 |time_window| the length in seconds for the time window. | all
 |ids| The topology ids that are being tracked | all
+|congested| Componets that appear to be congested | all
 |storm_version| The version of storm as reported by the client | all
 |java_version| The version of java as reported by the client | all
 |os_arch| The OS architecture as reported by the client | all

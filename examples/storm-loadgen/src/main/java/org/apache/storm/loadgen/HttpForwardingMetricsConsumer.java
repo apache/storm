@@ -48,6 +48,7 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
     private transient URL url;
     private transient IErrorReporter errorReporter;
     private transient KryoValuesSerializer serializer;
+    private transient String topologyId;
 
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { 
@@ -55,6 +56,7 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
             url = new URL((String)registrationArgument);
             this.errorReporter = errorReporter;
             serializer = new KryoValuesSerializer(topoConf);
+            topologyId = context.getStormId();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -67,7 +69,7 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
             con.setRequestMethod("POST");
             con.setDoOutput(true);
             try (Output out = new Output(con.getOutputStream())) {
-                serializer.serializeInto(Arrays.asList(taskInfo, dataPoints), out);
+                serializer.serializeInto(Arrays.asList(taskInfo, dataPoints, topologyId), out);
                 out.flush();
             }
             //The connection is not sent unless a response is requested

@@ -57,7 +57,7 @@ public abstract class HttpForwardingMetricsServer {
         protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             Input in = new Input(request.getInputStream());
             List<Object> metrics = des.get().deserializeFrom(in);
-            handle((TaskInfo)metrics.get(0), (Collection<DataPoint>)metrics.get(1));
+            handle((TaskInfo)metrics.get(0), (Collection<DataPoint>)metrics.get(1), (String)metrics.get(2));
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }
@@ -74,7 +74,7 @@ public abstract class HttpForwardingMetricsServer {
     }
 
     //This needs to be thread safe
-    public abstract void handle(TaskInfo taskInfo, Collection<DataPoint> dataPoints);
+    public abstract void handle(TaskInfo taskInfo, Collection<DataPoint> dataPoints, String topologyId);
 
     /**
      * Start the server.

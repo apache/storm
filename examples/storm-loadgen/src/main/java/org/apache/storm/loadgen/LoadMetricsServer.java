@@ -19,11 +19,9 @@
 package org.apache.storm.loadgen;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.PrintStream;
-import java.io.PrintWriter;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -39,6 +37,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -104,6 +103,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         private long workers;
         private long executors;
         private long hosts;
+        private Map<String, String> congested;
 
         /**
          * Constructor.
@@ -114,7 +114,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
          */
         public Measurements(long uptimeSecs, long acked, long timeWindow, long failed, Histogram histo,
                             double userMs, double sysMs, double gcMs, long memBytes, Set<String> topologyIds,
-                            long workers, long executors, long hosts) {
+                            long workers, long executors, long hosts, Map<String, String> congested) {
             this.uptimeSecs = uptimeSecs;
             this.acked = acked;
             this.timeWindow = timeWindow;
@@ -128,6 +128,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             this.workers = workers;
             this.executors = executors;
             this.hosts = hosts;
+            this.congested = congested;
         }
 
         /**
@@ -147,6 +148,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             workers = 0;
             executors = 0;
             hosts = 0;
+            congested = new HashMap<>();
         }
 
         /**
@@ -167,6 +169,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             workers = Math.max(workers, other.workers);
             executors = Math.max(executors, other.executors);
             hosts = Math.max(hosts, other.hosts);
+            congested.putAll(other.congested);
         }
 
         public double getLatencyAtPercentile(double percential, TimeUnit unit) {
@@ -255,6 +258,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         public long getExecutors() {
             return executors;
+        }
+
+        public Map<String, String> getCongested() {
+            return congested;
         }
 
         static Measurements combine(List<Measurements> measurements, Integer start, Integer count) {
@@ -396,6 +403,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         tmp.put("uptime",  new MetricExtractor((m, unit) -> m.getUptimeSecs(), "s"));
         tmp.put("time_window",  new MetricExtractor((m, unit) -> m.getTimeWindow(), "s"));
         tmp.put("ids",  new MetricExtractor((m, unit) -> m.getTopologyIds(), ""));
+        tmp.put("congested",  new MetricExtractor((m, unit) -> m.getCongested(), ""));
         tmp.put("workers",  new MetricExtractor((m, unit) -> m.getWorkers(), ""));
         tmp.put("hosts",  new MetricExtractor((m, unit) -> m.getHosts(), ""));
         tmp.put("executors",  new MetricExtractor((m, unit) -> m.getExecutors(), ""));
@@ -468,7 +476,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             } else {
                 //Wrapping it makes it mutable
                 extractors = new ArrayList<>(Arrays.asList("start_time", "end_time", "rate",
-                    "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids"));
+                    "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids", "congested"));
             }
 
             if (query.containsKey("extraColumns")) {
@@ -723,6 +731,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     private final AtomicLong gcCount = new AtomicLong(0);
     private final AtomicLong gcMs = new AtomicLong(0);
     private final ConcurrentHashMap<String, MemMeasure> memoryBytes = new ConcurrentHashMap<>();
+    private final AtomicReference<ConcurrentHashMap<String, String>> congested = new AtomicReference<>(new ConcurrentHashMap<>());
     private final List<MetricResultsReporter> reporters;
     private long prevAcked = 0;
     private long prevFailed = 0;
@@ -903,7 +912,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long memBytes = readMemory();
 
         allCombined.add(new Measurements(uptime, ackedThisTime, thisTime, failedThisTime, copy, user, sys, gc, memBytes,
-            ids, workers.size(), executors, hosts.size()));
+            ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>())));
         Measurements inWindow = Measurements.combine(allCombined, null, windowLength);
         for (MetricResultsReporter reporter: reporters) {
             reporter.reportWindow(inWindow, allCombined);
@@ -912,8 +921,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     @Override
     @SuppressWarnings("unchecked")
-    public void handle(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints) {
-        //crud no simple way to tie this to a given topology :(
+    public void handle(IMetricsConsumer.TaskInfo taskInfo, Collection<IMetricsConsumer.DataPoint> dataPoints, String topologyId) {
         String worker = taskInfo.srcWorkerHost + ":" + taskInfo.srcWorkerPort;
         for (IMetricsConsumer.DataPoint dp: dataPoints) {
             if (dp.name.startsWith("comp-lat-histo") && dp.value instanceof Histogram) {
@@ -951,6 +959,18 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                         mm = tmp == null ? mm : tmp;
                     }
                     mm.update(((Number)val).longValue());
+                }
+            } else if (dp.name.equals("__receive")) {
+                Map<Object, Object> m = (Map<Object, Object>)dp.value;
+                Object pop = m.get("population");
+                Object cap = m.get("capacity");
+                if (pop instanceof Number && cap instanceof Number) {
+                    double full = ((Number) pop).doubleValue() / ((Number) cap).doubleValue();
+                    if (full >= 0.8) {
+                        congested.get().put(
+                            topologyId + ":" + taskInfo.srcComponentId + ":" + taskInfo.srcTaskId,
+                            "receive " + pop + "/" + cap);
+                    }
                 }
             }
         }
