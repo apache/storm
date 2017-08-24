@@ -630,7 +630,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             .desc("Provide the config for a reporter to run.  Supported types are:\n"
                 + "LEGACY - (write things out in the legacy format)\n"
                 + "TSV - tab separated values\n"
-                + "CSV - comma separated values")
+                + "CSV - comma separated values\n"
+                + "PATH and OPTIONS are each optional but must be marked with a ':' or '?' separator respectively.")
             .build());
 
     }

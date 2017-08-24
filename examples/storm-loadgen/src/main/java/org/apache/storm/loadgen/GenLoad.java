@@ -23,6 +23,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -48,6 +51,8 @@ import org.slf4j.LoggerFactory;
 public class GenLoad {
     private static final Logger LOG = LoggerFactory.getLogger(GenLoad.class);
     private static final int TEST_EXECUTE_TIME_DEFAULT = 5;
+    private static final Pattern MULTI_PATTERN = Pattern.compile(
+        "(?<value>[^:?]+)(?::(?<topo>[^:]*):(?<comp>.*))?");
 
     /**
      * Main entry point for GenLoad application.
@@ -68,18 +73,25 @@ public class GenLoad {
             .build());
         options.addOption(Option.builder()
             .longOpt("parallel")
-            .argName("MULTIPLIER")
+            .argName("MULTIPLIER(:TOPO:COMP)?")
             .hasArg()
-            .desc("How much to scale the topology up or down in parallelism.\n"
-                + "The new parallelism will round up to the next whole number\n"
+            .desc("How much to scale the topology up or down in parallelism. "
+                + "The new parallelism will round up to the next whole number. "
+                + "If a topology + component is supplied only that component will be scaled. "
+                + "If topo or component is blank or a '*' all topologies or components matched will be scaled. "
+                + "Only 1 scaling rule, the most specific, will be applied to a component. Providing a topology name is considered more "
+                + "specific than not providing one."
                 + "(defaults to 1.0 no scaling)")
             .build());
         options.addOption(Option.builder()
             .longOpt("throughput")
-            .argName("MULTIPLIER")
+            .argName("MULTIPLIER(:TOPO:COMP)?")
             .hasArg()
-            .desc("How much to scale the topology up or down in throughput.\n"
-                + "Note this is applied after and build on any parallelism changes.\n"
+            .desc("How much to scale the topology up or down in throughput. "
+                + "If a topology + component is supplied only that component will be scaled. "
+                + "If topo or component is blank or a '*' all topologies or components matched will be scaled. "
+                + "Only 1 scaling rule, the most specific, will be applied to a component. Providing a topology name is considered more "
+                + "specific than not providing one."
                 + "(defaults to 1.0 no scaling)")
             .build());
         options.addOption(Option.builder()
@@ -95,18 +107,58 @@ public class GenLoad {
         CommandLine cmd = null;
         Exception commandLineException = null;
         double executeTime = TEST_EXECUTE_TIME_DEFAULT;
-        double parallel = 1.0;
-        double throughput = 1.0;
+        double globalParallel = 1.0;
+        Map<String, Double> topoSpecificParallel = new HashMap<>();
+        double globalThroughput = 1.0;
+        Map<String, Double> topoSpecificThroughput = new HashMap<>();
         try {
             cmd = parser.parse(options, args);
             if (cmd.hasOption("t")) {
                 executeTime = Double.valueOf(cmd.getOptionValue("t"));
             }
             if (cmd.hasOption("parallel")) {
-                parallel = Double.parseDouble(cmd.getOptionValue("parallel"));
+                for (String stringParallel : cmd.getOptionValues("parallel")) {
+                    Matcher m = MULTI_PATTERN.matcher(stringParallel);
+                    if (!m.matches()) {
+                        throw new ParseException("--parallel " + stringParallel + " is not in the format MULTIPLIER(:TOPO:COMP)?");
+                    }
+                    double parallel = Double.parseDouble(m.group("value"));
+                    String topo = m.group("topo");
+                    if (topo == null || topo.isEmpty()) {
+                        topo = "*";
+                    }
+                    String comp = m.group("comp");
+                    if (comp == null || comp.isEmpty()) {
+                        comp = "*";
+                    }
+                    if ("*".equals(topo) && "*".equals(comp)) {
+                        globalParallel = parallel;
+                    } else {
+                        topoSpecificParallel.put(topo + ":" + comp, parallel);
+                    }
+                }
             }
             if (cmd.hasOption("throughput")) {
-                throughput = Double.parseDouble(cmd.getOptionValue("throughput"));
+                for (String stringThroughput : cmd.getOptionValues("throughput")) {
+                    Matcher m = MULTI_PATTERN.matcher(stringThroughput);
+                    if (!m.matches()) {
+                        throw new ParseException("--throughput " + stringThroughput + " is not in the format MULTIPLIER(:TOPO:COMP)?");
+                    }
+                    double throughput = Double.parseDouble(m.group("value"));
+                    String topo = m.group("topo");
+                    if (topo == null || topo.isEmpty()) {
+                        topo = "*";
+                    }
+                    String comp = m.group("comp");
+                    if (comp == null || comp.isEmpty()) {
+                        comp = "*";
+                    }
+                    if ("*".equals(topo) && "*".equals(comp)) {
+                        globalThroughput = throughput;
+                    } else {
+                        topoSpecificThroughput.put(topo + ":" + comp, throughput);
+                    }
+                }
             }
         } catch (ParseException | NumberFormatException e) {
             commandLineException = e;
@@ -119,9 +171,13 @@ public class GenLoad {
             return;
         }
         Map<String, Object> metrics = new LinkedHashMap<>();
-        metrics.put("parallel_adjust", parallel);
-        metrics.put("throughput_adjust", throughput);
+        metrics.put("parallel_adjust", globalParallel);
+        metrics.put("throughput_adjust", globalThroughput);
         metrics.put("local_or_shuffle", cmd.hasOption("local-or-shuffle"));
+        metrics.put("topo_parallel", topoSpecificParallel.entrySet().stream().map((entry) -> entry.getValue() + ":" + entry.getKey())
+            .collect(Collectors.toList()));
+        metrics.put("topo_throuhgput", topoSpecificThroughput.entrySet().stream().map((entry) -> entry.getValue() + ":" + entry.getKey())
+            .collect(Collectors.toList()));
 
         Config conf = new Config();
         LoadMetricsServer metricServer = new LoadMetricsServer(conf, cmd, metrics);
@@ -134,12 +190,8 @@ public class GenLoad {
             for (String topoFile : cmd.getArgList()) {
                 try {
                     TopologyLoadConf tlc = readTopology(topoFile);
-                    if (parallel != 1.0) {
-                        tlc = tlc.scaleParallel(parallel);
-                    }
-                    if (throughput != 1.0) {
-                        tlc = tlc.scaleThroughput(throughput);
-                    }
+                    tlc = tlc.scaleParallel(globalParallel, topoSpecificParallel);
+                    tlc = tlc.scaleThroughput(globalThroughput, topoSpecificThroughput);
                     if (cmd.hasOption("local-or-shuffle")) {
                         tlc = tlc.replaceShuffleWithLocalOrShuffle();
                     }

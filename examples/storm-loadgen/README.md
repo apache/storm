@@ -39,11 +39,11 @@ storm jar storm-loadgen.jar org.apache.storm.loadgen.GenLoad [options] [capture_
 | --debug | Print debug information about the adjusted topology before submitting it. |
 |-h,--help | Print a help message |
 | --local-or-shuffle | Replace shuffle grouping with local or shuffle grouping. |
-| --parallel &lt;MULTIPLIER> | How much to scale the topology up or down in parallelism. The new parallelism will round up to the next whole number (defaults to 1.0 no scaling) The total throughput of the topology will not be scaled. |
+| --parallel &lt;MULTIPLIER(:TOPO:COMP)?> | How much to scale the topology up or down in parallelism. The new parallelism will round up to the next whole number. If a topology + component is supplied only that component will be scaled. If topo or component is blank or a `'*'` all topologies or components matched the other part will be scaled. Only 1 scaling rule, the most specific, will be applied to a component. Providing a topology name is considered more specific than not providing one. (defaults to 1.0 no scaling) |
 | -r,--report-interval &lt;INTERVAL_SECS> | How long in between reported metrics.  Will be rounded up to the next 10 sec boundary. default 30 |
 | --reporter &lt;TYPE:FILE?OPTIONS>  | Provide the config for a reporter to run. See below for more information about these |
 | -t,--test-time &lt;MINS> | How long to run the tests for in mins (defaults to 5) |
-| --throughput &lt;MULTIPLIER> | How much to scale the topology up or down in throughput. (defaults to 1.0 no scaling)|
+| --throughput &lt;MULTIPLIER(:TOPO:COMP)?> | How much to scale the topology up or down in throughput. If a topology + component is supplied only that component will be scaled. If topo or component is blank or a `'*'` all topologies or components matched will be scaled. Only 1 scaling rule, the most specific, will be applied to a component. Providing a topology name is considered more specific than not providing one.(defaults to 1.0 no scaling)|
 | -w,--report-window &lt;INTERVAL_SECS> | How long of a rolling window should be in each report.  Will be rounded up to the next report interval boundary. default 30|
 
 ## ThroughputVsLatency
@@ -125,7 +125,9 @@ There are a lot of different metrics supported
 |split_parallel| The parallelism of the split bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |count_parallel| The parallelism of the count bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |parallel\_adjust| The adjustment to the parallelism in `GenLoad`. | GenLoad
+|topo_parallel| A list of topology/component specfic adjustment rules to the parallelism in `GenLoad`. | GenLoad
 |throughput_adjust| The adjustment to the throughput in `GenLoad`. | GenLoad
+|topo_throughput| A list of topology/component specfic adjustment rules to the throughput in `GenLoad`. | GenLoad
 |local\_or\_shuffle| true if shuffles were replaced with local or shuffle in GenLoad. | GenLoad
 
 There are also some generic rules that you can use for some metrics.  Any metric that starts with `"conf:"` will be the config for that.  It does not include config overrides from the `GenLoad` file.

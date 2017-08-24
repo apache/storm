@@ -228,13 +228,57 @@ public class TopologyLoadConf {
     }
 
     /**
+     * The first one that is not null
+     * @param rest all the other somethings
+     * @param <V> whatever type you want.
+     * @return the first one that is not null
+     */
+    static <V> V or(V...rest) {
+        for (V i: rest) {
+            if (i != null) {
+                return i;
+            }
+        }
+        return null;
+    }
+
+    LoadCompConf scaleCompParallel(LoadCompConf comp, double v, Map<String, Double> topoSpecificParallel) {
+        LoadCompConf ret = comp;
+        double scale = or(topoSpecificParallel.get(name + ":" + comp.id),
+            topoSpecificParallel.get(name + ":*"),
+            topoSpecificParallel.get("*:" + comp.id),
+            v);
+        if (scale != 1.0) {
+            ret = ret.scaleParallel(scale);
+        }
+        return ret;
+    }
+
+    LoadCompConf scaleCompThroughput(LoadCompConf comp, double v, Map<String, Double> topoSpecificParallel) {
+        LoadCompConf ret = comp;
+        double scale = or(topoSpecificParallel.get(name + ":" + comp.id),
+            topoSpecificParallel.get(name + ":*"),
+            topoSpecificParallel.get("*:" + comp.id),
+            v);
+        if (scale != 1.0) {
+            ret = ret.scaleThroughput(scale);
+        }
+        return ret;
+    }
+
+    /**
      * Scale all of the components in the topology by a percentage (but keep the throughput the same).
      * @param v the amount to scale them by.  1.0 is nothing, 0.5 cuts them in half, 2.0 doubles them.
      * @return a copy of this with the needed adjustments made.
      */
-    public TopologyLoadConf scaleParallel(double v) {
-        List<LoadCompConf> scaledSpouts = spouts.stream().map((c) -> c.scaleParallel(v)).collect(Collectors.toList());
-        List<LoadCompConf> scaledBolts = bolts.stream().map((c) -> c.scaleParallel(v)).collect(Collectors.toList());
+    public TopologyLoadConf scaleParallel(double v, Map<String, Double> topoSpecific) {
+        if (v == 1.0 && (topoSpecific == null || topoSpecific.isEmpty())) {
+            return this;
+        }
+        List<LoadCompConf> scaledSpouts = spouts.stream().map((s) -> scaleCompParallel(s, v, topoSpecific))
+            .collect(Collectors.toList());
+        List<LoadCompConf> scaledBolts = bolts.stream().map((s) -> scaleCompParallel(s, v, topoSpecific))
+            .collect(Collectors.toList());
         return new TopologyLoadConf(name, topoConf, scaledSpouts, scaledBolts, streams);
     }
 
@@ -243,11 +287,14 @@ public class TopologyLoadConf {
      * @param v the amount to scale it by 1.0 is nothing 0.5 cuts it in half and 2.0 doubles it.
      * @return a copy of this with the needed adjustments made.
      */
-    public TopologyLoadConf scaleThroughput(double v) {
-        List<LoadCompConf> scaledSpouts = spouts.stream()
-            .map((c) -> c.scaleThroughput(v)).collect(Collectors.toList());
-        List<LoadCompConf> scaledBolts = bolts.stream()
-            .map((c) -> c.scaleThroughput(v)).collect(Collectors.toList());
+    public TopologyLoadConf scaleThroughput(double v, Map<String, Double> topoSpecific) {
+        if (v == 1.0 && (topoSpecific == null || topoSpecific.isEmpty())) {
+            return this;
+        }
+        List<LoadCompConf> scaledSpouts = spouts.stream().map((s) -> scaleCompThroughput(s, v, topoSpecific))
+            .collect(Collectors.toList());
+        List<LoadCompConf> scaledBolts = bolts.stream().map((s) -> scaleCompThroughput(s, v, topoSpecific))
+            .collect(Collectors.toList());
         return new TopologyLoadConf(name, topoConf, scaledSpouts, scaledBolts, streams);
     }
 
