@@ -7,6 +7,8 @@ The idea behind all of these tools is to measure the trade-offs between latency,
 
 When processing data you typically will know a few things.  First you will know about how much data you are going to be processing.  This will typically be a range of values that change throughput the day.  You also will have an idea of how quickly you need the data processed by.  Often this is measured in terms of the latency it takes to process data at the some percentile or set of percentiles.  This is because of most use cases the value of the data declines over time, and being able to react to the data quickly is more valuable.  You probably also have a budget for how much you are willing to spend to be able to process this data.  There are always trade-offs in how quickly you can process some data and how efficiently you can processes that data both in terms of resource usage (cost) and latency.  These tools are designed to help you explore that space.
 
+A note on how latency is measured.  Storm typically measures latency from when a message is emitted by a spout until the point it is fully acked or failed (in many versions of storm it actually does this in the acker instead of the spout so it is trying to be a measure of how long it takes for the actual processing, removing as much of the acker overhead as possible).  For these tools we do it differently.  We simulate a throughput and measure the start time of the tuple from when it would have been emitted if the topology could keep up with the load.  In the normal case this should not be an issue, but if the topology cannot keep up with the throughput you will see the latency grow very high compared to the latency reported by storm.
+
 ## Tools
 ### CaptureLoad 
 
@@ -120,14 +122,14 @@ There are a lot of different metrics supported
 |hosts| The number of hosts the monitored topologies are running on| all
 |executors| The number of running executors in the monitored topologies | all
 |workers| The number of workers the monitored topologies are running on | all
-|target_rate| The target rate in sentenses per second for the ThroughputVsLatency topology | ThroughputVsLatency
+|target_rate| The target rate in sentences per second for the ThroughputVsLatency topology | ThroughputVsLatency
 |spout_parallel| The parallelism of the spout for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |split_parallel| The parallelism of the split bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |count_parallel| The parallelism of the count bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |parallel\_adjust| The adjustment to the parallelism in `GenLoad`. | GenLoad
-|topo_parallel| A list of topology/component specfic adjustment rules to the parallelism in `GenLoad`. | GenLoad
+|topo_parallel| A list of topology/component specific adjustment rules to the parallelism in `GenLoad`. | GenLoad
 |throughput_adjust| The adjustment to the throughput in `GenLoad`. | GenLoad
-|topo_throughput| A list of topology/component specfic adjustment rules to the throughput in `GenLoad`. | GenLoad
+|topo_throughput| A list of topology/component specific adjustment rules to the throughput in `GenLoad`. | GenLoad
 |local\_or\_shuffle| true if shuffles were replaced with local or shuffle in GenLoad. | GenLoad
 
 There are also some generic rules that you can use for some metrics.  Any metric that starts with `"conf:"` will be the config for that.  It does not include config overrides from the `GenLoad` file.
