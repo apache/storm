@@ -55,16 +55,14 @@ public class EstimateThroughput {
             .build());
         CommandLineParser parser = new DefaultParser();
         CommandLine cmd = null;
-        ParseException pe = null;
+        boolean printHelp = false;
         try {
             cmd = parser.parse(options, args);
         } catch (ParseException e) {
-            pe = e;
+            System.err.println("ERROR " + e.getMessage());
+            printHelp = true;
         }
-        if (pe != null || cmd.hasOption('h')) {
-            if (pe != null) {
-                System.err.println("ERROR " + pe.getMessage());
-            }
+        if (printHelp || cmd.hasOption('h')) {
             new HelpFormatter().printHelp("EstimateThroughput [options] [topologyName]*", options);
             return;
         }

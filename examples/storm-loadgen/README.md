@@ -5,14 +5,14 @@ A set of tools to place an artificial load on a storm cluster to compare against
 ## Methodology
 The idea behind all of these tools is to measure the trade-offs between latency, throughput, and cost when processing data using Apache Storm.
 
-When processing data you typically will know a few things.  First you will know about how much data you are going to be processing.  This will typically be a range of values that change throughput the day.  You also will have an idea of how quickly you need the data processed by.  Often this is measured in terms of the latency it takes to process data at the some percentile or set of percentiles.  This is because of most use cases the value of the data declines over time, and being able to react to the data quickly is more valuable.  You probably also have a budget for how much you are willing to spend to be able to process this data.  There are always trade-offs in how quickly you can process some data and how efficiently you can processes that data both in terms of resource usage (cost) and latency.  These tools are designed to help you explore that space.
+When processing data you typically will know a few things.  First you will know about how much data you are going to be processing.  This will typically be a range of values that change throughput the day.  You also will have an idea of how quickly you need the data processed by.  Often this is measured in terms of the latency it takes to process data at some percentile or set of percentiles.  This is because in most use cases the value of the data declines over time, and being able to react to the data quickly is more valuable.  You probably also have a budget for how much you are willing to spend to be able to process this data.  There are always trade-offs in how quickly you can process some data and how efficiently you can processes that data both in terms of resource usage (cost) and latency.  These tools are designed to help you explore that space.
 
 A note on how latency is measured.  Storm typically measures latency from when a message is emitted by a spout until the point it is fully acked or failed (in many versions of storm it actually does this in the acker instead of the spout so it is trying to be a measure of how long it takes for the actual processing, removing as much of the acker overhead as possible).  For these tools we do it differently.  We simulate a throughput and measure the start time of the tuple from when it would have been emitted if the topology could keep up with the load.  In the normal case this should not be an issue, but if the topology cannot keep up with the throughput you will see the latency grow very high compared to the latency reported by storm.
 
 ## Tools
 ### CaptureLoad 
 
-`CaptureLoad` will look at the topologies on a running cluster and store the structure of and metrics about each of theses topologies storing them in a format that can be used later to reproduce a similar load on the cluster.
+`CaptureLoad` will look at the topologies on a running cluster and store the structure of and metrics about each in a format described below that can be used later to reproduce a similar load on the cluster.
 
 #### Usage
 ```
@@ -49,7 +49,7 @@ storm jar storm-loadgen.jar org.apache.storm.loadgen.GenLoad [options] [capture_
 | -w,--report-window &lt;INTERVAL_SECS> | How long of a rolling window should be in each report.  Will be rounded up to the next report interval boundary. default 30|
 
 ## ThroughputVsLatency
-This is a topology similar to `GenLoad` in most ways, except instead of simulating a load it runs a word count algorithm.
+A word count topology with metrics reporting like the `GenLoad` command.
 
 ### Usage
 ```

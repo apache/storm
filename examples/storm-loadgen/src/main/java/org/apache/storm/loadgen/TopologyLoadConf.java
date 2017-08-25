@@ -427,7 +427,7 @@ public class TopologyLoadConf {
     public double getAllEmittedAggregate() {
         double ret = getSpoutEmittedAggregate();
         for (LoadCompConf bolt: bolts) {
-            ret += bolt.getAllEmittedAggregate() * bolt.parallelism;
+            ret += bolt.getAllEmittedAggregate();
         }
         return ret;
     }
@@ -439,7 +439,7 @@ public class TopologyLoadConf {
     public double getSpoutEmittedAggregate() {
         double ret = 0;
         for (LoadCompConf spout: spouts) {
-            ret += spout.getAllEmittedAggregate() * spout.parallelism;
+            ret += spout.getAllEmittedAggregate();
         }
         return ret;
     }
