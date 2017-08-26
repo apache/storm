@@ -387,7 +387,7 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         int waitTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS));
         int batchSize = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_SIZE));
         int batchTimeOutMs = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS));
-        return new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.SINGLE,
+        return new DisruptorQueue("executor" + executorId + "-send-queue", ProducerType.MULTI,
                 sendSize, waitTimeOutMs, batchSize, batchTimeOutMs);
     }
 
