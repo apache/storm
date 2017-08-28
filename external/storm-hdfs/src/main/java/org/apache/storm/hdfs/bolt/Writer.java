@@ -15,12 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt;
 
+import java.io.IOException;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.tuple.Tuple;
-
-import java.io.IOException;
 
 public interface Writer {
     long write(Tuple tuple) throws IOException;

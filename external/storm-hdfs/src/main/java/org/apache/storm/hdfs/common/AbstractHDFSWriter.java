@@ -15,14 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.common;
 
+import java.io.IOException;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.bolt.Writer;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
-
-import java.io.IOException;
 
 abstract public class AbstractHDFSWriter implements Writer {
     protected long lastUsedTime;
