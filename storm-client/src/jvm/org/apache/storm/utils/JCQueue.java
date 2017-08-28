@@ -18,13 +18,6 @@
 
 package org.apache.storm.utils;
 
-// TODO: Remove max.spout.pending, fix netty issue
-// TODO: Flush tuple timer needs to check if topology.transfer.batch.size>1
-// DOCS: Document topology.producer.batch.size, topology.flush.tuple.freq.millis & deprecations, topology.spout.recvq.skips, topo.wait.strategy.*
-// DOCS: In release notes, mention that users may want to retweak their topology.executor.receive.buffer.size & topology.producer.batch.size
-// DOCS: Add perf tweaking notes: sampling rate, batch size (executor&transfer), spout skip count, sleep strategy, load aware, wait.strategy
-
-
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
@@ -217,11 +210,8 @@ public final class JCQueue implements IStatefulObject {
 
 
     public void haltWithInterrupt() {
-        if (tryPublishInternal(INTERRUPT)) {
-            metrics.close();
-        } else {
-            throw new RuntimeException(new QueueFullException());
-        }
+        tryPublishInternal(INTERRUPT);
+        metrics.close();
     }
 
     /**
@@ -318,12 +308,6 @@ public final class JCQueue implements IStatefulObject {
     //This method enables the metrics to be accessed from outside of the JCQueue class
     public JCQueue.QueueMetrics getMetrics() {
         return metrics;
-    }
-
-    private class QueueFullException extends Exception {
-        public QueueFullException() {
-            super(queueName + " is full");
-        }
     }
 
     public interface Consumer extends org.jctools.queues.MessagePassingQueue.Consumer<Object> {
