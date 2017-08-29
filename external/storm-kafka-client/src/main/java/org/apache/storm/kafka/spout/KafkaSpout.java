@@ -73,7 +73,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // Strategy to determine the fetch offset of the first realized by the spout upon activation
     private transient FirstPollOffsetStrategy firstPollOffsetStrategy;  
     // Class that has the logic to handle tuple failure
-    private transient KafkaSpoutRetryService retryService;              
+    private transient KafkaSpoutRetryService retryService;
+    // Handles tuple events (emit, ack etc.)
+    private transient KafkaTupleListener tupleListener;
     // timer == null for auto commit mode
     private transient Timer commitTimer;                                
     // Flag indicating that the spout is still undergoing initialization process.
@@ -95,7 +97,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
 
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        this(kafkaSpoutConfig, new KafkaConsumerFactoryDefault<K, V>());
+        this(kafkaSpoutConfig, new KafkaConsumerFactoryDefault<>());
     }
 
     //This constructor is here for testing
@@ -121,6 +123,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         // Retries management
         retryService = kafkaSpoutConfig.getRetryService();
 
+        tupleListener = kafkaSpoutConfig.getTupleListener();
+
         if (!consumerAutoCommitMode) {     // If it is auto commit, no need to commit offsets manually
             commitTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getOffsetsCommitPeriodMs(), TimeUnit.MILLISECONDS);
         }
@@ -129,6 +133,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         offsetManagers = new HashMap<>();
         emitted = new HashSet<>();
         waitingToEmit = Collections.emptyListIterator();
+
+        tupleListener.open(conf, context);
 
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
     }
@@ -151,6 +157,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.info("Partitions reassignment. [task-ID={}, consumer-group={}, consumer={}, topic-partitions={}]",
                     context.getThisTaskId(), kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
 
+            tupleListener.onPartitionsReassigned(partitions);
             initialize(partitions);
         }
 
@@ -363,6 +370,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                         } else {
                             collector.emit(tuple, msgId);
                         }
+                        tupleListener.onEmit(tuple, msgId);
                     }
                     LOG.trace("Emitted tuple [{}] for record [{}] with msgId [{}]", tuple, record, msgId);
                     return true;
@@ -432,6 +440,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             }
             emitted.remove(msgId);
         }
+        tupleListener.onAck(msgId);
     }
 
     // ======== Fail =======
@@ -449,8 +458,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.debug("Reached maximum number of retries. Message [{}] being marked as acked.", msgId);
             // this tuple should be removed from emitted only inside the ack() method. This is to ensure
             // that the OffsetManager for that TopicPartition is updated and allows commit progression
+            tupleListener.onMaxRetryReached(msgId);
             ack(msgId);
         } else {
+            tupleListener.onRetry(msgId);
             emitted.remove(msgId);
         }
     }

@@ -19,13 +19,13 @@
 package org.apache.storm.kafka.spout;
 
 import java.io.Serializable;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -59,6 +59,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
             DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
 
+    public static final KafkaTupleListener DEFAULT_TUPLE_LISTENER = new EmptyKafkaTupleListener();
+
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
     private final Subscription subscription;
@@ -70,6 +72,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final int maxUncommittedOffsets;
     private final FirstPollOffsetStrategy firstPollOffsetStrategy;
     private final KafkaSpoutRetryService retryService;
+    private final KafkaTupleListener tupleListener;
     private final long partitionRefreshPeriodMs;
     private final boolean emitNullTuples;
 
@@ -87,6 +90,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.firstPollOffsetStrategy = builder.firstPollOffsetStrategy;
         this.maxUncommittedOffsets = builder.maxUncommittedOffsets;
         this.retryService = builder.retryService;
+        this.tupleListener = builder.tupleListener;
         this.partitionRefreshPeriodMs = builder.partitionRefreshPeriodMs;
         this.emitNullTuples = builder.emitNullTuples;
     }
@@ -124,6 +128,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private FirstPollOffsetStrategy firstPollOffsetStrategy = DEFAULT_FIRST_POLL_OFFSET_STRATEGY;
         private int maxUncommittedOffsets = DEFAULT_MAX_UNCOMMITTED_OFFSETS;
         private KafkaSpoutRetryService retryService = DEFAULT_RETRY_SERVICE;
+        private KafkaTupleListener tupleListener = DEFAULT_TUPLE_LISTENER;
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
 
@@ -242,6 +247,20 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 throw new NullPointerException("retryService cannot be null");
             }
             this.retryService = retryService;
+            return this;
+        }
+
+        /**
+         * Sets the tuple listener for the spout to use.
+         *
+         * @param tupleListener the tuple listener
+         * @return the builder (this).
+         */
+        public Builder<K, V> setTupleListener(KafkaTupleListener tupleListener) {
+            if (tupleListener == null) {
+                throw new NullPointerException("KafkaTupleListener cannot be null");
+            }
+            this.tupleListener = tupleListener;
             return this;
         }
 
@@ -395,6 +414,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return retryService;
     }
 
+    public KafkaTupleListener getTupleListener() {
+        return tupleListener;
+    }
+
     public long getPartitionRefreshPeriodMs() {
         return partitionRefreshPeriodMs;
     }
@@ -414,6 +437,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             + ", subscription=" + subscription
             + ", translator=" + translator
             + ", retryService=" + retryService
+            + ", tupleListener=" + tupleListener
             + '}';
     }
 }
