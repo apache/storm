@@ -110,7 +110,7 @@ public class DynamicBrokersReader {
             List<String> children = _curator.getChildren().forPath(topicBrokersPath);
             return children.size();
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            LOG.error(e.getMessage(), e);
         }
     }
 
