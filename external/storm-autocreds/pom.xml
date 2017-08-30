@@ -15,7 +15,9 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
@@ -124,12 +126,12 @@
         </dependency>
     </dependencies>
     <build>
-    <plugins>
-       <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>appassembler-maven-plugin</artifactId>
-          <version>1.9</version>
-          <executions>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>1.9</version>
+                <executions>
                     <execution>
                         <id>create-repo</id>
                         <goals>
@@ -140,8 +142,8 @@
                             <repositoryLayout>flat</repositoryLayout>
                         </configuration>
                     </execution>
-          </executions>
-        </plugin>
-    </plugins>
-   </build>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>
