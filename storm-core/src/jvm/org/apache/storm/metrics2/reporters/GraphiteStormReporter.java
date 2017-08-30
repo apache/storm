@@ -23,6 +23,7 @@ import com.codahale.metrics.graphite.GraphiteUDP;
 import com.codahale.metrics.graphite.Graphite;
 import com.codahale.metrics.MetricRegistry;
 import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -30,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class GraphiteStormReporter extends SheduledStormReporter<GraphiteReporter> {
+public class GraphiteStormReporter extends ScheduledStormReporter<GraphiteReporter> {
     private final static Logger LOG = LoggerFactory.getLogger(GraphiteStormReporter.class);
 
     public static final String GRAPHITE_PREFIXED_WITH = "graphite.prefixed.with";
@@ -53,7 +54,10 @@ public class GraphiteStormReporter extends SheduledStormReporter<GraphiteReporte
             builder.convertRatesTo(rateUnit);
         }
 
-        //TODO: expose some simple MetricFilters 
+        StormMetricsFilter filter = getMetricsFilter(reporterConf);
+        if(filter != null){
+            builder.filter(filter);
+        }
         String prefix = getMetricsPrefixedWith(reporterConf);
         if (prefix != null) {
             builder.prefixedWith(prefix);

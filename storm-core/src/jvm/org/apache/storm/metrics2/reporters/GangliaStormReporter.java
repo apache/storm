@@ -21,6 +21,7 @@ import com.codahale.metrics.ganglia.GangliaReporter;
 import com.codahale.metrics.MetricRegistry;
 import info.ganglia.gmetric4j.gmetric.GMetric;
 import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,7 +30,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class GangliaStormReporter extends SheduledStormReporter<GangliaReporter> {
+public class GangliaStormReporter extends ScheduledStormReporter<GangliaReporter> {
     private final static Logger LOG = LoggerFactory.getLogger(GangliaStormReporter.class);
 
     public static final String GANGLIA_HOST = "ganglia.host";
@@ -58,7 +59,10 @@ public class GangliaStormReporter extends SheduledStormReporter<GangliaReporter>
             builder.convertRatesTo(rateUnit);
         }
 
-        //TODO: expose some simple MetricFilters 
+        StormMetricsFilter filter = getMetricsFilter(reporterConf);
+        if(filter != null){
+            builder.filter(filter);
+        }
         String prefix = getMetricsPrefixedWith(reporterConf);
         if (prefix != null) {
             builder.prefixedWith(prefix);

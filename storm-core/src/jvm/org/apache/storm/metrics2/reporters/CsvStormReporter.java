@@ -20,6 +20,7 @@ package org.apache.storm.metrics2.reporters;
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
 import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -30,7 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class CsvStormReporter extends SheduledStormReporter<CsvReporter> {
+public class CsvStormReporter extends ScheduledStormReporter<CsvReporter> {
     private final static Logger LOG = LoggerFactory.getLogger(CsvStormReporter.class);
 
     public static final String CSV_LOG_DIR = "csv.log.dir";
@@ -55,7 +56,11 @@ public class CsvStormReporter extends SheduledStormReporter<CsvReporter> {
             builder.convertDurationsTo(durationUnit);
         }
 
-        //TODO: expose some simple MetricFilters 
+        StormMetricsFilter filter = getMetricsFilter(reporterConf);
+        if(filter != null){
+            builder.filter(filter);
+        }
+
 
         //defaults to 10
         reportingPeriod = getReportPeriod(reporterConf);

@@ -86,12 +86,14 @@ public class StormMetricRegistry {
 
         LOG.info("Starting metrics reporters...");
         List<Map<String, Object>> reporterList = (List<Map<String, Object>>)stormConfig.get(Config.STORM_METRICS_REPORTERS);
-        for(Map<String, Object> reporterConfig : reporterList){
-            // only start those requested
-            List<String> daemons = (List<String>)reporterConfig.get("daemons");
-            for(String daemon : daemons){
-                if(DaemonType.valueOf(daemon.toUpperCase()) == type){
-                    startReporter(stormConfig, reporterConfig);
+        if(reporterList != null && reporterList.size() > 0) {
+            for (Map<String, Object> reporterConfig : reporterList) {
+                // only start those requested
+                List<String> daemons = (List<String>) reporterConfig.get("daemons");
+                for (String daemon : daemons) {
+                    if (DaemonType.valueOf(daemon.toUpperCase()) == type) {
+                        startReporter(stormConfig, reporterConfig);
+                    }
                 }
             }
         }
@@ -106,7 +108,7 @@ public class StormMetricRegistry {
         StormReporter reporter = null;
         LOG.info("Attempting to instantiate reporter class: {}", clazz);
         try{
-            reporter = instantiate(clazz);
+            reporter = (StormReporter)Metrics2Utils.instantiate(clazz);
         } catch(Exception e){
             LOG.warn("Unable to instantiate metrics reporter class: {}. Will skip this reporter.", clazz, e);
         }
@@ -118,10 +120,6 @@ public class StormMetricRegistry {
 
     }
 
-    private static StormReporter instantiate(String klass) throws ClassNotFoundException, IllegalAccessException, InstantiationException {
-        Class<?> c = Class.forName(klass);
-        return  (StormReporter) c.newInstance();
-    }
 
     public static void stop(){
         for(StormReporter sr : REPORTERS){

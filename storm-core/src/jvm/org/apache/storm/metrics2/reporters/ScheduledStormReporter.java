@@ -18,6 +18,8 @@
 package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.ScheduledReporter;
+import org.apache.storm.metrics2.Metrics2Utils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,8 +27,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class SheduledStormReporter<T extends ScheduledReporter> implements StormReporter{
-    private static final Logger LOG = LoggerFactory.getLogger(SheduledStormReporter.class);
+public abstract class ScheduledStormReporter<T extends ScheduledReporter> implements StormReporter{
+    private static final Logger LOG = LoggerFactory.getLogger(ScheduledStormReporter.class);
     protected ScheduledReporter reporter;
     long reportingPeriod;
     TimeUnit reportingPeriodUnit;
@@ -67,5 +69,20 @@ public abstract class SheduledStormReporter<T extends ScheduledReporter> impleme
 
     static long getReportPeriod(Map reporterConf) {
         return Utils.getInt(reporterConf.get(REPORT_PERIOD), 10).longValue();
+    }
+
+    static StormMetricsFilter getMetricsFilter(Map reporterConf){
+        StormMetricsFilter filter = null;
+        Map<String, Object> filterConf = (Map)reporterConf.get("filter");
+        String clazz = (String) filterConf.get("class");
+        if(filterConf != null && clazz != null){
+            try {
+                filter = (StormMetricsFilter) Metrics2Utils.instantiate(clazz);
+                filter.prepare(filterConf);
+            } catch (Exception e) {
+                LOG.warn("Unable to instantiate StormMetricsFilter class: {}", clazz);
+            }
+        }
+        return filter;
     }
 }
