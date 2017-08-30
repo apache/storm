@@ -20,7 +20,6 @@ package org.apache.storm.scheduler.resource;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -31,8 +30,10 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
+import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
 import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.DisallowedStrategyException;
+import org.apache.storm.scheduler.utils.IConfigLoader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,14 +43,16 @@ public class ResourceAwareScheduler implements IScheduler {
     private Map<String, Object> conf;
     private ISchedulingPriorityStrategy schedulingPrioritystrategy;
     private IEvictionStrategy evictionStrategy;
+    private IConfigLoader configLoader;
 
     @Override
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
         schedulingPrioritystrategy = (ISchedulingPriorityStrategy) ReflectionUtils.newInstance(
-            (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
+                (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY));
         evictionStrategy = (IEvictionStrategy) ReflectionUtils.newInstance(
-            (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY));
+                (String) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY));
+        configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
     }
 
     @Override
@@ -75,7 +78,7 @@ public class ResourceAwareScheduler implements IScheduler {
                 td = schedulingPrioritystrategy.getNextTopologyToSchedule(cluster, userMap);
             } catch (Exception ex) {
                 LOG.error("Exception thrown when running priority strategy {}. No topologies will be scheduled!",
-                    schedulingPrioritystrategy.getClass().getName(), ex);
+                        schedulingPrioritystrategy.getClass().getName(), ex);
                 break;
             }
             if (td == null) {
@@ -104,8 +107,8 @@ public class ResourceAwareScheduler implements IScheduler {
         } catch (DisallowedStrategyException e) {
             topologySubmitter.markTopoUnsuccess(td);
             cluster.setStatus(td.getId(), "Unsuccessful in scheduling - " + e.getAttemptedClass()
-                              + " is not an allowed strategy. Please make sure your " + Config.TOPOLOGY_SCHEDULER_STRATEGY
-                              + " config is one of the allowed strategies: " + e.getAllowedStrategies().toString());
+                    + " is not an allowed strategy. Please make sure your " + Config.TOPOLOGY_SCHEDULER_STRATEGY
+                    + " config is one of the allowed strategies: " + e.getAllowedStrategies().toString());
             return;
         } catch (RuntimeException e) {
             LOG.error("failed to create instance of IStrategy: {} Topology {} will not be scheduled.",
@@ -115,7 +118,7 @@ public class ResourceAwareScheduler implements IScheduler {
                     + strategyConf + ". Please check logs for details");
             return;
         }
-       
+
         while (true) {
             // A copy of the cluster that restricts the strategy to only modify a single topology
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
@@ -139,8 +142,8 @@ public class ResourceAwareScheduler implements IScheduler {
                         LOG.error("Unsuccessful attempting to assign executors to nodes.", ex);
                         topologySubmitter.markTopoUnsuccess(td);
                         cluster.setStatus(td.getId(), "Unsuccessful in scheduling - "
-                            + "IllegalStateException thrown when attempting to assign executors to nodes. Please check"
-                            + " log for details.");
+                                + "IllegalStateException thrown when attempting to assign executors to nodes. Please check"
+                                + " log for details.");
                     }
                     return;
                 } else {
@@ -151,8 +154,8 @@ public class ResourceAwareScheduler implements IScheduler {
                             madeSpace = evictionStrategy.makeSpaceForTopo(td, workingState, userMap);
                         } catch (Exception ex) {
                             LOG.error("Exception thrown when running eviction strategy {} to schedule topology {}."
-                                    + " No evictions will be done!", evictionStrategy.getClass().getName(),
-                                td.getName(), ex);
+                                            + " No evictions will be done!", evictionStrategy.getClass().getName(),
+                                    td.getName(), ex);
                             topologySubmitter.markTopoUnsuccess(td);
                             return;
                         }
@@ -160,7 +163,7 @@ public class ResourceAwareScheduler implements IScheduler {
                             LOG.debug("Could not make space for topo {} will move to attempted", td);
                             topologySubmitter.markTopoUnsuccess(td);
                             cluster.setStatus(td.getId(), "Not enough resources to schedule - "
-                                + result.getErrorMessage());
+                                    + result.getErrorMessage());
                             return;
                         }
                         continue;
@@ -171,7 +174,7 @@ public class ResourceAwareScheduler implements IScheduler {
                 }
             } else {
                 LOG.warn("Scheduling results returned from topology {} is not vaild! Topology with be ignored.",
-                    td.getName());
+                        td.getName());
                 topologySubmitter.markTopoUnsuccess(td, cluster);
                 return;
             }
@@ -202,19 +205,11 @@ public class ResourceAwareScheduler implements IScheduler {
         return userMap;
     }
 
-    /**
-     * Get resource guarantee configs.
-     *
-     * @return a map that contains resource guarantees of every user of the following format
-     *     {userid->{resourceType->amountGuaranteed}}
-     */
-    private Map<String, Map<String, Double>> getUserResourcePools() {
-        Map<String, Map<String, Number>> raw =
-            (Map<String, Map<String, Number>>) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
-        Map<String, Map<String, Double>> ret = new HashMap<>();
+    private Map<String, Map<String, Double>> convertToDouble(Map<String, Map<String, Number>> raw) {
+        Map<String, Map<String, Double>> ret = new HashMap<String, Map<String, Double>>();
 
         if (raw != null) {
-            for (Map.Entry<String, Map<String, Number>> userPoolEntry :  raw.entrySet()) {
+            for (Map.Entry<String, Map<String, Number>> userPoolEntry : raw.entrySet()) {
                 String user = userPoolEntry.getKey();
                 ret.put(user, new HashMap<String, Double>());
                 for (Map.Entry<String, Number> resourceEntry : userPoolEntry.getValue().entrySet()) {
@@ -223,18 +218,42 @@ public class ResourceAwareScheduler implements IScheduler {
             }
         }
 
-        Map fromFile = Utils.findAndReadConfigFile("user-resource-pools.yaml", false);
-        Map<String, Map<String, Number>> tmp =
-            (Map<String, Map<String, Number>>) fromFile.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
-        if (tmp != null) {
-            for (Map.Entry<String, Map<String, Number>> userPoolEntry : tmp.entrySet()) {
-                String user = userPoolEntry.getKey();
-                ret.put(user, new HashMap<String, Double>());
-                for (Map.Entry<String, Number> resourceEntry : userPoolEntry.getValue().entrySet()) {
-                    ret.get(user).put(resourceEntry.getKey(), resourceEntry.getValue().doubleValue());
-                }
+        return ret;
+    }
+
+    /**
+     * Get resource guarantee configs.
+     * Load from configLoaders first; if no config available, read from user-resource-pools.yaml;
+     * if no config available from user-resource-pools.yaml, get configs from conf. Only one will be used.
+     * @return a map that contains resource guarantees of every user of the following format
+     * {userid->{resourceType->amountGuaranteed}}
+     */
+    private Map<String, Map<String, Double>> getUserResourcePools() {
+        Map<String, Map<String, Number>> raw;
+
+        // Try the loader plugin, if configured
+        if (configLoader != null) {
+            raw = (Map<String, Map<String, Number>>) configLoader.load(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
+            if (raw != null) {
+                return convertToDouble(raw);
+            } else {
+                LOG.warn("Config loader returned null. Will try to read from user-resource-pools.yaml");
             }
         }
-        return ret;
+
+        // if no configs from loader, try to read from user-resource-pools.yaml
+        Map fromFile = Utils.findAndReadConfigFile("user-resource-pools.yaml", false);
+        raw = (Map<String, Map<String, Number>>) fromFile.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
+        if (raw != null) {
+            return convertToDouble(raw);
+        } else {
+            LOG.warn("Reading from user-resource-pools.yaml returned null. This could because the file is not available. "
+                    + "Will load configs from storm configuration");
+        }
+
+        // if no configs from user-resource-pools.yaml, get configs from conf
+        raw = (Map<String, Map<String, Number>>) conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
+
+        return convertToDouble(raw);
     }
 }

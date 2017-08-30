@@ -20,44 +20,66 @@ package org.apache.storm.scheduler.multitenant;
 
 import java.util.HashMap;
 import java.util.Map;
-
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.utils.Utils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.IScheduler;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
+import org.apache.storm.scheduler.utils.ConfigLoaderFactoryService;
+import org.apache.storm.scheduler.utils.IConfigLoader;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class MultitenantScheduler implements IScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
   @SuppressWarnings("rawtypes")
-  private Map _conf;
+  private Map conf;
+  protected IConfigLoader configLoader;
   
   @Override
-  public void prepare(@SuppressWarnings("rawtypes") Map<String, Object> conf) {
-    _conf = conf;
+  public void prepare(Map<String, Object> conf) {
+    this.conf = conf;
+    configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
+
   }
- 
+
+  /**
+   * Load from configLoaders first; if no config available, read from multitenant-scheduler.yaml;
+   * if no config available from multitenant-scheduler.yaml, get configs from conf. Only one will be used.
+   * @return User pool configs.
+   */
   private Map<String, Number> getUserConf() {
-    Map<String, Number> ret = (Map<String, Number>)_conf.get(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-    if (ret == null) {
-      ret = new HashMap<>();
-    } else {
-      ret = new HashMap<>(ret);
+    Map<String, Number> ret;
+
+    // Try the loader plugin, if configured
+    if (configLoader != null) {
+      ret = (Map<String, Number>) configLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+      if (ret != null) {
+        return ret;
+      } else {
+        LOG.warn("Config loader returned null. Will try to read from multitenant-scheduler.yaml");
+      }
     }
 
+    // If that fails, fall back on the multitenant-scheduler.yaml file
     Map fromFile = Utils.findAndReadConfigFile("multitenant-scheduler.yaml", false);
-    Map<String, Number> tmp = (Map<String, Number>)fromFile.get(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
-    if (tmp != null) {
-      ret.putAll(tmp);
+    ret = (Map<String, Number>)fromFile.get(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+    if (ret != null) {
+      return ret;
+    } else {
+        LOG.warn("Reading from multitenant-scheduler.yaml returned null. This could because the file is not available. "
+                + "Will load configs from storm configuration");
     }
-    return ret;
-  }
 
+    // If that fails, use config
+    ret = (Map<String, Number>) conf.get(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+    if (ret == null) {
+      return new HashMap<>();
+    } else {
+      return ret;
+    }
+  }
 
   @Override
   public Map<String, Object> config() {
