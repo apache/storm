@@ -20,6 +20,7 @@ package org.apache.storm.daemon.worker;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
+import java.util.Collections;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -127,6 +128,47 @@ public class LogConfigManagerTest {
             AtomicReference<TreeMap<String, LogLevel>> atomConf = new AtomicReference<>(config);
             
             LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
+            underTest.resetLogLevels();
+            assertEquals(new TreeMap<>(), atomConf.get());
+            verify(underTest).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));
+        }
+    }
+
+    @Test
+    public void testLogResetProperlyResetLogLevelAfterTimeout() throws InterruptedException {
+        try (SimulatedTime t = new SimulatedTime()){
+            long inThirtySeconds = Time.currentTimeMillis() + 30_000;
+            TreeMap<String, LogLevel> config = new TreeMap<>();
+            config.put(LogManager.ROOT_LOGGER_NAME, ll("DEBUG", "WARN", inThirtySeconds));
+            AtomicReference<TreeMap<String, LogLevel>> atomConf = new AtomicReference<>(config);
+
+            LogConfigManager underTest = spy(new LogConfigManagerUnderTest(atomConf));
+
+            TreeMap<String, LogLevel> expected = new TreeMap<>();
+            LogLevel logLevel = new LogLevel(LogLevelAction.UPDATE);
+            logLevel.set_target_log_level("DEBUG");
+            logLevel.set_reset_log_level("WARN");
+            logLevel.set_reset_log_level_timeout_epoch(30_000);
+            expected.put(LogManager.ROOT_LOGGER_NAME, logLevel);
+
+            underTest.resetLogLevels();
+            assertEquals(expected, atomConf.get());
+            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+
+            // 11 seconds passed by, not timing out
+            Time.advanceTimeSecs(11);
+            underTest.resetLogLevels();
+            assertEquals(expected, atomConf.get());
+            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+
+            // 22 seconds passed by, still not timing out
+            Time.advanceTimeSecs(11);
+            underTest.resetLogLevels();
+            assertEquals(expected, atomConf.get());
+            verify(underTest, never()).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), anyString());
+
+            // 33 seconds passed by, timed out
+            Time.advanceTimeSecs(11);
             underTest.resetLogLevels();
             assertEquals(new TreeMap<>(), atomConf.get());
             verify(underTest).setLoggerLevel(anyObject(), eq(LogManager.ROOT_LOGGER_NAME), eq("WARN"));

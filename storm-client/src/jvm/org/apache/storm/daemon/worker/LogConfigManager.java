@@ -111,6 +111,9 @@ public class LogConfigManager {
     // also called from processLogConfigChange
     public void resetLogLevels() {
         TreeMap<String, LogLevel> latestLogLevelMap = latestLogConfig.get();
+
+        LOG.debug("Resetting log levels: Latest log config is {}", latestLogLevelMap);
+
         LoggerContext loggerContext = (LoggerContext) LogManager.getContext(false);
 
         for (String loggerName : latestLogLevelMap.descendingKeySet()) {
@@ -120,12 +123,12 @@ public class LogConfigManager {
             if (timeout < Time.currentTimeMillis()) {
                 LOG.info("{}: Resetting level to {}", loggerName, resetLogLevel);
                 setLoggerLevel(loggerContext, loggerName, resetLogLevel);
+                latestLogConfig.getAndUpdate(input -> {
+                    TreeMap<String, LogLevel> result = new TreeMap<>(input);
+                    result.remove(loggerName);
+                    return result;
+                });
             }
-            latestLogConfig.getAndUpdate(input -> {
-                TreeMap<String, LogLevel> result = new TreeMap<>(input);
-                result.remove(loggerName);
-                return result;
-            });
         }
         loggerContext.updateLoggers();
     }
