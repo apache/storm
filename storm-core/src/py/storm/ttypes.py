@@ -9113,6 +9113,7 @@ class Assignment:
    - executor_node_port
    - executor_start_time_secs
    - worker_resources
+   - owner
   """
 
   thrift_spec = (
@@ -9126,9 +9127,11 @@ class Assignment:
     }, ), # 4
     (5, TType.MAP, 'worker_resources', (TType.STRUCT,(NodeInfo, NodeInfo.thrift_spec),TType.STRUCT,(WorkerResources, WorkerResources.thrift_spec)), {
     }, ), # 5
+    None, # 6
+    (7, TType.STRING, 'owner', None, None, ), # 7
   )
 
-  def __init__(self, master_code_dir=None, node_host=thrift_spec[2][4], executor_node_port=thrift_spec[3][4], executor_start_time_secs=thrift_spec[4][4], worker_resources=thrift_spec[5][4],):
+  def __init__(self, master_code_dir=None, node_host=thrift_spec[2][4], executor_node_port=thrift_spec[3][4], executor_start_time_secs=thrift_spec[4][4], worker_resources=thrift_spec[5][4], owner=None,):
     self.master_code_dir = master_code_dir
     if node_host is self.thrift_spec[2][4]:
       node_host = {
@@ -9146,6 +9149,7 @@ class Assignment:
       worker_resources = {
     }
     self.worker_resources = worker_resources
+    self.owner = owner
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -9218,6 +9222,11 @@ class Assignment:
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 7:
+        if ftype == TType.STRING:
+          self.owner = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -9270,6 +9279,10 @@ class Assignment:
         viter601.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
+    if self.owner is not None:
+      oprot.writeFieldBegin('owner', TType.STRING, 7)
+      oprot.writeString(self.owner.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -9286,6 +9299,7 @@ class Assignment:
     value = (value * 31) ^ hash(self.executor_node_port)
     value = (value * 31) ^ hash(self.executor_start_time_secs)
     value = (value * 31) ^ hash(self.worker_resources)
+    value = (value * 31) ^ hash(self.owner)
     return value
 
   def __repr__(self):
@@ -9391,6 +9405,7 @@ class StormBase:
    - topology_action_options
    - prev_status
    - component_debug
+   - principal
   """
 
   thrift_spec = (
@@ -9404,9 +9419,10 @@ class StormBase:
     (7, TType.STRUCT, 'topology_action_options', (TopologyActionOptions, TopologyActionOptions.thrift_spec), None, ), # 7
     (8, TType.I32, 'prev_status', None, None, ), # 8
     (9, TType.MAP, 'component_debug', (TType.STRING,None,TType.STRUCT,(DebugOptions, DebugOptions.thrift_spec)), None, ), # 9
+    (10, TType.STRING, 'principal', None, None, ), # 10
   )
 
-  def __init__(self, name=None, status=None, num_workers=None, component_executors=None, launch_time_secs=None, owner=None, topology_action_options=None, prev_status=None, component_debug=None,):
+  def __init__(self, name=None, status=None, num_workers=None, component_executors=None, launch_time_secs=None, owner=None, topology_action_options=None, prev_status=None, component_debug=None, principal=None,):
     self.name = name
     self.status = status
     self.num_workers = num_workers
@@ -9416,6 +9432,7 @@ class StormBase:
     self.topology_action_options = topology_action_options
     self.prev_status = prev_status
     self.component_debug = component_debug
+    self.principal = principal
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -9485,6 +9502,11 @@ class StormBase:
           iprot.readMapEnd()
         else:
           iprot.skip(ftype)
+      elif fid == 10:
+        if ftype == TType.STRING:
+          self.principal = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -9539,6 +9561,10 @@ class StormBase:
         viter619.write(oprot)
       oprot.writeMapEnd()
       oprot.writeFieldEnd()
+    if self.principal is not None:
+      oprot.writeFieldBegin('principal', TType.STRING, 10)
+      oprot.writeString(self.principal.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -9563,6 +9589,7 @@ class StormBase:
     value = (value * 31) ^ hash(self.topology_action_options)
     value = (value * 31) ^ hash(self.prev_status)
     value = (value * 31) ^ hash(self.component_debug)
+    value = (value * 31) ^ hash(self.principal)
     return value
 
   def __repr__(self):
@@ -9866,6 +9893,7 @@ class LocalAssignment:
    - topology_id
    - executors
    - resources
+   - owner
   """
 
   thrift_spec = (
@@ -9873,12 +9901,15 @@ class LocalAssignment:
     (1, TType.STRING, 'topology_id', None, None, ), # 1
     (2, TType.LIST, 'executors', (TType.STRUCT,(ExecutorInfo, ExecutorInfo.thrift_spec)), None, ), # 2
     (3, TType.STRUCT, 'resources', (WorkerResources, WorkerResources.thrift_spec), None, ), # 3
+    None, # 4
+    (5, TType.STRING, 'owner', None, None, ), # 5
   )
 
-  def __init__(self, topology_id=None, executors=None, resources=None,):
+  def __init__(self, topology_id=None, executors=None, resources=None, owner=None,):
     self.topology_id = topology_id
     self.executors = executors
     self.resources = resources
+    self.owner = owner
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -9911,6 +9942,11 @@ class LocalAssignment:
           self.resources.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 5:
+        if ftype == TType.STRING:
+          self.owner = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -9936,6 +9972,10 @@ class LocalAssignment:
       oprot.writeFieldBegin('resources', TType.STRUCT, 3)
       self.resources.write(oprot)
       oprot.writeFieldEnd()
+    if self.owner is not None:
+      oprot.writeFieldBegin('owner', TType.STRING, 5)
+      oprot.writeString(self.owner.encode('utf-8'))
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -9952,6 +9992,7 @@ class LocalAssignment:
     value = (value * 31) ^ hash(self.topology_id)
     value = (value * 31) ^ hash(self.executors)
     value = (value * 31) ^ hash(self.resources)
+    value = (value * 31) ^ hash(self.owner)
     return value
 
   def __repr__(self):

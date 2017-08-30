@@ -31,6 +31,7 @@ import org.apache.hive.hcatalog.api.HCatClient;
 import org.apache.hive.hcatalog.common.HCatException;
 import org.apache.storm.Config;
 import org.apache.storm.common.AbstractAutoCreds;
+import org.apache.storm.generated.StormTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,15 +81,15 @@ public class AutoHive extends AbstractAutoCreds {
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, String configKey) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
         Configuration configuration = new Configuration();
-        return getHadoopCredentials(conf, configuration);
+        return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
@@ -108,20 +109,19 @@ public class AutoHive extends AbstractAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, final Configuration configuration) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final Configuration configuration, final String topologyOwnerPrincipal) {
         try {
             if (UserGroupInformation.isSecurityEnabled()) {
-                String topologySubmitterUser = (String) conf.get(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
                 String hiveMetaStoreURI = getMetaStoreURI(configuration);
                 String hiveMetaStorePrincipal = getMetaStorePrincipal(configuration);
                 HiveConf hcatConf = createHiveConf(hiveMetaStoreURI, hiveMetaStorePrincipal);
                 login(configuration);
 
                 UserGroupInformation currentUser = UserGroupInformation.getCurrentUser();
-                UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologySubmitterUser, currentUser);
+                UserGroupInformation proxyUser = UserGroupInformation.createProxyUser(topologyOwnerPrincipal, currentUser);
                 try {
                     Token<DelegationTokenIdentifier> delegationTokenId =
-                            getDelegationToken(hcatConf, hiveMetaStorePrincipal, topologySubmitterUser);
+                            getDelegationToken(hcatConf, hiveMetaStorePrincipal, topologyOwnerPrincipal);
                     proxyUser.addToken(delegationTokenId);
                     LOG.info("Obtained Hive tokens, adding to user credentials.");
 
@@ -194,7 +194,7 @@ public class AutoHive extends AbstractAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, String ownerPrincipal) {
         for (Pair<String, Credentials> cred : getCredentials(credentials)) {
             try {
                 Configuration configuration = getHadoopConfiguration(topologyConf, cred.getFirst());
@@ -215,7 +215,7 @@ public class AutoHive extends AbstractAutoCreds {
             } catch (Exception e) {
                 LOG.warn("could not renew the credentials, one of the possible reason is tokens are beyond " +
                         "renewal period so attempting to get new tokens.", e);
-                populateCredentials(credentials, topologyConf);
+                populateCredentials(credentials, topologyConf, ownerPrincipal);
             }
         }
     }
@@ -254,8 +254,8 @@ public class AutoHive extends AbstractAutoCreds {
 
     @SuppressWarnings("unchecked")
     public static void main(String[] args) throws Exception {
-        Map conf = new HashMap();
-        conf.put(Config.TOPOLOGY_SUBMITTER_PRINCIPAL, args[0]); //with realm e.g. storm@WITZEND.COM
+        Map<String, Object> conf = new HashMap<>();
+        final String topologyOwnerPrincipal = args[0]; //with realm e.g. storm@WITZEND.COM
         conf.put(HIVE_PRINCIPAL_KEY, args[1]); // hive principal storm-hive@WITZEN.COM
         conf.put(HIVE_KEYTAB_FILE_KEY, args[2]); // storm hive keytab /etc/security/keytabs/storm-hive.keytab
         conf.put(HiveConf.ConfVars.METASTOREURIS.varname, args[3]); // hive.metastore.uris : "thrift://pm-eng1-cluster1.field.hortonworks.com:9083"
@@ -263,17 +263,26 @@ public class AutoHive extends AbstractAutoCreds {
         AutoHive autoHive = new AutoHive();
         autoHive.prepare(conf);
 
-        Map<String, String> creds = new HashMap<String, String>();
-        autoHive.populateCredentials(creds, conf);
+        Map<String, String> creds = new HashMap<>();
+        autoHive.populateCredentials(creds, conf, topologyOwnerPrincipal);
         LOG.info("Got Hive credentials" + autoHive.getCredentials(creds));
 
         Subject subject = new Subject();
         autoHive.populateSubject(subject, creds);
         LOG.info("Got a Subject " + subject);
 
-        //autoHive.renew(creds, conf);
+        //autoHive.renew(creds, conf, topologyOwnerPrincipal);
         //LOG.info("Renewed credentials" + autoHive.getCredentials(creds));
     }
 
+    @Override
+    public void populateCredentials(Map<String, String> credentials, Map topoConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
+    }
+
+    @Override
+    public void renew(Map<String, String> credentials, Map topologyConf) {
+        throw new IllegalStateException("SHOULD NOT BE CALLED");
+    }
 }
 

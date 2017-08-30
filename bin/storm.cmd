@@ -42,6 +42,8 @@
   if not "%storm-command%" == "jar" (
     set set_storm_options=true
   )
+  
+  @echo This script is deprecated. Please use the Powershell storm.ps1 script instead
 
   call %~dp0storm-config.cmd
 
@@ -145,6 +147,7 @@
 
 :drpc
   set CLASS=org.apache.storm.daemon.drpc
+  set STORM_OPTS=%STORM_OPTS% -Ddaemon.name=drpc
   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value drpc.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -171,6 +174,7 @@
 
 :logviewer
   set CLASS=org.apache.storm.daemon.logviewer
+  set STORM_OPTS=%STORM_OPTS% -Ddaemon.name=logviewer
    "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value logviewer.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -183,6 +187,7 @@
 
 :nimbus
   set CLASS=org.apache.storm.daemon.nimbus
+  set STORM_OPTS=%STORM_OPTS% -Ddaemon.name=nimbus
   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value nimbus.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -215,6 +220,7 @@
   
 :supervisor
   set CLASS=org.apache.storm.daemon.supervisor.Supervisor
+  set STORM_OPTS=%STORM_OPTS% -Ddaemon.name=supervisor
   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value supervisor.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (
      FOR /F "tokens=1,* delims= " %%a in ("%%i") do (
@@ -227,6 +233,7 @@
 
 :ui
   set CLASS=org.apache.storm.ui.core
+  set STORM_OPTS=%STORM_OPTS% -Ddaemon.name=ui
   set CLASSPATH=%CLASSPATH%;%STORM_HOME%
   "%JAVA%" -client -Dstorm.options= -Dstorm.conf.file= -cp "%CLASSPATH%" org.apache.storm.command.config_value ui.childopts > %CMD_TEMP_FILE%
   FOR /F "delims=" %%i in (%CMD_TEMP_FILE%) do (

@@ -36,7 +36,6 @@ import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
 import org.apache.storm.metrics2.DisruptorMetrics;
 import org.apache.storm.metrics2.StormMetricRegistry;
-import org.apache.storm.task.WorkerTopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,19 +61,19 @@ import java.util.concurrent.locks.ReentrantLock;
  * the ability to catch up to the producer by processing tuples in batches.
  */
 public class DisruptorQueue implements IStatefulObject {
-    private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueue.class);    
+    private static final Logger LOG = LoggerFactory.getLogger(DisruptorQueue.class);
     private static final Object INTERRUPT = new Object();
     private static final String PREFIX = "disruptor-";
     private static final FlusherPool FLUSHER = new FlusherPool();
-    
     private static final Timer METRICS_TIMER = new Timer("disruptor-metrics-timer", true);
+
     private static int getNumFlusherPoolThreads() {
         int numThreads = 100;
         try {
-        	Map<String, Object> conf = Utils.readStormConfig();
-        	numThreads = Utils.getInt(conf.get(Config.STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE), numThreads);
+            Map<String, Object> conf = Utils.readStormConfig();
+            numThreads = Utils.getInt(conf.get(Config.STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE), numThreads);
         } catch (Exception e) {
-        	LOG.warn("Error while trying to read system config", e);
+            LOG.warn("Error while trying to read system config", e);
         }
         try {
             String threads = System.getProperty("num_flusher_pool_threads", String.valueOf(numThreads));
@@ -86,8 +85,8 @@ public class DisruptorQueue implements IStatefulObject {
         return numThreads;
     }
 
-    private static class FlusherPool { 
-    	private static final String THREAD_PREFIX = "disruptor-flush";
+    private static class FlusherPool {
+        private static final String THREAD_PREFIX = "disruptor-flush";
         private Timer _timer = new Timer(THREAD_PREFIX + "-trigger", true);
         private ThreadPoolExecutor _exec;
         private HashMap<Long, ArrayList<Flusher>> _pendingFlush = new HashMap<>();
@@ -201,8 +200,8 @@ public class DisruptorQueue implements IStatefulObject {
             if (block) {
                 _flushLock.lock();
             } else if (!_flushLock.tryLock()) {
-               //Someone else if flushing so don't do anything
-               return;
+                //Someone else if flushing so don't do anything
+                return;
             }
             try {
                 while (!_overflow.isEmpty()) {
@@ -256,7 +255,7 @@ public class DisruptorQueue implements IStatefulObject {
                     }
                 }
 
-                if (!flushed) {        
+                if (!flushed) {
                     _overflow.add(_currentBatch);
                     _currentBatch = new ArrayList<Object>(_inputBatchSize);
                 }
@@ -276,8 +275,8 @@ public class DisruptorQueue implements IStatefulObject {
             if (block) {
                 _flushLock.lock();
             } else if (!_flushLock.tryLock()) {
-               //Someone else if flushing so don't do anything
-               return;
+                //Someone else if flushing so don't do anything
+                return;
             }
             try {
                 while (!_overflow.isEmpty()) {
@@ -354,32 +353,44 @@ public class DisruptorQueue implements IStatefulObject {
         }
 
         public double sojournTime(){
-            // get readPos then writePos so it's never an under-estimate
-            long rp = readPos();
-            long wp = writePos();
-            final double arrivalRateInSecs = arrivalRate();
-
-            //Assume the queue is stable, in which the arrival rate is equal to the consumption rate.
-            // If this assumption does not hold, the calculation of sojourn time should also consider
-            // departure rate according to Queuing Theory.
-            return (wp - rp) / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+            return tuplePopulation.get() / Math.max(arrivalRate(), 0.00001) * 1000.0;
         }
 
         public Object getState() {
             Map state = new HashMap<String, Object>();
+
+            // get readPos then writePos so it's never an under-estimate
+            long rp = readPos();
+            long wp = writePos();
+
+            final long tuplePop = tuplePopulation.get();
+
+            final double arrivalRateInSecs = _rateTracker.reportRate();
+
+            //Assume the queue is stable, in which the arrival rate is equal to the consumption rate.
+            // If this assumption does not hold, the calculation of sojourn time should also consider
+            // departure rate according to Queuing Theory.
+            final double sojournTime = tuplePop / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+
             state.put("capacity", capacity());
-            state.put("population", population());
-            state.put("write_pos", writePos());
-            state.put("read_pos", readPos());
-            state.put("arrival_rate_secs", arrivalRate());
-            state.put("sojourn_time_ms", sojournTime()); //element sojourn time in milliseconds
-            state.put("overflow", overflow());
+            state.put("population", wp - rp);
+            state.put("tuple_population", tuplePop);
+            state.put("write_pos", wp);
+            state.put("read_pos", rp);
+            state.put("arrival_rate_secs", arrivalRateInSecs);
+            state.put("sojourn_time_ms", sojournTime); //element sojourn time in milliseconds
+            state.put("overflow", _overflowCount.get());
 
             return state;
         }
 
         public void notifyArrivals(long counts) {
             _rateTracker.notify(counts);
+            tuplePopulation.getAndAdd(counts);
+        }
+
+        public void notifyDepartures(long counts) {
+            tuplePopulation.getAndAdd(-counts);
         }
 
         public void close() {
@@ -393,7 +404,7 @@ public class DisruptorQueue implements IStatefulObject {
     private final int _inputBatchSize;
     private final ConcurrentHashMap<Long, ThreadLocalInserter> _batchers = new ConcurrentHashMap<Long, ThreadLocalInserter>();
     private final Flusher _flusher;
-    private final QueueMetrics _metrics; // old metrics API
+    private final QueueMetrics _metrics;
     private final DisruptorMetrics _disruptorMetrics;
 
     private String _queueName = "";
@@ -402,6 +413,7 @@ public class DisruptorQueue implements IStatefulObject {
     private int _lowWaterMark = 0;
     private boolean _enableBackpressure = false;
     private final AtomicLong _overflowCount = new AtomicLong(0);
+    private final AtomicLong tuplePopulation = new AtomicLong(0);
     private volatile boolean _throttleOn = false;
 
     public DisruptorQueue(String queueName, ProducerType type, int size, long readTimeout, int inputBatchSize, long flushInterval, String topologyId, String componentId, int port) {
@@ -425,13 +437,12 @@ public class DisruptorQueue implements IStatefulObject {
 
         _flusher = new Flusher(Math.max(flushInterval, 1), _queueName);
         _flusher.start();
-
         METRICS_TIMER.schedule(new TimerTask(){
             @Override
             public void run() {
                 _disruptorMetrics.set(_metrics);
             }
-        }, 15000, 15000); // TODO: Configurable interval
+        }, 15000, 15000);
     }
 
     public String getName() {
@@ -486,6 +497,7 @@ public class DisruptorQueue implements IStatefulObject {
                 } else if (o == null) {
                     LOG.error("NULL found in {}:{}", this.getName(), cursor);
                 } else {
+                    _metrics.notifyDepartures(getTupleCount(o));
                     handler.onEvent(o, curr, curr == cursor);
                     if (_enableBackpressure && _cb != null && (_metrics.writePos() - curr + _overflowCount.get()) <= _lowWaterMark) {
                         try {
@@ -562,8 +574,8 @@ public class DisruptorQueue implements IStatefulObject {
                 at++;
                 numberOfTuples += getTupleCount(obj);
             }
-            _buffer.publish(begin, end);
             _metrics.notifyArrivals(numberOfTuples);
+            _buffer.publish(begin, end);
         }
     }
 

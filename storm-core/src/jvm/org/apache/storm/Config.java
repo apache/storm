@@ -387,7 +387,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_AUTH_PAYLOAD="storm.zookeeper.auth.payload";
 
     /**
-     * The topology Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication.
+     * The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it.
      */
     @isString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME="storm.zookeeper.topology.auth.scheme";
@@ -571,7 +571,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the nimbus daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String NIMBUS_CHILDOPTS = "nimbus.childopts";
 
 
@@ -743,7 +743,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for log viewer java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String LOGVIEWER_CHILDOPTS = "logviewer.childopts";
 
     /**
@@ -853,7 +853,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for Storm UI Java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String UI_CHILDOPTS = "ui.childopts";
 
     /**
@@ -976,7 +976,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the pacemaker daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String PACEMAKER_CHILDOPTS = "pacemaker.childopts";
 
     /**
@@ -1163,7 +1163,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for Storm DRPC Java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String DRPC_CHILDOPTS = "drpc.childopts";
 
     /**
@@ -1348,7 +1348,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the supervisor daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String SUPERVISOR_CHILDOPTS = "supervisor.childopts";
 
     /**

@@ -17,45 +17,71 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsTestUtil;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
 import org.elasticsearch.action.percolate.PercolateResponse;
+import org.elasticsearch.client.ResponseException;
+import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.verify;
 
 @Category(IntegrationTest.class)
 public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercolateBolt> {
 
+    private final String source = "{\"user\":\"user1\"}";
+
     @Override
     protected EsPercolateBolt createBolt(EsConfig esConfig) {
-        EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
-        return new EsPercolateBolt(esConfig, tupleMapper);
+        return new EsPercolateBolt(esConfig);
+    }
+
+    @Before
+    public void populateIndexWithTestData() throws Exception {
+        node.client().prepareIndex(index, ".percolator", documentId)
+            .setSource("{\"query\":{\"match\":" + source + "}}")
+            .setRefresh(true)
+            .execute().actionGet();
     }
 
     @Test
-    public void testEsPercolateBolt()
-            throws Exception {
-        String source = "{\"user\":\"user1\"}";
-        String index = "index1";
-        String type = ".percolator";
-
-        node.client().prepareIndex("index1", ".percolator")
-                .setId("1")
-                .setSource("{\"query\":{\"match\":{\"user\":\"user1\"}}}").
-                execute().actionGet();
+    public void testEsPercolateBolt() throws Exception {
         Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, null);
 
         bolt.execute(tuple);
 
         verify(outputCollector).ack(tuple);
         verify(outputCollector).emit(new Values(source, any(PercolateResponse.Match.class)));
+    }
+
+    @Test
+    public void noDocumentsMatch() throws Exception {
+        Tuple tuple = EsTestUtil.generateTestTuple("{\"user\":\"user2\"}", index, type, null);
+
+        bolt.execute(tuple);
+
+        verify(outputCollector).ack(tuple);
+        verify(outputCollector, never()).emit(any(Values.class));
+    }
+
+    @Test
+    public void indexMissing()
+            throws Exception {
+        String index = "missing";
+
+        Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, null);
+
+        bolt.execute(tuple);
+
+        verify(outputCollector, never()).emit(any(Values.class));
+        verify(outputCollector).reportError(any(ResponseException.class));
+        verify(outputCollector).fail(tuple);
     }
 
     @Override

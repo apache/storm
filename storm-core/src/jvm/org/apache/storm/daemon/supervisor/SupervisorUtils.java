@@ -94,23 +94,23 @@ public class SupervisorUtils {
         return ret;
     }
 
-    public static void setupStormCodeDir(Map<String, Object> conf, Map<String, Object> stormConf, String dir) throws IOException {
+    public static void setupStormCodeDir(Map<String, Object> conf, String user, String dir) throws IOException {
         if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Storm Code Dir Setup for " + dir;
             List<String> commands = new ArrayList<>();
             commands.add("code-dir");
             commands.add(dir);
-            processLauncherAndWait(conf, (String) (stormConf.get(Config.TOPOLOGY_SUBMITTER_USER)), commands, null, logPrefix);
+            processLauncherAndWait(conf, user, commands, null, logPrefix);
         }
     }
 
-    public static void setupWorkerArtifactsDir(Map<String, Object> conf, Map<String, Object> stormConf, String dir) throws IOException {
+    public static void setupWorkerArtifactsDir(Map<String, Object> conf, String user, String dir) throws IOException {
         if (Utils.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
             String logPrefix = "Worker Artifacts Setup for " + dir;
             List<String> commands = new ArrayList<>();
             commands.add("artifacts-dir");
             commands.add(dir);
-            processLauncherAndWait(conf, (String) (stormConf.get(Config.TOPOLOGY_SUBMITTER_USER)), commands, null, logPrefix);
+            processLauncherAndWait(conf, user, commands, null, logPrefix);
         }
     }
 
@@ -161,10 +161,9 @@ public class SupervisorUtils {
      * @param stormId
      * @param conf
      */
-    static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf) throws IOException {
+    static void addBlobReferences(Localizer localizer, String stormId, Map<String, Object> conf, String user) throws IOException {
         Map<String, Object> stormConf = ConfigUtils.readSupervisorStormConf(conf, stormId);
         Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-        String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
         String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
         List<LocalResource> localresources = SupervisorUtils.blobstoreMapToLocalresources(blobstoreMap);
         if (blobstoreMap != null) {

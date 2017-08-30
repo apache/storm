@@ -42,7 +42,7 @@ public class TestUser {
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
 
-        List<TopologyDetails> topos = TestUtilsForResourceAwareScheduler.getListOfTopologies(config);
+        List<TopologyDetails> topos = TestUtilsForResourceAwareScheduler.getListOfTopologies(config, "user1");
         User user1 = new User("user1");
 
         for (TopologyDetails topo : topos) {
@@ -64,7 +64,7 @@ public class TestUser {
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
 
-        List<TopologyDetails> topos = TestUtilsForResourceAwareScheduler.getListOfTopologies(config);
+        List<TopologyDetails> topos = TestUtilsForResourceAwareScheduler.getListOfTopologies(config, "user1");
         User user1 = new User("user1");
 
         for (TopologyDetails topo : topos) {
@@ -95,7 +95,8 @@ public class TestUser {
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 200);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 200);
 
-        TopologyDetails topo1 = TestUtilsForResourceAwareScheduler.getTopology("topo-1", config, 1, 1, 2, 1, Time.currentTimeSecs() - 24, 9);
+        TopologyDetails topo1 = TestUtilsForResourceAwareScheduler.getTopology("topo-1", config, 1, 1, 2, 1,
+            Time.currentTimeSecs() - 24, 9, "user1");
 
         User user1 = new User("user1", resourceGuaranteeMap);
 
