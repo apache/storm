@@ -310,7 +310,7 @@ public class ServerUtils {
     public static String writeScript(String dir, List<String> command,
                                      Map<String,String> environment) throws IOException {
         String path = scriptFilePath(dir);
-        try(BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
+        try (BufferedWriter out = new BufferedWriter(new FileWriter(path))) {
             out.write("#!/bin/bash");
             out.newLine();
             if (environment != null) {
@@ -377,7 +377,12 @@ public class ServerUtils {
         return nimbusBlobVersion;
     }
 
-    public static boolean canUserReadBlob(ReadableBlobMeta meta, String user) {
+    public static boolean canUserReadBlob(ReadableBlobMeta meta, String user, Map<String, Object> conf) {
+
+        if (!ObjectReader.getBoolean(conf.get(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED), false)) {
+            return true;
+        }
+
         SettableBlobMeta settable = meta.get_settable();
         for (AccessControl acl : settable.get_acl()) {
             if (acl.get_type().equals(AccessControlType.OTHER) && (acl.get_access() & BlobStoreAclHandler.READ) > 0) {

@@ -37,6 +37,7 @@ import org.apache.storm.streams.processors.MapValuesProcessor;
 import org.apache.storm.streams.processors.MergeAggregateByKeyProcessor;
 import org.apache.storm.streams.processors.ReduceByKeyProcessor;
 import org.apache.storm.streams.processors.UpdateStateByKeyProcessor;
+import org.apache.storm.streams.processors.CoGroupByKeyProcessor;
 import org.apache.storm.streams.windowing.Window;
 import org.apache.storm.tuple.Fields;
 
@@ -44,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+
 
 /**
  * Represents a stream of key-value pairs.
@@ -380,6 +382,29 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
         return partitionBy(KEY).updateStateByKeyPartition(stateUpdater);
     }
 
+    /**
+     * Groups the values of this stream with the values having the same key from
+     * the other stream.
+     * <p>
+     * If stream1 has values - (k1, v1), (k2, v2), (k2, v3) <br/>
+     * and stream2 has values - (k1, x1), (k1, x2), (k3, x3) <br/>
+     * The the co-grouped stream would contain -
+     * (k1, ([v1], [x1, x2]), (k2, ([v2, v3], [])), (k3, ([], [x3]))
+     * </p>
+     * <p>
+     * Note: The parallelism of this stream is carried forward to the co-grouped stream.
+     * </p>
+     *
+     * @param otherStream the other stream
+     * @param <V1>        the type of the values in the other stream
+     * @return the new stream
+     */
+    public <V1> PairStream<K,  Pair<Iterable<V>, Iterable<V1>>> coGroupByKey(PairStream<K, V1> otherStream) {
+        return partitionByKey().coGroupByKeyPartition(otherStream);
+    }
+
+
+
     private <R> StreamState<K, R> updateStateByKeyPartition(StateUpdater<? super V, ? extends R> stateUpdater) {
         return new StreamState<>(
                 new PairStream<>(streamBuilder,
@@ -398,6 +423,17 @@ public class PairStream<K, V> extends Stream<Pair<K, V>> {
                 true);
         addNode(otherStream.getNode(), joinNode, joinNode.getParallelism());
         return new PairStream<>(streamBuilder, joinNode);
+    }
+
+    private <R, V1> PairStream<K,R> coGroupByKeyPartition(PairStream<K, V1> otherStream) {
+        String firstStream = stream;
+        String secondStream = otherStream.stream;
+        Node coGroupNode = addProcessorNode(
+                new CoGroupByKeyProcessor<>(firstStream, secondStream),
+                KEY_VALUE,
+                true);
+        addNode(otherStream.getNode(), coGroupNode, coGroupNode.getParallelism());
+        return new PairStream<>(streamBuilder, coGroupNode);
     }
 
     private PairStream<K, V> partitionByKey() {

@@ -20,6 +20,9 @@ env:
   - MODULES='!storm-client,!storm-server,!storm-core'
   - MODULES='INTEGRATION-TEST'
 
+dist: trusty
+sudo: required
+
 language: java
 jdk:
   - oraclejdk8

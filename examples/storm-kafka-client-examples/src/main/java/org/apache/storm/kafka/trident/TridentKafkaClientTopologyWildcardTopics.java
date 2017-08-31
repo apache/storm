@@ -22,12 +22,14 @@ import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrat
 
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
-public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClientWordCountNamedTopics {
+/**
+ * This example is similar to {@link TridentKafkaClientTopologyWildcardTopics}, but demonstrates subscribing to Kafka topics with a regex.
+ */
+public class TridentKafkaClientTopologyWildcardTopics extends TridentKafkaClientTopologyNamedTopics {
     private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test-trident(-1)?");
 
     @Override
@@ -44,6 +46,6 @@ public class TridentKafkaClientWordCountWildcardTopics extends TridentKafkaClien
     }
 
     public static void main(String[] args) throws Exception {
-        new TridentKafkaClientWordCountWildcardTopics().run(args);
+        new TridentKafkaClientTopologyWildcardTopics().run(args);
     }
 }

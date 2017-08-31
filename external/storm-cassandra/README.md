@@ -151,6 +151,40 @@ import static org.apache.storm.cassandra.DynamicStatementBuilder.*
     );
 ```
 
+#### Writing using Cassandra Object Mapper
+
+Instead of defining CQL statements by hand, it is possible to define CQL using cassandra object mapper.
+
+In the topology we need to define what fields in the tuple will hold the operation (INSERT/DELETE) and the actual value:
+
+```java
+    new CassandraWriterBolt(new ObjectMapperCQLStatementMapperBuilder("operation", "model"))
+```
+
+Define some class using object mapper:
+
+```java
+@Table(keyspace = "my_keyspace", name = "my_table")
+public class ValueObject {
+    ...
+}
+```
+
+And in the bolt that emits to the cassandra bolt:
+
+```java
+    collector.emit(new Values(ObjectMapperOperation.SAVE, new ValueObject("foo", "bar")));
+
+```
+##### Custom codecs
+
+To add custom type codes to the mapping you need to define a lambda expression to work around TypeCodecs not being serializable:
+
+```java
+    new ObjectMapperCQLStatementMapperBuilder("operation", "model")
+            .withCodecs(Arrays.asList(() -> new EnumNameCodec<>(MyEnum.class)));
+```
+                                       
 ### How to handle query execution results
 
 The interface *ExecutionResultHandler* can be used to custom how an execution result should be handle.

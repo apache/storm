@@ -238,6 +238,20 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
 
     /**
+     * A list of host names that this topology would prefer to be scheduled on (no guarantee is given though).
+     * This is intended for debugging only.
+     */
+    @isStringList
+    public static final String TOPOLOGY_SCHEDULER_FAVORED_NODES = "topology.scheduler.favored.nodes";
+
+    /**
+     * A list of host names that this topology would prefer to NOT be scheduled on (no guarantee is given though).
+     * This is intended for debugging only.
+     */
+    @isStringList
+    public static final String TOPOLOGY_SCHEDULER_UNFAVORED_NODES = "topology.scheduler.unfavored.nodes";
+
+    /**
      * How many executors to spawn for ackers.
      *
      * <p>By not setting this variable or setting it as null, Storm will set the number of acker executors
@@ -1389,6 +1403,13 @@ public class Config extends HashMap<String, Object> {
      */
     @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class}, valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
+
+    /**
+     * A whitelist of the RAS scheduler strategies allowed by nimbus. Should be a list of fully-qualified class names
+     * or null to allow all.
+     */
+    @isStringList
+    public static final String NIMBUS_SCHEDULER_STRATEGY_CLASS_WHITELIST = "nimbus.scheduler.strategy.class.whitelist";
 
     /**
      * Full path to the worker-laucher executable that will be used to lauch workers when

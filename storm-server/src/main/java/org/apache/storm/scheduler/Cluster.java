@@ -514,6 +514,18 @@ public class Cluster implements ISchedulingState {
             return false;
         }
 
+        //Lets see if we can make the Memory one fast too, at least in the failure case.
+        //The totalMemReq is not really that accurate because it does not include shared memory, but if it does not fit we know
+        // Even with shared it will not work
+        double minMemNeeded = td.getTotalMemReqTask(exec);
+        if (minMemNeeded > memoryAvailable) {
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Could not schedule {}:{} on {} not enough Mem {} > {}", td.getName(), exec, ws, minMemNeeded, memoryAvailable);
+            }
+            //Not enough minimum MEM no need to try any more
+            return false;
+        }
+
         double currentTotal = 0.0;
         double afterTotal = 0.0;
         double afterOnHeap = 0.0;

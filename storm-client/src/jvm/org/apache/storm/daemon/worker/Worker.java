@@ -100,13 +100,13 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     /**
      * TODO: should worker even take the topologyId as input? this should be
-     * deducable from cluster state (by searching through assignments)
+     * deducible from cluster state (by searching through assignments)
      * what about if there's inconsistency in assignments? -> but nimbus should guarantee this consistency
      *
      * @param conf         - Storm configuration
      * @param context      -
      * @param topologyId   - topology id
-     * @param assignmentId - assignement id
+     * @param assignmentId - assignment id
      * @param port         - port on which the worker runs
      * @param workerId     - worker id
      */
@@ -448,7 +448,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public static void main(String[] args) throws Exception {
-        Preconditions.checkArgument(args.length == 4, "Illegal number of arguemtns. Expected: 4, Actual: " + args.length);
+        Preconditions.checkArgument(args.length == 4, "Illegal number of arguments. Expected: 4, Actual: " + args.length);
         String stormId = args[0];
         String assignmentId = args[1];
         String portStr = args[2];

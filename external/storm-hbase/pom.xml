@@ -35,10 +35,6 @@
         </developer>
     </developers>
 
-    <properties>
-        <hdfs.version>${hadoop.version}</hdfs.version>
-    </properties>
-
     <dependencies>
         <dependency>
             <groupId>org.apache.storm</groupId>

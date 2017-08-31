@@ -135,7 +135,7 @@ public class StormSubmitter {
                 LOG.info("Pushing Credentials to topology {} in local mode", name);
                 localNimbus.uploadNewCredentials(name, new Credentials(fullCreds));
             } else {
-                try(NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+                try (NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
                     LOG.info("Uploading new credentials to {}", name);
                     client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
                 }
@@ -561,15 +561,8 @@ public class StormSubmitter {
         public void onCompleted(String srcFile, String targetFile, long totalBytes);
     }
 
-    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException {
+    private static void validateConfs(Map<String, Object> topoConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException, AuthorizationException {
         ConfigValidation.validateFields(topoConf);
-        Utils.validateTopologyBlobStoreMap(topoConf, getListOfKeysFromBlobStore(topoConf));
-    }
-
-    private static Set<String> getListOfKeysFromBlobStore(Map<String, Object> topoConf) {
-        try (NimbusBlobStore client = new NimbusBlobStore()) {
-            client.prepare(topoConf);
-            return Sets.newHashSet(client.listKeys());
-        }
+        Utils.validateTopologyBlobStoreMap(topoConf);
     }
 }

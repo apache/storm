@@ -117,7 +117,7 @@ public class ObjectReader {
         if (o instanceof Number) {
             return ((Number) o).doubleValue();
         } else {
-            throw new IllegalArgumentException("Don't know how to convert " + o + " + to double");
+            throw new IllegalArgumentException("Don't know how to convert " + o + " to double");
         }
     }
 
@@ -128,7 +128,7 @@ public class ObjectReader {
         if (o instanceof Boolean) {
             return (Boolean) o;
         } else {
-            throw new IllegalArgumentException("Don't know how to convert " + o + " + to boolean");
+            throw new IllegalArgumentException("Don't know how to convert " + o + " to boolean");
         }
     }
 
@@ -139,7 +139,7 @@ public class ObjectReader {
         if (o instanceof String) {
             return (String) o;
         } else {
-            throw new IllegalArgumentException("Don't know how to convert " + o + " + to String");
+            throw new IllegalArgumentException("Don't know how to convert " + o + " to String");
         }
     }
 }

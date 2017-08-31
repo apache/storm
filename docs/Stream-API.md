@@ -31,6 +31,7 @@ documentation: true
         * [to](#to)
     * [Branch](#branching)
     * [Joins](#joins)
+    * [CoGroupByKey](#cogroupbykey)
     * [State](#state)
         * [updateStateByKey](#updatestatebykey)
         * [stateQuery](#statequery)
@@ -276,7 +277,7 @@ PairStream<String, Double> scores = ...
 // list of scores per user in the last window, e.g. ("alice", [10, 11, 13]), ("bob", [15, 20])
 PairStream<String, Iterable<Integer>> userScores =  scores.window(...).groupByKey(); 
 ```
- 
+
 ###  <a name="countbykey"></a> countByKey
 `countByKey` counts the values for each key of this stream.
 
@@ -399,6 +400,20 @@ Joins are typically invoked on a windowed stream, joining the key-values that ar
 
 Left, right and full outer joins are supported. 
 
+## <a name="cogroupbykey"></a> CoGroupByKey
+
+`coGroupByKey` Groups the values of this stream with the values having the same key from the other stream.
+
+```java
+// a stream of (key, value) pairs e.g. (k1, v1), (k2, v2), (k2, v3)
+PairStream<String, String> stream1 = ...
+
+// another stream of (key, value) pairs e.g. (k1, x1), (k1, x2), (k3, x3)
+PairStream<String, String> stream2 = ...
+
+// the co-grouped values per key in the last window, e.g. (k1, ([v1], [x1, x2]), (k2, ([v2, v3], [])), (k3, ([], [x3]))
+PairStream<String, Iterable<String>> coGroupedStream =  stream1.window(...).coGroupByKey(stream2);
+```
 
 ## <a name="state"></a> State
 

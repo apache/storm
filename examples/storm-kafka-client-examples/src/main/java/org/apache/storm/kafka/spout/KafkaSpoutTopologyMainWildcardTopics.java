@@ -16,19 +16,20 @@
  *   limitations under the License.
  */
 
-package org.apache.storm.kafka.spout.test;
+package org.apache.storm.kafka.spout;
 
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.util.regex.Pattern;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.kafka.spout.KafkaSpout;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+/**
+ * This example is similar to {@link KafkaSpoutTopologyMainNamedTopics}, but demonstrates subscribing to Kafka topics with a regex.
+ */
 public class KafkaSpoutTopologyMainWildcardTopics extends KafkaSpoutTopologyMainNamedTopics {
 
     private static final String STREAM = "test_wildcard_stream";

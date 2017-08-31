@@ -126,7 +126,7 @@ public class BlobStoreUtils {
                 break;
             }
             LOG.debug("Download blob key: {}, NimbusInfo {}", key, nimbusInfo);
-            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
+            try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 rbm = client.getClient().getBlobMeta(key);
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
@@ -174,7 +174,7 @@ public class BlobStoreUtils {
             if (isSuccess) {
                 break;
             }
-            try(NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
+            try (NimbusClient client = new NimbusClient(conf, nimbusInfo.getHost(), nimbusInfo.getPort(), null)) {
                 remoteBlobStore = new NimbusBlobStore();
                 remoteBlobStore.setClient(conf, client);
                 in = remoteBlobStore.getBlob(key);

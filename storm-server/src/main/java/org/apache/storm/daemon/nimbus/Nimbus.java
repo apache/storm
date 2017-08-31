@@ -902,7 +902,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static void setLoggerTimeouts(LogLevel level) {
         int timeoutSecs = level.get_reset_log_level_timeout_secs();
         if (timeoutSecs > 0) {
-            level.set_reset_log_level_timeout_epoch(Time.currentTimeSecs() + timeoutSecs);
+            level.set_reset_log_level_timeout_epoch(Time.currentTimeMillis() + Time.secsToMillis(timeoutSecs));
         } else {
             level.unset_reset_log_level_timeout_epoch();
         }
@@ -2527,7 +2527,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             validateTopologyWorkerMaxHeapSizeConfigs(topoConf, topology);
-            Utils.validateTopologyBlobStoreMap(topoConf, Sets.newHashSet(blobStore.listKeys()));
+            Utils.validateTopologyBlobStoreMap(topoConf, blobStore);
             long uniqueNum = submittedCount.incrementAndGet();
             String topoId = topoName + "-" + uniqueNum + "-" + Time.currentTimeSecs();
             Map<String, String> creds = null;
@@ -2747,11 +2747,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (mergedLogConfig == null) {
                 mergedLogConfig = new LogConfig();
             }
-            Map<String, LogLevel> namedLoggers = mergedLogConfig.get_named_logger_level();
-            for (LogLevel level: namedLoggers.values()) {
-                level.set_action(LogLevelAction.UNCHANGED);
+
+            if (mergedLogConfig.is_set_named_logger_level()) {
+                Map<String, LogLevel> namedLoggers = mergedLogConfig.get_named_logger_level();
+                for (LogLevel level: namedLoggers.values()) {
+                    level.set_action(LogLevelAction.UNCHANGED);
+                }
             }
-            
+
             if (config.is_set_named_logger_level()) {
                 for (Entry<String, LogLevel> entry: config.get_named_logger_level().entrySet()) {
                     LogLevel logConfig = entry.getValue();

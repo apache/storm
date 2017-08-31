@@ -46,7 +46,6 @@
             <groupId>org.elasticsearch</groupId>
             <artifactId>elasticsearch</artifactId>
             <version>${elasticsearch.test.version}</version>
-            <scope>${provided.scope}</scope>
         </dependency>
     </dependencies>
 

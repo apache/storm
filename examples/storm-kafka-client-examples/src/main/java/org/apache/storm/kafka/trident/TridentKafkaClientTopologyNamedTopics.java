@@ -21,17 +21,16 @@ package org.apache.storm.kafka.trident;
 import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.kafka.bolt.KafkaProducerTopology;
 import org.apache.storm.kafka.spout.Func;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
@@ -41,7 +40,11 @@ import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
-public class TridentKafkaClientWordCountNamedTopics {
+/**
+ * This example sets up a few topologies to put random strings in Kafka topics via the KafkaBolt,
+ * and shows how to set up a Trident topology that reads from some Kafka topics using the KafkaSpout.
+ */
+public class TridentKafkaClientTopologyNamedTopics {
 
     private static final String TOPIC_1 = "test-trident";
     private static final String TOPIC_2 = "test-trident-1";
@@ -51,7 +54,7 @@ public class TridentKafkaClientWordCountNamedTopics {
         return new KafkaTridentSpoutOpaque<>(spoutConfig);
     }
 
-    private static Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new JustValueFunc();
+    private static final Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new JustValueFunc();
 
     /**
      * Needs to be serializable.
@@ -82,7 +85,7 @@ public class TridentKafkaClientWordCountNamedTopics {
     }
 
     public static void main(String[] args) throws Exception {
-        new TridentKafkaClientWordCountNamedTopics().run(args);
+        new TridentKafkaClientTopologyNamedTopics().run(args);
     }
 
     protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException,
@@ -100,10 +103,5 @@ public class TridentKafkaClientWordCountNamedTopics {
         // Consumer
         StormSubmitter.submitTopology("topics-consumer", tpConf,
             TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque(newKafkaSpoutConfig(brokerUrl))));
-
-        // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
-        Thread.sleep(2000);
-        DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
-        System.exit(0);     // Kill all the non daemon threads
     }
 }

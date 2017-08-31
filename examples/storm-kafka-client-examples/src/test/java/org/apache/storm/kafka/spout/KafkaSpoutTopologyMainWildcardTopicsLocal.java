@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.kafka.spout.test;
+package org.apache.storm.kafka.spout;
 
 public class KafkaSpoutTopologyMainWildcardTopicsLocal extends KafkaSpoutTopologyMainNamedTopicsLocal {
 
