@@ -1031,7 +1031,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * What directory to use for the blobstore. The directory is expected to be an
      * absolute path when using HDFS blobstore, for LocalFsBlobStore it could be either
-     * absolute or relative.
+     * absolute or relative. If the setting is a relative directory, it is relative to
+     * root directory of Storm installation.
      */
     @isString
     public static final String BLOBSTORE_DIR = "blobstore.dir";
@@ -1424,7 +1425,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * A directory on the local filesystem used by Storm for any local
      * filesystem usage it needs. The directory must exist and the Storm daemons must
-     * have permission to read/write from this location.
+     * have permission to read/write from this location. It could be either absolute or relative.
+     * If the setting is a relative directory, it is relative to root directory of Storm installation.
      */
     @isString
     public static final String STORM_LOCAL_DIR = "storm.local.dir";

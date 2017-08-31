@@ -215,6 +215,20 @@ public class ConfigUtils {
         }
     }
 
+    public static String absoluteStormBlobStoreDir(Map<String, Object> conf) {
+        String stormHome = System.getProperty("storm.home");
+        String blobStoreDir = (String) conf.get(Config.BLOBSTORE_DIR);
+        if (blobStoreDir == null) {
+            return ConfigUtils.absoluteStormLocalDir(conf);
+        } else {
+            if (new File(blobStoreDir).isAbsolute()) {
+                return blobStoreDir;
+            } else {
+                return (stormHome + FILE_SEPARATOR + blobStoreDir);
+            }
+        }
+    }
+
     public static StormTopology readSupervisorStormCodeGivenPath(String stormCodePath, AdvancedFSOps ops) throws IOException {
         return Utils.deserialize(ops.slurp(new File(stormCodePath)), StormTopology.class);
     }

@@ -55,7 +55,7 @@ public class ServerConfigUtils {
     }
 
     public static String masterLocalDir(Map<String, Object> conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPARATOR + "nimbus";
+        String ret = ConfigUtils.absoluteStormLocalDir(conf) + FILE_SEPARATOR + "nimbus";
         FileUtils.forceMkdir(new File(ret));
         return ret;
     }
