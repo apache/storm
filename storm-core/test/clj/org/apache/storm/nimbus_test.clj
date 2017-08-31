@@ -537,6 +537,10 @@
                                 (TestPlannerSpout. true) (Integer. 4))}
                          {}))
         (bind state (.getClusterState cluster))
+        ; get topology history when there's no topology history
+        (let [hist-topo-ids (vec (sort (.get_topo_ids (.getTopologyHistory (.getNimbus cluster) (System/getProperty "user.name")))))]
+             (log-message "Checking user " (System/getProperty "user.name") " " hist-topo-ids)
+             (is (= 0 (count hist-topo-ids))))
         (.submitTopology cluster "test" {TOPOLOGY-MESSAGE-TIMEOUT-SECS 20, LOGS-USERS ["alice", (System/getProperty "user.name")]} topology)
         (bind storm-id (StormCommon/getStormId state "test"))
         (.advanceClusterTime cluster 5)
