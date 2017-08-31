@@ -18,7 +18,6 @@
 package org.apache.storm.executor.bolt;
 
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ import org.apache.storm.hooks.info.BoltAckInfo;
 import org.apache.storm.hooks.info.BoltFailInfo;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IOutputCollector;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
@@ -97,7 +97,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
             MessageId msgId;
             if (ackingEnabled && anchors != null) {
                 final Map<Long, Long> anchorsToIds = new HashMap<>();
-                for (Tuple a : anchors) {  //TODO: PERF: critical path. should avoid using iterators here and below
+                for (Tuple a : anchors) {  // perf critical path. would be nice to avoid iterator allocation here and below
                     Set<Long> rootIds = a.getMessageId().getAnchorsToIds().keySet();
                     if (rootIds.size() > 0) {
                         long edgeId = MessageId.generateId(random);
@@ -112,7 +112,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                 msgId = MessageId.makeUnanchored();
             }
             TupleImpl tupleExt = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), taskId, streamId, msgId);
-            xsfer.transfer(t, tupleExt);
+            xsfer.transfer(new AddressedTuple(t, tupleExt) );
         }
         if (isEventLoggers) {
             task.sendToEventLogger(executor, values, executor.getComponentId(), null, random);

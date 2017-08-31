@@ -41,6 +41,7 @@ import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.ShellBolt;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
@@ -56,6 +57,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Queue;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 
@@ -190,16 +192,28 @@ public class Task {
         return builtInMetrics;
     }
 
+    // Blocking call. Wont return until emits to destination
     public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);
         try {
             for (Integer t : tasks) {
-                transfer.transfer(t, tuple);
+                AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
+                transfer.transfer(addressedTuple);
             }
         } catch (InterruptedException e) {
             LOG.warn("Thread interrupted during sendUnanchored().");
             throw new RuntimeException(e);
+        }
+    }
+
+    // Non Blocking call. If cannot emmit to destination immediately, such tuples will be added to `outFailedEmits` argument
+    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> overflow) {
+        Tuple tuple = getTuple(stream, values);
+        List<Integer> tasks = getOutgoingTasks(stream, values);
+        for (Integer t : tasks) {
+            AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
+            transfer.tryTransfer(addressedTuple, overflow);
         }
     }
 

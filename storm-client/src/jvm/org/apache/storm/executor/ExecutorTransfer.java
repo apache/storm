@@ -21,7 +21,6 @@ import org.apache.storm.Config;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.tuple.AddressedTuple;
-import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
@@ -31,6 +30,7 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Queue;
 
 public class ExecutorTransfer  {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorTransfer.class);
@@ -54,25 +54,61 @@ public class ExecutorTransfer  {
     }
 
 
-    public void transfer(int task, Tuple tuple) throws InterruptedException {
-        AddressedTuple addressedTuple = new AddressedTuple(task, tuple);
+    public void transfer(AddressedTuple addressedTuple) throws InterruptedException {
         if (isDebug) {
             LOG.info("TRANSFERRING tuple {}", addressedTuple);
         }
 
-        boolean isLocal = transferLocal(addressedTuple);
-        if (!isLocal) {
+        JCQueue localQueue = getLocalQueue(addressedTuple);
+        if (localQueue!=null) {
+            transferLocal(addressedTuple, localQueue);
+        }  else  {
             transferRemote(addressedTuple);
             ++remotesBatchSz;
-            if(remotesBatchSz >=producerBatchSz) {
+            if (remotesBatchSz >=producerBatchSz) {
                 flushRemotes();
                 remotesBatchSz =0;
             }
         }
     }
 
+    // adds addressedTuple to destination Q is it is not full. else adds to overflow (if its not null)
+    public boolean tryTransfer(AddressedTuple addressedTuple, Queue<AddressedTuple> overflow) {
+        if (isDebug) {
+            LOG.info("TRANSFERRING tuple {}", addressedTuple);
+        }
+
+        JCQueue localQueue = getLocalQueue(addressedTuple);
+        if (localQueue!=null) {
+            return tryTransferLocal(addressedTuple, localQueue, overflow);
+        }  else  {
+            if (remotesBatchSz >= producerBatchSz) {
+                if ( !tryFlushRemotes() ) {
+                    if (overflow != null) {
+                        overflow.add(addressedTuple);
+                    }
+                    return false;
+                }
+                remotesBatchSz = 0;
+            }
+            if (tryTransferRemote(addressedTuple, overflow)) {
+                ++remotesBatchSz;
+                if (remotesBatchSz >= producerBatchSz) {
+                    tryFlushRemotes();
+                    remotesBatchSz = 0;
+                }
+                return true;
+            }
+            return false;
+        }
+    }
+
     private void transferRemote(AddressedTuple tuple) throws InterruptedException {
         workerData.transferRemote(tuple);
+    }
+
+    private boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
+        return workerData.tryTransferRemote(tuple, overflow);
     }
 
     // flushes local and remote messages
@@ -93,16 +129,33 @@ public class ExecutorTransfer  {
         workerData.flushRemotes();
     }
 
-    public boolean transferLocal(AddressedTuple tuple) throws InterruptedException {
-        if(tuple.dest>=localReceiveQueues.size())
-            return false;
-        JCQueue queue = localReceiveQueues.get(tuple.dest);
-        if (queue==null)
-            return false;
+    private boolean tryFlushRemotes() {
+        return workerData.tryFlushRemotes();
+    }
+
+    private JCQueue getLocalQueue(AddressedTuple tuple) {
+        if (tuple.dest>=localReceiveQueues.size())
+            return null;
+        return localReceiveQueues.get(tuple.dest);
+    }
+
+    public void transferLocal(AddressedTuple tuple, JCQueue localQueue) throws InterruptedException {
         workerData.checkSerialize(serializer, tuple);
-        queue.publish(tuple);
-        outboundQueues.set(tuple.dest, queue);
-        return true;
+        localQueue.publish(tuple);
+        outboundQueues.set(tuple.dest, localQueue);
+    }
+
+    // tries to add to localQueue, else adds to overflow. returns false if it cannot add to localQueue.
+    public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> overflow) {
+        workerData.checkSerialize(serializer, tuple);
+        if (localQueue.tryPublish(tuple)) {
+            outboundQueues.set(tuple.dest, localQueue);
+            return true;
+        }
+        if (overflow!=null) {
+            overflow.add(tuple);
+        }
+        return false;
     }
 
 }

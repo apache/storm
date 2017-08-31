@@ -515,8 +515,22 @@ public class WorkerState implements JCQueue.Consumer {
         transferQueue.publish(tuple);
     }
 
+    /* Not a Blocking call. 'overflow' can be null */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
+        if (transferQueue.tryPublish(tuple))
+            return true;
+        if(overflow!=null) {
+            overflow.add(tuple);
+        }
+        return false;
+    }
+
     public void flushRemotes() throws InterruptedException {
         transferQueue.flush();
+    }
+
+    public boolean tryFlushRemotes() {
+        return transferQueue.tryFlush();
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {

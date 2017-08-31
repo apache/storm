@@ -317,7 +317,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                     AddressedTuple metricsTickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
                     try {
                         receiveQueue.publish(metricsTickTuple);
-                        receiveQueue.flush();  // flush immediately to avoid buffering
+                        receiveQueue.flush();  // avoid buffering
                     } catch (InterruptedException e) {
                         LOG.warn("Thread interrupted when publishing metrics. Setting interrupt flag.");
                         Thread.currentThread().interrupt();
@@ -344,7 +344,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                         AddressedTuple tickTuple = new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple);
                         try {
                             receiveQueue.publish(tickTuple);
-                            receiveQueue.flush();
+                            receiveQueue.flush(); // avoid buffering
                         } catch (InterruptedException e) {
                             LOG.warn("Thread interrupted when emitting tick tuple. Setting interrupt flag.");
                             Thread.currentThread().interrupt();
@@ -358,7 +358,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
 
     // Called by flush-tuple-timer thread
     public boolean publishFlushTuple() {
-        if( receiveQueue.tryPublish(flushTuple) ) {
+        if( receiveQueue.tryPublishDirect(flushTuple) ) {
             LOG.debug("Published Flush tuple to: {} ", getComponentId());
             return true;
         }

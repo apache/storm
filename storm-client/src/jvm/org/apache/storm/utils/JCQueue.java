@@ -39,10 +39,12 @@ public final class JCQueue implements IStatefulObject {
     private ThroughputMeter emptyMeter = new ThroughputMeter("EmptyBatch");
 
     private interface Inserter {
-        // blocking call that can be interrupted with Thread.interrupt()
+        // blocking call that can be interrupted using Thread.interrupt()
         void add(Object obj) throws InterruptedException;
+        boolean tryAdd(Object obj);
 
         void flush() throws InterruptedException;
+        boolean tryFlush();
     }
 
     /* Thread safe. Same instance can be used across multiple threads */
@@ -53,9 +55,7 @@ public final class JCQueue implements IStatefulObject {
             this.q = q;
         }
 
-        /**
-         * Blocking call, that can be interrupted via Thread.interrupt
-         */
+        /** Blocking call, that can be interrupted via Thread.interrupt */
         @Override
         public void add(Object obj) throws InterruptedException {
             boolean inserted = q.tryPublishInternal(obj);
@@ -71,9 +71,25 @@ public final class JCQueue implements IStatefulObject {
 
         }
 
+        /** Non-Blocking call. return value indicates success/failure */
+        @Override
+        public boolean tryAdd(Object obj) {
+            boolean inserted = q.tryPublishInternal(obj);
+            if (!inserted) {
+                q.metrics.notifyInsertFailure();
+                return false;
+            }
+            return true;
+        }
+
         @Override
         public void flush() throws InterruptedException {
             return;
+        }
+
+        @Override
+        public boolean tryFlush() {
+            return true;
         }
     } // class DirectInserter
 
@@ -88,6 +104,7 @@ public final class JCQueue implements IStatefulObject {
             this.currentBatch = new ArrayList<>(batchSz + 1);
         }
 
+        /** Blocking call - retires till element is successfully added */
         @Override
         public void add(Object obj) throws InterruptedException {
             currentBatch.add(obj);
@@ -96,8 +113,21 @@ public final class JCQueue implements IStatefulObject {
             }
         }
 
+        /** Non-Blocking call. return value indicates success/failure */
         @Override
-        /** Blocking call - Does not return until at least 1 element is drained or Thread.interrupt() is received */
+        public boolean tryAdd(Object obj) {
+            if (currentBatch.size() >= batchSz) {
+                if (!tryFlush()) {
+                    return false;
+                }
+            }
+            currentBatch.add(obj);
+            return true;
+        }
+
+        /** Blocking call - Does not return until at least 1 element is drained or Thread.interrupt() is received.
+         *    Uses backpressure wait strategy. */
+        @Override
         public void flush() throws InterruptedException {
             if (currentBatch.isEmpty()) {
                 return;
@@ -113,6 +143,23 @@ public final class JCQueue implements IStatefulObject {
                 publishCount = q.tryPublishInternal(currentBatch);
             }
             currentBatch.subList(0, publishCount).clear();
+        }
+
+        /** Non blocking call. tries to flush as many as possible. Returns true if at least one from non-empty currentBatch was flushed
+         *      or if currentBatch is empty. Returns false otherwise */
+        @Override
+        public boolean tryFlush() {
+            if (currentBatch.isEmpty()) {
+                return true;
+            }
+            int publishCount = q.tryPublishInternal(currentBatch);
+            if (publishCount == 0) {
+                q.metrics.notifyInsertFailure();
+                return false;
+            } else {
+                currentBatch.subList(0, publishCount).clear();
+                return true;
+            }
         }
     } // class BatchInserter
 
@@ -267,6 +314,24 @@ public final class JCQueue implements IStatefulObject {
      * Blocking call. Retries till it can successfully publish the obj. Can be interrupted via Thread.interrupt().
      */
     public void publish(Object obj) throws InterruptedException {
+        Inserter inserter = getInserter();
+        inserter.add(obj);
+    }
+
+    /**
+     * Non-blocking call, returns false if failed
+     **/
+    public boolean tryPublish(Object obj) {
+        Inserter inserter = getInserter();
+        return inserter.tryAdd(obj);
+    }
+
+    /** Non-blocking call. Bypasses any batching that may be enabled on the queue. */
+    public boolean tryPublishDirect(Object obj) {
+        return tryPublishInternal(obj);
+    }
+
+    private Inserter getInserter() {
         Inserter inserter;
         if (producerBatchSz > 1) {
             inserter = thdLocalBatcher.get();
@@ -278,14 +343,7 @@ public final class JCQueue implements IStatefulObject {
         } else {
             inserter = directInserter;
         }
-        inserter.add(obj);
-    }
-
-    /**
-     * Non-blocking call, returns false if failed
-     **/
-    public boolean tryPublish(Object obj) {
-        return tryPublishInternal(obj);
+        return inserter;
     }
 
     /**
@@ -293,11 +351,19 @@ public final class JCQueue implements IStatefulObject {
      * if(batchSz==1) : NO-OP. Returns immediately. doesnt throw.
      */
     public void flush() throws InterruptedException {
-        Inserter inserter = thdLocalBatcher.get();
-        if (inserter != null) {
-            inserter.flush();
-        }
+        Inserter inserter = getInserter();
+        inserter.flush();
     }
+
+    /**
+     * if(batchSz>1)  : Non-Blocking call. Tries to flush as many as it can. Returns true if flushed at least 1.
+     * if(batchSz==1) : This is a NO-OP. Returns true immediately.
+     */
+    public boolean tryFlush()  {
+        Inserter inserter = getInserter();
+        return inserter.tryFlush();
+    }
+
 
     @Override
     public Object getState() {

@@ -291,10 +291,10 @@ public class Worker implements Shutdownable, DaemonCommon {
                     }
                 }
                 if (xferBatchSize > 1) {        // 2 - send flush tuple to workerTransferThread
-                    if (workerState.transferQueue.tryPublish(flushTuple)) {
+                    if (workerState.transferQueue.tryPublishDirect(flushTuple)) {
                         LOG.debug("Published Flush tuple to: workerTransferThread");
                     } else {
-                        LOG.debug("RecvQ is currently full, will retry publishing Flush Tuple later to : workerTransferThread");
+                        LOG.info("RecvQ of workerTransferThread is currently full, will retry publishing Flush Tuple later");
                     }
                 }
             }

@@ -79,13 +79,15 @@ public class ConstSpoutNullBoltTopo {
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
-        // configure for achieving max throughput in single worker mode (empirically found).
-        //    -- Expect ~7.8 mill/sec.  (4.8 mill/sec with batchSz=1)
-        //    -- ~1 mill/sec, lat= ~20 microsec  with acker=1 & batchSz=1
+        // Configured for achieving max throughput in single worker mode (empirically found).
+        //  For reference : numbers taken on MacBook Pro mid 2015
+        //    -- ACKer=0:  ~8 mill/sec.  (6.7 mill/sec with batchSz=1)
+        //    -- ACKer=1:  ~1 mill/sec,   lat= ~1 microsec  with batchSz=1 & bolt.wait.strategy=Park bolt.wait.park.micros=0
+        //    -- ACKer=1:  ~1.3 mill/sec, lat= ~11 micros   with batchSz=1 & receive.buffer.size=1k, bolt.wait & bp.wait = Progressive[defaults]
+        //    -- ACKer=1:  ~1.6 mill/sec, lat= ~300 micros  with batchSz=500 & bolt.wait.strategy=Park bolt.wait.park.micros=0
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
-        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 2_000);
+        topoConf.put(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE, 50_000);
         topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);

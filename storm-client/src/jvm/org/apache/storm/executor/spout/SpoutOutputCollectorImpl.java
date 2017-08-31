@@ -22,6 +22,7 @@ import org.apache.storm.daemon.Task;
 import org.apache.storm.executor.TupleInfo;
 import org.apache.storm.spout.ISpout;
 import org.apache.storm.spout.ISpoutOutputCollector;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.MessageId;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
@@ -116,57 +117,58 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
             outTasks = taskData.getOutgoingTasks(stream, values);
         }
 
-            final boolean needAck = (messageId != null) && hasAckers;
+        final boolean needAck = (messageId != null) && hasAckers;
 
-            final List<Long> ackSeq = needAck ? new ArrayList<>() : null;
+        final List<Long> ackSeq = needAck ? new ArrayList<>() : null;
 
-            final long rootId = needAck ? MessageId.generateId(random) : 0;
+        final long rootId = needAck ? MessageId.generateId(random) : 0;
 
-            for (int i = 0; i < outTasks.size(); i++) { // perf critical path. don't use iterators.
-                Integer t = outTasks.get(i);
-                MessageId msgId;
-                if (needAck) {
-                    long as = MessageId.generateId(random);
-                    msgId = MessageId.makeRootId(rootId, as);
-                    ackSeq.add(as);
-                } else {
-                    msgId = MessageId.makeUnanchored();
-                }
-
-                final TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
-                executor.getExecutorTransfer().transfer(t, tuple); // TODO: PERF: This is limiting emit() throughput. need to see why.
-            }
-            if (isEventLoggers) {
-                taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random);
-            }
-
+        for (int i = 0; i < outTasks.size(); i++) { // perf critical path. don't use iterators.
+            Integer t = outTasks.get(i);
+            MessageId msgId;
             if (needAck) {
-                boolean sample = executor.samplerCheck();
-                TupleInfo info = new TupleInfo();
-                info.setTaskId(this.taskId);
-                info.setStream(stream);
-                info.setMessageId(messageId);
-                if (isDebug) {
-                    info.setValues(values);
-                }
-                if (sample) {
-                    info.setTimestamp(System.currentTimeMillis());
-                }
-
-                pending.put(rootId, info);
-                List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
-                taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer());
-            } else if (messageId != null) {
-                // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
-                globalTupleInfo.clear();
-                globalTupleInfo.setStream(stream);
-                globalTupleInfo.setValues(values);
-                globalTupleInfo.setMessageId(messageId);
-                globalTupleInfo.setTimestamp(0);
-                globalTupleInfo.setId("0:");
-                Long timeDelta = 0L;
-                executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
+                long as = MessageId.generateId(random);
+                msgId = MessageId.makeRootId(rootId, as);
+                ackSeq.add(as);
+            } else {
+                msgId = MessageId.makeUnanchored();
             }
+
+            final TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
+            AddressedTuple adrTuple = new AddressedTuple(t, tuple);
+            executor.getExecutorTransfer().tryTransfer(adrTuple , executor.getOverflow());
+        }
+        if (isEventLoggers) {
+            taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random);
+        }
+
+        if (needAck) {
+            boolean sample = executor.samplerCheck();
+            TupleInfo info = new TupleInfo();
+            info.setTaskId(this.taskId);
+            info.setStream(stream);
+            info.setMessageId(messageId);
+            if (isDebug) {
+                info.setValues(values);
+            }
+            if (sample) {
+                info.setTimestamp(System.currentTimeMillis());
+            }
+
+            pending.put(rootId, info);
+            List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
+            taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer(), executor.getOverflow());
+        } else if (messageId != null) {
+            // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
+            globalTupleInfo.clear();
+            globalTupleInfo.setStream(stream);
+            globalTupleInfo.setValues(values);
+            globalTupleInfo.setMessageId(messageId);
+            globalTupleInfo.setTimestamp(0);
+            globalTupleInfo.setId("0:");
+            Long timeDelta = 0L;
+            executor.ackSpoutMsg(executor, taskData, timeDelta, globalTupleInfo);
+        }
         return outTasks;
     }
 }

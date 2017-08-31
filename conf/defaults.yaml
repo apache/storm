@@ -234,7 +234,7 @@ topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
-topology.max.spout.pending: 995  # Used in ACK mode only. Should be less than `topology.executor.receive.buffer.size` to avoid deadlocked cycles involving ACKer
+topology.max.spout.pending: null
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60

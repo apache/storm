@@ -117,7 +117,6 @@ public class BoltExecutor extends Executor {
         init(idToTask, idToTaskBase);
 
         return new Callable<Long>() {
-            RunningAvg avgConsumeCount = new RunningAvg("BOLT Avg consume count", 10_000_000, true);
             @Override
             public Long call() throws Exception {
                 int count = receiveQueue.consume(BoltExecutor.this);
@@ -128,7 +127,6 @@ public class BoltExecutor extends Executor {
                     }
                     count = receiveQueue.consume(BoltExecutor.this);
                 }
-                avgConsumeCount.push(count);
                 return 0L;
             }
         };
