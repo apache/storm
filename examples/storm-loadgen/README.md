@@ -89,8 +89,8 @@ Not all options are supported by all reporters.
 |columns | A comma separated list of columns to output (see below for the metrics supported).  A `*` is replaced by all metrics. Defaults to "start_time", "end_time", "rate", "mean", "99%ile", "99.9%ile", "cores", "mem", "failed", "ids", "congested" | csv, tsv, fixed |
 |extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv, fixed |
 |meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv, fixed|
+|precision | The number of places after the decimal point to print out.  The default for fixed is 3, all others it is unlimited. | csv, tsv, fixed|
 |columnWidth | The width of each field | fixed|
-|precision | The number of places after the decimal point to print out | fixed|
 
 There are a lot of different metrics supported
 

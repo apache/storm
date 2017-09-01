@@ -476,9 +476,16 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         protected final TimeUnit targetUnit;
         protected final List<String> extractors;
         protected final String meta;
+        protected final int precision;
+        protected String doubleFormat;
 
         public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
+            this(path, query, extractorsMap, null);
+        }
+
+        public ColumnsFileReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap,
+                                   String defaultPreceision) throws FileNotFoundException {
             super(path, query, extractorsMap);
             targetUnit = UNIT_MAP.get(query.getOrDefault("time", "MILLISECONDS").toUpperCase());
             if (targetUnit == null) {
@@ -511,7 +518,14 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     }
                 }
             }
-
+            String strPrecision = query.getOrDefault("precision", defaultPreceision);
+            if (strPrecision == null) {
+                precision = -1;
+                doubleFormat = "%f";
+            } else {
+                precision = Integer.parseInt(strPrecision);
+                doubleFormat = "%." + precision + "f";
+            }
             meta = query.get("meta");
         }
 
@@ -536,19 +550,25 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             }
             return ret;
         }
+
+        protected String format(Object o) {
+            if (o instanceof Double || o instanceof Float) {
+                return String.format(doubleFormat, o);
+            } else {
+                return o == null ? "" : o.toString();
+            }
+        }
     }
 
 
     static class FixedWidthReporter extends  ColumnsFileReporter {
-        public final String doubleFormat;
         public final String longFormat;
         public final String stringFormat;
 
         public FixedWidthReporter(String path, Map<String, String> query, Map<String, MetricExtractor> extractorsMap)
             throws FileNotFoundException {
-            super(path, query, extractorsMap);
+            super(path, query, extractorsMap, "3");
             int columnWidth = Integer.parseInt(query.getOrDefault("columnWidth", "15")) - 1;//Always have a space in between
-            int precision = Integer.parseInt(query.getOrDefault("precision", "3"));
             doubleFormat = "%," + columnWidth + "." + precision + "f";
             longFormat = "%," + columnWidth + "d";
             stringFormat = "%" + columnWidth + "s";
@@ -558,7 +578,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             this(null, Collections.emptyMap(), allExtractors);
         }
 
-        private String format(Object o) {
+        @Override
+        protected String format(Object o) {
             if (o instanceof Double || o instanceof Float) {
                 return String.format(doubleFormat, o);
             } else if (o instanceof Integer || o instanceof Long) {
@@ -638,7 +659,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 }
                 first = false;
                 Object value = allExtractors.get(name).get(m, targetUnit);
-                String svalue = value == null ? "" : value.toString();
+                String svalue = format(value);
                 out.print(escape(svalue));
             }
             if (meta != null) {
