@@ -469,8 +469,8 @@ function toggleComponents(elId) {
     });
 }
 
-function open_visualization() {
-    window.open('/visualize.html?id='+ $.url("?id"), '_blank');
+function open_visualization(sys) {
+    window.open('/visualize.html?id='+ $.url("?id") + "&sys=" + sys, '_blank');
 }
 
 function show_visualization(sys) {
@@ -482,7 +482,7 @@ function show_visualization(sys) {
                     Mustache.render($(template)
                         .filter("#topology-visualization-container-template")
                         .html(),
-                        {id: $.url("?id")}));
+                        {id: $.url("?id"), sys: sys}));
             }
         });
 

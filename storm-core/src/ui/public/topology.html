@@ -340,8 +340,9 @@ $(document).ready(function() {
 
           jsError(function() {
             topologyVisualization.append(Mustache.render($(template).filter("#topology-visualization-template").html(), response));
-            $("#show-hide-visualization").click(function () { show_visualization(null) });
-            $("#open-visualization").click(function() { open_visualization(); });
+            var sys = $.cookies.get("sys") || "false";
+            $("#show-hide-visualization").click(function () { show_visualization(sys) });
+            $("#open-visualization").click(function() { open_visualization(sys); });
 
             config.append(Mustache.render($(template).filter("#topology-configuration-template").html(),formattedConfig));
             $('#topology-configuration td').jsonFormatter()
