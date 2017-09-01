@@ -129,6 +129,7 @@ There are a lot of different metrics supported
 |executors| The number of running executors in the monitored topologies | all
 |workers| The number of workers the monitored topologies are running on | all
 |skipped\_max\_spout| The number of ms in total that the spout reported it skipped trying to emit because of `topology.max.spout.pending`. This is the sum for all spouts and can be used to decide if setting the value higher will likely improve throughput. `congested` reports individual spouts that appear to be slowed down by this to a large degree. | all
+|ui\_complete\_latency| This is a special metric, as it is the average completion latency as reported on the ui for `:all-time`. Because it is comes from the UI it does not follow the normal windows.  Within a window the maximum value reported is used.  | all
 |target_rate| The target rate in sentences per second for the ThroughputVsLatency topology | ThroughputVsLatency
 |spout_parallel| The parallelism of the spout for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |split_parallel| The parallelism of the split bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency

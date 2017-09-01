@@ -50,6 +50,7 @@ import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.TopologyInfo;
+import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.metric.api.IMetricsConsumer;
 import org.apache.storm.utils.Utils;
@@ -91,6 +92,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     public static class Measurements {
         private final Histogram histo;
+        private double uiCompleteLatency;
         private long skippedMaxSpoutMs;
         private double userMs;
         private double sysMs;
@@ -115,7 +117,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
          */
         public Measurements(long uptimeSecs, long acked, long timeWindow, long failed, Histogram histo,
                             double userMs, double sysMs, double gcMs, long memBytes, Set<String> topologyIds,
-                            long workers, long executors, long hosts, Map<String, String> congested, long skippedMaxSpoutMs) {
+                            long workers, long executors, long hosts, Map<String, String> congested, long skippedMaxSpoutMs,
+                            double uiCompleteLatency) {
             this.uptimeSecs = uptimeSecs;
             this.acked = acked;
             this.timeWindow = timeWindow;
@@ -131,6 +134,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             this.hosts = hosts;
             this.congested = congested;
             this.skippedMaxSpoutMs = skippedMaxSpoutMs;
+            this.uiCompleteLatency = uiCompleteLatency;
         }
 
         /**
@@ -152,6 +156,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             hosts = 0;
             congested = new HashMap<>();
             skippedMaxSpoutMs = 0;
+            uiCompleteLatency = 0.0;
         }
 
         /**
@@ -174,6 +179,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             hosts = Math.max(hosts, other.hosts);
             congested.putAll(other.congested);
             skippedMaxSpoutMs += other.skippedMaxSpoutMs;
+            uiCompleteLatency = Math.max(uiCompleteLatency, other.uiCompleteLatency);
         }
 
         public double getLatencyAtPercentile(double percential, TimeUnit unit) {
@@ -194,6 +200,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         public double getLatencyStdDeviation(TimeUnit unit) {
             return convert(histo.getStdDeviation(), TimeUnit.NANOSECONDS, unit);
+        }
+
+        public double getUiCompleteLatency(TimeUnit unit) {
+            return convert(uiCompleteLatency, TimeUnit.MILLISECONDS, unit);
         }
 
         public double getUserTime(TimeUnit unit) {
@@ -424,6 +434,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         tmp.put("os_name", new MetricExtractor((m, unit) -> System.getProperty("os.name"), ""));
         tmp.put("os_version", new MetricExtractor((m, unit) -> System.getProperty("os.version"), ""));
         tmp.put("config_override", new MetricExtractor((m, unit) -> Utils.readCommandLineOpts(), ""));
+        tmp.put("ui_complete_latency", new MetricExtractor((m, unit) -> m.getUiCompleteLatency(unit)));
         NAMED_EXTRACTORS = Collections.unmodifiableMap(tmp);
     }
 
@@ -874,8 +885,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         int uptime = 0;
         long acked = 0;
         long failed = 0;
+        double totalLatMs = 0;
+        long totalLatCount = 0;
         for (String id: ids) {
             TopologyInfo info = client.getTopologyInfo(id);
+            @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
+            TopologyPageInfo tpi = client.getTopologyPageInfo(id, ":all-time", false);
             uptime = Math.max(uptime, info.get_uptime_secs());
             for (ExecutorSummary exec : info.get_executors()) {
                 hosts.add(exec.get_host());
@@ -900,6 +915,12 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                     }
                 }
             }
+            Double latency = tpi.get_topology_stats().get_window_to_complete_latencies_ms().get(":all-time");
+            Long latAcked = tpi.get_topology_stats().get_window_to_acked().get(":all-time");
+            if (latency != null && latAcked != null) {
+                totalLatCount += latAcked;
+                totalLatMs += (latAcked * latency);
+            }
         }
         @SuppressWarnings("checkstyle:VariableDeclarationUsageDistance")
         long failedThisTime = failed - prevFailed;
@@ -923,7 +944,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long memBytes = readMemory();
 
         allCombined.add(new Measurements(uptime, ackedThisTime, thisTime, failedThisTime, copy, user, sys, gc, memBytes,
-            ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>()), skippedMaxSpout));
+            ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>()), skippedMaxSpout,
+            totalLatMs / totalLatCount));
         Measurements inWindow = Measurements.combine(allCombined, null, windowLength);
         for (MetricResultsReporter reporter: reporters) {
             reporter.reportWindow(inWindow, allCombined);
