@@ -33,7 +33,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 
@@ -136,7 +135,11 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             final TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
             AddressedTuple adrTuple = new AddressedTuple(t, tuple);
-            executor.getExecutorTransfer().tryTransfer(adrTuple , executor.getOverflow());
+            if (hasAckers) {
+                executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getOverflow());
+            } else {
+                executor.getExecutorTransfer().transfer(adrTuple);
+            }
         }
         if (isEventLoggers) {
             taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random);
