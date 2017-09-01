@@ -91,6 +91,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
     public static class Measurements {
         private final Histogram histo;
+        private long skippedMaxSpoutMs;
         private double userMs;
         private double sysMs;
         private double gcMs;
@@ -114,7 +115,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
          */
         public Measurements(long uptimeSecs, long acked, long timeWindow, long failed, Histogram histo,
                             double userMs, double sysMs, double gcMs, long memBytes, Set<String> topologyIds,
-                            long workers, long executors, long hosts, Map<String, String> congested) {
+                            long workers, long executors, long hosts, Map<String, String> congested, long skippedMaxSpoutMs) {
             this.uptimeSecs = uptimeSecs;
             this.acked = acked;
             this.timeWindow = timeWindow;
@@ -129,6 +130,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             this.executors = executors;
             this.hosts = hosts;
             this.congested = congested;
+            this.skippedMaxSpoutMs = skippedMaxSpoutMs;
         }
 
         /**
@@ -149,6 +151,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             executors = 0;
             hosts = 0;
             congested = new HashMap<>();
+            skippedMaxSpoutMs = 0;
         }
 
         /**
@@ -170,6 +173,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
             executors = Math.max(executors, other.executors);
             hosts = Math.max(hosts, other.hosts);
             congested.putAll(other.congested);
+            skippedMaxSpoutMs += other.skippedMaxSpoutMs;
         }
 
         public double getLatencyAtPercentile(double percential, TimeUnit unit) {
@@ -202,6 +206,10 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         public double getGc(TimeUnit unit) {
             return convert(gcMs, TimeUnit.MILLISECONDS, unit);
+        }
+
+        public double getSkippedMaxSpout(TimeUnit unit) {
+            return convert(skippedMaxSpoutMs, TimeUnit.MILLISECONDS, unit);
         }
 
         public double getMemMb() {
@@ -397,6 +405,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         tmp.put("user_cpu", new MetricExtractor((m, unit) -> m.getUserTime(unit)));
         tmp.put("sys_cpu", new MetricExtractor((m, unit) -> m.getSysTime(unit)));
         tmp.put("gc_cpu", new MetricExtractor((m, unit) -> m.getGc(unit)));
+        tmp.put("skipped_max_spout", new MetricExtractor((m, unit) -> m.getSkippedMaxSpout(unit)));
         tmp.put("acked",  new MetricExtractor((m, unit) -> m.getAcked(), ""));
         tmp.put("acked_rate",  new MetricExtractor((m, unit) -> m.getAckedPerSec(), "tuple/s"));
         tmp.put("completed",  new MetricExtractor((m, unit) -> m.getCompleted(), ""));
@@ -730,6 +739,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
     private final AtomicLong userCpu = new AtomicLong(0);
     private final AtomicLong gcCount = new AtomicLong(0);
     private final AtomicLong gcMs = new AtomicLong(0);
+    private final AtomicLong skippedMaxSpoutMs = new AtomicLong(0);
     private final ConcurrentHashMap<String, MemMeasure> memoryBytes = new ConcurrentHashMap<>();
     private final AtomicReference<ConcurrentHashMap<String, String>> congested = new AtomicReference<>(new ConcurrentHashMap<>());
     private final List<MetricResultsReporter> reporters;
@@ -909,10 +919,11 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         long user = userCpu.getAndSet(0);
         long sys = systemCpu.getAndSet(0);
         long gc = gcMs.getAndSet(0);
+        long skippedMaxSpout = skippedMaxSpoutMs.getAndSet(0);
         long memBytes = readMemory();
 
         allCombined.add(new Measurements(uptime, ackedThisTime, thisTime, failedThisTime, copy, user, sys, gc, memBytes,
-            ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>())));
+            ids, workers.size(), executors, hosts.size(), congested.getAndSet(new ConcurrentHashMap<>()), skippedMaxSpout));
         Measurements inWindow = Measurements.combine(allCombined, null, windowLength);
         for (MetricResultsReporter reporter: reporters) {
             reporter.reportWindow(inWindow, allCombined);
@@ -974,6 +985,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
                 }
             } else if (dp.name.equals("__skipped-max-spout-ms")) {
                 if (dp.value instanceof Number) {
+                    skippedMaxSpoutMs.getAndAdd(((Number) dp.value).longValue());
                     double full = ((Number) dp.value).doubleValue() / 10_000.0; //The frequency of reporting
                     if (full >= 0.8) {
                         congested.get().put(

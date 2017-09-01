@@ -118,7 +118,7 @@ There are a lot of different metrics supported
 |end_time| The ending time of the metrics window from the the first topology was launched. | all
 |time_window| the length in seconds for the time window. | all
 |ids| The topology ids that are being tracked | all
-|congested| Componets that appear to be congested | all
+|congested| Components that appear to be congested | all
 |storm_version| The version of storm as reported by the client | all
 |java_version| The version of java as reported by the client | all
 |os_arch| The OS architecture as reported by the client | all
@@ -128,6 +128,7 @@ There are a lot of different metrics supported
 |hosts| The number of hosts the monitored topologies are running on| all
 |executors| The number of running executors in the monitored topologies | all
 |workers| The number of workers the monitored topologies are running on | all
+|skipped\_max\_spout| The number of ms in total that the spout reported it skipped trying to emit because of `topology.max.spout.pending`. This is the sum for all spouts and can be used to decide if setting the value higher will likely improve throughput. `congested` reports individual spouts that appear to be slowed down by this to a large degree. | all
 |target_rate| The target rate in sentences per second for the ThroughputVsLatency topology | ThroughputVsLatency
 |spout_parallel| The parallelism of the spout for the `ThroughputVsLatency` topology. | ThroughputVsLatency
 |split_parallel| The parallelism of the split bolt for the `ThroughputVsLatency` topology. | ThroughputVsLatency
