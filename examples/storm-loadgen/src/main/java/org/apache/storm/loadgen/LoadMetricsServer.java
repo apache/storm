@@ -21,6 +21,8 @@ package org.apache.storm.loadgen;
 import com.google.common.annotations.VisibleForTesting;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilterOutputStream;
+import java.io.OutputStream;
 import java.io.PrintStream;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -45,6 +47,7 @@ import org.HdrHistogram.Histogram;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.Option;
 import org.apache.commons.cli.Options;
+import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.storm.generated.ClusterSummary;
 import org.apache.storm.generated.ExecutorSummary;
 import org.apache.storm.generated.Nimbus;
@@ -309,10 +312,21 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         void finish(List<Measurements> allTime) throws Exception;
     }
 
+    private static class NoCloseOutputStream extends FilterOutputStream {
+        public NoCloseOutputStream(OutputStream out) {
+            super(out);
+        }
+
+        @Override
+        public void close() {
+            //NOOP on purpose
+        }
+    }
+
     abstract static class FileReporter implements MetricResultsReporter {
         protected final PrintStream out;
-        private final boolean needsClose;
         protected final Map<String, MetricExtractor> allExtractors;
+        public final boolean includesSysOutOrError;
 
         public FileReporter(Map<String, MetricExtractor> allExtractors) throws FileNotFoundException {
             this(null, Collections.emptyMap(), allExtractors);
@@ -321,19 +335,30 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         public FileReporter(String path, Map<String, String> query,  Map<String, MetricExtractor> allExtractors)
             throws FileNotFoundException {
             boolean append = Boolean.parseBoolean(query.getOrDefault("append", "false"));
+            boolean tee = Boolean.parseBoolean(query.getOrDefault("tee", "false"));
+            boolean includesSysOutOrError = false;
 
+            OutputStream out = null;
             if (path == null || "/dev/stdout".equals(path)) {
-                out = System.out;
-                needsClose = false;
+                out = new NoCloseOutputStream(System.out);
+                includesSysOutOrError = true;
+                tee = false;
             } else if ("/dev/stderr".equals(path)) {
-                out = System.err;
-                needsClose = false;
+                out = new NoCloseOutputStream(System.err);
+                includesSysOutOrError = true;
+                tee = false;
             } else {
-                out = new PrintStream(new FileOutputStream(path, append));
-                needsClose = true;
+                out = new FileOutputStream(path, append);
             }
+
+            if (tee) {
+                out = new TeeOutputStream(new NoCloseOutputStream(System.out), out);
+                includesSysOutOrError = true;
+            }
+            this.out = new PrintStream(out);
             //Copy it in case we want to modify it
             this.allExtractors = new LinkedHashMap<>(allExtractors);
+            this.includesSysOutOrError = includesSysOutOrError;
         }
 
         @Override
@@ -343,7 +368,7 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
 
         @Override
         public void finish(List<Measurements> allTime) throws Exception {
-            if (needsClose && out != null) {
+            if (out != null) {
                 out.close();
             }
         }
@@ -840,9 +865,8 @@ public class LoadMetricsServer extends HttpForwardingMetricsServer {
         boolean foundStdOutOrErr = false;
         for (MetricResultsReporter rep : reporters) {
             if (rep instanceof FileReporter) {
-                PrintStream ps = ((FileReporter) rep).out;
-                if (ps == System.out || ps == System.err) {
-                    foundStdOutOrErr = true;
+                foundStdOutOrErr = ((FileReporter) rep).includesSysOutOrError;
+                if (foundStdOutOrErr) {
                     break;
                 }
             }

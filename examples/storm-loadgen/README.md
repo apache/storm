@@ -90,6 +90,7 @@ Not all options are supported by all reporters.
 |extraColumns | Like columns but ones that should be added to the defaults instead of replacing them. A `*` is replaced by all metrics. | csv, tsv, fixed |
 |meta | An arbitrary string that will appear as a "meta" column at the end.  This helps when appending to files to keep different runs separated | csv, tsv, fixed|
 |precision | The number of places after the decimal point to print out.  The default for fixed is 3, all others it is unlimited. | csv, tsv, fixed|
+|tee | A boolean saying if in addition to writing to a file should the output be written to stdout too. | csv, tsv, fixed|
 |columnWidth | The width of each field | fixed|
 
 There are a lot of different metrics supported
