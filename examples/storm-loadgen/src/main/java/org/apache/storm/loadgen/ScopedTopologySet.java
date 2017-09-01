@@ -29,7 +29,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A set of topology names that will be killed when this is closed.
+ * A set of topology names that will be killed when this is closed, or when the
+ * program exits.
  */
 public class ScopedTopologySet extends HashSet<String> implements AutoCloseable {
     private static final Logger LOG = LoggerFactory.getLogger(ScopedTopologySet.class);
@@ -40,11 +41,21 @@ public class ScopedTopologySet extends HashSet<String> implements AutoCloseable 
     }
 
     private final Nimbus.Iface client;
-    private final Set<String> unmodWrapper;
+    private boolean closed = false;
 
+    /**
+     * Constructor.
+     * @param client the client used to kill the topologies when this exist.
+     */
     public ScopedTopologySet(Nimbus.Iface client) {
         this.client = client;
-        unmodWrapper = Collections.unmodifiableSet(this);
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            try {
+                close();
+            } catch (Exception e) {
+                LOG.error("Error trying to shutdown topologies on exit", e);
+            }
+        }));
     }
 
     @Override
@@ -69,11 +80,15 @@ public class ScopedTopologySet extends HashSet<String> implements AutoCloseable 
 
     @Override
     public void close() {
+        if (closed) {
+            return;
+        }
         RuntimeException saved = null;
         for (Iterator<String> it = super.iterator(); it.hasNext();) {
             String name = it.next();
             try {
                 client.killTopologyWithOpts(name, NO_WAIT_KILL);
+                it.remove();
             } catch (Exception e) {
                 RuntimeException wrapped = new RuntimeException("Error trying to kill " + name, e);
                 if (saved != null) {
@@ -87,5 +102,6 @@ public class ScopedTopologySet extends HashSet<String> implements AutoCloseable 
         if (saved != null) {
             throw saved;
         }
+        closed = true;
     }
 }
