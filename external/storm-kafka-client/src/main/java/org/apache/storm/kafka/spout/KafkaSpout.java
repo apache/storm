@@ -91,7 +91,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // Always empty if processing guarantee is none or at-most-once
     private transient Set<KafkaSpoutMessageId> emitted;
     // Records that have been polled and are queued to be emitted in the nextTuple() call. One record is emitted per nextTuple()
-    private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;                         
+    private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;
     // Triggers when a subscription should be refreshed
     private transient Timer refreshSubscriptionTimer;
     private transient TopologyContext context;
@@ -152,7 +152,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             previousAssignment = partitions;
 
             LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
-                    kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
+                kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
 
             if (isAtLeastOnceProcessing()) {
                 commitOffsetsForAckedTuples();
@@ -265,7 +265,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     private Set<TopicPartition> poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
-        
+
         if (waitingToEmit()) {
             LOG.debug("Not polling. Tuples waiting to be emitted.");
             return Collections.emptySet();
@@ -311,12 +311,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     // ======== poll =========
     private ConsumerRecords<K, V> pollKafkaBroker(Set<TopicPartition> pollablePartitions) {
-        doSeekRetriableTopicPartitions(pollablePartitions);
+        final Map<TopicPartition, Long> retriableOffsets = doSeekRetriableTopicPartitions(pollablePartitions);
         Set<TopicPartition> pausedPartitions = new HashSet<>(kafkaConsumer.assignment());
         pausedPartitions.removeIf(pollablePartitions::contains);
         try {
             kafkaConsumer.pause(pausedPartitions);
             final ConsumerRecords<K, V> consumerRecords = kafkaConsumer.poll(kafkaSpoutConfig.getPollTimeoutMs());
+            ackRetriableOffsetsIfCompactedAway(retriableOffsets, consumerRecords);
             final int numPolledRecords = consumerRecords.count();
             LOG.debug("Polled [{}] records from Kafka.",
                 numPolledRecords);
@@ -330,13 +331,42 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
     }
 
-    private void doSeekRetriableTopicPartitions(Set<TopicPartition> pollablePartitions) {
+    private Map<TopicPartition, Long> doSeekRetriableTopicPartitions(Set<TopicPartition> pollablePartitions) {
         final Map<TopicPartition, Long> retriableTopicPartitions = retryService.earliestRetriableOffsets();
-
+        for (TopicPartition tp : retriableTopicPartitions.keySet()) {
+            if (!pollablePartitions.contains(tp)) {
+                retriableTopicPartitions.remove(tp);
+            }
+        }
         for (Entry<TopicPartition, Long> retriableTopicPartitionAndOffset : retriableTopicPartitions.entrySet()) {
-            if (pollablePartitions.contains(retriableTopicPartitionAndOffset.getKey())) {
-                //Seek directly to the earliest retriable message for each retriable topic partition
-                kafkaConsumer.seek(retriableTopicPartitionAndOffset.getKey(), retriableTopicPartitionAndOffset.getValue());
+            //Seek directly to the earliest retriable message for each retriable topic partition
+            kafkaConsumer.seek(retriableTopicPartitionAndOffset.getKey(), retriableTopicPartitionAndOffset.getValue());
+        }
+        return retriableTopicPartitions;
+    }
+
+    private void ackRetriableOffsetsIfCompactedAway(Map<TopicPartition, Long> earliestRetriableOffsets,
+        ConsumerRecords<K, V> consumerRecords) {
+        for (Entry<TopicPartition, Long> entry : earliestRetriableOffsets.entrySet()) {
+            TopicPartition tp = entry.getKey();
+            List<ConsumerRecord<K, V>> records = consumerRecords.records(tp);
+            if (!records.isEmpty()) {
+                ConsumerRecord<K, V> record = records.get(0);
+                long seekOffset = entry.getValue();
+                long earliestReceivedOffset = record.offset();
+                if (seekOffset < earliestReceivedOffset) {
+                    //Since we asked for tuples starting at seekOffset, some retriable records must have been compacted away.
+                    //Ack up to the first offset received if the record is not already acked or currently in the topology
+                    for (long i = seekOffset; i < earliestReceivedOffset; i++) {
+                        KafkaSpoutMessageId msgId = retryService.getMessageId(tp, i);
+                        if (!offsetManagers.get(tp).contains(msgId) && !emitted.contains(msgId)) {
+                            LOG.debug("Record at offset [{}] appears to have been compacted away from topic [{}], marking as acked", i, tp);
+                            retryService.remove(msgId);
+                            emitted.add(msgId);
+                            ack(msgId);
+                        }
+                    }
+                }
             }
         }
     }

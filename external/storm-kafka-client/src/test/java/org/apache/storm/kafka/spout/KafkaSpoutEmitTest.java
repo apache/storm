@@ -74,7 +74,7 @@ public class KafkaSpoutEmitTest {
     public void testNextTupleEmitsAtMostOneTuple() {
         //The spout should emit at most one message per call to nextTuple
         //This is necessary for Storm to be able to throttle the spout according to maxSpoutPending
-        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
         Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
         records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 10));
 
@@ -92,7 +92,7 @@ public class KafkaSpoutEmitTest {
 
         //Emit maxUncommittedOffsets messages, and fail all of them. Then ensure that the spout will retry them when the retry backoff has passed
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             int numRecords = spoutConfig.getMaxUncommittedOffsets();
             //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
@@ -139,10 +139,7 @@ public class KafkaSpoutEmitTest {
         //This verifies that partitions can't prevent each other from retrying tuples due to the maxUncommittedOffsets limit.
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             TopicPartition partitionTwo = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 2);
-            Set<TopicPartition> partitions = new HashSet<>();
-            partitions.add(partition);
-            partitions.add(partitionTwo);
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partitions);
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition, partitionTwo);
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
             records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, spoutConfig.getMaxUncommittedOffsets()));

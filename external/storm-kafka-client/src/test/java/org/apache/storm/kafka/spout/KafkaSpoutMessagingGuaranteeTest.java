@@ -67,7 +67,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
         KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE)
             .build();
-        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
 
         when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
             SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 1))));
@@ -82,7 +82,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     }
 
     private void doTestModeDisregardsMaxUncommittedOffsets(KafkaSpoutConfig<String, String> spoutConfig) {
-        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
 
         when(consumerMock.poll(anyLong()))
             .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
@@ -117,7 +117,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     }
 
     private void doTestModeCannotReplayTuples(KafkaSpoutConfig<String, String> spoutConfig) {
-        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+        KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
 
         when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
             SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 1))));
@@ -163,7 +163,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
 
     private void doTestModeDoesNotCommitAckedTuples(KafkaSpoutConfig<String, String> spoutConfig) {
         try (SimulatedTime time = new SimulatedTime()) {
-            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
+            KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock,partition);
 
             when(consumerMock.poll(anyLong())).thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition,
                 SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, 1))));
