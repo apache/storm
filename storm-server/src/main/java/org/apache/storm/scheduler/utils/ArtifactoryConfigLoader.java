@@ -37,6 +37,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.util.EntityUtils;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONArray;
@@ -330,15 +332,9 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         }
     }
 
-    private void makeArtifactoryCache(String location) {
-        // Just make sure appropriate directories exist
-        String localDirName = (String) conf.get(Config.STORM_LOCAL_DIR);
-        if (localDirName == null) {
-            return;
-        }
-
+    private void makeArtifactoryCache(String location) throws IOException {
         // First make the cache dir
-        localDirName = localDirName + File.separator + "nimbus" + File.separator + LOCAL_ARTIFACT_DIR;
+        String localDirName = ServerConfigUtils.masterLocalDir(conf) + File.separator + LOCAL_ARTIFACT_DIR;
         File dir = new File(localDirName);
         if (! dir.exists()) {
             dir.mkdirs();
@@ -352,7 +348,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         cacheInitialized = true;
     }
 
-    private Map loadFromURI(URI uri) {
+    private Map loadFromURI(URI uri) throws IOException {
         String host = uri.getHost();
         Integer port = uri.getPort();
         String location = uri.getPath();
