@@ -192,6 +192,20 @@ public class ConfigUtils {
         }
     }
 
+    public static String absoluteStormBlobStoreDir(Map<String, Object> conf) {
+        String stormHome = System.getProperty("storm.home");
+        String blobStoreDir = (String) conf.get(Config.BLOBSTORE_DIR);
+        if (blobStoreDir == null) {
+            return ConfigUtils.absoluteStormLocalDir(conf);
+        } else {
+            if (new File(blobStoreDir).isAbsolute()) {
+                return blobStoreDir;
+            } else {
+                return (stormHome + FILE_SEPARATOR + blobStoreDir);
+            }
+        }
+    }
+
     public static String absoluteHealthCheckDir(Map conf) {
         String stormHome = System.getProperty("storm.home");
         String healthCheckDir = (String) conf.get(Config.STORM_HEALTH_CHECK_DIR);
@@ -207,7 +221,7 @@ public class ConfigUtils {
     }
 
     public static String masterLocalDir(Map conf) throws IOException {
-        String ret = String.valueOf(conf.get(Config.STORM_LOCAL_DIR)) + FILE_SEPARATOR + "nimbus";
+        String ret =ConfigUtils.absoluteStormLocalDir(conf) + FILE_SEPARATOR + "nimbus";
         FileUtils.forceMkdir(new File(ret));
         return ret;
     }
