@@ -25,6 +25,7 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -82,10 +83,7 @@ public class LocalFsBlobStore extends BlobStore {
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf);
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
-            if (overrideBase == null) {
-                overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR);
-            }
+            overrideBase = ConfigUtils.absoluteStormBlobStoreDir(conf);
         }
         File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME);
         try {
