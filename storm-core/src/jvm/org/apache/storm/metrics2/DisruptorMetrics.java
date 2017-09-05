@@ -24,7 +24,7 @@ public class DisruptorMetrics {
     private SimpleGauge<Long> population;
     private SimpleGauge<Long> writePosition;
     private SimpleGauge<Long> readPosition;
-    private SimpleGauge<Double> arrivalRate; // TODO: Change to meter
+    private SimpleGauge<Double> arrivalRate;
     private SimpleGauge<Double> sojournTime;
     private SimpleGauge<Long> overflow;
     private SimpleGauge<Float> pctFull;
