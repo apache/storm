@@ -356,9 +356,8 @@ public class ThroughputVsLatency {
 
         TopologyBuilder builder = new TopologyBuilder();
 
-        int numEach = 4 * parallelism;
+        int numEach = parallelism;
         builder.setSpout("spout", new FastRandomSentenceSpout(ratePerSecond/numEach), numEach);
-
         builder.setBolt("split", new SplitSentence(), numEach).shuffleGrouping("spout");
         builder.setBolt("count", new WordCount(), numEach).fieldsGrouping("split", new Fields("word"));
 

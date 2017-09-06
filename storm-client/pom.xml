@@ -106,10 +106,10 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
 
-        <!-- disruptor -->
+        <!-- jctools -->
         <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
         </dependency>
 
         <!-- json -->
@@ -257,7 +257,7 @@
                 <!--Note - the version would be inherited-->
                 <configuration>
                     <excludes>**/generated/**</excludes>
-                    <maxAllowedViolations>10785</maxAllowedViolations>
+                    <maxAllowedViolations>50785</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>

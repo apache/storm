@@ -17,10 +17,13 @@
  */
 package org.apache.storm.tuple;
 
+import org.apache.storm.Constants;
+import org.apache.storm.task.GeneralTopologyContext;
+
 /**
  * A Tuple that is addressed to a destination.
  */
-public class AddressedTuple {
+public final class AddressedTuple {
     /**
      * Destination used when broadcasting a tuple.
      */
@@ -44,5 +47,11 @@ public class AddressedTuple {
     @Override
     public String toString() {
         return "[dest: "+dest+" tuple: "+tuple+"]";
+    }
+
+    public static AddressedTuple createFlushTuple(GeneralTopologyContext workerTopologyContext) {
+        TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(), Constants.SYSTEM_COMPONENT_ID,
+            (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_FLUSH_STREAM_ID);
+        return new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple); // one instance per executor avoids false sharing of CPU cache
     }
 }

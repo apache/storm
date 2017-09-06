@@ -19,6 +19,7 @@
 package org.apache.storm.executor;
 
 import org.apache.storm.daemon.worker.WorkerState;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.RegisteredGlobalState;
 
@@ -33,14 +34,13 @@ public class LocalExecutor {
     public static Executor mkExecutor(WorkerState workerState, List<Long> executorId, Map<String, String> initialCredentials)
         throws Exception {
         Executor executor = Executor.mkExecutor(workerState, executorId, initialCredentials);
-        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getTransferWorkerQueue(),
-            executor.getStormConf()) {
+        executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getStormConf()) {
             @Override
-            public void transfer(int task, Tuple tuple) {
+            public void transfer(AddressedTuple tuple) throws InterruptedException {
                 if (null != trackId) {
                     ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId)).get("transferred")).incrementAndGet();
                 }
-                super.transfer(task, tuple);
+                super.transfer(tuple);
             }
         });
         return executor;

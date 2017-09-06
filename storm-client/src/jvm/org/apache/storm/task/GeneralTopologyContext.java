@@ -41,7 +41,7 @@ public class GeneralTopologyContext implements JSONAware {
     private Map<String, List<Integer>> _componentToTasks;
     private Map<String, Map<String, Fields>> _componentToStreamToFields;
     private String _stormId;
-    protected Map _topoConf;
+    protected Map<String, Object> _topoConf;
     
     // pass in componentToSortedTasks for the case of running tons of tasks in single executor
     public GeneralTopologyContext(StormTopology topology, Map<String, Object> topoConf,

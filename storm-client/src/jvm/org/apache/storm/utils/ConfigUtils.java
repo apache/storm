@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -36,6 +36,7 @@ import java.util.Random;
 import java.util.HashSet;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.function.BooleanSupplier;
 
 public class ConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
@@ -143,19 +144,19 @@ public class ConfigUtils {
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
     }
 
-    public static Callable<Boolean> mkStatsSampler(Map<String, Object> conf) {
+    public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {
         return evenSampler(samplingRate(conf));
     }
 
-    public static Callable<Boolean> evenSampler(final int samplingFreq) {
+    public static BooleanSupplier evenSampler(final int samplingFreq) {
         final Random random = new Random();
 
-        return new Callable<Boolean>() {
+        return new BooleanSupplier() {
             private int curr = -1;
             private int target = random.nextInt(samplingFreq);
 
             @Override
-            public Boolean call() throws Exception {
+            public boolean getAsBoolean() {
                 curr++;
                 if (curr >= samplingFreq) {
                     curr = 0;
