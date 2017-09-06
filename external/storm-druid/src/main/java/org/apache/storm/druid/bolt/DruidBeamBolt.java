@@ -25,12 +25,10 @@ import com.twitter.util.FutureEventListener;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -78,27 +76,28 @@ public class DruidBeamBolt<E> extends BaseTickTupleAwareRichBolt {
 
     @Override
     protected void process(final Tuple tuple) {
-        Future future = tranquilizer.send((druidEventMapper.getEvent(tuple)));
-        LOG.debug("Sent tuple : [{}]", tuple);
+        final E mappedEvent = druidEventMapper.getEvent(tuple);
+        Future future = tranquilizer.send(mappedEvent);
+        LOG.debug("Sent tuple : [{}]", mappedEvent);
 
         future.addEventListener(new FutureEventListener() {
             @Override
             public void onFailure(Throwable cause) {
                 if (cause instanceof MessageDroppedException) {
                     collector.ack(tuple);
-                    LOG.debug("Tuple Dropped due to MessageDroppedException : [{}]", tuple);
+                    LOG.debug("Tuple Dropped due to MessageDroppedException {} : [{}]", cause.getMessage(), mappedEvent);
                     if (druidConfig.getDiscardStreamId() != null)
                         collector.emit(druidConfig.getDiscardStreamId(), new Values(tuple, System.currentTimeMillis()));
                 } else {
                     collector.fail(tuple);
-                    LOG.debug("Tuple Processing Failed : [{}]", tuple);
+                    LOG.error("Tuple Processing Failed : [{}]", mappedEvent, cause);
                 }
             }
 
             @Override
             public void onSuccess(Object value) {
                 collector.ack(tuple);
-                LOG.debug("Tuple Processing Success : [{}]", tuple);
+                LOG.debug("Tuple Processing Success : [{}]", mappedEvent);
             }
         });
 
