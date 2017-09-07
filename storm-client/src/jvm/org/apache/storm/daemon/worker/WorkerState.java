@@ -583,20 +583,22 @@ public class WorkerState {
 
     public void runWorkerStartHooks() {
         WorkerTopologyContext workerContext = getWorkerTopologyContext();
-        for (ByteBuffer hook : topology.get_worker_hooks()) {
-            byte[] hookBytes = Utils.toByteArray(hook);
-            BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
-            hookObject.start(topologyConf, workerContext);
-
+        if (topology.is_set_worker_hooks()) {
+            for (ByteBuffer hook : topology.get_worker_hooks()) {
+                byte[] hookBytes = Utils.toByteArray(hook);
+                BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
+                hookObject.start(topologyConf, workerContext);
+            }
         }
     }
 
     public void runWorkerShutdownHooks() {
-        for (ByteBuffer hook : topology.get_worker_hooks()) {
-            byte[] hookBytes = Utils.toByteArray(hook);
-            BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
-            hookObject.shutdown();
-
+        if (topology.is_set_worker_hooks()) {
+            for (ByteBuffer hook : topology.get_worker_hooks()) {
+                byte[] hookBytes = Utils.toByteArray(hook);
+                BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
+                hookObject.shutdown();
+            }
         }
     }
 
