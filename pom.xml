@@ -335,7 +335,6 @@
         <module>storm-buildtools/maven-shade-clojure-transformer</module>
         <module>storm-buildtools/storm-maven-plugins</module>
         <module>storm-client</module>
-        <module>storm-client-misc</module>
         <module>storm-server</module>
         <module>storm-core</module>
         <module>storm-webapp</module>
@@ -371,6 +370,7 @@
 
         <!-- examples -->
         <module>examples/storm-starter</module>
+	<module>examples/storm-loadgen</module>
         <module>examples/storm-mongodb-examples</module>
         <module>examples/storm-redis-examples</module>
         <module>examples/storm-opentsdb-examples</module>

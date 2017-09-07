@@ -15,49 +15,48 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.misc.metric;
 
+package org.apache.storm.loadgen;
+
+import com.esotericsoftware.kryo.io.Output;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
-import java.net.URL;
-import java.net.HttpURLConnection;
-
-import com.esotericsoftware.kryo.io.Output;
-import org.apache.storm.serialization.KryoValuesSerializer;
-
 import org.apache.storm.metric.api.IMetricsConsumer;
+import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.task.IErrorReporter;
 import org.apache.storm.task.TopologyContext;
 
 /**
- * Listens for all metrics and POSTs them serialized to a configured URL
+ * Listens for all metrics and POSTs them serialized to a configured URL.
  *
- * To use, add this to your topology's configuration:
- *
+ * <p>To use, add this to your topology's configuration:
  * ```java
- *   conf.registerMetricsConsumer(org.apache.storm.metrics.HttpForwardingMetricsConsumer.class, "http://example.com:8080/metrics/my-topology/", 1);
+ *   conf.registerMetricsConsumer(HttpForwardingMetricsConsumer.class, "http://example.com:8080/metrics/my-topology/", 1);
  * ```
  *
- * The body of the post is data serialized using {@link org.apache.storm.serialization.KryoValuesSerializer}, with the data passed in
- * as a list of `[TaskInfo, Collection<DataPoint>]`.  More things may be appended to the end of the list in the future.
+ * <p>The body of the post is data serialized using {@link org.apache.storm.serialization.KryoValuesSerializer}, with the data passed in
+ * as a list of `[TaskInfo, Collection&lt;DataPoint&gt;]`.  More things may be appended to the end of the list in the future.
  *
- * The values can be deserialized using the org.apache.storm.serialization.KryoValuesDeserializer, and a 
- * correct config + classpath.
+ * <p>The values can be deserialized using the org.apache.storm.serialization.KryoValuesDeserializer, and a correct config + classpath.
  *
- * @see org.apache.storm.serialization.KryoValuesSerializer
+ * <p>@see org.apache.storm.serialization.KryoValuesSerializer
  */
 public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
-    private transient URL _url; 
-    private transient IErrorReporter _errorReporter;
-    private transient KryoValuesSerializer _serializer;
+    private transient URL url;
+    private transient IErrorReporter errorReporter;
+    private transient KryoValuesSerializer serializer;
+    private transient String topologyId;
 
     @Override
     public void prepare(Map<String, Object> topoConf, Object registrationArgument, TopologyContext context, IErrorReporter errorReporter) { 
         try {
-            _url = new URL((String)registrationArgument);
-            _errorReporter = errorReporter;
-            _serializer = new KryoValuesSerializer(topoConf);
+            url = new URL((String)registrationArgument);
+            this.errorReporter = errorReporter;
+            serializer = new KryoValuesSerializer(topoConf);
+            topologyId = context.getStormId();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -66,13 +65,13 @@ public class HttpForwardingMetricsConsumer implements IMetricsConsumer {
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
         try {
-            HttpURLConnection con = (HttpURLConnection)_url.openConnection();
+            HttpURLConnection con = (HttpURLConnection) url.openConnection();
             con.setRequestMethod("POST");
             con.setDoOutput(true);
-            Output out = new Output(con.getOutputStream());
-            _serializer.serializeInto(Arrays.asList(taskInfo, dataPoints), out);
-            out.flush();
-            out.close();
+            try (Output out = new Output(con.getOutputStream())) {
+                serializer.serializeInto(Arrays.asList(taskInfo, dataPoints, topologyId), out);
+                out.flush();
+            }
             //The connection is not sent unless a response is requested
             int response = con.getResponseCode();
         } catch (Exception e) {

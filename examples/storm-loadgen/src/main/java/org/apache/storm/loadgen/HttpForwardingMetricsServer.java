@@ -15,27 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.misc.metric;
 
+package org.apache.storm.loadgen;
+
+import com.esotericsoftware.kryo.io.Input;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Map;
-import java.util.List;
-import java.net.ServerSocket;
 import java.net.InetAddress;
-
+import java.net.ServerSocket;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.ServletException;
-
-import org.apache.storm.metric.api.IMetricsConsumer.TaskInfo;
 import org.apache.storm.metric.api.IMetricsConsumer.DataPoint;
-
-import com.esotericsoftware.kryo.io.Input;
+import org.apache.storm.metric.api.IMetricsConsumer.TaskInfo;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.utils.Utils;
-
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
@@ -44,64 +41,72 @@ import org.eclipse.jetty.servlet.ServletHolder;
  * A server that can listen for metrics from the HttpForwardingMetricsConsumer.
  */
 public abstract class HttpForwardingMetricsServer {
-    private Map _conf;
-    private Server _server = null;
-    private int _port = -1;
-    private String _url = null;
+    private Map conf;
+    private Server server = null;
+    private int port = -1;
+    private String url = null;
 
-    ThreadLocal<KryoValuesDeserializer> _des = new ThreadLocal<KryoValuesDeserializer>() {
+    ThreadLocal<KryoValuesDeserializer> des = new ThreadLocal<KryoValuesDeserializer>() {
         @Override
         protected KryoValuesDeserializer initialValue() {
-            return new KryoValuesDeserializer(_conf);
+            return new KryoValuesDeserializer(conf);
         }
     };
 
-    private class MetricsCollectionServlet extends HttpServlet
-    {
-        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException
-        {
+    private class MetricsCollectionServlet extends HttpServlet {
+        protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
             Input in = new Input(request.getInputStream());
-            List<Object> metrics = _des.get().deserializeFrom(in);
-            handle((TaskInfo)metrics.get(0), (Collection<DataPoint>)metrics.get(1));
+            List<Object> metrics = des.get().deserializeFrom(in);
+            handle((TaskInfo)metrics.get(0), (Collection<DataPoint>)metrics.get(1), (String)metrics.get(2));
             response.setStatus(HttpServletResponse.SC_OK);
         }
     }
 
+    /**
+     * Constructor.
+     * @param conf the configuration for storm.
+     */
     public HttpForwardingMetricsServer(Map<String, Object> conf) {
-        _conf = Utils.readStormConfig();
+        this.conf = Utils.readStormConfig();
         if (conf != null) {
-            _conf.putAll(conf);
+            this.conf.putAll(conf);
         }
     }
 
     //This needs to be thread safe
-    public abstract void handle(TaskInfo taskInfo, Collection<DataPoint> dataPoints);
+    public abstract void handle(TaskInfo taskInfo, Collection<DataPoint> dataPoints, String topologyId);
 
+    /**
+     * Start the server.
+     * @param port the port it shuld listen on, or null/<= 0 to pick a free ephemeral port.
+     */
     public void serve(Integer port) {
         try {
-            if (_server != null) throw new RuntimeException("The server is already running");
+            if (server != null) {
+                throw new RuntimeException("The server is already running");
+            }
     
             if (port == null || port <= 0) {
                 ServerSocket s = new ServerSocket(0);
                 port = s.getLocalPort();
                 s.close();
             }
-            _server = new Server(port);
-            _port = port;
-            _url = "http://"+InetAddress.getLocalHost().getHostName()+":"+_port+"/";
+            server = new Server(port);
+            this.port = port;
+            url = "http://" + InetAddress.getLocalHost().getHostName() + ":" + this.port + "/";
  
             ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
             context.setContextPath("/");
-            _server.setHandler(context);
+            server.setHandler(context);
  
             context.addServlet(new ServletHolder(new MetricsCollectionServlet()),"/*");
 
-            _server.start();
-         } catch (RuntimeException e) {
-             throw e;
-         } catch (Exception e) {
-             throw new RuntimeException(e);
-         }
+            server.start();
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void serve() {
@@ -109,10 +114,10 @@ public abstract class HttpForwardingMetricsServer {
     }
 
     public int getPort() {
-        return _port;
+        return port;
     }
 
     public String getUrl() {
-        return _url;
+        return url;
     }
 }
