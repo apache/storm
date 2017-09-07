@@ -2116,9 +2116,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private List<String> readTopologyHistory(String user, Collection<String> adminUsers) throws IOException {
         LocalState state = topologyHistoryState;
+        List<LSTopoHistory> topoHistoryList = state.getTopoHistoryList();
+        if (topoHistoryList == null || topoHistoryList.isEmpty()) {
+            return Collections.emptyList();
+        }
+
         List<String> ret = new ArrayList<>();
-        for (LSTopoHistory history: state.getTopoHistoryList()) {
-            
+        for (LSTopoHistory history: topoHistoryList) {
             if (user == null || //Security off
                     adminUsers.contains(user) || //is admin
                     isUserPartOf(user, history.get_groups()) || //is in allowed group
