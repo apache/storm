@@ -450,6 +450,11 @@ public class BatchSubtopologyBuilder {
         }
 
         @Override
+        public Map getConfiguration() {
+            return _component.componentConfs.get(_component.componentConfs.size() -1);
+        }
+
+        @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
             _component.sharedMemory.add(request);
             return this;

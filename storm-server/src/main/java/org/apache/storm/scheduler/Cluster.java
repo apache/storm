@@ -49,6 +49,17 @@ public class Cluster implements ISchedulingState {
         private final double totalCpu;
         private final double usedMem;
         private final double usedCpu;
+        private final Map<String, Double> totalResources;
+        private final Map<String, Double> usedResources;
+
+        public SupervisorResources(double totalMem, double totalCpu, double usedMem, double usedCpu, Map<String, Double> totalResources, Map<String, Double> usedResources) {
+            this.totalMem = totalMem;
+            this.totalCpu = totalCpu;
+            this.usedMem = usedMem;
+            this.usedCpu = usedCpu;
+            this.totalResources = totalResources;
+            this.usedResources = usedResources;
+        }
 
         /**
          * Constructor for a Supervisor's resources.
@@ -59,11 +70,9 @@ public class Cluster implements ISchedulingState {
          * @param usedCpu the used CPU on the supervisor
          */
         public SupervisorResources(double totalMem, double totalCpu, double usedMem, double usedCpu) {
-            this.totalMem = totalMem;
-            this.totalCpu = totalCpu;
-            this.usedMem = usedMem;
-            this.usedCpu = usedCpu;
+            this(totalMem, totalCpu, usedMem, usedCpu, null, null);
         }
+
 
         public double getUsedMem() {
             return usedMem;

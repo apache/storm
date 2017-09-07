@@ -131,7 +131,7 @@ public class TopologyDetails {
 
     private void initResourceList() {
         this.resourceList = new HashMap<>();
-        // Extract bolt memory info
+        // Extract bolt resource info
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
                 //the json_conf is populated by TopologyBuilder (e.g. boltDeclarer.setMemoryLoad)
@@ -146,7 +146,7 @@ public class TopologyDetails {
                 }
             }
         }
-        // Extract spout memory info
+        // Extract spout resource info
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
                 Map<String, Double> topologyResources =

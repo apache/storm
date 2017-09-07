@@ -372,6 +372,11 @@ public class TridentTopologyBuilder {
         }
 
         @Override
+        public Map getConfiguration() {
+            return _component.componentConfs.get(_component.componentConfs.size() -1);
+        }
+
+        @Override
         public SpoutDeclarer addSharedMemory(SharedMemory request) {
             _component.sharedMemory.add(request);
             return this;
@@ -760,6 +765,11 @@ public class TridentTopologyBuilder {
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
             return this;
+        }
+
+        @Override
+        public Map getConfiguration() {
+            return _component.componentConfs.get(_component.componentConfs.size() -1);
         }
 
         @Override

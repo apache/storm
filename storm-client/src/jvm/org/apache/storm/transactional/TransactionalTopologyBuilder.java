@@ -228,6 +228,11 @@ public class TransactionalTopologyBuilder {
         }
 
         @Override
+        public Map getConfiguration() {
+            return _spoutConfs.get(_spoutConfs.size() -1);
+        }
+
+        @Override
         public SpoutDeclarer addSharedMemory(SharedMemory request) {
             _spoutSharedMemory.add(request);
             return this;
@@ -531,6 +536,11 @@ public class TransactionalTopologyBuilder {
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             _component.componentConfs.add(conf);
             return this;
+        }
+
+        @Override
+        public Map getConfiguration() {
+            return _component.componentConfs.get(_component.componentConfs.size() -1);
         }
 
         @Override
