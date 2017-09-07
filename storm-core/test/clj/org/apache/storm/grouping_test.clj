@@ -32,7 +32,7 @@
        min-prcnt (int (* num-messages 0.49))
        max-prcnt (int (* num-messages 0.51))
        data [1 2]
-       freq (frequencies (for [x (range 0 num-messages)] (.chooseTasks shuffler (int 1) data nil)))
+       freq (frequencies (for [x (range 0 num-messages)] (.chooseTasks shuffler (int 1) data)))
        load1 (.get freq [(int 1)])
        load2 (.get freq [(int 2)])]
     (log-message "FREQ:" freq)
@@ -40,42 +40,6 @@
     (is (<= load1 max-prcnt))
     (is (>= load2 min-prcnt))
     (is (<= load2 max-prcnt))))
-
-(deftest test-shuffle-load-even
- (let [shuffler (GrouperFactory/mkGrouper nil "comp" "stream" nil shuffle-grouping [(int 1) (int 2)] {})
-       num-messages 100000
-       min-prcnt (int (* num-messages 0.49))
-       max-prcnt (int (* num-messages 0.51))
-       load (LoadMapping.)
-       _ (.setLocal load {(int 1) 0.0 (int 2) 0.0})
-       data [1 2]
-       freq (frequencies (for [x (range 0 num-messages)] (.chooseTasks shuffler (int 1) data load)))
-       load1 (.get freq [(int 1)])
-       load2 (.get freq [(int 2)])]
-    (log-message "FREQ:" freq)
-    (is (>= load1 min-prcnt))
-    (is (<= load1 max-prcnt))
-    (is (>= load2 min-prcnt))
-    (is (<= load2 max-prcnt))))
-
-(deftest test-shuffle-load-uneven
- (let [shuffler (GrouperFactory/mkGrouper nil "comp" "stream" nil shuffle-grouping [(int 1) (int 2)] {})
-       num-messages 100000
-       min1-prcnt (int (* num-messages 0.32))
-       max1-prcnt (int (* num-messages 0.34))
-       min2-prcnt (int (* num-messages 0.65))
-       max2-prcnt (int (* num-messages 0.67))
-       load (LoadMapping.)
-       _ (.setLocal load {(int 1) 0.5 (int 2) 0.0})
-       data [1 2]
-       freq (frequencies (for [x (range 0 num-messages)] (.chooseTasks shuffler (int 1) data load)))
-       load1 (.get freq [(int 1)])
-       load2 (.get freq [(int 2)])]
-    (log-message "FREQ:" freq)
-    (is (>= load1 min1-prcnt))
-    (is (<= load1 max1-prcnt))
-    (is (>= load2 min2-prcnt))
-    (is (<= load2 max2-prcnt))))
 
 (deftest test-field
   (with-open [cluster (.build (doto (LocalCluster$Builder.)

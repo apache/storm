@@ -19,6 +19,7 @@ package org.apache.storm.executor;
 
 import org.apache.storm.generated.Credentials;
 import org.apache.storm.generated.ExecutorStats;
+import org.apache.storm.grouping.LoadMapping;
 
 import java.util.List;
 
@@ -27,5 +28,6 @@ public interface IRunningExecutor {
     ExecutorStats renderStats();
     List<Long> getExecutorId();
     void credentialsChanged(Credentials credentials);
+    void loadChanged(LoadMapping loadMapping);
     boolean getBackPressureFlag();
 }
