@@ -17,6 +17,7 @@
  */
 package org.apache.storm.windowing;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.topology.FailedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,6 +26,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -46,7 +48,11 @@ public class TimeTriggerPolicy<T> implements TriggerPolicy<T, Void> {
     public TimeTriggerPolicy(long millis, TriggerHandler handler, EvictionPolicy<T, ?> evictionPolicy) {
         this.duration = millis;
         this.handler = handler;
-        this.executor = Executors.newSingleThreadScheduledExecutor();
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("time-trigger-policy-%d")
+                .setDaemon(true)
+                .build();
+        this.executor = Executors.newSingleThreadScheduledExecutor(threadFactory);
         this.evictionPolicy = evictionPolicy;
     }
 
