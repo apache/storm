@@ -35,6 +35,7 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
+import org.apache.storm.scheduler.resource.strategies.scheduling.GenericResourceAwareStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -53,6 +54,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,6 +64,8 @@ import java.util.Random;
 import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static org.apache.storm.scheduler.resource.ResourceUtils.normalizedResourceMap;
 
 public class TestUtilsForResourceAwareScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilsForResourceAwareScheduler.class);
@@ -103,6 +107,14 @@ public class TestUtilsForResourceAwareScheduler {
         return ret;
     }
 
+    public static Config createGrasClusterConfig(double compPcore, double compOnHeap, double compOffHeap,
+                                             Map<String, Map<String, Number>> pools, Map<String, Double> genericResourceMap) {
+        Config config = createClusterConfig(compPcore, compOnHeap, compOffHeap, pools);
+        config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, genericResourceMap);
+        config.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, GenericResourceAwareStrategy.class.getName());
+        return config;
+    }
+
     public static Config createClusterConfig(double compPcore, double compOnHeap, double compOffHeap, Map<String, Map<String, Number>> pools) {
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
@@ -121,17 +133,29 @@ public class TestUtilsForResourceAwareScheduler {
         return genSupervisors(numSup, numPorts, 0, cpu, mem);
     }
 
-    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, int start, double cpu, double mem) {
-        Map<String, Double> resourceMap = new HashMap<>();
-        resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu);
-        resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);
-        Map<String, SupervisorDetails> retList = new HashMap<>();
+    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts,
+                                                                double cpu, double mem, Map<String, Double> miscResources) {
+        return genSupervisors(numSup, numPorts, 0, cpu, mem, miscResources);
+    }
+
+    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, int start,
+                                                                double cpu, double mem) {
+        return genSupervisors(numSup, numPorts, start, cpu, mem, Collections.emptyMap());
+    }
+
+    public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts, int start,
+                                                                double cpu, double mem, Map<String, Double> miscResources) {
+      Map<String, Double> resourceMap = new HashMap<>();
+      resourceMap.put(Config.SUPERVISOR_CPU_CAPACITY, cpu);
+      resourceMap.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);
+      resourceMap.putAll(miscResources);
+        Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
         for (int i = start; i < numSup + start; i++) {
             List<Number> ports = new LinkedList<>();
             for (int j = 0; j < numPorts; j++) {
                 ports.add(j);
             }
-            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, resourceMap);
+            SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, normalizedResourceMap(resourceMap));
             retList.put(sup.getId(), sup);
         }
         return retList;

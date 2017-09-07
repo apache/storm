@@ -35,7 +35,7 @@ import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy.ObjectResources;
+import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy.ObjectResources;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
@@ -275,9 +275,9 @@ public class TestDefaultResourceAwareStrategy {
         cluster.setNetworkTopography(rackToNodes);
 
         DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
-
+        
         rs.prepare(cluster);
-        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(topo1.getId());
+        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(null, topo1);
 
         Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
         Iterator<ObjectResources> it = sortedRacks.iterator();
@@ -418,7 +418,7 @@ public class TestDefaultResourceAwareStrategy {
         DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
 
         rs.prepare(cluster);
-        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(topo1.getId());
+        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(null, topo1);
 
         Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
         Iterator<ObjectResources> it = sortedRacks.iterator();

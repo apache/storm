@@ -91,7 +91,7 @@ public class ObjectReader {
         if (o instanceof Number) {
             return ((Number) o).doubleValue();
         } else {
-            throw new IllegalArgumentException("Don't know how to convert " + o + " to double");
+            throw new IllegalArgumentException("Don't know how to convert (" + o + ") to double");
         }
     }
 

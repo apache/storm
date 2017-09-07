@@ -54,6 +54,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
 import org.apache.storm.blobstore.AtomicOutputStream;
@@ -2565,8 +2566,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         for (Map<String, Double> entry :
             ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
             double memoryRequirement =
-                entry.getOrDefault(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0)
-                    + entry.getOrDefault(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 0.0);
+                entry.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
+                    + entry.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
             if (memoryRequirement > largestMemoryOperator) {
                 largestMemoryOperator = memoryRequirement;
             }
@@ -2574,8 +2575,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         for (Map<String, Double> entry :
             ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
             double memoryRequirement =
-                entry.getOrDefault(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0)
-                    + entry.getOrDefault(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 0.0);
+                entry.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
+                    + entry.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
             if (memoryRequirement > largestMemoryOperator) {
                 largestMemoryOperator = memoryRequirement;
             }

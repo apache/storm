@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.utils;
 
 import java.io.IOException;
@@ -32,15 +33,15 @@ public class BufferInputStream implements AutoCloseable {
     }
 
     public BufferInputStream(InputStream stream) {
-        this(stream, 15*1024);
+        this(stream, 15 * 1024);
     }
 
     public byte[] read() throws IOException {
         int length = stream.read(buffer);
-        if(length==-1) {
+        if (length == -1) {
             close();
             return new byte[0];
-        } else if(length==buffer.length) {
+        } else if (length == buffer.length) {
             return buffer;
         } else {
             return Arrays.copyOf(buffer, length);

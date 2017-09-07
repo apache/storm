@@ -37,11 +37,14 @@ import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.resource.ResourceUtils;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.storm.scheduler.resource.ResourceUtils.normalizedResourceMap;
 
 public class TopologyDetails {
     private final String topologyId;
@@ -133,22 +136,22 @@ public class TopologyDetails {
 
     private void initResourceList() {
         this.resourceList = new HashMap<>();
-        // Extract bolt memory info
+        // Extract bolt resource info
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
                 //the json_conf is populated by TopologyBuilder (e.g. boltDeclarer.setMemoryLoad)
                 Map<String, Double> topologyResources =
                     ResourceUtils.parseResources(bolt.getValue().get_common().get_json_conf());
-                ResourceUtils.checkInitialization(topologyResources, bolt.getKey(), topologyConf);
+                ResourceUtils.checkInitialization(topologyResources, bolt.getKey(), this.topologyConf);
                 for (Map.Entry<ExecutorDetails, String> anExecutorToComponent :
                     executorToComponent.entrySet()) {
-                    if (bolt.getKey().equals(anExecutorToComponent.getValue())) {
+                    if (bolt.getKey().equals(anExecutorToComponent.getValue()) && !topologyResources.isEmpty()) {
                         resourceList.put(anExecutorToComponent.getKey(), topologyResources);
                     }
                 }
             }
         }
-        // Extract spout memory info
+        // Extract spout resource info
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
                 Map<String, Double> topologyResources =
@@ -156,7 +159,7 @@ public class TopologyDetails {
                 ResourceUtils.checkInitialization(topologyResources, spout.getKey(), this.topologyConf);
                 for (Map.Entry<ExecutorDetails, String> anExecutorToComponent :
                     executorToComponent.entrySet()) {
-                    if (spout.getKey().equals(anExecutorToComponent.getValue())) {
+                    if (spout.getKey().equals(anExecutorToComponent.getValue()) && !topologyResources.isEmpty()) {
                         resourceList.put(anExecutorToComponent.getKey(), topologyResources);
                     }
                 }
@@ -168,6 +171,13 @@ public class TopologyDetails {
         // topology.getbolt (AKA sys tasks most specifically __acker tasks)
         for (ExecutorDetails exec : getExecutors()) {
             if (!resourceList.containsKey(exec)) {
+                LOG.debug(
+                    "Scheduling {} {} with resource requirement as {}",
+                    getExecutorToComponent().get(exec),
+                    exec,
+                    topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB),
+                        resourceList.get(exec)
+                    );
                 addDefaultResforExec(exec);
             }
         }
@@ -254,7 +264,7 @@ public class TopologyDetails {
         if (hasExecInTopo(exec)) {
             ret = resourceList
                     .get(exec)
-                    .get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+                    .get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
         }
         return ret;
     }
@@ -269,7 +279,7 @@ public class TopologyDetails {
         if (hasExecInTopo(exec)) {
             ret = resourceList
                     .get(exec)
-                    .get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
+                    .get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
         }
         return ret;
     }
@@ -289,17 +299,13 @@ public class TopologyDetails {
 
     /**
      * Gets the total memory resource list for a set of tasks that is part of a topology.
-     * @return Map<ExecutorDetails, Double> a map of the total memory requirement for all tasks in topology topoId.
+     * @param executors all executors for a topology
+     * @return Map<ExecutorDetails, Double> ,
+     * a map of the total memory requirement for all tasks in topology topoId.
      */
-    public Map<ExecutorDetails, Double> getTotalMemoryResourceList() {
-        Map<ExecutorDetails, Double> ret = new HashMap<>();
-        for (ExecutorDetails exec : resourceList.keySet()) {
-            ret.put(exec, getTotalMemReqTask(exec));
-        }
-        return ret;
-    }
-
-    public Set<SharedMemory> getSharedMemoryRequests(Collection<ExecutorDetails> executors) {
+    public Set<SharedMemory> getSharedMemoryRequests(
+            Collection<ExecutorDetails> executors
+    ) {
         Set<String> components = new HashSet<>();
         for (ExecutorDetails exec : executors) {
             String component = executorToComponent.get(exec);
@@ -327,14 +333,27 @@ public class TopologyDetails {
     }
 
     /**
-     * Get the total CPU requirement for executor
+     * Get the total resource requirement for an executor.
+     * @param exec
      * @return Double the total about of cpu requirement for executor
+     */
+    public Map<String, Double> getTotalResources(ExecutorDetails exec) {
+        if (hasExecInTopo(exec)) {
+            return this.resourceList.get(exec);
+        }
+        return null;
+    }
+
+    /**
+     * Get the total CPU requirement for executor.
+     * @param exec
+     * @return Map<String, Double> generic resource mapping requirement for the executor
      */
     public Double getTotalCpuReqTask(ExecutorDetails exec) {
         if (hasExecInTopo(exec)) {
             return resourceList
                     .get(exec)
-                    .get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
+                    .get(Constants.COMMON_CPU_RESOURCE_NAME);
         }
         return null;
     }
@@ -419,7 +438,7 @@ public class TopologyDetails {
     }
 
     /**
-     * get the resources requirements for a executor
+     * get the resources requirements for a executor.
      * @param exec
      * @return a map containing the resource requirements for this exec
      */
@@ -431,7 +450,7 @@ public class TopologyDetails {
     }
 
     /**
-     * Checks if a executor is part of this topology
+     * Checks if a executor is part of this topology.
      * @return Boolean whether or not a certain ExecutorDetail is included in the resourceList.
      */
     public boolean hasExecInTopo(ExecutorDetails exec) {
@@ -439,7 +458,7 @@ public class TopologyDetails {
     }
 
     /**
-     * add resource requirements for a executor
+     * add resource requirements for a executor.
      */
     public void addResourcesForExec(ExecutorDetails exec, Map<String, Double> resourceList) {
         if (hasExecInTopo(exec)) {
@@ -450,7 +469,7 @@ public class TopologyDetails {
     }
 
     /**
-     * Add default resource requirements for a executor
+     * Add default resource requirements for a executor.
      */
     private void addDefaultResforExec(ExecutorDetails exec) {
         Double topologyComponentCpuPcorePercent =
@@ -479,6 +498,15 @@ public class TopologyDetails {
 
         adjustResourcesForExec(exec, defaultResourceList);
 
+        Map<String,Double> topologyComponentResourcesMap = (
+                Map<String, Double>) this.topologyConf.getOrDefault(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()
+        );
+
+        topologyComponentResourcesMap = normalizedResourceMap(topologyComponentResourcesMap);
+
+        LOG.info("Scheduling Executor: {} with resource requirement as {}",
+                exec, topologyComponentResourcesMap);
         LOG.debug(
             "Scheduling Executor: {} {} with memory requirement as onHeap: {} - offHeap: {} "
                 + "and CPU requirement: {}",
@@ -487,8 +515,7 @@ public class TopologyDetails {
             topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB),
             topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB),
             topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT));
-
-        addResourcesForExec(exec, defaultResourceList);
+        addResourcesForExec(exec, normalizedResourceMap(defaultResourceList));
     }
 
     /**
@@ -526,7 +553,7 @@ public class TopologyDetails {
     }
 
     /**
-     * initializes member variables
+     * initializes member variables.
      */
     private void initConfigs() {
         this.topologyWorkerMaxHeapSize =
@@ -540,7 +567,7 @@ public class TopologyDetails {
     }
 
     /**
-     * Get the max heap size for a worker used by this topology
+     * Get the max heap size for a worker used by this topology.
      * @return the worker max heap size
      */
     public Double getTopologyWorkerMaxHeapSize() {
@@ -548,21 +575,21 @@ public class TopologyDetails {
     }
 
     /**
-     * Get the user that submitted this topology
+     * Get the user that submitted this topology.
      */
     public String getTopologySubmitter() {
         return owner;
     }
 
     /**
-     * get the priority of this topology
+     * get the priority of this topology.
      */
     public int getTopologyPriority() {
         return topologyPriority;
     }
 
     /**
-     * Get the timestamp of when this topology was launched
+     * Get the timestamp of when this topology was launched.
      */
     public int getLaunchTime() {
         return launchTime;

@@ -50,6 +50,8 @@ import org.json.simple.JSONValue;
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -58,6 +60,7 @@ import java.util.Set;
 
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;
+import static org.apache.storm.utils.Utils.parseJson;
 
 /**
  * TopologyBuilder exposes the Java API for specifying a topology for Storm
@@ -576,10 +579,28 @@ public class TopologyBuilder {
                 throw new IllegalArgumentException("Cannot set serializations for a component using fluent API");
             }
             String currConf = _commons.get(_id).get_json_conf();
-            _commons.get(_id).set_json_conf(mergeIntoJson(Utils.parseJson(currConf), conf));
+            _commons.get(_id).set_json_conf(mergeIntoJson(parseJson(currConf), conf));
             return (T) this;
         }
-        
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public T addResource(String resourceName, Number resourceValue) {
+            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().getOrDefault(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
+
+            resourcesMap.put(resourceName, resourceValue.doubleValue());
+
+            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
+            return (T) this;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Map getRASConfiguration() {
+            return parseJson(_commons.get(_id).get_json_conf());
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public T addSharedMemory(SharedMemory request) {

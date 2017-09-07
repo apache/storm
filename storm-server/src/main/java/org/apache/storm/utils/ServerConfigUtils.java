@@ -18,10 +18,6 @@
 
 package org.apache.storm.utils;
 
-import org.apache.commons.io.FileUtils;
-import org.apache.storm.Config;
-import org.apache.storm.DaemonConfig;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -32,10 +28,16 @@ import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
 
+import org.apache.commons.io.FileUtils;
+import org.apache.storm.Config;
+import org.apache.storm.DaemonConfig;
+
+
+
 public class ServerConfigUtils {
     public static final String FILE_SEPARATOR = File.separator;
-    public final static String NIMBUS_DO_NOT_REASSIGN = "NIMBUS-DO-NOT-REASSIGN";
-    public final static String RESOURCES_SUBDIR = "resources";
+    public static final String NIMBUS_DO_NOT_REASSIGN = "NIMBUS-DO-NOT-REASSIGN";
+    public static final String RESOURCES_SUBDIR = "resources";
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.

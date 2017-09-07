@@ -241,6 +241,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TASKS = "topology.tasks";
 
     /**
+     * A map of resources used by each component e.g {"cpu.pcore.percent" : 200.0. "onheap.memory.mb": 256.0, "gpu.count" : 2 }
+     */
+    @isMapEntryType(keyType = String.class, valueType = Number.class)
+    public static final String TOPOLOGY_COMPONENT_RESOURCES_MAP = "topology.component.resources.map";
+
+    /**
      * The maximum amount of memory an instance of a spout/bolt will take on heap. This enables the scheduler
      * to allocate slots on machines with enough available memory. A default value will be set for this config if user does not override
      */
@@ -1286,6 +1292,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
+
+    /**
+     * A map of resources the Supervisor has e.g {"cpu.pcore.percent" : 200.0. "onheap.memory.mb": 256.0, "gpu.count" : 2.0 }
+     */
+    @isMapEntryType(keyType = String.class, valueType = Number.class)
+    public static final String SUPERVISOR_RESOURCES_MAP = "supervisor.resources.map";
 
     /**
      * Whether or not to use ZeroMQ for messaging in local mode. If this is set
