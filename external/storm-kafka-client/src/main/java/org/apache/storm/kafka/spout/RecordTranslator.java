@@ -32,7 +32,7 @@ public interface RecordTranslator<K, V> extends Serializable, Func<ConsumerRecor
     public static final List<String> DEFAULT_STREAM = Collections.singletonList("default");
     
     /**
-     * Translate the ConsumerRecord into a list of objects that can be emitted
+     * Translate the ConsumerRecord into a list of objects that can be emitted.
      * @param record the record to translate
      * @return the objects in the tuple.  Return a {@link KafkaTuple}
      *     if you want to route the tuple to a non-default stream.

@@ -332,7 +332,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     /**
-     * Creates a tuple from the kafka record and emits it if it was not yet emitted
+     * Creates a tuple from the kafka record and emits it if it was not yet emitted.
      *
      * @param record to be emitted
      * @return true if tuple was emitted. False if tuple has been acked or has been emitted and is pending ack or fail

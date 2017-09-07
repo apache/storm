@@ -19,7 +19,7 @@
 
 <!DOCTYPE module PUBLIC
           "-//Puppy Crawl//DTD Check Configuration 1.3//EN"
-          "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+          "http://checkstyle.sourceforge.net/dtds/configuration_1_3.dtd">
 
 <!--
     The original file came from here:
@@ -87,9 +87,7 @@
             <property name="tokens" value="LITERAL_TRY, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_SWITCH"/>
         </module>
         <module name="NeedBraces"/>
-        <module name="LeftCurly">
-            <property name="maxLineLength" value="140"/>
-        </module>
+        <module name="LeftCurly"/>
         <module name="RightCurly">
             <property name="id" value="RightCurlySame"/>
             <property name="tokens" value="LITERAL_TRY, LITERAL_CATCH, LITERAL_FINALLY, LITERAL_IF, LITERAL_ELSE, LITERAL_DO"/>
@@ -127,6 +125,18 @@
         <module name="SeparatorWrap">
             <property name="id" value="SeparatorWrapComma"/>
             <property name="tokens" value="COMMA"/>
+            <property name="option" value="EOL"/>
+        </module>
+        <module name="SeparatorWrap">
+            <!-- ELLIPSIS is EOL until https://github.com/google/styleguide/issues/258 -->
+            <property name="id" value="SeparatorWrapEllipsis"/>
+            <property name="tokens" value="ELLIPSIS"/>
+            <property name="option" value="EOL"/>
+        </module>
+        <module name="SeparatorWrap">
+            <!-- ARRAY_DECLARATOR is EOL until https://github.com/google/styleguide/issues/259 -->
+            <property name="id" value="SeparatorWrapArrayDeclarator"/>
+            <property name="tokens" value="ARRAY_DECLARATOR"/>
             <property name="option" value="EOL"/>
         </module>
         <module name="SeparatorWrap">

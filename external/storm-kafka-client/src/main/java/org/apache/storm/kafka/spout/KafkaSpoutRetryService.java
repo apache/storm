@@ -54,6 +54,7 @@ public interface KafkaSpoutRetryService extends Serializable {
     boolean retainAll(Collection<TopicPartition> topicPartitions);
 
     /**
+     * Gets the earliest retriable offsets.
      * @return The earliest retriable offset for each TopicPartition that has
      *     offsets ready to be retried, i.e. for which a tuple has failed
      *     and has retry time less than current time.
