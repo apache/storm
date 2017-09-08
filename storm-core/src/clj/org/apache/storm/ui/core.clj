@@ -223,7 +223,9 @@
 
 (defn visualization-data
   [spout-bolt spout-comp-summs bolt-comp-summs window storm-id]
-  (let [components (for [[id spec] spout-bolt]
+  (let [components (for [[id spec] spout-bolt
+                         :when (or (contains? bolt-comp-summs id)
+                                   (contains? spout-comp-summs id))]
             [id
              (let [inputs (.get_inputs (.get_common spec))
                    bolt-summs (.get bolt-comp-summs id)

@@ -321,7 +321,7 @@ function isStreamEnabled(streamIdSanitized) {
 var update = function() {
     if(visNS.shouldUpdate) {
         $.ajax({
-            url: "/api/v1/topology/"+$.url("?id")+"/visualization",
+            url: "/api/v1/topology/"+$.url("?id")+"/visualization?sys="+$.url("?sys"),
             success: function (data, status, jqXHR) {
                 json = data;
                 parseResponse(data);
