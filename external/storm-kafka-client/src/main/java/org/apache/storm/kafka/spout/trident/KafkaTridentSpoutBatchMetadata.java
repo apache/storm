@@ -19,7 +19,10 @@
 package org.apache.storm.kafka.spout.trident;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import org.apache.commons.lang.Validate;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.common.TopicPartition;
@@ -29,38 +32,47 @@ import org.slf4j.LoggerFactory;
 /**
  * Wraps transaction batch information.
  */
-public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
+public class KafkaTridentSpoutBatchMetadata implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutBatchMetadata.class);
-
+    private static final TopicPartitionSerializer TP_SERIALIZER = new TopicPartitionSerializer();
+    
+    public static final String TOPIC_PARTITION_KEY = "tp";
+    public static final String FIRST_OFFSET_KEY = "firstOffset";
+    public static final String LAST_OFFSET_KEY = "lastOffset";
+    
     // topic partition of this batch
-    private TopicPartition topicPartition;  
+    private final TopicPartition topicPartition;  
     // first offset of this batch
-    private long firstOffset;               
+    private final long firstOffset;               
     // last offset of this batch
-    private long lastOffset;
+    private final long lastOffset;
 
+    /**
+     * Builds a metadata object.
+     * @param topicPartition The topic partition
+     * @param firstOffset The first offset for the batch
+     * @param lastOffset The last offset for the batch
+     */
     public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, long firstOffset, long lastOffset) {
         this.topicPartition = topicPartition;
         this.firstOffset = firstOffset;
         this.lastOffset = lastOffset;
     }
 
-    public KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, ConsumerRecords<K, V> consumerRecords,
-            KafkaTridentSpoutBatchMetadata<K, V> lastBatch) {
-        this.topicPartition = topicPartition;
-
+    /**
+     * Builds a metadata object from a non-empty set of records.
+     * @param topicPartition The topic partition the records belong to.
+     * @param consumerRecords The non-empty set of records.
+     */
+    public <K, V> KafkaTridentSpoutBatchMetadata(TopicPartition topicPartition, ConsumerRecords<K, V> consumerRecords) {
+        Validate.notNull(consumerRecords.records(topicPartition));
         List<ConsumerRecord<K, V>> records = consumerRecords.records(topicPartition);
-
-        if (records != null && !records.isEmpty()) {
-            firstOffset = records.get(0).offset();
-            lastOffset = records.get(records.size() - 1).offset();
-        } else {
-            if (lastBatch != null) {
-                firstOffset = lastBatch.firstOffset;
-                lastOffset = lastBatch.lastOffset;
-            }
-        }
-        LOG.debug("Created {}", this);
+        Validate.isTrue(!records.isEmpty(), "There must be at least one record in order to build metadata");
+        
+        this.topicPartition = topicPartition;
+        firstOffset = records.get(0).offset();
+        lastOffset = records.get(records.size() - 1).offset();
+        LOG.debug("Created {}", this.toString());
     }
 
     public long getFirstOffset() {
@@ -74,9 +86,32 @@ public class KafkaTridentSpoutBatchMetadata<K,V> implements Serializable {
     public TopicPartition getTopicPartition() {
         return topicPartition;
     }
+    
+    /**
+     * Constructs a metadata object from a Map in the format produced by {@link #toMap() }.
+     * @param map The source map
+     * @return A new metadata object
+     */
+    public static KafkaTridentSpoutBatchMetadata fromMap(Map<String, Object> map) {
+        Map<String, Object> topicPartitionMap = (Map<String, Object>)map.get(TOPIC_PARTITION_KEY);
+        TopicPartition tp = TP_SERIALIZER.fromMap(topicPartitionMap);
+        return new KafkaTridentSpoutBatchMetadata(tp, ((Number)map.get(FIRST_OFFSET_KEY)).longValue(),
+            ((Number)map.get(LAST_OFFSET_KEY)).longValue());
+    }
+    
+    /**
+     * Writes this metadata object to a Map so Trident can read/write it to Zookeeper.
+     */
+    public Map<String, Object> toMap() {
+        Map<String, Object> map = new HashMap<>();
+        map.put(TOPIC_PARTITION_KEY, TP_SERIALIZER.toMap(topicPartition));
+        map.put(FIRST_OFFSET_KEY, firstOffset);
+        map.put(LAST_OFFSET_KEY, lastOffset);
+        return map;
+    }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return super.toString()
                 + "{topicPartition=" + topicPartition
                 + ", firstOffset=" + firstOffset

@@ -28,11 +28,6 @@
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    
-    <properties>
-        <!-- Override with -Dkafka.dependency.scope=provided to generate a jar without dependencies -->
-        <kafka.dependency.scope>compile</kafka.dependency.scope>
-    </properties>
 
     <artifactId>storm-kafka-client-examples</artifactId>
 
@@ -47,19 +42,19 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-kafka-client</artifactId>
             <version>${project.version}</version>
-            <scope>${kafka.dependency.scope}</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>${storm.kafka.artifact.id}</artifactId>
             <version>${storm.kafka.client.version}</version>
-            <scope>${kafka.dependency.scope}</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
             <version>${storm.kafka.client.version}</version>
-            <scope>${kafka.dependency.scope}</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
