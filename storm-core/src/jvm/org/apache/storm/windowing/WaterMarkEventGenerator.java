@@ -25,8 +25,11 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.topology.FailedException;
 import org.slf4j.Logger;
@@ -60,7 +63,13 @@ public class WaterMarkEventGenerator<T> implements Runnable {
                                    int eventTsLagMs, Set<GlobalStreamId> inputStreams) {
         this.windowManager = windowManager;
         streamToTs = new ConcurrentHashMap<>();
-        executorService = Executors.newSingleThreadScheduledExecutor();
+
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("watermark-event-generator-%d")
+                .setDaemon(true)
+                .build();
+        executorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+
         this.interval = intervalMs;
         this.eventTsLag = eventTsLagMs;
         this.inputStreams = inputStreams;
@@ -125,5 +134,19 @@ public class WaterMarkEventGenerator<T> implements Runnable {
 
     public void start() {
         this.executorFuture = executorService.scheduleAtFixedRate(this, interval, interval, TimeUnit.MILLISECONDS);
+    }
+
+    public void shutdown() {
+        LOG.debug("Shutting down WaterMarkEventGenerator");
+        executorService.shutdown();
+
+        try {
+            if (!executorService.awaitTermination(2, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }
