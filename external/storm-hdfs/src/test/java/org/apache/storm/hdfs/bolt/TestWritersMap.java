@@ -15,19 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.bolt;
 
+import java.io.IOException;
+import org.apache.hadoop.fs.Path;
+import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
+import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.common.AbstractHDFSWriter;
+import org.apache.storm.tuple.Tuple;
 import org.junit.Assert;
 import org.junit.Test;
-import org.mockito.Mock;
 
 public class TestWritersMap {
 
-    AbstractHdfsBolt.WritersMap map = new AbstractHdfsBolt.WritersMap(2);
-    @Mock AbstractHDFSWriter foo;
-    @Mock AbstractHDFSWriter bar;
-    @Mock AbstractHDFSWriter baz;
+    AbstractHdfsBolt.WritersMap map = new AbstractHdfsBolt.WritersMap(2, null);
+    AbstractHDFSWriterMock foo = new AbstractHDFSWriterMock(new FileSizeRotationPolicy(1, FileSizeRotationPolicy.Units.KB), null);
+    AbstractHDFSWriterMock bar = new AbstractHDFSWriterMock(new FileSizeRotationPolicy(1, FileSizeRotationPolicy.Units.KB), null);
+    AbstractHDFSWriterMock baz = new AbstractHDFSWriterMock(new FileSizeRotationPolicy(1, FileSizeRotationPolicy.Units.KB), null);
 
     @Test public void testLRUBehavior()
     {
@@ -44,5 +49,36 @@ public class TestWritersMap {
         Assert.assertTrue(map.keySet().contains("BAZ"));
 
         Assert.assertFalse(map.keySet().contains("BAR"));
+
+        // The removed writer should have been closed
+        Assert.assertTrue(bar.isClosed);
+
+        Assert.assertFalse(foo.isClosed);
+        Assert.assertFalse(baz.isClosed);
     }
+
+    public static final class AbstractHDFSWriterMock extends AbstractHDFSWriter {
+        Boolean isClosed;
+
+        public AbstractHDFSWriterMock(FileRotationPolicy policy, Path path) {
+            super(policy, path);
+            isClosed = false;
+        }
+
+        @Override
+        protected void doWrite(Tuple tuple) throws IOException {
+
+        }
+
+        @Override
+        protected void doSync() throws IOException {
+
+        }
+
+        @Override
+        protected void doClose() throws IOException {
+            isClosed = true;
+        }
+    }
+
 }
