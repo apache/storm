@@ -51,9 +51,12 @@ xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xs
       <scope>${provided.scope}</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.storm</groupId>
-      <artifactId>storm-client-misc</artifactId>
-      <version>${project.version}</version>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-server</artifactId>
+    </dependency>
+    <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-servlet</artifactId>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
