@@ -79,7 +79,7 @@ public class TridentKafkaState implements State {
     /**
      * Write the given tuples to Kafka.
      * @param tuples The tuples to write.
-     * @param collector Tbe Trident collector.
+     * @param collector The Trident collector.
      */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
