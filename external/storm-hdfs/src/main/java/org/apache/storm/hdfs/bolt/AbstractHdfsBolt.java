@@ -106,7 +106,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             throw new IllegalStateException("File system URL must be specified.");
         }
 
-        writers = new WritersMap(this.maxOpenFiles);
+        writers = new WritersMap(this.maxOpenFiles, collector);
 
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
@@ -196,7 +196,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             }
 
             if (writer != null && writer.needsRotation()) {
-                    doRotationAndRemoveWriter(writerKey, writer);
+                doRotationAndRemoveWriter(writerKey, writer);
             }
         }
     }
@@ -238,6 +238,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             //The next tuple will almost certainly fail to write and/or sync, which force a rotation.  That
             //will give rotateAndReset() a chance to work which includes creating a fresh file handle.
         } finally {
+            //rotateOutputFile(writer) has closed the writer. It's safe to remove the writer from the map here.
             writers.remove(writerKey);
         }
     }
@@ -261,9 +262,11 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             try {
                 rotateOutputFile(writer);
             } catch (IOException e) {
+                this.collector.reportError(e);
                 LOG.warn("IOException during scheduled file rotation.", e);
             }
         }
+        //above for-loop has closed all the writers. It's safe to clear the map here.
         writers.clear();
     }
 
@@ -309,15 +312,29 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     static class WritersMap extends LinkedHashMap<String, Writer> {
         final long maxWriters;
+        final OutputCollector collector;
 
-        public WritersMap(long maxWriters) {
+        public WritersMap(long maxWriters, OutputCollector collector) {
             super((int)maxWriters, 0.75f, true);
             this.maxWriters = maxWriters;
+            this.collector = collector;
         }
 
         @Override
         protected boolean removeEldestEntry(Map.Entry<String, Writer> eldest) {
-            return this.size() > this.maxWriters;
+            if (this.size() > this.maxWriters) {
+                //The writer must be closed before removed from the map.
+                //If it failed, we might lose some data.
+                try {
+                    eldest.getValue().close();
+                } catch (IOException e) {
+                    collector.reportError(e);
+                    LOG.error("Failed to close the eldest Writer");
+                }
+                return true;
+            } else {
+                return false;
+            }
         }
     }
 }
