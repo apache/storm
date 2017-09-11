@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 
 import org.apache.storm.Config;
+import org.apache.storm.daemon.Acker;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.ComponentType;
@@ -166,14 +167,6 @@ public class TopologyDetails {
         // topology.getbolt (AKA sys tasks most specifically __acker tasks)
         for (ExecutorDetails exec : getExecutors()) {
             if (!resourceList.containsKey(exec)) {
-                LOG.debug(
-                    "Scheduling {} {} with memory requirement as 'on heap' - {} and 'off heap' - {} and "
-                        + "CPU requirement as {}",
-                    getExecutorToComponent().get(exec),
-                    exec,
-                    topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB),
-                    topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB),
-                    topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT));
                 addDefaultResforExec(exec);
             }
         }
@@ -482,14 +475,40 @@ public class TopologyDetails {
         defaultResourceList.put(
             Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB,
             topologyComponentResourcesOnheapMemoryMb);
+
+        adjustResourcesForExec(exec, defaultResourceList);
+
         LOG.debug(
-            "Scheduling Executor: {} with memory requirement as onHeap: {} - offHeap: {} "
+            "Scheduling Executor: {} {} with memory requirement as onHeap: {} - offHeap: {} "
                 + "and CPU requirement: {}",
+            getExecutorToComponent().get(exec),
             exec,
             topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB),
             topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB),
             topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT));
+
         addResourcesForExec(exec, defaultResourceList);
+    }
+
+    /**
+     * Some components might have different resource configs.
+     */
+    private void adjustResourcesForExec(ExecutorDetails exec, Map<String, Double> resourceListForExec) {
+        String component = getExecutorToComponent().get(exec);
+        if (component.equals(Acker.ACKER_COMPONENT_ID)) {
+            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)) {
+                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB,
+                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB)));
+            }
+            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)) {
+                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB,
+                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_RESOURCES_OFFHEAP_MEMORY_MB)));
+            }
+            if (topologyConf.containsKey(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)) {
+                resourceListForExec.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT,
+                        ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT)));
+            }
+        }
     }
 
     /**
