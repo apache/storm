@@ -32,7 +32,7 @@ import org.apache.storm.task.TopologyContext;
 @FunctionalInterface
 public interface ManualPartitioner extends Serializable {
     /**
-     * Get the partitions for this assignment
+     * Get the partitions for this assignment.
      * @param allPartitions all of the partitions that the set of spouts want to subscribe to, in a strict ordering
      * @param context the context of the topology
      * @return the subset of the partitions that this spout should use.

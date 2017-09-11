@@ -86,4 +86,4 @@ for i in {1..20} ; do
     sleep 6
 done
 list_storm_processes
-mvn test -DfailIfNoTests=false -Dstorm.version=${STORM_VERSION} -Dui.url=http://localhost:8744
+mvn test -DfailIfNoTests=false -DskipTests=false -Dstorm.version=${STORM_VERSION} -Dui.url=http://localhost:8744

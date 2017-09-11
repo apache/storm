@@ -31,6 +31,7 @@ public interface TopicFilter extends Serializable {
     List<TopicPartition> getFilteredTopicPartitions(KafkaConsumer<?, ?> consumer);
     
     /**
+     * Get the topics string.
      * @return A human-readable string representing the topics that pass the filter.
      */
     String getTopicsString();
