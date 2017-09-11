@@ -436,7 +436,7 @@
       (nimbus-summary
         (.get_nimbuses (.getClusterInfo ^Nimbus$Client nimbus)))))
   ([nimbuses]
-    (let [nimbus-seeds (set (map #(str %1 ":" (*STORM-CONF* NIMBUS-THRIFT-PORT)) (set (*STORM-CONF* NIMBUS-SEEDS))))
+    (let [nimbus-seeds (set (map #(str %1 ":" (*STORM-CONF* NIMBUS-THRIFT-PORT)) (remove #(Utils/isLocalhostAddress %) (set (*STORM-CONF* NIMBUS-SEEDS)))))
           alive-nimbuses (set (map #(str (.get_host %1) ":" (.get_port %1)) nimbuses))
           offline-nimbuses (clojure.set/difference nimbus-seeds alive-nimbuses)
           offline-nimbuses-summary (map #(convert-to-nimbus-summary %1) offline-nimbuses)]
