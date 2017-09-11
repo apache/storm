@@ -20,7 +20,8 @@
   (:import [org.apache.storm Config])
   (:import [org.apache.storm.utils Utils LocalState])
   (:import [org.apache.storm.validation ConfigValidation])
-  (:import [org.apache.commons.io FileUtils])
+  (:import [org.apache.commons.io FileUtils]
+           (org.apache.storm.assignments LocalAssignmentsBackendFactory))
   (:require [clojure [string :as str]])
   (:use [org.apache.storm log util]))
 
@@ -161,6 +162,12 @@
   (let [ret (str (master-local-dir conf) file-path-separator "inbox")]
     (FileUtils/forceMkdir (File. ret))
     ret ))
+
+(defn assignments-local-dir
+  [conf]
+  (let [ret (str (absolute-storm-local-dir conf) file-path-separator "assignments")]
+    (FileUtils/forceMkdir (File. ret))
+    ret))
 
 (defn master-inimbus-dir
   [conf]
@@ -333,3 +340,6 @@
                       (topology-conf LOGS-GROUPS)
                       (topology-conf TOPOLOGY-GROUPS))))))
 
+(defn get-assignments-backend
+  [conf]
+  (LocalAssignmentsBackendFactory/getBackend conf (assignments-local-dir conf)))

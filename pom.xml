@@ -252,6 +252,7 @@
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <kafka.version>0.10.0.0</kafka.version>
         <kafka.artifact.id>kafka_2.11</kafka.artifact.id>
+        <rocksdb.version>5.5.1</rocksdb.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
@@ -885,6 +886,11 @@
                 <groupId>org.apache.kafka</groupId>
                 <artifactId>kafka-clients</artifactId>
                 <version>${kafka.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdb.version}</version>
             </dependency>
 
         </dependencies>

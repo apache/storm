@@ -10687,3 +10687,83 @@ class HBExecutionException(TException):
 
   def __ne__(self, other):
     return not (self == other)
+
+class SupervisorAssignments:
+  """
+  Attributes:
+   - storm_assignment
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.MAP, 'storm_assignment', (TType.STRING,None,TType.STRUCT,(Assignment, Assignment.thrift_spec)), {
+    }, ), # 1
+  )
+
+  def __init__(self, storm_assignment=thrift_spec[1][4],):
+    if storm_assignment is self.thrift_spec[1][4]:
+      storm_assignment = {
+    }
+    self.storm_assignment = storm_assignment
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.MAP:
+          self.storm_assignment = {}
+          (_ktype660, _vtype661, _size659 ) = iprot.readMapBegin()
+          for _i663 in xrange(_size659):
+            _key664 = iprot.readString().decode('utf-8')
+            _val665 = Assignment()
+            _val665.read(iprot)
+            self.storm_assignment[_key664] = _val665
+          iprot.readMapEnd()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('SupervisorAssignments')
+    if self.storm_assignment is not None:
+      oprot.writeFieldBegin('storm_assignment', TType.MAP, 1)
+      oprot.writeMapBegin(TType.STRING, TType.STRUCT, len(self.storm_assignment))
+      for kiter666,viter667 in self.storm_assignment.items():
+        oprot.writeString(kiter666.encode('utf-8'))
+        viter667.write(oprot)
+      oprot.writeMapEnd()
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.storm_assignment)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)

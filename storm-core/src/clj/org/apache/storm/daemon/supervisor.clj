@@ -21,24 +21,25 @@
            [org.apache.storm Constants]
            [org.apache.storm.cluster ClusterStateContext DaemonType]
            [java.net JarURLConnection]
-           [java.net URI]
+           [java.net URI BindException ServerSocket]
            [org.apache.commons.io FileUtils])
-  (:use [org.apache.storm config util log timer local-state])
+  (:use [org.apache.storm config util log zookeeper timer local-state])
   (:import [org.apache.storm.generated AuthorizationException KeyNotFoundException WorkerResources])
-  (:import [org.apache.storm.utils NimbusLeaderNotFoundException VersionInfo])
+  (:import [org.apache.storm.utils NimbusLeaderNotFoundException VersionInfo NimbusClient])
   (:import [java.nio.file Files StandardCopyOption])
   (:import [org.apache.storm Config])
-  (:import [org.apache.storm.generated WorkerResources ProfileAction])
+  (:import [org.apache.storm.generated WorkerResources ProfileAction Supervisor$Iface SupervisorAssignments Supervisor$Processor Assignment NotAliveException])
   (:import [org.apache.storm.localizer LocalResource])
   (:use [org.apache.storm.daemon common])
   (:require [org.apache.storm.command [healthcheck :as healthcheck]])
   (:require [org.apache.storm.daemon [worker :as worker]]
-            [org.apache.storm [process-simulator :as psim] [cluster :as cluster] [event :as event]]
+            [org.apache.storm [process-simulator :as psim] [cluster :as cluster] [converter :as converter] [event :as event]]
             [clojure.set :as set])
   (:import [org.apache.thrift.transport TTransportException])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
   (:import [org.yaml.snakeyaml Yaml]
-           [org.yaml.snakeyaml.constructor SafeConstructor])
+           [org.yaml.snakeyaml.constructor SafeConstructor]
+           (org.apache.storm.security.auth ThriftServer ThriftConnectionType))
   (:require [metrics.gauges :refer [defgauge]])
   (:require [metrics.meters :refer [defmeter mark!]])
   (:gen-class
@@ -62,17 +63,7 @@
 
 (defn- assignments-snapshot [storm-cluster-state callback assignment-versions]
   (let [storm-ids (.assignments storm-cluster-state callback)]
-    (let [new-assignments
-          (->>
-           (dofor [sid storm-ids]
-                  (let [recorded-version (:version (get assignment-versions sid))]
-                    (if-let [assignment-version (.assignment-version storm-cluster-state sid callback)]
-                      (if (= assignment-version recorded-version)
-                        {sid (get assignment-versions sid)}
-                        {sid (.assignment-info-with-version storm-cluster-state sid callback)})
-                      {sid nil})))
-           (apply merge)
-           (filter-val not-nil?))
+    (let [new-assignments (.assignments-info storm-cluster-state)
           new-profiler-actions
           (->>
             (dofor [sid (distinct storm-ids)]
@@ -80,8 +71,9 @@
                       {sid topo-profile-actions}))
            (apply merge))]
          
-      {:assignments (into {} (for [[k v] new-assignments] [k (:data v)]))
+      {:assignments new-assignments
        :profiler-actions new-profiler-actions
+       ;; TODO: remove versions
        :versions new-assignments})))
 
 (defn- read-my-executors [assignments-snapshot storm-id assignment-id]
@@ -299,7 +291,7 @@
         (try
           (rmr-as-user conf id (worker-pid-path conf id pid))
           (rmpath (worker-pid-path conf id pid))
-          (rmpath (worker-tmp-root conf id pid))
+          (rmpath (worker-tmp-root conf id))
           (catch Exception e
             (log-warn-error e "Failed to cleanup pid dir: " pid " for worker " id". Will retry later")))))
           ;; on windows, the supervisor may still holds the lock on the worker directory
@@ -322,7 +314,8 @@
                                                                      (Utils/isZkAuthenticationConfiguredStormServer
                                                                        conf)
                                                                      SUPERVISOR-ZK-ACLS)
-                                                        :context (ClusterStateContext. DaemonType/SUPERVISOR))
+                                                        :context (ClusterStateContext. DaemonType/SUPERVISOR)
+                                                        :backend (get-assignments-backend conf))
    :local-state (supervisor-state conf)
    :supervisor-id (.getSupervisorId isupervisor)
    :assignment-id (.getAssignmentId isupervisor)
@@ -590,6 +583,7 @@
                                 (set (keys new-assignment)))]
         (.killedWorker isupervisor (int p)))
       (.assigned isupervisor (keys new-assignment))
+      ;;TODO: remove one copy of assignmnets.
       (ls-local-assignments! local-state
             new-assignment)
       (reset! (:assignment-versions supervisor) versions)
@@ -758,6 +752,35 @@
       (catch Exception e
         (log-error e "Error running profiler actions, will retry again later")))))
 
+(defn assigned-assignments-to-local!
+  [^SupervisorAssignments supervisorAssignments supervisor]
+  (when (not-nil? supervisorAssignments)
+    (let [serialized-assignments (into {} (for [[tid amt] (.get_storm_assignment supervisorAssignments)]
+                                            {tid (Utils/serialize amt)}))]
+      (.sync-remote-assignments! (:storm-cluster-state supervisor) serialized-assignments))))
+
+;; Supervisor should be told that who is leader.
+;; Fetch leader info each time before request node assignment.
+;; TODO: get leader address from zk directly.
+(defn assignments-from-master
+  [conf supervisor]
+  (let [client (atom nil)]
+    (try
+      (let [master-client (NimbusClient/getConfiguredClientAs conf nil)
+            _ (reset! client master-client) ;; keep a refence so we can close it
+            supervisor-assignments (.getSupervisorAssignments (.getClient master-client) (:my-hostname supervisor))]
+        (assigned-assignments-to-local! supervisor-assignments supervisor))
+      (catch Throwable e
+        ;; just ignore the exception/error and try it next time.
+        (log-warn-error (.getMessage e) "Get assignments from master exception"))
+      (finally
+        (when (not-nil? @client)
+          (try
+            (.close @client)
+            (catch Throwable e
+              (log-warn (.getMessage e) "Close nimbus client exception.")))))
+      )))
+
 ;; in local state, supervisor stores who its current assignments are
 ;; another thread launches events to restart any dead processes if necessary
 (defserverfn mk-supervisor [conf shared-context ^ISupervisor isupervisor]
@@ -800,7 +823,9 @@
     (when (conf SUPERVISOR-ENABLE)
       ;; This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
       ;; to date even if callbacks don't all work exactly right
-      (schedule-recurring (:event-timer supervisor) 0 10 (fn [] (.add event-manager synchronize-supervisor)))
+      (schedule-recurring (:event-timer supervisor) 0 10 (fn [] (.add event-manager (fn [] (do
+                                                                                             (assignments-from-master conf supervisor)
+                                                                                             (synchronize-supervisor))))))
       (schedule-recurring (:event-timer supervisor)
                           0
                           (conf SUPERVISOR-MONITOR-FREQUENCY-SECS)
@@ -829,9 +854,26 @@
                           30
                           (fn [] (.add event-manager run-profiler-actions-fn))))
     (log-message "Starting supervisor with id " (:supervisor-id supervisor) " at host " (:my-hostname supervisor))
-    (reify
-     Shutdownable
-     (shutdown [this]
+    (reify Supervisor$Iface
+      (^void sendSupervisorAssignments
+        [this ^SupervisorAssignments supervisorAssignments]
+        (do
+          (log-message "Got a remote assignments from master, will start to sync with assignments: " (pr-str (into {} (for [[id assignment] (.get_storm_assignment supervisorAssignments)]
+                                                                                                                        {id (converter/clojurify-assignment assignment)}))))
+          ;;keep a local copy then fire a sync, make sure assignments local copy happens before workers synchronization.
+          (.add event-manager (fn [] (do
+                                       (assigned-assignments-to-local! supervisorAssignments supervisor)
+                                       (synchronize-supervisor)
+                                       )))))
+      (^Assignment getLocalAssignmentForStorm
+        [this ^String storm-id]
+        (let [cluster-state (:storm-cluster-state supervisor)
+              assignment (.thrift-assignment-info cluster-state storm-id)]
+          (if (nil? assignment)
+            (throw (NotAliveException. (str "No local assignment assigned for storm: " storm-id " for node: " (:my-hostname supervisor))))
+            assignment)))
+      Shutdownable
+      (shutdown [this]
                (log-message "Shutting down supervisor " (:supervisor-id supervisor))
                (reset! (:active supervisor) false)
                (cancel-timer (:heartbeat-timer supervisor))
@@ -841,24 +883,23 @@
                (.shutdown processes-event-manager)
                (.shutdown (:localizer supervisor))
                (.disconnect (:storm-cluster-state supervisor)))
-     SupervisorDaemon
-     (get-conf [this]
-       conf)
-     (get-id [this]
-       (:supervisor-id supervisor))
-     (shutdown-all-workers [this]
-       (let [ids (my-worker-ids conf)]
-         (doseq [id ids]
-           (shutdown-worker supervisor id)
-           )))
-     DaemonCommon
-     (waiting? [this]
-       (or (not @(:active supervisor))
-           (and
-            (timer-waiting? (:heartbeat-timer supervisor))
-            (timer-waiting? (:event-timer supervisor))
-            (every? (memfn waiting?) managers)))
-           ))))
+      SupervisorDaemon
+      (get-conf [this]
+        conf)
+      (get-id [this]
+        (:supervisor-id supervisor))
+      (shutdown-all-workers [this]
+        (let [ids (my-worker-ids conf)]
+          (doseq [id ids]
+            (shutdown-worker supervisor id)
+            )))
+      DaemonCommon
+      (waiting? [this]
+        (or (not @(:active supervisor))
+          (and
+          (timer-waiting? (:heartbeat-timer supervisor))
+          (timer-waiting? (:event-timer supervisor))
+          (every? (memfn waiting?) managers)))))))
 
 (defn kill-supervisor [supervisor]
   (.shutdown supervisor)
@@ -1192,15 +1233,31 @@
       (swap! (:worker-thread-pids-atom supervisor) assoc worker-id pid)
       ))
 
+(defn validate-port-available[conf]
+  (try
+    (let [socket (ServerSocket. (conf SUPERVISOR-THRIFT-PORT))]
+      (.close socket))
+    (catch BindException e
+      (log-error e (conf SUPERVISOR-THRIFT-PORT) " is not available. Check if another process is already listening on " (conf SUPERVISOR-THRIFT-PORT))
+      (System/exit 0))))
+
 (defn -launch
   [supervisor]
   (log-message "Starting supervisor for storm version '" STORM-VERSION "'")
-  (let [conf (read-storm-config)]
-    (validate-distributed-mode! conf)
-    (let [supervisor (mk-supervisor conf nil supervisor)]
-      (add-shutdown-hook-with-force-kill-in-1-sec #(.shutdown supervisor)))
+  (let [conf (read-storm-config)
+        ;; validation
+        _ (validate-distributed-mode! conf)
+        _ (validate-port-available conf)
+        supervisor (mk-supervisor conf nil supervisor)
+        server (ThriftServer. conf (Supervisor$Processor. supervisor)
+                              ThriftConnectionType/SUPERVISOR)]
+    (add-shutdown-hook-with-force-kill-in-1-sec (fn []
+                                                  (.shutdown supervisor)
+                                                  (.stop server)))
+    (.serve server)
     (defgauge supervisor:num-slots-used-gauge #(count (my-worker-ids conf)))
-    (start-metrics-reporters conf)))
+    (start-metrics-reporters conf)
+    supervisor))
 
 (defn standalone-supervisor []
   (let [conf-atom (atom nil)

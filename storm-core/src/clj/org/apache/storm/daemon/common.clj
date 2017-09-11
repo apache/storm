@@ -87,11 +87,7 @@
   (ExecutorStats. 0 0 0 0 0))
 
 (defn get-storm-id [storm-cluster-state storm-name]
-  (let [active-storms (.active-storms storm-cluster-state)]
-    (find-first
-      #(= storm-name (:storm-name (.storm-base storm-cluster-state % nil)))
-      active-storms)
-    ))
+  (.storm-id storm-cluster-state storm-name))
 
 (defn topology-bases [storm-cluster-state]
   (let [active-topologies (.active-storms storm-cluster-state)]

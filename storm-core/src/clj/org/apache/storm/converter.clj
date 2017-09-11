@@ -15,8 +15,8 @@
 ;; limitations under the License.
 (ns org.apache.storm.converter
   (:import [org.apache.storm.generated SupervisorInfo NodeInfo Assignment WorkerResources
-            StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions
-            TopologyActionOptions DebugOptions ProfileRequest])
+                                       StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions
+                                       TopologyActionOptions DebugOptions ProfileRequest SupervisorAssignments])
   (:use [org.apache.storm util stats log])
   (:require [org.apache.storm.daemon [common :as common]]))
 
@@ -70,6 +70,13 @@
                                                                (.set_cpu (last resources)))])
                                                           (:worker->resources assignment)))))
     thrift-assignment))
+
+(defn thriftify-supervisor-assignments [assignments]
+  (let [id-to-assignment (into {} (for [[storm-id assignment] assignments]
+                                    {storm-id (thriftify-assignment assignment)}))
+        thrift-supervisor-assignments (doto (SupervisorAssignments.)
+                                        (.set_storm_assignment  id-to-assignment)) ]
+        thrift-supervisor-assignments))
 
 (defn clojurify-executor->node_port [executor->node_port]
   (into {}
