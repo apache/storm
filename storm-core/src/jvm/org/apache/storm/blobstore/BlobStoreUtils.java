@@ -17,6 +17,7 @@
  */
 package org.apache.storm.blobstore;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.AuthorizationException;
@@ -245,6 +246,9 @@ public class BlobStoreUtils {
                 return;
             }
             stateInfo = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
+            if (CollectionUtils.isEmpty(stateInfo)) {
+                return;
+            }
             LOG.debug("StateInfo for update {}", stateInfo);
             Set<NimbusInfo> nimbusInfoList = getNimbodesWithLatestSequenceNumberOfBlob(zkClient, key);
 
