@@ -371,16 +371,16 @@ public class SupervisorAssignments implements org.apache.thrift.TBase<Supervisor
           case 1: // STORM_ASSIGNMENT
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map604 = iprot.readMapBegin();
-                struct.storm_assignment = new HashMap<String,Assignment>(2*_map604.size);
-                String _key605;
-                Assignment _val606;
-                for (int _i607 = 0; _i607 < _map604.size; ++_i607)
+                org.apache.thrift.protocol.TMap _map738 = iprot.readMapBegin();
+                struct.storm_assignment = new HashMap<String,Assignment>(2*_map738.size);
+                String _key739;
+                Assignment _val740;
+                for (int _i741 = 0; _i741 < _map738.size; ++_i741)
                 {
-                  _key605 = iprot.readString();
-                  _val606 = new Assignment();
-                  _val606.read(iprot);
-                  struct.storm_assignment.put(_key605, _val606);
+                  _key739 = iprot.readString();
+                  _val740 = new Assignment();
+                  _val740.read(iprot);
+                  struct.storm_assignment.put(_key739, _val740);
                 }
                 iprot.readMapEnd();
               }
@@ -407,10 +407,10 @@ public class SupervisorAssignments implements org.apache.thrift.TBase<Supervisor
           oprot.writeFieldBegin(STORM_ASSIGNMENT_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, struct.storm_assignment.size()));
-            for (Map.Entry<String, Assignment> _iter608 : struct.storm_assignment.entrySet())
+            for (Map.Entry<String, Assignment> _iter742 : struct.storm_assignment.entrySet())
             {
-              oprot.writeString(_iter608.getKey());
-              _iter608.getValue().write(oprot);
+              oprot.writeString(_iter742.getKey());
+              _iter742.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -442,10 +442,10 @@ public class SupervisorAssignments implements org.apache.thrift.TBase<Supervisor
       if (struct.is_set_storm_assignment()) {
         {
           oprot.writeI32(struct.storm_assignment.size());
-          for (Map.Entry<String, Assignment> _iter609 : struct.storm_assignment.entrySet())
+          for (Map.Entry<String, Assignment> _iter743 : struct.storm_assignment.entrySet())
           {
-            oprot.writeString(_iter609.getKey());
-            _iter609.getValue().write(oprot);
+            oprot.writeString(_iter743.getKey());
+            _iter743.getValue().write(oprot);
           }
         }
       }
@@ -457,16 +457,16 @@ public class SupervisorAssignments implements org.apache.thrift.TBase<Supervisor
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TMap _map610 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.storm_assignment = new HashMap<String,Assignment>(2*_map610.size);
-          String _key611;
-          Assignment _val612;
-          for (int _i613 = 0; _i613 < _map610.size; ++_i613)
+          org.apache.thrift.protocol.TMap _map744 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.storm_assignment = new HashMap<String,Assignment>(2*_map744.size);
+          String _key745;
+          Assignment _val746;
+          for (int _i747 = 0; _i747 < _map744.size; ++_i747)
           {
-            _key611 = iprot.readString();
-            _val612 = new Assignment();
-            _val612.read(iprot);
-            struct.storm_assignment.put(_key611, _val612);
+            _key745 = iprot.readString();
+            _val746 = new Assignment();
+            _val746.read(iprot);
+            struct.storm_assignment.put(_key745, _val746);
           }
         }
         struct.set_storm_assignment_isSet(true);

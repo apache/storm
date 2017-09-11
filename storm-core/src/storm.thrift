@@ -445,10 +445,6 @@ struct Assignment {
     5: optional map<NodeInfo, WorkerResources> worker_resources = {};
 }
 
-struct SupervisorAssignments {
-    1: optional map<string, Assignment> storm_assignment = {}
-}
-
 enum TopologyStatus {
     ACTIVE = 1,
     INACTIVE = 2,
@@ -501,6 +497,10 @@ struct LSSupervisorId {
 
 struct LSApprovedWorkers {
    1: required map<string, i32> approved_workers;
+}
+
+struct LSSupervisorAssignments {
+   1: required map<i32, LocalAssignment> assignments;
 }
 
 struct LSWorkerHeartbeat {
@@ -737,8 +737,8 @@ exception HBExecutionException {
   1: required string msg;
 }
 
-struct LSSupervisorAssignments {
-   1: required map<i32, LocalAssignment> assignments;
+struct SupervisorAssignments {
+    1: optional map<string, Assignment> storm_assignment = {}
 }
 
 service Supervisor {
