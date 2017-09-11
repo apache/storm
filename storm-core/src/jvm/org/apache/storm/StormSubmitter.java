@@ -45,8 +45,7 @@ import org.apache.storm.utils.Utils;
  * with the "storm jar" command from the command-line, and then use this class to
  * submit your topologies.
  */
-public class
-StormSubmitter {
+public class StormSubmitter {
     public static final Logger LOG = LoggerFactory.getLogger(StormSubmitter.class);
 
     private static final int THRIFT_CHUNK_SIZE_BYTES = 307200;

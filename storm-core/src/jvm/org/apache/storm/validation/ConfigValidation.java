@@ -651,12 +651,7 @@ public class ConfigValidation {
      * @param conf map of configs
      */
     public static void validateFields(Map conf) {
-        try {
-            validateFields(conf, CONFIG_CLASS);
-        }catch (Throwable e) {
-            LOG.info("validate got an exception: {}", e.getMessage());
-            e.printStackTrace();
-        }
+        validateFields(conf, CONFIG_CLASS);
     }
 
     /**

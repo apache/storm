@@ -503,10 +503,6 @@ struct LSApprovedWorkers {
    1: required map<string, i32> approved_workers;
 }
 
-struct LSSupervisorAssignments {
-   1: required map<i32, LocalAssignment> assignments; 
-}
-
 struct LSWorkerHeartbeat {
    1: required i32 time_secs;
    2: required string topology_id;
@@ -664,17 +660,6 @@ service Nimbus {
   SupervisorAssignments getSupervisorAssignments(1: string node) throws (1: AuthorizationException aze);
 }
 
-service Supervisor {
-  /**
-   * Send node specific assignments to supervisor
-   **/
-  void sendSupervisorAssignments(1: SupervisorAssignments assignments) throws (1: AuthorizationException aze);
-  /**
-   * Get local assignment for a storm
-   **/
-  Assignment getLocalAssignmentForStorm(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
-}
-
 struct DRPCRequest {
   1: required string func_args;
   2: required string request_id;
@@ -750,4 +735,19 @@ exception HBAuthorizationException {
 
 exception HBExecutionException {
   1: required string msg;
+}
+
+struct LSSupervisorAssignments {
+   1: required map<i32, LocalAssignment> assignments;
+}
+
+service Supervisor {
+  /**
+   * Send node specific assignments to supervisor
+   **/
+  void sendSupervisorAssignments(1: SupervisorAssignments assignments) throws (1: AuthorizationException aze);
+  /**
+   * Get local assignment for a storm
+   **/
+  Assignment getLocalAssignmentForStorm(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
 }

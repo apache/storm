@@ -204,7 +204,6 @@
      :cred-update-lock (Object.)
      :log-update-lock (Object.)
      :heartbeats-cache (atom {})
-     :assignments-cache (atom {})
      :downloaders (file-cache-map conf)
      :uploaders (file-cache-map conf)
      :blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))
