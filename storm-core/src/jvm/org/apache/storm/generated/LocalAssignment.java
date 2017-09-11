@@ -549,14 +549,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
           case 2: // EXECUTORS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list644 = iprot.readListBegin();
-                struct.executors = new ArrayList<ExecutorInfo>(_list644.size);
-                ExecutorInfo _elem645;
-                for (int _i646 = 0; _i646 < _list644.size; ++_i646)
+                org.apache.thrift.protocol.TList _list654 = iprot.readListBegin();
+                struct.executors = new ArrayList<ExecutorInfo>(_list654.size);
+                ExecutorInfo _elem655;
+                for (int _i656 = 0; _i656 < _list654.size; ++_i656)
                 {
-                  _elem645 = new ExecutorInfo();
-                  _elem645.read(iprot);
-                  struct.executors.add(_elem645);
+                  _elem655 = new ExecutorInfo();
+                  _elem655.read(iprot);
+                  struct.executors.add(_elem655);
                 }
                 iprot.readListEnd();
               }
@@ -596,9 +596,9 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
         oprot.writeFieldBegin(EXECUTORS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.executors.size()));
-          for (ExecutorInfo _iter647 : struct.executors)
+          for (ExecutorInfo _iter657 : struct.executors)
           {
-            _iter647.write(oprot);
+            _iter657.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -631,9 +631,9 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       oprot.writeString(struct.topology_id);
       {
         oprot.writeI32(struct.executors.size());
-        for (ExecutorInfo _iter648 : struct.executors)
+        for (ExecutorInfo _iter658 : struct.executors)
         {
-          _iter648.write(oprot);
+          _iter658.write(oprot);
         }
       }
       BitSet optionals = new BitSet();
@@ -652,14 +652,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       struct.topology_id = iprot.readString();
       struct.set_topology_id_isSet(true);
       {
-        org.apache.thrift.protocol.TList _list649 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executors = new ArrayList<ExecutorInfo>(_list649.size);
-        ExecutorInfo _elem650;
-        for (int _i651 = 0; _i651 < _list649.size; ++_i651)
+        org.apache.thrift.protocol.TList _list659 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executors = new ArrayList<ExecutorInfo>(_list659.size);
+        ExecutorInfo _elem660;
+        for (int _i661 = 0; _i661 < _list659.size; ++_i661)
         {
-          _elem650 = new ExecutorInfo();
-          _elem650.read(iprot);
-          struct.executors.add(_elem650);
+          _elem660 = new ExecutorInfo();
+          _elem660.read(iprot);
+          struct.executors.add(_elem660);
         }
       }
       struct.set_executors_isSet(true);

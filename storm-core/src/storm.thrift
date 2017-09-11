@@ -445,6 +445,10 @@ struct Assignment {
     5: optional map<NodeInfo, WorkerResources> worker_resources = {};
 }
 
+struct SupervisorAssignments {
+    1: optional map<string, Assignment> storm_assignment = {}
+}
+
 enum TopologyStatus {
     ACTIVE = 1,
     INACTIVE = 2,
@@ -654,6 +658,21 @@ service Nimbus {
    */
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
+  /**
+   * Get assigned assignments for a specific supervisor
+   */
+  SupervisorAssignments getSupervisorAssignments(1: string node) throws (1: AuthorizationException aze);
+}
+
+service Supervisor {
+  /**
+   * Send node specific assignments to supervisor
+   **/
+  void sendSupervisorAssignments(1: SupervisorAssignments assignments) throws (1: AuthorizationException aze);
+  /**
+   * Get local assignment for a storm
+   **/
+  Assignment getLocalAssignmentForStorm(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
 }
 
 struct DRPCRequest {

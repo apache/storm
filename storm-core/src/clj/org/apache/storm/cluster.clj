@@ -25,7 +25,9 @@
   (:import [org.apache.storm.cluster ClusterState ClusterStateContext ClusterStateListener ConnectionState])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
-  (:import [org.apache.storm.nimbus NimbusInfo])
+  (:import [org.apache.storm.nimbus NimbusInfo]
+           (org.apache.storm.assignments LocalAssignmentsBackendFactory InMemoryAssignmentBackend)
+           (java.util Map))
   (:use [org.apache.storm util log config converter])
   (:require [org.apache.storm [zookeeper :as zk]])
   (:require [org.apache.storm.daemon [common :as common]]))
@@ -36,7 +38,7 @@
     (when (Utils/isZkAuthenticationConfiguredTopology topo-conf)
       [(first ZooDefs$Ids/CREATOR_ALL_ACL)
        (ACL. ZooDefs$Perms/READ (Id. "digest" (DigestAuthenticationProvider/generateDigest payload)))])))
- 
+
 (defnk mk-distributed-cluster-state
   [conf :auth-conf nil :acls nil :context (ClusterStateContext.)]
   (let [clazz (Class/forName (or (conf STORM-CLUSTER-STATE-STORE)
@@ -49,6 +51,10 @@
 (defprotocol StormClusterState
   (assignments [this callback])
   (assignment-info [this storm-id callback])
+  (thrift-assignment-info [this storm-id])
+  (remote-assignment-info [this storm-id])
+  (assignments-info [this])
+  (sync-remote-assignments! [this remote])
   (assignment-info-with-version [this storm-id callback])
   (assignment-version [this storm-id callback])
   ;returns key information under /storm/blobstore/key
@@ -60,6 +66,8 @@
 
   (active-storms [this])
   (storm-base [this storm-id callback])
+  (storm-id [this storm-name])
+  (sync-remote-ids! [this remote])
   (get-worker-heartbeat [this storm-id node port])
   (get-worker-profile-requests [this storm-id nodeinfo thrift?])
   (get-topology-profile-requests [this storm-id thrift?])
@@ -74,6 +82,7 @@
   (heartbeat-storms [this])
   (error-topologies [this])
   (backpressure-topologies [this])
+  (get-leader [this callback])
   (set-topology-log-config! [this storm-id log-config])
   (topology-log-config [this storm-id cb])
   (worker-heartbeat! [this storm-id node port info])
@@ -109,6 +118,7 @@
 (def SUPERVISORS-ROOT "supervisors")
 (def WORKERBEATS-ROOT "workerbeats")
 (def BACKPRESSURE-ROOT "backpressure")
+(def LEADERINFO-ROOT zk/leader-info-root)
 (def ERRORS-ROOT "errors")
 (def BLOBSTORE-ROOT "blobstore")
 ; Stores the latest update sequence for a blob
@@ -123,6 +133,7 @@
 (def SUPERVISORS-SUBTREE (str "/" SUPERVISORS-ROOT))
 (def WORKERBEATS-SUBTREE (str "/" WORKERBEATS-ROOT))
 (def BACKPRESSURE-SUBTREE (str "/" BACKPRESSURE-ROOT))
+(def LEADERINFO-SUBTREE (str "/" LEADERINFO-ROOT))
 (def ERRORS-SUBTREE (str "/" ERRORS-ROOT))
 ;; Blobstore subtree /storm/blobstore
 (def BLOBSTORE-SUBTREE (str "/" BLOBSTORE-ROOT))
@@ -244,15 +255,19 @@
 
 ;; Watches should be used for optimization. When ZK is reconnecting, they're not guaranteed to be called.
 (defnk mk-storm-cluster-state
-  [cluster-state-spec :acls nil :context (ClusterStateContext.)]
-  (let [[solo? cluster-state] (if (instance? ClusterState cluster-state-spec)
-                                [false cluster-state-spec]
-                                [true (mk-distributed-cluster-state cluster-state-spec :auth-conf cluster-state-spec :acls acls :context context)])
+  [conf :cluster-state nil :acls nil :context (ClusterStateContext.) :backend nil]
+  (let [[solo? cluster-state] (if (and (not-nil? cluster-state) (instance? ClusterState cluster-state))
+                                [false cluster-state]
+                                [true (mk-distributed-cluster-state conf :auth-conf conf :acls acls :context context)])
+        assignments-backend (if (nil? backend)
+                              (doto (InMemoryAssignmentBackend.) (.prepare nil nil))
+                              backend)
         assignment-info-callback (atom {})
         assignment-info-with-version-callback (atom {})
         assignment-version-callback (atom {})
         supervisors-callback (atom nil)
         backpressure-callback (atom {})   ;; we want to reigister a topo directory getChildren callback for all workers of this dir
+        leader-info-callback (atom nil)
         assignments-callback (atom nil)
         storm-base-callback (atom {})
         blobstore-callback (atom nil)
@@ -275,36 +290,58 @@
                          CREDENTIALS-ROOT (issue-map-callback! credentials-callback (first args))
                          LOGCONFIG-ROOT (issue-map-callback! log-config-callback (first args))
                          BACKPRESSURE-ROOT (issue-map-callback! backpressure-callback (first args))
+                         LEADERINFO-ROOT (issue-callback! leader-info-callback)
                          ;; this should never happen
                          (exit-process! 30 "Unknown callback for subtree " subtree args)))))]
     (doseq [p [ASSIGNMENTS-SUBTREE STORMS-SUBTREE SUPERVISORS-SUBTREE WORKERBEATS-SUBTREE ERRORS-SUBTREE BLOBSTORE-SUBTREE NIMBUSES-SUBTREE
-               LOGCONFIG-SUBTREE BACKPRESSURE-SUBTREE]]
+               LOGCONFIG-SUBTREE BACKPRESSURE-SUBTREE LEADERINFO-ROOT]]
       (.mkdirs cluster-state p acls))
     (reify
       StormClusterState
 
       (assignments
         [this callback]
-        (when callback
-          (reset! assignments-callback callback))
-        (.get_children cluster-state ASSIGNMENTS-SUBTREE (not-nil? callback)))
+        ;; for backward compatibility, just ignore callback
+        (.assignments assignments-backend))
 
       (assignment-info
         [this storm-id callback]
-        (when callback
-          (swap! assignment-info-callback assoc storm-id callback))
-        (clojurify-assignment (maybe-deserialize (.get_data cluster-state (assignment-path storm-id) (not-nil? callback)) Assignment)))
+        ;; for backward compatibility, just ignore callback
+        (clojurify-assignment (maybe-deserialize (.getAssignment assignments-backend storm-id) Assignment)))
 
-      (assignment-info-with-version 
+      (thrift-assignment-info
+        [this storm-id]
+        (maybe-deserialize (.getAssignment assignments-backend storm-id) Assignment))
+
+      (remote-assignment-info
+        [this storm-id]
+        (clojurify-assignment (maybe-deserialize (.get_data cluster-state (assignment-path storm-id) false) Assignment)))
+
+      (assignments-info
+        [this]
+        (into {}
+          (for [[storm-id ser] (.assignmentsInfo assignments-backend)]
+            {storm-id (clojurify-assignment (maybe-deserialize ser Assignment))})))
+
+      (sync-remote-assignments!
+        [this remote]
+        (if (not-nil? remote)
+          (.syncRemoteAssignments assignments-backend remote))
+          (let [assigned-topology-ids (.get_children cluster-state ASSIGNMENTS-SUBTREE false)
+                tid-assignment (into {} (for [tid assigned-topology-ids]
+                                         {tid (.get_data cluster-state (assignment-path tid) false)}))]
+            (.syncRemoteAssignments assignments-backend tid-assignment)))
+
+      (assignment-info-with-version
         [this storm-id callback]
         (when callback
           (swap! assignment-info-with-version-callback assoc storm-id callback))
-        (let [{data :data version :version} 
+        (let [{data :data version :version}
               (.get_data_with_version cluster-state (assignment-path storm-id) (not-nil? callback))]
         {:data (clojurify-assignment (maybe-deserialize data Assignment))
          :version version}))
 
-      (assignment-version 
+      (assignment-version
         [this storm-id callback]
         (when callback
           (swap! assignment-version-callback assoc storm-id callback))
@@ -337,7 +374,7 @@
                               ;explicit delete for ephmeral node to ensure this session creates the entry.
                               (.delete_node cluster-state (nimbus-path nimbus-id))
                               (.set_ephemeral_node cluster-state (nimbus-path nimbus-id) (Utils/serialize nimbus-summary) acls))))))
-        
+
         (.set_ephemeral_node cluster-state (nimbus-path nimbus-id) (Utils/serialize nimbus-summary) acls))
 
       (setup-blobstore!
@@ -374,6 +411,12 @@
       (backpressure-topologies
         [this]
         (.get_children cluster-state BACKPRESSURE-SUBTREE false))
+
+      (get-leader
+        [this callback]
+        (when callback
+          (reset! leader-info-callback callback))
+        (Utils/javaDeserialize (.get_data cluster-state LEADERINFO-SUBTREE (not-nil? callback)) NimbusInfo))
 
       (get-worker-heartbeat
         [this storm-id node port]
@@ -446,7 +489,7 @@
               port (:port profile-request)]
           (.delete_node cluster-state
            (profiler-config-path storm-id host port action))))
-          
+
       (get-worker-profile-requests
         [this storm-id node-info thrift?]
         (let [host (:host node-info)
@@ -457,7 +500,7 @@
                     profile-requests)
             (filter #(and (= host (:host %)) (= port (:port %)))
                     profile-requests))))
-      
+
       (worker-heartbeat!
         [this storm-id node port info]
         (let [thrift-worker-hb (thriftify-zk-worker-hb info)]
@@ -490,7 +533,7 @@
               (.delete_node cluster-state path))   ;; delete the znode since the worker is not congested
             (if on?
               (.set_ephemeral_node cluster-state path nil acls))))) ;; create the znode since worker is congested
-    
+
       (topology-backpressure
         [this storm-id callback]
         "if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
@@ -501,7 +544,7 @@
               children (if (.node_exists cluster-state path false)
                          (.get_children cluster-state path (not-nil? callback))) ]
               (> (count children) 0)))
-      
+
       (setup-backpressure!
         [this storm-id]
         (.mkdirs cluster-state (backpressure-storm-root storm-id) acls))
@@ -516,7 +559,7 @@
               existed (.node_exists cluster-state path false)]
           (if existed
             (.delete_node cluster-state (backpressure-path storm-id node port)))))
-    
+
       (teardown-topology-errors!
         [this storm-id]
         (try-cause
@@ -532,7 +575,9 @@
       (activate-storm!
         [this storm-id storm-base]
         (let [thrift-storm-base (thriftify-storm-base storm-base)]
-          (.set_data cluster-state (storm-path storm-id) (Utils/serialize thrift-storm-base) acls)))
+          (.set_data cluster-state (storm-path storm-id) (Utils/serialize thrift-storm-base) acls)
+          ;; keep a cache in local
+          (.keepStormId assignments-backend (:storm-name storm-base) storm-id)))
 
       (update-storm!
         [this storm-id new-elems]
@@ -560,8 +605,22 @@
 
       (set-assignment!
         [this storm-id info]
-        (let [thrift-assignment (thriftify-assignment info)]
-          (.set_data cluster-state (assignment-path storm-id) (Utils/serialize thrift-assignment) acls)))
+        (let [ser-assignment (Utils/serialize (thriftify-assignment info))]
+          ; set local assignment first then zk
+          (.keepOrUpdateAssignment assignments-backend storm-id (Utils/serialize ser-assignment))
+          (.set_data cluster-state (assignment-path storm-id) (Utils/serialize ser-assignment) acls)))
+
+      (storm-id
+        [this storm-name]
+        (.getStormId assignments-backend storm-name))
+
+      (sync-remote-ids!
+        [this remote]
+        (if (not-nil? remote)
+          (.syncRemoteIDS assignments-backend remote)
+          (let [active-storms (.get_children cluster-state STORMS-SUBTREE false)
+                tid-names (into {} (for [tid active-storms] {tid (:storm-name (storm-base this tid nil))}))]
+            (.syncRemoteIDS assignments-backend tid-names))))
 
       (remove-blobstore-key!
         [this blob-key]
@@ -574,7 +633,9 @@
 
       (remove-storm!
         [this storm-id]
+        ;; delete zk assignment first then local
         (.delete_node cluster-state (assignment-path storm-id))
+        (.clearStateForStorm assignments-backend storm-id)
         (.delete_node cluster-state (credentials-path storm-id))
         (.delete_node cluster-state (log-config-path storm-id))
         (.delete_node cluster-state (profiler-config-path storm-id))
@@ -633,12 +694,13 @@
                               (maybe-deserialize ErrorInfo)
                               clojurify-error)]
               (map->TaskError data)))))
-      
+
       (disconnect
          [this]
         (.unregister cluster-state state-id)
         (when solo?
-          (.close cluster-state))))))
+          (.close cluster-state))
+        (.dispose assignments-backend)))))
 
 ;; daemons have a single thread that will respond to events
 ;; start with initialize event

@@ -22,7 +22,7 @@
 
 (defn -main [^String tmpjarpath & args]
   (let [conf (read-storm-config)
-        zk-leader-elector (zk-leader-elector conf)
+        zk-leader-elector (zk-leader-elector conf nil nil)
         leader-nimbus (.getLeader zk-leader-elector)
         host (.getHost leader-nimbus)
         port (.getPort leader-nimbus)

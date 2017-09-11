@@ -21,11 +21,12 @@
   (:require [org.apache.storm.daemon [executor :as executor]])
   (:require [org.apache.storm [disruptor :as disruptor] [cluster :as cluster]])
   (:require [clojure.set :as set])
-  (:require [org.apache.storm.messaging.loader :as msg-loader])
+  (:require [org.apache.storm.messaging.loader :as msg-loader]
+            [org.apache.storm.converter :as converter])
   (:import [java.util.concurrent Executors]
            [org.apache.storm.hooks IWorkerHook BaseWorkerHook])
   (:import [java.util ArrayList HashMap])
-  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue])
+  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue SupervisorClient])
   (:import [org.apache.storm.grouping LoadMapping])
   (:import [org.apache.storm.messaging TransportFactory])
   (:import [org.apache.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
@@ -47,9 +48,30 @@
 
 (defmulti mk-suicide-fn cluster-mode)
 
+(defn get-local-assignment
+  [conf storm-id cluster-state]
+  (try
+    (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
+          assignment (converter/clojurify-assignment (.getLocalAssignmentForStorm (.getClient supervisor-cli) storm-id))]
+      (try
+        (.close supervisor-cli)
+        (catch Throwable e
+          (log-warn (.getMessage e) "Exception when close supervisor client.")))
+      assignment)
+    (catch Throwable e
+      ;; if any error/exception thrown, fetch it from zookeeper
+      (.remote-assignment-info cluster-state storm-id)
+      )))
+
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")
-  (let [assignment (:executor->node+port (.assignment-info storm-cluster-state storm-id nil))]
+  ;; TODO: keep a long time connection when worker need more heart beat to supervisor.
+  (let [supervisor-cli (SupervisorClient/getConfiguredClient storm-conf (memoized-local-hostname))
+        assignment (:executor->node+port (get-local-assignment storm-conf storm-id storm-cluster-state))]
+    (try
+      (.close supervisor-cli)
+      (catch Throwable e
+        (log-warn "Exception when close supervisor client.")))
     (doall
      (concat
       [Constants/SYSTEM_EXECUTOR_ID]
@@ -351,6 +373,8 @@
             (.sendLoadMetrics (:receiver worker) local-pop)
             (reset! next-update (+ LOAD-REFRESH-INTERVAL-MS now))))))))
 
+;;TODO: define a method to get this
+
 (defn mk-refresh-connections [worker]
   (let [outbound-tasks (worker-outbound-tasks worker)
         conf (:conf worker)
@@ -360,12 +384,7 @@
       ([]
         (this (fn [& ignored] (schedule (:refresh-connections-timer worker) 0 this))))
       ([callback]
-         (let [version (.assignment-version storm-cluster-state storm-id callback)
-               assignment (if (= version (:version (get @(:assignment-versions worker) storm-id)))
-                            (:data (get @(:assignment-versions worker) storm-id))
-                            (let [new-assignment (.assignment-info-with-version storm-cluster-state storm-id callback)]
-                              (swap! (:assignment-versions worker) assoc storm-id new-assignment)
-                              (:data new-assignment)))
+         (let [assignment (get-local-assignment conf storm-id storm-cluster-state) ;; directly get it from local.
               my-assignment (-> assignment
                                 :executor->node+port
                                 to-task->node+port
@@ -602,7 +621,7 @@
         storm-conf (override-login-config-with-system-property storm-conf)
         acls (Utils/getWorkerACL storm-conf)
         cluster-state (cluster/mk-distributed-cluster-state conf :auth-conf storm-conf :acls acls :context (ClusterStateContext. DaemonType/WORKER))
-        storm-cluster-state (cluster/mk-storm-cluster-state cluster-state :acls acls)
+        storm-cluster-state (cluster/mk-storm-cluster-state conf :cluster-state cluster-state :acls acls)
         initial-credentials (.credentials storm-cluster-state storm-id nil)
         auto-creds (AuthUtils/GetAutoCredentials storm-conf)
         subject (AuthUtils/populateSubject nil auto-creds initial-credentials)]

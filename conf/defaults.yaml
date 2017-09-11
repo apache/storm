@@ -63,6 +63,7 @@ nimbus.seeds : ["localhost"]
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
 nimbus.thrift.max_buffer_size: 1048576
+nimbus.local.assignments.backend.class: "org.apache.storm.assignments.RocksDBAssignmentBackend"
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
@@ -142,6 +143,10 @@ supervisor.slots.ports:
     - 6701
     - 6702
     - 6703
+supervisor.thrift.port: 6627
+supervisor.queue.size: 128
+supervisor.thrift.threads: 16
+supervisor.thrift.max_buffer_size: 1048576
 supervisor.childopts: "-Xmx256m"
 supervisor.run.worker.as.user: false
 #how long supervisor will wait to ensure that a worker process is started
