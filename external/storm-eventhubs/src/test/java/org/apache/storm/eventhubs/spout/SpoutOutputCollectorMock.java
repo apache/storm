@@ -19,6 +19,7 @@ package org.apache.storm.eventhubs.spout;
 
 import java.util.List;
 
+import org.apache.storm.eventhubs.core.MessageId;
 import org.apache.storm.spout.ISpoutOutputCollector;
 
 /**

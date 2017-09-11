@@ -16,19 +16,33 @@
  * limitations under the License.
  *******************************************************************************/
 
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.format;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectOutputStream;
 
+import org.apache.commons.lang.SerializationUtils;
+
+/**
+ * Utility methods for SerDe operations.
+ *
+ */
 public class SerializeDeserializeUtil {
-    public static byte[] serialize(Object obj) throws IOException {
-        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
-                o.writeObject(obj);
-            }
-            return b.toByteArray();
-        }
-    }
+	/**
+	 * Serializes a given object to byte array
+	 * 
+	 * @param obj
+	 *            object instance to be serialized
+	 * @return byte array
+	 * @throws IOException
+	 */
+	public static byte[] serialize(Object obj) throws IOException {
+		try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+			try (ObjectOutputStream o = new ObjectOutputStream(b)) {
+				o.writeObject(obj);
+			}
+			return b.toByteArray();
+		}
+	}
 }

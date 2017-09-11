@@ -15,30 +15,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.format;
 
-import com.microsoft.azure.eventhubs.EventData;
-import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
 
-import java.io.Serializable;
-import java.util.List;
+/**
+ * A default implementation of IEventDataFormat that converts the tuple
+ * into a delimited string.
+ */
+public class DefaultEventDataFormat implements IEventDataFormat {
+  private static final long serialVersionUID = 1L;
+  private String delimiter = ",";
+  
+  public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
+    this.delimiter = delimiter;
+    return this;
+  }
 
-public interface IEventDataScheme extends Serializable {
+  @Override
+  public byte[] serialize(Tuple tuple) {
+    StringBuilder sb = new StringBuilder();
+    for(Object obj : tuple.getValues()) {
+      if(sb.length() != 0) {
+        sb.append(delimiter);
+      }
+      sb.append(obj.toString());
+    }
+    return sb.toString().getBytes();
+  }
 
-  /**
-   * Deserialize an AMQP Message into a Tuple.
-   *
-   * @see #getOutputFields() for the list of fields the tuple will contain.
-   *
-   * @param eventData The EventData to Deserialize.
-   * @return A tuple containing the deserialized fields of the message.
-   */
-  List<Object> deserialize(EventData eventData);
-
-  /**
-   * Retrieve the Fields that are present on tuples created by this object.
-   *
-   * @return The Fields that are present on tuples created by this object.
-   */
-  Fields getOutputFields();
 }

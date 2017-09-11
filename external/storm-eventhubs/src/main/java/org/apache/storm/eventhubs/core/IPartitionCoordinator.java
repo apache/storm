@@ -15,33 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.bolt;
+package org.apache.storm.eventhubs.core;
 
-import org.apache.storm.tuple.Tuple;
+import java.util.List;
 
 /**
- * A default implementation of IEventDataFormat that converts the tuple
- * into a delimited string.
+ * Contracts for assigning and handling workers to read/write data from EventHub
+ * partitions.
+ *
  */
-public class DefaultEventDataFormat implements IEventDataFormat {
-  private static final long serialVersionUID = 1L;
-  private String delimiter = ",";
-  
-  public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
-    this.delimiter = delimiter;
-    return this;
-  }
+public interface IPartitionCoordinator {
 
-  @Override
-  public byte[] serialize(Tuple tuple) {
-    StringBuilder sb = new StringBuilder();
-    for(Object obj : tuple.getValues()) {
-      if(sb.length() != 0) {
-        sb.append(delimiter);
-      }
-      sb.append(obj.toString());
-    }
-    return sb.toString().getBytes();
-  }
+	/**
+	 * Retrieve list of {@link IPartitionManager} instances for the target EventHub.
+	 * 
+	 * @return List of {@link IPartitionManager} instances
+	 */
+	List<IPartitionManager> getMyPartitionManagers();
 
+	/**
+	 * Retrieves {@link IPartitionManager} instance for the EventHub partition
+	 * identified by specified id.
+	 * 
+	 * @param partitionId
+	 *            partition id
+	 * @return {@link IPartitionManager} implementation
+	 */
+	IPartitionManager getPartitionManager(String partitionId);
 }

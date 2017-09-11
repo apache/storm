@@ -15,34 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
 
-import com.microsoft.azure.eventhubs.EventData;
+package org.apache.storm.eventhubs.core;
 
-public class EventDataWrap implements Comparable<EventDataWrap> {
-  private final EventData eventData;
-  private final MessageId messageId;
+/**
+ * Marker interface to identify filter criteria for receiving from EventHubs
+ * @see OffsetFilter
+ * @see TimestampFilter
+ */
+public interface IEventFilter {
 
-  public EventDataWrap(EventData eventdata, MessageId messageId) {
-    this.eventData = eventdata;
-    this.messageId = messageId;
-  }
-
-  public static EventDataWrap create(EventData eventData, MessageId messageId) {
-    return new EventDataWrap(eventData, messageId);
-  }
-
-  public EventData getEventData() {
-    return this.eventData;
-  }
-
-  public MessageId getMessageId() {
-    return this.messageId;
-  }
-
-  @Override
-  public int compareTo(EventDataWrap ed) {
-    return messageId.getSequenceNumber().
-        compareTo(ed.getMessageId().getSequenceNumber());
-  }
 }

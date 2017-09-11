@@ -19,6 +19,7 @@ package org.apache.storm.eventhubs.trident;
 
 import java.util.List;
 
+import org.apache.storm.eventhubs.core.EventHubMessage;
 import org.apache.storm.trident.operation.TridentCollector;
 
 /**
@@ -34,7 +35,13 @@ public class TridentCollectorMock implements TridentCollector {
   @Override
   public void emit(List<Object> tuples) {
     for(Object o: tuples) {
-      buffer.append(o.toString());
+    	if(o instanceof EventHubMessage)
+    	{
+    		buffer.append(((EventHubMessage)o).readAsUtf8String());
+    	}
+    	else{
+    		buffer.append(o.toString());
+    	}
     }
   }
 

@@ -15,14 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.format;
 
 import com.microsoft.azure.eventhubs.EventData;
+
+import org.apache.storm.eventhubs.core.EventHubMessage;
+import org.apache.storm.eventhubs.core.FieldConstants;
+import org.apache.storm.eventhubs.core.MessageId;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
@@ -38,43 +44,35 @@ import java.util.Map;
  * For passing the raw bytes of a messsage to Bolts, refer to
  * {@link BinaryEventDataScheme}.
  */
-public class EventDataScheme implements IEventDataScheme {
+public abstract class EventDataScheme implements IEventDataScheme {
 
 	private static final long serialVersionUID = 1L;
 	private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
+
+	protected boolean includeApplicationProperties = true; // backward compatibility
+	protected boolean includeSystemProperties = false; // backward compatibility
+
+	public EventDataScheme() {
+
+	}
+
+	public EventDataScheme(boolean includeApplicationProperties, boolean includeSystemProperties) {
+		this.includeApplicationProperties = includeApplicationProperties;
+		this.includeSystemProperties = includeSystemProperties;
+	}
+
 	@Override
-	public List<Object> deserialize(EventData eventData) {
+	public List<Object> deserialize(EventHubMessage eventHubMessage) {
 		final List<Object> fieldContents = new ArrayList<Object>();
-		String messageData = "";
-		if (eventData.getBytes()!=null) {
-			messageData = new String(eventData.getBytes());
-		}
-		/*Will only serialize AMQPValue type*/
-		else if (eventData.getObject()!=null) {
-			try {
-				if (!(eventData.getObject() instanceof List)) {
-					messageData = eventData.getObject().toString();
-				} else {
-					throw new RuntimeException("Cannot serialize the given AMQP type");
-				}
-			} catch (RuntimeException e) {
-				logger.error("Failed to serialize EventData payload class"
-						+ eventData.getObject().getClass());
-				logger.error("Exception encountered while serializing EventData payload is"
-						+ e.toString());
-				throw e;
-			}
-		}
-		Map metaDataMap = eventData.getProperties().size() > 0 ? eventData.getProperties() : null;
+		String messageData = new String(eventHubMessage.getContent());
+		Map metadataMap = eventHubMessage.getApplicationProperties();
 		fieldContents.add(messageData);
-		if ( metaDataMap != null ) {
-			fieldContents.add(metaDataMap);
-		}
+		fieldContents.add(metadataMap);
 		return fieldContents;
 	}
 
 	@Override
 	public Fields getOutputFields() {
-		return new Fields(FieldConstants.Message, FieldConstants.META_DATA);
+		return new Fields(FieldConstants.MESSAGE_FIELD, FieldConstants.META_DATA_FIELD);
 	}
 }

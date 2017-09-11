@@ -15,13 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
-import java.util.List;
+import java.io.Serializable;
+import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
+import org.apache.storm.trident.spout.ISpoutPartition;
 
-public interface IPartitionCoordinator {
-
-  List<IPartitionManager> getMyPartitionManagers();
-
-  IPartitionManager getPartitionManager(String partitionId);
+/**
+ * Represents an EventHub partition
+ */
+public class Partition implements ISpoutPartition, Serializable {
+  private static final long serialVersionUID = 1L;
+  String partitionId;
+  
+  public Partition(String partitionId) {
+    this.partitionId = partitionId;
+  }
+  
+  @Override
+  public String getId() {
+    return partitionId;
+  }
 }

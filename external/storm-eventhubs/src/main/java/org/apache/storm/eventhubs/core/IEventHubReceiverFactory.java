@@ -15,23 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+/**
+ * 
+ */
+package org.apache.storm.eventhubs.core;
 
-import java.util.Map;
+import java.io.Serializable;
 
-public interface IPartitionManager {
-
-  void open() throws Exception;
-
-  void close();
-
-  EventDataWrap receive();
-
-  void checkpoint();
-
-  void ack(String offset);
-
-  void fail(String offset);
-  
-  Map getMetricsData();
+/**
+ * Factory to generate IEventHubReceiver implementations
+ */
+public interface IEventHubReceiverFactory extends Serializable {
+	/**
+	 * Creates an {@link IEventHubReceiver} implementation for specified
+	 * configuration and partition id.
+	 * 
+	 * @param config
+	 *            {@link EventHubConfig} containing connection parameters and other
+	 *            settings.
+	 * @param partitionId
+	 *            target partition id to connect to
+	 * @return Implementation for {@link IEventHubReceiver}
+	 */
+	IEventHubReceiver create(EventHubConfig config, String partitionId);
 }

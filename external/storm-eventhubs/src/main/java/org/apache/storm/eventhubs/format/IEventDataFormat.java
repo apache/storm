@@ -15,13 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.format;
 
-public class FieldConstants {
+import java.io.Serializable;
+import org.apache.storm.tuple.Tuple;
 
-  public static final String PartitionKey = "partitionKey";
-  public static final String Offset = "offset";
-  public static final String Message = "message";
-  public static final String META_DATA = "metadata";
-  public static final String DefaultStartingOffset = "-1";
+/**
+ * Serialize a tuple to a byte array to be sent to EventHub
+ */
+public interface IEventDataFormat extends Serializable {
+
+	/**
+	 * Serialize given tuple to byte stream
+	 * 
+	 * @param tuple
+	 *            {@link Tuple} instance
+	 * @return byte array representing the tuples
+	 */
+	public byte[] serialize(Tuple tuple);
 }
