@@ -26,6 +26,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
@@ -34,9 +35,10 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 
 public class SpoutWithMockedConsumerSetupHelper {
-    
+
     /**
      * Creates, opens and activates a KafkaSpout using a mocked consumer.
+     *
      * @param <K> The Kafka key type
      * @param <V> The Kafka value type
      * @param spoutConfig The spout config to use
@@ -48,7 +50,7 @@ public class SpoutWithMockedConsumerSetupHelper {
      * @return The spout
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
-        TopologyContext contextMock, SpoutOutputCollector collectorMock, final KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {     
+        TopologyContext contextMock, SpoutOutputCollector collectorMock, final KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {
 
         Map<String, List<PartitionInfo>> partitionInfos = new HashMap<>();
         for(TopicPartition tp : assignedPartitions) {
@@ -75,13 +77,31 @@ public class SpoutWithMockedConsumerSetupHelper {
 
         when(contextMock.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
         when(contextMock.getThisTaskIndex()).thenReturn(0);
-        
+
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();
 
         verify(consumerMock).assign(assignedPartitions);
-        
+
         return spout;
     }
-    
+
+    /**
+     * Creates sequential dummy records
+     *
+     * @param <K> The Kafka key type
+     * @param <V> The Kafka value type
+     * @param topic The topic partition to create records for
+     * @param startingOffset The starting offset of the records
+     * @param numRecords The number of records to create
+     * @return The dummy records
+     */
+    public static <K, V> List<ConsumerRecord<K, V>> createRecords(TopicPartition topic, long startingOffset, int numRecords) {
+        List<ConsumerRecord<K, V>> recordsForPartition = new ArrayList<>();
+        for (int i = 0; i < numRecords; i++) {
+            recordsForPartition.add(new ConsumerRecord<K, V>(topic.topic(), topic.partition(), startingOffset + i, null, null));
+        }
+        return recordsForPartition;
+    }
+
 }

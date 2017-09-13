@@ -44,7 +44,7 @@ public class KafkaSpoutConfigTest {
     }
 
     @Test
-    public void test_setEmitNullTuples_true_true() {
+    public void testSetEmitNullTuplesToTrue() {
         final KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
                 .setEmitNullTuples(true)
                 .build();
