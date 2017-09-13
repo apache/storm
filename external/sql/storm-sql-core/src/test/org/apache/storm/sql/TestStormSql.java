@@ -18,9 +18,8 @@
 package org.apache.storm.sql;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.calcite.sql.validate.SqlValidatorException;
 import org.apache.calcite.tools.ValidationException;
-import org.apache.storm.sql.compiler.backends.standalone.BuiltinAggregateFunctions;
+import org.apache.storm.sql.javac.CompilingClassLoader;
 import org.apache.storm.sql.runtime.ChannelHandler;
 import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
@@ -36,8 +35,10 @@ import org.junit.Test;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 public class TestStormSql {
   private static class MockDataSourceProvider implements DataSourcesProvider {
@@ -55,7 +56,7 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
+                                                  Properties properties, List<FieldInfo> fields) {
       return new TestUtils.MockSqlTridentDataSource();
     }
   }
@@ -75,8 +76,8 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
-      throw new UnsupportedOperationException("Not supported");
+                                                  Properties properties, List<FieldInfo> fields) {
+      return new TestUtils.MockSqlTridentDataSource();
     }
   }
 
@@ -95,8 +96,8 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
-      throw new UnsupportedOperationException("Not supported");
+                                                  Properties properties, List<FieldInfo> fields) {
+      return new TestUtils.MockSqlTridentGroupedDataSource();
     }
   }
 
@@ -115,8 +116,8 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
-      throw new UnsupportedOperationException("Not supported");
+                                                  Properties properties, List<FieldInfo> fields) {
+      return new TestUtils.MockSqlTridentJoinDataSourceEmp();
     }
   }
 
@@ -135,8 +136,8 @@ public class TestStormSql {
 
     @Override
     public ISqlTridentDataSource constructTrident(URI uri, String inputFormatClass, String outputFormatClass,
-                                                  String properties, List<FieldInfo> fields) {
-      throw new UnsupportedOperationException("Not supported");
+                                                  Properties properties, List<FieldInfo> fields) {
+      return new TestUtils.MockSqlTridentJoinDataSourceDept();
     }
   }
 
@@ -174,9 +175,9 @@ public class TestStormSql {
   public void testExternalDataSourceNested() throws Exception {
     List<String> stmt = new ArrayList<>();
     stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
-    stmt.add("SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
+    stmt.add("SELECT STREAM ID, MAPFIELD['c'], NESTEDMAPFIELD, ARRAYFIELD " +
                      "FROM FOO " +
-                     "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD[1] = 200");
+                     "WHERE CAST(MAPFIELD['b'] AS INTEGER) = 2 AND CAST(ARRAYFIELD[2] AS INTEGER) = 200");
     StormSql sql = StormSql.construct();
     List<Values> values = new ArrayList<>();
     ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
@@ -184,16 +185,60 @@ public class TestStormSql {
     System.out.println(values);
     Map<String, Integer> map = ImmutableMap.of("b", 2, "c", 4);
     Map<String, Map<String, Integer>> nestedMap = ImmutableMap.of("a", map);
-    Assert.assertEquals(new Values(2, map, nestedMap, Arrays.asList(100, 200, 300)), values.get(0));
+    Assert.assertEquals(new Values(2, 4, nestedMap, Arrays.asList(100, 200, 300)), values.get(0));
   }
 
   @Test
-  public void testExternalNestedInvalidAccess() throws Exception {
+  public void testExternalNestedNonExistKeyAccess() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    // this triggers java.lang.RuntimeException: Cannot convert null to int
+    stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
+    stmt.add("SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
+             "FROM FOO " +
+             "WHERE CAST(MAPFIELD['a'] AS INTEGER) = 2");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(0, values.size());
+  }
+
+  @Test
+  public void testExternalNestedNonExistKeyAccess2() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    // this triggers java.lang.RuntimeException: Cannot convert null to int
+    stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
+    stmt.add("SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
+             "FROM FOO " +
+             "WHERE CAST(NESTEDMAPFIELD['b']['c'] AS INTEGER) = 4");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(0, values.size());
+  }
+
+  @Test
+  public void testExternalNestedInvalidAccessStringIndexOnArray() throws Exception {
     List<String> stmt = new ArrayList<>();
     stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
     stmt.add("SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
-                     "FROM FOO " +
-                     "WHERE NESTEDMAPFIELD['a']['b'] = 2 AND ARRAYFIELD['a'] = 200");
+             "FROM FOO " +
+             "WHERE CAST(ARRAYFIELD['a'] AS INTEGER) = 200");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(0, values.size());
+  }
+
+  @Test
+  public void testExternalNestedArrayOutOfBoundAccess() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, MAPFIELD ANY, NESTEDMAPFIELD ANY, ARRAYFIELD ANY) LOCATION 'mocknested:///foo'");
+    stmt.add("SELECT STREAM ID, MAPFIELD, NESTEDMAPFIELD, ARRAYFIELD " +
+             "FROM FOO " +
+             "WHERE CAST(ARRAYFIELD[10] AS INTEGER) = 200");
     StormSql sql = StormSql.construct();
     List<Values> values = new ArrayList<>();
     ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
@@ -215,9 +260,10 @@ public class TestStormSql {
 
   }
 
-  @Test
+  @Test(expected = CompilingClassLoader.CompilerException.class)
   public void testExternalUdfType2() throws Exception {
     List<String> stmt = new ArrayList<>();
+    // generated code will be not compilable since return type of MYPLUS and type of 'x' are different
     stmt.add("CREATE EXTERNAL TABLE FOO (ID INT, NAME VARCHAR) LOCATION 'mock:///foo'");
     stmt.add("CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'");
     stmt.add("SELECT STREAM ID FROM FOO WHERE MYPLUS(ID, 1) = 'x'");
@@ -292,7 +338,8 @@ public class TestStormSql {
     List<String> stmt = new ArrayList<>();
     stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY, SALARY INT, PCT DOUBLE, NAME VARCHAR) LOCATION 'mockgroup:///foo'");
     stmt.add("CREATE FUNCTION MYCONCAT AS 'org.apache.storm.sql.TestUtils$MyConcat'");
-    stmt.add("SELECT STREAM ID, SUM(SALARY), MYCONCAT(NAME) FROM FOO GROUP BY (ID)");
+    stmt.add("CREATE FUNCTION TOPN AS 'org.apache.storm.sql.TestUtils$TopN'");
+    stmt.add("SELECT STREAM ID, SUM(SALARY), MYCONCAT(NAME), TOPN(2, SALARY) FROM FOO GROUP BY (ID)");
     StormSql sql = StormSql.construct();
     List<Values> values = new ArrayList<>();
     ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
@@ -300,12 +347,33 @@ public class TestStormSql {
     Assert.assertEquals(4, values.size());
     Assert.assertEquals(3, values.get(0).get(1));
     Assert.assertEquals("xxx", values.get(0).get(2));
+    Assert.assertEquals(Arrays.asList(2, 1), values.get(0).get(3));
     Assert.assertEquals(12, values.get(1).get(1));
     Assert.assertEquals("xxx", values.get(1).get(2));
+    Assert.assertEquals(Arrays.asList(5, 4), values.get(1).get(3));
     Assert.assertEquals(21, values.get(2).get(1));
     Assert.assertEquals("xxx", values.get(2).get(2));
+    Assert.assertEquals(Arrays.asList(8, 7), values.get(2).get(3));
     Assert.assertEquals(9, values.get(3).get(1));
     Assert.assertEquals("x", values.get(3).get(2));
+    Assert.assertEquals(Arrays.asList(9), values.get(3).get(3));
+  }
+
+  @Test
+  public void testAggFnNonSqlReturnType() throws Exception {
+    List<String> stmt = new ArrayList<>();
+    stmt.add("CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY, SALARY INT, PCT DOUBLE, NAME VARCHAR) LOCATION 'mockgroup:///foo'");
+    stmt.add("CREATE FUNCTION TOPN AS 'org.apache.storm.sql.TestUtils$TopN'");
+    stmt.add("SELECT STREAM ID, SUM(SALARY), TOPN(1, SALARY) FROM FOO WHERE ID >= 0 GROUP BY (ID) HAVING MAX(SALARY) > 0");
+    StormSql sql = StormSql.construct();
+    List<Values> values = new ArrayList<>();
+    ChannelHandler h = new TestUtils.CollectDataChannelHandler(values);
+    sql.execute(stmt, h);
+    Assert.assertEquals(4, values.size());
+    Assert.assertEquals(Collections.singletonList(2), values.get(0).get(2));
+    Assert.assertEquals(Collections.singletonList(5), values.get(1).get(2));
+    Assert.assertEquals(Collections.singletonList(8), values.get(2).get(2));
+    Assert.assertEquals(Collections.singletonList(9), values.get(3).get(2));
   }
 
   @Test

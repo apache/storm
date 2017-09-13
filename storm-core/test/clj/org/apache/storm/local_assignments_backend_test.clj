@@ -26,9 +26,13 @@
   [assignment]
   (Utils/serialize (converter/thriftify-assignment assignment)))
 
+(defn thriftify-assignment
+  [assignment]
+  (converter/thriftify-assignment assignment))
+
 (defn deserialize-assignment
-  [ser]
-  (converter/clojurify-assignment (Utils/deserialize ser Assignment)))
+  [assignment]
+  (converter/clojurify-assignment assignment))
 
 (deftest test-local-assignment
   (with-local-tmp [dir1]
@@ -37,25 +41,27 @@
                                                          {"node1" "host1"}
                                                          {[1] ["node1" 9723]}
                                                          {[1] 12345}
-                                                         {["node1" 9723] [1 3 2]})]
+                                                         {["node1" 9723] [1 3 2]}
+                                                         "o")]
                         [storm2 assignment2] ["storm2" (Assignment.
                                                          "master_code_dir2"
                                                          {"node2" "host2"}
                                                          {[1] ["node2" 9723]}
                                                          {[1] 12345}
-                                                         {["node2" 9723] [1 3 2]})]
+                                                         {["node2" 9723] [1 3 2]}
+                                                         "o")]
                         conf (read-storm-config)
                         assbd (doto (LocalAssignmentsBackendFactory/getBackend conf dir1)
-                                              (.prepare conf))]
+                                              (.prepare conf dir1))]
                     (is (= nil (.getAssignment assbd "storm1")))
-                    (.keepOrUpdateAssignment assbd storm1 (serialize-assignment assignment1))
-                    (.keepOrUpdateAssignment assbd storm2 (serialize-assignment assignment2))
+                    (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment1))
+                    (.keepOrUpdateAssignment assbd storm2 (thriftify-assignment assignment2))
                     (is (= assignment1 (deserialize-assignment (.getAssignment assbd storm1))))
                     (is (= assignment2 (deserialize-assignment (.getAssignment assbd storm1))))
                     (.clearStateForStorm assbd storm1)
                     (is (= nil (.getAssignment assbd storm1)))
-                    (.keepOrUpdateAssignment assbd storm1 (serialize-assignment assignment1))
-                    (.keepOrUpdateAssignment assbd storm1 (serialize-assignment assignment2))
+                    (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment1))
+                    (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment2))
                     (is (= assignment2 (deserialize-assignment (.getAssignment assbd storm1)))))))
 
 (deftest test-local-id-info
@@ -65,7 +71,7 @@
                         [name3 id3] ["name3" "id3"]
                         conf (read-storm-config)
                         assbd (doto (LocalAssignmentsBackendFactory/getBackend conf dir1)
-                                              (.prepare conf))]
+                                              (.prepare conf dir1))]
                     (is (= nil (.getStormId assbd "name3")))
                     (.keepStormId assbd name1 id1)
                     (.keepStormId assbd name2 id2)

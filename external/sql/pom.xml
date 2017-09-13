@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0</version>
+        <version>1.1.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -39,6 +39,9 @@
     <modules>
         <module>storm-sql-core</module>
         <module>storm-sql-runtime</module>
-        <module>storm-sql-kafka</module>
+        <module>storm-sql-external/storm-sql-kafka</module>
+        <module>storm-sql-external/storm-sql-redis</module>
+        <module>storm-sql-external/storm-sql-mongodb</module>
+        <module>storm-sql-external/storm-sql-hdfs</module>
     </modules>
 </project>

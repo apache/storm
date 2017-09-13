@@ -15,7 +15,7 @@
 from optparse import OptionParser
 from datetime import datetime
 from github import GitHub
-from jira import JiraRepo
+from jira_github import JiraRepo
 from report.report_builder import CompleteReportBuilder
 
 

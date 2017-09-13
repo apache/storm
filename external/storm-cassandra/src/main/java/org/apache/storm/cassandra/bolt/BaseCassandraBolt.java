@@ -18,17 +18,10 @@
  */
 package org.apache.storm.cassandra.bolt;
 
-import org.apache.storm.Config;
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
-import org.apache.storm.utils.Utils;
 import com.datastax.driver.core.Session;
 import com.datastax.driver.core.exceptions.NoHostAvailableException;
+import com.google.common.base.Preconditions;
+import org.apache.storm.Config;
 import org.apache.storm.cassandra.BaseExecutionResultHandler;
 import org.apache.storm.cassandra.CassandraContext;
 import org.apache.storm.cassandra.ExecutionResultHandler;
@@ -39,6 +32,15 @@ import org.apache.storm.cassandra.executor.AsyncExecutor;
 import org.apache.storm.cassandra.executor.AsyncExecutorProvider;
 import org.apache.storm.cassandra.executor.AsyncResultHandler;
 import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -48,9 +50,9 @@ import java.util.Map;
 /**
  * A base cassandra bolt.
  *
- * Default {@link org.apache.storm.topology.base.BaseRichBolt}
+ * Default {@link org.apache.storm.topology.base.BaseTickTupleAwareRichBolt}
  */
-public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
+public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(BaseCassandraBolt.class);
 
@@ -61,12 +63,13 @@ public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
     protected Session session;
     protected Map stormConfig;
 
-    protected CassandraConf cassandraConfConfig;
+    protected CassandraConf cassandraConf;
 
     private CQLStatementTupleMapper mapper;
     private ExecutionResultHandler resultHandler;
 
     transient private  Map<String, Fields> outputsFields = new HashMap<>();
+    private Map<String, Object> cassandraConfig;
 
     /**
      * Creates a new {@link CassandraWriterBolt} instance.
@@ -91,8 +94,12 @@ public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
     public void prepare(Map stormConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.outputCollector = outputCollector;
         this.stormConfig = stormConfig;
-        this.cassandraConfConfig = new CassandraConf(stormConfig);
-        this.client = clientProvider.getClient(this.stormConfig);
+
+        Map<String, Object> cassandraClientConfig = cassandraConfig != null ? cassandraConfig : stormConfig;
+
+        this.cassandraConf = new CassandraConf(cassandraClientConfig);
+        this.client = clientProvider.getClient(cassandraClientConfig);
+
         try {
             session = client.connect();
         } catch (NoHostAvailableException e) {
@@ -105,14 +112,40 @@ public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
         return this;
     }
 
+    /**
+     * Configures this bolt with the given {@code fields} as outputfields with stream id as {@link Utils#DEFAULT_STREAM_ID}
+     *
+     * @param fields outputfields
+     */
     public BaseCassandraBolt withOutputFields(Fields fields) {
+        Preconditions.checkNotNull(fields, "fields should not be null.");
         this.outputsFields.put(Utils.DEFAULT_STREAM_ID, fields);
         return this;
     }
 
+    /**
+     * Configures this bolt given {@code fields} as outputfields for the given {@code stream}.
+     *
+     * @param stream
+     * @param fields
+     */
     public BaseCassandraBolt withStreamOutputFields(String stream, Fields fields) {
         if( stream == null || stream.length() == 0) throw new IllegalArgumentException("'stream' should not be null");
         this.outputsFields.put(stream, fields);
+        return this;
+    }
+
+    /**
+     * Takes the given {@code config} for creating cassandra client.
+     * {@link CassandraConf} contains all the properties that can be configured.
+     *
+     * @param config
+     */
+    public BaseCassandraBolt withCassandraConfig(Map<String, Object> config) {
+        if(config == null) {
+            throw new IllegalArgumentException("config should not be null");
+        }
+        cassandraConfig = config;
         return this;
     }
 
@@ -139,35 +172,21 @@ public abstract class BaseCassandraBolt<T> extends BaseRichBolt {
     @Override
     public final void execute(Tuple input) {
         getAsyncHandler().flush(outputCollector);
-        if (TupleUtils.isTick(input)) {
-            onTickTuple();
-            outputCollector.ack(input);
-        } else {
-            process(input);
-        }
+        super.execute(input);
     }
-
-    /**
-     * Process a single tuple of input.
-     *
-     * @param input The input tuple to be processed.
-     */
-    abstract protected void process(Tuple input);
-
-    /**
-     * Calls by an input tick tuple.
-     */
-    abstract protected void onTickTuple();
 
     /**
      * {@inheritDoc}
      */
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        Fields fields = this.outputsFields.remove(Utils.DEFAULT_STREAM_ID);
-        if( fields != null) declarer.declare(fields);
-        for(Map.Entry<String, Fields> entry : this.outputsFields.entrySet()) {
-            declarer.declareStream(entry.getKey(), entry.getValue());
+        // outputsFields can be empty if this bolt acts like a sink in topology.
+        if (!outputsFields.isEmpty()) {
+            Fields fields = outputsFields.remove(Utils.DEFAULT_STREAM_ID);
+            if( fields != null) declarer.declare(fields);
+            for(Map.Entry<String, Fields> entry : outputsFields.entrySet()) {
+                declarer.declareStream(entry.getKey(), entry.getValue());
+            }
         }
     }
 

@@ -17,6 +17,8 @@
  */
 package org.apache.storm.assignments;
 
+import org.apache.storm.generated.Assignment;
+
 import java.util.List;
 import java.util.Map;
 
@@ -35,16 +37,16 @@ public interface ILocalAssignmentsBackend {
     /**
      * Keep a storm assignment to local state or update old assignment.
      * @param stormID storm runtime id
-     * @param assignment assignment as byte[]
+     * @param assignment assignment as thrift
      */
-    void keepOrUpdateAssignment(String stormID, byte[] assignment);
+    void keepOrUpdateAssignment(String stormID, Assignment assignment);
 
     /**
      * Get assignment as byte[] for a storm
      * @param stormID storm runtime id
      * @return
      */
-    byte[] getAssignment(String stormID);
+    Assignment getAssignment(String stormID);
 
     void removeAssignment(String stormID);
 
@@ -58,7 +60,7 @@ public interface ILocalAssignmentsBackend {
      * Get all the local assignments of local state
      * @return mapping of storm-id -> assignment
      */
-    Map<String, byte[]> assignmentsInfo();
+    Map<String, Assignment> assignmentsInfo();
 
     /**
      * Sync remote assignments to local, if remote is null, we will sync it from zk

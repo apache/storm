@@ -18,21 +18,36 @@
 
 package org.apache.storm.kafka.spout;
 
+import java.io.Serializable;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 
-public class KafkaSpoutMessageId {
-    private transient TopicPartition topicPart;
-    private transient long offset;
-    private transient int numFails = 0;
+public class KafkaSpoutMessageId implements Serializable {
+    private final TopicPartition topicPart;
+    private final long offset;
+    private int numFails = 0;
+    /**
+     * true if the record was emitted using a form of collector.emit(...). false
+     * when skipping null tuples as configured by the user in KafkaSpoutConfig
+     */
+    private boolean emitted;
 
-    public KafkaSpoutMessageId(ConsumerRecord consumerRecord) {
-        this(new TopicPartition(consumerRecord.topic(), consumerRecord.partition()), consumerRecord.offset());
+    public KafkaSpoutMessageId(ConsumerRecord<?, ?> consumerRecord) {
+        this(consumerRecord, true);
+    }
+
+    public KafkaSpoutMessageId(ConsumerRecord<?, ?> consumerRecord, boolean emitted) {
+        this(new TopicPartition(consumerRecord.topic(), consumerRecord.partition()), consumerRecord.offset(), emitted);
     }
 
     public KafkaSpoutMessageId(TopicPartition topicPart, long offset) {
+        this(topicPart, offset, true);
+    }
+
+    public KafkaSpoutMessageId(TopicPartition topicPart, long offset, boolean emitted) {
         this.topicPart = topicPart;
         this.offset = offset;
+        this.emitted = emitted;
     }
 
     public int partition() {
@@ -57,6 +72,14 @@ public class KafkaSpoutMessageId {
 
     public TopicPartition getTopicPartition() {
         return topicPart;
+    }
+
+    public boolean isEmitted() {
+        return emitted;
+    }
+
+    public void setEmitted(boolean emitted) {
+        this.emitted = emitted;
     }
 
     public String getMetadata(Thread currThread) {

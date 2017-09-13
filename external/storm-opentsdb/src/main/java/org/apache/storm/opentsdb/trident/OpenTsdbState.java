@@ -19,7 +19,7 @@
 package org.apache.storm.opentsdb.trident;
 
 import org.apache.storm.opentsdb.OpenTsdbMetricDatapoint;
-import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
+import org.apache.storm.opentsdb.bolt.ITupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.ClientResponse;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
 import org.apache.storm.topology.FailedException;
@@ -41,10 +41,10 @@ public class OpenTsdbState implements State {
 
     private final Map conf;
     private final OpenTsdbClient.Builder openTsdbClientBuilder;
-    private final Iterable<TupleOpenTsdbDatapointMapper> tupleMetricPointMappers;
+    private final Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers;
     private OpenTsdbClient openTsdbClient;
 
-    public OpenTsdbState(Map conf, OpenTsdbClient.Builder openTsdbClientBuilder, Iterable<TupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
+    public OpenTsdbState(Map conf, OpenTsdbClient.Builder openTsdbClientBuilder, Iterable<? extends ITupleOpenTsdbDatapointMapper> tupleMetricPointMappers) {
         this.conf = conf;
         this.openTsdbClientBuilder = openTsdbClientBuilder;
         this.tupleMetricPointMappers = tupleMetricPointMappers;
@@ -68,7 +68,7 @@ public class OpenTsdbState implements State {
         try {
             List<OpenTsdbMetricDatapoint> metricDataPoints = new ArrayList<>();
             for (TridentTuple tridentTuple : tridentTuples) {
-                for (TupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper : tupleMetricPointMappers) {
+                for (ITupleOpenTsdbDatapointMapper tupleOpenTsdbDatapointMapper : tupleMetricPointMappers) {
                     metricDataPoints.add(tupleOpenTsdbDatapointMapper.getMetricPoint(tridentTuple));
                 }
             }

@@ -58,6 +58,7 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
   private static final org.apache.thrift.protocol.TField TOPOLOGY_ID_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_id", org.apache.thrift.protocol.TType.STRING, (short)1);
   private static final org.apache.thrift.protocol.TField EXECUTORS_FIELD_DESC = new org.apache.thrift.protocol.TField("executors", org.apache.thrift.protocol.TType.LIST, (short)2);
   private static final org.apache.thrift.protocol.TField RESOURCES_FIELD_DESC = new org.apache.thrift.protocol.TField("resources", org.apache.thrift.protocol.TType.STRUCT, (short)3);
+  private static final org.apache.thrift.protocol.TField OWNER_FIELD_DESC = new org.apache.thrift.protocol.TField("owner", org.apache.thrift.protocol.TType.STRING, (short)5);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -68,12 +69,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
   private String topology_id; // required
   private List<ExecutorInfo> executors; // required
   private WorkerResources resources; // optional
+  private String owner; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     TOPOLOGY_ID((short)1, "topology_id"),
     EXECUTORS((short)2, "executors"),
-    RESOURCES((short)3, "resources");
+    RESOURCES((short)3, "resources"),
+    OWNER((short)5, "owner");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -94,6 +97,8 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
           return EXECUTORS;
         case 3: // RESOURCES
           return RESOURCES;
+        case 5: // OWNER
+          return OWNER;
         default:
           return null;
       }
@@ -134,7 +139,7 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
   }
 
   // isset id assignments
-  private static final _Fields optionals[] = {_Fields.RESOURCES};
+  private static final _Fields optionals[] = {_Fields.RESOURCES,_Fields.OWNER};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -145,6 +150,8 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
             new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, ExecutorInfo.class))));
     tmpMap.put(_Fields.RESOURCES, new org.apache.thrift.meta_data.FieldMetaData("resources", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.StructMetaData(org.apache.thrift.protocol.TType.STRUCT, WorkerResources.class)));
+    tmpMap.put(_Fields.OWNER, new org.apache.thrift.meta_data.FieldMetaData("owner", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(LocalAssignment.class, metaDataMap);
   }
@@ -178,6 +185,9 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
     if (other.is_set_resources()) {
       this.resources = new WorkerResources(other.resources);
     }
+    if (other.is_set_owner()) {
+      this.owner = other.owner;
+    }
   }
 
   public LocalAssignment deepCopy() {
@@ -189,6 +199,7 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
     this.topology_id = null;
     this.executors = null;
     this.resources = null;
+    this.owner = null;
   }
 
   public String get_topology_id() {
@@ -275,6 +286,29 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
     }
   }
 
+  public String get_owner() {
+    return this.owner;
+  }
+
+  public void set_owner(String owner) {
+    this.owner = owner;
+  }
+
+  public void unset_owner() {
+    this.owner = null;
+  }
+
+  /** Returns true if field owner is set (has been assigned a value) and false otherwise */
+  public boolean is_set_owner() {
+    return this.owner != null;
+  }
+
+  public void set_owner_isSet(boolean value) {
+    if (!value) {
+      this.owner = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TOPOLOGY_ID:
@@ -301,6 +335,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       }
       break;
 
+    case OWNER:
+      if (value == null) {
+        unset_owner();
+      } else {
+        set_owner((String)value);
+      }
+      break;
+
     }
   }
 
@@ -314,6 +356,9 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
 
     case RESOURCES:
       return get_resources();
+
+    case OWNER:
+      return get_owner();
 
     }
     throw new IllegalStateException();
@@ -332,6 +377,8 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       return is_set_executors();
     case RESOURCES:
       return is_set_resources();
+    case OWNER:
+      return is_set_owner();
     }
     throw new IllegalStateException();
   }
@@ -376,6 +423,15 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
         return false;
     }
 
+    boolean this_present_owner = true && this.is_set_owner();
+    boolean that_present_owner = true && that.is_set_owner();
+    if (this_present_owner || that_present_owner) {
+      if (!(this_present_owner && that_present_owner))
+        return false;
+      if (!this.owner.equals(that.owner))
+        return false;
+    }
+
     return true;
   }
 
@@ -397,6 +453,11 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
     list.add(present_resources);
     if (present_resources)
       list.add(resources);
+
+    boolean present_owner = true && (is_set_owner());
+    list.add(present_owner);
+    if (present_owner)
+      list.add(owner);
 
     return list.hashCode();
   }
@@ -435,6 +496,16 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
     }
     if (is_set_resources()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.resources, other.resources);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_owner()).compareTo(other.is_set_owner());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_owner()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.owner, other.owner);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -481,6 +552,16 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
         sb.append("null");
       } else {
         sb.append(this.resources);
+      }
+      first = false;
+    }
+    if (is_set_owner()) {
+      if (!first) sb.append(", ");
+      sb.append("owner:");
+      if (this.owner == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.owner);
       }
       first = false;
     }
@@ -549,14 +630,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
           case 2: // EXECUTORS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list644 = iprot.readListBegin();
-                struct.executors = new ArrayList<ExecutorInfo>(_list644.size);
-                ExecutorInfo _elem645;
-                for (int _i646 = 0; _i646 < _list644.size; ++_i646)
+                org.apache.thrift.protocol.TList _list714 = iprot.readListBegin();
+                struct.executors = new ArrayList<ExecutorInfo>(_list714.size);
+                ExecutorInfo _elem715;
+                for (int _i716 = 0; _i716 < _list714.size; ++_i716)
                 {
-                  _elem645 = new ExecutorInfo();
-                  _elem645.read(iprot);
-                  struct.executors.add(_elem645);
+                  _elem715 = new ExecutorInfo();
+                  _elem715.read(iprot);
+                  struct.executors.add(_elem715);
                 }
                 iprot.readListEnd();
               }
@@ -570,6 +651,14 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
               struct.resources = new WorkerResources();
               struct.resources.read(iprot);
               struct.set_resources_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 5: // OWNER
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.owner = iprot.readString();
+              struct.set_owner_isSet(true);
             } else { 
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
@@ -596,9 +685,9 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
         oprot.writeFieldBegin(EXECUTORS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.executors.size()));
-          for (ExecutorInfo _iter647 : struct.executors)
+          for (ExecutorInfo _iter717 : struct.executors)
           {
-            _iter647.write(oprot);
+            _iter717.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -608,6 +697,13 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
         if (struct.is_set_resources()) {
           oprot.writeFieldBegin(RESOURCES_FIELD_DESC);
           struct.resources.write(oprot);
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.owner != null) {
+        if (struct.is_set_owner()) {
+          oprot.writeFieldBegin(OWNER_FIELD_DESC);
+          oprot.writeString(struct.owner);
           oprot.writeFieldEnd();
         }
       }
@@ -631,18 +727,24 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       oprot.writeString(struct.topology_id);
       {
         oprot.writeI32(struct.executors.size());
-        for (ExecutorInfo _iter648 : struct.executors)
+        for (ExecutorInfo _iter718 : struct.executors)
         {
-          _iter648.write(oprot);
+          _iter718.write(oprot);
         }
       }
       BitSet optionals = new BitSet();
       if (struct.is_set_resources()) {
         optionals.set(0);
       }
-      oprot.writeBitSet(optionals, 1);
+      if (struct.is_set_owner()) {
+        optionals.set(1);
+      }
+      oprot.writeBitSet(optionals, 2);
       if (struct.is_set_resources()) {
         struct.resources.write(oprot);
+      }
+      if (struct.is_set_owner()) {
+        oprot.writeString(struct.owner);
       }
     }
 
@@ -652,22 +754,26 @@ public class LocalAssignment implements org.apache.thrift.TBase<LocalAssignment,
       struct.topology_id = iprot.readString();
       struct.set_topology_id_isSet(true);
       {
-        org.apache.thrift.protocol.TList _list649 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-        struct.executors = new ArrayList<ExecutorInfo>(_list649.size);
-        ExecutorInfo _elem650;
-        for (int _i651 = 0; _i651 < _list649.size; ++_i651)
+        org.apache.thrift.protocol.TList _list719 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+        struct.executors = new ArrayList<ExecutorInfo>(_list719.size);
+        ExecutorInfo _elem720;
+        for (int _i721 = 0; _i721 < _list719.size; ++_i721)
         {
-          _elem650 = new ExecutorInfo();
-          _elem650.read(iprot);
-          struct.executors.add(_elem650);
+          _elem720 = new ExecutorInfo();
+          _elem720.read(iprot);
+          struct.executors.add(_elem720);
         }
       }
       struct.set_executors_isSet(true);
-      BitSet incoming = iprot.readBitSet(1);
+      BitSet incoming = iprot.readBitSet(2);
       if (incoming.get(0)) {
         struct.resources = new WorkerResources();
         struct.resources.read(iprot);
         struct.set_resources_isSet(true);
+      }
+      if (incoming.get(1)) {
+        struct.owner = iprot.readString();
+        struct.set_owner_isSet(true);
       }
     }
   }

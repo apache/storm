@@ -21,7 +21,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0</version>
+        <version>1.1.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -32,13 +32,12 @@
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.7</java.version>
         <org.slf4j.version>1.7.6</org.slf4j.version>
         <jackson.databind.version>2.3.2</jackson.databind.version>
         <junit.version>4.11</junit.version>
         <guava.version>16.0.1</guava.version>
         <commons-lang3.version>3.3</commons-lang3.version>
-        <cassandra.driver.core.version>2.1.7.1</cassandra.driver.core.version>
+        <cassandra.driver.core.version>3.1.2</cassandra.driver.core.version>
     </properties>
 
     <developers>
@@ -62,20 +61,6 @@
         </developer>
     </developers>
 
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.1</version>
-                <configuration>
-                    <source>${java.version}</source>
-                    <target>${java.version}</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>
@@ -88,7 +73,7 @@
             <groupId>org.apache.storm</groupId>
             <artifactId>storm-core</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
 
         <dependency>

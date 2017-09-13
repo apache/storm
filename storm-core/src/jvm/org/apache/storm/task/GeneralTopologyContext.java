@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Set;
 import org.json.simple.JSONValue;
 import org.json.simple.JSONAware;
+import org.json.simple.parser.ParseException;
 
 public class GeneralTopologyContext implements JSONAware {
     private StormTopology _topology;
@@ -187,10 +188,12 @@ public class GeneralTopologyContext implements JSONAware {
             ComponentCommon common = getComponentCommon(spout);
             String jsonConf = common.get_json_conf();
             if(jsonConf!=null) {
-                Map conf = (Map) JSONValue.parse(jsonConf);
-                Object comp = conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
-                if(comp!=null) {
-                    max = Math.max(Utils.getInt(comp), max);
+                try {
+                    Map conf = (Map) JSONValue.parseWithException(jsonConf);
+                    Object comp = conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS);
+                    max = Math.max(Utils.getInt(comp, max), max);
+                } catch (ParseException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }

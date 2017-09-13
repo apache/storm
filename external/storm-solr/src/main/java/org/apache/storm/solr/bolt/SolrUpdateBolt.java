@@ -22,6 +22,7 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.TupleUtils;
 import org.apache.solr.client.solrj.SolrClient;
@@ -40,7 +41,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SolrUpdateBolt extends BaseRichBolt {
+public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SolrUpdateBolt.class);
 
     /**
@@ -85,12 +86,10 @@ public class SolrUpdateBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    protected void process(Tuple tuple) {
         try {
-            if (!TupleUtils.isTick(tuple)) {    // Don't add tick tuples to the SolrRequest
-                SolrRequest request = solrMapper.toSolrRequest(tuple);
-                solrClient.request(request, solrMapper.getCollection());
-            }
+            SolrRequest request = solrMapper.toSolrRequest(tuple);
+            solrClient.request(request, solrMapper.getCollection());
             ack(tuple);
         } catch (Exception e) {
             fail(tuple, e);

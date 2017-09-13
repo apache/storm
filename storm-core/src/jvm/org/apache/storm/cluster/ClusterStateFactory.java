@@ -21,7 +21,9 @@ import clojure.lang.APersistentMap;
 import java.util.List;
 import org.apache.zookeeper.data.ACL;
 
-public interface ClusterStateFactory {
+import org.apache.storm.cluster.StateStorageFactory;
+
+public interface ClusterStateFactory extends StateStorageFactory {
     
     ClusterState mkState(APersistentMap config, APersistentMap auth_conf, List<ACL> acls, ClusterStateContext context);
 

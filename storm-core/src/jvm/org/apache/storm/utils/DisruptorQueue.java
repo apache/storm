@@ -31,6 +31,7 @@ import com.lmax.disruptor.TimeoutException;
 import com.lmax.disruptor.WaitStrategy;
 import com.lmax.disruptor.dsl.ProducerType;
 
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
 import org.slf4j.Logger;
@@ -62,6 +63,24 @@ public class DisruptorQueue implements IStatefulObject {
     private static final Object INTERRUPT = new Object();
     private static final String PREFIX = "disruptor-";
     private static final FlusherPool FLUSHER = new FlusherPool();
+    
+    private static int getNumFlusherPoolThreads() {
+        int numThreads = 100;
+        try {
+        	Map<String, Object> conf = Utils.readStormConfig();
+        	numThreads = Utils.getInt(conf.get(Config.STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE), numThreads);
+        } catch (Exception e) {
+        	LOG.warn("Error while trying to read system config", e);
+        }
+        try {
+            String threads = System.getProperty("num_flusher_pool_threads", String.valueOf(numThreads));
+            numThreads = Integer.parseInt(threads);
+        } catch (Exception e) {
+            LOG.warn("Error while parsing number of flusher pool threads", e);
+        }
+        LOG.debug("Reading num_flusher_pool_threads Flusher pool threads: {}", numThreads);
+        return numThreads;
+    }
 
     private static class FlusherPool { 
     	private static final String THREAD_PREFIX = "disruptor-flush";
@@ -71,7 +90,7 @@ public class DisruptorQueue implements IStatefulObject {
         private HashMap<Long, TimerTask> _tt = new HashMap<>();
 
         public FlusherPool() {
-            _exec = new ThreadPoolExecutor(1, 100, 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
+            _exec = new ThreadPoolExecutor(1, getNumFlusherPoolThreads(), 10, TimeUnit.SECONDS, new ArrayBlockingQueue<Runnable>(1024), new ThreadPoolExecutor.DiscardPolicy());
             ThreadFactory threadFactory = new ThreadFactoryBuilder()
                     .setDaemon(true)
                     .setNameFormat(THREAD_PREFIX + "-task-pool")
@@ -107,10 +126,12 @@ public class DisruptorQueue implements IStatefulObject {
 
         public synchronized void stop(Flusher flusher, long flushInterval) {
             ArrayList<Flusher> pending = _pendingFlush.get(flushInterval);
-            pending.remove(flusher);
-            if (pending.size() == 0) {
-                _pendingFlush.remove(flushInterval);
-                _tt.remove(flushInterval).cancel();
+            if (pending != null) {
+                pending.remove(flusher);
+                if (pending.size() == 0) {
+                    _pendingFlush.remove(flushInterval);
+                    _tt.remove(flushInterval).cancel();
+                }
             }
         }
     }
@@ -331,15 +352,18 @@ public class DisruptorQueue implements IStatefulObject {
             long rp = readPos();
             long wp = writePos();
 
+            final long tuplePop = tuplePopulation.get();
+
             final double arrivalRateInSecs = _rateTracker.reportRate();
 
             //Assume the queue is stable, in which the arrival rate is equal to the consumption rate.
             // If this assumption does not hold, the calculation of sojourn time should also consider
             // departure rate according to Queuing Theory.
-            final double sojournTime = (wp - rp) / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+            final double sojournTime = tuplePop / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
 
             state.put("capacity", capacity());
             state.put("population", wp - rp);
+            state.put("tuple_population", tuplePop);
             state.put("write_pos", wp);
             state.put("read_pos", rp);
             state.put("arrival_rate_secs", arrivalRateInSecs);
@@ -351,6 +375,11 @@ public class DisruptorQueue implements IStatefulObject {
 
         public void notifyArrivals(long counts) {
             _rateTracker.notify(counts);
+            tuplePopulation.getAndAdd(counts);
+        }
+
+        public void notifyDepartures(long counts) {
+            tuplePopulation.getAndAdd(-counts);
         }
 
         public void close() {
@@ -372,6 +401,7 @@ public class DisruptorQueue implements IStatefulObject {
     private int _lowWaterMark = 0;
     private boolean _enableBackpressure = false;
     private final AtomicLong _overflowCount = new AtomicLong(0);
+    private final AtomicLong tuplePopulation = new AtomicLong(0);
     private volatile boolean _throttleOn = false;
 
     public DisruptorQueue(String queueName, ProducerType type, int size, long readTimeout, int inputBatchSize, long flushInterval) {
@@ -448,6 +478,7 @@ public class DisruptorQueue implements IStatefulObject {
                 } else if (o == null) {
                     LOG.error("NULL found in {}:{}", this.getName(), cursor);
                 } else {
+                    _metrics.notifyDepartures(getTupleCount(o));
                     handler.onEvent(o, curr, curr == cursor);
                     if (_enableBackpressure && _cb != null && (_metrics.writePos() - curr + _overflowCount.get()) <= _lowWaterMark) {
                         try {
@@ -475,8 +506,25 @@ public class DisruptorQueue implements IStatefulObject {
         return Thread.currentThread().getId();
     }
 
+    private long getTupleCount(Object obj) {
+        //a published object could be an instance of either AddressedTuple, ArrayList<AddressedTuple>, or HashMap<Integer, ArrayList<TaskMessage>>.
+        long tupleCount;
+        if (obj instanceof ArrayList) {
+            tupleCount = ((ArrayList) obj).size();
+        } else if (obj instanceof HashMap) {
+            tupleCount = 0;
+            for (Object value:((HashMap) obj).values()) {
+                tupleCount += ((ArrayList) value).size();
+            }
+        } else {
+            tupleCount = 1;
+        }
+        return tupleCount;
+    }
+
     private void publishDirectSingle(Object obj, boolean block) throws InsufficientCapacityException {
         long at;
+        long numberOfTuples;
         if (block) {
             at = _buffer.next();
         } else {
@@ -485,7 +533,8 @@ public class DisruptorQueue implements IStatefulObject {
         AtomicReference<Object> m = _buffer.get(at);
         m.set(obj);
         _buffer.publish(at);
-        _metrics.notifyArrivals(1);
+        numberOfTuples = getTupleCount(obj);
+        _metrics.notifyArrivals(numberOfTuples);
     }
 
     private void publishDirect(ArrayList<Object> objs, boolean block) throws InsufficientCapacityException {
@@ -499,13 +548,15 @@ public class DisruptorQueue implements IStatefulObject {
             }
             long begin = end - (size - 1);
             long at = begin;
+            long numberOfTuples = 0;
             for (Object obj: objs) {
                 AtomicReference<Object> m = _buffer.get(at);
                 m.set(obj);
                 at++;
+                numberOfTuples += getTupleCount(obj);
             }
+            _metrics.notifyArrivals(numberOfTuples);
             _buffer.publish(begin, end);
-            _metrics.notifyArrivals(size);
         }
     }
 

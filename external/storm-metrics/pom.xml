@@ -20,7 +20,7 @@
   <parent>
       <artifactId>storm</artifactId>
       <groupId>org.apache.storm</groupId>
-      <version>1.1.0</version>
+      <version>1.1.2-SNAPSHOT</version>
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -33,7 +33,7 @@
   <properties>
     <!-- settings for downloading the sigar native binary complete archive, which is not available in Maven central-->
     <sigar.version>1.6.4</sigar.version>
-    <sigar.download.url>https://magelan.googlecode.com/files/hyperic-sigar-${sigar.version}.zip</sigar.download.url>
+    <sigar.download.url>https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/magelan/hyperic-sigar-${sigar.version}.zip</sigar.download.url>
     <sigar.SHA1>8f79d4039ca3ec6c88039d5897a80a268213e6b7</sigar.SHA1>
     <!-- this will download the sigar ZIP to the local maven repository next to the sigar dependencies,
          so we only download it once -->
@@ -61,7 +61,7 @@
       <artifactId>storm-core</artifactId>
       <version>${project.version}</version>
       <!-- keep storm out of the jar-with-dependencies -->
-      <scope>provided</scope>
+      <scope>${provided.scope}</scope>
     </dependency>
   </dependencies>
   <build>

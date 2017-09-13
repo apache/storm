@@ -21,42 +21,18 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0</version>
+        <version>1.1.2-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
     
     <artifactId>storm-eventhubs</artifactId>
-    <version>1.1.0</version>
     <packaging>jar</packaging>
     <name>storm-eventhubs</name>
     <description>EventHubs Storm Spout</description>
-
-    <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <eventhubs.client.version>0.9.1</eventhubs.client.version>
-    </properties>
+    
     <build>
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-shade-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>shade</goal>
-                        </goals>
-                        <phase>package</phase>
-                    </execution>
-                </executions>
-                <configuration>
-                    <transformers>
-                        <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheLicenseResourceTransformer">
-                        </transformer>
-                    </transformers>
-                    <outputFile>target/${project.artifactId}-${project.version}-jar-with-dependencies.jar</outputFile>
-                </configuration>
-	        </plugin>
-            <plugin>
+             <plugin>
 		        <artifactId>maven-antrun-plugin</artifactId>
 		        <executions>
 		          <execution>
@@ -86,7 +62,7 @@
             <version>${project.version}</version>
             <!-- keep storm out of the jar-with-dependencies -->
             <type>jar</type>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
@@ -102,6 +78,21 @@
                     <artifactId>slf4j-log4j12</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-amqp-1-0-client</artifactId>
+            <version>${qpid.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-amqp-1-0-client-jms</artifactId>
+            <version>${qpid.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.qpid</groupId>
+            <artifactId>qpid-amqp-1-0-common</artifactId>
+            <version>${qpid.version}</version>
         </dependency>
         <dependency>
             <groupId>junit</groupId>

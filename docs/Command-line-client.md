@@ -8,6 +8,7 @@ This page describes all the commands that are possible with the "storm" command 
 These commands are:
 
 1. jar
+1. sql
 1. kill
 1. activate
 1. deactivate
@@ -32,7 +33,6 @@ These commands are:
 1. pacemaker
 1. set_log_level
 1. shell
-1. sql
 1. upload-credentials
 1. version
 1. help
@@ -42,6 +42,24 @@ These commands are:
 Syntax: `storm jar topology-jar-path class ...`
 
 Runs the main method of `class` with the specified arguments. The storm jars and configs in `~/.storm` are put on the classpath. The process is configured so that [StormSubmitter](javadocs/org/apache/storm/StormSubmitter.html) will upload the jar at `topology-jar-path` when the topology is submitted.
+
+When you want to ship other jars which is not included to application jar, you can pass them to `--jars` option with comma-separated string.
+For example, --jars "your-local-jar.jar,your-local-jar2.jar" will load your-local-jar.jar and your-local-jar2.jar.
+And when you want to ship maven artifacts and its transitive dependencies, you can pass them to `--artifacts` with comma-separated string. You can also exclude some dependencies like what you're doing in maven pom. Please add exclusion artifacts with '^' separated string after the artifact. For example, `--artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12"` will load jedis and kafka artifact and all of transitive dependencies but exclude slf4j-log4j12 from kafka.
+
+When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string. Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters. For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
+
+Complete example of both options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
+
+When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
+
+### sql
+
+Syntax: `storm sql sql-file topology-name`
+
+Compiles the SQL statements into a Trident topology and submits it to Storm.
+
+`--jars` and `--artifacts`, and `--artifactRepositories` options available for jar are also applied to sql command. Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories options. You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
 
 ### kill
 
@@ -65,7 +83,7 @@ Deactivates the specified topology's spouts.
 
 Syntax: `storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*`
 
-Sometimes you may wish to spread out where the workers for a topology are running. For example, let's say you have a 10 node cluster running 4 workers per node, and then let's say you add another 10 nodes to the cluster. You may wish to have Storm spread out the workers for the running topology so that each node runs 2 workers. One way to do this is to kill the topology and resubmit it, but Storm provides a "rebalance" command that provides an easier way to do this. 
+Sometimes you may wish to spread out where the workers for a topology are running. For example, let's say you have a 10 node cluster running 4 workers per node, and then let's say you add another 10 nodes to the cluster. You may wish to have Storm spread out the workers for the running topology so that each node runs 2 workers. One way to do this is to kill the topology and resubmit it, but Storm provides a "rebalance" command that provides an easier way to do this.
 
 Rebalance will first deactivate the topology for the duration of the message timeout (overridable with the -w flag) and then redistribute the workers evenly around the cluster. The topology will then return to its previous state of activation (so a deactivated topology will still be deactivated and an activated topology will go back to being activated).
 
@@ -216,7 +234,7 @@ See Setting up a Storm cluster for more information.(http://storm.apache.org/doc
 Syntax: `storm set_log_level -l [logger name]=[log level][:optional timeout] -r [logger name] topology-name`
 
 Dynamically change topology log levels
-    
+
 where log level is one of: ALL, TRACE, DEBUG, INFO, WARN, ERROR, FATAL, OFF
 and timeout is integer seconds.
 
@@ -244,12 +262,6 @@ Syntax: `storm shell resourcesdir command args`
 Makes constructing jar and uploading to nimbus for using non JVM languages
 
 eg: `storm shell resources/ python topology.py arg1 arg2`
-
-### sql
-
-Syntax: `storm sql sql-file topology-name`
-
-Compiles the SQL statements into a Trident topology and submits it to Storm.
 
 ### upload-credentials
 

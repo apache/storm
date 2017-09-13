@@ -118,6 +118,10 @@ struct StormTopology {
   2: required map<string, Bolt> bolts;
   3: required map<string, StateSpoutSpec> state_spouts;
   4: optional list<binary> worker_hooks;
+  5: optional list<string> dependency_jars;
+  6: optional list<string> dependency_artifacts;
+  7: optional string storm_version;
+  8: optional string jdk_version;
 }
 
 exception AlreadyAliveException {
@@ -271,6 +275,7 @@ struct CommonAggregateStats {
 4: optional i64 transferred;
 5: optional i64 acked;
 6: optional i64 failed;
+7: optional map<string, double> resources_map;
 }
 
 struct SpoutAggregateStats {
@@ -309,6 +314,29 @@ struct TopologyStats {
 5: optional map<string, i64> window_to_failed;
 }
 
+struct WorkerSummary {
+  1: optional string supervisor_id; 
+  2: optional string host;
+  3: optional i32 port;
+  4: optional string topology_id;
+  5: optional string topology_name;
+  6: optional i32 num_executors;
+  7: optional map<string, i64> component_to_num_tasks;
+  8: optional i32 time_secs;
+  9: optional i32 uptime_secs;
+521: optional double requested_memonheap;
+522: optional double requested_memoffheap;
+523: optional double requested_cpu;
+524: optional double assigned_memonheap;
+525: optional double assigned_memoffheap;
+526: optional double assigned_cpu;
+}
+
+struct SupervisorPageInfo {
+  1: optional list<SupervisorSummary> supervisor_summaries;
+  2: optional list<WorkerSummary> worker_summaries;
+}
+
 struct TopologyPageInfo {
  1: required string id;
  2: optional string name;
@@ -325,6 +353,7 @@ struct TopologyPageInfo {
 13: optional string owner;
 14: optional DebugOptions debug_options;
 15: optional i32 replication_count;
+16: optional list<WorkerSummary> workers;
 521: optional double requested_memonheap;
 522: optional double requested_memoffheap;
 523: optional double requested_cpu;
@@ -354,6 +383,7 @@ struct ComponentPageInfo {
 13: optional i32 eventlog_port;
 14: optional DebugOptions debug_options;
 15: optional string topology_status;
+16: optional map<string, double> resources_map;
 }
 
 struct KillOptions {
@@ -443,6 +473,8 @@ struct Assignment {
     3: optional map<list<i64>, NodeInfo> executor_node_port = {};
     4: optional map<list<i64>, i64> executor_start_time_secs = {};
     5: optional map<NodeInfo, WorkerResources> worker_resources = {};
+    //6: from other pull request
+    7: optional string owner;
 }
 
 enum TopologyStatus {
@@ -467,6 +499,7 @@ struct StormBase {
     7: optional TopologyActionOptions topology_action_options;
     8: optional TopologyStatus prev_status;//currently only used during rebalance action.
     9: optional map<string, DebugOptions> component_debug; // topology/component level debug option.
+   10: optional string principal;
 }
 
 struct ClusterWorkerHeartbeat {
@@ -489,6 +522,8 @@ struct LocalAssignment {
   1: required string topology_id;
   2: required list<ExecutorInfo> executors;
   3: optional WorkerResources resources;
+  //4: other pull request
+  5: optional string owner;
 }
 
 struct LSSupervisorId {
@@ -639,9 +674,12 @@ service Nimbus {
   string getNimbusConf() throws (1: AuthorizationException aze);
   // stats functions
   ClusterSummary getClusterInfo() throws (1: AuthorizationException aze);
+  NimbusSummary getLeader() throws (1: AuthorizationException aze);
+  bool isTopologyNameAllowed(1: string name) throws (1: AuthorizationException aze);
   TopologyInfo getTopologyInfo(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyInfo getTopologyInfoWithOpts(1: string id, 2: GetInfoOptions options) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyPageInfo getTopologyPageInfo(1: string id, 2: string window, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  SupervisorPageInfo getSupervisorPageInfo(1: string id, 2: string host, 3: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   ComponentPageInfo getComponentPageInfo(1: string topology_id, 2: string component_id, 3: string window, 4: bool is_include_sys) throws (1: NotAliveException e, 2: AuthorizationException aze);
   //returns json
   string getTopologyConf(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);

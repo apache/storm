@@ -37,7 +37,7 @@ public class LocalAssignmentsBackendFactory {
             return (ILocalAssignmentsBackend) targetObj;
         }
 
-        ILocalAssignmentsBackend backend = new RocksDBAssignmentBackend();
+        ILocalAssignmentsBackend backend = new InMemoryAssignmentBackend();
         backend.prepare(conf, localPath);
         return backend;
     }

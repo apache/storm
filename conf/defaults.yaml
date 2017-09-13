@@ -40,6 +40,7 @@ storm.exhibitor.poll.uripath: "/exhibitor/v1/cluster/list"
 storm.cluster.mode: "distributed" # can be distributed or local
 storm.local.mode.zmq: false
 storm.thrift.transport: "org.apache.storm.security.auth.SimpleTransportPlugin"
+storm.thrift.socket.timeout.ms: 600000
 storm.principal.tolocal: "org.apache.storm.security.auth.DefaultPrincipalToLocal"
 storm.group.mapping.service: "org.apache.storm.security.auth.ShellBasedGroupsMapping"
 storm.group.mapping.service.params: null
@@ -57,13 +58,13 @@ storm.codedistributor.class: "org.apache.storm.codedistributor.LocalFileSystemCo
 storm.workers.artifacts.dir: "workers-artifacts"
 storm.health.check.dir: "healthchecks"
 storm.health.check.timeout.ms: 5000
+storm.disable.symlinks: false
 
 ### nimbus.* configs are for the master
 nimbus.seeds : ["localhost"]
 nimbus.thrift.port: 6627
 nimbus.thrift.threads: 64
 nimbus.thrift.max_buffer_size: 1048576
-nimbus.local.assignments.backend.class: "org.apache.storm.assignments.RocksDBAssignmentBackend"
 nimbus.childopts: "-Xmx1024m"
 nimbus.task.timeout.secs: 30
 nimbus.supervisor.timeout.secs: 60
@@ -79,6 +80,9 @@ topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600
 nimbus.queue.size: 100000
 scheduler.display.resource: false
+nimbus.local.assignments.backend.class: "org.apache.storm.assignments.InMemoryAssignmentBackend"
+nimbus.assignments.service.threads: 10
+nimbus.assignments.service.thread.queue.size: 100
 
 ### ui.* configs are for the master
 ui.host: 0.0.0.0
@@ -90,6 +94,7 @@ ui.filter.params: null
 ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
+ui.http.x-frame-options: DENY
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -147,6 +152,7 @@ supervisor.thrift.port: 6627
 supervisor.queue.size: 128
 supervisor.thrift.threads: 16
 supervisor.thrift.max_buffer_size: 1048576
+supervisor.thrift.socket.timeout.ms: 5000
 supervisor.childopts: "-Xmx256m"
 supervisor.run.worker.as.user: false
 #how long supervisor will wait to ensure that a worker process is started
@@ -154,7 +160,7 @@ supervisor.worker.start.timeout.secs: 120
 #how long between heartbeats until supervisor considers that worker dead and tries to restart it
 supervisor.worker.timeout.secs: 30
 #how many seconds to sleep for before shutting down threads on worker
-supervisor.worker.shutdown.sleep.secs: 1
+supervisor.worker.shutdown.sleep.secs: 3
 #how frequently the supervisor checks on the status of the processes it's monitoring and restarts if necessary
 supervisor.monitor.frequency.secs: 3
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
@@ -190,6 +196,7 @@ topology.worker.receiver.thread.count: 1
 task.heartbeat.frequency.secs: 3
 task.refresh.poll.secs: 10
 task.credentials.poll.secs: 30
+task.backpressure.poll.secs: 30
 
 # now should be null by default
 topology.backpressure.enable: false
@@ -262,7 +269,7 @@ topology.bolts.outgoing.overflow.buffer.enable: false
 topology.disruptor.wait.timeout.millis: 1000
 topology.disruptor.batch.size: 100
 topology.disruptor.batch.timeout.millis: 1
-topology.disable.loadaware: false
+topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
 
 # Configs for Resource Aware Scheduler

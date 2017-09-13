@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
 import java.util.ArrayList;
@@ -37,13 +38,12 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
 public class TopologyDetails {
-    private String topologyId;
-    private Map topologyConf;
-    private StormTopology topology;
-    private Map<ExecutorDetails, String> executorToComponent;
-    private int numWorkers;
+    private final String topologyId;
+    private final Map topologyConf;
+    private final StormTopology topology;
+    private final Map<ExecutorDetails, String> executorToComponent;
+    private final int numWorkers;
     //<ExecutorDetails - Task, Map<String - Type of resource, Map<String - type of that resource, Double - amount>>>
     private Map<ExecutorDetails, Map<String, Double>> resourceList;
     //Max heap size for a worker used by topology
@@ -51,21 +51,23 @@ public class TopologyDetails {
     //topology priority
     private Integer topologyPriority;
     //when topology was launched
-    private int launchTime;
+    private final int launchTime;
+    private final String owner;
 
     private static final Logger LOG = LoggerFactory.getLogger(TopologyDetails.class);
 
-    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers) {
-        this(topologyId, topologyConf, topology,  numWorkers,  null, 0);
+    public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology, int numWorkers, String owner) {
+        this(topologyId, topologyConf, topology,  numWorkers,  null, 0, owner);
     }
 
     public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology,
-                           int numWorkers, Map<ExecutorDetails, String> executorToComponents) {
-        this(topologyId, topologyConf, topology,  numWorkers,  executorToComponents, 0);
+                           int numWorkers, Map<ExecutorDetails, String> executorToComponents, String owner) {
+        this(topologyId, topologyConf, topology,  numWorkers,  executorToComponents, 0, owner);
     }
 
     public TopologyDetails(String topologyId, Map topologyConf, StormTopology topology,
-                           int numWorkers, Map<ExecutorDetails, String> executorToComponents, int launchTime) {
+                           int numWorkers, Map<ExecutorDetails, String> executorToComponents, int launchTime, String owner) {
+        this.owner = owner;
         this.topologyId = topologyId;
         this.topologyConf = topologyConf;
         this.topology = topology;
@@ -464,12 +466,7 @@ public class TopologyDetails {
      * Get the user that submitted this topology
      */
     public String getTopologySubmitter() {
-        String user = (String) this.topologyConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-        if (user == null || user.equals("")) {
-            LOG.debug("Topology {} submitted by anonymous user", this.getName());
-            user = System.getProperty("user.name");
-        }
-        return user;
+        return owner;
     }
 
     /**

@@ -21,9 +21,11 @@
             ExecutorSpecificStats SpoutStats BoltStats ErrorInfo
             SupervisorSummary CommonAggregateStats ComponentAggregateStats
             ComponentPageInfo ComponentType BoltAggregateStats
-            ExecutorAggregateStats SpecificAggregateStats
-            SpoutAggregateStats TopologyPageInfo TopologyStats])
+            ExecutorAggregateStats WorkerSummary SpecificAggregateStats
+            SpoutAggregateStats TopologyPageInfo TopologyStats
+            WorkerResources])
   (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.scheduler WorkerSlot])
   (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
   (:use [org.apache.storm log util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
@@ -255,7 +257,6 @@
   [(.get_acked stats)
    (.get_failed stats)
    (.get_complete_ms_avg stats)])
-
 
 (defn clojurify-executor-stats
   [^ExecutorStats stats]
@@ -1002,14 +1003,61 @@
                            window->complete-latency)
                          (.set_window_to_acked window->acked)
                          (.set_window_to_failed window->failed))
-      topo-page-info (doto (TopologyPageInfo. topology-id)
-                       (.set_num_tasks num-tasks)
-                       (.set_num_workers num-workers)
-                       (.set_num_executors num-executors)
-                       (.set_id_to_spout_agg_stats spout-agg-stats)
-                       (.set_id_to_bolt_agg_stats bolt-agg-stats)
-                       (.set_topology_stats topology-stats))]
+        topo-page-info (doto (TopologyPageInfo. topology-id)
+                         (.set_num_tasks num-tasks)
+                         (.set_num_workers num-workers)
+                         (.set_num_executors num-executors)
+                         (.set_id_to_spout_agg_stats spout-agg-stats)
+                         (.set_id_to_bolt_agg_stats bolt-agg-stats)
+                         (.set_topology_stats topology-stats))]
     topo-page-info))
+
+(defn agg-worker-stats
+  "Aggregate statistics per worker for a topology. Optionally filtering on specific supervisors."
+  ([storm-id topo-info worker->resources include-sys? user-authorized]
+    (agg-worker-stats storm-id topo-info worker->resources include-sys?  user-authorized nil))
+  ([storm-id topo-info worker->resources include-sys? user-authorized filter-supervisor]
+    (let [{:keys [storm-name
+                  assignment
+                  beats
+                  task->component]} topo-info
+          exec->node+port (:executor->node+port assignment)
+          node->host (:node->host assignment)
+          all-node+port->exec (reverse-map exec->node+port)
+          node+port->exec (if (nil? filter-supervisor) 
+                            all-node+port->exec 
+                            (filter #(= filter-supervisor (ffirst %)) all-node+port->exec))
+          handle-sys-components-fn (mk-include-sys-fn include-sys?)]
+      (dofor [[[node port] executors] node+port->exec]
+        (let [executor-tasks (map #(range (first %) (inc (last %))) executors)
+              worker-beats (vals (select-keys beats executors))
+              not-null-worker-beat (first (filter identity worker-beats))
+              worker-uptime (or (:uptime not-null-worker-beat) 0)
+              ;; list of components per executor ((c1 c2 c3) (c4) (c5))
+              ;; if the executor was running only system components, an empty list for that executor is possible
+              components-per-executor (for [tasks executor-tasks] 
+                                        (filter handle-sys-components-fn (map #(get task->component %) tasks)))
+              component->num-tasks (frequencies (flatten components-per-executor))
+              num-executors (count executors)
+              default-worker-resources (WorkerResources.)
+              resources (if (nil? worker->resources) 
+                            default-worker-resources 
+                            (or (.get worker->resources (WorkerSlot. node port)) 
+                                default-worker-resources))
+              worker-summary (doto 
+                 (WorkerSummary.)
+                   (.set_host (node->host node))
+                   (.set_uptime_secs worker-uptime)
+                   (.set_supervisor_id node)
+                   (.set_port port)
+                   (.set_topology_id storm-id)
+                   (.set_topology_name storm-name)
+                   (.set_num_executors num-executors)
+                   (.set_assigned_memonheap (.get_mem_on_heap resources))
+                   (.set_assigned_memoffheap (.get_mem_off_heap resources))
+                   (.set_assigned_cpu (.get_cpu resources)))]
+          (if user-authorized (.set_component_to_num_tasks worker-summary component->num-tasks))
+          worker-summary)))))
 
 (defn agg-topo-execs-stats
   "Aggregate various executor statistics for a topology from the given

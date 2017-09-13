@@ -19,6 +19,9 @@ package org.apache.storm.kafka;
 
 import org.junit.Test;
 
+import org.apache.storm.utils.Time;
+import org.junit.After;
+import org.junit.Before;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -31,6 +34,16 @@ public class ExponentialBackoffMsgRetryManagerTest {
     private static final Long TEST_OFFSET2 = 102L;
     private static final Long TEST_OFFSET3 = 105L;
     private static final Long TEST_NEW_OFFSET = 103L;
+
+    @Before
+    public void setup() throws Exception {
+        Time.startSimulating();
+    }
+
+    @After
+    public void cleanup() throws Exception {
+        Time.stopSimulating();
+    }
 
     @Test
     public void testImmediateRetry() throws Exception {
@@ -54,12 +67,12 @@ public class ExponentialBackoffMsgRetryManagerTest {
     public void testSingleDelay() throws Exception {
         ExponentialBackoffMsgRetryManager manager = buildExponentialBackoffMsgRetryManager(100, 1d, 1000, Integer.MAX_VALUE);
         manager.failed(TEST_OFFSET);
-        Thread.sleep(5);
+        Time.advanceTime(5);
         Long next = manager.nextFailedMessageToRetry();
         assertNull("expect no message ready for retry yet", next);
         assertFalse("message should not be ready for retry yet", manager.shouldReEmitMsg(TEST_OFFSET));
 
-        Thread.sleep(100);
+        Time.advanceTime(100);
         next = manager.nextFailedMessageToRetry();
         assertEquals("expect test offset next available for retry", TEST_OFFSET, next);
         assertTrue("message should be ready for retry", manager.shouldReEmitMsg(TEST_OFFSET));
@@ -75,10 +88,10 @@ public class ExponentialBackoffMsgRetryManagerTest {
         for (long i = 0L; i < 3L; ++i) {
             manager.failed(TEST_OFFSET);
 
-            Thread.sleep((expectedWaitTime + 1L) / 2L);
+            Time.advanceTime((expectedWaitTime + 1L) / 2L);
             assertFalse("message should not be ready for retry yet", manager.shouldReEmitMsg(TEST_OFFSET));
 
-            Thread.sleep((expectedWaitTime + 1L) / 2L);
+            Time.advanceTime((expectedWaitTime + 1L) / 2L);
             Long next = manager.nextFailedMessageToRetry();
             assertEquals("expect test offset next available for retry", TEST_OFFSET, next);
             assertTrue("message should be ready for retry", manager.shouldReEmitMsg(TEST_OFFSET));
@@ -96,7 +109,7 @@ public class ExponentialBackoffMsgRetryManagerTest {
         ExponentialBackoffMsgRetryManager manager = buildExponentialBackoffMsgRetryManager(initial, mult, max, Integer.MAX_VALUE);
 
         manager.failed(TEST_OFFSET);
-        Thread.sleep(initial);
+        Time.advanceTime(initial);
 
         manager.retryStarted(TEST_OFFSET);
         manager.failed(TEST_OFFSET);
@@ -105,14 +118,14 @@ public class ExponentialBackoffMsgRetryManagerTest {
         // although TEST_OFFSET failed first, it's retry delay time is longer b/c this is the second retry
         // so TEST_OFFSET2 should come first
 
-        Thread.sleep(initial * 2);
+        Time.advanceTime(initial * 2);
         assertTrue("message "+TEST_OFFSET+"should be ready for retry", manager.shouldReEmitMsg(TEST_OFFSET));
         assertTrue("message "+TEST_OFFSET2+"should be ready for retry", manager.shouldReEmitMsg(TEST_OFFSET2));
 
         Long next = manager.nextFailedMessageToRetry();
         assertEquals("expect first message to retry is "+TEST_OFFSET2, TEST_OFFSET2, next);
 
-        Thread.sleep(initial);
+        Time.advanceTime(initial);
 
         // haven't retried yet, so first should still be TEST_OFFSET2
         next = manager.nextFailedMessageToRetry();
@@ -174,10 +187,10 @@ public class ExponentialBackoffMsgRetryManagerTest {
         for (long i = 0L; i < 4L; ++i) {
             manager.failed(TEST_OFFSET);
 
-            Thread.sleep((expectedWaitTime + 1L) / 2L);
+            Time.advanceTime((expectedWaitTime + 1L) / 2L);
             assertFalse("message should not be ready for retry yet", manager.shouldReEmitMsg(TEST_OFFSET));
 
-            Thread.sleep((expectedWaitTime + 1L) / 2L);
+            Time.advanceTime((expectedWaitTime + 1L) / 2L);
             Long next = manager.nextFailedMessageToRetry();
             assertEquals("expect test offset next available for retry", TEST_OFFSET, next);
             assertTrue("message should be ready for retry", manager.shouldReEmitMsg(TEST_OFFSET));

@@ -1,9 +1,26 @@
+/**
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements.  See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership.  The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the
+ * "License"); you may not use this file except in compliance
+ * with the License.  You may obtain a copy of the License at
+ * <p/>
+ * http://www.apache.org/licenses/LICENSE-2.0
+ * <p/>
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.apache.storm.assignments;
 
+import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.generated.Assignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,12 +32,9 @@ import java.util.Map;
 public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryAssignmentBackend.class);
 
-    private Map<String, byte[]> idToAssignment;
-    private Map<String, byte[]> idToName;
-    private Map<String, byte[]> nameToId;
-
-    private final Charset DEFAULT_CHARSET = Charset.defaultCharset();
-
+    private Map<String, Assignment> idToAssignment;
+    private Map<String, String> idToName;
+    private Map<String, String> nameToId;
 
     @Override
     public void prepare(Map conf, String localPath) {
@@ -30,12 +44,12 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     }
 
     @Override
-    public void keepOrUpdateAssignment(String stormID, byte[] assignment) {
+    public void keepOrUpdateAssignment(String stormID, Assignment assignment) {
         this.idToAssignment.put(stormID, assignment);
     }
 
     @Override
-    public byte[] getAssignment(String stormID) {
+    public Assignment getAssignment(String stormID) {
         return this.idToAssignment.get(stormID);
     }
 
@@ -54,53 +68,56 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     }
 
     @Override
-    public Map<String, byte[]> assignmentsInfo() {
+    public Map<String, Assignment> assignmentsInfo() {
         return this.idToAssignment;
     }
 
     @Override
     public void syncRemoteAssignments(Map<String, byte[]> remote) {
-        this.idToAssignment = remote;
+        Map<String, Assignment> tmp = new HashMap<>();
+        for(Map.Entry<String, byte[]> entry: remote.entrySet()) {
+            tmp.put(entry.getKey(), ClusterUtils.maybeDeserialize(entry.getValue(), Assignment.class));
+        }
+        this.idToAssignment = tmp;
     }
 
     @Override
     public void keepStormId(String stormName, String stormID) {
-        this.nameToId.put(stormName, stormID.getBytes(DEFAULT_CHARSET));
-        this.idToName.put(stormID, stormName.getBytes(DEFAULT_CHARSET));
+        this.nameToId.put(stormName, stormID);
+        this.idToName.put(stormID, stormName);
     }
 
     @Override
     public String getStormId(String stormName) {
-        byte[] id = this.nameToId.get(stormName);
-        return id == null ? null : new String(id, DEFAULT_CHARSET);
+        return this.nameToId.get(stormName);
     }
 
     @Override
     public void syncRemoteIDS(Map<String, String> remote) {
-        Map<String, byte[]> tmpIdToName = new HashMap<>();
-        Map<String, byte[]> tmpNameToID = new HashMap<>();
+        Map<String, String> tmpNameToID = new HashMap<>();
+        Map<String, String> tmpIDToName = new HashMap<>();
         for(Map.Entry<String, String> entry: remote.entrySet()) {
-            tmpIdToName.put(entry.getKey(), entry.getValue().getBytes(DEFAULT_CHARSET));
-            tmpNameToID.put(entry.getValue(), entry.getKey().getBytes(DEFAULT_CHARSET));
+            tmpIDToName.put(entry.getKey(), entry.getValue());
+            tmpNameToID.put(entry.getValue(), entry.getKey());
         }
-        this.idToName = tmpIdToName;
+        this.idToName = tmpIDToName;
         this.nameToId = tmpNameToID;
     }
 
     @Override
     public void deleteStormId(String stormName) {
-        byte[] id = this.nameToId.remove(stormName);
+        String id = this.nameToId.remove(stormName);
         if (null != id) {
-            this.idToName.remove(new String(id, DEFAULT_CHARSET));
+            this.idToName.remove(id);
         }
     }
 
     @Override
     public void clearStateForStorm(String stormID) {
         this.idToAssignment.remove(stormID);
-        byte[] name = this.idToName.remove(stormID);
+        String name = this.idToName.remove(stormID);
         if (null != name) {
-            this.nameToId.remove(new String(name, DEFAULT_CHARSET));
+            this.nameToId.remove(name);
         }
     }
 

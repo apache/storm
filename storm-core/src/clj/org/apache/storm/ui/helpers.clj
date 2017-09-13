@@ -32,18 +32,32 @@
 	   [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
            [org.eclipse.jetty.servlets CrossOriginFilter])
-  (:require [ring.util servlet])
+  (:require [ring.util servlet]
+            [ring.util.response :as response])
   (:require [compojure.route :as route]
             [compojure.handler :as handler])
   (:require [metrics.meters :refer [defmeter mark!]]))
 
 (defmeter num-web-requests)
+
 (defn requests-middleware
-  "Coda Hale metric for counting the number of web requests."
+  "Wrap request with Coda Hale metric for counting the number of web requests,
+  and add Cache-Control: no-cache for html files in root directory (index.html, topology.html, etc)"
   [handler]
   (fn [req]
-    (mark! num-web-requests)
-    (handler req)))
+    (.mark num-web-requests)
+    (let [uri (:uri req)
+          res (handler req)
+          content-type (response/get-header res "Content-Type")]
+      ;; check that the response is html and that the path is for a root page: a single / in the path
+      ;; then we know we don't want it cached (e.g. /index.html)
+      (if (and (= content-type "text/html")
+               (= 1 (count (re-seq #"/" uri))))
+        ;; response for html page in root directory, no-cache
+        (response/header res "Cache-Control" "no-cache")
+        ;; else, carry on
+        res))))
+
 
 (defn split-divide [val divider]
   [(Integer. (int (/ val divider))) (mod val divider)]
@@ -158,16 +172,39 @@
     (.setInitParameter CrossOriginFilter/ACCESS_CONTROL_ALLOW_ORIGIN_HEADER "*")
     ))
 
+(defn validate-x-frame-options!
+  [x-frame-options]
+  (if (.startsWith x-frame-options "ALLOW-FROM http") nil
+    (case x-frame-options
+      "DENY" nil
+      "SAMEORIGIN" nil
+      (throw
+        (IllegalArgumentException. "Invalid X-Frame-Option specified!")))))
+
+(defn x-frame-options-filter-handler
+  [x-frame-options]
+  (let [filter (proxy [javax.servlet.Filter] []
+                 (doFilter [request response chain]
+                   (.setHeader response "X-Frame-Options" x-frame-options)
+                   (.doFilter chain request response))
+                 (init [config])
+                 (destroy [])
+                 )]
+    (org.eclipse.jetty.servlet.FilterHolder. filter)))
+
 (defn mk-access-logging-filter-handler []
   (org.eclipse.jetty.servlet.FilterHolder. (AccessLoggingFilter.)))
 
-(defn config-filter [server handler filters-confs]
-  (if filters-confs
+(defn config-filter 
+([server handler filters-conf] (config-filter server handler filters-conf nil))
+  ([server handler filters-confs http-x-frame-options](if filters-confs
     (let [servlet-holder (ServletHolder.
                            (ring.util.servlet/servlet handler))
           context (doto (org.eclipse.jetty.servlet.ServletContextHandler. server "/")
                     (.addServlet servlet-holder "/"))]
       (.addFilter context (cors-filter-handler) "/*" (EnumSet/allOf DispatcherType))
+      (if-not (blank? http-x-frame-options)
+        (.addFilter context (x-frame-options-filter-handler http-x-frame-options) "/*" FilterMapping/ALL))
       (doseq [{:keys [filter-name filter-class filter-params]} filters-confs]
         (if filter-class
           (let [filter-holder (doto (org.eclipse.jetty.servlet.FilterHolder.)
@@ -176,7 +213,7 @@
                                 (.setInitParameters (or filter-params {})))]
             (.addFilter context filter-holder "/*" FilterMapping/ALL))))
       (.addFilter context (mk-access-logging-filter-handler) "/*" (EnumSet/allOf DispatcherType))
-      (.setHandler server context))))
+      (.setHandler server context)))))
 
 (defn ring-response-from-exception [ex]
   {:headers {}

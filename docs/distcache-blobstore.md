@@ -68,7 +68,7 @@ key “key1” having a local file name mapping named “blob_file” and it is 
 
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar 
-org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ```
 
 ### Blob Creation Process
@@ -99,7 +99,7 @@ end, the supervisor and localizer talks to HdfsBlobStore through “HdfsClientBl
 ## Additional Features and Documentation
 ```
 storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo 
--c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+-c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ```
  
 ### Compression
@@ -115,12 +115,12 @@ the responsibility of mapping the blob to a local name on the supervisor node.
 
 ## Additional Blobstore Implementation Details
 Blobstore uses a hashing function to create the blobs based on the key. The blobs are generally stored inside the directory specified by
-the blobstore.dir configuration. By default, it is stored under “storm.local.dir/nimbus/blobs” for local file system and a similar path on 
+the blobstore.dir configuration. By default, it is stored under “storm.local.dir/blobs” for local file system and a similar path on 
 hdfs file system.
 
 Once a file is submitted, the blobstore reads the configs and creates a metadata for the blob with all the access control details. The metadata 
 is generally used for authorization while accessing the blobs. The blob key and version contribute to the hash code and there by the directory 
-under “storm.local.dir/nimbus/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
+under “storm.local.dir/blobs/data” where the data is placed. The blobs are generally placed in a positive number directory like 193,822 etc.
 
 Once the topology is launched and the relevant blobs have been created, the supervisor downloads blobs related to the storm.conf, storm.ser 
 and storm.code first and all the blobs uploaded by the command line separately using the localizer to uncompress and map them to a local name 
@@ -381,7 +381,7 @@ following format. A shortcut is to add the configuration item on the command
 line when starting a topology by using the **-c** command:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
--c topology.blobstore.map='{"[KEY]":{"localname":"[VALUE]", "uncompress":"[true|false]"}}'
+-c topology.blobstore.map='{"[KEY]":{"localname":"[VALUE]", "uncompress":[true|false]}}'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note: Please take care of the quotes.
@@ -397,7 +397,7 @@ file-name-like format and extension, so it can be uncompressed correctly.
 ###### Example:  
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":"false"},"key2":{}}'
+storm jar /home/y/lib/storm-starter/current/storm-starter-jar-with-dependencies.jar org.apache.storm.starter.clj.word_count test_topo -c topology.blobstore.map='{"key1":{"localname":"blob_file", "uncompress":false},"key2":{}}'
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Note: Please take care of the quotes.

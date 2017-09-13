@@ -18,45 +18,51 @@
 
 package org.apache.storm.kafka.spout.test;
 
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+
+import java.util.List;
+import java.util.regex.Pattern;
+
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.kafka.spout.Func;
 import org.apache.storm.kafka.spout.KafkaSpout;
-import org.apache.storm.kafka.spout.KafkaSpoutStream;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsWildcardTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderWildcardTopics;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
-
-import java.util.regex.Pattern;
+import org.apache.storm.tuple.Values;
 
 public class KafkaSpoutTopologyMainWildcardTopics extends KafkaSpoutTopologyMainNamedTopics {
     private static final String STREAM = "test_wildcard_stream";
-    private static final String TOPIC_WILDCARD_PATTERN = "test[1|2]";
+    private static final Pattern TOPIC_WILDCARD_PATTERN = Pattern.compile("test[1|2]");
 
     public static void main(String[] args) throws Exception {
         new KafkaSpoutTopologyMainWildcardTopics().runMain(args);
     }
 
-    protected StormTopology getTopolgyKafkaSpout() {
+    protected StormTopology getTopologyKafkaSpout() {
         final TopologyBuilder tp = new TopologyBuilder();
-        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig(getKafkaSpoutStreams())), 1);
+        tp.setSpout("kafka_spout", new KafkaSpout<>(getKafkaSpoutConfig()), 1);
         tp.setBolt("kafka_bolt", new KafkaSpoutTestBolt()).shuffleGrouping("kafka_spout", STREAM);
         return tp.createTopology();
     }
 
-    protected KafkaSpoutTuplesBuilder<String, String> getTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilderWildcardTopics<>(getTupleBuilder());
-    }
-
-    protected KafkaSpoutTupleBuilder<String, String> getTupleBuilder() {
-        return new TopicsTest0Test1TupleBuilder<>(TOPIC_WILDCARD_PATTERN);
-    }
-
-    protected KafkaSpoutStreams getKafkaSpoutStreams() {
-        final Fields outputFields = new Fields("topic", "partition", "offset", "key", "value");
-        final KafkaSpoutStream kafkaSpoutStream = new KafkaSpoutStream(outputFields, STREAM, Pattern.compile(TOPIC_WILDCARD_PATTERN));
-        return new KafkaSpoutStreamsWildcardTopics(kafkaSpoutStream);
+    public static Func<ConsumerRecord<String, String>, List<Object>> TOPIC_PART_OFF_KEY_VALUE_FUNC = new Func<ConsumerRecord<String, String>, List<Object>>() {
+        @Override
+        public List<Object> apply(ConsumerRecord<String, String> r) {
+            return new Values(r.topic(), r.partition(), r.offset(), r.key(), r.value());
+        }
+    };
+    
+    protected KafkaSpoutConfig<String,String> getKafkaSpoutConfig() {
+        return KafkaSpoutConfig.builder("127.0.0.1:9092", TOPIC_WILDCARD_PATTERN)
+                .setGroupId("kafkaSpoutTestGroup")
+                .setRetry(getRetryService())
+                .setRecordTranslator(TOPIC_PART_OFF_KEY_VALUE_FUNC,
+                        new Fields("topic", "partition", "offset", "key", "value"), STREAM)
+                .setOffsetCommitPeriodMs(10_000)
+                .setFirstPollOffsetStrategy(EARLIEST)
+                .setMaxUncommittedOffsets(250)
+                .build();
     }
 }

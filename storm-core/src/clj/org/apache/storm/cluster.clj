@@ -22,7 +22,7 @@
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [org.apache.curator.framework CuratorFramework])
   (:import [org.apache.storm.utils Utils])
-  (:import [org.apache.storm.cluster ClusterState ClusterStateContext ClusterStateListener ConnectionState])
+  (:import [org.apache.storm.cluster ClusterState ClusterStateContext ClusterStateListener ConnectionState ClusterUtils])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
   (:import [org.apache.storm.nimbus NimbusInfo]
@@ -118,7 +118,7 @@
 (def SUPERVISORS-ROOT "supervisors")
 (def WORKERBEATS-ROOT "workerbeats")
 (def BACKPRESSURE-ROOT "backpressure")
-(def LEADERINFO-ROOT zk/leader-info-root)
+(def LEADERINFO-ROOT ClusterUtils/LEADERINFO_ROOT)
 (def ERRORS-ROOT "errors")
 (def BLOBSTORE-ROOT "blobstore")
 ; Stores the latest update sequence for a blob
@@ -307,11 +307,11 @@
       (assignment-info
         [this storm-id callback]
         ;; for backward compatibility, just ignore callback
-        (clojurify-assignment (maybe-deserialize (.getAssignment assignments-backend storm-id) Assignment)))
+        (clojurify-assignment (.getAssignment assignments-backend storm-id)))
 
       (thrift-assignment-info
         [this storm-id]
-        (maybe-deserialize (.getAssignment assignments-backend storm-id) Assignment))
+        (.getAssignment assignments-backend storm-id))
 
       (remote-assignment-info
         [this storm-id]
@@ -320,8 +320,8 @@
       (assignments-info
         [this]
         (into {}
-          (for [[storm-id ser] (.assignmentsInfo assignments-backend)]
-            {storm-id (clojurify-assignment (maybe-deserialize ser Assignment))})))
+          (for [[storm-id assignment] (.assignmentsInfo assignments-backend)]
+            {storm-id (clojurify-assignment assignment)})))
 
       (sync-remote-assignments!
         [this remote]
@@ -357,8 +357,11 @@
 
       (nimbuses
         [this]
-        (map #(maybe-deserialize (.get_data cluster-state (nimbus-path %1) false) NimbusSummary)
-          (.get_children cluster-state NIMBUSES-SUBTREE false)))
+        ;; remove any null instances which can exist because of a race condition in which
+        ;;  - nimbus nodes in zk may have been removed when connections are reconnected after getting children in
+        ;; /nimbuses node in zk.
+        (remove nil?  (map #(maybe-deserialize (.get_data cluster-state (nimbus-path %1) false) NimbusSummary)
+                           (.get_children cluster-state NIMBUSES-SUBTREE false))))
 
       (add-nimbus-host!
         [this nimbus-id nimbus-summary]
@@ -605,10 +608,10 @@
 
       (set-assignment!
         [this storm-id info]
-        (let [ser-assignment (Utils/serialize (thriftify-assignment info))]
+        (let [thrift-assignment (thriftify-assignment info)]
           ; set zk assignment first then local
-          (.set_data cluster-state (assignment-path storm-id) ser-assignment acls)
-          (.keepOrUpdateAssignment assignments-backend storm-id ser-assignment)))
+          (.set_data cluster-state (assignment-path storm-id) (Utils/serialize thrift-assignment) acls)
+          (.keepOrUpdateAssignment assignments-backend storm-id thrift-assignment)))
 
       (storm-id
         [this storm-name]

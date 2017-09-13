@@ -32,4 +32,9 @@ public class NoRotationPolicy implements FileRotationPolicy {
     @Override
     public void reset() {
     }
+
+    @Override
+    public FileRotationPolicy copy() {
+        return this;
+    }
 }

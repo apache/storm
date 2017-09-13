@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.1.0</version>
+        <version>1.1.2-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <groupId>org.apache.storm</groupId>
@@ -67,6 +67,10 @@
         <dependency>
             <groupId>hiccup</groupId>
             <artifactId>hiccup</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ring</groupId>
+            <artifactId>ring-core</artifactId>
         </dependency>
         <dependency>
             <groupId>ring</groupId>
@@ -155,6 +159,10 @@
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-exec</artifactId>
             <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>commons-collections</groupId>
+            <artifactId>commons-collections</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-lang</groupId>
@@ -333,6 +341,7 @@
         <dependency>
             <groupId>org.rocksdb</groupId>
             <artifactId>rocksdbjni</artifactId>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <!--
@@ -502,6 +511,7 @@
                             <include>org.jgrapht:jgrapht-core</include>
                             <include>org.apache.commons:commons-exec</include>
                             <include>org.apache.commons:commons-compress</include>
+                            <include>commons-collections:commons-collections</include>
                             <include>org.apache.hadoop:hadoop-auth</include>
                             <include>commons-io:commons-io</include>
                             <include>commons-codec:commons-codec</include>
@@ -664,6 +674,10 @@
                           <shadedPattern>org.apache.storm.shade.org.apache.commons.lang</shadedPattern>
                         </relocation>
                         <relocation>
+                            <pattern>org.apache.commons.collections</pattern>
+                            <shadedPattern>org.apache.storm.shade.org.apache.commons.collections</shadedPattern>
+                        </relocation>
+                        <relocation>
                           <pattern>org.json.simple</pattern>
                           <shadedPattern>org.apache.storm.shade.org.json.simple</shadedPattern>
                         </relocation>
@@ -780,6 +794,13 @@
                             </excludes>
                         </filter>
                         <filter>
+                            <artifact>commons-collections:commons-collections</artifact>
+                            <excludes>
+                                <exclude>META-INF/LICENSE.txt</exclude>
+                                <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
                             <artifact>commons-io:commons-io</artifact>
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
@@ -812,6 +833,21 @@
                             <excludes>
                                 <exclude>META-INF/LICENSE.txt</exclude>
                                 <exclude>META-INF/NOTICE.txt</exclude>
+                            </excludes>
+                        </filter>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.sf</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.dsa</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/*.rsa</exclude>
+                                <exclude>META-INF/*.EC</exclude>
+                                <exclude>META-INF/*.ec</exclude>
+                                <exclude>META-INF/MSFTSIG.SF</exclude>
+                                <exclude>META-INF/MSFTSIG.RSA</exclude>
                             </excludes>
                         </filter>
                     </filters>

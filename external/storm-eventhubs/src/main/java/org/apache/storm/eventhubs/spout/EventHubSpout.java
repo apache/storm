@@ -17,6 +17,7 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import com.google.common.base.Strings;
 import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
@@ -121,8 +122,8 @@ public class EventHubSpout extends BaseRichSpout {
         zkEndpointAddress = sb.toString();
       }
       stateStore = new ZookeeperStateStore(zkEndpointAddress,
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES),
-          (Integer)config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL));
+           Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_TIMES).toString()),
+           Integer.parseInt(config.get(Config.STORM_ZOOKEEPER_RETRY_INTERVAL).toString()));
     }
     stateStore.open();
 
@@ -152,7 +153,7 @@ public class EventHubSpout extends BaseRichSpout {
     try {
       preparePartitions(config, totalTasks, taskIndex, collector);
     } catch (Exception e) {
-      logger.error(e.getMessage());
+      collector.reportError(e);
       throw new RuntimeException(e);
     }
     
@@ -167,7 +168,7 @@ public class EventHubSpout extends BaseRichSpout {
           }
           return concatMetricsDataMaps;
       }
-    }, (Integer)config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
+    }, Integer.parseInt(config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS).toString()));
     logger.info("end open()");
   }
 
@@ -242,7 +243,11 @@ public class EventHubSpout extends BaseRichSpout {
 
   @Override
   public void declareOutputFields(OutputFieldsDeclarer declarer) {
-    declarer.declare(scheme.getOutputFields());
+    if (Strings.isNullOrEmpty(eventHubConfig.getOutputStreamId())) {
+      declarer.declare(scheme.getOutputFields());
+    } else {
+      declarer.declareStream(eventHubConfig.getOutputStreamId(), scheme.getOutputFields());
+    }
   }
 
   private void checkpointIfNeeded() {

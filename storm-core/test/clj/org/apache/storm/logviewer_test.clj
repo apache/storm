@@ -15,13 +15,16 @@
 ;; limitations under the License.
 (ns org.apache.storm.logviewer-test
   (:use [org.apache.storm config util])
-  (:require [org.apache.storm.daemon [logviewer :as logviewer]
-                                   [supervisor :as supervisor]])
+  (:require [org.apache.storm.daemon [logviewer :as logviewer]])
   (:require [conjure.core])
   (:use [clojure test])
   (:use [conjure core])
-  (:use [org.apache.storm.ui helpers])
-  (:import [org.apache.storm.daemon DirectoryCleaner])
+  (:use [org.apache.storm testing]
+        [org.apache.storm.ui helpers])
+  (:import [org.apache.storm.daemon DirectoryCleaner]
+           [org.apache.storm.daemon.supervisor SupervisorUtils]
+           [org.apache.storm.testing.staticmocking MockedSupervisorUtils]
+           [org.apache.storm.generated LSWorkerHeartbeat])
   (:import [java.nio.file Files Path DirectoryStream])
   (:import [java.nio.file Files])
   (:import [java.nio.file.attribute FileAttribute])
@@ -231,27 +234,33 @@
           mock-metaFile (mk-mock-File {:name "worker.yaml"
                                        :type :file})
           exp-id "id12345"
-          expected {exp-id port1-dir}]
-      (stubbing [supervisor/read-worker-heartbeats nil
-                 logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
-                 logviewer/get-worker-id-from-metadata-file exp-id]
-        (is (= expected (logviewer/identify-worker-log-dirs [port1-dir])))))))
+          expected {exp-id port1-dir}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+        (stubbing [logviewer/get-metadata-file-for-wroker-logdir mock-metaFile
+                   logviewer/get-worker-id-from-metadata-file exp-id]
+          (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn nil))
+          (is (= expected (logviewer/identify-worker-log-dirs [port1-dir]))))))))
 
 (deftest test-get-dead-worker-dirs
-         (testing "return directories for workers that are not alive"
-                  (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
-                        id->hb {"42" {:time-secs 1}} ;; map for alive ids
-                        now-secs 2
-                        unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
-                        expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
-                        expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
-                        log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}]
-                       (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
-                                                                      "007" expected-dir2,
-                                                                      "" expected-dir3} ;; this tests a directory with no yaml file thus no worker id
-                                  supervisor/read-worker-heartbeats id->hb]
-                                 (is (= #{expected-dir2 expected-dir3}
-                                        (logviewer/get-dead-worker-dirs conf now-secs log-dirs)))))))
+  (testing "return directories for workers that are not alive"
+    (let [conf {SUPERVISOR-WORKER-TIMEOUT-SECS 5}
+          hb (let [lwb (LSWorkerHeartbeat.)]
+                   (.set_time_secs lwb (int 1)) lwb)
+          id->hb {"42" hb}
+          now-secs 2
+          unexpected-dir1 (mk-mock-File {:name "dir1" :type :directory})
+          expected-dir2 (mk-mock-File {:name "dir2" :type :directory})
+          expected-dir3 (mk-mock-File {:name "dir3" :type :directory})
+          log-dirs #{unexpected-dir1 expected-dir2 expected-dir3}
+          supervisor-util (Mockito/mock SupervisorUtils)]
+      (with-open [_ (MockedSupervisorUtils. supervisor-util)]
+      (stubbing [logviewer/identify-worker-log-dirs {"42" unexpected-dir1,
+                                                     "007" expected-dir2,
+                                                     "" expected-dir3}] ;; this tests a directory with no yaml file thus no worker id
+        (. (Mockito/when (.readWorkerHeartbeatsImpl supervisor-util (Mockito/any))) (thenReturn id->hb))
+        (is (= #{expected-dir2 expected-dir3}
+              (logviewer/get-dead-worker-dirs conf now-secs log-dirs))))))))
 
 (deftest test-cleanup-fn
   (testing "cleanup function rmr's files of dead workers"
@@ -362,7 +371,7 @@
         ;; match.
         exp-offset-fn #(- (/ logviewer/default-bytes-per-page 2) %)]
 
-    (stubbing [local-hostname expected-host
+    (stubbing [hostname expected-host
                logviewer/logviewer-port expected-port]
 
       (testing "Logviewer link centers the match in the page"

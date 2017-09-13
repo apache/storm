@@ -18,6 +18,9 @@
 package org.apache.storm.assignments;
 
 import com.google.common.base.Preconditions;
+import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.generated.Assignment;
+import org.apache.storm.utils.Utils;
 import org.rocksdb.*;
 import org.slf4j.*;
 
@@ -32,6 +35,8 @@ import java.util.*;
  * For newly elected leader, it will sync the whole assignments and id info from zookeeper then clean local corrupt state.
  * <p/>
  * For supervisors we just sync-assignment from remote.
+ * <p>
+ * To reduce jar conflict, user should add a dependency of rocks-db lib.
  */
 public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(RocksDBAssignmentBackend.class);
@@ -80,6 +85,8 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
 
         columnHandles = new ArrayList<>(columnFamilyDescriptors.size());
         dbOptions = new DBOptions();
+        dbOptions.setRecycleLogFileNum(3l);
+        dbOptions.setKeepLogFileNum(10l);
         try {
             this._db = RocksDB.open(dbOptions, assignmentPath, columnFamilyDescriptors, columnHandles);
             bookColumnNameToHandle(columnFamilyDescriptors, columnHandles);
@@ -113,13 +120,14 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
     }
 
     @Override
-    public void keepOrUpdateAssignment(String stormID, byte[] assignment) {
-        keepRecordInternal(COLUMN_ASSIGNMENTS, stormID, assignment);
+    public void keepOrUpdateAssignment(String stormID, Assignment assignment) {
+        keepRecordInternal(COLUMN_ASSIGNMENTS, stormID, Utils.serialize(assignment));
     }
 
     @Override
-    public byte[] getAssignment(String stormID) {
-        return getRecordInternal(COLUMN_ASSIGNMENTS, stormID);
+    public Assignment getAssignment(String stormID) {
+        byte[] ser = getRecordInternal(COLUMN_ASSIGNMENTS, stormID);
+        return ClusterUtils.maybeDeserialize(ser, Assignment.class);
     }
 
     @Override
@@ -150,12 +158,12 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
      * @return
      */
     @Override
-    public Map<String, byte[]> assignmentsInfo() {
+    public Map<String, Assignment> assignmentsInfo() {
         ColumnFamilyHandle handle = getColumnHandleByName(COLUMN_ASSIGNMENTS);
-        Map<String, byte[]> ret = new HashMap<>();
+        Map<String, Assignment> ret = new HashMap<>();
         try (final RocksIterator iterator = this._db.newIterator(handle)) {
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
-                ret.put(new String(iterator.key(), DEFAULT_CHARSET), iterator.value());
+                ret.put(new String(iterator.key(), DEFAULT_CHARSET), ClusterUtils.maybeDeserialize(iterator.value(), Assignment.class));
             }
         }
         return ret;
@@ -163,7 +171,6 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
 
     @Override
     public void syncRemoteAssignments(Map<String, byte[]> remote) {
-
         try (final WriteBatch wb = new WriteBatch()) {
             for (Map.Entry<String, byte[]> assignment : remote.entrySet()) {
                 wb.put(getColumnHandleByName(COLUMN_ASSIGNMENTS), assignment.getKey().getBytes(DEFAULT_CHARSET), assignment.getValue());
@@ -200,10 +207,6 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
 
     @Override
     public void syncRemoteIDS(Map<String, String> remote) {
-        if (remote == null || remote.size() < 1) {
-            return;
-        }
-
         try (final WriteBatch wb = new WriteBatch()) {
             for (Map.Entry<String, String> idToName : remote.entrySet()) {
                 wb.put(getColumnHandleByName(COLUMN_STORM_ID_TO_NAME), idToName.getKey().getBytes(DEFAULT_CHARSET),
@@ -352,22 +355,28 @@ public class RocksDBAssignmentBackend implements ILocalAssignmentsBackend {
     }
 
     private void clearExpiredIDS(Set<String> keys) {
+
         ColumnFamilyHandle handleIDName = getColumnHandleByName(COLUMN_STORM_ID_TO_NAME);
         ColumnFamilyHandle handleNameID = getColumnHandleByName(COLUMN_STORM_NAME_TO_ID);
         try (final RocksIterator iterator = this._db.newIterator(handleIDName);
+             final RocksIterator iterator1 = this._db.newIterator(handleNameID);
              final WriteBatch wb = new WriteBatch()) {
+            //remove storm-id -> storm-name/ storm-name -> storm-id mapping
             for (iterator.seekToFirst(); iterator.isValid(); iterator.next()) {
                 String localID = new String(iterator.key(), DEFAULT_CHARSET);
                 if (!keys.contains(localID)) {
-                    //remove storm-id -> storm-name/ storm-name -> storm-id mapping
-                    byte[] stormName = this._db.get(handleNameID, iterator.key());
-                    if (null != stormName) {
-                        wb.remove(handleNameID, stormName);
-                    }
                     wb.remove(handleIDName, iterator.key());
 
                 }
             }
+            for (iterator1.seekToFirst(); iterator1.isValid(); iterator1.next()) {
+                String localID = new String(iterator1.value(), DEFAULT_CHARSET);
+                if (!keys.contains(localID)) {
+                    wb.remove(handleNameID, iterator1.key());
+
+                }
+            }
+
             this._db.write(new WriteOptions(), wb);
         } catch (RocksDBException e) {
             LOG.error("Exception to remove expired keys for local id info.");

@@ -25,6 +25,7 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.utils.TupleUtils;
 import org.elasticsearch.action.percolate.PercolateResponse;
 import org.elasticsearch.action.percolate.PercolateSourceBuilder;
 
@@ -61,7 +62,7 @@ public class EsPercolateBolt extends AbstractEsBolt {
      * and Percolate.Match for each Percolate.Match in PercolateResponse.
      */
     @Override
-    public void execute(Tuple tuple) {
+    public void process(Tuple tuple) {
         try {
             String source = tupleMapper.getSource(tuple);
             String index = tupleMapper.getIndex(tuple);

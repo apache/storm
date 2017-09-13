@@ -120,7 +120,7 @@ public class OpenTsdbClient {
         private boolean enableChunkedEncoding;
         private ResponseType responseType = ResponseType.None;
 
-        protected Builder(String url) {
+        public Builder(String url) {
             this.url = url;
         }
 

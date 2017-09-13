@@ -24,6 +24,7 @@ import shlex
 import tempfile
 import uuid
 import subprocess as sub
+import json
 
 import sys
 
@@ -65,6 +66,12 @@ def init_storm_env():
     for option in options:
         value = config.get('environment', option)
         os.environ[option] = value
+        
+def get_java_cmd():
+    cmd = 'java' if not is_windows() else 'java.exe'
+    if JAVA_HOME:
+        cmd = os.path.join(JAVA_HOME, 'bin', cmd)
+    return cmd
 
 normclasspath = cygpath if sys.platform == 'cygwin' else identity
 STORM_DIR = os.sep.join(os.path.realpath( __file__ ).split(os.sep)[:-2])
@@ -90,12 +97,15 @@ CONFIG_OPTS = []
 CONFFILE = ""
 JAR_JVM_OPTS = shlex.split(os.getenv('STORM_JAR_JVM_OPTS', ''))
 JAVA_HOME = os.getenv('JAVA_HOME', None)
-JAVA_CMD = 'java' if not JAVA_HOME else os.path.join(JAVA_HOME, 'bin', 'java')
+JAVA_CMD = get_java_cmd(); 
 if JAVA_HOME and not os.path.exists(JAVA_CMD):
     print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
     sys.exit(1)
 STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
 STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
+DEP_JARS_OPTS = []
+DEP_ARTIFACTS_OPTS = []
+DEP_ARTIFACTS_REPOSITORIES_OPTS = []
 
 def get_config_opts():
     global CONFIG_OPTS
@@ -128,11 +138,9 @@ def get_classpath(extrajars, daemon=True):
     if daemon:
         ret.extend(get_jars_full(STORM_DIR + "/extlib-daemon"))
     if STORM_EXT_CLASSPATH != None:
-        for path in STORM_EXT_CLASSPATH.split(os.pathsep):
-            ret.extend(get_jars_full(path))
+        ret.append(STORM_EXT_CLASSPATH)
     if daemon and STORM_EXT_CLASSPATH_DAEMON != None:
-        for path in STORM_EXT_CLASSPATH_DAEMON.split(os.pathsep):
-            ret.extend(get_jars_full(path))
+        ret.append(STORM_EXT_CLASSPATH_DAEMON)
     ret.extend(extrajars)
     return normclasspath(os.pathsep.join(ret))
 
@@ -153,6 +161,42 @@ def confvalue(name, extrapaths, daemon=True):
         if tokens[0] == "VALUE:":
             return " ".join(tokens[1:])
     return ""
+
+def resolve_dependencies(artifacts, artifact_repositories):
+    if len(artifacts) == 0:
+        return {}
+
+    print("Resolving dependencies on demand: artifacts (%s) with repositories (%s)" % (artifacts, artifact_repositories))
+    sys.stdout.flush()
+
+    # TODO: should we move some external modules to outer place?
+
+    # storm-submit module doesn't rely on storm-core and relevant libs
+    extrajars = get_jars_full(STORM_DIR + "/external/storm-submit-tools")
+    classpath = normclasspath(os.pathsep.join(extrajars))
+
+    command = [
+        JAVA_CMD, "-client", "-cp", classpath, "org.apache.storm.submit.command.DependencyResolverMain",
+        ",".join(artifacts), ",".join(artifact_repositories)
+    ]
+
+    p = sub.Popen(command, stdout=sub.PIPE)
+    output, errors = p.communicate()
+    if p.returncode != 0:
+        raise RuntimeError("dependency handler returns non-zero code: code<%s> syserr<%s>" % (p.returncode, errors))
+
+    # python 3
+    if not isinstance(output, str):
+        output = output.decode('utf-8')
+
+    # For debug purpose, uncomment when you need to debug DependencyResolver
+    #print("Resolved dependencies: %s" % output)
+
+    try:
+        out_dict = json.loads(output)
+        return out_dict
+    except:
+        raise RuntimeError("dependency handler returns non-json response: sysout<%s>", output)
 
 def print_localconfvalue(name):
     """Syntax: [storm localconfvalue conf-name]
@@ -218,7 +262,8 @@ def exec_storm_class(klass, jvmtype="-server", jvmopts=[], extrajars=[], args=[]
         try:
             ret = sub.check_output(all_args, stderr=sub.STDOUT)
             print(ret)
-        except sub.CalledProcessor as e:
+        except sub.CalledProcessError as e:
+            print(e.output)
             sys.exit(e.returncode)
     else:
         os.execvp(JAVA_CMD, all_args)
@@ -232,44 +277,101 @@ def jar(jarfile, klass, *args):
     The process is configured so that StormSubmitter
     (http://storm.apache.org/releases/current/javadocs/org/apache/storm/StormSubmitter.html)
     will upload the jar at topology-jar-path when the topology is submitted.
+
+    When you want to ship other jars which is not included to application jar, you can pass them to --jars option with comma-separated string.
+    For example, --jars "your-local-jar.jar,your-local-jar2.jar" will load your-local-jar.jar and your-local-jar2.jar.
+    And when you want to ship maven artifacts and its transitive dependencies, you can pass them to --artifacts with comma-separated string.
+    You can also exclude some dependencies like what you're doing in maven pom.
+    Please add exclusion artifacts with '^' separated string after the artifact.
+    For example, --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" will load jedis and kafka artifact and all of transitive dependencies but exclude slf4j-log4j12 from kafka.
+
+    When you need to pull the artifacts from other than Maven Central, you can pass remote repositories to --artifactRepositories option with comma-separated string.
+    Repository format is "<name>^<url>". '^' is taken as separator because URL allows various characters.
+    For example, --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/" will add JBoss and HDP repositories for dependency resolver.
+
+    Complete example of options is here: `./bin/storm jar example/storm-starter/storm-starter-topologies-*.jar org.apache.storm.starter.RollingTopWords blobstore-remote2 remote --jars "./external/storm-redis/storm-redis-1.1.0.jar,./external/storm-kafka/storm-kafka-1.1.0.jar" --artifacts "redis.clients:jedis:2.9.0,org.apache.kafka:kafka_2.10:0.8.2.2^org.slf4j:slf4j-log4j12" --artifactRepositories "jboss-repository^http://repository.jboss.com/maven2,HDPRepo^http://repo.hortonworks.com/content/groups/public/"`
+
+    When you pass jars and/or artifacts options, StormSubmitter will upload them when the topology is submitted, and they will be included to classpath of both the process which runs the class, and also workers for that topology.
     """
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+
+    local_jars = DEP_JARS_OPTS
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
+
     transform_class = confvalue("client.jartransformer.class", [CLUSTER_CONF_DIR])
     if (transform_class != None and transform_class != "nil"):
         tmpjar = os.path.join(tempfile.gettempdir(), uuid.uuid1().hex+".jar")
         exec_storm_class("org.apache.storm.daemon.ClientJarTransformerRunner", args=[transform_class, jarfile, tmpjar], fork=True, daemon=False)
+        extra_jars = [tmpjar, USER_CONF_DIR, STORM_BIN_DIR]
+        extra_jars.extend(local_jars)
+        extra_jars.extend(artifact_to_file_jars.values())
         topology_runner_exit_code = exec_storm_class(
                 klass,
                 jvmtype="-client",
-                extrajars=[tmpjar, USER_CONF_DIR, STORM_BIN_DIR],
+                extrajars=extra_jars,
                 args=args,
                 daemon=False,
                 fork=True,
-                jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar])
+                jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + tmpjar] +
+                        ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                        ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
         os.remove(tmpjar)
         sys.exit(topology_runner_exit_code)
     else:
+        extra_jars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR]
+        extra_jars.extend(local_jars)
+        extra_jars.extend(artifact_to_file_jars.values())
         exec_storm_class(
             klass,
             jvmtype="-client",
-            extrajars=[jarfile, USER_CONF_DIR, STORM_BIN_DIR],
+            extrajars=extra_jars,
             args=args,
             daemon=False,
-            jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile])
+            jvmopts=JAR_JVM_OPTS + ["-Dstorm.jar=" + jarfile] +
+                    ["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                    ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
 def sql(sql_file, topology_name):
-    """Syntax: [storm sql sql-file topology-name]
+    """Syntax: [storm sql sql-file topology-name], or [storm sql sql-file --explain] when activating explain mode
 
     Compiles the SQL statements into a Trident topology and submits it to Storm.
+    If user activates explain mode, SQL Runner analyzes each query statement and shows query plan instead of submitting topology.
+
+    --jars and --artifacts, and --artifactRepositories options available for jar are also applied to sql command.
+    Please refer "help jar" to see how to use --jars and --artifacts, and --artifactRepositories options.
+    You normally want to pass these options since you need to set data source to your sql which is an external storage in many cases.
     """
+    global DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+
+    local_jars = DEP_JARS_OPTS
+    artifact_to_file_jars = resolve_dependencies(DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS)
+
+    sql_core_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-core")
+    sql_runtime_jars = get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime")
+
+    # include storm-sql-runtime jar(s) to local jar list
+    local_jars.extend(sql_runtime_jars)
+
     extrajars=[USER_CONF_DIR, STORM_BIN_DIR]
-    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-core"))
-    extrajars.extend(get_jars_full(STORM_DIR + "/external/sql/storm-sql-runtime"))
+    extrajars.extend(local_jars)
+    extrajars.extend(artifact_to_file_jars.values())
+
+    # include this for running StormSqlRunner, but not for generated topology
+    extrajars.extend(sql_core_jars)
+
+    if topology_name == "--explain":
+        args = ["--file", sql_file, "--explain"]
+    else:
+        args = ["--file", sql_file, "--topology", topology_name]
+
     exec_storm_class(
         "org.apache.storm.sql.StormSqlRunner",
         jvmtype="-client",
         extrajars=extrajars,
-        args=[sql_file, topology_name],
-        daemon=False)
+        args=args,
+        daemon=False,
+        jvmopts=["-Dstorm.dependency.jars=" + ",".join(local_jars)] +
+                ["-Dstorm.dependency.artifacts=" + json.dumps(artifact_to_file_jars)])
 
 def kill(*args):
     """Syntax: [storm kill topology-name [-w wait-time-secs]]
@@ -467,7 +569,7 @@ def healthcheck(*args):
     Run health checks on the local supervisor.
     """
     exec_storm_class(
-        "org.apache.storm.command.healthcheck",
+        "org.apache.storm.command.HealthCheck",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -480,7 +582,7 @@ def kill_workers(*args):
     to have admin rights on the node to be able to successfully kill all workers.
     """
     exec_storm_class(
-        "org.apache.storm.command.kill_workers",
+        "org.apache.storm.command.KillWorkers",
         args=args,
         jvmtype="-client",
         extrajars=[USER_CONF_DIR, os.path.join(STORM_DIR, "bin")])
@@ -564,7 +666,7 @@ def pacemaker(klass="org.apache.storm.pacemaker.pacemaker"):
         extrajars=cppaths,
         jvmopts=jvmopts)
 
-def supervisor(klass="org.apache.storm.daemon.supervisor"):
+def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     """Syntax: [storm supervisor]
 
     Launches the supervisor daemon. This command should be run
@@ -742,30 +844,42 @@ def parse_config(config_list):
             CONFIG_OPTS.append(config)
 
 def parse_config_opts(args):
-  curr = args[:]
-  curr.reverse()
-  config_list = []
-  args_list = []
+    curr = args[:]
+    curr.reverse()
+    config_list = []
+    args_list = []
+    jars_list = []
+    artifacts_list = []
+    artifact_repositories_list = []
 
-  while len(curr) > 0:
-    token = curr.pop()
-    if token == "-c":
-      config_list.append(curr.pop())
-    elif token == "--config":
-      global CONFFILE
-      CONFFILE = curr.pop()
-    else:
-      args_list.append(token)
+    while len(curr) > 0:
+        token = curr.pop()
+        if token == "-c":
+            config_list.append(curr.pop())
+        elif token == "--config":
+            global CONFFILE
+            CONFFILE = curr.pop()
+        elif token == "--jars":
+            jars_list.extend(curr.pop().split(','))
+        elif token == "--artifacts":
+            artifacts_list.extend(curr.pop().split(','))
+        elif token == "--artifactRepositories":
+            artifact_repositories_list.extend(curr.pop().split(','))
+        else:
+            args_list.append(token)
 
-  return config_list, args_list
+    return config_list, jars_list, artifacts_list, artifact_repositories_list, args_list
 
 def main():
     if len(sys.argv) <= 1:
         print_usage()
         sys.exit(-1)
-    global CONFIG_OPTS
-    config_list, args = parse_config_opts(sys.argv[1:])
+    global CONFIG_OPTS, DEP_JARS_OPTS, DEP_ARTIFACTS_OPTS, DEP_ARTIFACTS_REPOSITORIES_OPTS
+    config_list, jars_list, artifacts_list, artifact_repositories_list, args = parse_config_opts(sys.argv[1:])
     parse_config(config_list)
+    DEP_JARS_OPTS = jars_list
+    DEP_ARTIFACTS_OPTS = artifacts_list
+    DEP_ARTIFACTS_REPOSITORIES_OPTS = artifact_repositories_list
     COMMAND = args[0]
     ARGS = args[1:]
     (COMMANDS.get(COMMAND, unknown_command))(*ARGS)

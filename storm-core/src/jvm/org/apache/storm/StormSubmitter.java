@@ -17,13 +17,21 @@
  */
 package org.apache.storm;
 
+import com.google.common.collect.Sets;
+
 import java.io.File;
 import java.nio.ByteBuffer;
+import java.util.Collections;
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
+import org.apache.storm.blobstore.NimbusBlobStore;
+import org.apache.storm.dependency.DependencyPropertiesParser;
+import org.apache.storm.dependency.DependencyUploader;
 import org.apache.storm.hooks.SubmitterHookException;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.validation.ConfigValidation;
@@ -69,21 +77,18 @@ public class StormSubmitter {
     @SuppressWarnings("unchecked")
     public static Map prepareZookeeperAuthentication(Map conf) {
         Map toRet = new HashMap();
-
+        String secretPayload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         // Is the topology ZooKeeper authentication configuration unset?
         if (! conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||
                 conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null ||
                 !  validateZKDigestPayload((String)
                     conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
-
-            String secretPayload = generateZookeeperDigestSecretPayload();
-            toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, secretPayload);
+            secretPayload = generateZookeeperDigestSecretPayload();
             LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
         }
-
+        toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, secretPayload);
         // This should always be set to digest.
         toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME, "digest");
-
         return toRet;
     }
 
@@ -120,19 +125,16 @@ public class StormSubmitter {
             return;
         }
         try {
-            if(localNimbus!=null) {
-                LOG.info("Pushing Credentials to topology " + name + " in local mode");
+            if (localNimbus!=null) {
+                LOG.info("Pushing Credentials to topology {} in local mode", name);
                 localNimbus.uploadNewCredentials(name, new Credentials(fullCreds));
             } else {
-                NimbusClient client = NimbusClient.getConfiguredClient(conf);
-                try {
-                    LOG.info("Uploading new credentials to " +  name);
+                try(NimbusClient client = NimbusClient.getConfiguredClient(conf)) {
+                    LOG.info("Uploading new credentials to {}", name);
                     client.getClient().uploadNewCredentials(name, new Credentials(fullCreds));
-                } finally {
-                    client.close();
                 }
             }
-            LOG.info("Finished submitting topology: " +  name);
+            LOG.info("Finished pushing creds to topology: {}", name);
         } catch(TException e) {
             throw new RuntimeException(e);
         }
@@ -219,9 +221,9 @@ public class StormSubmitter {
             opts.set_creds(new Credentials(fullCreds));
         }
         try {
-            if(localNimbus!=null) {
+            if (localNimbus!=null) {
                 LOG.info("Submitting topology " + name + " in local mode");
-                if(opts!=null) {
+                if (opts!=null) {
                     localNimbus.submitTopologyWithOpts(name, stormConf, topology, opts);
                 } else {
                     // this is for backwards compatibility
@@ -230,26 +232,41 @@ public class StormSubmitter {
                 LOG.info("Finished submitting topology: " +  name);
             } else {
                 String serConf = JSONValue.toJSONString(stormConf);
-                if(topologyNameExists(conf, name, asUser)) {
-                    throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
-                }
-                String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, asUser);
-                try {
-                    LOG.info("Submitting topology " + name + " in distributed mode with conf " + serConf);
-                    NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
-                    if (opts != null) {
-                        client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
-                    } else {
-                        // this is for backwards compatibility
-                        client.getClient().submitTopology(name, jar, serConf, topology);
+                try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+                    if (topologyNameExists(name, client)) {
+                        throw new RuntimeException("Topology with name `" + name + "` already exists on cluster");
                     }
-                    LOG.info("Finished submitting topology: " + name);
-                } catch (InvalidTopologyException e) {
-                    LOG.warn("Topology submission exception: " + e.get_msg());
-                    throw e;
-                } catch (AlreadyAliveException e) {
-                    LOG.warn("Topology already alive exception", e);
-                    throw e;
+
+                    // Dependency uploading only makes sense for distributed mode
+                    List<String> jarsBlobKeys = Collections.emptyList();
+                    List<String> artifactsBlobKeys;
+
+                    DependencyUploader uploader = new DependencyUploader();
+                    try {
+                        uploader.init();
+
+                        jarsBlobKeys = uploadDependencyJarsToBlobStore(uploader);
+
+                        artifactsBlobKeys = uploadDependencyArtifactsToBlobStore(uploader);
+                    } catch (Throwable e) {
+                        // remove uploaded jars blobs, not artifacts since they're shared across the cluster
+                        uploader.deleteBlobs(jarsBlobKeys);
+                        uploader.shutdown();
+                        throw e;
+                    }
+
+                    try {
+                        setDependencyBlobsToTopology(topology, jarsBlobKeys, artifactsBlobKeys);
+                        submitTopologyInDistributeMode(name, topology, opts, progressListener, asUser, conf, serConf, client);
+                    } catch (AlreadyAliveException | InvalidTopologyException | AuthorizationException e) {
+                        // remove uploaded jars blobs, not artifacts since they're shared across the cluster
+                        // Note that we don't handle TException to delete jars blobs
+                        // because it's safer to leave some blobs instead of topology not running
+                        uploader.deleteBlobs(jarsBlobKeys);
+                        throw e;
+                    } finally {
+                        uploader.shutdown();
+                    }
                 }
             }
         } catch(TException e) {
@@ -257,6 +274,65 @@ public class StormSubmitter {
         }
         invokeSubmitterHook(name, asUser, conf, topology);
 
+    }
+
+    private static List<String> uploadDependencyJarsToBlobStore(DependencyUploader uploader) {
+        LOG.info("Uploading dependencies - jars...");
+
+        DependencyPropertiesParser propertiesParser = new DependencyPropertiesParser();
+
+        String depJarsProp = System.getProperty("storm.dependency.jars", "");
+        List<File> depJars = propertiesParser.parseJarsProperties(depJarsProp);
+
+        try {
+            return uploader.uploadFiles(depJars, true);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static List<String> uploadDependencyArtifactsToBlobStore(DependencyUploader uploader) {
+        LOG.info("Uploading dependencies - artifacts...");
+
+        DependencyPropertiesParser propertiesParser = new DependencyPropertiesParser();
+
+        String depArtifactsProp = System.getProperty("storm.dependency.artifacts", "{}");
+        Map<String, File> depArtifacts = propertiesParser.parseArtifactsProperties(depArtifactsProp);
+
+        try {
+            return uploader.uploadArtifacts(depArtifacts);
+        } catch (Throwable e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void setDependencyBlobsToTopology(StormTopology topology, List<String> jarsBlobKeys, List<String> artifactsBlobKeys) {
+        LOG.info("Dependency Blob keys - jars : {} / artifacts : {}", jarsBlobKeys, artifactsBlobKeys);
+        topology.set_dependency_jars(jarsBlobKeys);
+        topology.set_dependency_artifacts(artifactsBlobKeys);
+    }
+
+    private static void submitTopologyInDistributeMode(String name, StormTopology topology, SubmitOptions opts,
+                                                       ProgressListener progressListener, String asUser, Map conf,
+                                                       String serConf, NimbusClient client) throws TException {
+        try {
+            String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, client);
+            LOG.info("Submitting topology {} in distributed mode with conf {}", name, serConf);
+            Utils.addVersions(topology);
+            if (opts != null) {
+                client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
+            } else {
+                // this is for backwards compatibility
+                client.getClient().submitTopology(name, jar, serConf, topology);
+            }
+            LOG.info("Finished submitting topology: {}", name);
+        } catch (InvalidTopologyException e) {
+            LOG.warn("Topology submission exception: {}", e.get_msg());
+            throw e;
+        } catch (AlreadyAliveException e) {
+            LOG.warn("Topology already alive exception", e);
+            throw e;
+        }
     }
 
     /**
@@ -367,21 +443,11 @@ public class StormSubmitter {
         });
     }
 
-    private static boolean topologyNameExists(Map conf, String name, String asUser) {
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
+    private static boolean topologyNameExists(String name, NimbusClient client) {
         try {
-            ClusterSummary summary = client.getClient().getClusterInfo();
-            for(TopologySummary s : summary.get_topologies()) {
-                if(s.get_name().equals(name)) {
-                    return true;
-                }
-            }
-            return false;
-
+            return !client.getClient().isTopologyNameAllowed(name);
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
         }
     }
 
@@ -399,13 +465,11 @@ public class StormSubmitter {
         return submitJar(conf, localJar, null);
     }
 
-
-    public static String submitJarAs(Map conf, String localJar, ProgressListener listener, String asUser) {
+    public static String submitJarAs(Map conf, String localJar, ProgressListener listener, NimbusClient client) {
         if (localJar == null) {
             throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
         }
 
-        NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser);
         try {
             String uploadLocation = client.getClient().beginFileUpload();
             LOG.info("Uploading topology jar " + localJar + " to assigned location: " + uploadLocation);
@@ -437,8 +501,16 @@ public class StormSubmitter {
             return uploadLocation;
         } catch(Exception e) {
             throw new RuntimeException(e);
-        } finally {
-            client.close();
+        }
+    }
+    
+    public static String submitJarAs(Map conf, String localJar, ProgressListener listener, String asUser) {
+        if (localJar == null) {
+            throw new RuntimeException("Must submit topologies using the 'storm' client script so that StormSubmitter knows which jar to upload.");
+        }
+
+        try (NimbusClient client = NimbusClient.getConfiguredClientAs(conf, asUser)) {
+            return submitJarAs(conf, localJar, listener, client);
         }
     }
 
@@ -450,7 +522,7 @@ public class StormSubmitter {
      * @return the remote location of the submitted jar
      */
     public static String submitJar(Map conf, String localJar, ProgressListener listener) {
-        return submitJarAs(conf,localJar, listener, null);
+        return submitJarAs(conf,localJar, listener, (String)null);
     }
 
     /**
@@ -483,12 +555,13 @@ public class StormSubmitter {
         public void onCompleted(String srcFile, String targetFile, long totalBytes);
     }
 
-    private static void validateConfs(Map stormConf, StormTopology topology) throws IllegalArgumentException {
+    private static void validateConfs(Map<String, Object> stormConf, StormTopology topology) throws IllegalArgumentException, InvalidTopologyException {
         ConfigValidation.validateFields(stormConf);
         validateTopologyWorkerMaxHeapSizeMBConfigs(stormConf, topology);
+        Utils.validateTopologyBlobStoreMap(stormConf, getListOfKeysFromBlobStore(stormConf));
     }
 
-    private static void validateTopologyWorkerMaxHeapSizeMBConfigs(Map stormConf, StormTopology topology) {
+    private static void validateTopologyWorkerMaxHeapSizeMBConfigs(Map<String, Object> stormConf, StormTopology topology) {
         double largestMemReq = getMaxExecutorMemoryUsageForTopo(topology, stormConf);
         Double topologyWorkerMaxHeapSize = Utils.getDouble(stormConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB));
         if(topologyWorkerMaxHeapSize < largestMemReq) {
@@ -515,5 +588,12 @@ public class StormSubmitter {
             }
         }
         return largestMemoryOperator;
+    }
+
+    private static Set<String> getListOfKeysFromBlobStore(Map<String, Object> stormConf) {
+        try (NimbusBlobStore client = new NimbusBlobStore()) {
+            client.prepare(stormConf);
+            return Sets.newHashSet(client.listKeys());
+        }
     }
 }

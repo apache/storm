@@ -45,6 +45,7 @@ import org.slf4j.LoggerFactory;
 
 public class ShellSpout implements ISpout {
     public static final Logger LOG = LoggerFactory.getLogger(ShellSpout.class);
+    private static final long serialVersionUID = 5982357019665454L;
 
     private SpoutOutputCollector _collector;
     private String[] _command;
@@ -61,6 +62,7 @@ public class ShellSpout implements ISpout {
     private ScheduledExecutorService heartBeatExecutorService;
     private AtomicLong lastHeartbeatTimestamp = new AtomicLong();
     private AtomicBoolean waitingOnSubprocess = new AtomicBoolean(false);
+    private boolean changeDirectory = true;
 
     public ShellSpout(ShellComponent component) {
         this(component.get_execution_command(), component.get_script());
@@ -73,6 +75,21 @@ public class ShellSpout implements ISpout {
     public ShellSpout setEnv(Map<String, String> env) {
         this.env = env;
         return this;
+    }
+
+    public boolean shouldChangeChildCWD() {
+        return changeDirectory;
+    }
+
+    /**
+     * Set if the current working directory of the child process should change
+     * to the resources dir from extracted from the jar, or if it should stay
+     * the same as the worker process to access things from the blob store.
+     * @param changeDirectory true change the directory (default) false
+     * leave the directory the same as the worker process.
+     */
+    public void changeChildCWD(boolean changeDirectory) {
+        this.changeDirectory = changeDirectory;
     }
 
     public void open(Map stormConf, TopologyContext context,
@@ -91,7 +108,7 @@ public class ShellSpout implements ISpout {
             _process.setEnv(env);
         }
 
-        Number subpid = _process.launch(stormConf, context);
+        Number subpid = _process.launch(stormConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
@@ -104,32 +121,18 @@ public class ShellSpout implements ISpout {
     }
 
     public void nextTuple() {
-        if (_exception != null) {
-            throw _exception;
-        }
-
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("next");
-        _spoutMsg.setId("");
-        querySubprocess();
+        this.sendSyncCommand("next", "");
     }
 
     public void ack(Object msgId) {
-        if (_exception != null) {
-            throw _exception;
-        }
-
-        if (_spoutMsg == null) {
-            _spoutMsg = new SpoutMsg();
-        }
-        _spoutMsg.setCommand("ack");
-        _spoutMsg.setId(msgId);
-        querySubprocess();
+        this.sendSyncCommand("ack", msgId);
     }
 
     public void fail(Object msgId) {
+        this.sendSyncCommand("fail", msgId);
+    }
+
+    private void sendSyncCommand(String command, Object msgId) {
         if (_exception != null) {
             throw _exception;
         }
@@ -137,10 +140,11 @@ public class ShellSpout implements ISpout {
         if (_spoutMsg == null) {
             _spoutMsg = new SpoutMsg();
         }
-        _spoutMsg.setCommand("fail");
+        _spoutMsg.setCommand(command);
         _spoutMsg.setId(msgId);
         querySubprocess();
     }
+
     
     private void handleMetrics(ShellMsg shellMsg) {
         //get metric name
@@ -254,11 +258,17 @@ public class ShellSpout implements ISpout {
         LOG.info("Start checking heartbeat...");
         // prevent timer to check heartbeat based on last thing before activate
         setHeartbeat();
+        if (heartBeatExecutorService.isShutdown()){
+            //In case deactivate was called before
+            heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
+        }
         heartBeatExecutorService.scheduleAtFixedRate(new SpoutHeartbeatTimerTask(this), 1, 1, TimeUnit.SECONDS);
+        this.sendSyncCommand("activate", "");
     }
 
     @Override
     public void deactivate() {
+        this.sendSyncCommand("deactivate", "");
         heartBeatExecutorService.shutdownNow();
     }
 
@@ -271,6 +281,7 @@ public class ShellSpout implements ISpout {
     }
 
     private void markWaitingSubprocess() {
+        setHeartbeat();
         waitingOnSubprocess.compareAndSet(false, true);
     }
 

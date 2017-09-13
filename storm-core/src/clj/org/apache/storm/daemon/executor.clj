@@ -172,7 +172,6 @@
                         TOPOLOGY-BOLTS-WINDOW-LENGTH-DURATION-MS
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-COUNT
                         TOPOLOGY-BOLTS-SLIDING-INTERVAL-DURATION-MS
-                        TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-FIELD-NAME
                         TOPOLOGY-BOLTS-LATE-TUPLE-STREAM
                         TOPOLOGY-BOLTS-TUPLE-TIMESTAMP-MAX-LAG-MS
                         TOPOLOGY-BOLTS-MESSAGE-ID-FIELD-NAME
@@ -208,9 +207,9 @@
       (swap! interval-errors inc)
 
       (when (<= @interval-errors max-per-interval)
-        (cluster/report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
-                              (hostname storm-conf)
-                              (.getThisWorkerPort (:worker-context executor)) error)
+        (.report-error (:storm-cluster-state executor) (:storm-id executor) (:component-id executor)
+                              (hostname)
+                              (.getThisWorkerPort ^WorkerTopologyContext (:worker-context executor)) error)
         ))))
 
 ;; in its own function so that it can be mocked out by tracked topologies
@@ -232,7 +231,7 @@
                                   (str "executor"  executor-id "-send-queue")
                                   (storm-conf TOPOLOGY-EXECUTOR-SEND-BUFFER-SIZE)
                                   (storm-conf TOPOLOGY-DISRUPTOR-WAIT-TIMEOUT-MILLIS)
-                                  :producer-type :single-threaded
+                                  :producer-type :multi-threaded
                                   :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)
                                   :batch-timeout (storm-conf TOPOLOGY-DISRUPTOR-BATCH-TIMEOUT-MILLIS))
         ]
@@ -270,12 +269,13 @@
                                (catch Exception e
                                  (log-message "Error while reporting error to cluster, proceeding with shutdown")))
                              (if (or
-                                    (exception-cause? InterruptedException error)
-                                    (exception-cause? java.io.InterruptedIOException error))
+                                   (exception-cause? InterruptedException error)
+                                   (and
+                                     (exception-cause? java.io.InterruptedIOException error)
+                                     (not (exception-cause? java.net.SocketTimeoutException error))))
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)
-     :backpressure (atom false)
      :spout-throttling-metrics (if (= executor-type :spout) 
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
@@ -288,16 +288,12 @@
   (disruptor/disruptor-backpressure-handler
     (fn []
       "When receive queue is above highWaterMark"
-      (if (not @(:backpressure executor-data))
-        (do (reset! (:backpressure executor-data) true)
-            (log-debug "executor " (:executor-id executor-data) " is congested, set backpressure flag true")
-            (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data))))))
+      (do (log-debug "executor " (:executor-id executor-data) " is congested, set backpressure flag true")
+          (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data)))))
     (fn []
       "When receive queue is below lowWaterMark"
-      (if @(:backpressure executor-data)
-        (do (reset! (:backpressure executor-data) false)
-            (log-debug "executor " (:executor-id executor-data) " is not-congested, set backpressure flag false")
-            (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data))))))))
+      (do (log-debug "executor " (:executor-id executor-data) " is not-congested, set backpressure flag false")
+          (WorkerBackpressureThread/notifyBackpressureChecker (:backpressure-trigger (:worker executor-data)))))))
 
 (defn start-batch-transfer->worker-handler! [worker executor-data]
   (let [worker-transfer-fn (:transfer-fn worker)
@@ -334,7 +330,7 @@
          task-id (:task-id task-data)
          name->imetric (-> interval->task->metric-registry (get interval) (get task-id))
          task-info (IMetricsConsumer$TaskInfo.
-                     (hostname (:storm-conf executor-data))
+                     (hostname)
                      (.getThisWorkerPort worker-context)
                      (:component-id executor-data)
                      task-id
@@ -410,7 +406,7 @@
               val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. context [creds] Constants/SYSTEM_TASK_ID Constants/CREDENTIALS_CHANGED_STREAM_ID))]]
           (disruptor/publish receive-queue val)))
       (get-backpressure-flag [this]
-        @(:backpressure executor-data))
+        (.getThrottleOn (:receive-queue executor-data)))
       Shutdownable
       (shutdown
         [this]
@@ -677,12 +673,14 @@
 (defn- tuple-time-delta! [^TupleImpl tuple]
   (let [ms (.getProcessSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
+      (time-delta-ms ms)
+      -1)))
       
 (defn- tuple-execute-time-delta! [^TupleImpl tuple]
   (let [ms (.getExecuteSampleStartTime tuple)]
     (if ms
-      (time-delta-ms ms))))
+      (time-delta-ms ms)
+      -1)))
 
 (defn put-xor! [^Map pending key id]
   (let [curr (or (.get pending key) (long 0))]
@@ -737,7 +735,7 @@
                                     (log-message "Execute done TUPLE " tuple " TASK: " task-id " DELTA: " delta))
  
                                   (task/apply-hooks user-context .boltExecute (BoltExecuteInfo. tuple task-id delta))
-                                  (when delta
+                                  (when (<= 0 delta)
                                     (stats/bolt-execute-tuple! executor-stats
                                                                (.getSourceComponent tuple)
                                                                (.getSourceStreamId tuple)
@@ -815,7 +813,7 @@
                            (when debug? 
                              (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                            (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
-                           (when delta
+                           (when (<= 0 delta)
                              (stats/bolt-acked-tuple! executor-stats
                                                       (.getSourceComponent tuple)
                                                       (.getSourceStreamId tuple)
@@ -830,7 +828,7 @@
                            (when debug? 
                              (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
                            (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
-                           (when delta
+                           (when (<= 0 delta)
                              (stats/bolt-failed-tuple! executor-stats
                                                        (.getSourceComponent tuple)
                                                        (.getSourceStreamId tuple)

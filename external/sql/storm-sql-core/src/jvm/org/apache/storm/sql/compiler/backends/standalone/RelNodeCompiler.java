@@ -18,7 +18,6 @@
 package org.apache.storm.sql.compiler.backends.standalone;
 
 import com.google.common.base.Joiner;
-import com.google.common.primitives.Primitives;
 import org.apache.calcite.adapter.java.JavaTypeFactory;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
@@ -30,18 +29,21 @@ import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalJoin;
 import org.apache.calcite.rel.stream.Delta;
+import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexBuilder;
+import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.schema.AggregateFunction;
 import org.apache.calcite.schema.impl.AggregateFunctionImpl;
 import org.apache.calcite.sql.SqlAggFunction;
 import org.apache.calcite.sql.validate.SqlUserDefinedAggFunction;
-import org.apache.storm.sql.compiler.ExprCompiler;
-import org.apache.storm.sql.compiler.PostOrderRelNodeVisitor;
+import org.apache.storm.sql.compiler.RexNodeToJavaCodeCompiler;
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,6 +56,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private final PrintWriter pw;
   private final JavaTypeFactory typeFactory;
+  private final RexNodeToJavaCodeCompiler rexCompiler;
+
   private static final String STAGE_PROLOGUE = NEW_LINE_JOINER.join(
     "  private static final ChannelHandler %1$s = ",
     "    new AbstractChannelHandler() {",
@@ -66,8 +70,7 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "  private static final ChannelHandler %1$s = ",
           "    new AbstractChannelHandler() {",
           "    private final Values EMPTY_VALUES = new Values();",
-          "    private List<Object> prevGroupValues = null;",
-          "    private final Map<String, Object> accumulators = new HashMap<>();",
+          "    private final Map<List<Object>, Map<String, Object>> state = new LinkedHashMap<>();",
           "    private final int[] groupIndices = new int[] {%2$s};",
           "    private List<Object> getGroupValues(Values _data) {",
           "      List<Object> res = new ArrayList<>();",
@@ -81,11 +84,15 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
           "    public void flush(ChannelContext ctx) {",
           "      emitAggregateResults(ctx);",
           "      super.flush(ctx);",
-          "      prevGroupValues = null;",
+          "      state.clear();",
           "    }",
           "",
           "    private void emitAggregateResults(ChannelContext ctx) {",
-          "    %3$s",
+          "        for (Map.Entry<List<Object>, Map<String, Object>> entry: state.entrySet()) {",
+          "          List<Object> groupValues = entry.getKey();",
+          "          Map<String, Object> accumulators = entry.getValue();",
+          "          %3$s",
+          "        }",
           "    }",
           "",
           "    @Override",
@@ -193,19 +200,29 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   RelNodeCompiler(PrintWriter pw, JavaTypeFactory typeFactory) {
     this.pw = pw;
     this.typeFactory = typeFactory;
+    this.rexCompiler = new RexNodeToJavaCodeCompiler(new RexBuilder(typeFactory));
   }
 
   @Override
-  public Void visitDelta(Delta delta) throws Exception {
+  public Void visitDelta(Delta delta, List<Void> inputStreams) throws Exception {
     pw.print(String.format(STAGE_PASSTHROUGH, getStageName(delta)));
     return null;
   }
 
   @Override
-  public Void visitFilter(Filter filter) throws Exception {
+  public Void visitFilter(Filter filter, List<Void> inputStreams) throws Exception {
     beginStage(filter);
-    ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
-    String r = filter.getCondition().accept(compiler);
+
+    List<RexNode> childExps = filter.getChildExps();
+    RelDataType inputRowType = filter.getInput(0).getRowType();
+
+    pw.print("Context context = new StormContext(Processor.dataContext);\n");
+    pw.print("context.values = _data.toArray();\n");
+    pw.print("Object[] outputValues = new Object[1];\n");
+
+    pw.write(rexCompiler.compileToBlock(childExps, inputRowType).toString());
+
+    String r = "((Boolean) outputValues[0])";
     if (filter.getCondition().getType().isNullable()) {
       pw.print(String.format("    if (%s != null && %s) { ctx.emit(_data); }\n", r, r));
     } else {
@@ -216,53 +233,54 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
   }
 
   @Override
-  public Void visitProject(Project project) throws Exception {
+  public Void visitProject(Project project, List<Void> inputStreams) throws Exception {
     beginStage(project);
-    ExprCompiler compiler = new ExprCompiler(pw, typeFactory);
-    int size = project.getChildExps().size();
-    String[] res = new String[size];
-    for (int i = 0; i < size; ++i) {
-      res[i] = project.getChildExps().get(i).accept(compiler);
-    }
 
-    pw.print(String.format("    ctx.emit(new Values(%s));\n",
-                           Joiner.on(',').join(res)));
+    List<RexNode> childExps = project.getChildExps();
+    RelDataType inputRowType = project.getInput(0).getRowType();
+    int outputCount = project.getRowType().getFieldCount();
+
+    pw.print("Context context = new StormContext(Processor.dataContext);\n");
+    pw.print("context.values = _data.toArray();\n");
+    pw.print(String.format("Object[] outputValues = new Object[%d];\n", outputCount));
+
+    pw.write(rexCompiler.compileToBlock(childExps, inputRowType).toString());
+
+    pw.print("    ctx.emit(new Values(outputValues));\n");
     endStage();
     return null;
   }
 
   @Override
-  public Void defaultValue(RelNode n) {
+  public Void defaultValue(RelNode n, List<Void> inputStreams) {
     throw new UnsupportedOperationException();
   }
 
   @Override
-  public Void visitTableScan(TableScan scan) throws Exception {
+  public Void visitTableScan(TableScan scan, List<Void> inputStreams) throws Exception {
     pw.print(String.format(STAGE_ENUMERABLE_TABLE_SCAN, getStageName(scan)));
     return null;
   }
 
   @Override
-  public Void visitAggregate(Aggregate aggregate) throws Exception {
+  public Void visitAggregate(Aggregate aggregate, List<Void> inputStreams) throws Exception {
     beginAggregateStage(aggregate);
-    pw.println("        List<Object> curGroupValues = _data == null ? null : getGroupValues(_data);");
-    pw.println("        if (prevGroupValues != null && !prevGroupValues.equals(curGroupValues)) {");
-    pw.println("          emitAggregateResults(ctx);");
+    pw.println("        if (_data != null) {");
+    pw.println("        List<Object> curGroupValues = getGroupValues(_data);");
+    pw.println("        if (!state.containsKey(curGroupValues)) {");
+    pw.println("          state.put(curGroupValues, new HashMap<String, Object>());");
     pw.println("        }");
-    pw.println("        if (curGroupValues != null) {");
+    pw.println("        Map<String, Object> accumulators = state.get(curGroupValues);");
     for (AggregateCall call : aggregate.getAggCallList()) {
       aggregate(call);
     }
-    pw.println("        }");
-    pw.println("        if (prevGroupValues != curGroupValues) {");
-    pw.println("          prevGroupValues = curGroupValues;");
     pw.println("        }");
     endStage();
     return null;
   }
 
   @Override
-  public Void visitJoin(Join join) {
+  public Void visitJoin(Join join, List<Void> inputStreams) {
     beginJoinStage(join);
     pw.println("        if (source == left) {");
     pw.println("            leftRows.add(_data);");
@@ -293,10 +311,8 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     return NEW_LINE_JOINER.join(sw.toString(),
                                 String.format("          ctx.emit(new Values(%s, %s));",
-                                              groupValueEmitStr("prevGroupValues", aggregate.getGroupSet().cardinality()),
-                                              Joiner.on(", ").join(res)),
-                                "          accumulators.clear();"
-    );
+                                              groupValueEmitStr("groupValues", aggregate.getGroupSet().cardinality()),
+                                              Joiner.on(", ").join(res)));
   }
 
   private String aggregateResult(AggregateCall call, PrintWriter pw) {
@@ -320,23 +336,20 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private String doAggregateResult(AggregateFunctionImpl aggFn, String varName, Type ty, PrintWriter pw) {
     String resultName = varName + "_result";
+    Class<?> accumulatorType = aggFn.accumulatorType;
+    Class<?> resultType = aggFn.resultType;
     List<String> args = new ArrayList<>();
     if (!aggFn.isStatic) {
       String aggObjName = String.format("%s_obj", varName);
-      String aggObjClassName = (aggFn.initMethod.getDeclaringClass().getCanonicalName());
-      boolean genericType = aggFn.initMethod.getDeclaringClass().getTypeParameters().length > 0;
-      if (genericType) {
-        pw.println("          @SuppressWarnings(\"unchecked\")");
-        pw.print(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
-                                 aggObjName, Primitives.wrap((Class<?>) ty).getCanonicalName()));
-      } else {
-        pw.print(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
-      }
+      String aggObjClassName = aggFn.initMethod.getDeclaringClass().getCanonicalName();
+      pw.println("          @SuppressWarnings(\"unchecked\")");
+      pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName,
+              aggObjName));
       args.add(aggObjName);
     }
-    args.add(String.format("(%s)accumulators.get(\"%s\")", ((Class<?>) ty).getCanonicalName(), varName));
-    pw.print(String.format("          final %s %s = %s;", ((Class<?>) ty).getCanonicalName(),
-                             resultName, ExprCompiler.printMethodCall(aggFn.resultMethod, args)));
+    args.add(String.format("(%s)accumulators.get(\"%s\")", accumulatorType.getCanonicalName(), varName));
+    pw.println(String.format("          final %s %s = %s;", resultType.getCanonicalName(),
+                             resultName, printMethodCall(aggFn.resultMethod, args)));
 
     return resultName;
   }
@@ -350,8 +363,6 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
         if (call.getArgList().size() != 0) {
           throw new UnsupportedOperationException("Count with nullable fields");
         }
-      } else {
-        throw new IllegalArgumentException("Aggregate call should have one argument");
       }
     }
     if (aggFunction instanceof SqlUserDefinedAggFunction) {
@@ -378,34 +389,32 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
 
   private void doAggregate(AggregateFunctionImpl aggFn, String varName, Type ty, List<Integer> argList) {
     List<String> args = new ArrayList<>();
+    Class<?> accumulatorType = aggFn.accumulatorType;
     if (!aggFn.isStatic) {
       String aggObjName = String.format("%s_obj", varName);
       String aggObjClassName = aggFn.initMethod.getDeclaringClass().getCanonicalName();
       pw.println(String.format("          if (!accumulators.containsKey(\"%s\")) { ", aggObjName));
       pw.println(String.format("            accumulators.put(\"%s\", new %s());", aggObjName, aggObjClassName));
       pw.println("          }");
-      boolean genericType = aggFn.initMethod.getDeclaringClass().getTypeParameters().length > 0;
-      if (genericType) {
-        pw.println("          @SuppressWarnings(\"unchecked\")");
-        pw.println(String.format("          final %1$s<%3$s> %2$s = (%1$s<%3$s>) accumulators.get(\"%2$s\");", aggObjClassName,
-                                 aggObjName, Primitives.wrap((Class<?>) ty).getCanonicalName()));
-      } else {
-        pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName, aggObjName));
-      }
+      pw.println("          @SuppressWarnings(\"unchecked\")");
+      pw.println(String.format("          final %1$s %2$s = (%1$s) accumulators.get(\"%2$s\");", aggObjClassName,
+              aggObjName));
       args.add(aggObjName);
     }
     args.add(String.format("%1$s == null ? %2$s : (%3$s) %1$s",
                            "accumulators.get(\"" + varName + "\")",
-                           ExprCompiler.printMethodCall(aggFn.initMethod, args),
-                           Primitives.wrap((Class<?>) ty).getCanonicalName()));
+                           printMethodCall(aggFn.initMethod, args),
+                           accumulatorType.getCanonicalName()));
     if (argList.isEmpty()) {
       args.add("EMPTY_VALUES");
     } else {
-      args.add(String.format("(%s) %s", ((Class<?>) ty).getCanonicalName(), "_data.get(" + argList.get(0) + ")"));
+      for (int i = 0; i < aggFn.valueTypes.size(); i++) {
+        args.add(String.format("(%s) %s", aggFn.valueTypes.get(i).getCanonicalName(), "_data.get(" + argList.get(i) + ")"));
+      }
     }
     pw.print(String.format("          accumulators.put(\"%s\", %s);\n",
                            varName,
-                           ExprCompiler.printMethodCall(aggFn.addMethod, args)));
+                           printMethodCall(aggFn.addMethod, args)));
   }
 
   private String reserveAggVarName(AggregateCall call) {
@@ -457,4 +466,19 @@ class RelNodeCompiler extends PostOrderRelNodeVisitor<Void> {
     }
     return res.toString();
   }
+
+  public static String printMethodCall(Method method, List<String> args) {
+    return printMethodCall(method.getDeclaringClass(), method.getName(),
+            Modifier.isStatic(method.getModifiers()), args);
+  }
+
+  private static String printMethodCall(Class<?> clazz, String method, boolean isStatic, List<String> args) {
+    if (isStatic) {
+      return String.format("%s.%s(%s)", clazz.getCanonicalName(), method, Joiner.on(',').join(args));
+    } else {
+      return String.format("%s.%s(%s)", args.get(0), method,
+              Joiner.on(',').join(args.subList(1, args.size())));
+    }
+  }
+
 }

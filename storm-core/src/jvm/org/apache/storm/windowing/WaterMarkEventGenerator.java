@@ -15,12 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.windowing;
 
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.topology.FailedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.windowing;
 
 import java.util.Map;
 import java.util.Set;
@@ -29,7 +25,15 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.topology.FailedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Tracks tuples across input streams and periodically emits watermark events.
@@ -46,15 +50,28 @@ public class WaterMarkEventGenerator<T> implements Runnable {
     private final ScheduledExecutorService executorService;
     private final int interval;
     private ScheduledFuture<?> executorFuture;
-    private long lastWaterMarkTs = 0;
+    private volatile long lastWaterMarkTs;
 
-    public WaterMarkEventGenerator(WindowManager<T> windowManager, int interval,
-                                   int eventTsLag, Set<GlobalStreamId> inputStreams) {
+    /**
+     * Creates a new WatermarkEventGenerator.
+     * @param windowManager The window manager this generator will submit watermark events to
+     * @param intervalMs The generator will check if it should generate a watermark event with this interval
+     * @param eventTsLagMs The max allowed lag behind the last watermark event before an event is considered late
+     * @param inputStreams The input streams this generator is expected to handle
+     */
+    public WaterMarkEventGenerator(WindowManager<T> windowManager, int intervalMs,
+                                   int eventTsLagMs, Set<GlobalStreamId> inputStreams) {
         this.windowManager = windowManager;
         streamToTs = new ConcurrentHashMap<>();
-        executorService = Executors.newSingleThreadScheduledExecutor();
-        this.interval = interval;
-        this.eventTsLag = eventTsLag;
+
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("watermark-event-generator-%d")
+                .setDaemon(true)
+                .build();
+        executorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
+
+        this.interval = intervalMs;
+        this.eventTsLag = eventTsLagMs;
         this.inputStreams = inputStreams;
     }
 
@@ -117,5 +134,19 @@ public class WaterMarkEventGenerator<T> implements Runnable {
 
     public void start() {
         this.executorFuture = executorService.scheduleAtFixedRate(this, interval, interval, TimeUnit.MILLISECONDS);
+    }
+
+    public void shutdown() {
+        LOG.debug("Shutting down WaterMarkEventGenerator");
+        executorService.shutdown();
+
+        try {
+            if (!executorService.awaitTermination(2, TimeUnit.SECONDS)) {
+                executorService.shutdownNow();
+            }
+        } catch (InterruptedException ie) {
+            executorService.shutdownNow();
+            Thread.currentThread().interrupt();
+        }
     }
 }

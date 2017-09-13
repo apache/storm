@@ -222,8 +222,8 @@
 ;; checks conf for STORM_LOCAL_HOSTNAME.
 ;; when unconfigured, falls back to (memoized) guess by `local-hostname`.
 (defn hostname
-  [conf]
-  (conf Config/STORM_LOCAL_HOSTNAME (memoized-local-hostname)))
+  []
+  (Utils/hostname))
 
 (letfn [(try-port [port]
                   (with-open [socket (java.net.ServerSocket. port)]
@@ -494,7 +494,8 @@
                        (kill-fn t)))))]
     (.setDaemon thread daemon)
     (.setPriority thread priority)
-    (when thread-name
+    (when-not (clojure.string/blank? thread-name)
+      ;; if thead-name is blank, just use the default thread name
       (.setName thread (str (.getName thread) "-" thread-name)))
     (when start
       (.start thread))
@@ -1096,11 +1097,30 @@
     (assoc coll k (apply str (repeat (count (coll k)) "#")))
     coll))
 
-(defn log-thrift-access
+(defn- log-thrift-access-base
   [request-id remoteAddress principal operation]
+  (str "Request ID: " request-id 
+       " access from: " remoteAddress 
+       " principal: " principal 
+       " operation: " operation))
+
+(defn log-thrift-access
+  [request-id remoteAddress principal operation storm-name access-result]
   (doto
     (ThriftAccessLogger.)
-    (.log (str "Request ID: " request-id " access from: " remoteAddress " principal: " principal " operation: " operation))))
+    (.log (str (log-thrift-access-base request-id remoteAddress principal operation)
+               (if storm-name 
+                 (str " storm-name: " storm-name) "")
+               (if access-result
+                 (str " access result: " access-result) "")))))
+
+(defn log-thrift-access-function
+  [request-id remoteAddress principal operation function]
+  (doto
+    (ThriftAccessLogger.)
+    (.log (str (log-thrift-access-base request-id remoteAddress principal operation)
+               (if function 
+                 (str " function: " function) "")))))
 
 (def DISALLOWED-KEY-NAME-STRS #{"/" "." ":" "\\"})
 

@@ -18,7 +18,8 @@
   (:use compojure.core)
   (:use [clojure.java.shell :only [sh]])
   (:use ring.middleware.reload
-        ring.middleware.multipart-params)
+        ring.middleware.multipart-params
+        ring.middleware.multipart-params.temp-file)
   (:use [ring.middleware.json :only [wrap-json-params]])
   (:use [hiccup core page-helpers])
   (:use [org.apache.storm config util log stats zookeeper converter])
@@ -37,7 +38,7 @@
             TopologyStats CommonAggregateStats ComponentAggregateStats
             ComponentType BoltAggregateStats SpoutAggregateStats
             ExecutorAggregateStats SpecificAggregateStats ComponentPageInfo
-            LogConfig LogLevel LogLevelAction])
+            LogConfig LogLevel LogLevelAction SupervisorPageInfo WorkerSummary])
   (:import [org.apache.storm.security.auth AuthUtils ReqContext])
   (:import [org.apache.storm.generated AuthorizationException ProfileRequest ProfileAction NodeInfo])
   (:import [org.apache.storm.security.auth AuthUtils])
@@ -63,6 +64,7 @@
 (defmeter ui:num-cluster-configuration-http-requests)
 (defmeter ui:num-cluster-summary-http-requests)
 (defmeter ui:num-nimbus-summary-http-requests)
+(defmeter ui:num-supervisor-http-requests)
 (defmeter ui:num-supervisor-summary-http-requests)
 (defmeter ui:num-all-topologies-summary-http-requests)
 (defmeter ui:num-topology-page-http-requests)
@@ -363,7 +365,20 @@
                             (reduce +))
            total-executors (->> (.get_topologies summ)
                                 (map #(.get_num_executors ^TopologySummary %))
-                                (reduce +))]
+                             (reduce +))
+           resourceSummary (if (> (.size sups) 0)
+                             (reduce #(map + %1 %2)
+                               (for [^SupervisorSummary s sups
+                                     :let [sup-total-mem (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+                                           sup-total-cpu (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
+                                           sup-avail-mem (max (- sup-total-mem (.get_used_mem s)) 0.0)
+                                           sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)]]
+                                 [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu]))
+                             [0.0 0.0 0.0 0.0])
+           total-mem (nth resourceSummary 0)
+           total-cpu (nth resourceSummary 1)
+           avail-mem (nth resourceSummary 2)
+           avail-cpu (nth resourceSummary 3)]
        {"user" user
         "stormVersion" STORM-VERSION
         "supervisors" (count sups)
@@ -372,7 +387,14 @@
         "slotsUsed"  used-slots
         "slotsFree" free-slots
         "executorsTotal" total-executors
-        "tasksTotal" total-tasks })))
+        "tasksTotal" total-tasks
+        "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+        "totalMem" total-mem
+        "totalCpu" total-cpu
+        "availMem" avail-mem
+        "availCpu" avail-cpu
+        "memAssignedPercentUtil" (if (and (not (nil? total-mem)) (> total-mem 0.0)) (format "%.1f" (* (/ (- total-mem avail-mem) total-mem) 100.0)) 0.0)
+        "cpuAssignedPercentUtil" (if (and (not (nil? total-cpu)) (> total-cpu 0.0)) (format "%.1f" (* (/ (- total-cpu avail-cpu) total-cpu) 100.0)) 0.0)})))
 
 (defn convert-to-nimbus-summary[nimbus-seed]
   (let [[host port] (.split nimbus-seed ":")]
@@ -409,26 +431,77 @@
           "nimbusUpTime" (pretty-uptime-sec uptime)
           "nimbusUpTimeSeconds" uptime}))})))
 
+(defn worker-summary-to-json
+  [secure? ^WorkerSummary worker-summary]
+  (let [host (.get_host worker-summary)
+        port (.get_port worker-summary)
+        topology-id (.get_topology_id worker-summary)
+        uptime-secs (.get_uptime_secs worker-summary)]
+    {"supervisorId" (.get_supervisor_id worker-summary)
+     "host" host
+     "port" port
+     "topologyId" topology-id
+     "topologyName" (.get_topology_name worker-summary)
+     "executorsTotal" (.get_num_executors worker-summary)
+     "assignedMemOnHeap" (.get_assigned_memonheap worker-summary)
+     "assignedMemOffHeap" (.get_assigned_memoffheap worker-summary)
+     "assignedCpu" (.get_assigned_cpu worker-summary)
+     "componentNumTasks" (.get_component_to_num_tasks worker-summary)
+     "uptime" (pretty-uptime-sec uptime-secs)
+     "uptimeSeconds" uptime-secs
+     "workerLogLink" (worker-log-link host port topology-id secure?)}))
+
+(defn supervisor-summary-to-json 
+  [summary]
+  (let [slotsTotal (.get_num_workers summary)
+        slotsUsed (.get_num_used_workers summary)
+        slotsFree (max (- slotsTotal slotsUsed) 0)
+        totalMem (get (.get_total_resources summary) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
+        totalCpu (get (.get_total_resources summary) Config/SUPERVISOR_CPU_CAPACITY)
+        usedMem (.get_used_mem summary)
+        usedCpu (.get_used_cpu summary)
+        availMem (max (- totalMem usedMem) 0)
+        availCpu (max (- totalCpu usedCpu) 0)]
+  {"id" (.get_supervisor_id summary)
+   "host" (.get_host summary)
+   "uptime" (pretty-uptime-sec (.get_uptime_secs summary))
+   "uptimeSeconds" (.get_uptime_secs summary)
+   "slotsTotal" slotsTotal
+   "slotsUsed" slotsUsed
+   "slotsFree" slotsFree
+   "totalMem" totalMem
+   "totalCpu" totalCpu
+   "usedMem" usedMem
+   "usedCpu" usedCpu
+   "logLink" (supervisor-log-link (.get_host summary))
+   "availMem" availMem
+   "availCpu" availCpu
+   "version" (.get_version summary)}))
+
+(defn supervisor-page-info
+  ([supervisor-id host include-sys? secure?]
+     (thrift/with-configured-nimbus-connection 
+        nimbus (supervisor-page-info (.getSupervisorPageInfo ^Nimbus$Client nimbus
+                                                      supervisor-id
+                                                      host
+                                                      include-sys?) secure?)))
+  ([^SupervisorPageInfo supervisor-page-info secure?]
+    ;; ask nimbus to return supervisor workers + any details user is allowed
+    ;; access on a per-topology basis (i.e. components)
+    (let [supervisors-json (map supervisor-summary-to-json (.get_supervisor_summaries supervisor-page-info))]
+      {"supervisors" supervisors-json
+       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
+       "workers" (into [] (for [^WorkerSummary worker-summary (.get_worker_summaries supervisor-page-info)]
+                            (worker-summary-to-json secure? worker-summary)))})))
+
 (defn supervisor-summary
   ([]
    (thrift/with-configured-nimbus-connection nimbus
                 (supervisor-summary
                   (.get_supervisors (.getClusterInfo ^Nimbus$Client nimbus)))))
   ([summs]
-   {"supervisors"
-    (for [^SupervisorSummary s summs]
-      {"id" (.get_supervisor_id s)
-       "host" (.get_host s)
-       "uptime" (pretty-uptime-sec (.get_uptime_secs s))
-       "uptimeSeconds" (.get_uptime_secs s)
-       "slotsTotal" (.get_num_workers s)
-       "slotsUsed" (.get_num_used_workers s)
-       "totalMem" (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
-       "totalCpu" (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
-       "usedMem" (.get_used_mem s)
-       "usedCpu" (.get_used_cpu s)
-       "logLink" (supervisor-log-link (.get_host s))
-       "version" (.get_version s)})
+   {"supervisors" (for [^SupervisorSummary s summs]
+                    (supervisor-summary-to-json s))
     "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)}))
 
 (defn all-topologies-summary
@@ -520,7 +593,10 @@
    "emitted" (.get_emitted common-stats)
    "transferred" (.get_transferred common-stats)
    "acked" (.get_acked common-stats)
-   "failed" (.get_failed common-stats)})
+   "failed" (.get_failed common-stats)
+   "requestedMemOnHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+   "requestedMemOffHeap" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+   "requestedCpu" (.get (.get_resources_map common-stats) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)})
 
 (defmulti comp-agg-stats-json
   "Returns a JSON representation of aggregated statistics."
@@ -587,6 +663,8 @@
      "assignedTotalMem" (+ (.get_assigned_memonheap topo-info) (.get_assigned_memoffheap topo-info))
      "assignedCpu" (.get_assigned_cpu topo-info)
      "topologyStats" topo-stats
+     "workers"  (map (partial worker-summary-to-json secure?)
+                     (.get_workers topo-info))
      "spouts" (map (partial comp-agg-stats-json id secure?)
                    (.get_id_to_spout_agg_stats topo-info))
      "bolts" (map (partial comp-agg-stats-json id secure?)
@@ -905,7 +983,7 @@
                                "dumplink" (worker-dump-link (:host profile-action) (str (:port profile-action)) topology-id)
                                "timestamp" (str (- (:timestamp profile-action) (System/currentTimeMillis)))})
                             latest-profile-actions)]
-    (log-message "Latest-active actions are: " (pr active-actions))
+    (log-message "Latest-active actions are: " (pr-str active-actions))
     active-actions))
 
 (defn component-page
@@ -937,6 +1015,10 @@
        "name" (.get_topology_name comp-page-info)
        "executors" (.get_num_executors comp-page-info)
        "tasks" (.get_num_tasks comp-page-info)
+       "requestedMemOnHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)
+       "requestedMemOffHeap" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)
+       "requestedCpu" (.get (.get_resources_map comp-page-info) Config/TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)
+       "schedulerDisplayResource" (*STORM-CONF* Config/SCHEDULER_DISPLAY_RESOURCE)
        "topologyId" topology-id
        "topologyStatus" (.get_topology_status comp-page-info)
        "encodedTopologyId" (url-encode topology-id)
@@ -1045,6 +1127,16 @@
     (assert-authorized-user "getClusterInfo")
     (json-response (assoc (supervisor-summary)
                      "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m)))
+  (GET "/api/v1/supervisor" [:as {:keys [cookies servlet-request scheme]} & m]
+    (.mark ui:num-supervisor-http-requests)
+    (populate-context! servlet-request)
+    (assert-authorized-user "getSupervisorPageInfo")
+    ;; supervisor takes either an id or a host query parameter, and technically both
+    ;; that said, if both the id and host are provided, the id wins
+    (let [id (:id m)
+          host (:host m)]
+      (json-response (assoc (supervisor-page-info id host (check-include-sys? (:sys m)) (= scheme :https))
+                            "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m))))
   (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
     (mark! ui:num-all-topologies-summary-http-requests)
     (populate-context! servlet-request)
@@ -1364,8 +1456,10 @@
           https-ts-password (conf UI-HTTPS-TRUSTSTORE-PASSWORD)
           https-ts-type (conf UI-HTTPS-TRUSTSTORE-TYPE)
           https-want-client-auth (conf UI-HTTPS-WANT-CLIENT-AUTH)
-          https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)]
+          https-need-client-auth (conf UI-HTTPS-NEED-CLIENT-AUTH)
+          http-x-frame-options (conf UI-HTTP-X-FRAME-OPTIONS)]
       (start-metrics-reporters conf)
+      (validate-x-frame-options! http-x-frame-options)
       (storm-run-jetty {:port (conf UI-PORT)
                         :host (conf UI-HOST)
                         :https-port https-port
@@ -1383,7 +1477,7 @@
                                                     https-want-client-auth)
                                         (doseq [connector (.getConnectors server)]
                                           (.setRequestHeaderSize connector header-buffer-size))
-                                        (config-filter server app filters-confs))}))
+                                        (config-filter server app filters-confs http-x-frame-options))}))
    (catch Exception ex
      (log-error ex))))
 

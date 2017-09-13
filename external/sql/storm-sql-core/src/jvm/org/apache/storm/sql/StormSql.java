@@ -47,6 +47,11 @@ public abstract class StormSql {
       StormSubmitter.ProgressListener progressListener, String asUser)
       throws Exception;
 
+  /**
+   * Print out query plan for each query.
+   */
+  public abstract void explain(Iterable<String> statements) throws Exception;
+
   public static StormSql construct() {
     return new StormSqlImpl();
   }
