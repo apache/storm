@@ -286,7 +286,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public void doRefreshLoad() {
-        workerState.refreshLoad();
+        workerState.refreshLoad(executorsAtom.get());
 
         final List<IRunningExecutor> executors = executorsAtom.get();
         for (IRunningExecutor executor : executors) {

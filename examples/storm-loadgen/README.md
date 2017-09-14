@@ -47,6 +47,7 @@ storm jar storm-loadgen.jar org.apache.storm.loadgen.GenLoad [options] [capture_
 | -t,--test-time &lt;MINS> | How long to run the tests for in mins (defaults to 5) |
 | --throughput &lt;MULTIPLIER(:TOPO:COMP)?> | How much to scale the topology up or down in throughput. If a topology + component is supplied only that component will be scaled. If topo or component is blank or a `'*'` all topologies or components matched will be scaled. Only 1 scaling rule, the most specific, will be applied to a component. Providing a topology name is considered more specific than not providing one.(defaults to 1.0 no scaling)|
 | -w,--report-window &lt;INTERVAL_SECS> | How long of a rolling window should be in each report.  Will be rounded up to the next report interval boundary. default 30|
+| --imbalance &lt;MS(:COUNT)?:TOPO:COMP> | The number of ms that the first COUNT of TOPO:COMP will wait before processing.  This creates an imbalance that helps test load aware groupings. By default there is no imbalance unless specificed by the captrue file. |
 
 ## ThroughputVsLatency
 A word count topology with metrics reporting like the `GenLoad` command.
@@ -68,6 +69,7 @@ storm jar storm-loadgen.jar org.apache.storm.loadgen.ThroughputVsLatency [option
 | --spouts &lt;NUM>| Number of spouts to use (defaults to 1) |
 | -t,--test-time &lt;MINS>| How long to run the tests for in mins (defaults to 5) |
 | -w,--report-window &lt;INTERVAL_SECS>| How long of a rolling window should be in each report.  Will be rounded up to the next report interval boundary.|
+| --splitter-imbalance &lt;MS(:COUNT)?> | The number of ms that the first COUNT splitters will wait before processing.  This creates an imbalance that helps test load aware groupings (defaults to 0:1)|
 
 # Reporters
 Reporters provide a way to store various statistics about a running topology. There are currently a few supported reporters
@@ -140,6 +142,7 @@ There are a lot of different metrics supported
 |throughput_adjust| The adjustment to the throughput in `GenLoad`. | GenLoad
 |topo_throughput| A list of topology/component specific adjustment rules to the throughput in `GenLoad`. | GenLoad
 |local\_or\_shuffle| true if shuffles were replaced with local or shuffle in GenLoad. | GenLoad
+|slow\_execs| A list of topology/component specific adjustment rules to the slowExecutorPattern in `GenLoad`. | GenLoad
 
 There are also some generic rules that you can use for some metrics.  Any metric that starts with `"conf:"` will be the config for that.  It does not include config overrides from the `GenLoad` file.
 
@@ -170,6 +173,8 @@ Spouts and bolts have the same format.
 | streams | The streams that are produced by this bolt or spout |
 | cpuLoad | The number of cores this component needs for resource aware scheduling |
 | memoryLoad | The amount of memory in MB that this component needs for resource aware scheduling |
+| slowExecutorPattern.slownessMs | an Optional number of ms to slow down the exec + process latency for some of this component (defaults to 0) |
+| slowExecutorPattern.count | the number of components to slow down (defaults to 1) | 
 
 ### Output Streams
 

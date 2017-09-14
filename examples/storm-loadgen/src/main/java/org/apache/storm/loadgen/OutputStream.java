@@ -105,7 +105,7 @@ public class OutputStream implements Serializable {
     }
 
     /**
-     * Create a new stream with stats
+     * Create a new stream with stats.
      * @param id the id of the stream
      * @param rate the rate of tuples being emitted on this stream
      * @param areKeysSkewed true if keys are skewed else false.  For skewed keys

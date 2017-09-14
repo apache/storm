@@ -28,6 +28,7 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
+import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.DebugOptions;
 import org.apache.storm.generated.Grouping;
@@ -444,15 +445,20 @@ public class WorkerState {
         this.throttleOn.set(backpressure);
     }
 
-    public void refreshLoad() {
-        Set<Integer> remoteTasks = Sets.difference(new HashSet<Integer>(outboundTasks), new HashSet<>(taskIds));
+    private static double getQueueLoad(DisruptorQueue q) {
+        DisruptorQueue.QueueMetrics qMetrics = q.getMetrics();
+        return ((double) qMetrics.population()) / qMetrics.capacity();
+    }
+
+    public void refreshLoad(List<IRunningExecutor> execs) {
+        Set<Integer> remoteTasks = Sets.difference(new HashSet<>(outboundTasks), new HashSet<>(taskIds));
         Long now = System.currentTimeMillis();
-        Map<Integer, Double> localLoad = shortExecutorReceiveQueueMap.entrySet().stream().collect(Collectors.toMap(
-            (Function<Map.Entry<Integer, DisruptorQueue>, Integer>) Map.Entry::getKey,
-            (Function<Map.Entry<Integer, DisruptorQueue>, Double>) entry -> {
-                DisruptorQueue.QueueMetrics qMetrics = entry.getValue().getMetrics();
-                return ( (double) qMetrics.population()) / qMetrics.capacity();
-            }));
+        Map<Integer, Double> localLoad = new HashMap<>();
+        for (IRunningExecutor exec: execs) {
+            double receiveLoad = getQueueLoad(exec.getReceiveQueue());
+            double sendLoad = getQueueLoad(exec.getSendQueue());
+            localLoad.put(exec.getExecutorId().get(0).intValue(), Math.max(receiveLoad, sendLoad));
+        }
 
         Map<Integer, Load> remoteLoad = new HashMap<>();
         cachedNodeToPortSocket.get().values().stream().forEach(conn -> remoteLoad.putAll(conn.getLoad(remoteTasks)));

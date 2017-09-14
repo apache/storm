@@ -62,7 +62,6 @@ public class Task {
     private TopologyContext systemTopologyContext;
     private TopologyContext userTopologyContext;
     private WorkerTopologyContext workerTopologyContext;
-    private LoadMapping loadMapping;
     private Integer taskId;
     private String componentId;
     private Object taskObject; // Spout/Bolt object
@@ -84,7 +83,6 @@ public class Task {
         this.builtInMetrics = BuiltinMetricsUtil.mkData(executor.getType(), this.executorStats);
         this.workerTopologyContext = executor.getWorkerTopologyContext();
         this.emitSampler = ConfigUtils.mkStatsSampler(topoConf);
-        this.loadMapping = workerData.getLoadMapping();
         this.systemTopologyContext = mkTopologyContext(workerData.getSystemTopology());
         this.userTopologyContext = mkTopologyContext(workerData.getTopology());
         this.taskObject = mkTaskObject();

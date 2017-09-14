@@ -228,7 +228,7 @@ public class TopologyLoadConf {
     }
 
     /**
-     * The first one that is not null
+     * The first one that is not null.
      * @param rest all the other somethings
      * @param <V> whatever type you want.
      * @return the first one that is not null
@@ -266,6 +266,15 @@ public class TopologyLoadConf {
         return ret;
     }
 
+    private LoadCompConf overrideCompSlowExec(LoadCompConf comp, Map<String, SlowExecutorPattern> topoSpecific) {
+        LoadCompConf ret = comp;
+        SlowExecutorPattern slp = topoSpecific.get(name + ":" + comp.id);
+        if (slp != null) {
+            ret = ret.overrideSlowExecutorPattern(slp);
+        }
+        return ret;
+    }
+
     /**
      * Scale all of the components in the topology by a percentage (but keep the throughput the same).
      * @param v the amount to scale them by.  1.0 is nothing, 0.5 cuts them in half, 2.0 doubles them.
@@ -296,6 +305,22 @@ public class TopologyLoadConf {
         List<LoadCompConf> scaledBolts = bolts.stream().map((s) -> scaleCompThroughput(s, v, topoSpecific))
             .collect(Collectors.toList());
         return new TopologyLoadConf(name, topoConf, scaledSpouts, scaledBolts, streams);
+    }
+
+    /**
+     * Override the SlowExecutorPattern for given components.
+     * @param topoSpecific what we are going to use to override.
+     * @return a copy of this with the needed adjustments made.
+     */
+    public TopologyLoadConf overrideSlowExecs(Map<String, SlowExecutorPattern> topoSpecific) {
+        if (topoSpecific == null || topoSpecific.isEmpty()) {
+            return this;
+        }
+        List<LoadCompConf> modedSpouts = spouts.stream().map((s) -> overrideCompSlowExec(s, topoSpecific))
+            .collect(Collectors.toList());
+        List<LoadCompConf> modedBolts = bolts.stream().map((b) -> overrideCompSlowExec(b, topoSpecific))
+            .collect(Collectors.toList());
+        return new TopologyLoadConf(name, topoConf, modedSpouts, modedBolts, streams);
     }
 
     /**

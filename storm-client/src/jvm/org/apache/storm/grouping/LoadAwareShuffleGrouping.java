@@ -15,61 +15,61 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.grouping;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Random;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-
 import com.google.common.annotations.VisibleForTesting;
-import org.apache.commons.lang.ArrayUtils;
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
-    private static final int CAPACITY = 1000;
+    static final int CAPACITY = 1000;
+    private static final int MAX_WEIGHT = 100;
+    private static class IndexAndWeights {
+        final int index;
+        int weight;
 
+        IndexAndWeights(int index) {
+            this.index = index;
+            weight = MAX_WEIGHT;
+        }
+    }
+
+    private final Map<Integer, IndexAndWeights> orig = new HashMap<>();
     private Random random;
-    private List<Integer>[] rets;
-    private int[] targets;
-    private int[] loads;
-    private int[] unassigned;
-    private int[] choices;
-    private int[] prepareChoices;
+    @VisibleForTesting
+    List<Integer>[] rets;
+    @VisibleForTesting
+    volatile int[] choices;
+    private volatile int[] prepareChoices;
     private AtomicInteger current;
 
     @Override
     public void prepare(WorkerTopologyContext context, GlobalStreamId stream, List<Integer> targetTasks) {
         random = new Random();
 
-        rets = (List<Integer>[])new List<?>[targetTasks.size()];
-        targets = new int[targetTasks.size()];
-        for (int i = 0; i < targets.length; i++) {
-            rets[i] = Arrays.asList(targetTasks.get(i));
-            targets[i] = targetTasks.get(i);
+        rets = (List<Integer>[]) new List<?>[targetTasks.size()];
+        int i = 0;
+        for (int target : targetTasks) {
+            rets[i] = Arrays.asList(target);
+            orig.put(target, new IndexAndWeights(i));
+            i++;
         }
 
         // can't leave choices to be empty, so initiate it similar as ShuffleGrouping
         choices = new int[CAPACITY];
 
-        for (int i = 0 ; i < CAPACITY ; i++) {
-            choices[i] = i % rets.length;
-        }
-
-        shuffleArray(choices);
-        current = new AtomicInteger(-1);
-
+        current = new AtomicInteger(0);
         // allocate another array to be switched
         prepareChoices = new int[CAPACITY];
-
-        // allocating only once
-        loads = new int[targets.length];
-        unassigned = new int[targets.length];
+        updateRing(null);
     }
 
     @Override
@@ -93,48 +93,44 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         updateRing(loadMapping);
     }
 
-    private void updateRing(LoadMapping load) {
-        int localTotal = 0;
-        for (int i = 0 ; i < targets.length; i++) {
-            int val = (int)(101 - (load.get(targets[i]) * 100));
-            loads[i] = val;
-            localTotal += val;
+    private synchronized void updateRing(LoadMapping load) {
+        //We will adjust weights based off of the minimum load
+        double min = load == null ? 0 : orig.keySet().stream().mapToDouble((key) -> load.get(key)).min().getAsDouble();
+        for (Map.Entry<Integer, IndexAndWeights> target: orig.entrySet()) {
+            IndexAndWeights val = target.getValue();
+            double l = load == null ? 0.0 : load.get(target.getKey());
+            if (l <= min + (0.05)) {
+                //We assume that within 5% of the minimum congestion is still fine.
+                //Not congested we grow (but slowly)
+                val.weight = Math.min(MAX_WEIGHT, val.weight + 1);
+            } else {
+                //Congested we contract much more quickly
+                val.weight = Math.max(0, val.weight - 10);
+            }
         }
+        //Now we need to build the array
+        long weightSum = orig.values().stream().mapToLong((w) -> w.weight).sum();
+        //Now we can calculate a percentage
 
         int currentIdx = 0;
-        int unassignedIdx = 0;
-        for (int i = 0 ; i < loads.length ; i++) {
-            if (currentIdx == CAPACITY) {
-                break;
+        if (weightSum > 0) {
+            for (IndexAndWeights indexAndWeights : orig.values()) {
+                int count = (int) ((indexAndWeights.weight / (double) weightSum) * CAPACITY);
+                for (int i = 0; i < count && currentIdx < CAPACITY; i++) {
+                    prepareChoices[currentIdx] = indexAndWeights.index;
+                    currentIdx++;
+                }
             }
 
-            int loadForTask = loads[i];
-            int amount = Math.round(loadForTask * 1.0f * CAPACITY / localTotal);
-            // assign at least one for task
-            if (amount == 0) {
-                unassigned[unassignedIdx++] = i;
+            //in case we didn't fill in enough
+            for (; currentIdx < CAPACITY; currentIdx++) {
+                prepareChoices[currentIdx] = prepareChoices[random.nextInt(currentIdx)];
             }
-            for (int j = 0; j < amount; j++) {
-                if (currentIdx == CAPACITY) {
-                    break;
-                }
-
-                prepareChoices[currentIdx++] = i;
-            }
-        }
-
-        if (currentIdx < CAPACITY) {
-            // if there're some rooms, give unassigned tasks a chance to be included
-            // this should be really small amount, so just add them sequentially
-            if (unassignedIdx > 0) {
-                for (int i = currentIdx ; i < CAPACITY ; i++) {
-                    prepareChoices[i] = unassigned[(i - currentIdx) % unassignedIdx];
-                }
-            } else {
-                // just pick random
-                for (int i = currentIdx ; i < CAPACITY ; i++) {
-                    prepareChoices[i] = random.nextInt(loads.length);
-                }
+        } else {
+            //This really should be impossible, because we go off of the min load, and inc anything within 5% of it.
+            // But just to be sure it is never an issue, especially with float rounding etc.
+            for (;currentIdx < CAPACITY; currentIdx++) {
+                prepareChoices[currentIdx] = currentIdx % rets.length;
             }
         }
 
@@ -160,5 +156,4 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         arr[i] = arr[j];
         arr[j] = tmp;
     }
-
 }

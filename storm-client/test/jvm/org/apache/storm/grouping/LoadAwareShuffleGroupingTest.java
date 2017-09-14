@@ -19,12 +19,12 @@ package org.apache.storm.grouping;
 
 import com.google.common.collect.Lists;
 import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.storm.StormTimer;
+import java.util.Arrays;
 import org.apache.storm.daemon.GrouperFactory;
+import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
 import org.apache.storm.task.WorkerTopologyContext;
-import org.apache.storm.utils.Utils;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -53,6 +53,64 @@ import static org.mockito.Mockito.mock;
 public class LoadAwareShuffleGroupingTest {
     public static final double ACCEPTABLE_MARGIN = 0.015;
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGroupingTest.class);
+
+    @Test
+    public void testUnevenLoadOverTime() throws Exception {
+        LoadAwareShuffleGrouping grouping = new LoadAwareShuffleGrouping();
+        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        grouping.prepare(context, new GlobalStreamId("a", "default"), Arrays.asList(1, 2));
+        double expectedOneWeight = 100.0;
+        double expectedTwoWeight = 100.0;
+
+        Map<Integer, Double> localLoad = new HashMap<>();
+        localLoad.put(1, 1.0);
+        localLoad.put(2, 0.0);
+        LoadMapping lm = new LoadMapping();
+        lm.setLocal(localLoad);
+        //First verify that if something has a high load it's distribution will drop over time
+        for (int i = 9; i >= 0; i--) {
+            grouping.refreshLoad(lm);
+            expectedOneWeight -= 10.0;
+            Map<Integer, Double> countByType = count(grouping.choices, grouping.rets);
+            LOG.info("contByType = {}", countByType);
+            double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
+            double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
+            assertEquals("i = " + i,
+                expectedOnePercentage, countByType.getOrDefault(1, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                0.01);
+            assertEquals("i = " + i,
+                expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                0.01);
+        }
+
+        //Now verify that when it is switched we can recover
+        localLoad.put(1, 0.0);
+        localLoad.put(2, 1.0);
+        lm.setLocal(localLoad);
+
+        while (expectedOneWeight < 100.0) {
+            grouping.refreshLoad(lm);
+            expectedOneWeight += 1.0;
+            expectedTwoWeight = Math.max(0.0, expectedTwoWeight - 10.0);
+            Map<Integer, Double> countByType = count(grouping.choices, grouping.rets);
+            LOG.info("contByType = {}", countByType);
+            double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
+            double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
+            assertEquals(expectedOnePercentage, countByType.getOrDefault(1, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                0.01);
+            assertEquals(expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                0.01);
+        }
+    }
+
+    private Map<Integer,Double> count(int[] choices, List<Integer>[] rets) {
+        Map<Integer, Double> ret = new HashMap<>();
+        for (int i : choices) {
+            int task = rets[i].get(0);
+            ret.put(task, ret.getOrDefault(task, 0.0) + 1);
+        }
+        return ret;
+    }
 
     @Test
     public void testLoadAwareShuffleGroupingWithEvenLoad() {
@@ -161,36 +219,6 @@ public class LoadAwareShuffleGroupingTest {
     }
 
     @Test
-    public void testLoadAwareShuffleGroupingWithUnevenLoad() {
-        // just pick arbitrary number
-        final int numTasks = 7;
-        final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
-
-        // Define our taskIds and loads
-        final List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
-        final LoadMapping loadMapping = buildLocalTasksUnevenLoadMapping(availableTaskIds);
-
-        runDistributionVerificationTestWithUnevenLoad(numTasks, grouper, availableTaskIds,
-            loadMapping);
-    }
-
-    @Test
-    public void testLoadAwareShuffleGroupingWithRandomTasksAndRandomLoad() {
-        for (int trial = 0 ; trial < 200 ; trial++) {
-            // just pick arbitrary number in 5 ~ 100
-            final int numTasks = new Random().nextInt(96) + 5;
-            final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
-
-            // Define our taskIds and loads
-            final List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
-            final LoadMapping loadMapping = buildLocalTasksRandomLoadMapping(availableTaskIds);
-
-            runDistributionVerificationTestWithUnevenLoad(numTasks, grouper, availableTaskIds,
-                loadMapping);
-        }
-    }
-
-    @Test
     public void testShuffleLoadEven() {
         // port test-shuffle-load-even
         LoadAwareCustomStreamGrouping shuffler = GrouperFactory
@@ -226,46 +254,6 @@ public class LoadAwareShuffleGroupingTest {
         assertTrue(load1 <= maxPrCount);
         assertTrue(load2 >= minPrCount);
         assertTrue(load2 <= maxPrCount);
-    }
-
-    @Test
-    public void testShuffleLoadUneven() {
-        // port test-shuffle-load-uneven
-        LoadAwareCustomStreamGrouping shuffler = GrouperFactory
-            .mkGrouper(null, "comp", "stream", null, Grouping.shuffle(new NullStruct()),
-                Lists.newArrayList(1, 2), Collections.emptyMap());
-        int numMessages = 100000;
-        int min1PrCount = (int) (numMessages * (0.33 - ACCEPTABLE_MARGIN));
-        int max1PrCount = (int) (numMessages * (0.33 + ACCEPTABLE_MARGIN));
-        int min2PrCount = (int) (numMessages * (0.66 - ACCEPTABLE_MARGIN));
-        int max2PrCount = (int) (numMessages * (0.66 + ACCEPTABLE_MARGIN));
-        LoadMapping load = new LoadMapping();
-        Map<Integer, Double> loadInfoMap = new HashMap<>();
-        loadInfoMap.put(1, 0.5);
-        loadInfoMap.put(2, 0.0);
-        load.setLocal(loadInfoMap);
-
-        // force triggers building ring
-        shuffler.refreshLoad(load);
-
-        List<Object> data = Lists.newArrayList(1, 2);
-        int[] frequencies = new int[3]; // task id starts from 1
-        for (int i = 0 ; i < numMessages ; i++) {
-            List<Integer> tasks = shuffler.chooseTasks(1, data);
-            for (int task : tasks) {
-                frequencies[task]++;
-            }
-        }
-
-        int load1 = frequencies[1];
-        int load2 = frequencies[2];
-
-        LOG.info("Frequency info: load1 = {}, load2 = {}", load1, load2);
-
-        assertTrue(load1 >= min1PrCount);
-        assertTrue(load1 <= max1PrCount);
-        assertTrue(load2 >= min2PrCount);
-        assertTrue(load2 <= max2PrCount);
     }
 
     @Ignore
@@ -372,37 +360,6 @@ public class LoadAwareShuffleGroupingTest {
             taskCounts[taskId]++;
         }
         return taskCounts;
-    }
-
-    private void runDistributionVerificationTestWithUnevenLoad(int numTasks,
-        LoadAwareShuffleGrouping grouper, List<Integer> availableTaskIds,
-        LoadMapping loadMapping) {
-        int[] loads = new int[numTasks];
-        int localTotal = 0;
-        List<Double> loadRate = new ArrayList<>();
-        for (int i = 0; i < numTasks; i++) {
-            int val = (int)(101 - (loadMapping.get(i) * 100));
-            loads[i] = val;
-            localTotal += val;
-        }
-
-        for (int i = 0; i < numTasks; i++) {
-            loadRate.add(loads[i] * 1.0 / localTotal);
-        }
-
-        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
-        grouper.prepare(context, null, availableTaskIds);
-
-        // Keep track of how many times we see each taskId
-        int totalEmits = 5000 * numTasks;
-        int[] taskCounts = runChooseTasksWithVerification(grouper, totalEmits, numTasks, loadMapping);
-
-        int delta = (int) (totalEmits * ACCEPTABLE_MARGIN);
-        for (int i = 0; i < numTasks; i++) {
-            int expected = (int) (totalEmits * loadRate.get(i));
-            assertTrue("Distribution should respect the task load with small delta",
-                taskCounts[i] >= expected - delta && taskCounts[i] <= expected + delta);
-        }
     }
 
     private void runSimpleBenchmark(LoadAwareCustomStreamGrouping grouper,
