@@ -22,6 +22,7 @@ import org.apache.curator.framework.recipes.leader.LeaderLatch;
 import org.apache.curator.framework.recipes.leader.LeaderLatchListener;
 import org.apache.curator.framework.recipes.leader.Participant;
 import org.apache.storm.blobstore.BlobStore;
+import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.Utils;
@@ -44,9 +45,11 @@ public class LeaderElectorImp implements ILeaderElector {
     private final AtomicReference<LeaderLatch> leaderLatch;
     private final AtomicReference<LeaderLatchListener> leaderLatchListener;
     private final BlobStore blobStore;
+    private final TopoCache tc;
 
-    public LeaderElectorImp(Map<String, Object> conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id, AtomicReference<LeaderLatch> leaderLatch,
-            AtomicReference<LeaderLatchListener> leaderLatchListener, BlobStore blobStore) {
+    public LeaderElectorImp(Map<String, Object> conf, List<String> servers, CuratorFramework zk, String leaderlockPath, String id,
+                            AtomicReference<LeaderLatch> leaderLatch, AtomicReference<LeaderLatchListener> leaderLatchListener,
+                            BlobStore blobStore, final TopoCache tc) {
         this.conf = conf;
         this.servers = servers;
         this.zk = zk;
@@ -55,6 +58,7 @@ public class LeaderElectorImp implements ILeaderElector {
         this.leaderLatch = leaderLatch;
         this.leaderLatchListener = leaderLatchListener;
         this.blobStore = blobStore;
+        this.tc = tc;
     }
 
     @Override
@@ -67,7 +71,7 @@ public class LeaderElectorImp implements ILeaderElector {
         // if this latch is already closed, we need to create new instance.
         if (LeaderLatch.State.CLOSED.equals(leaderLatch.get().getState())) {
             leaderLatch.set(new LeaderLatch(zk, leaderlockPath));
-            leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(conf, zk, blobStore, leaderLatch.get()));
+            leaderLatchListener.set(Zookeeper.leaderLatchListenerImpl(conf, zk, blobStore, leaderLatch.get(), tc));
             LOG.info("LeaderLatch was in closed state. Resetted the leaderLatch and listeners.");
         }
         // Only if the latch is not already started we invoke start

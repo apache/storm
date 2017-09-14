@@ -20,13 +20,13 @@
   (:import [java.util Optional])
   (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
   (:import [org.apache.storm.blobstore BlobStore])
-  (:import [org.apache.storm.utils NimbusClient])
+  (:import [org.apache.storm.daemon.nimbus TopoCache])
   (:import [org.apache.storm.generated NotAliveException StormBase])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
-  (:import [org.apache.storm.utils ConfigUtils Utils])
+  (:import [org.apache.storm.utils ConfigUtils NimbusClient Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
   (:import [org.mockito Mockito Matchers])
   (:use [org.apache.storm util config daemon-config log])
@@ -64,12 +64,14 @@
 (deftest test-noop-authorization-w-simple-transport
   (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/empty))
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
@@ -88,14 +90,16 @@
 (deftest test-deny-authorization-w-simple-transport
   (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
@@ -150,14 +154,16 @@
 (deftest test-deny-authorization-w-sasl-digest
   (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"

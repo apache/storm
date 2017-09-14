@@ -43,6 +43,7 @@ import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.daemon.nimbus.Nimbus;
 import org.apache.storm.daemon.nimbus.Nimbus.StandaloneINimbus;
+import org.apache.storm.daemon.nimbus.TopoCache;
 import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
 import org.apache.storm.daemon.supervisor.Supervisor;
@@ -140,6 +141,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         private boolean nimbusDaemon = false;
         private UnaryOperator<Nimbus> nimbusWrapper = null;
         private BlobStore store = null;
+        private TopoCache topoCache = null;
         private IStormClusterState clusterState = null;
         private ILeaderElector leaderElector = null;
         private String trackId = null;
@@ -278,7 +280,16 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.store = store;
             return this;
         }
-        
+
+        /**
+         * Use the following topo cache instead of creating out own.
+         * This is intended mostly for internal testing with Mocks.
+         */
+        public Builder withTopoCache(TopoCache topoCache) {
+            this.topoCache = topoCache;
+            return this;
+        }
+
         /**
          * Use the following clusterState instead of the one in the config.
          * This is intended mostly for internal testing with Mocks.
@@ -430,8 +441,9 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             }
             //Set it for nimbus only
             conf.put(Config.STORM_LOCAL_DIR, nimbusTmp.getPath());
-            Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus, 
-                this.getClusterState(), null, builder.store, builder.leaderElector, builder.groupMapper);
+            Nimbus nimbus = new Nimbus(conf, builder.inimbus == null ? new StandaloneINimbus() : builder.inimbus,
+                this.getClusterState(), null, builder.store, builder.topoCache, builder.leaderElector,
+                builder.groupMapper);
             if (builder.nimbusWrapper != null) {
                 nimbus = builder.nimbusWrapper.apply(nimbus);
             }
