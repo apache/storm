@@ -45,20 +45,17 @@ import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
-import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
-import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
-import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
-import org.apache.storm.utils.TransferDrainer;
+import org.apache.storm.utils.Utils.SmartThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -76,12 +73,13 @@ import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class WorkerState implements JCQueue.Consumer {
+public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
 
     final Map<String, Object> conf;
     final IContext mqContext;
+    private final WorkerTransfer workerTransfer;
 
     public Map getConf() {
         return conf;
@@ -119,8 +117,8 @@ public class WorkerState implements JCQueue.Consumer {
         return executors;
     }
 
-    public List<Integer> getTaskIds() {
-        return taskIds;
+    public List<Integer> getLocalTaskIds() {
+        return localTaskIds;
     }
 
     public Map getTopologyConf() {
@@ -195,9 +193,9 @@ public class WorkerState implements JCQueue.Consumer {
     final AtomicBoolean isTopologyActive;
     final AtomicReference<Map<String, DebugOptions>> stormComponentToDebug;
 
-    // executors and taskIds running in this worker
+    // executors and localTaskIds running in this worker
     final Set<List<Long>> executors;
-    final List<Integer> taskIds;
+    final List<Integer> localTaskIds;
     final Map<String, Object> topologyConf;
     final StormTopology topology;
     final StormTopology systemTopology;
@@ -228,15 +226,9 @@ public class WorkerState implements JCQueue.Consumer {
         return assignmentVersions;
     }
 
-    public JCQueue getTransferQueue() {
-        return transferQueue;
-    }
-
     public StormTimer getUserTimer() {
         return userTimer;
     }
-
-    final JCQueue transferQueue;
 
     // Timers
     final StormTimer heartbeatTimer = mkHaltingTimer("heartbeat-timer");
@@ -254,28 +246,13 @@ public class WorkerState implements JCQueue.Consumer {
     private final Set<Integer> outboundTasks;
     private final AtomicLong nextUpdate = new AtomicLong(0);
 
-    public boolean isTrySerializeLocal() {
-        return trySerializeLocal;
-    }
-
     private final boolean trySerializeLocal;
-    private final KryoTupleSerializer serializer;
-    private final TransferDrainer drainer;
-
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
                        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
         throws IOException, InvalidTopologyException {
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
-        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
-        Integer xferQueueSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
-        Integer xferBatchSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
-        if (xferBatchSz > xferQueueSz / 2) {
-            throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":" + xferBatchSz + " is greater than half of "
-                + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
-        }
-        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, xferBatchSz, backPressureWaitStrategy);
 
         this.conf = conf;
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
@@ -291,13 +268,13 @@ public class WorkerState implements JCQueue.Consumer {
         this.stormComponentToDebug = new AtomicReference<>();
         this.executorReceiveQueueMap = mkReceiveQueueMap(topologyConf, executors);
         this.shortExecutorReceiveQueueMap = new HashMap<>();
-        this.taskIds = new ArrayList<>();
+        this.localTaskIds = new ArrayList<>();
         this.blobToLastKnownVersion = new ConcurrentHashMap<>();
         for (Map.Entry<List<Long>, JCQueue> entry : executorReceiveQueueMap.entrySet()) {
             this.shortExecutorReceiveQueueMap.put(entry.getKey().get(0).intValue(), entry.getValue());
-            this.taskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
+            this.localTaskIds.addAll(StormCommon.executorIdToTasks(entry.getKey()));
         }
-        Collections.sort(taskIds);
+        Collections.sort(localTaskIds);
         this.topologyConf = topologyConf;
         this.topology = ConfigUtils.readSupervisorTopology(conf, topologyId, AdvancedFSOps.make(conf));
         this.systemTopology = StormCommon.systemTopology(topologyConf, topology);
@@ -333,14 +310,9 @@ public class WorkerState implements JCQueue.Consumer {
         if (trySerializeLocal) {
             LOG.warn("WILL TRY TO SERIALIZE ALL TUPLES (Turn off {} for production", Config.TOPOLOGY_TESTING_ALWAYS_TRY_SERIALIZE);
         }
-        this.serializer = new KryoTupleSerializer(topologyConf, getWorkerTopologyContext());
-        this.drainer = new TransferDrainer();
-    }
+        int maxTaskId = getMaxTaskId(componentToSortedTasks);
+        this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
 
-    private static IWaitStrategy createBackPressureWaitStrategy(Map<String, Object> topologyConf) {
-        IWaitStrategy producerWaitStrategy = ReflectionUtils.newInstance((String) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
-        producerWaitStrategy.prepare(topologyConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
-        return producerWaitStrategy;
     }
 
     public void refreshConnections() {
@@ -349,6 +321,10 @@ public class WorkerState implements JCQueue.Consumer {
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }
+    }
+
+    public SmartThread makeTransferThread() {
+        return workerTransfer.makeTransferThread();
     }
 
     public void refreshConnections(Runnable callback) throws Exception {
@@ -378,7 +354,7 @@ public class WorkerState implements JCQueue.Consumer {
                 Integer task = taskToNodePortEntry.getKey();
                 if (outboundTasks.contains(task)) {
                     newTaskToNodePort.put(task, taskToNodePortEntry.getValue());
-                    if (!taskIds.contains(task)) {
+                    if (!localTaskIds.contains(task)) {
                         neededConnections.add(taskToNodePortEntry.getValue());
                     }
                 }
@@ -449,7 +425,7 @@ public class WorkerState implements JCQueue.Consumer {
     }
 
     public void refreshLoad() {
-        Set<Integer> remoteTasks = Sets.difference(new HashSet<Integer>(outboundTasks), new HashSet<>(taskIds));
+        Set<Integer> remoteTasks = Sets.difference(new HashSet<Integer>(outboundTasks), new HashSet<>(localTaskIds));
         Long now = System.currentTimeMillis();
         Map<Integer, Double> localLoad = shortExecutorReceiveQueueMap.entrySet().stream().collect(Collectors.toMap(
             (Function<Map.Entry<Integer, JCQueue>, Integer>) Map.Entry::getKey,
@@ -496,6 +472,22 @@ public class WorkerState implements JCQueue.Consumer {
             this::transferLocalBatch));
     }
 
+    public void transferRemote(AddressedTuple tuple) throws InterruptedException {
+        workerTransfer.transferRemote(tuple);
+    }
+
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
+        return workerTransfer.tryTransferRemote(tuple, overflow);
+    }
+
+    public void flushRemotes() throws InterruptedException {
+        workerTransfer.flushRemotes();
+    }
+
+    public boolean tryFlushRemotes() {
+        return workerTransfer.tryFlushRemotes();
+    }
+
 
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
         try {
@@ -510,57 +502,10 @@ public class WorkerState implements JCQueue.Consumer {
         }
     }
 
-    /* Blocking call, can be interrupted with Thread.interrupt() */
-    public void transferRemote(AddressedTuple tuple) throws InterruptedException {
-        transferQueue.publish(tuple);
-    }
-
-    /* Not a Blocking call. 'overflow' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
-        if (transferQueue.tryPublish(tuple))
-            return true;
-        if(overflow!=null) {
-            overflow.add(tuple);
-        }
-        return false;
-    }
-
-    public void flushRemotes() throws InterruptedException {
-        transferQueue.flush();
-    }
-
-    public boolean tryFlushRemotes() {
-        return transferQueue.tryFlush();
-    }
-
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
         if (trySerializeLocal) {
             serializer.serialize(tuple.getTuple());
         }
-    }
-
-    @Override
-    public void accept(Object tuple) {
-        AddressedTuple addressedTuple = (AddressedTuple) tuple;
-        String streamId = addressedTuple.getTuple().getSourceStreamId();
-        if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
-            flush();
-        } else {
-            TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
-            drainer.add(tm);
-        }
-    }
-
-    @Override
-    public void flush() {
-        ReentrantReadWriteLock.ReadLock readLock = endpointSocketLock.readLock();
-        try {
-            readLock.lock();
-            drainer.send(cachedTaskToNodePort.get(), cachedNodeToPortSocket.get());
-        } finally {
-            readLock.unlock();
-        }
-        drainer.clear();
     }
 
     public WorkerTopologyContext getWorkerTopologyContext() {
@@ -568,7 +513,7 @@ public class WorkerState implements JCQueue.Consumer {
             String codeDir = ConfigUtils.supervisorStormResourcesPath(ConfigUtils.supervisorStormDistRoot(conf, topologyId));
             String pidDir = ConfigUtils.workerPidsRoot(conf, topologyId);
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
-                componentToStreamToFields, topologyId, codeDir, pidDir, port, taskIds,
+                componentToStreamToFields, topologyId, codeDir, pidDir, port, localTaskIds,
                 defaultSharedResources,
                 userSharedResources);
         } catch (IOException e) {
@@ -638,7 +583,7 @@ public class WorkerState implements JCQueue.Consumer {
                 " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" + recvQueueSize);
         }
 
-        IWaitStrategy backPressureWaitStrategy = createBackPressureWaitStrategy(topologyConf);
+        IWaitStrategy backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
@@ -675,7 +620,7 @@ public class WorkerState implements JCQueue.Consumer {
     private Set<Integer> workerOutboundTasks() {
         WorkerTopologyContext context = getWorkerTopologyContext();
         Set<String> components = new HashSet<>();
-        for (Integer taskId : taskIds) {
+        for (Integer taskId : localTaskIds) {
             for (Map<String, Grouping> value : context.getTargets(context.getComponentId(taskId)).values()) {
                 components.addAll(value.keySet());
             }
@@ -689,6 +634,27 @@ public class WorkerState implements JCQueue.Consumer {
             }
         }
         return outboundTasks;
+    }
+
+    public void haltWorkerTransfer() {
+        workerTransfer.haltTransferThd();
+    }
+
+    private static int getMaxTaskId(Map<String, List<Integer>> componentToSortedTasks) {
+        int maxTaskId = -1;
+        for (List<Integer> integers : componentToSortedTasks.values()) {
+            if (!integers.isEmpty()) {
+                int tempMax = integers.stream().max( Integer::compareTo).get();
+                if (tempMax>maxTaskId) {
+                    maxTaskId = tempMax;
+                }
+            }
+        }
+        return maxTaskId;
+    }
+
+    public JCQueue getTransferQueue() {
+        return workerTransfer.getTransferQueue();
     }
 
     public interface ILocalTransferCallback {

@@ -211,15 +211,8 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         executorsAtom.set(newExecutors);
 
-        JCQueue.Consumer tupleHandler = workerState;
-
-        // This thread will send the messages destined for remote tasks (out of process)
-        transferThread = Utils.asyncLoop(() -> {
-            int x = workerState.transferQueue.consume(tupleHandler);
-            if(x==0)
-                return 1L;
-            return 0L;
-        });
+        // This thread will send out messages destined for remote tasks (on other workers)
+        transferThread = workerState.makeTransferThread();
         transferThread.setName("Worker-Transfer");
 
         credentialsAtom = new AtomicReference<Credentials>(initialCredentials);
@@ -279,22 +272,13 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
 
         workerState.flushTupleTimer.scheduleRecurringMs(flushIntervalMicros, flushIntervalMicros, new Runnable() {
-            AddressedTuple flushTuple = AddressedTuple.createFlushTuple(null);
             @Override
             public void run() {
-                if (producerBatchSize > 1) {    // 1 - send flush tuple to all executors
-                    for (int i = 0; i < executors.size(); i++) {
-                        IRunningExecutor exec = executors.get(i);
-                        if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
-                            exec.getExecutor().publishFlushTuple();
-                        }
-                    }
-                }
-                if (xferBatchSize > 1) {        // 2 - send flush tuple to workerTransferThread
-                    if (workerState.transferQueue.tryPublishDirect(flushTuple)) {
-                        LOG.debug("Published Flush tuple to: workerTransferThread");
-                    } else {
-                        LOG.info("RecvQ of workerTransferThread is currently full, will retry publishing Flush Tuple later");
+                // send flush tuple to all executors
+                for (int i = 0; i < executors.size(); i++) {
+                    IRunningExecutor exec = executors.get(i);
+                    if (exec.getExecutorId().get(0) != Constants.SYSTEM_TASK_ID) {
+                        exec.getExecutor().publishFlushTuple();
                     }
                 }
             }
@@ -403,7 +387,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             // in which case it's a noop
             workerState.mqContext.term();
             LOG.info("Shutting down transfer thread");
-            workerState.transferQueue.haltWithInterrupt();
+            workerState.haltWorkerTransfer();
+
 
             transferThread.interrupt();
             transferThread.join();

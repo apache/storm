@@ -250,7 +250,7 @@ public class Task {
                     ConfigUtils.supervisorStormDistRoot(conf, workerData.getTopologyId())),
                     ConfigUtils.workerPidsRoot(conf, workerData.getWorkerId()),
             taskId,
-            workerData.getPort(), workerData.getTaskIds(),
+            workerData.getPort(), workerData.getLocalTaskIds(),
             workerData.getDefaultSharedResources(),
             workerData.getUserSharedResources(),
             executor.getSharedExecutorData(),

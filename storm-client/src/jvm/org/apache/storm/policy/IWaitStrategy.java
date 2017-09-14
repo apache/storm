@@ -18,6 +18,9 @@
 
 package org.apache.storm.policy;
 
+import org.apache.storm.Config;
+import org.apache.storm.utils.ReflectionUtils;
+
 import java.util.Map;
 
 
@@ -47,4 +50,12 @@ public interface IWaitStrategy {
      * @return new counter value to be used on subsequent idle cycle
      */
     int idle(int idleCounter) throws InterruptedException;
+
+    static IWaitStrategy createBackPressureWaitStrategy(Map<String, Object> topologyConf) {
+        IWaitStrategy producerWaitStrategy = ReflectionUtils.newInstance((String) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
+        producerWaitStrategy.prepare(topologyConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
+        return producerWaitStrategy;
+    }
+
+
 }
