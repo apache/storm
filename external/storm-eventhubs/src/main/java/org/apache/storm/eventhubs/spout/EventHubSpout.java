@@ -219,14 +219,6 @@ public class EventHubSpout extends BaseRichSpout {
 		}
 
 		checkpointIfNeeded();
-
-		if (eventHubConfig.getNextTupleSleepIntervalMs() > 0) {
-			try {
-				Thread.sleep(eventHubConfig.getNextTupleSleepIntervalMs());
-			} catch (InterruptedException ie) {
-
-			}
-		}
 	}
 
 	@Override

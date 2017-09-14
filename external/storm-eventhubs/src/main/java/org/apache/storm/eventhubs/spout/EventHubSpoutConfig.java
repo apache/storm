@@ -102,12 +102,4 @@ public class EventHubSpoutConfig extends EventHubConfig {
 	public void setTargetAddress(String targetAddress) {
 		this.targetAddress = targetAddress;
 	}
-
-	public int getNextTupleSleepIntervalMs() {
-		return nextTupleSleepIntervalMs;
-	}
-
-	public void setNextTupleSleepIntervalMs(int nextTupleSleepIntervalMs) {
-		this.nextTupleSleepIntervalMs = nextTupleSleepIntervalMs;
-	}
 }
