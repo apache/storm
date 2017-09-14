@@ -31,7 +31,6 @@ public class EventHubSpoutConfig extends EventHubConfig {
 
 	private String targetAddress;
 	private String outputStreamId;
-	private int nextTupleSleepIntervalMs = FieldConstants.DEFAULT_SLEEP_BETWEEN_NEXT_TUPLE;
 
 	public EventHubSpoutConfig(String username, String password, String namespace, String entityPath,
 			int partitionCount) {
