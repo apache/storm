@@ -180,18 +180,25 @@ public class AssignmentDistributionService implements Closeable {
         }
 
         private void sendAssignmentsToNode(NodeAssignments assignments) {
-            SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(), assignments.getNode());
             try {
-                client.getClient().sendSupervisorAssignments(assignments.getAssignments());
-            } catch (Exception e) {
-                //just ignore the exception.
-                LOG.error("{} Exception when trying to send assignments to node: {}", e.getMessage(), assignments.getNode());
-            } finally {
+                SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(), assignments.getNode());
                 try {
-                    client.close();
+                    client.getClient().sendSupervisorAssignments(assignments.getAssignments());
                 } catch (Exception e) {
-                    LOG.error("Exception closing client for node: {}", assignments.getNode());
+                    //just ignore the exception.
+                    LOG.error("{} Exception when trying to send assignments to node: {}", e.getMessage(), assignments.getNode());
+                } finally {
+                    try {
+                        if (client != null) {
+                            client.close();
+                        }
+                    } catch (Exception e) {
+                        LOG.error("Exception closing client for node: {}", assignments.getNode());
+                    }
                 }
+            }catch (Throwable e) {
+                //just ignore any error/exception.
+                LOG.error("Exception to create supervisor client for node: {}", assignments.getNode());
             }
         }
 

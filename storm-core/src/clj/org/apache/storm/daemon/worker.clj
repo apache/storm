@@ -65,12 +65,7 @@
 
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")
-  (let [supervisor-cli (SupervisorClient/getConfiguredClient storm-conf (memoized-local-hostname))
-        assignment (:executor->node+port (get-local-assignment storm-conf storm-id storm-cluster-state))]
-    (try
-      (.close supervisor-cli)
-      (catch Throwable e
-        (log-warn "Exception when close supervisor client.")))
+  (let [assignment (:executor->node+port (get-local-assignment storm-conf storm-id storm-cluster-state))]
     (doall
      (concat
       [Constants/SYSTEM_EXECUTOR_ID]

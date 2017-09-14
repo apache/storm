@@ -72,7 +72,7 @@ public class StormClusterStateImpl implements IStormClusterState {
 
         if (null == backend) {
             this.backend = new InMemoryAssignmentBackend();
-            this.backend.prepare(null, null);
+            this.backend.prepare(null);
         } else {
             this.backend = backend;
         }

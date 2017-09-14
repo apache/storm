@@ -37,7 +37,7 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     private Map<String, String> nameToId;
 
     @Override
-    public void prepare(Map conf, String localPath) {
+    public void prepare(Map conf) {
         this.idToAssignment = new HashMap<>();
         this.idToName = new HashMap<>();
         this.nameToId = new HashMap<>();

@@ -51,8 +51,8 @@
                                                          {["node2" 9723] [1 3 2]}
                                                          "o")]
                         conf (read-storm-config)
-                        assbd (doto (LocalAssignmentsBackendFactory/getBackend conf dir1)
-                                              (.prepare conf dir1))]
+                        assbd (doto (LocalAssignmentsBackendFactory/getBackend conf)
+                                              (.prepare conf))]
                     (is (= nil (.getAssignment assbd "storm1")))
                     (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment1))
                     (.keepOrUpdateAssignment assbd storm2 (thriftify-assignment assignment2))
@@ -70,8 +70,8 @@
                         [name2 id2] ["name2" "id2"]
                         [name3 id3] ["name3" "id3"]
                         conf (read-storm-config)
-                        assbd (doto (LocalAssignmentsBackendFactory/getBackend conf dir1)
-                                              (.prepare conf dir1))]
+                        assbd (doto (LocalAssignmentsBackendFactory/getBackend conf)
+                                              (.prepare conf))]
                     (is (= nil (.getStormId assbd "name3")))
                     (.keepStormId assbd name1 id1)
                     (.keepStormId assbd name2 id2)

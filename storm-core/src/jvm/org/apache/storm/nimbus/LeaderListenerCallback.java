@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * a callback function when nimbus gains leadership
+ * A callback function when nimbus gains leadership
  */
 public class LeaderListenerCallback {
     private static final Logger LOG = LoggerFactory.getLogger(LeaderListenerCallback.class);

@@ -279,12 +279,6 @@ public class ConfigUtils {
         return ret;
     }
 
-    public static String assignmentsLocalDir(Map conf) throws IOException {
-        String ret = absoluteStormLocalDir(conf) + FILE_SEPARATOR + "assignments";
-        FileUtils.forceMkdir(new File(ret));
-        return ret;
-    }
-
     public static String masterInimbusDir(Map conf) throws IOException {
         return (masterLocalDir(conf) + FILE_SEPARATOR + "inimbus");
     }
@@ -557,6 +551,6 @@ public class ConfigUtils {
     }
 
     public static ILocalAssignmentsBackend getAssignmentsBackend(Map conf) throws IOException {
-        return LocalAssignmentsBackendFactory.getBackend(conf, assignmentsLocalDir(conf));
+        return LocalAssignmentsBackendFactory.getBackend(conf);
     }
 }

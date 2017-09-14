@@ -255,13 +255,13 @@
 
 ;; Watches should be used for optimization. When ZK is reconnecting, they're not guaranteed to be called.
 (defnk mk-storm-cluster-state
-  [conf :cluster-state nil :acls nil :context (ClusterStateContext.) :backend nil]
+  [conf :cluster-state nil :acls nil :context (ClusterStateContext.) :assignments-backend nil]
   (let [[solo? cluster-state] (if (and (not-nil? cluster-state) (instance? ClusterState cluster-state))
                                 [false cluster-state]
                                 [true (mk-distributed-cluster-state conf :auth-conf conf :acls acls :context context)])
-        assignments-backend (if (nil? backend)
-                              (doto (InMemoryAssignmentBackend.) (.prepare nil nil))
-                              backend)
+        assignments-backend (if (nil? assignments-backend)
+                              (doto (InMemoryAssignmentBackend.) (.prepare conf))
+                              assignments-backend)
         assignment-info-callback (atom {})
         assignment-info-with-version-callback (atom {})
         assignment-version-callback (atom {})

@@ -167,12 +167,6 @@
     (FileUtils/forceMkdir (File. ret))
     ret ))
 
-(defn assignments-local-dir
-  [conf]
-  (let [ret (str (absolute-storm-local-dir conf) file-path-separator "assignments")]
-    (FileUtils/forceMkdir (File. ret))
-    ret))
-
 (defn master-inimbus-dir
   [conf]
   (str (master-local-dir conf) file-path-separator "inimbus"))
@@ -345,4 +339,4 @@
 
 (defn get-assignments-backend
   [conf]
-  (LocalAssignmentsBackendFactory/getBackend conf (assignments-local-dir conf)))
+  (LocalAssignmentsBackendFactory/getBackend conf))

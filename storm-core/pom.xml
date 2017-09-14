@@ -339,11 +339,6 @@
             <artifactId>commons-codec</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.rocksdb</groupId>
-            <artifactId>rocksdbjni</artifactId>
-            <scope>provided</scope>
-        </dependency>
-        <dependency>
             <!--
             hadoop-auth is needed in storm-core because ui in a secured storm cluster needs it for authentication.
             Please DO NOT REMOVE this dependency

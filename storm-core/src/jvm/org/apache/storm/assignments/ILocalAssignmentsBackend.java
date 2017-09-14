@@ -30,9 +30,8 @@ public interface ILocalAssignmentsBackend {
     /**
      * initial function for creating backend.
      * @param conf
-     * @param localPath
      */
-    void prepare(Map conf, String localPath);
+    void prepare(Map conf);
 
     /**
      * Keep a storm assignment to local state or update old assignment.

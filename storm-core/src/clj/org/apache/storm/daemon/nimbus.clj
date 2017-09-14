@@ -2509,6 +2509,7 @@
       (.cleanup (:uploaders nimbus))
       (.shutdown (:blob-store nimbus))
       (.close (:leader-elector nimbus))
+      (.close (:assignments-distributer nimbus))
       (when (:nimbus-topology-action-notifier nimbus) (.cleanup (:nimbus-topology-action-notifier nimbus)))
       (log-message "Shut down master"))
     DaemonCommon

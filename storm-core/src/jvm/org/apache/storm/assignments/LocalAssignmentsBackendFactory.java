@@ -19,6 +19,7 @@ package org.apache.storm.assignments;
 
 import com.google.common.base.Preconditions;
 import org.apache.storm.Config;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 
 import java.util.Map;
@@ -29,16 +30,16 @@ import java.util.Map;
 public class LocalAssignmentsBackendFactory {
 
 
-    public static ILocalAssignmentsBackend getBackend(Map conf, String localPath) {
+    public static ILocalAssignmentsBackend getBackend(Map conf) {
         if (conf.get(Config.NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS) != null) {
             Object targetObj = Utils.newInstance((String) conf.get(Config.NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS));
             Preconditions.checkState(targetObj instanceof ILocalAssignmentsBackend, "{} must implements ILocalAssignmentsBackend", Config.NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS);
-            ((ILocalAssignmentsBackend)targetObj).prepare(conf, localPath);
+            ((ILocalAssignmentsBackend)targetObj).prepare(conf);
             return (ILocalAssignmentsBackend) targetObj;
         }
 
         ILocalAssignmentsBackend backend = new InMemoryAssignmentBackend();
-        backend.prepare(conf, localPath);
+        backend.prepare(conf);
         return backend;
     }
 }

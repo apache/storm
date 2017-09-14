@@ -271,7 +271,6 @@
 
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
-        <rocksdb.version>5.5.1</rocksdb.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.1</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
@@ -984,12 +983,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${storm.kafka.client.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.rocksdb</groupId>
-                <artifactId>rocksdbjni</artifactId>
-                <version>${rocksdb.version}</version>
-            </dependency>
-
         </dependencies>
     </dependencyManagement>
 
