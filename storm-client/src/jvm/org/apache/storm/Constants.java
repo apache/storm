@@ -30,7 +30,7 @@ public class Constants {
     public static final List<Long> SYSTEM_EXECUTOR_ID = Arrays.asList(-1L, -1L);
     public static final String SYSTEM_COMPONENT_ID = "__system";
     public static final String SYSTEM_TICK_STREAM_ID = "__tick";
-    public static final String METRICS_COMPONENT_ID_PREFIX = "__metrics";
+    public static final String METRICS_COMPONENT_ID_PREFIX = "__metrics_";
     public static final String METRICS_STREAM_ID = "__metrics";
     public static final String METRICS_TICK_STREAM_ID = "__metrics_tick";
     public static final String CREDENTIALS_CHANGED_STREAM_ID = "__credentials";
