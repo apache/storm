@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
@@ -25,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -39,19 +39,15 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHealthCheck;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHeartbeat;
-import org.apache.storm.daemon.supervisor.timer.UpdateBlobs;
 import org.apache.storm.event.EventManager;
 import org.apache.storm.event.EventManagerImp;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.localizer.AsyncLocalizer;
-import org.apache.storm.localizer.ILocalizer;
-import org.apache.storm.localizer.Localizer;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerConfigUtils;
-import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.LocalState;
@@ -78,8 +74,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final AtomicReference<Map<Long, LocalAssignment>> currAssignment;
     private final StormTimer heartbeatTimer;
     private final StormTimer eventTimer;
-    private final StormTimer blobUpdateTimer;
-    private final Localizer localizer;
     private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
@@ -110,10 +104,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             throw Utils.wrapInRuntime(e);
         }
 
+        this.currAssignment = new AtomicReference<>(new HashMap<>());
+
         try {
             this.localState = ServerConfigUtils.supervisorState(conf);
-            this.localizer = ServerUtils.createLocalizer(conf, ConfigUtils.supervisorLocalDir(conf));
-            this.asyncLocalizer = new AsyncLocalizer(conf, this.localizer);
+            this.asyncLocalizer = new AsyncLocalizer(conf, currAssignment, localState.getLocalAssignmentsMap());
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -126,13 +121,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             throw Utils.wrapInRuntime(e);
         }
 
-        this.currAssignment = new AtomicReference<Map<Long, LocalAssignment>>(new HashMap<Long,LocalAssignment>());
-
         this.heartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
 
         this.eventTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
-
-        this.blobUpdateTimer = new StormTimer("blob-update-timer", new DefaultUncaughtExceptionHandler());
     }
     
     public String getId() {
@@ -178,12 +169,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public AtomicReference<Map<Long, LocalAssignment>> getCurrAssignment() {
         return currAssignment;
     }
-
-    public Localizer getLocalizer() {
-        return localizer;
-    }
     
-    ILocalizer getAsyncLocalizer() {
+    AsyncLocalizer getAsyncLocalizer() {
         return asyncLocalizer;
     }
     
@@ -199,8 +186,6 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         String path = ServerConfigUtils.supervisorTmpDir(conf);
         FileUtils.cleanDirectory(new File(path));
 
-        Localizer localizer = getLocalizer();
-
         SupervisorHeartbeat hb = new SupervisorHeartbeat(conf, this);
         hb.run();
         // should synchronize supervisor so it doesn't launch anything after being down (optimization)
@@ -209,35 +194,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         this.eventManager = new EventManagerImp(false);
         this.readState = new ReadClusterState(this);
-        
-        Set<String> downloadedTopoIds = SupervisorUtils.readDownloadedTopologyIds(conf);
-        Map<Integer, LocalAssignment> portToAssignments = localState.getLocalAssignmentsMap();
-        if (portToAssignments != null) {
-            Map<String, LocalAssignment> assignments = new HashMap<>();
-            for (LocalAssignment la : localState.getLocalAssignmentsMap().values()) {
-                assignments.put(la.get_topology_id(), la);
-            }
-            for (String topoId : downloadedTopoIds) {
-                LocalAssignment la = assignments.get(topoId);
-                if (la != null) {
-                    SupervisorUtils.addBlobReferences(localizer, topoId, conf, la.get_owner());
-                } else {
-                    LOG.warn("Could not find an owner for topo {}", topoId);
-                }
-            }
-        }
-        // do this after adding the references so we don't try to clean things being used
-        localizer.startCleaner();
 
-        UpdateBlobs updateBlobsThread = new UpdateBlobs(this);
+        asyncLocalizer.start();
 
         if ((Boolean) conf.get(DaemonConfig.SUPERVISOR_ENABLE)) {
             // This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
             // to date even if callbacks don't all work exactly right
             eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(readState, eventManager));
-
-            // Blob update thread. Starts with 30 seconds delay, every 30 seconds
-            blobUpdateTimer.scheduleRecurring(30, 30, new EventManagerPushCallback(updateBlobsThread, eventManager));
 
             // supervisor health check
             eventTimer.scheduleRecurring(300, 300, new SupervisorHealthCheck(this));
@@ -282,15 +245,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             this.active = false;
             heartbeatTimer.close();
             eventTimer.close();
-            blobUpdateTimer.close();
             if (eventManager != null) {
                 eventManager.close();
             }
             if (readState != null) {
                 readState.close();
             }
-            asyncLocalizer.shutdown();
-            localizer.shutdown();
+            asyncLocalizer.close();
             getStormClusterState().disconnect();
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);

@@ -25,7 +25,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.storm.daemon.supervisor.Slot.StaticState;
@@ -39,7 +39,7 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.localizer.ILocalizer;
+import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
@@ -115,7 +115,7 @@ public class SlotTest {
     @Test
     public void testEmptyToEmpty() throws Exception {
         try (SimulatedTime t = new SimulatedTime(1010)){
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             LocalState state = mock(LocalState.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
             ISupervisor iSuper = mock(ISupervisor.class);
@@ -137,7 +137,7 @@ public class SlotTest {
             LocalAssignment newAssignment = 
                     mkLocalAssignment(topoId, execList, mkWorkerResources(100.0, 100.0, 100.0));
             
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             Container container = mock(Container.class);
             LocalState state = mock(LocalState.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
@@ -146,11 +146,11 @@ public class SlotTest {
             when(container.readHeartbeat()).thenReturn(hb, hb);
             
             @SuppressWarnings("unchecked")
-            Future<Void> baseFuture = mock(Future.class);
+            CompletableFuture<Void> baseFuture = mock(CompletableFuture.class);
             when(localizer.requestDownloadBaseTopologyBlobs(newAssignment, port)).thenReturn(baseFuture);
             
             @SuppressWarnings("unchecked")
-            Future<Void> blobFuture = mock(Future.class);
+            CompletableFuture<Void> blobFuture = mock(CompletableFuture.class);
             when(localizer.requestDownloadTopologyBlobs(newAssignment, port)).thenReturn(blobFuture);
             
             ISupervisor iSuper = mock(ISupervisor.class);
@@ -220,7 +220,7 @@ public class SlotTest {
             LocalAssignment assignment = 
                     mkLocalAssignment(topoId, execList, mkWorkerResources(100.0, 100.0, 100.0));
             
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             Container container = mock(Container.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
             LSWorkerHeartbeat oldhb = mkWorkerHB(topoId, port, execList, Time.currentTimeSecs()-10);
@@ -276,7 +276,7 @@ public class SlotTest {
             LocalAssignment nAssignment = 
                     mkLocalAssignment(nTopoId, nExecList, mkWorkerResources(100.0, 100.0, 100.0));
             
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             Container nContainer = mock(Container.class);
             LocalState state = mock(LocalState.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
@@ -285,11 +285,11 @@ public class SlotTest {
             when(nContainer.readHeartbeat()).thenReturn(nhb, nhb);
             
             @SuppressWarnings("unchecked")
-            Future<Void> baseFuture = mock(Future.class);
+            CompletableFuture<Void> baseFuture = mock(CompletableFuture.class);
             when(localizer.requestDownloadBaseTopologyBlobs(nAssignment, port)).thenReturn(baseFuture);
             
             @SuppressWarnings("unchecked")
-            Future<Void> blobFuture = mock(Future.class);
+            CompletableFuture<Void> blobFuture = mock(CompletableFuture.class);
             when(localizer.requestDownloadTopologyBlobs(nAssignment, port)).thenReturn(blobFuture);
             
             ISupervisor iSuper = mock(ISupervisor.class);
@@ -377,7 +377,7 @@ public class SlotTest {
             when(cContainer.readHeartbeat()).thenReturn(chb);
             when(cContainer.areAllProcessesDead()).thenReturn(false, true);
             
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
             
             ISupervisor iSuper = mock(ISupervisor.class);
@@ -437,7 +437,7 @@ public class SlotTest {
             when(cContainer.readHeartbeat()).thenReturn(chb, chb, chb, chb, chb, chb);
             when(cContainer.runProfiling(any(ProfileRequest.class), anyBoolean())).thenReturn(true);
             
-            ILocalizer localizer = mock(ILocalizer.class);
+            AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
             
             ISupervisor iSuper = mock(ISupervisor.class);

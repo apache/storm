@@ -73,7 +73,7 @@ public class EventManagerImp implements EventManager {
         runner.start();
     }
 
-    public void proccessInc() {
+    private void proccessInc() {
         processed.incrementAndGet();
     }
 
