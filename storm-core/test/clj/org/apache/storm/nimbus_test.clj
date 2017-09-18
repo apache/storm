@@ -21,7 +21,7 @@
             TestAggregatesCounter TestPlannerSpout TestPlannerBolt]
            [org.apache.storm.blobstore BlobStore]
            [org.apache.storm.nimbus InMemoryTopologyActionNotifier]
-           [org.apache.storm.daemon.nimbus Nimbus Nimbus$StandaloneINimbus]
+           [org.apache.storm.daemon.nimbus TopoCache Nimbus Nimbus$StandaloneINimbus]
            [org.apache.storm.generated GlobalStreamId TopologyStatus SupervisorInfo StormTopology StormBase]
            [org.apache.storm LocalCluster LocalCluster$Builder Thrift MockAutoCred Testing Testing$Condition]
            [org.apache.storm.stats BoltExecutorStats StatsUtil]
@@ -56,7 +56,7 @@
 
 (defn- mk-nimbus
   [conf inimbus blob-store leader-elector group-mapper cluster-state]
-  (Nimbus. conf inimbus cluster-state nil blob-store leader-elector group-mapper))
+  (Nimbus. conf inimbus cluster-state nil blob-store nil leader-elector group-mapper))
 
 (defn- from-json
        [^String str]
@@ -1307,7 +1307,7 @@
   (with-open [zk (InProcessZookeeper. )]
     (with-open [tmp-nimbus-dir (TmpPath.)
                 _ (MockedZookeeper. (proxy [Zookeeper] []
-                      (zkLeaderElectorImpl [conf blob-store] (MockLeaderElector. ))))]
+                      (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus-dir (.getPath tmp-nimbus-dir)]
         (letlocals
           (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -1324,7 +1324,7 @@
                            {}))
 
           (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                          (zkLeaderElectorImpl [conf blob-store] (MockLeaderElector. false))))]
+                          (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. false))))]
 
             (letlocals
               (bind non-leader-cluster-state (ClusterUtils/mkStormClusterState conf nil (ClusterStateContext.)))
@@ -1384,11 +1384,13 @@
 
 (deftest test-nimbus-iface-methods-check-authorization
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"})))]
       (let [nimbus (.getNimbus cluster)
             topology-name "test"
@@ -1403,11 +1405,13 @@
 
 (deftest test-nimbus-check-authorization-params
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusWrapper (reify UnaryOperator (apply [this nimbus] (Mockito/spy nimbus))))
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"})))]
     (let [nimbus (.getNimbus cluster)
@@ -1418,8 +1422,8 @@
           expected-conf {TOPOLOGY-NAME expected-name
                          "foo" "bar"}]
       (.thenReturn (Mockito/when (.getTopoId cluster-state topology-name)) (Optional/of topology-id))
-      (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) expected-conf)
-      (.thenReturn (Mockito/when (.readTopology blob-store (Mockito/any String) (Mockito/anyObject))) nil)
+      (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) expected-conf)
+      (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (Mockito/anyObject))) nil)
       (testing "getTopologyConf calls check-authorization! with the correct parameters."
       (let [expected-operation "getTopologyConf"]
           (try
@@ -1456,15 +1460,17 @@
             (finally
               (.checkAuthorization (Mockito/verify nimbus) (Mockito/eq topology-name) (Mockito/any Map) (Mockito/eq expected-operation))
               ;;One for this time and one for getTopology call
-              (.readTopology (Mockito/verify blob-store (Mockito/times 2)) (Mockito/eq topology-id) (Mockito/anyObject))))))))))
+              (.readTopology (Mockito/verify tc (Mockito/times 2)) (Mockito/eq topology-id) (Mockito/anyObject))))))))))
 
 (deftest test-check-authorization-getSupervisorPageInfo
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusWrapper (reify UnaryOperator (apply [this nimbus] (Mockito/spy nimbus))))
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"})))]
     (let [nimbus (.getNimbus cluster)
@@ -1494,8 +1500,8 @@
                             (.put "super2" (doto (SupervisorInfo.) (.set_hostname "host2") (.set_meta [(long 1234)])
                                              (.set_uptime_secs (long 123)) (.set_meta [1 2 3]) (.set_used_ports []) (.set_resources_map {}))))]
       (.thenReturn (Mockito/when (.allSupervisorInfo cluster-state)) all-supervisors)
-      (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/any Subject))) expected-conf)
-      (.thenReturn (Mockito/when (.readTopology blob-store (Mockito/any String) (Mockito/any Subject))) topology)
+      (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/any Subject))) expected-conf)
+      (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (Mockito/any Subject))) topology)
       (.thenReturn (Mockito/when (.topologyAssignments cluster-state)) topo-assignment)
       (.getSupervisorPageInfo nimbus "super1" nil true)
 
@@ -1550,10 +1556,12 @@
 
 (deftest test-nimbus-iface-getClusterInfo-filters-topos-without-bases
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
+                            (.withTopoCache tc)
                             (.withBlobStore blob-store)))]
     (let [nimbus (.getNimbus cluster)
           bogus-secs 42
@@ -1576,8 +1584,8 @@
         ]
       (.thenReturn (Mockito/when (.stormBase cluster-state (Mockito/any String) (Mockito/anyObject))) storm-base)
       (.thenReturn (Mockito/when (.topologyBases cluster-state)) bogus-bases)
-      (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/any Subject))) topo-conf)
-      (.thenReturn (Mockito/when (.readTopology blob-store (Mockito/any String) (Mockito/any Subject))) topology)
+      (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/any Subject))) topo-conf)
+      (.thenReturn (Mockito/when (.readTopology tc (Mockito/any String) (Mockito/any Subject))) topology)
 
       (let [topos (.get_topologies (.getClusterInfo nimbus))]
         ; The number of topologies in the summary is correct.
@@ -1625,7 +1633,7 @@
                   _ (UtilsInstaller. fake-utils)
                   - (StormCommonInstaller. fake-common)
                   zk-le (MockedZookeeper. (proxy [Zookeeper] []
-                          (zkLeaderElectorImpl [conf blob-store] nil)))
+                          (zkLeaderElectorImpl [conf blob-store tc] nil)))
                   mocked-cluster (MockedCluster. cluster-utils)]
           (Nimbus. auth-conf fake-inimbus)
           (.mkStormClusterStateImpl (Mockito/verify cluster-utils (Mockito/times 1)) (Mockito/any) (Mockito/eq expected-acls) (Mockito/any))
@@ -1643,11 +1651,13 @@
 
 (deftest test-validate-topo-config-on-submit
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"})))]
       (.thenReturn (Mockito/when (.getTopoId cluster-state "test")) (Optional/empty))
       (let [topology (Thrift/buildTopology {} {})
@@ -1694,7 +1704,7 @@
   (with-open [zk (InProcessZookeeper. )]
     (with-open [tmp-nimbus-dir (TmpPath.)
                 _ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus-dir (.getPath tmp-nimbus-dir)]
         (letlocals
           (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -1756,11 +1766,13 @@
 ;; log configs it contains are LogLevelAction/UNCHANGED
 (deftest empty-save-config-results-in-all-unchanged-actions
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"})))]
       (let [nimbus (.getNimbus cluster)
             previous-config (LogConfig.)
@@ -1777,7 +1789,7 @@
             (.set_target_log_level "ERROR")
             (.set_action LogLevelAction/UNCHANGED)))
 
-        (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
         (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
@@ -1785,11 +1797,13 @@
 
 (deftest log-level-update-merges-and-flags-existent-log-level
   (let [cluster-state (Mockito/mock IStormClusterState)
-        blob-store (Mockito/mock BlobStore)]
+        blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)]
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder. )
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withDaemonConf {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"})))]
       (let [nimbus (.getNimbus cluster)
             previous-config (LogConfig.)
@@ -1823,7 +1837,7 @@
             (.set_target_log_level "DEBUG")
             (.set_action LogLevelAction/UNCHANGED)))
 
-        (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+        (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
         (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
@@ -1883,7 +1897,7 @@
         mock-blob-store (Mockito/mock BlobStore)
         conf {}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (HashSet. inactive-topos))
@@ -1928,7 +1942,7 @@
         mock-blob-store (Mockito/mock BlobStore)
         conf {}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (set inactive-topos))
@@ -1960,7 +1974,8 @@
         assignments {"topo1" assignment, "topo2" assignment2}
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
-        nimbus (Nimbus. {} nil mock-state nil mock-blob-store (MockLeaderElector. ) nil)]
+        mock-tc (Mockito/mock TopoCache)
+        nimbus (Nimbus. {} nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil)]
     (let [supervisor1-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super1"))
           user1-topologies (clojurify-structure (.filterAuthorized nimbus "getTopology" supervisor1-topologies))
           supervisor2-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super2"))
@@ -1980,9 +1995,10 @@
         assignments {"topo1" assignment, "authorized" assignment2}
         mock-state (mock-cluster-state)
         mock-blob-store (Mockito/mock BlobStore)
-        nimbus (Nimbus. {} nil mock-state nil mock-blob-store (MockLeaderElector. ) nil)]
-    (.thenReturn (Mockito/when (.readTopologyConf mock-blob-store (Mockito/eq "authorized") (Mockito/anyObject))) {TOPOLOGY-NAME "authorized"})
-    (.thenReturn (Mockito/when (.readTopologyConf mock-blob-store (Mockito/eq "topo1") (Mockito/anyObject))) {TOPOLOGY-NAME "topo1"})
+        mock-tc (Mockito/mock TopoCache)
+        nimbus (Nimbus. {} nil mock-state nil mock-blob-store mock-tc (MockLeaderElector. ) nil)]
+    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "authorized") (Mockito/anyObject))) {TOPOLOGY-NAME "authorized"})
+    (.thenReturn (Mockito/when (.readTopoConf mock-tc (Mockito/eq "topo1") (Mockito/anyObject))) {TOPOLOGY-NAME "topo1"})
     (.setAuthorizationHandler nimbus (reify IAuthorizer (permit [this context operation topo-conf] (= "authorized" (get topo-conf TOPOLOGY-NAME)))))
     (let [supervisor-topologies (clojurify-structure (Nimbus/topologiesOnSupervisor assignments "super1"))
           user-topologies (clojurify-structure (.filterAuthorized nimbus "getTopology" supervisor-topologies))]

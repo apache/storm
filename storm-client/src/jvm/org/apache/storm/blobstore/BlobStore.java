@@ -27,23 +27,20 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.regex.Pattern;
-
 import javax.security.auth.Subject;
-
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.commons.lang.StringUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
+import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Provides a way to store blobs that can be downloaded.
@@ -232,6 +229,30 @@ public abstract class BlobStore implements Shutdownable {
      * Wrapper called to create the blob which contains
      * the byte data
      * @param key Key for the blob.
+     * @param data Byte data that needs to be uploaded.
+     * @param who Is the subject creating the blob.
+     * @throws AuthorizationException
+     * @throws IOException
+     * @throws KeyNotFoundException
+     */
+    public void updateBlob(String key, byte [] data, Subject who) throws AuthorizationException, IOException, KeyNotFoundException {
+        AtomicOutputStream out = null;
+        try {
+            out = updateBlob(key, who);
+            out.write(data);
+            out.close();
+            out = null;
+        } finally {
+            if (out != null) {
+                out.cancel();
+            }
+        }
+    }
+
+    /**
+     * Wrapper called to create the blob which contains
+     * the byte data
+     * @param key Key for the blob.
      * @param in InputStream from which the data is read to be
      * written as a part of the blob.
      * @param meta Metadata which contains the acls information
@@ -304,32 +325,6 @@ public abstract class BlobStore implements Shutdownable {
         byte[] bytes = out.toByteArray();
         out.close();
         return bytes;
-    }
-
-    /**
-     * Helper method to read a stored topology
-     * @param topoId the id of the topology to read
-     * @param who who to read it as
-     * @return the deserialized topology.
-     * @throws IOException on any error while reading the blob.
-     * @throws AuthorizationException if who is not allowed to read the blob
-     * @throws KeyNotFoundException if the blob could not be found
-     */
-    public StormTopology readTopology(String topoId, Subject who) throws KeyNotFoundException, AuthorizationException, IOException {
-        return Utils.deserialize(readBlob(ConfigUtils.masterStormCodeKey(topoId), who), StormTopology.class);
-    }
-    
-    /**
-     * Helper method to read a stored topology config
-     * @param topoId the id of the topology whose conf we are reading
-     * @param who who we are reading this as
-     * @return the deserialized config
-     * @throws KeyNotFoundException if the blob could not be found
-     * @throws AuthorizationException if who is not allowed to read the blob
-     * @throws IOException on any error while reading the blob.
-     */
-    public Map<String, Object> readTopologyConf(String topoId, Subject who) throws KeyNotFoundException, AuthorizationException, IOException {
-        return Utils.fromCompressedJsonConf(readBlob(ConfigUtils.masterStormConfKey(topoId), who));
     }
     
     private static final KeyFilter<String> TO_TOPO_ID = (key) -> ConfigUtils.getIdFromBlobKey(key);
