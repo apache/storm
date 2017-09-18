@@ -419,6 +419,7 @@ public class StormCommon {
                     classOccurrencesMap.put(className, occurrenceNum);
                     id = Constants.METRICS_COMPONENT_ID_PREFIX + className + "#" + occurrenceNum;
                 } else {
+                    id = Constants.METRICS_COMPONENT_ID_PREFIX + className;
                     classOccurrencesMap.put(className, 1);
                 }
                 metricsConsumerBolts.put(id, metricsConsumerBolt);
