@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,8 +19,10 @@
 package org.apache.storm.hdfs.common;
 
 import java.io.IOException;
+
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.bolt.Writer;
+import org.apache.storm.hdfs.bolt.rotation.ClosingFilesPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
 
@@ -30,11 +32,18 @@ abstract public class AbstractHDFSWriter implements Writer {
     protected boolean needsRotation;
     final protected Path filePath;
     final protected FileRotationPolicy rotationPolicy;
+    ClosingFilesPolicy closingFilesPolicy;
+
 
     public AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
         //This must be defensively copied, because a bolt probably has only one rotation policy object
         this.rotationPolicy = policy.copy();
         this.filePath = path;
+    }
+
+    public AbstractHDFSWriter withClosingFilesPolicy(ClosingFilesPolicy policy) {
+        this.closingFilesPolicy = policy;
+        return this;
     }
 
     final public long write(Tuple tuple) throws IOException {
@@ -50,6 +59,14 @@ abstract public class AbstractHDFSWriter implements Writer {
 
     final public void close() throws IOException {
         doClose();
+    }
+
+    final public void updateClosingPolicy() {
+        this.needsRotation = closingFilesPolicy.closeWriter();
+    }
+
+    final public void resetClosingPolicy() {
+        closingFilesPolicy.reset();
     }
 
     public boolean needsRotation() {

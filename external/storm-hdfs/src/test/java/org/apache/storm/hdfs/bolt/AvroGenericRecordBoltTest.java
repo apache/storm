@@ -18,6 +18,7 @@
 package org.apache.storm.hdfs.bolt;
 
 import org.apache.storm.Config;
+import org.apache.storm.hdfs.bolt.rotation.TickTupleBasedClosingPolicy;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -45,6 +46,7 @@ import org.junit.Test;
 import org.junit.Assert;
 
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 
 import org.apache.hadoop.conf.Configuration;
@@ -59,6 +61,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+
+import static org.mockito.Mockito.when;
 
 public class AvroGenericRecordBoltTest {
 
@@ -199,6 +203,41 @@ public class AvroGenericRecordBoltTest {
         verifyAllAvroFiles(testRoot);
     }
 
+    @Test
+    public void testClosingFilesPolicy() throws IOException{
+        AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, 1000f, schemaV2)
+                .withClosingFilesPolicy(new TickTupleBasedClosingPolicy(1));
+
+        bolt.prepare(new Config(), topologyContext, collector);
+        bolt.execute(tuple1);
+        bolt.execute(tuple2);
+        Assert.assertEquals(2, countOpenFiles(testRoot));
+        bolt.execute(generateTickTuple());
+        bolt.execute(tuple2);
+        Assert.assertEquals(2, countOpenFiles(testRoot));
+        bolt.execute(generateTickTuple());
+        Assert.assertEquals(1, countOpenFiles(testRoot));
+        bolt.execute(generateTickTuple());
+        Assert.assertEquals(0, countOpenFiles(testRoot));
+    }
+
+    private int countOpenFiles(String path) throws IOException
+    {
+        int count = 0;
+        Path p = new Path(path);
+        for (FileStatus fileStatus : fs.listStatus(p)
+                ) {
+            if(!fs.isFileClosed(fileStatus.getPath()))
+                count++;
+        }
+        return count;
+    }
+    private Tuple generateTickTuple() {
+        Tuple tuple = Mockito.mock(Tuple.class);
+        when(tuple.getSourceComponent()).thenReturn("__system");
+        when(tuple.getSourceStreamId()).thenReturn("__tick");
+        return tuple;
+    }
     private AvroGenericRecordBolt makeAvroBolt(String nameNodeAddr, int countSync, float rotationSizeMB, String schemaAsString) {
 
         SyncPolicy fieldsSyncPolicy = new CountSyncPolicy(countSync);

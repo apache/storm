@@ -17,6 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt;
 
+import org.apache.storm.hdfs.bolt.rotation.ClosingFilesPolicy;
 import org.apache.storm.hdfs.common.AbstractHDFSWriter;
 import org.apache.storm.hdfs.common.AvroGenericRecordHDFSWriter;
 import org.apache.storm.hdfs.common.Partitioner;
@@ -87,6 +88,13 @@ public class AvroGenericRecordBolt extends AbstractHdfsBolt{
         return this;
     }
 
+
+    public AvroGenericRecordBolt withClosingFilesPolicy(ClosingFilesPolicy policy)
+    {
+        this.closingFilesPolicy = policy;
+        return this;
+    }
+
     @Override
     protected void doPrepare(Map<String, Object> conf, TopologyContext topologyContext, OutputCollector collector) throws IOException {
         LOG.info("Preparing AvroGenericRecord Bolt...");
@@ -107,6 +115,11 @@ public class AvroGenericRecordBolt extends AbstractHdfsBolt{
     @Override
     protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException {
         Schema recordSchema = ((GenericRecord) tuple.getValue(0)).getSchema();
-        return new AvroGenericRecordHDFSWriter(this.rotationPolicy, path, this.fs.create(path), recordSchema);
+
+        AbstractHDFSWriter writer =new AvroGenericRecordHDFSWriter(this.rotationPolicy, path, this.fs.create(path), recordSchema);
+        if(closingFilesPolicy!=null)
+            writer = writer.withClosingFilesPolicy(closingFilesPolicy.copy());
+
+        return writer;
     }
 }

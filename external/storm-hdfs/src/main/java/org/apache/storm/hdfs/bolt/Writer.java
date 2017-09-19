@@ -29,6 +29,10 @@ public interface Writer {
 
     void close() throws IOException;
 
+    void updateClosingPolicy();
+
+    void resetClosingPolicy();
+
     boolean needsRotation();
 
     Path getFilePath();

@@ -17,6 +17,7 @@
  */
 package org.apache.storm.hdfs.bolt;
 
+import org.apache.storm.hdfs.bolt.rotation.ClosingFilesPolicy;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -38,14 +39,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.LinkedList;
-import java.util.Map;
-import java.util.List;
-import java.util.Timer;
-import java.util.TimerTask;
+import java.util.*;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
@@ -74,6 +68,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     protected Integer tickTupleInterval = DEFAULT_TICK_TUPLE_INTERVAL_SECS;
     protected Integer maxOpenFiles = DEFAULT_MAX_OPEN_FILES;
     protected Partitioner partitioner = new NullPartitioner();
+    protected ClosingFilesPolicy closingFilesPolicy;
 
     protected transient Configuration hdfsConfig;
 
@@ -142,6 +137,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
                 LOG.debug("TICK! forcing a file system flush");
                 this.collector.ack(tuple);
                 forceSync = true;
+                checkClosingPolicy();
             } else {
 
                 writerKey = getHashKeyForTuple(tuple);
@@ -210,6 +206,9 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
             writer = makeNewWriter(pathForNextFile, tuple);
             writers.put(writerKey, writer);
         }
+        else if(this.closingFilesPolicy !=null) {
+            writer.resetClosingPolicy();
+        }
         return writer;
     }
 
@@ -240,6 +239,30 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         } finally {
             //rotateOutputFile(writer) has closed the writer. It's safe to remove the writer from the map here.
             writers.remove(writerKey);
+        }
+    }
+
+    private void checkClosingPolicy() {
+        if (closingFilesPolicy != null) {
+            LOG.debug("Closing policy exists");
+            Iterator iterator = writers.entrySet().iterator();
+            while (iterator.hasNext()) {
+                Map.Entry<String, Writer> entry = (Map.Entry<String, Writer>) iterator.next();
+                Writer hdfswriter = entry.getValue();
+                String writerKey = entry.getKey();
+                LOG.debug("Checking writer key: " + writerKey);
+                hdfswriter.updateClosingPolicy();
+                if (hdfswriter.needsRotation()) {
+                    try {
+                        rotateOutputFile(hdfswriter);
+                    } catch (IOException e) {
+                        this.collector.reportError(e);
+                        LOG.error("File could not be rotated");
+                    } finally {
+                        iterator.remove();
+                    }
+                }
+            }
         }
     }
 
