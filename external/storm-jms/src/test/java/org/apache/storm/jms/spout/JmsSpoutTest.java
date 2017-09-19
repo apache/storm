@@ -45,28 +45,33 @@ public class JmsSpoutTest {
     @Test
     public void testFailure() throws JMSException, Exception {
         JmsSpout spout = new JmsSpout();
-        JmsProvider mockProvider = new MockJmsProvider();
-        MockSpoutOutputCollector mockCollector = new MockSpoutOutputCollector();
-        SpoutOutputCollector collector =
+        try {
+            JmsProvider mockProvider = new MockJmsProvider();
+            MockSpoutOutputCollector mockCollector = new MockSpoutOutputCollector();
+            SpoutOutputCollector collector =
                 new SpoutOutputCollector(mockCollector);
-        spout.setJmsProvider(new MockJmsProvider());
-        spout.setJmsTupleProducer(new MockTupleProducer());
-        spout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
-        spout.setRecoveryPeriodMs(10); // Rapid recovery for testing.
-        spout.open(new HashMap<>(), null, collector);
-        ConnectionFactory connectionFactory = mockProvider.connectionFactory();
-        Destination destination = mockProvider.destination();
-        Message msg = this.sendMessage(connectionFactory, destination);
-        Thread.sleep(100);
-        spout.nextTuple(); // Pretend to be storm.
-        Assert.assertTrue(mockCollector.emitted);
+            spout.setJmsProvider(new MockJmsProvider());
+            spout.setJmsTupleProducer(new MockTupleProducer());
+            spout.setJmsAcknowledgeMode(Session.CLIENT_ACKNOWLEDGE);
+            spout.setRecoveryPeriodMs(10); // Rapid recovery for testing.
+            spout.open(new HashMap<>(), null, collector);
+            ConnectionFactory connectionFactory = mockProvider.connectionFactory();
+            Destination destination = mockProvider.destination();
+            Message msg = this.sendMessage(connectionFactory, destination);
+            Thread.sleep(100);
+            LOG.info("Calling nextTuple on the spout...");
+            spout.nextTuple(); // Pretend to be storm.
+            Assert.assertTrue(mockCollector.emitted);
 
-        mockCollector.reset();
-        spout.fail(msg.getJMSMessageID()); // Mock failure
-        Thread.sleep(5000);
-        spout.nextTuple(); // Pretend to be storm.
-        Thread.sleep(5000);
-        Assert.assertTrue(mockCollector.emitted); // Should have been re-emitted
+            mockCollector.reset();
+            spout.fail(msg.getJMSMessageID()); // Mock failure
+            Thread.sleep(5000);
+            spout.nextTuple(); // Pretend to be storm.
+            Thread.sleep(5000);
+            Assert.assertTrue(mockCollector.emitted); // Should have been re-emitted
+        } finally {
+            spout.close();
+        }
     }
 
     @Test
@@ -87,21 +92,26 @@ public class JmsSpoutTest {
     @Test
     public void testOpenWorksMultipleTypesOfNumberObjects() throws Exception {
         JmsSpout spout = new JmsSpout();
-        spout.setJmsProvider(new MockJmsProvider());
-        spout.setJmsTupleProducer(new MockTupleProducer());
-        Map<String, Object> configuration = new HashMap<String, Object>();
-        MockSpoutOutputCollector delegateCollector =
+        try {
+            spout.setJmsProvider(new MockJmsProvider());
+            spout.setJmsTupleProducer(new MockTupleProducer());
+            Map<String, Object> configuration = new HashMap<String, Object>();
+            MockSpoutOutputCollector delegateCollector =
                 new MockSpoutOutputCollector();
-        SpoutOutputCollector collector =
+            SpoutOutputCollector collector =
                 new SpoutOutputCollector(delegateCollector);
 
-        // Test with long value
-        configuration.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 1000L);
-        spout.open(configuration, null, collector);
+            // Test with long value
+            configuration.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 1000L);
+            spout.open(configuration, null, collector);
+            spout.close();
 
-        // Test with integer value
-        configuration.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 1000);
-        spout.open(configuration, null, collector);
+            // Test with integer value
+            configuration.put(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 1000);
+            spout.open(configuration, null, collector);
+        } finally {
+            spout.close();
+        }
     }
 
     public Message sendMessage(ConnectionFactory connectionFactory,
