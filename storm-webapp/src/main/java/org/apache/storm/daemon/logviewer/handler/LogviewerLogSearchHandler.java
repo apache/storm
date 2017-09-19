@@ -272,90 +272,96 @@ public class LogviewerLogSearchHandler {
             }
 
             boolean isZipFile = file.getName().endsWith(".gz");
-            FileInputStream fis = new FileInputStream(file);
-            InputStream gzippedInputStream;
-            if (isZipFile) {
-                gzippedInputStream = new GZIPInputStream(fis);
-            } else {
-                gzippedInputStream = fis;
-            }
 
-            BufferedInputStream stream = new BufferedInputStream(gzippedInputStream);
-
-            int fileLength;
-            if (isZipFile) {
-                fileLength = (int) ServerUtils.zipFileSize(file);
-            } else {
-                fileLength = (int) file.length();
-            }
-
-            ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
-            final byte[] bufArray = buf.array();
-            final byte[] searchBytes = searchString.getBytes("UTF-8");
-            numMatches = numMatches != null ? numMatches : 10;
-            startByteOffset = startByteOffset != null ? startByteOffset : 0;
-
-            // Start at the part of the log file we are interested in.
-            // Allow searching when start-byte-offset == file-len so it doesn't blow up on 0-length files
-            if (startByteOffset > fileLength) {
-                throw new InvalidRequestException("Cannot search past the end of the file");
-            }
-
-            if (startByteOffset > 0) {
-                StreamUtil.skipBytes(stream, startByteOffset);
-            }
-
-            Arrays.fill(bufArray, (byte) 0);
-
-            int totalBytesRead = 0;
-            int bytesRead = stream.read(bufArray, 0, Math.min((int) fileLength, GREP_BUF_SIZE));
-            buf.limit(bytesRead);
-            totalBytesRead += bytesRead;
-
-            List<Map<String, Object>> initialMatches = new ArrayList<>();
-            int initBufOffset = 0;
-            int byteOffset = startByteOffset;
-            byte[] beforeBytes = null;
-
-            Map<String, Object> ret = new HashMap<>();
-            while (true) {
-                SubstringSearchResult searchRet = bufferSubstringSearch(isDaemon, file, fileLength, byteOffset, initBufOffset,
-                        stream, startByteOffset, totalBytesRead, buf, searchBytes, initialMatches, numMatches, beforeBytes);
-
-                List<Map<String, Object>> matches = searchRet.getMatches();
-                Integer newByteOffset = searchRet.getNewByteOffset();
-                byte[] newBeforeBytes = searchRet.getNewBeforeBytes();
-
-                if (matches.size() < numMatches && totalBytesRead + startByteOffset < fileLength) {
-                    // The start index is positioned to find any possible
-                    // occurrence search string that did not quite fit in the
-                    // buffer on the previous read.
-                    final int newBufOffset = Math.min(buf.limit(), GREP_MAX_SEARCH_SIZE) - searchBytes.length;
-
-                    totalBytesRead = rotateGrepBuffer(buf, stream, totalBytesRead, file, fileLength);
-                    if (totalBytesRead < 0) {
-                        throw new InvalidRequestException("Cannot search past the end of the file");
-                    }
-
-                    initialMatches = matches;
-                    initBufOffset = newBufOffset;
-                    byteOffset = newByteOffset;
-                    beforeBytes = newBeforeBytes;
+            InputStream gzippedInputStream = null;
+            try {
+                FileInputStream fis = new FileInputStream(file);
+                if (isZipFile) {
+                    gzippedInputStream = new GZIPInputStream(fis);
                 } else {
-                    ret.put("isDaemon", isDaemon ? "yes" : "no");
-                    Integer nextByteOffset = null;
-                    if (matches.size() >= numMatches || totalBytesRead < fileLength) {
-                        nextByteOffset = (Integer) last(matches).get("byteOffset") + searchBytes.length;
-                        if (fileLength <= nextByteOffset) {
-                            nextByteOffset = null;
+                    gzippedInputStream = fis;
+                }
+
+                BufferedInputStream stream = new BufferedInputStream(gzippedInputStream);
+
+                int fileLength;
+                if (isZipFile) {
+                    fileLength = (int) ServerUtils.zipFileSize(file);
+                } else {
+                    fileLength = (int) file.length();
+                }
+
+                ByteBuffer buf = ByteBuffer.allocate(GREP_BUF_SIZE);
+                final byte[] bufArray = buf.array();
+                final byte[] searchBytes = searchString.getBytes("UTF-8");
+                numMatches = numMatches != null ? numMatches : 10;
+                startByteOffset = startByteOffset != null ? startByteOffset : 0;
+
+                // Start at the part of the log file we are interested in.
+                // Allow searching when start-byte-offset == file-len so it doesn't blow up on 0-length files
+                if (startByteOffset > fileLength) {
+                    throw new InvalidRequestException("Cannot search past the end of the file");
+                }
+
+                if (startByteOffset > 0) {
+                    StreamUtil.skipBytes(stream, startByteOffset);
+                }
+
+                Arrays.fill(bufArray, (byte) 0);
+
+                int totalBytesRead = 0;
+                int bytesRead = stream.read(bufArray, 0, Math.min((int) fileLength, GREP_BUF_SIZE));
+                buf.limit(bytesRead);
+                totalBytesRead += bytesRead;
+
+                List<Map<String, Object>> initialMatches = new ArrayList<>();
+                int initBufOffset = 0;
+                int byteOffset = startByteOffset;
+                byte[] beforeBytes = null;
+
+                Map<String, Object> ret = new HashMap<>();
+                while (true) {
+                    SubstringSearchResult searchRet = bufferSubstringSearch(isDaemon, file, fileLength, byteOffset, initBufOffset,
+                            stream, startByteOffset, totalBytesRead, buf, searchBytes, initialMatches, numMatches, beforeBytes);
+
+                    List<Map<String, Object>> matches = searchRet.getMatches();
+                    Integer newByteOffset = searchRet.getNewByteOffset();
+                    byte[] newBeforeBytes = searchRet.getNewBeforeBytes();
+
+                    if (matches.size() < numMatches && totalBytesRead + startByteOffset < fileLength) {
+                        // The start index is positioned to find any possible
+                        // occurrence search string that did not quite fit in the
+                        // buffer on the previous read.
+                        final int newBufOffset = Math.min(buf.limit(), GREP_MAX_SEARCH_SIZE) - searchBytes.length;
+
+                        totalBytesRead = rotateGrepBuffer(buf, stream, totalBytesRead, file, fileLength);
+                        if (totalBytesRead < 0) {
+                            throw new InvalidRequestException("Cannot search past the end of the file");
                         }
+
+                        initialMatches = matches;
+                        initBufOffset = newBufOffset;
+                        byteOffset = newByteOffset;
+                        beforeBytes = newBeforeBytes;
+                    } else {
+                        ret.put("isDaemon", isDaemon ? "yes" : "no");
+                        Integer nextByteOffset = null;
+                        if (matches.size() >= numMatches || totalBytesRead < fileLength) {
+                            nextByteOffset = (Integer) last(matches).get("byteOffset") + searchBytes.length;
+                            if (fileLength <= nextByteOffset) {
+                                nextByteOffset = null;
+                            }
+                        }
+                        ret.putAll(mkGrepResponse(searchBytes, startByteOffset, matches, nextByteOffset));
+                        break;
                     }
-                    ret.putAll(mkGrepResponse(searchBytes, startByteOffset, matches, nextByteOffset));
-                    break;
+                }
+                return ret;
+            } finally {
+                if (gzippedInputStream != null) {
+                    gzippedInputStream.close();
                 }
             }
-
-            return ret;
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
