@@ -29,37 +29,39 @@ const intercept = require('intercept-stdout');
 let preInitMessages = '';
 let initComplete = false;
 
-const getLogInvalidMessages = (logLevel) => (
-    (inputMsg) => {
-        let msg = inputMsg;
+const logInvalidMessages = (inputMsg, logLevel = 2) => {
+    let msg = inputMsg;
 
-        if (/^{\s*"pid"\s*:\s*\d+\s*}\nend\n$/.test(msg)) {
-            initComplete = true;
-            if (preInitMessages) {
-                msg += preInitMessages;
-                preInitMessages = undefined;
-            }
-        } else if (!/^\{.*\}\nend\n$/.test(msg)) {
-            let m = { command: 'log', msg: msg.trim() };
-            if (logLevel >= 0) m.level = logLevel;
-            msg = `${JSON.stringify(m)}\nend\n`;
+    if (/^{\s*"pid"\s*:\s*\d+\s*}\nend\n$/.test(msg)) {
+        initComplete = true;
+        if (preInitMessages) {
+            msg += preInitMessages;
+            preInitMessages = undefined;
         }
-        if (!initComplete) {
-            /*
-             * Storm multilang protocol expects first message to be a pid message, so anything written
-             * to stdout or stderr before the pid message is cached and sent with the first message
-             * after the PID has been processed.
-             */
-            preInitMessages += msg;
-            msg = '';
-        }
-
-        return msg;
+    } else if (!/^\{.*\}\nend\n$/.test(msg)) {
+        let m = { command: 'log', msg: msg.trim() };
+        if (logLevel >= 0) m.level = logLevel;
+        msg = `${JSON.stringify(m)}\nend\n`;
     }
-);
+    if (!initComplete) {
+        /*
+         * Storm multilang protocol expects first message to be a pid message, so anything written
+         * to stdout or stderr before the pid message is cached and sent with the first message
+         * after the PID has been processed.
+         */
+        preInitMessages += msg;
+        msg = '';
+    }
+
+    return msg;
+};
 
 // Sends stdout with log level INFO and stderr with log level ERROR
-intercept(getLogInvalidMessages(2), getLogInvalidMessages(4));
+intercept(
+    m => logInvalidMessages(m),
+    // stderr is not parsed by storm, so redirecting to stdout so log level will be honored
+    m => process.stdout.write(logInvalidMessages(m, 4))
+);
 
 if (process.argv.length < 3 || !process.argv[2])
     throw new Error('You must specify a js file that exports a valid storm component.');
