@@ -90,15 +90,15 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 			receiver.close().whenComplete((voidargs, error) -> {
 				try {
 					if (error != null) {
-						logger.error("Exception during receiver close phase" + error.toString());
+						logger.error("Exception during receiver close phase: " + error.toString());
 					}
 					ehClient.closeSync();
 				} catch (Exception e) {
-					logger.error("Exception during ehclient close phase" + e.toString());
+					logger.error("Exception during ehclient close phase: " + e.toString());
 				}
 			}).get();
 		} catch (InterruptedException | ExecutionException e) {
-			logger.warn("Exception occured during close phase" + e.toString());
+			logger.warn("Exception occured during close phase: " + e.toString());
 		}
 
 		logger.info("closed eventhub receiver: partitionId=" + partitionId);

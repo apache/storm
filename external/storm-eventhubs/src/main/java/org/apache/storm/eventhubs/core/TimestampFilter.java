@@ -33,8 +33,9 @@ public class TimestampFilter implements IEventFilter {
 
 	@Override
 	public String toString() {
-		if (time != null)
+		if (time != null) {
 			return Long.toString(time.toEpochMilli());
+		}
 
 		return null;
 	}

@@ -132,18 +132,18 @@ public class EventHubBolt extends BaseRichBolt {
 
 	@Override
 	public void cleanup() {
-		logger.info("EventHubClient cleanup");
+		logger.debug("EventHubBolt cleanup");
 		try {
 			ehClient.close().whenComplete((voidargs, error) -> {
 				try {
 					if (error != null) {
-						logger.error("Exception during EventHub Client cleanup phase" + error.toString());
+						logger.error("Exception during EventHubBolt cleanup phase" + error.toString());
 					}
 					if (sender != null) {
 						sender.closeSync();
 					}
 				} catch (Exception e) {
-					logger.error("Exception during ehclient cleanup phase" + e.toString());
+					logger.error("Exception during EventHubBolt cleanup phase" + e.toString());
 				}
 			}).get();
 

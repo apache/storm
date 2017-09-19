@@ -51,6 +51,7 @@ public class PartitionManager extends SimplePartitionManager {
 	private void fill() {
 		Iterable<EventData> receivedEvents = receiver.receive(config.getReceiveEventsMaxCount());
 		if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
+			logger.debug("No messages received from EventHub.");
 			return;
 		}
 
@@ -65,7 +66,8 @@ public class PartitionManager extends SimplePartitionManager {
 		int countToRetrieve = pending.size() - config.getMaxPendingMsgsPerPartition();
 
 		if (countToRetrieve >= 0) {
-			Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition() + " messages.");
+			Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
+					+ " messages. No new events will be retrieved from EventHub.");
 			return null;
 		}
 
@@ -80,6 +82,7 @@ public class PartitionManager extends SimplePartitionManager {
 		}
 
 		if (ehm == null) {
+			logger.debug("No messages pending or waiting for reprocessing.");
 			return null;
 		}
 

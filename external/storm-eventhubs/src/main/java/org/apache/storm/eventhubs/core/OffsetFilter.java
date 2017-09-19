@@ -31,8 +31,9 @@ public class OffsetFilter implements IEventFilter {
 
 	@Override
 	public String toString() {
-		if (offset != null)
+		if (offset != null) {
 			return offset;
+		}
 
 		return null;
 	}

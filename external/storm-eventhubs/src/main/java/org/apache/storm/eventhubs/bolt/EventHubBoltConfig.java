@@ -173,7 +173,8 @@ public class EventHubBoltConfig implements Serializable {
 	 * @param namespace
 	 *            servicebus namespace
 	 * @param fqdnSuffix
-	 *            FQDN suffix for the servicebus entity url. (Default is:
+	 *            FQDN suffix for the servicebus entity url. 
+	 *            (example: servicebus.windows.net)
 	 * @param entityPath
 	 *            Name of the EventHub
 	 * @param partitionMode
