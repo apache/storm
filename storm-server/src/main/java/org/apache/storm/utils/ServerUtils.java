@@ -32,14 +32,11 @@ import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
-import org.apache.storm.generated.AccessControl;
-import org.apache.storm.generated.AccessControlType;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.daemon.StormCommon;
+import org.apache.storm.generated.*;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.thrift.TException;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -738,4 +735,60 @@ public class ServerUtils {
         return isSuccess;
     }
 
+    /**
+     * Check if the scheduler is resource aware or not.
+     * @param conf The configuration
+     * @return True if it's resource aware; false otherwise
+     */
+    public static boolean isRAS(Map<String, Object> conf) {
+        if (conf.containsKey(DaemonConfig.STORM_SCHEDULER)) {
+            if (conf.get(DaemonConfig.STORM_SCHEDULER).equals("org.apache.storm.scheduler.resource.ResourceAwareScheduler")) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+        return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) /
+                ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB)));
+    }
+
+    public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+        Map<String, Integer> componentParallelism = getComponentParallelism(topoConf, topology);
+        double totalMemoryRequired = 0.0;
+
+        for(Map.Entry<String, Map<String, Double>> entry: ResourceUtils.getBoltsResources(topology, topoConf).entrySet()) {
+            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
+            double memoryRequirement = entry.getValue().get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+            totalMemoryRequired += memoryRequirement * parallelism;
+        }
+
+        for(Map.Entry<String, Map<String, Double>> entry: ResourceUtils.getSpoutsResources(topology, topoConf).entrySet()) {
+            int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
+            double memoryRequirement = entry.getValue().get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+            totalMemoryRequired += memoryRequirement * parallelism;
+        }
+        return totalMemoryRequired;
+    }
+
+    public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+        Map<String, Integer> ret = new HashMap<>();
+        Map<String, Object> components = StormCommon.allComponents(topology);
+        for (Map.Entry<String, Object> entry : components.entrySet()) {
+            ret.put(entry.getKey(), getComponentParallelism(topoConf, entry.getValue()));
+        }
+        return ret;
+    }
+
+    public static int getComponentParallelism(Map<String, Object> topoConf, Object component) throws InvalidTopologyException {
+        Map<String, Object> combinedConf = Utils.merge(topoConf, StormCommon.componentConf(component));
+        int numTasks = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_TASKS), StormCommon.numStartExecutors(component));
+        Integer maxParallel = ObjectReader.getInt(combinedConf.get(Config.TOPOLOGY_MAX_TASK_PARALLELISM), null);
+        int ret = numTasks;
+        if (maxParallel != null) {
+            ret = Math.min(maxParallel, numTasks);
+        }
+        return ret;
+    }
 }

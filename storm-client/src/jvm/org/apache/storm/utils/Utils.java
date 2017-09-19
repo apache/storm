@@ -1501,4 +1501,12 @@ public class Utils {
     public static boolean isLocalhostAddress(String address) {
         return LOCALHOST_ADDRESSES.contains(address);
     }
+
+    public static <K, V> Map<K, V> merge(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> other) {
+        Map<K, V> ret = new HashMap<>(first);
+        if (other != null) {
+            ret.putAll(other);
+        }
+        return ret;
+    }
 }
