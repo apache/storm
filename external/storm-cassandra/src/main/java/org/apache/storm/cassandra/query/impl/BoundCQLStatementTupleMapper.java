@@ -68,7 +68,7 @@ public class BoundCQLStatementTupleMapper implements CQLStatementTupleMapper {
      * {@inheritDoc}
      */
     @Override
-    public List<Statement> map(Map config, Session session, ITuple tuple) {
+    public List<Statement> map(Map<String, Object> config, Session session, ITuple tuple) {
         final List<Column> columns = mapper.map(tuple);
 
         final String query = contextQuery.resolves(config, tuple);

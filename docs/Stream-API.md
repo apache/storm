@@ -31,6 +31,7 @@ documentation: true
         * [to](#to)
     * [Branch](#branching)
     * [Joins](#joins)
+    * [CoGroupByKey](#cogroupbykey)
     * [State](#state)
         * [updateStateByKey](#updatestatebykey)
         * [stateQuery](#statequery)
@@ -109,7 +110,7 @@ Stream<Tuple3<String, Integer, Long>> stream = builder.newStream(new TestSpout()
 
 # <a name="streamapis"></a> Stream APIs 
 
-Storm's streaming apis (defined in [Stream](../storm-core/src/jvm/org/apache/storm/streams/Stream.java) and [PairStream](../storm-core/src/jvm/org/apache/storm/streams/PairStream.java)) currently support a wide range of operations such as transformations, filters, windowing, aggregations, branching, joins, stateful, output and debugging operations.
+Storm's streaming apis (defined in [Stream](../storm-client/src/jvm/org/apache/storm/streams/Stream.java) and [PairStream](../storm-client/src/jvm/org/apache/storm/streams/PairStream.java)) currently support a wide range of operations such as transformations, filters, windowing, aggregations, branching, joins, stateful, output and debugging operations.
 
 ## <a name="basictransformations"></a> Basic transformations 
 
@@ -276,9 +277,10 @@ PairStream<String, Double> scores = ...
 // list of scores per user in the last window, e.g. ("alice", [10, 11, 13]), ("bob", [15, 20])
 PairStream<String, Iterable<Integer>> userScores =  scores.window(...).groupByKey(); 
 ```
- 
+
 ###  <a name="countbykey"></a> countByKey
 `countByKey` counts the values for each key of this stream.
+
 ```java
 Stream<String> words = ...                                              // a windowed stream of words
 Stream<String, Long> wordCounts = words.mapToPair(w -> Pair.of(w,1)     // convert to a stream of (word, 1) pairs
@@ -373,6 +375,7 @@ Stream<T>[] streams  = stream.branch(Predicate<T>... predicates)
 The predicates are applied in the given order to the values of the stream and the result is forwarded to the corresponding (index based) result stream based on the first predicate that matches. If none of the predicates match a value, that value is dropped.
 
 For example,
+
 ```java
 Stream<Integer>[] streams = builder.newStream(new RandomIntegerSpout(), new ValueMapper<Integer>(0))
                                    .branch(x -> (x % 2) == 0, 
@@ -391,13 +394,26 @@ PairStream<Long, Long> cubes = … // (1, 1), (2, 8), (3, 27) ...
 
 // join the sqaures and cubes stream to produce (1, [1, 1]), (2, [4, 8]), (3, [9, 27]) ...
 PairStream<Long, Pair<Long, Long>> joined = squares.window(TumblingWindows.of(Duration.seconds(5))).join(cubes);
-
 ```
 
 Joins are typically invoked on a windowed stream, joining the key-values that arrived on each stream in the current window. The parallelism of the stream on which the join is invoked is carried forward to the joined stream. An optional `ValueJoiner` can be passed as an argument to join to specify how to join the two values for each matching key (the default behavior is to return a `Pair` of the value from both streams).
 
 Left, right and full outer joins are supported. 
 
+## <a name="cogroupbykey"></a> CoGroupByKey
+
+`coGroupByKey` Groups the values of this stream with the values having the same key from the other stream.
+
+```java
+// a stream of (key, value) pairs e.g. (k1, v1), (k2, v2), (k2, v3)
+PairStream<String, String> stream1 = ...
+
+// another stream of (key, value) pairs e.g. (k1, x1), (k1, x2), (k3, x3)
+PairStream<String, String> stream2 = ...
+
+// the co-grouped values per key in the last window, e.g. (k1, ([v1], [x1, x2]), (k2, ([v2, v3], [])), (k3, ([], [x3]))
+PairStream<String, Iterable<String>> coGroupedStream =  stream1.window(...).coGroupByKey(stream2);
+```
 
 ## <a name="state"></a> State
 

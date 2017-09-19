@@ -50,11 +50,11 @@ public class ConfluentAvroSerializer extends AbstractAvroSerializer {
      * See Storm's SerializationFactory class for details
      *
      * @param k Unused but needs to be present for Serialization Factory to find this constructor
-     * @param stormConf The global storm configuration. Must define "avro.schemaregistry.confluent" to locate the
+     * @param topoConf The global storm configuration. Must define "avro.schemaregistry.confluent" to locate the
      *                  confluent schema registry. Should in the form of "http://HOST:PORT"
      */
-    public ConfluentAvroSerializer(Kryo k, Map stormConf) {
-        url = (String) stormConf.get("avro.schemaregistry.confluent");
+    public ConfluentAvroSerializer(Kryo k, Map<String, Object> topoConf) {
+        url = (String) topoConf.get("avro.schemaregistry.confluent");
         this.theClient = new CachedSchemaRegistryClient(this.url, 10000);
     }
 

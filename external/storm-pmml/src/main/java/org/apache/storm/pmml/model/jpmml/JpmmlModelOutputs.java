@@ -87,7 +87,7 @@ public class JpmmlModelOutputs implements ModelOutputs {
         return toDefaultStream(blobKey, Utils.readStormConfig());
     }
 
-    public static ModelOutputs toDefaultStream(String blobKey, Map config) {
+    public static ModelOutputs toDefaultStream(String blobKey, Map<String, Object> config) {
         try {
             return toDefaultStream(JpmmlFactory.newPmml(blobKey, config));
         } catch (Exception e) {
@@ -126,7 +126,7 @@ public class JpmmlModelOutputs implements ModelOutputs {
         return toStreams(blobKey, Utils.readStormConfig(), streams);
     }
 
-    public static ModelOutputs toStreams(String blobKey, Map config, List<String> streams) {
+    public static ModelOutputs toStreams(String blobKey, Map<String, Object> config, List<String> streams) {
         try {
             return toStreams(JpmmlFactory.newPmml(blobKey, config), streams);
         } catch (Exception e) {

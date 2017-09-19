@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.kafka.spout.internal;
 
 import java.io.Serializable;
@@ -20,7 +21,7 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 
 /**
- * This is here to enable testing
+ * This is here to enable testing.
  */
 public interface KafkaConsumerFactory<K, V> extends Serializable {
     public KafkaConsumer<K,V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig);

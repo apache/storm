@@ -28,22 +28,22 @@ import java.util.List;
 
 public class ListTopologies {
     private static final Logger LOG = LoggerFactory.getLogger(ListTopologies.class);
-    private static final String MSG_FORMAT = "%-20s %-10s %-10s %-12s %-10s\n";
+    private static final String MSG_FORMAT = "%-20s %-10s %-10s %-12s %-12s %-20s\n";
 
     public static void main(String [] args) throws Exception {
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
           @Override
-          public void run(Nimbus.Client nimbus) throws Exception {
+          public void run(Nimbus.Iface nimbus) throws Exception {
               List<TopologySummary> topologies = nimbus.getClusterInfo().get_topologies();
               if (topologies == null || topologies.isEmpty()) {
                   System.out.println("No topologies running.");
               } else {
-                  System.out.printf(MSG_FORMAT, "Topology_name", "Status", "Num_tasks", "Num_workers", "Uptime_secs");
-                  System.out.println("-------------------------------------------------------------------");
+                  System.out.printf(MSG_FORMAT, "Topology_name", "Status", "Num_tasks", "Num_workers", "Uptime_secs", "Topology_Id");
+                  System.out.println("----------------------------------------------------------------------------------------");
                   for (TopologySummary topology: topologies) {
                       System.out.printf(MSG_FORMAT, topology.get_name(), topology.get_status(),
                                         topology.get_num_tasks(), topology.get_num_workers(),
-                                        topology.get_uptime_secs());
+                                        topology.get_uptime_secs(), topology.get_id());
                   }
               }
           }

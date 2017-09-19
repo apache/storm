@@ -214,14 +214,9 @@ To pull in a merge request you should generally follow the command line instruct
         $ git pull <remote_repo_url> <remote_branch>
     You can use `./dev-tools/storm-merge.py <pull-number>` to produce the above command most of the time.
 
-4.  Assuming that the pull request merges without any conflicts:
-    Update the top-level `CHANGELOG.md`, and add in the JIRA ticket number (example: `STORM-1234`) and ticket
-    description to the change log.  Make sure that you place the JIRA ticket number in the commit comments where
-    applicable.
+4. Run any sanity tests that you think are needed.
 
-5. Run any sanity tests that you think are needed.
-
-6. Once you are confident that everything is ok, you can merge your local test branch into your local `master` branch,
+5. Once you are confident that everything is ok, you can merge your local test branch into your local `master` branch,
    and push the changes back to the official Apache repo.
 
         # Pull request looks ok, change log was updated, etc.  We are ready for pushing.
@@ -233,7 +228,7 @@ To pull in a merge request you should generally follow the command line instruct
         # automatically a short while after you have pushed to the Apache repo.
         $ git push origin master
 
-7. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
+6. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
    and resolve the ticket.  Be sure to set the `Fix Version/s` field to the version you pushed your changes to.
    It is usually good practice to thank the author of the pull request for their contribution if you have not done
    so already.
@@ -272,7 +267,7 @@ If you wish to skip the unit tests you can do this by adding `-DskipTests` to th
 In case you modified `storm.thrift`, you have to regenerate thrift code as java and python code before compiling whole project.
 
 ```sh
-cd storm-core/src
+cd storm-client/src
 sh genthrift.sh
 ```
 

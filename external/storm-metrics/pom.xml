@@ -57,10 +57,10 @@
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
-      <artifactId>storm-core</artifactId>
+      <artifactId>storm-client</artifactId>
       <version>${project.version}</version>
       <!-- keep storm out of the jar-with-dependencies -->
-      <scope>provided</scope>
+      <scope>${provided.scope}</scope>
     </dependency>
   </dependencies>
   <build>
@@ -100,6 +100,14 @@
             </goals>
           </execution>
         </executions>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-checkstyle-plugin</artifactId>
+        <!--Note - the version would be inherited-->
+        <configuration>
+          <maxAllowedViolations>32</maxAllowedViolations>
+        </configuration>
       </plugin>
     </plugins>
   </build>

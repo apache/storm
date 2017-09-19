@@ -40,14 +40,14 @@ public abstract class BaseBeanFactory<T> implements BeanFactory<T> {
      * {@inheritDoc}
      */
     @Override
-    public synchronized T get(Map<String, Object> stormConf) {
+    public synchronized T get(Map<String, Object> topoConf) {
         if( instance != null) return instance;
-        return instance = make(stormConf);
+        return instance = make(topoConf);
     }
     /**
      * Return a new instance of T.
      */
-    protected abstract T make(final Map<String, Object> stormConf);
+    protected abstract T make(final Map<String, Object> topoConf);
     /**
      * {@inheritDoc}
      */

@@ -31,7 +31,6 @@ chown -R storm:storm /etc/storm
 
 rm /usr/share/storm/conf/storm.yaml
 cp "${SCRIPT_DIR}/storm.yaml" /usr/share/storm/conf/
-cp "${SCRIPT_DIR}/cluster.xml" /usr/share/storm/logback/
 ln -s /usr/share/storm/conf/storm.yaml /etc/storm/conf/storm.yaml
 
 mkdir /var/log/storm

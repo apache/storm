@@ -41,7 +41,7 @@ public class MetricGenSpout extends BaseRichSpout {
                     TupleOpenTsdbDatapointMapper.DEFAULT_MAPPER.getValueField(),
                     TupleOpenTsdbDatapointMapper.DEFAULT_MAPPER.getTagsField());
 
-    private Map conf;
+    private Map<String, Object> conf;
     private TopologyContext context;
     private SpoutOutputCollector collector;
 
@@ -51,7 +51,7 @@ public class MetricGenSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.conf = conf;
         this.context = context;
         this.collector = collector;

@@ -15,12 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.bolt;
 
 import java.util.Map;
 
 import org.apache.commons.lang.Validate;
-import org.apache.storm.mongodb.common.MongoDBClient;
+import org.apache.storm.mongodb.common.MongoDbClient;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.base.BaseRichBolt;
@@ -31,26 +32,31 @@ public abstract class AbstractMongoBolt extends BaseRichBolt {
     private String collectionName;
 
     protected OutputCollector collector;
-    protected MongoDBClient mongoClient;
+    protected MongoDbClient mongoClient;
 
+    /**
+     * AbstractMongoBolt Constructor.
+     * @param url The MongoDB server url
+     * @param collectionName The collection where reading/writing data
+     */
     public AbstractMongoBolt(String url, String collectionName) {
-       Validate.notEmpty(url, "url can not be blank or null");
-       Validate.notEmpty(collectionName, "collectionName can not be blank or null");
+        Validate.notEmpty(url, "url can not be blank or null");
+        Validate.notEmpty(collectionName, "collectionName can not be blank or null");
 
-       this.url = url;
-       this.collectionName = collectionName;
+        this.url = url;
+        this.collectionName = collectionName;
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context,
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
             OutputCollector collector) {
         this.collector = collector;
-        this.mongoClient = new MongoDBClient(url, collectionName);
+        this.mongoClient = new MongoDbClient(url, collectionName);
     }
 
     @Override
     public void cleanup() {
-       this.mongoClient.close();
+        this.mongoClient.close();
     }
 
 }

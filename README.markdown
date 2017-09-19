@@ -33,10 +33,21 @@ You can subscribe to this list by sending an email to [dev-subscribe@storm.apach
 
 You can also [browse the archives of the storm-dev mailing list](http://mail-archives.apache.org/mod_mbox/storm-dev/).
 
+Storm developers who would want to track the JIRA issues should subscribe to [issues@storm.apache.org](mailto:issues@storm.apache.org).
+
+You can subscribe to this list by sending an email to [issues-subscribe@storm.apache.org](mailto:issues-subscribe@storm.apache.org). Likewise, you can cancel a subscription by sending an email to [issues-unsubscribe@storm.apache.org](mailto:issues-unsubscribe@storm.apache.org).
+
+You can view the archives of the mailing list [here](http://mail-archives.apache.org/mod_mbox/storm-issues/).
+
+### Issue tracker
+In case you want to raise a bug/feature or propose an idea, please use [Apache Jira](https://issues.apache.org/jira/projects/STORM)
+
 ### Which list should I send/subscribe to?
 If you are using a pre-built binary distribution of Storm, then chances are you should send questions, comments, storm-related announcements, etc. to [user@storm.apache.org](mailto:user@storm.apache.org).
 
 If you are building storm from source, developing new features, or otherwise hacking storm source code, then [dev@storm.apache.org](mailto:dev@storm.apache.org) is more appropriate.
+
+If you are committers and/or PMCs, or contributors looking for following up and participating development of Storm, then you would want to also subscribe [issues@storm.apache.org](issues@storm.apache.org) in addition to [dev@storm.apache.org](dev@storm.apache.org).
 
 ### What will happen with storm-user@googlegroups.com?
 All existing messages will remain archived there, and can be accessed/searched [here](https://groups.google.com/forum/#!forum/storm-user).
@@ -100,6 +111,7 @@ under the License.
 * Satish Duggana ([@satishd](https://github.com/satishd))
 * Xin Wang ([@vesense](https://github.com/vesense))
 * Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
+* Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
 
 ## Contributors
 
@@ -276,6 +288,7 @@ under the License.
 * Juan Paulo Gutierrez ([@juanpaulo](https://github.com/juanpaulo)) 
 * Ambud Sharma ([@ambud](https://github.com/ambud]))
 * Abhishek ([@aandis](https://github.com/aandis]))
+* Zhaokun Liu ([@liu-zhaokun](https://github.com/liu-zhaokun]))
  
 ## Acknowledgements
 

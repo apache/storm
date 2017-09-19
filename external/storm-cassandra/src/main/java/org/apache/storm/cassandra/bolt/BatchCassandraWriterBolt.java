@@ -76,8 +76,8 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
      * {@inheritDoc}
      */
     @Override
-    public void prepare(Map stormConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
-        super.prepare(stormConfig, topologyContext, outputCollector);
+    public void prepare(Map<String, Object> topoConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
+        super.prepare(topoConfig, topologyContext, outputCollector);
         this.componentID = topologyContext.getThisComponentId();
         this.queue = new LinkedBlockingQueue<>(batchMaxSize);
         this.lastModifiedTimesMillis = now();
@@ -148,7 +148,7 @@ public class BatchCassandraWriterBolt extends BaseCassandraBolt<List<Tuple>> {
         List<PairStatementTuple> stmts = new ArrayList<>(inputs.size());
 
         for(Tuple t : inputs) {
-            List<Statement> sl = getMapper().map(stormConfig, session, t);
+            List<Statement> sl = getMapper().map(topoConfig, session, t);
             for(Statement s : sl)
                 stmts.add(new PairStatementTuple(t, s) );
         }

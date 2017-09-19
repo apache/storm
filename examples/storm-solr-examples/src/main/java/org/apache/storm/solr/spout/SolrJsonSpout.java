@@ -39,7 +39,7 @@ public class SolrJsonSpout extends BaseRichSpout {
             getPojoValues("1"), getPojoValues("2"));    // Tuple contains Java object that must be serialized to JSON by SolrJsonMapper
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
     }
 

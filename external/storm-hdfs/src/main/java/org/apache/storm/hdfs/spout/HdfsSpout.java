@@ -35,7 +35,7 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.storm.hdfs.common.HdfsUtils;
-import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
+import org.apache.storm.hdfs.security.HdfsSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class HdfsSpout extends BaseRichSpout {
 
   private Configuration hdfsConfig;
 
-  private Map conf = null;
+  private Map<String, Object> conf = null;
   private FileLock lock;
   private String spoutId = null;
 
@@ -364,7 +364,8 @@ public class HdfsSpout extends BaseRichSpout {
     inflight.put(id, tuple);
   }
 
-  public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+  @SuppressWarnings("deprecation")
+public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
     LOG.info("Opening HDFS Spout");
     this.conf = conf;
     this.commitTimer = new Timer();
@@ -528,12 +529,16 @@ public class HdfsSpout extends BaseRichSpout {
     return sourceDirPath.toString() + Path.SEPARATOR + Configs.DEFAULT_LOCK_DIR;
   }
 
-  private static void checkValidReader(String readerType) {
+  static void checkValidReader(String readerType) {
     if ( readerType.equalsIgnoreCase(Configs.TEXT)  || readerType.equalsIgnoreCase(Configs.SEQ) )
       return;
     try {
       Class<?> classType = Class.forName(readerType);
       classType.getConstructor(FileSystem.class, Path.class, Map.class);
+      if (!FileReader.class.isAssignableFrom(classType)) {
+          LOG.error(readerType + " not a FileReader");
+          throw new IllegalArgumentException(readerType + " not a FileReader."); 
+      }
       return;
     } catch (ClassNotFoundException e) {
       LOG.error(readerType + " not found in classpath.", e);

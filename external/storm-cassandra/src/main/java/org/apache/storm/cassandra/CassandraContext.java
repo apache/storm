@@ -16,6 +16,7 @@
  * specific language governing permissions and limitations
  * under the License.
  */
+
 package org.apache.storm.cassandra;
 
 import com.datastax.driver.core.Cluster;
@@ -64,8 +65,8 @@ public class CassandraContext extends WorkerCtx implements SimpleClientProvider 
          * {@inheritDoc}
          */
         @Override
-        protected CassandraConf make(Map<String, Object> stormConf) {
-            return new CassandraConf(stormConf);
+        protected CassandraConf make(Map<String, Object> topoConf) {
+            return new CassandraConf(topoConf);
         }
     }
 
@@ -79,13 +80,13 @@ public class CassandraContext extends WorkerCtx implements SimpleClientProvider 
          * {@inheritDoc}
          */
         @Override
-        protected SimpleClient make(Map<String, Object> stormConf) {
-            Cluster cluster = this.context.getWorkerBean(Cluster.class, stormConf);
+        protected SimpleClient make(Map<String, Object> topoConf) {
+            Cluster cluster = this.context.getWorkerBean(Cluster.class, topoConf);
             if( cluster.isClosed() ) {
                 LOG.warn("Cluster is closed - trigger new initialization!");
-                cluster = this.context.getWorkerBean(Cluster.class, stormConf, true);
+                cluster = this.context.getWorkerBean(Cluster.class, topoConf, true);
             }
-            CassandraConf config = this.context.getWorkerBean(CassandraConf.class, stormConf);
+            CassandraConf config = this.context.getWorkerBean(CassandraConf.class, topoConf);
             return new DefaultClient(cluster, config.getKeyspace());
         }
     }

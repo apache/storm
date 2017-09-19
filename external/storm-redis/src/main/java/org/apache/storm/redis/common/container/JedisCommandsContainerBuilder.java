@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.common.container;
 
 import org.apache.storm.redis.common.config.JedisClusterConfig;
@@ -47,7 +48,7 @@ public class JedisCommandsContainerBuilder {
      * @return container for Redis Cluster environment
      */
     public static JedisCommandsInstanceContainer build(JedisClusterConfig config) {
-        JedisCluster jedisCluster = new JedisCluster(config.getNodes(), config.getTimeout(), config.getMaxRedirections(), DEFAULT_POOL_CONFIG);
+        JedisCluster jedisCluster = new JedisCluster(config.getNodes(), config.getTimeout(), config.getTimeout(), config.getMaxRedirections(), config.getPassword(), DEFAULT_POOL_CONFIG);
         return new JedisClusterContainer(jedisCluster);
     }
 }

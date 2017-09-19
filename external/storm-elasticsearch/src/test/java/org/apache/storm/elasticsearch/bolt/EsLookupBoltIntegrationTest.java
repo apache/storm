@@ -17,45 +17,29 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.testing.IntegrationTest;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.elasticsearch.ElasticsearchGetRequest;
-import org.apache.storm.elasticsearch.EsLookupResultOutput;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.elasticsearch.action.delete.DeleteRequest;
-import org.elasticsearch.action.get.GetRequest;
-import org.elasticsearch.action.get.GetResponse;
+import org.elasticsearch.client.ResponseException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
-import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.UUID;
-
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
-import static org.mockito.Mockito.verify;
 
 @Category(IntegrationTest.class)
 @RunWith(MockitoJUnitRunner.class)
 public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<EsLookupBolt> {
-
-    private final String documentId = UUID.randomUUID().toString();
-    private final String indexName = "index";
-    private final String typeName = "type";
-    private final String source = "{\"user\":\"user1\"}";
-
-    private ElasticsearchGetRequest getRequest = new TestElasticsearchGetRequest();
-    private EsLookupResultOutput output = new TestEsLookupResultOutput();
 
     @Captor
     private ArgumentCaptor<Tuple> anchor;
@@ -63,22 +47,16 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
     @Captor
     private ArgumentCaptor<Values> emmitedValues;
 
-    @Mock
-    private Tuple tuple;
+    private Tuple tuple = EsTestUtil.generateTestTuple(source, index, type, documentId);
 
     @Override
     protected EsLookupBolt createBolt(EsConfig esConfig) {
-        return new EsLookupBolt(esConfig, getRequest, output);
+        return new EsLookupBolt(esConfig);
     }
 
     @Before
     public void populateIndexWithTestData() throws Exception {
-        node.client().prepareIndex(indexName, typeName, documentId).setSource(source).execute().actionGet();
-    }
-
-    @Before
-    public void clearIndex() throws Exception {
-        node.client().delete(new DeleteRequest(indexName, typeName, documentId)).actionGet();
+        node.client().prepareIndex(index, type, documentId).setSource(source).execute().actionGet();
     }
 
     @Test
@@ -107,29 +85,18 @@ public class EsLookupBoltIntegrationTest extends AbstractEsBoltIntegrationTest<E
         assertThat(anchor.getValue(), is(tuple));
     }
 
+    @Test
+    public void indexMissing() throws Exception {
+        Tuple tuple = EsTestUtil.generateTestTuple(source, "missing", type, documentId);
+        bolt.execute(tuple);
+
+        verify(outputCollector, never()).emit(any(Tuple.class), any(Values.class));
+        verify(outputCollector).reportError(any(ResponseException.class));
+        verify(outputCollector).fail(tuple);
+    }
+
     private Values expectedValues() {
-        return new Values(source);
-    }
-
-    private class TestElasticsearchGetRequest implements ElasticsearchGetRequest {
-
-        @Override
-        public GetRequest extractFrom(ITuple tuple) {
-            return node.client().prepareGet().setId(documentId).setIndex(indexName).setType(typeName).request();
-        }
-    }
-
-    private class TestEsLookupResultOutput implements EsLookupResultOutput {
-
-        @Override
-        public Collection<Values> toValues(GetResponse response) {
-            return Collections.singleton(expectedValues());
-        }
-
-        @Override
-        public Fields fields() {
-            return new Fields("data");
-        }
+        return new Values(index, type, documentId, source);
     }
 
     @Override

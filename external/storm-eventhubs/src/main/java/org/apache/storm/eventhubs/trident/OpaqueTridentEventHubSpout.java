@@ -46,13 +46,13 @@ public class OpaqueTridentEventHubSpout implements IOpaquePartitionedTridentSpou
 
   @Override
   public IOpaquePartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
-      Map conf, TopologyContext context) {
+      Map<String, Object> conf, TopologyContext context) {
     return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
   }
 
   @Override
   public IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map> getEmitter(
-      Map conf, TopologyContext context) {
+      Map<String, Object> conf, TopologyContext context) {
     return new OpaqueTridentEventHubEmitter(spoutConfig);
   }
 

@@ -109,7 +109,7 @@ def emitBolt(tup, stream=None, anchors = [], directTask=None):
     m = {"command": "emit"}
     if stream is not None:
         m["stream"] = stream
-    m["anchors"] = map(lambda a: a.id, anchors)
+    m["anchors"] = [a.id for a in anchors]
     if directTask is not None:
         m["task"] = directTask
     m["tuple"] = tup

@@ -33,6 +33,7 @@ import kafka.message.MessageAndOffset;
 
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.storm.utils.Utils;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -43,7 +44,6 @@ import org.slf4j.LoggerFactory;
 
 import org.apache.storm.kafka.trident.GlobalPartitionInformation;
 import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.utils.Utils;
 
 import com.google.common.collect.ImmutableMap;
 public class KafkaUtilsTest {
@@ -271,7 +271,7 @@ public class KafkaUtilsTest {
         partitions.add(globalPartitionInformation);
         int numTasks = numPartitions / partitionsPerTask;
         for (int i = 0 ; i < numTasks ; i++) {
-            assertEquals(partitionsPerTask, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, i).size());
+            assertEquals(partitionsPerTask, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, i, i).size());
         }
     }
 
@@ -281,8 +281,8 @@ public class KafkaUtilsTest {
         List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
         partitions.add(globalPartitionInformation);
         int numTasks = 2;
-        assertEquals(1, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, 0).size());
-        assertEquals(0, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, 1).size());
+        assertEquals(1, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, 0, 0).size());
+        assertEquals(0, KafkaUtils.calculatePartitionsForTask(partitions, numTasks, 1, 1).size());
     }
 
     @Test (expected = IllegalArgumentException.class )
@@ -290,6 +290,6 @@ public class KafkaUtilsTest {
         GlobalPartitionInformation globalPartitionInformation = new GlobalPartitionInformation(TEST_TOPIC);
         List<GlobalPartitionInformation> partitions = new ArrayList<GlobalPartitionInformation>();
         partitions.add(globalPartitionInformation);
-        KafkaUtils.calculatePartitionsForTask(partitions, 1, 1);
+        KafkaUtils.calculatePartitionsForTask(partitions, 1, 1, 1);
     }
 }

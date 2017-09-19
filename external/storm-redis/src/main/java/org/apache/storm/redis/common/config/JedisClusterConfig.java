@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.common.config;
 
 import com.google.common.base.Preconditions;
@@ -33,6 +34,11 @@ public class JedisClusterConfig implements Serializable {
     private Set<InetSocketAddress> nodes;
     private int timeout;
     private int maxRedirections;
+    private String password;
+
+    // for jackson
+    public JedisClusterConfig() {
+    }
 
     /**
      * Constructor
@@ -47,11 +53,29 @@ public class JedisClusterConfig implements Serializable {
      * @throws NullPointerException when you didn't set nodes
      */
     public JedisClusterConfig(Set<InetSocketAddress> nodes, int timeout, int maxRedirections) {
+        this(nodes, timeout, maxRedirections, null);
+    }
+
+    /**
+     * Constructor
+     * <p/>
+     * You can use JedisClusterConfig.Builder() for leaving some fields to apply default value.
+     * <p/>
+     * Note that list of node is mandatory, and when you didn't set nodes, it throws NullPointerException.
+     *
+     * @param nodes list of node information for JedisCluster
+     * @param timeout socket / connection timeout
+     * @param maxRedirections limit of redirections - how much we'll follow MOVED or ASK
+     * @param password password, if any
+     * @throws NullPointerException when you didn't set nodes
+     */
+    public JedisClusterConfig(Set<InetSocketAddress> nodes, int timeout, int maxRedirections, String password) {
         Preconditions.checkNotNull(nodes, "Node information should be presented");
 
         this.nodes = nodes;
         this.timeout = timeout;
         this.maxRedirections = maxRedirections;
+        this.password = password;
     }
 
     /**
@@ -83,12 +107,21 @@ public class JedisClusterConfig implements Serializable {
     }
 
     /**
+     * Returns password.
+     * @return password
+     */
+    public String getPassword() {
+        return password;
+    }
+
+    /**
      * Builder for initializing JedisClusterConfig.
      */
     public static class Builder {
         private Set<InetSocketAddress> nodes;
         private int timeout = Protocol.DEFAULT_TIMEOUT;
         private int maxRedirections = 5;
+        private String password;
 
         /**
          * Sets list of node.
@@ -121,11 +154,21 @@ public class JedisClusterConfig implements Serializable {
         }
 
         /**
+         * Sets password.
+         * @param password password, if any
+         * @return Builder itself
+         */
+        public Builder setPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        /**
          * Builds JedisClusterConfig.
          * @return JedisClusterConfig
          */
         public JedisClusterConfig build() {
-            return new JedisClusterConfig(nodes, timeout, maxRedirections);
+            return new JedisClusterConfig(nodes, timeout, maxRedirections, password);
         }
     }
 }

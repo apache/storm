@@ -41,6 +41,9 @@
   <div class="row">
     <div id="result"></div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 <script type="text/javascript">
@@ -94,11 +97,26 @@ $(document).ready(function() {
             file.count = count;
             file.logviewerPort = logviewerPort;
             file.search_archived = search_archived;
+            if (file.matches == 0) {
+               file.resultNotFound = true;
+            }
             var searchTemplate = $(template).filter("#search-result-identified-template").html();
             var rendered = Mustache.render(searchTemplate, file);
             var elemId = elem_id_for_host(host);
             $("#"+elemId).remove();
-            $("#search-result-table > tbody").append(rendered);
+            if (file.resultNotFound) {
+                // if no result found,
+                // and there is no "aResult" or "noResult" element exists,
+                // append "resultNotFound" element
+                if (!$("#aResult").length && !$("#noResult").length) {
+                    $("#search-result-table > tbody").append(rendered);
+                }
+            } else {
+              // if a result found, remove "noResult" element,
+              // and append the result
+              $("#noResult").remove();
+              $("#search-result-table > tbody").append(rendered);
+            }
         }
 
 
@@ -120,7 +138,7 @@ $(document).ready(function() {
 
 
                 for (var host in distinct_hosts) {
-                    var searchURL = "http://"+host+":"+logviewerPort+"/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
+                    var searchURL = "http://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
                     if(search_archived)
                         searchURL += "&search-archived=" + search_archived;
                     
@@ -150,6 +168,8 @@ $(document).ready(function() {
         }
     });
 });
+
+getPageRenderedTimestamp("page-rendered-at-timestamp");
 
 </script>
 </html>

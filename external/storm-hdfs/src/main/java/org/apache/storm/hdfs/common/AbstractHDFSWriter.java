@@ -15,28 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hdfs.common;
 
+import java.io.IOException;
 import org.apache.hadoop.fs.Path;
+import org.apache.storm.hdfs.bolt.Writer;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
 
-import java.io.IOException;
+abstract public class AbstractHDFSWriter implements Writer {
+    protected long lastUsedTime;
+    protected long offset;
+    protected boolean needsRotation;
+    final protected Path filePath;
+    final protected FileRotationPolicy rotationPolicy;
 
-abstract public class AbstractHDFSWriter {
-    long lastUsedTime;
-    long offset;
-    boolean needsRotation;
-    Path filePath;
-    FileRotationPolicy rotationPolicy;
-
-    AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
+    public AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
         //This must be defensively copied, because a bolt probably has only one rotation policy object
         this.rotationPolicy = policy.copy();
         this.filePath = path;
     }
 
-    final public long write(Tuple tuple) throws IOException{
+    final public long write(Tuple tuple) throws IOException {
         doWrite(tuple);
         this.needsRotation = rotationPolicy.mark(tuple, offset);
 

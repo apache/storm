@@ -17,21 +17,20 @@
   (:use [clojure test])
   (:import [org.apache.storm.drpc ReturnResults DRPCSpout
             LinearDRPCTopologyBuilder DRPCInvocationsClient]
-           [org.apache.storm.utils ConfigUtils Utils ServiceRegistry])
+           [org.apache.storm.utils ServiceRegistry Utils])
   (:import [org.apache.storm.topology FailedException])
   (:import [org.apache.storm.coordination CoordinatedBolt$FinishedCallback])
   (:import [org.apache.storm ILocalDRPC LocalDRPC LocalCluster])
   (:import [org.apache.storm.tuple Fields])
   (:import [org.mockito Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
-  (:import [org.apache.storm.utils.staticmocking ConfigUtilsInstaller])
   (:import [org.apache.storm.spout SpoutOutputCollector])
   (:import [org.apache.storm.generated DRPCExecutionException DRPCRequest])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:import [org.apache.storm Thrift])
   (:import [org.mockito ArgumentCaptor Mockito Matchers])
   (:use [org.apache.storm config])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [conjure core]))
 
 (defbolt exclamation-bolt ["result" "return-info"] [tuple collector]
@@ -46,15 +45,15 @@
         spout (DRPCSpout. "test" drpc)
         cluster (LocalCluster.)
         topology (Thrift/buildTopology
-                  {"1" (Thrift/prepareSpoutDetails spout)}
-                  {"2" (Thrift/prepareBoltDetails
-                         {(Utils/getGlobalStreamId "1" nil)
-                          (Thrift/prepareShuffleGrouping)}
-                         exclamation-bolt)
-                   "3" (Thrift/prepareBoltDetails
-                         {(Utils/getGlobalStreamId "2" nil)
-                          (Thrift/prepareGlobalGrouping)}
-                         (ReturnResults.))})]
+                   {"1" (Thrift/prepareSpoutDetails spout)}
+                   {"2" (Thrift/prepareBoltDetails
+                          {(Utils/getGlobalStreamId "1" nil)
+                           (Thrift/prepareShuffleGrouping)}
+                          exclamation-bolt)
+                    "3" (Thrift/prepareBoltDetails
+                          {(Utils/getGlobalStreamId "2" nil)
+                           (Thrift/prepareGlobalGrouping)}
+                          (ReturnResults.))})]
     (.submitTopology cluster "test" {} topology)
 
     (is (= "aaa!!!" (.execute drpc "test" "aaa")))

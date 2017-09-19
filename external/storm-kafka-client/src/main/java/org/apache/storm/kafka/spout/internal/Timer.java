@@ -15,6 +15,7 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout.internal;
 
 import java.util.concurrent.TimeUnit;
@@ -63,7 +64,7 @@ public class Timer {
      * (re-initiated) and a new cycle will start.
      *
      * @return true if the time elapsed since the last call returning true is greater than {@code period}. Returns false
-     * otherwise.
+     *     otherwise.
      */
     public boolean isExpiredResetOnTrue() {
         final boolean expired = Time.nanoTime() - start >= periodNanos;

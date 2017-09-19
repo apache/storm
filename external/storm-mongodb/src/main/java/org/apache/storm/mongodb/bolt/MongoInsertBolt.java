@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.bolt;
 
 import java.util.LinkedList;
@@ -33,9 +34,7 @@ import org.bson.Document;
 
 /**
  * Basic bolt for writing to MongoDB.
- *
  * Note: Each MongoInsertBolt defined in a topology is tied to a specific collection.
- *
  */
 public class MongoInsertBolt extends AbstractMongoBolt {
 
@@ -51,6 +50,12 @@ public class MongoInsertBolt extends AbstractMongoBolt {
 
     private int flushIntervalSecs = DEFAULT_FLUSH_INTERVAL_SECS;
 
+    /**
+     * MongoInsertBolt Constructor.
+     * @param url The MongoDB server url
+     * @param collectionName The collection where reading/writing data
+     * @param mapper MongoMapper converting tuple to an MongoDB document
+     */
     public MongoInsertBolt(String url, String collectionName, MongoMapper mapper) {
         super(url, collectionName);
 
@@ -61,21 +66,21 @@ public class MongoInsertBolt extends AbstractMongoBolt {
 
     @Override
     public void execute(Tuple tuple) {
-        try{
-            if(batchHelper.shouldHandle(tuple)){
+        try {
+            if (batchHelper.shouldHandle(tuple)) {
                 batchHelper.addBatch(tuple);
             }
 
-            if(batchHelper.shouldFlush()) {
+            if (batchHelper.shouldFlush()) {
                 flushTuples();
                 batchHelper.ack();
             }
         } catch (Exception e) {
-           batchHelper.fail(e);
+            batchHelper.fail(e);
         }
     }
 
-    private void flushTuples(){
+    private void flushTuples() {
         List<Document> docs = new LinkedList<>();
         for (Tuple t : batchHelper.getBatchTuples()) {
             Document doc = mapper.toDocument(t);
@@ -105,9 +110,9 @@ public class MongoInsertBolt extends AbstractMongoBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context,
+    public void prepare(Map<String, Object> topoConf, TopologyContext context,
             OutputCollector collector) {
-        super.prepare(stormConf, context, collector);
+        super.prepare(topoConf, context, collector);
         this.batchHelper = new BatchHelper(batchSize, collector);
     }
 

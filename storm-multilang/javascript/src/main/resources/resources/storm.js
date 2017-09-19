@@ -29,6 +29,9 @@ function Storm() {
     this.taskIdsCallbacks = [];
     this.isFirstMessage = true;
     this.separator = '\nend\n';
+    this.logLevels = {
+        trace: 0, debug: 1, info: 2, warn: 3, error: 4
+    };
 }
 
 Storm.prototype.sendMsgToParent = function(msg) {
@@ -46,9 +49,36 @@ Storm.prototype.sendPid = function(heartbeatdir) {
     this.sendMsgToParent({pid: pid});
 };
 
-Storm.prototype.log = function(msg) {
-    this.sendMsgToParent({command: 'log', msg: msg});
+Storm.prototype.sendToLogging = function(args, logLevel) {
+    var argArray = Object.keys(args).map(function(key) {
+        return (typeof args[key] === 'string') ? args[key] : JSON.stringify(args[key]);
+    });
+    var msg = argArray.join(' ');
+    this.sendMsgToParent({'command': 'log', 'msg': msg, 'level': logLevel});
 };
+
+Storm.prototype.logTrace = function() {
+    this.sendToLogging(arguments, this.logLevels.trace);
+};
+
+Storm.prototype.logDebug = function() {
+    this.sendToLogging(arguments, this.logLevels.debug);
+};
+
+Storm.prototype.logInfo = function() {
+    this.sendToLogging(arguments, this.logLevels.info);
+};
+
+Storm.prototype.logWarn = function() {
+    this.sendToLogging(arguments, this.logLevels.warn);
+};
+
+Storm.prototype.logError = function() {
+    this.sendToLogging(arguments, this.logLevels.error);
+};
+
+// For backwards compatibility
+Storm.prototype.log = Storm.prototype.logInfo;
 
 Storm.prototype.initSetupInfo = function(setupInfo) {
     var self = this;
@@ -223,11 +253,11 @@ function Tuple(id, component, stream, task, values) {
 }
 
 Tuple.prototype.isTickTuple = function(){
-    return this.task === -1 && this.stream === '__tick';
+  return this.task === -1 && this.stream === '__tick';
 };
 
 Tuple.prototype.isHeartbeatTuple = function(){
-    return this.task === -1 && this.stream === '__heartbeat';
+  return this.task === -1 && this.stream === '__heartbeat';
 };
 
 /**
@@ -384,3 +414,4 @@ Spout.prototype.__emit = function(commandDetails) {
 
 module.exports.BasicBolt = BasicBolt;
 module.exports.Spout = Spout;
+module.exports.Tuple = Tuple;

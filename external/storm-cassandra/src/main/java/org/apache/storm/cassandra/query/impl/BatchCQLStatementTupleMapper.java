@@ -49,7 +49,7 @@ public class BatchCQLStatementTupleMapper implements CQLStatementTupleMapper {
      * {@inheritDoc}
      */
     @Override
-    public List<Statement> map(Map conf, Session session, ITuple tuple) {
+    public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
         final BatchStatement batch = new BatchStatement(this.type);
         for(CQLStatementTupleMapper m : mappers)
             batch.addAll(m.map(conf, session, tuple));

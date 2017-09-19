@@ -14,22 +14,23 @@ Here's a summary of the steps for setting up a Storm cluster:
 3. Download and extract a Storm release to Nimbus and worker machines
 4. Fill in mandatory configurations into storm.yaml
 5. Launch daemons under supervision using "storm" script and a supervisor of your choice
+6. Setup DRPC servers (Optional)
 
 ### Set up a Zookeeper cluster
 
-Storm uses Zookeeper for coordinating the cluster. Zookeeper **is not** used for message passing, so the load Storm places on Zookeeper is quite low. Single node Zookeeper clusters should be sufficient for most cases, but if you want failover or are deploying large Storm clusters you may want larger Zookeeper clusters. Instructions for deploying Zookeeper are [here](http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html). 
+Storm uses Zookeeper for coordinating the cluster. Zookeeper **is not** used for message passing, so the load Storm places on Zookeeper is quite low. Single node Zookeeper clusters should be sufficient for most cases, but if you want failover or are deploying large Storm clusters you may want larger Zookeeper clusters. Instructions for deploying Zookeeper are [here](http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html).
 
 A few notes about Zookeeper deployment:
 
-1. It's critical that you run Zookeeper under supervision, since Zookeeper is fail-fast and will exit the process if it encounters any error case. See [here](http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_supervision) for more details. 
+1. It's critical that you run Zookeeper under supervision, since Zookeeper is fail-fast and will exit the process if it encounters any error case. See [here](http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_supervision) for more details.
 2. It's critical that you set up a cron to compact Zookeeper's data and transaction logs. The Zookeeper daemon does not do this on its own, and if you don't set up a cron, Zookeeper will quickly run out of disk space. See [here](http://zookeeper.apache.org/doc/r3.3.3/zookeeperAdmin.html#sc_maintenance) for more details.
 
 ### Install dependencies on Nimbus and worker machines
 
 Next you need to install Storm's dependencies on Nimbus and the worker machines. These are:
 
-1. Java 7
-2. Python 2.6.6
+1. Java 8+ (Apache Storm 2.x is tested through travis ci against a java 8 JDK)
+2. Python 2.6.6 (Python 3.x should work too, but is not tested as part of our CI enviornment)
 
 These are the versions of the dependencies that have been tested with Storm. Storm may or may not work with different versions of Java and/or Python.
 
@@ -58,11 +59,12 @@ If the port that your Zookeeper cluster uses is different than the default, you 
 ```yaml
 storm.local.dir: "/mnt/storm"
 ```
-If you run storm on windows,it could be:
+If you run storm on windows, it could be:
+
 ```yaml
 storm.local.dir: "C:\\storm-local"
 ```
-If you use a relative path,it will be relative to where you installed storm(STORM_HOME).
+If you use a relative path, it will be relative to where you installed storm(STORM_HOME).
 You can leave it empty with default value `$STORM_HOME/storm-local`
 
 3) **nimbus.seeds**: The worker nodes need to know which machines are the candidate of master in order to download topology jars and confs. For example:
@@ -82,9 +84,15 @@ supervisor.slots.ports:
     - 6703
 ```
 
+5) **drpc.servers**: If you want to setup DRPC servers they need to specified so that the workers can find them. This should be a list of the DRPC servers.  For example:
+
+```yaml
+drpc.servers: ["111.222.333.44"]
+```
+
 ### Monitoring Health of Supervisors
 
-Storm provides a mechanism by which administrators can configure the supervisor to run administrator supplied scripts periodically to determine if a node is healthy or not. Administrators can have the supervisor determine if the node is in a healthy state by performing any checks of their choice in scripts located in storm.health.check.dir. If a script detects the node to be in an unhealthy state, it must print a line to standard output beginning with the string ERROR. The supervisor will periodically run the scripts in the health check dir and check the output. If the script’s output contains the string ERROR, as described above, the supervisor will shut down any workers and exit. 
+Storm provides a mechanism by which administrators can configure the supervisor to run administrator supplied scripts periodically to determine if a node is healthy or not. Administrators can have the supervisor determine if the node is in a healthy state by performing any checks of their choice in scripts located in storm.health.check.dir. If a script detects the node to be in an unhealthy state, it must print a line to standard output beginning with the string ERROR. The supervisor will periodically run the scripts in the health check dir and check the output. If the script’s output contains the string ERROR, as described above, the supervisor will shut down any workers and exit.
 
 If the supervisor is running with supervision "/bin/storm node-health-check" can be called to determine if the supervisor should be launched or if the node is unhealthy.
 
@@ -101,17 +109,27 @@ The time to allow any given healthcheck script to run before it is marked failed
 storm.health.check.timeout.ms: 5000
 ```
 
-### Configure external libraries and environmental variables (optional)
+### Configure external libraries and environment variables (optional)
 
-If you need support from external libraries or custom plugins, you can place such jars into the extlib/ and extlib-daemon/ directories. Note that the extlib-daemon/ directory stores jars used only by daemons (Nimbus, Supervisor, DRPC, UI, Logviewer), e.g., HDFS and customized scheduling libraries. Accordingly, two environmental variables STORM_EXT_CLASSPATH and STORM_EXT_CLASSPATH_DAEMON can be configured by users for including the external classpath and daemon-only external classpath.
+If you need support from external libraries or custom plugins, you can place such jars into the extlib/ and extlib-daemon/ directories. Note that the extlib-daemon/ directory stores jars used only by daemons (Nimbus, Supervisor, DRPC, UI, Logviewer), e.g., HDFS and customized scheduling libraries. Accordingly, two environment variables STORM_EXT_CLASSPATH and STORM_EXT_CLASSPATH_DAEMON can be configured by users for including the external classpath and daemon-only external classpath. See [Classpath handling](Classpath-handling.html) for more details on using external libraries.
 
 
 ### Launch daemons under supervision using "storm" script and a supervisor of your choice
 
 The last step is to launch all the Storm daemons. It is critical that you run each of these daemons under supervision. Storm is a __fail-fast__ system which means the processes will halt whenever an unexpected error is encountered. Storm is designed so that it can safely halt at any point and recover correctly when the process is restarted. This is why Storm keeps no state in-process -- if Nimbus or the Supervisors restart, the running topologies are unaffected. Here's how to run the Storm daemons:
 
-1. **Nimbus**: Run the command "bin/storm nimbus" under supervision on the master machine.
-2. **Supervisor**: Run the command "bin/storm supervisor" under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.
-3. **UI**: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command "bin/storm ui" under supervision. The UI can be accessed by navigating your web browser to http://{ui host}:8080. 
+1. **Nimbus**: Run the command `bin/storm nimbus` under supervision on the master machine.
+2. **Supervisor**: Run the command `bin/storm supervisor` under supervision on each worker machine. The supervisor daemon is responsible for starting and stopping worker processes on that machine.
+3. **UI**: Run the Storm UI (a site you can access from the browser that gives diagnostics on the cluster and topologies) by running the command "bin/storm ui" under supervision. The UI can be accessed by navigating your web browser to http://{ui host}:8080.
 
 As you can see, running the daemons is very straightforward. The daemons will log to the logs/ directory in wherever you extracted the Storm release.
+
+### Setup DRPC servers (Optional)
+
+Just like with nimbus or the supervisors you will need to launch the drpc server.  To do this run the command `bin/storm drpc` on each of the machines that you configured as a part of the `drpc.servers` config.
+
+#### DRPC Http Setup
+
+DRPC optionally offers a REST API as well.  To enable this set teh config `drpc.http.port` to the port you want to run on before launching the DRPC server. See the [REST documentation](STORM-UI-REST-API.html) for more information on how to use it.
+
+It also supports SSL by setting `drpc.https.port` along with the keystore and optional truststore similar to how you would configure the UI.

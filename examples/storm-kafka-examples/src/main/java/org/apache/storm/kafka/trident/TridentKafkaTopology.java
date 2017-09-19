@@ -18,9 +18,10 @@
 
 package org.apache.storm.kafka.trident;
 
+import java.util.Properties;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.trident.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
@@ -29,8 +30,6 @@ import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.Properties;
 
 public class TridentKafkaTopology {
 
@@ -79,10 +78,6 @@ public class TridentKafkaTopology {
         if(args.length < 1) {
             System.out.println("Please provide kafka broker url ,e.g. localhost:9092");
         }
-
-        try (LocalCluster cluster = new LocalCluster();
-             LocalTopology topo = cluster.submitTopology("wordCounter", new Config(), buildTopology(args[0]));) {
-            Thread.sleep(60 * 1000);
-        }
+        StormSubmitter.submitTopology("wordCounter", new Config(), buildTopology(args[0]));
     }
 }

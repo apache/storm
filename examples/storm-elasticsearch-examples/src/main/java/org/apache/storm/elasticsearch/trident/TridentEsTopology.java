@@ -17,24 +17,26 @@
  */
 package org.apache.storm.elasticsearch.trident;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsConstants;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.spout.IBatchSpout;
 import org.apache.storm.trident.state.StateFactory;
-
-import java.util.*;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 public class TridentEsTopology {
 
@@ -47,7 +49,7 @@ public class TridentEsTopology {
 
         TridentTopology topology = new TridentTopology();
         Stream stream = topology.newStream("spout", spout);
-        EsConfig esConfig = new EsConfig(EsConstants.clusterName, new String[]{"localhost:9300"});
+        EsConfig esConfig = new EsConfig("http://localhost:9300");
         Fields esFields = new Fields("index", "type", "source");
         EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
         StateFactory factory = new EsStateFactory(esConfig, tupleMapper);
@@ -56,11 +58,7 @@ public class TridentEsTopology {
         EsTestUtil.startEsNode();
         EsTestUtil.waitForSeconds(5);
 
-        try (LocalCluster cluster = new LocalCluster();
-             LocalTopology topo = cluster.submitTopology(TOPOLOGY_NAME, null, topology.build());) {
-            EsTestUtil.waitForSeconds(20);
-        }
-        System.exit(0);
+        StormSubmitter.submitTopology(TOPOLOGY_NAME, new Config(), topology.build());
     }
 
     public static class FixedBatchSpout implements IBatchSpout {
@@ -89,7 +87,7 @@ public class TridentEsTopology {
         }
 
         @Override
-        public void open(Map conf, TopologyContext context) {
+        public void open(Map<String, Object> conf, TopologyContext context) {
             index = 0;
         }
 

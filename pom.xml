@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache</groupId>
         <artifactId>apache</artifactId>
-        <version>10</version>
+        <version>18</version>
     </parent>
 
 
@@ -261,10 +261,11 @@
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
+        <auto-service.version>1.0-rc3</auto-service.version>
         <netty.version>3.9.0.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.8</log4j.version>
+        <log4j.version>2.8.2</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.1.0</metrics.version>
         <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
@@ -276,6 +277,8 @@
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>0.14.0</hive.version>
         <hadoop.version>2.6.1</hadoop.version>
+        <hdfs.version>${hadoop.version}</hdfs.version>
+        <hbase.version>1.1.0</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>
@@ -283,11 +286,18 @@
         <junit.version>4.11</junit.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
-
+        <hamcrest.version>1.3</hamcrest.version>
+        <cassandra.version>2.1.7</cassandra.version>
+        <druid.version>0.8.2</druid.version>
+        <elasticsearch.version>5.2.2</elasticsearch.version>
         <calcite.version>1.11.0</calcite.version>
+        <mongodb.version>3.2.0</mongodb.version>
+        <solr.version>5.2.1</solr.version>
+        <jpmml.version>1.0.22</jpmml.version>
+        <jedis.version>2.9.0</jedis.version>
+        <rocketmq.version>4.0.0-incubating</rocketmq.version>
 
         <jackson.version>2.6.3</jackson.version>
-        <maven-surefire.version>2.18.1</maven-surefire.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.2</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
@@ -302,26 +312,39 @@
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
 
-        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
-        <qpid.version>0.32</qpid.version>
-        <eventhubs.client.version>1.0.1</eventhubs.client.version>
+        <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.24.1</jersey.version>
+        <dropwizard.version>1.1.2</dropwizard.version>
+        <j2html.version>1.0.0</j2html.version>
+        <jool.version>0.9.12</jool.version>
+        <caffeine.version>2.3.5</caffeine.version>
+
+        <!-- see intellij profile below... This fixes an annoyance with intellij -->
+        <provided.scope>provided</provided.scope>
     </properties>
 
     <modules>
+        <module>storm-checkstyle</module>
         <module>storm-multilang/javascript</module>
         <module>storm-multilang/python</module>
         <module>storm-multilang/ruby</module>
         <module>storm-buildtools/maven-shade-clojure-transformer</module>
         <module>storm-buildtools/storm-maven-plugins</module>
+        <module>storm-client</module>
+        <module>storm-server</module>
         <module>storm-core</module>
-        <module>storm-drpc-server</module>
-        <module>storm-rename-hack</module>
+        <module>storm-webapp</module>
         <module>storm-clojure</module>
+        <module>storm-clojure-test</module>
+        <module>storm-submit-tools</module>
+        <module>flux</module>
+        <module>sql</module>
 
         <!-- externals -->
+        <module>external/storm-autocreds</module>
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
@@ -329,8 +352,6 @@
         <module>external/storm-jdbc</module>
         <module>external/storm-redis</module>
         <module>external/storm-eventhubs</module>
-        <module>external/flux</module>
-        <module>external/sql</module>
         <module>external/storm-elasticsearch</module>
         <module>external/storm-solr</module>
         <module>external/storm-metrics</module>
@@ -342,12 +363,14 @@
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
         <module>external/storm-druid</module>
-        <module>external/storm-submit-tools</module>
         <module>external/storm-jms</module>
         <module>external/storm-pmml</module>
+        <module>external/storm-rocketmq</module>
+        <module>integration-test</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
+        <module>examples/storm-loadgen</module>
         <module>examples/storm-mongodb-examples</module>
         <module>examples/storm-redis-examples</module>
         <module>examples/storm-opentsdb-examples</module>
@@ -361,7 +384,9 @@
         <module>examples/storm-elasticsearch-examples</module>
         <module>examples/storm-mqtt-examples</module>
         <module>examples/storm-pmml-examples</module>
-        <module>storm-perf</module>
+        <module>examples/storm-jms-examples</module>
+        <module>examples/storm-rocketmq-examples</module>
+        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
@@ -374,6 +399,18 @@
     </dependencies>
 
     <profiles>
+        <!--
+            Hack to make intellij behave.
+            If you use intellij, enable this profile in your IDE.
+            It should make life easier.
+        -->
+        <profile>
+            <id>intellij</id>
+            <properties>
+                <provided.scope>compile</provided.scope>
+            </properties>
+        </profile>
+
         <profile>
             <id>rat</id>
             <build>
@@ -438,15 +475,14 @@
                                 <exclude>**/src/ui/public/js/moment.min.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.blockUI.min.js</exclude>
                                 <exclude>**/src/ui/public/js/url.min.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor-graphics.js</exclude>
-                                <exclude>**/src/ui/public/js/arbor-tween.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.mustache.js</exclude>
                                 <exclude>**/src/ui/public/js/typeahead.jquery.min.js</exclude>
                                 <exclude>**/src/ui/public/js/cytoscape-dagre.js</exclude>
                                 <exclude>**/src/ui/public/js/dagre.min.js</exclude>
                                 <exclude>**/src/ui/public/js/esprima.min.js</exclude>
                                 <exclude>**/src/ui/public/js/js-yaml.min.js</exclude>
+                                <exclude>**/src/ui/public/js/vis.min.js</exclude>
+                                <exclude>**/src/ui/public/css/vis.min.css</exclude>
                                 <exclude>**/src/main/resources/Audit.50.csv</exclude>
                                 <exclude>**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml</exclude>
                                 <exclude>**/src/main/sampledata/**</exclude>
@@ -458,6 +494,12 @@
                                 <exclude>**/.git/**</exclude>
                                 <exclude>**/derby.log</exclude>
                                 <exclude>**/src/dev/**</exclude>
+
+                                <!-- webapp test resources -->
+                                <exclude>**/src/test/resources/test-3072.log.test</exclude>
+                                <exclude>**/src/test/resources/small-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/test-worker.log.test</exclude>
+                                <exclude>**/src/test/resources/logviewer-search-context-tests.log.test</exclude>
 
                                 <!-- StormSQL -->
                                 <exclude>**/src/codegen/config.fmpp</exclude>
@@ -510,7 +552,7 @@
                             <execution>
                                 <id>attach-sources</id>
                                 <goals>
-                                    <goal>jar</goal>
+                                    <goal>jar-no-fork</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -526,7 +568,7 @@
                             <execution>
                                 <id>attach-javadocs</id>
                                 <goals>
-                                    <goal>jar</goal>
+                                    <goal>jar-no-fork</goal>
                                 </goals>
                             </execution>
                             <execution>
@@ -595,7 +637,7 @@
                 <artifactId>jersey-container-servlet-core</artifactId>
                 <version>${jersey.version}</version>
             </dependency> 
-             <dependency>
+            <dependency>
                 <groupId>org.glassfish.jersey.containers</groupId> 
                 <artifactId>jersey-container-jetty-http</artifactId>
                 <version>${jersey.version}</version>
@@ -858,6 +900,12 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
+                <dependency>
+                    <groupId>com.google.auto.service</groupId>
+                    <artifactId>auto-service</artifactId>
+                    <version>${auto-service.version}</version>
+                    <optional>true</optional>
+                </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
@@ -935,6 +983,24 @@
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
                 <artifactId>mockito-all</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
@@ -1001,6 +1067,11 @@
                 <artifactId>sysout-over-slf4j</artifactId>
                 <version>${sysout-over-slf4j.version}</version>
             </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
@@ -1033,7 +1104,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>${maven-surefire.version}</version>
+                    <version>${surefire.version}</version>
                     <configuration>
                         <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <excludedGroups>${java.unit.test.exclude}</excludedGroups>
@@ -1046,7 +1117,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-failsafe-plugin</artifactId>
-                    <version>${maven-surefire.version}</version>
+                    <version>${surefire.version}</version>
                     <configuration>
                         <includes>
                             <include>${java.integration.test.include}</include>
@@ -1059,6 +1130,43 @@
                             <goals>
                                 <goal>integration-test</goal>
                                 <goal>verify</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <!--To support checkstyle goals. For example: "mvn checkstyle:checkstyle"-->
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-checkstyle-plugin</artifactId>
+                    <version>2.17</version>
+                    <dependencies>
+                        <dependency>
+                            <groupId>org.apache.storm</groupId>
+                            <artifactId>storm-checkstyle</artifactId>
+                            <version>${project.version}</version>
+                        </dependency>
+                        <dependency>
+                            <groupId>com.puppycrawl.tools</groupId>
+                            <artifactId>checkstyle</artifactId>
+                            <!-- If you change this, you should also update the storm_checkstyle.xml file to be
+                            based on the google_checks.xml from the version of checkstyle you are choosing. -->
+                            <version>8.2</version>
+                        </dependency>
+                    </dependencies>
+                    <executions>
+                        <execution>
+                            <id>validate</id>
+                            <phase>validate</phase>
+                            <configuration>
+                                <configLocation>storm/storm_checkstyle.xml</configLocation>
+                                <encoding>UTF-8</encoding>
+                                <failOnViolation>true</failOnViolation>
+                                <logViolationsToConsole>false</logViolationsToConsole>
+                                <outputFile>target/checkstyle-violation.xml</outputFile>
+                                <violationSeverity>warning</violationSeverity>
+                            </configuration>
+                            <goals>
+                                <goal>check</goal>
                             </goals>
                         </execution>
                     </executions>
@@ -1085,41 +1193,6 @@
                     </executions>
                 </plugin>
                 <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>2.2.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-install-plugin</artifactId>
-                    <version>2.4</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>3.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-source-plugin</artifactId>
-                    <version>2.2.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.9</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.4</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>2.5</version>
-                </plugin>
-                <plugin>
                     <groupId>com.theoryinpractise</groupId>
                     <artifactId>clojure-maven-plugin</artifactId>
                     <version>1.7.1</version>
@@ -1127,29 +1200,8 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-report-plugin</artifactId>
-                    <version>2.16</version>
-                </plugin>
-
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-gpg-plugin</artifactId>
-                    <version>1.6</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-shade-plugin</artifactId>
                     <version>2.4.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-project-info-reports-plugin</artifactId>
-                    <version>2.7</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-site-plugin</artifactId>
-                    <version>3.3</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1198,7 +1250,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>2.11</version>
+                <version>2.17</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -1215,10 +1267,12 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <version>2.10.4</version>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-report-plugin</artifactId>
+                <version>2.19.1</version>
                 <configuration>
                     <reportsDirectories>
                         <file>${project.build.directory}/test-reports</file>

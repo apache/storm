@@ -15,21 +15,10 @@
 ;; limitations under the License.
 
 (ns org.apache.storm.internal.thrift
-  (:import [java.util HashMap]
-           [java.io Serializable]
-           [org.apache.storm.generated NodeInfo Assignment])
-  (:import [org.apache.storm.generated JavaObject Grouping Nimbus StormTopology
-            StormTopology$_Fields Bolt Nimbus$Client Nimbus$Iface
-            ComponentCommon Grouping$_Fields SpoutSpec NullStruct StreamInfo
-            GlobalStreamId ComponentObject ComponentObject$_Fields
-            ShellComponent SupervisorInfo])
-  (:import [org.apache.storm.utils Utils NimbusClient ConfigUtils])
-  (:import [org.apache.storm Constants])
+  (:import [org.apache.storm.generated Grouping
+            Grouping$_Fields StreamInfo])
+  (:import [org.apache.storm.utils NimbusClient Utils ConfigUtils])
   (:import [org.apache.storm.security.auth ReqContext])
-  (:import [org.apache.storm.grouping CustomStreamGrouping])
-  (:import [org.apache.storm.topology TopologyBuilder])
-  (:import [org.apache.storm.clojure RichShellBolt RichShellSpout])
-  (:import [org.apache.thrift.transport TTransport])
   (:use [org.apache.storm util config log]))
 
 ;; Leaving this definition as core.clj is using them as a nested keyword argument

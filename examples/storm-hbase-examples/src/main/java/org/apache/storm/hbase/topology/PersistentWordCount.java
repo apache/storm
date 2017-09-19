@@ -18,19 +18,16 @@
 package org.apache.storm.hbase.topology;
 
 
+import java.util.HashMap;
+import java.util.Map;
+
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
-import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.tuple.Fields;
 import org.apache.storm.hbase.bolt.HBaseBolt;
 import org.apache.storm.hbase.bolt.mapper.SimpleHBaseMapper;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
-
-
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.storm.topology.TopologyBuilder;
+import org.apache.storm.tuple.Fields;
 
 
 public class PersistentWordCount {
@@ -68,24 +65,20 @@ public class PersistentWordCount {
         builder.setBolt(COUNT_BOLT, bolt, 1).shuffleGrouping(WORD_SPOUT);
         builder.setBolt(HBASE_BOLT, hbase, 1).fieldsGrouping(COUNT_BOLT, new Fields("word"));
 
-
-        if (args.length == 1) {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("test", config, builder.createTopology());) {
-                Thread.sleep(30000);
-            }
-            System.exit(0);
-        } else if (args.length == 2) {
-            StormSubmitter.submitTopology(args[1], config, builder.createTopology());
+        String topoName = "test";
+        if (args.length == 2) {
+            topoName = args[0];
         } else if (args.length == 4) {
             System.out.println("hdfs url: " + args[0] + ", keytab file: " + args[2] + 
-                ", principal name: " + args[3] + ", toplogy name: " + args[1]);
+                    ", principal name: " + args[3] + ", toplogy name: " + args[1]);
             hbConf.put(HBaseSecurityUtil.STORM_KEYTAB_FILE_KEY, args[2]);
             hbConf.put(HBaseSecurityUtil.STORM_USER_NAME_KEY, args[3]);
             config.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[1], config, builder.createTopology());
-        } else {
+            topoName = args[1];
+        } else if (args.length != 1) {
             System.out.println("Usage: PersistentWordCount <hbase.rootdir> [topology name] [keytab file] [principal name]");
+            return;
         }
+        StormSubmitter.submitTopology(topoName, config, builder.createTopology());
     }
 }

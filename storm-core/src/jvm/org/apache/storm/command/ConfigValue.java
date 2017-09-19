@@ -17,14 +17,39 @@
  */
 package org.apache.storm.command;
 
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.Utils;
 
-public class ConfigValue {
-    public static void main(String [] args) {
+/**
+ * Read a value from the topology config map.
+ */
+public final class ConfigValue {
+
+    /**
+     * Utility classes should not have a public constructor.
+     */
+    private ConfigValue() {
+    }
+
+    /**
+     * Read the topology config and return the value for the given key.
+     * @param args - an array of length 1 containing the key to fetch.
+     */
+    public static void main(final String[] args) {
         String name = args[0];
-        Map<String, Object> conf = ConfigUtils.readStormConfig();
-        System.out.println("VALUE: " + conf.get(name));
+        Map<String, Object> conf = Utils.readStormConfig();
+        Object value = conf.get(name);
+        if (value instanceof List) {
+            List<String> stringValues = ((List<?>) value)
+                    .stream()
+                    .map(ObjectReader::getString)
+                    .collect(Collectors.toList());
+            value = String.join(" ", stringValues);
+        }
+        System.out.println("VALUE: " + value);
     }
 }

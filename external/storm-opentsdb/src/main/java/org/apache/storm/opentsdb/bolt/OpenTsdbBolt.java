@@ -101,7 +101,7 @@ public class OpenTsdbBolt extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
         batchHelper = new BatchHelper(batchSize, collector);
         openTsdbClient = openTsdbClientBuilder.build();

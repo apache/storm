@@ -40,7 +40,7 @@ public class RandomSentenceSpout extends BaseRichSpout {
 
 
   @Override
-  public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+  public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
     _collector = collector;
     _rand = new Random();
   }

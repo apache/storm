@@ -41,7 +41,8 @@
     </properties>
 
     <modules>
-        <module>storm-drpc-server-bin</module>
+        <module>storm-client-bin</module>
+        <module>storm-webapp-bin</module>
         <module>final-package</module>
     </modules>
 </project>

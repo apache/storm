@@ -15,17 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common.mapper;
 
-import org.apache.storm.mongodb.common.MongoUtils;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.ITuple;
 import org.apache.storm.tuple.Values;
 import org.bson.Document;
-
-import java.util.ArrayList;
-import java.util.List;
 
 public class SimpleMongoLookupMapper implements MongoLookupMapper {
 
@@ -39,8 +39,8 @@ public class SimpleMongoLookupMapper implements MongoLookupMapper {
     public List<Values> toTuple(ITuple input, Document doc) {
         Values values = new Values();
 
-        for(String field : fields) {
-            if(input.contains(field)) {
+        for (String field : fields) {
+            if (input.contains(field)) {
                 values.add(input.getValueByField(field));
             } else {
                 values.add(doc.get(field));

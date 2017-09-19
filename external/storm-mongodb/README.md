@@ -321,4 +321,5 @@ under the License.
 ## Committer Sponsors
 
  * Sriharsha Chintalapani ([sriharsha@apache.org](mailto:sriharsha@apache.org))
+ * Xin Wang ([xinwang@apache.org](mailto:xinwang@apache.org))
  

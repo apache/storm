@@ -16,434 +16,352 @@
  * limitations under the License.
  */
 
-// Inspired by
-// https://github.com/samizdatco/arbor/blob/master/docs/sample-project/main.js
+var visNS = {
+    // Update / refresh setting
+    shouldUpdate: true,
+    updateFreqMs: 30000,
 
-function renderGraph(elem) {
+    // Holds our network
+    network: null,
 
-    var canvas = $(elem).get(0);
-    canvas.width = $(window).width();
-    canvas.height = $(window).height();
-    var ctx = canvas.getContext("2d");
-    var gfx = arbor.Graphics(canvas);
-    var psys;
+    // Holds nodes and edge definitions
+    nodes: new vis.DataSet(),
+    edges: new vis.DataSet(),
 
-    var totaltrans = 0;
-    var weights = {};
-    var texts = {};
-    var update = false;
+    // References our visualization container element
+    networkContainer: null,
 
-    var myRenderer = {
-        init: function(system){ 
-            psys = system;
-            psys.screenSize(canvas.width, canvas.height)
-            psys.screenPadding(20);
-            myRenderer.initMouseHandling();
-        },
+    // Holds map of Sanitized Stream Id => Stream Id
+    availableStreamsHash: { },
 
-        signal_update: function() {
-            update = true;
-        },
-
-        redraw: function() { 
-            
-            if(!psys)
-                return;
-            
-            if(update) {
-                totaltrans = calculate_total_transmitted(psys);
-                weights = calculate_weights(psys, totaltrans);
-                texts = calculate_texts(psys, totaltrans);
-                update = false;
+    // vis.js options
+    options: {
+        edges:{
+            arrows: {
+                to: {enabled: true, scaleFactor:1}
+            },
+            hoverWidth: 1.5,
+            shadow:{
+                enabled: true,
+                color: 'rgba(0,0,0,0.5)',
+                size:10,
+                x:5,
+                y:5
+            },
+            smooth: {
+                type: "continuous",
+                forceDirection: "none"
             }
-
-
-
-            ctx.fillStyle = "white";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-            var x = 0;
-            
-
-            psys.eachEdge(function(edge, pt1, pt2) {
-
-                var len = Math.sqrt(Math.pow(pt2.x - pt1.x,2) + Math.pow(pt2.y - pt1.y,2));
-                var sublen = len - (Math.max(50, 20 + gfx.textWidth(edge.target.name)) / 2);
-                var thirdlen = len/3;
-                var theta = Math.atan2(pt2.y - pt1.y, pt2.x - pt1.x);
-                
-                var newpt2 = {
-                    x : pt1.x + (Math.cos(theta) * sublen),
-                    y : pt1.y + (Math.sin(theta) * sublen)
-                };
-
-                var thirdpt = {
-                    x: pt1.x + (Math.cos(theta) * thirdlen),
-                    y: pt1.y + (Math.sin(theta) * thirdlen)
-                }
-
-                weight = weights[edge.source.name + edge.target.name];
-                
-                if(!weights[edge.source.name + edge.target.name])
-                {
-                    totaltrans = calculate_total_transmitted(psys);
-                    weights = calculate_weights(psys, totaltrans);
-                }
-
-                ctx.strokeStyle = "rgba(0,0,0, .333)";
-                ctx.lineWidth = 25 * weight + 5;
-                ctx.beginPath();
-
-                var arrlen = 15;
-                ctx.moveTo(pt1.x, pt1.y);
-                ctx.lineTo(newpt2.x, newpt2.y);
-                ctx.lineTo(newpt2.x - arrlen * Math.cos(theta-Math.PI/6), newpt2.y - arrlen * Math.sin(theta - Math.PI/6));
-                ctx.moveTo(newpt2.x, newpt2.y);
-                ctx.lineTo(newpt2.x - arrlen * Math.cos(theta+Math.PI/6), newpt2.y - arrlen * Math.sin(theta + Math.PI/6));
-
-                
-                if (texts[edge.source.name + edge.target.name] == null)
-                {
-                    totaltrans = calculate_total_transmitted(psys);
-                    texts = calculate_texts(psys, totaltrans);
-                }
-
-                gfx.text(texts[edge.source.name + edge.target.name], thirdpt.x, thirdpt.y + 10, {color:"black", align:"center", font:"Arial", size:10})
-                ctx.stroke();
-            });
-
-            psys.eachNode(function(node, pt) {
-                var col;
-
-                var real_trans = gather_stream_count(node.data[":stats"], "default", "600");
-                
-                if(node.data[":type"] === "bolt") {
-                    var cap = Math.min(node.data[":capacity"], 1);
-                    var red = Math.floor(cap * 225) + 30;
-                    var green = Math.floor(255 - red);
-                    var blue = Math.floor(green/5);
-                    col = arbor.colors.encode({r:red,g:green,b:blue,a:1});
-                } else {
-                    col = "#0000FF";
-                }
-                
-                var w = Math.max(55, 25 + gfx.textWidth(node.name));
-                
-                gfx.oval(pt.x - w/2, pt.y - w/2, w, w, {fill: col});
-                gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});
-                gfx.text(node.name, pt.x, pt.y+3, {color:"white", align:"center", font:"Arial", size:12});
-                
-                gfx.text(parseFloat(node.data[":latency"]).toFixed(2) + " ms", pt.x, pt.y + 17, {color:"white", align:"center", font:"Arial", size:12});
-                
-            });
-
-            // Draw gradient sidebar
-            ctx.rect(0,0,50,canvas.height);
-            var grd = ctx.createLinearGradient(0,0,50,canvas.height);
-            grd.addColorStop(0, '#1ee12d');
-            grd.addColorStop(1, '#ff0000');
-            ctx.fillStyle=grd;
-            ctx.fillRect(0,0,50,canvas.height);
-            
-            
         },
-        
-        initMouseHandling:function() {
-            var dragged = null;
-
-            var clicked = false;
-            
-            var handler = {
-                clicked:function(e){
-                    var pos = $(canvas).offset();
-                    _mouseP = arbor.Point(e.pageX-pos.left, e.pageY - pos.top);
-                    dragged = psys.nearest(_mouseP);
-                    
-                    if(dragged && dragged.node !== null) {
-                        dragged.node.fixed = true;
-                    }
-                    
-                    clicked = true;
-                    setTimeout(function(){clicked = false;}, 50);
-
-                    $(canvas).bind('mousemove', handler.dragged);
-                    $(window).bind('mouseup', handler.dropped);
-                    
-                    return false;
+        nodes: {
+            color: {
+                border: '#2B7CE9',
+                background: '#97C2FC',
+                highlight: {
+                    border: '#2B7CE9',
+                    background: '#D2E5FF'
                 },
-                
-                dragged:function(e) {
-
-                    var pos = $(canvas).offset();
-                    var s = arbor.Point(e.pageX-pos.left, e.pageY-pos.top);
-                    
-                    if(dragged && dragged.node != null) {
-                        var p = psys.fromScreen(s);
-                        dragged.node.p = p;
-                    }
-                    
-                    return false;
-                    
-                },
-
-                dropped:function(e) {
-                    if(clicked) {
-                        if(dragged.distance < 50) {
-                            if(dragged && dragged.node != null) { 
-                                window.location = dragged.node.data[":link"];
-                            }
-                        }
-                    }
-
-                    if(dragged === null || dragged.node === undefined) return;
-                    if(dragged.node !== null) dragged.node.fixed = false;
-                    dragged.node.tempMass = 1000;
-                    dragged = null;
-                    $(canvas).unbind('mousemove', handler.dragged);
-                    $(window).unbind('mouseup', handler.dropped);
-                    _mouseP = null;
-                    return false;
+                hover: {
+                    border: '#2B7CE9',
+                    background: '#D2E5FF'
                 }
-                
+            },
+            shadow:{
+              enabled: true,
+              color: 'rgba(0,0,0,0.5)',
+              size:10,
+              x:5,
+              y:5
+            },
+        },
+        physics:{
+            enabled: false
+        },
+        layout: {
+            randomSeed: 31337,
+            improvedLayout:true,
+            hierarchical: {
+                enabled: true,
+                levelSeparation: 150,
+                nodeSpacing: 300,
+                treeSpacing: 200,
+                blockShifting: true,
+                edgeMinimization: true,
+                parentCentralization: true,
+                direction: 'UD',        // UD, DU, LR, RL
+                sortMethod: 'directed'   // hubsize, directed
             }
-            
-            $(canvas).mousedown(handler.clicked);
+        },
+        interaction: {
+            navigationButtons: false
         }
     }
-    
-    return myRenderer;
-}
+};
 
-function calculate_texts(psys, totaltrans) {
-    var texts = {};
-    psys.eachEdge(function(edge, pt1, pt2) {
-        var text = "";
-        for(var i = 0; i < edge.target.data[":inputs"].length; i++) {
-            var stream = edge.target.data[":inputs"][i][":stream"];
-            var sani_stream = edge.target.data[":inputs"][i][":sani-stream"];
-            if(stream_checked(sani_stream) 
-               && edge.target.data[":inputs"][i][":component"] === edge.source.name) {
-                stream_transfered = gather_stream_count(edge.source.data[":stats"], sani_stream, "600");
-                text += stream + ": " 
-                    + stream_transfered + ": " 
-                    + (totaltrans > 0  ? Math.round((stream_transfered/totaltrans) * 100) : 0) + "%\n";
-                
-            }
-        }
-        
-        texts[edge.source.name + edge.target.name] = text;
-    });
-
-    return texts;
-}
-
-function calculate_weights(psys, totaltrans) {
-    var weights = {};
- 
-    psys.eachEdge(function(edge, pt1, pt2) {
-        var trans = 0;
-        for(var i = 0; i < edge.target.data[":inputs"].length; i++) {
-            var stream = edge.target.data[":inputs"][i][":sani-stream"];
-            if(stream_checked(stream) && edge.target.data[":inputs"][i][":component"] === edge.source.name)
-                trans += gather_stream_count(edge.source.data[":stats"], stream, "600");
-        }
-        weights[edge.source.name + edge.target.name] = (totaltrans > 0 ? trans/totaltrans : 0);
-    });
-    return weights;
-}
-
-function calculate_total_transmitted(psys) {
-    var totaltrans = 0;
-    var countedmap = {}
-    psys.eachEdge(function(node, pt, pt2) {
-        if(!countedmap[node.source.name])
-            countedmap[node.source.name] = {};
-
-        for(var i = 0; i < node.target.data[":inputs"].length; i++) {
-            var stream = node.target.data[":inputs"][i][":stream"];
-            if(stream_checked(node.target.data[":inputs"][i][":sani-stream"]))
-            {
-                if(!countedmap[node.source.name][stream]) {
-                    if(node.source.data[":stats"])
-                    {
-                        var toadd = gather_stream_count(node.source.data[":stats"], node.target.data[":inputs"][i][":sani-stream"], "600");
-                        totaltrans += toadd;
-                    }
-                    countedmap[node.source.name][stream] = true;
-                }
-            }
-        }
-        
-    });
-
-    return totaltrans;
-}
-
-function has_checked_stream_input(inputs) {
-    
-    for(var i = 0; i < inputs.length; i++) {
-        var x = stream_checked(inputs[i][":sani-stream"]);
-        if(x) 
-            return true;
-    }
-    return false;
-}
-
-function stream_checked(stream) {
-    var checked = $("#" + stream).is(":checked");
-    return checked;
-}
-
-function has_checked_stream_output(jdat, component) {
-    var ret = false;
-    $.each(jdat, function(k, v) {
-        for(var i = 0; i < v[":inputs"].length; i++) {
-            if(stream_checked(v[":inputs"][i][":sani-stream"]) 
-               && v[":inputs"][i][":component"] == component)
-                ret = true;
-        }
-    });
-    return ret;
-}
-
-function gather_stream_count(stats, stream, time) {
-    var transferred = 0;
-    if(stats)
-        for(var i = 0; i < stats.length; i++) {
-            if(stats[i][":transferred"] != null && stats[i][":transferred"][time] != undefined)
-            {
-                var stream_trans = stats[i][":transferred"][time][stream];
-                if(stream_trans != null)
-                    transferred += stream_trans;
-            }
-        }
-    return transferred;
-}
-
-
-function rechoose(jdat, sys, box) {
-    var id = box.id;
-    if($(box).is(':checked'))
-    {
-        //Check each node in our json data to see if it has inputs from or outputs to selected streams. If it does, add a node for it.
-        $.each(jdat,function(k,v) {
-            if( has_checked_stream_input(v[":inputs"]) || has_checked_stream_output(jdat, k))
-                sys.addNode(k,v);
-        });
-           
-        //Check each node in our json data and add necessary edges based on selected components.
-        $.each(jdat, function(k, v) {
-            for(var i = 0; i < v[":inputs"].length; i++)
-                if(v[":inputs"][i][":sani-stream"] === id) {
-                    
-                    sys.addEdge(v[":inputs"][i][":component"], k, v);
-                }
-        });
-    }
-    else {
-        //Check each node to see if it should be pruned.
-        sys.prune(function(node, from, to) {
-            return !has_checked_stream_input(node.data[":inputs"]) && !has_checked_stream_output(jdat, node.name);
-        });
-        
-        //Check each edge to see if it represents any selected streams. If not, prune it.
-        sys.eachEdge(function(edge, pt1, pt2) {
-            var inputs = edge.target.data[":inputs"];
-            
-            if($.grep(inputs, function(input) {
-                
-                return input[":component"] === edge.source.name 
-                    && stream_checked(input[":sani-stream"]);
-            
-            }).length == 0)
-            {
-                sys.pruneEdge(edge);
-            }
-        });
+function parseResponse(json) {
+    console.log("Updating network");
+    // parse json
+    for (var componentId in json) {
+        parseNode(json[componentId], componentId);
     }
 
-    //Tell the particle system's renderer that it needs to update its labels, colors, widths, etc.
-    sys.renderer.signal_update();
-    sys.renderer.redraw();
-
+    // Create network if it does not exist yet
+    if (visNS.network == null) {
+        createNetwork()
+    }
 }
 
-var topology_data;
-function update_data(jdat, sys) {
-    $.each(jdat, function(k,v) {
-        if(sys.getNode(k))
-            sys.getNode(k).data = v;
+function createNetwork() {
+    var data = {
+        "nodes": visNS.nodes,
+        "edges": visNS.edges
+    };
+    // Create network
+    visNS.network = new vis.Network(visNS.networkContainer, data, visNS.options);
+
+    // Create event handlers
+    visNS.network.on("click", function (params) {
+        handleClickEvent(params);
     });
-}
-
-function jsError(other) {
-  try {
-    other();
-  } catch (err) {
-    getStatic("/templates/json-error-template.html", function(template) {
-      $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),{error: "JS Error", errorMessage: err}));
+    visNS.network.on("deselectNode", function(params) {
+        handleNodeClickEvent(null);
     });
-  }
+
+    // Then disable layout
+    visNS.network.setOptions({layout: {hierarchical: false } });
 }
 
-var should_update;
-function show_visualization(sys) {
-    $.getJSON("/api/v1/topology/"+$.url("?id")+"/visualization-init",function(response,status,jqXHR) {
-        getStatic("/templates/topology-page-template.html", function(template) {
-            jsError(function() {
-                var topologyVisualization = $("#visualization-container");
-                if (topologyVisualization.find("canvas").length == 0) {
-                    topologyVisualization.append(
-                        Mustache.render($(template)
-                            .filter("#topology-visualization-container-template")
-                            .html(),
-                            response));
-                }
-            });
+function handleClickEvent(params) {
+    if (params["nodes"].length == 1) {
+        handleNodeClickEvent(params["nodes"][0])
+    }
+}
 
-            if(sys == null)
-            {
-                sys = arbor.ParticleSystem(20, 1000, 0.15, true, 55, 0.02, 0.6);
-                sys.renderer = renderGraph("#topoGraph");
-                sys.stop();
+function handleNodeClickEvent(nodeId) {
+    // if nodeId is null, hide
+    if (nodeId == null) {
+        // Ensure slider is hidden
+        $("#bolt_slideout_inner").css("display", "none");
+        return;
+    }
 
-                $(".stream-box").click(function () { rechoose(topology_data, sys, this) });
+    // add new values
+    var nodeDetails = json[nodeId];
+    //console.log(nodeDetails);
+
+    // Prep the json slightly
+    nodeDetails[":id"] = nodeId;
+    nodeDetails[":inputs_length"] = nodeDetails[":inputs"].length;
+    nodeDetails[":stats_length"] = nodeDetails[":stats"].length;
+
+    // Conditionally link to component
+    for (x=0; x<nodeDetails[":inputs"].length; x++) {
+        var showLink = true;
+        if (nodeDetails[":inputs"][x][":component"].startsWith("__")) {
+            showLink = false;
+        }
+        nodeDetails[":inputs"][x][":show_link"] = showLink;
+    }
+
+    // Calculate uptime in a nice format.
+    for (x=0; x<nodeDetails[":stats"].length; x++) {
+        nodeDetails[":stats"][x][":uptime_str"] = secondsToString(nodeDetails[":stats"][x][":uptime_secs"]);
+    }
+
+    // Render and display template.
+    var template = $('#bolt_info_template').html();
+    var html = Mustache.to_html(template, nodeDetails);
+    $("#bolt-details").html(html);
+
+    // Ensure slider is viewable
+    $("#bolt_slideout_inner").css("display", "inline");
+    return;
+}
+
+function parseNode(nodeJson, nodeId) {
+    // Conditional hack for system components
+    if (isSystemComponent(nodeId)) {
+        nodeJson[":type"] = "system";
+    }
+
+    // Determine node color
+    var col = "#D2E5FF"
+    var selectedCol = "#97C2FC";
+    var shape = "dot"
+
+    if (nodeJson[":type"] === "bolt") {
+        // Determine color based on capacity
+        var cap = Math.min(nodeJson[":capacity"], 1);
+        var red = Math.floor(cap * 225) + 30;
+        var green = Math.floor(255 - red);
+        var blue = Math.floor(green/5);
+        col = "rgba(" + red + "," + green + "," + blue + ",1)"
+        selectedCol = "rgba(" + (red+2) + "," + (green) + "," + (green + 2) + ",1)"
+    }
+    if (nodeJson[":type"] === "spout") {
+        shape = "triangleDown";
+        col = "#D2E5FF";
+        selectedCol = "#97C2FC"
+    }
+    if (nodeJson[":type"] === "system") {
+        shape = "diamond";
+        col = "#ffe6cc";
+        selectedCol = "#ffc180";
+    }
+
+    // Generate title
+    var title = "<b>" + nodeId + "</b><br/>";
+    title += "Capacity: " + nodeJson[":capacity"] + "<br/>";
+    title += "Latency: " + nodeJson[":latency"]
+
+    // Construct the node
+    var node = {
+        "id": nodeId,
+        "label": nodeId,
+        "color": {
+            "background": col,
+            "highlight": {
+                "background": selectedCol
             }
+        },
+        "shape": shape,
+        "shadow": {
+            "enabled": true
+        },
+        "title": title,
+        "size": 45
+    };
 
-            should_update = true;
-            var update_freq_ms = 10000;
-            var update = function(should_rechoose){
-              if(should_update) {
-                $.ajax({
-                    url: "/api/v1/topology/"+$.url("?id")+"/visualization",
-                    success: function(data, status, jqXHR) {
-                        topology_data = data;
-                        update_data(topology_data, sys);
-                        sys.renderer.signal_update();
-                        sys.renderer.redraw();
-                        if(should_update)
-                            setTimeout(update, update_freq_ms);
-                        if(should_rechoose)
-                            $(".stream-box").each(function () {
-                                rechoose(topology_data, sys, this)
-                            });
-                    }
-                });
-              }
-            };
+    // Construct edges
+    for (var index in nodeJson[":inputs"]) {
+        var inputComponent = nodeJson[":inputs"][index];
+        parseEdge(inputComponent, nodeId);
+    }
 
-            update(true);
-            $("#visualization-container").show(500);
-            $("#show-hide-visualization").attr('value', 'Hide Visualization');
-            $("#show-hide-visualization").unbind("click");
-            $("#show-hide-visualization").click(function () { hide_visualization(sys) });
-        })
+    if (node != null) {
+        visNS.nodes.update(node);
+    }
+}
+
+function isSystemComponent(nodeId) {
+    return nodeId.startsWith("__");
+}
+
+function parseEdge(edgeJson, sourceId) {
+    //console.log(edgeJson);
+
+    // Make this stream available
+    addAvailableStream(edgeJson[":stream"], edgeJson[":sani-stream"])
+
+    // Create a unique Id
+    var id = edgeJson[":component"] + ":" + sourceId + ":" + edgeJson[":sani-stream"];
+
+    // Determine if stream is enabled
+    if (!isStreamEnabled(edgeJson[":sani-stream"])) {
+        // Remove edge
+        visNS.edges.remove({ "id": id });
+        return
+    }
+
+    if (!visNS.edges.get(id)) {
+        visNS.edges.update({
+            "id": id,
+            "from": edgeJson[":component"],
+            "to": sourceId,
+            "label": edgeJson[":stream"],
+            "title": "From: " + edgeJson[":component"] + "<br>To: " + sourceId + "<br>Grouping: " + edgeJson[":grouping"]
+        });
+    }
+}
+
+function addAvailableStream(streamId, streamIdSanitized) {
+    // Create a master list of all streams
+    if (visNS.availableStreamsHash[streamIdSanitized] == null) {
+        visNS.availableStreamsHash[streamIdSanitized] = streamId;
+        updateAvailableStreams();
+    }
+}
+
+function updateAvailableStreams() {
+    var container = jQuery("#available-streams");
+    $.each(visNS.availableStreamsHash, function(streamIdSanitized, streamName) {
+        var entry = jQuery(container).find("#stream-" + streamIdSanitized)
+        if (entry.length == 0) {
+            var checked = "checked"
+            if (streamName.startsWith("__")) {
+                checked = ""
+            }
+            // Render template
+            var template = $('#stream_selector_template').html();
+            var html = Mustache.to_html(template, {"checked": checked, "streamName": streamName, "streamNameSanitized": streamIdSanitized});
+            container.append(html);
+
+            // keep list of streams in sorted order
+            jQuery("#available-streams li").sort(asc_sort).appendTo('#available-streams');
+        }
     });
 }
 
-function hide_visualization(sys) {
-    should_update = false;
-    $("#visualization-container").hide(500);
-    $("#show-hide-visualization").attr('value', 'Show Visualization');
-    $("#show-hide-visualization").unbind("click");
-    $("#show-hide-visualization").click(function () { show_visualization(sys) });
+// Called when a stream's checkbox is selected/unselected.
+function checkStream(checkBox) {
+    // reload data
+    parseResponse(json);
 }
+
+// Redraws edges
+function redrawStreams() {
+    visNS.edges.forEach(function(edge) { visNS.edges.remove(edge); visNS.edges.add(edge); });
+}
+
+// Returns true if a stream is enabled
+function isStreamEnabled(streamIdSanitized) {
+    return jQuery("input#stream-" + streamIdSanitized).is(':checked')
+}
+
+var update = function() {
+    if(visNS.shouldUpdate) {
+        $.ajax({
+            url: "/api/v1/topology/"+$.url("?id")+"/visualization?sys="+$.url("?sys"),
+            success: function (data, status, jqXHR) {
+                json = data;
+                parseResponse(data);
+                setTimeout(update, visNS.updateFreqMs);
+            }
+        });
+    } else {
+        setTimeout(update, visNS.updateFreqMs);
+    }
+}
+
+function secondsToString(seconds) {
+    var numDays = Math.floor(seconds / 86400);
+    var numHours = Math.floor((seconds % 86400) / 3600);
+    var numMinutes = Math.floor(((seconds % 86400) % 3600) / 60);
+    var numSeconds = ((seconds % 86400) % 3600) % 60;
+
+    var returnStr = "";
+    if (numDays > 0) {
+        returnStr += numDays + " days ";
+    }
+    if (numHours > 0) {
+        returnStr += numHours + " hours ";
+    }
+    if (numMinutes > 0) {
+        returnStr += numMinutes + " mins ";
+    }
+    if (numSeconds > 0) {
+        returnStr += numSeconds + " seconds";
+    }
+    return returnStr;
+}
+
+// ascending sort
+function asc_sort(a, b){
+    return ($(b).text()) < ($(a).text()) ? 1 : -1;
+}
+
+$(document).ready(function() {
+    visNS.networkContainer = document.getElementById("mynetwork");
+    update();
+});
+

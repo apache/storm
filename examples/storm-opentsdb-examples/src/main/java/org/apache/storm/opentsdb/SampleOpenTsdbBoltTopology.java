@@ -18,16 +18,14 @@
  */
 package org.apache.storm.opentsdb;
 
+import java.util.Collections;
+
+import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.opentsdb.bolt.OpenTsdbBolt;
 import org.apache.storm.opentsdb.bolt.TupleOpenTsdbDatapointMapper;
 import org.apache.storm.opentsdb.client.OpenTsdbClient;
-import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
-import org.apache.storm.StormSubmitter;
 import org.apache.storm.topology.TopologyBuilder;
-
-import java.util.Collections;
 
 /**
  * Sample application to use OpenTSDB bolt.
@@ -51,19 +49,12 @@ public class SampleOpenTsdbBoltTopology {
 
         Config conf = new Config();
         conf.setDebug(true);
-
+        String topoName = "word-count";
         if (args.length > 1) {
-            conf.setNumWorkers(3);
-
-            StormSubmitter.submitTopologyWithProgressBar(args[1], conf, topologyBuilder.createTopology());
-        } else {
-            conf.setMaxTaskParallelism(3);
-
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalTopology topo = cluster.submitTopology("word-count", conf, topologyBuilder.createTopology());) {
-                Thread.sleep(30000);
-            }
-            System.exit(0);
+            topoName = args[1];
         }
+        conf.setNumWorkers(3);
+
+        StormSubmitter.submitTopologyWithProgressBar(topoName, conf, topologyBuilder.createTopology());
     }
 }

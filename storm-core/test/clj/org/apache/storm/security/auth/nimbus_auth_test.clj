@@ -18,18 +18,18 @@
   (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
-  (:import [org.apache.storm Config LocalCluster$Builder])
+  (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
   (:import [org.apache.storm.blobstore BlobStore])
-  (:import [org.apache.storm.utils NimbusClient ConfigUtils])
+  (:import [org.apache.storm.daemon.nimbus TopoCache])
   (:import [org.apache.storm.generated NotAliveException StormBase])
-  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient 
+  (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient
                                          ReqContext ThriftConnectionType])
   (:import [org.apache.storm.generated Nimbus Nimbus$Client Nimbus$Processor
             AuthorizationException SubmitOptions TopologyInitialStatus KillOptions])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils ConfigUtils NimbusClient Utils])
   (:import [org.apache.storm.cluster IStormClusterState])
   (:import [org.mockito Mockito Matchers])
-  (:use [org.apache.storm util config log])
+  (:use [org.apache.storm util config daemon-config log])
   (:require [conjure.core])
   (:use [conjure core]))
 
@@ -40,9 +40,9 @@
          conf (if login-cfg (merge conf {"java.security.auth.login.config" login-cfg}) conf)]
     conf))
 
-(defmacro with-test-cluster [args & body]
+(defmacro with-test-cluster [[cluster-sym & args] & body]
   `(let [conf# (to-conf ~@args)]
-     (with-open [_# (.build (doto (LocalCluster$Builder. )
+     (with-open [~cluster-sym (.build (doto (LocalCluster$Builder. )
                       (.withNimbusDaemon)
                       (.withDaemonConf conf#)
                       (.withSupervisors 0)
@@ -50,37 +50,37 @@
        ~@body)))
 
 (deftest Simple-authentication-test
-  (let [port (Utils/getAvailablePort)]
-    (with-test-cluster [port nil nil "org.apache.storm.security.auth.SimpleTransportPlugin"]
-      (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
-                               STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
-            nimbus_client (.getClient client)]
-        (testing "(Positive authorization) Simple protocol w/o authentication/authorization enforcement"
-                 (is (thrown-cause? NotAliveException
-                              (.activate nimbus_client "topo-name"))))
-        (.close client)))))
+  (with-test-cluster [cluster 0 nil nil "org.apache.storm.security.auth.SimpleTransportPlugin"]
+    (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
+                            {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
+                             STORM-NIMBUS-RETRY-TIMES 0})
+          client (NimbusClient. storm-conf "localhost" (.getThriftServerPort cluster) nimbus-timeout)
+          nimbus_client (.getClient client)]
+      (testing "(Positive authorization) Simple protocol w/o authentication/authorization enforcement"
+               (is (thrown-cause? NotAliveException
+                            (.activate nimbus_client "topo-name"))))
+      (.close client))))
 
 (deftest test-noop-authorization-w-simple-transport
-  (let [port (Utils/getAvailablePort)
-        cluster-state (Mockito/mock IStormClusterState)
+  (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/empty))
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                                NIMBUS-THRIFT-PORT port
+                                NIMBUS-THRIFT-PORT 0
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
                                 STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
+            client (NimbusClient. storm-conf "localhost" (.getThriftServerPort cluster) nimbus-timeout)
             nimbus_client (.getClient client)]
         (testing "(Positive authorization) Authorization plugin should accept client request"
                  (is (thrown-cause? NotAliveException
@@ -88,27 +88,28 @@
         (.close client)))))
 
 (deftest test-deny-authorization-w-simple-transport
-  (let [port (Utils/getAvailablePort)
-        cluster-state (Mockito/mock IStormClusterState)
+  (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                                NIMBUS-THRIFT-PORT port
+                                NIMBUS-THRIFT-PORT 0
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                               {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.SimpleTransportPlugin"
-                               Config/NIMBUS_THRIFT_PORT port
-                               STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
+                              {STORM-THRIFT-TRANSPORT-PLUGIN   "org.apache.storm.security.auth.SimpleTransportPlugin"
+                               Config/NIMBUS_THRIFT_PORT (.getThriftServerPort cluster)
+                               STORM-NIMBUS-RETRY-TIMES        0})
+            client (NimbusClient. storm-conf "localhost" (.getThriftServerPort cluster) nimbus-timeout)
             nimbus_client (.getClient client)
             topologyInitialStatus (TopologyInitialStatus/findByValue 2)
             submitOptions (SubmitOptions. topologyInitialStatus)]
@@ -134,47 +135,47 @@
         (.close client)))))
 
 (deftest test-noop-authorization-w-sasl-digest
-  (let [port (Utils/getAvailablePort)]
-    (with-test-cluster [port
-                  "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                  "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
-                  "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"]
-      (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
-                              {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
-                               "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                               Config/NIMBUS_THRIFT_PORT port
-                               STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
-            nimbus_client (.getClient client)]
-        (testing "(Positive authorization) Authorization plugin should accept client request"
-                 (is (thrown-cause? NotAliveException
-                              (.activate nimbus_client "topo-name"))))
-        (.close client)))))
+  (with-test-cluster [cluster 0
+                "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
+                "org.apache.storm.security.auth.authorizer.NoopAuthorizer"
+                "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"]
+    (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
+                            {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
+                             "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
+                             Config/NIMBUS_THRIFT_PORT (.getThriftServerPort cluster)
+                             STORM-NIMBUS-RETRY-TIMES 0})
+          client (NimbusClient. storm-conf "localhost" (.getThriftServerPort cluster) nimbus-timeout)
+          nimbus_client (.getClient client)]
+      (testing "(Positive authorization) Authorization plugin should accept client request"
+               (is (thrown-cause? NotAliveException
+                            (.activate nimbus_client "topo-name"))))
+      (.close client))))
 
 (deftest test-deny-authorization-w-sasl-digest
-  (let [port (Utils/getAvailablePort)
-        cluster-state (Mockito/mock IStormClusterState)
+  (let [cluster-state (Mockito/mock IStormClusterState)
         blob-store (Mockito/mock BlobStore)
+        tc (Mockito/mock TopoCache)
         topo-name "topo-name"
         topo-id "topo-name-1"]
     (.thenReturn (Mockito/when (.getTopoId cluster-state topo-name)) (Optional/of topo-id))
-    (.thenReturn (Mockito/when (.readTopologyConf blob-store (Mockito/any String) (Mockito/anyObject))) {})
+    (.thenReturn (Mockito/when (.readTopoConf tc (Mockito/any String) (Mockito/anyObject))) {})
     (with-open [cluster (.build
                           (doto (LocalCluster$Builder.)
                             (.withClusterState cluster-state)
                             (.withBlobStore blob-store)
+                            (.withTopoCache tc)
                             (.withNimbusDaemon)
                             (.withDaemonConf
                                {NIMBUS-AUTHORIZER "org.apache.storm.security.auth.authorizer.DenyAuthorizer"
-                                NIMBUS-THRIFT-PORT port
+                                NIMBUS-THRIFT-PORT 0
                                 "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
                                 STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"})))]
       (let [storm-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
                                {STORM-THRIFT-TRANSPORT-PLUGIN "org.apache.storm.security.auth.digest.DigestSaslTransportPlugin"
                                "java.security.auth.login.config" "test/clj/org/apache/storm/security/auth/jaas_digest.conf"
-                               Config/NIMBUS_THRIFT_PORT port
+                               Config/NIMBUS_THRIFT_PORT (.getThriftServerPort cluster)
                                STORM-NIMBUS-RETRY-TIMES 0})
-            client (NimbusClient. storm-conf "localhost" port nimbus-timeout)
+            client (NimbusClient. storm-conf "localhost" (.getThriftServerPort cluster) nimbus-timeout)
             nimbus_client (.getClient client)
             topologyInitialStatus (TopologyInitialStatus/findByValue 2)
             submitOptions (SubmitOptions. topologyInitialStatus)]

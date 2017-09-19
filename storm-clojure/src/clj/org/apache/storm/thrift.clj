@@ -16,20 +16,17 @@
 
 (ns org.apache.storm.thrift
   (:import [java.util HashMap]
-           [java.io Serializable]
-           [org.apache.storm.generated NodeInfo Assignment])
-  (:import [org.apache.storm.generated JavaObject Grouping Nimbus StormTopology
-            StormTopology$_Fields Bolt Nimbus$Client Nimbus$Iface
+           [java.io Serializable])
+  (:import [org.apache.storm.generated JavaObject Grouping StormTopology
+            StormTopology$_Fields Bolt Nimbus$Client
             ComponentCommon Grouping$_Fields SpoutSpec NullStruct StreamInfo
-            GlobalStreamId ComponentObject ComponentObject$_Fields
-            ShellComponent SupervisorInfo])
-  (:import [org.apache.storm.utils Utils NimbusClient ConfigUtils])
-  (:import [org.apache.storm Constants])
+            GlobalStreamId ComponentObject ComponentObject$_Fields])
+  (:import [org.apache.storm.utils NimbusClient ConfigUtils Utils])
   (:import [org.apache.storm.security.auth ReqContext])
   (:import [org.apache.storm.grouping CustomStreamGrouping])
   (:import [org.apache.storm.topology TopologyBuilder])
   (:import [org.apache.storm.clojure RichShellBolt RichShellSpout])
-  (:import [org.apache.storm.thrift.transport TTransport]
+  (:import [org.apache.thrift.transport TTransport]
            (org.json.simple JSONValue))
   (:use [org.apache.storm util config log]))
 
@@ -246,11 +243,11 @@
     {:obj bolt :inputs inputs :p parallelism-hint :conf conf}))
 
 (defn mk-shell-bolt-spec
-  [inputs command script-or-output-spec & kwargs]
-  (let [[command output-spec kwargs]
+      [inputs command script-or-output-spec & kwargs]
+      (let [[command output-spec kwargs]
         (shell-component-params command script-or-output-spec kwargs)]
-    (apply mk-bolt-spec inputs
-           (RichShellBolt. command (mk-output-spec output-spec)) kwargs)))
+           (apply mk-bolt-spec inputs
+                  (RichShellBolt. command (mk-output-spec output-spec)) kwargs)))
 
 (defn mk-shell-spout-spec
   [command script-or-output-spec & kwargs]

@@ -17,10 +17,11 @@
 
 package org.apache.storm.st.tests.window;
 
+import java.io.IOException;
 import org.apache.storm.st.helper.AbstractTest;
 import org.apache.storm.st.wrapper.LogData;
 import org.apache.storm.st.wrapper.TopoWrap;
-import org.apache.storm.thrift.TException;
+import org.apache.thrift.TException;
 import org.apache.storm.st.topology.TestableTopology;
 import org.apache.storm.st.topology.window.SlidingTimeCorrectness;
 import org.apache.storm.st.topology.window.SlidingWindowCorrectness;
@@ -79,21 +80,25 @@ public final class SlidingWindowTest extends AbstractTest {
         runAndVerifyCount(windowSize, slideSize, testable, topo);
     }
 
-    static void runAndVerifyCount(int windowSize, int slideSize, TestableTopology testable, TopoWrap topo) throws TException, MalformedURLException {
+    static void runAndVerifyCount(int windowSize, int slideSize, TestableTopology testable, TopoWrap topo) throws IOException, TException, MalformedURLException {
         topo.submitSuccessfully();
-        final int minSpoutEmits = 1000 + windowSize;
         final int minBoltEmits = 5;
+        //Sliding windows should produce one window every slideSize tuples
+        //Wait for the spout to emit at least enough tuples to get minBoltEmit windows and at least one full window
+        final int minSpoutEmits = Math.max(windowSize, minBoltEmits * slideSize);
+        
         String boltName = testable.getBoltName();
         String spoutName = testable.getSpoutName();
-        topo.waitForProgress(minSpoutEmits, spoutName, 180);
-        topo.waitForProgress(minBoltEmits, boltName, 180);
+        //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
+        topo.assertProgress(minSpoutEmits, spoutName, 180);
+        topo.assertProgress(minBoltEmits, boltName, 180);
         List<TopoWrap.ExecutorURL> boltUrls = topo.getLogUrls(boltName);
         log.info(boltUrls.toString());
         final List<LogData> allBoltData = topo.getLogData(boltName);
         final List<LogData> allSpoutData = topo.getLogData(spoutName);
         Assert.assertTrue(allBoltData.size() >= minBoltEmits,
                 "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltData.size() + " \n\t" + allBoltData);
-        final int numberOfWindows = allBoltData.size() - windowSize / slideSize;
+        final int numberOfWindows = allBoltData.size();
         for(int i = 0; i < numberOfWindows; ++i ) {
             log.info("Comparing window: " + (i + 1) + " of " + numberOfWindows);
             final int toIndex = (i + 1) * slideSize;
@@ -143,28 +148,29 @@ public final class SlidingWindowTest extends AbstractTest {
         runAndVerifyTime(windowSec, slideSec, testable, topo);
     }
 
-    static void runAndVerifyTime(int windowSec, int slideSec, TestableTopology testable, TopoWrap topo) throws TException, java.net.MalformedURLException {
+    static void runAndVerifyTime(int windowSec, int slideSec, TestableTopology testable, TopoWrap topo) throws IOException, TException, java.net.MalformedURLException {
         topo.submitSuccessfully();
-        final int minSpoutEmits = 1000 + windowSec;
+        final int minSpoutEmits = 100;
         final int minBoltEmits = 5;
         String boltName = testable.getBoltName();
         String spoutName = testable.getSpoutName();
-        topo.waitForProgress(minSpoutEmits, spoutName, 60 + 10 * (windowSec + slideSec));
-        topo.waitForProgress(minBoltEmits, boltName, 60 + 10 * (windowSec + slideSec));
-        final List<TimeData> allSpoutData = topo.getLogData(spoutName, TimeData.CLS);
-        final List<LogData> allBoltLog = topo.getLogData(boltName);
-        final List<TimeDataWindow> allBoltData = topo.getLogData(boltName, TimeDataWindow.CLS);
-        Assert.assertTrue(allBoltLog.size() >= minBoltEmits,
-                "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltLog.size() + " \n\t" + allBoltLog);
-        final DateTime firstEndTime = TimeUtil.ceil(new DateTime(allSpoutData.get(0).getDate()).withZone(DateTimeZone.UTC), slideSec);
-        final int numberOfWindows = allBoltLog.size() - windowSec / slideSec;
+        //Waiting for spout tuples isn't strictly necessary since we also wait for bolt emits, but do it anyway
+        topo.assertProgress(minSpoutEmits, spoutName, 60 + 10 * (windowSec + slideSec));
+        topo.assertProgress(minBoltEmits, boltName, 60 + 10 * (windowSec + slideSec));
+        final List<TimeData> allSpoutDataDeserialized = topo.getLogData(spoutName, TimeData.CLS);
+        final List<LogData> allBoltData = topo.getLogData(boltName);
+        final List<TimeDataWindow> allBoltDataDeserialized = topo.deserializeLogData(allBoltData, TimeDataWindow.CLS);
+        Assert.assertTrue(allBoltData.size() >= minBoltEmits,
+                "Expecting min " + minBoltEmits + " bolt emits, found: " + allBoltData.size() + " \n\t" + allBoltData);
+        final DateTime firstEndTime = TimeUtil.ceil(new DateTime(allSpoutDataDeserialized.get(0).getDate()).withZone(DateTimeZone.UTC), slideSec);
+        final int numberOfWindows = allBoltData.size();
         for(int i = 0; i < numberOfWindows; ++i ) {
             final DateTime toDate = firstEndTime.plusSeconds(i * slideSec);
             final DateTime  fromDate =  toDate.minusSeconds(windowSec);
             log.info("Comparing window: " + fromDate + " to " + toDate + " iter " + (i+1) + "/" + numberOfWindows);
-            final TimeDataWindow computedWindow = TimeDataWindow.newInstance(allSpoutData,fromDate, toDate);
-            final LogData oneBoltLog = allBoltLog.get(i);
-            final TimeDataWindow actualWindow = allBoltData.get(i);
+            final TimeDataWindow computedWindow = TimeDataWindow.newInstance(allSpoutDataDeserialized,fromDate, toDate);
+            final LogData oneBoltLog = allBoltData.get(i);
+            final TimeDataWindow actualWindow = allBoltDataDeserialized.get(i);
             log.info("Actual window: " + actualWindow.getDescription());
             log.info("Computed window: " + computedWindow.getDescription());
             for (TimeData oneLog : computedWindow) {

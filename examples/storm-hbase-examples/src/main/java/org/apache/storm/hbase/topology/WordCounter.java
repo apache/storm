@@ -32,7 +32,7 @@ public class WordCounter implements IBasicBolt {
 
 
     @SuppressWarnings("rawtypes")
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
     /*

@@ -28,7 +28,7 @@ import org.apache.hadoop.io.Writable;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
 import org.apache.storm.Config;
 import org.apache.storm.hdfs.common.rotation.RotationAction;
-import org.apache.storm.hdfs.common.security.HdfsSecurityUtil;
+import org.apache.storm.hdfs.security.HdfsSecurityUtil;
 import org.apache.storm.hdfs.trident.format.FileNameFormat;
 import org.apache.storm.hdfs.trident.format.RecordFormat;
 import org.apache.storm.hdfs.trident.format.SequenceFormat;
@@ -76,7 +76,7 @@ public class HdfsState implements State {
 
         abstract void execute(List<TridentTuple> tuples) throws IOException;
 
-        abstract void doPrepare(Map conf, int partitionIndex, int numPartitions) throws IOException;
+        abstract void doPrepare(Map<String, Object> conf, int partitionIndex, int numPartitions) throws IOException;
 
         abstract long getCurrentOffset() throws  IOException;
 
@@ -106,7 +106,7 @@ public class HdfsState implements State {
         }
 
 
-        void prepare(Map conf, int partitionIndex, int numPartitions) {
+        void prepare(Map<String, Object> conf, int partitionIndex, int numPartitions) {
             if (this.rotationPolicy == null) {
                 throw new IllegalStateException("RotationPolicy must be specified.");
             } else if (this.rotationPolicy instanceof FileSizeRotationPolicy) {
@@ -221,7 +221,7 @@ public class HdfsState implements State {
         }
 
         @Override
-        void doPrepare(Map conf, int partitionIndex, int numPartitions) throws IOException {
+        void doPrepare(Map<String, Object> conf, int partitionIndex, int numPartitions) throws IOException {
             LOG.info("Preparing HDFS File state...");
             this.fs = FileSystem.get(URI.create(this.fsUrl), hdfsConfig);
         }
@@ -333,7 +333,7 @@ public class HdfsState implements State {
         }
 
         @Override
-        void doPrepare(Map conf, int partitionIndex, int numPartitions) throws IOException {
+        void doPrepare(Map<String, Object> conf, int partitionIndex, int numPartitions) throws IOException {
             LOG.info("Preparing Sequence File State...");
             if (this.format == null) throw new IllegalStateException("SequenceFormat must be specified.");
 
@@ -429,7 +429,7 @@ public class HdfsState implements State {
         this.options = options;
     }
 
-    void prepare(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         this.options.prepare(conf, partitionIndex, numPartitions);
         initLastTxn(conf, partitionIndex);
     }
@@ -476,7 +476,7 @@ public class HdfsState implements State {
         return new TxnRecord(0, options.currentFile.toString(), 0);
     }
 
-    private void initLastTxn(Map conf, int partition) {
+    private void initLastTxn(Map<String, Object> conf, int partition) {
         // include partition id in the file name so that index for different partitions are independent.
         String indexFileName = String.format(".index.%s.%d", conf.get(Config.TOPOLOGY_NAME), partition);
         this.indexFilePath = new Path(options.fileNameFormat.getPath(), indexFileName);

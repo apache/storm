@@ -61,6 +61,9 @@
       <span id="toggle-sys" style="display: block;" class="js-only"></span>
     </div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 
@@ -129,4 +132,7 @@ $(document).ready(function() {
         });
     });
 });
+
+getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>

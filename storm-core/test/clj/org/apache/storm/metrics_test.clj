@@ -23,11 +23,10 @@
   (:import [org.apache.storm.spout ShellSpout])
   (:import [org.apache.storm.metric.api CountMetric IMetricsConsumer$DataPoint IMetricsConsumer$TaskInfo])
   (:import [org.apache.storm.metric.api.rpc CountShellMetric])
-  (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm Testing Testing$Condition LocalCluster$Builder])
   
   (:use [org.apache.storm config])
-  (:use [org.apache.storm.internal clojure])
+  (:use [org.apache.storm clojure])
   (:use [org.apache.storm.util])
   (:import [org.apache.storm Thrift])
   (:import [org.apache.storm.utils Utils]
@@ -333,11 +332,11 @@
           tracker (AckFailMapTracker.)
           _ (.setAckFailDelegate feeder tracker)
           topology (Thrift/buildTopology
-                    {"myspout" (Thrift/prepareSpoutDetails feeder)}
-                    {"mybolt" (Thrift/prepareBoltDetails
-                                {(Utils/getGlobalStreamId "myspout" nil)
-                                 (Thrift/prepareGlobalGrouping)}
-                                ack-every-other)})]
+                     {"myspout" (Thrift/prepareSpoutDetails feeder)}
+                     {"mybolt" (Thrift/prepareBoltDetails
+                                 {(Utils/getGlobalStreamId "myspout" nil)
+                                  (Thrift/prepareGlobalGrouping)}
+                                 ack-every-other)})]
       (.submitTopology cluster
                              "timeout-tester"
                              {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}

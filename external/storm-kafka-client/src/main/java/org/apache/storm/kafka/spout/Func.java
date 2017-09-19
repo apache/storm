@@ -15,13 +15,14 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
+
 package org.apache.storm.kafka.spout;
 
 import java.io.Serializable;
 
 /**
  * A simple interface to allow compatibility with non java 8
- * code bases 
+ * code bases. 
  */
 public interface Func<V, R> extends Serializable {
     R apply(V record);

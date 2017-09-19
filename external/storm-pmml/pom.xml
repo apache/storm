@@ -41,17 +41,13 @@
         </developer>
     </developers>
 
-    <properties>
-        <jpmml.version>1.0.22</jpmml.version>
-    </properties>
-
     <dependencies>
         <!--parent module dependency-->
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
 
         <!-- JPMML Compile Time dependencies              LICENSING WARNING!
@@ -77,5 +73,18 @@
         </dependency>
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <!--Note - the version would be inherited-->
+                <configuration>
+
+                    <maxAllowedViolations>67</maxAllowedViolations>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
 </project>

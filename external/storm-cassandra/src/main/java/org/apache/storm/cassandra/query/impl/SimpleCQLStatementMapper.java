@@ -67,7 +67,7 @@ public class SimpleCQLStatementMapper implements CQLStatementTupleMapper {
      * {@inheritDoc}.
      */
     @Override
-    public List<Statement> map(Map conf, Session session, ITuple tuple) {
+    public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
         List<Column> columns = mapper.map(tuple);
         SimpleStatement statement = new SimpleStatement(queryString, Column.getVals(columns));
 

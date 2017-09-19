@@ -28,13 +28,11 @@ import com.google.common.collect.Maps;
 
 import java.util.Map;
 
-import static org.apache.storm.utils.Utils.tuple;
-
 public class WordCounter implements IBasicBolt {
     private Map<String, Integer> wordCounter = Maps.newHashMap();
 
     @SuppressWarnings("rawtypes")
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 
     public void execute(Tuple input, BasicOutputCollector collector) {

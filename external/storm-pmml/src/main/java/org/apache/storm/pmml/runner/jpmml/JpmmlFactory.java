@@ -71,7 +71,7 @@ public class JpmmlFactory {
      * Creates a new {@link PMML} object representing the PMML model uploaded to the Blobstore with key specified as argument.
      * Uses the specified configuration to get the Blobstore client
      */
-    public static PMML newPmml(String blobKey, Map config) throws JAXBException, SAXException, IOException {
+    public static PMML newPmml(String blobKey, Map<String, Object> config) throws JAXBException, SAXException, IOException {
         Objects.requireNonNull(blobKey);
         Objects.requireNonNull(config);
         return newPmml(getPmmlModelBlob(blobKey, config));
@@ -92,7 +92,7 @@ public class JpmmlFactory {
      * @param blobKey key of PMML model in Blobstore
      * @param config Configuration to use to get Blobstore client
      */
-    public static InputStream getPmmlModelBlob(String blobKey, Map config) {
+    public static InputStream getPmmlModelBlob(String blobKey, Map<String, Object> config) {
         Objects.requireNonNull(blobKey);
         Objects.requireNonNull(config);
         try {
@@ -142,7 +142,7 @@ public class JpmmlFactory {
      * Creates a new {@link Evaluator} object representing the PMML model uploaded to the Blobstore using the blob key specified as argument.
      * Uses the specified configuration to get the Blobstore client
      */
-    public static Evaluator newEvaluator(String blobKey, Map config) throws IOException, JAXBException, SAXException {
+    public static Evaluator newEvaluator(String blobKey, Map<String, Object> config) throws IOException, JAXBException, SAXException {
         Objects.requireNonNull(blobKey);
         Objects.requireNonNull(config);
         return newEvaluator(newPmml(blobKey, config));

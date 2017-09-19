@@ -48,13 +48,13 @@ public class TransactionalTridentEventHubSpout implements
 
   @Override
   public IPartitionedTridentSpout.Coordinator<Partitions> getCoordinator(
-      Map conf, TopologyContext context) {
+      Map<String, Object> conf, TopologyContext context) {
     return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
   }
 
   @Override
   public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map> getEmitter(
-      Map conf, TopologyContext context) {
+      Map<String, Object> conf, TopologyContext context) {
     return new TransactionalTridentEventHubEmitter(spoutConfig);
   }
 

@@ -57,15 +57,6 @@ public class RollingTopWords extends ConfigurableTopology {
    *
    * ```
    *
-   * # Runs in local mode (LocalCluster), with topology name "slidingWindowCounts"
-   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.RollingTopWords -local
-   * 
-   * # Runs in local mode (LocalCluster), with topology name "foobar"
-   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.RollingTopWords foobar -local
-   * 
-   * # Runs in local mode (LocalCluster) for 30 seconds, with topology name "foobar" 
-   * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.RollingTopWords foobar -local -ttl 30
-   *
    * # Runs in remote/cluster mode, with topology name "production-topology"
    * $ storm jar storm-starter-jar-with-dependencies.jar org.apache.storm.starter.RollingTopWords production-topology ```
    *

@@ -25,6 +25,7 @@ public class KinesisSpoutTopology {
     }
 }
 ```
+
 As you can see above the spout takes an object of KinesisConfig in its constructor. The constructor of KinesisConfig takes 8 objects as explained below.
 
 #### `String` streamName
@@ -38,6 +39,7 @@ will need to clear the state of zookeeper node used for storing sequence numbers
 #### `RecordToTupleMapper` recordToTupleMapper
 an implementation of `RecordToTupleMapper` interface that spout will call to convert a kinesis record to a storm tuple. It has two methods. getOutputFields 
 tells the spout the fields that will be present in the tuple emitted from the getTuple method. If getTuple returns null, the record will be acked
+
 ```java
     Fields getOutputFields ();
     List<Object> getTuple (Record record);
@@ -53,6 +55,7 @@ mechanism for failed messages. That implementation has two constructors. Default
 subsequent retires at Math.pow(2, i-1) where i is the retry number in the range 2 to LONG.MAX_LONG. 2 represents the base for exponential function in seconds. 
 Other constructor takes retry interval in millis for first retry as first argument, base for exponential function in seconds as second argument and number of 
 retries as third argument. The methods of this interface and its working in accord with the spout is explained below
+
 ```java
     boolean failed (KinesisMessageId messageId);
     KinesisMessageId getNextFailedMessageToRetry ();
@@ -106,7 +109,7 @@ Aws sdk version that this was tested with is 1.10.77
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

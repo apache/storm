@@ -18,15 +18,11 @@
 package org.apache.storm.redis.trident;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
-import org.apache.storm.LocalCluster.LocalTopology;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
+import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.redis.common.mapper.RedisDataTypeDescription;
 import org.apache.storm.redis.trident.state.RedisMapState;
-import org.apache.storm.redis.common.config.JedisPoolConfig;
 import org.apache.storm.trident.Stream;
 import org.apache.storm.trident.TridentState;
 import org.apache.storm.trident.TridentTopology;
@@ -34,6 +30,8 @@ import org.apache.storm.trident.operation.builtin.MapGet;
 import org.apache.storm.trident.operation.builtin.Sum;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 public class WordCountTridentRedisMap {
     public static StormTopology buildTopology(String redisHost, Integer redisPort){
@@ -66,29 +64,18 @@ public class WordCountTridentRedisMap {
     }
 
     public static void main(String[] args) throws Exception {
-        if (args.length != 3) {
-            System.out.println("Usage: WordCountTrident 0(storm-local)|1(storm-cluster) redis-host redis-port");
+        if (args.length != 2) {
+            System.out.println("Usage: WordCountTrident redis-host redis-port");
             System.exit(1);
         }
 
-        Integer flag = Integer.valueOf(args[0]);
-        String redisHost = args[1];
-        Integer redisPort = Integer.valueOf(args[2]);
+        String redisHost = args[0];
+        Integer redisPort = Integer.valueOf(args[1]);
 
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
-        if (flag == 0) {
-            try (LocalCluster cluster = new LocalCluster();
-                LocalTopology topo = cluster.submitTopology("test_wordCounter_for_redis", conf, buildTopology(redisHost, redisPort));) {
-                Thread.sleep(60 * 1000);
-            }
-            System.exit(0);
-        } else if(flag == 1) {
-            conf.setNumWorkers(3);
-            StormSubmitter.submitTopology("test_wordCounter_for_redis", conf, buildTopology(redisHost, redisPort));
-        } else {
-            System.out.println("Usage: WordCountTrident 0(storm-local)|1(storm-cluster) redis-host redis-port");
-        }
+        conf.setNumWorkers(3);
+        StormSubmitter.submitTopology("test_wordCounter_for_redis", conf, buildTopology(redisHost, redisPort));
     }
 
 }

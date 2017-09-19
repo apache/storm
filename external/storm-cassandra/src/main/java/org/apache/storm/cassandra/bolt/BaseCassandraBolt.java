@@ -35,11 +35,9 @@ import org.apache.storm.cassandra.query.CQLStatementTupleMapper;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,7 +59,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
     protected SimpleClientProvider clientProvider;
     protected SimpleClient client;
     protected Session session;
-    protected Map stormConfig;
+    protected Map<String, Object> topoConfig;
 
     protected CassandraConf cassandraConf;
 
@@ -91,11 +89,11 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
      * {@inheritDoc}
      */
     @Override
-    public void prepare(Map stormConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
+    public void prepare(Map<String, Object> topoConfig, TopologyContext topologyContext, OutputCollector outputCollector) {
         this.outputCollector = outputCollector;
-        this.stormConfig = stormConfig;
+        this.topoConfig = topoConfig;
 
-        Map<String, Object> cassandraClientConfig = cassandraConfig != null ? cassandraConfig : stormConfig;
+        Map<String, Object> cassandraClientConfig = cassandraConfig != null ? cassandraConfig : topoConfig;
 
         this.cassandraConf = new CassandraConf(cassandraClientConfig);
         this.client = clientProvider.getClient(cassandraClientConfig);
@@ -104,6 +102,7 @@ public abstract class BaseCassandraBolt<T> extends BaseTickTupleAwareRichBolt {
             session = client.connect();
         } catch (NoHostAvailableException e) {
             outputCollector.reportError(e);
+            throw e;
         }
     }
 

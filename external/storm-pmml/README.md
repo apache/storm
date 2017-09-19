@@ -1,9 +1,9 @@
-#Storm PMML Bolt
+# Storm PMML Bolt
  Storm integration to load PMML models and compute predictive scores for running tuples. The PMML model represents
  the machine learning (predictive) model used to do prediction on raw input data. The model is typically loaded into a 
  runtime environment, which will score the raw data that comes in the tuples. 
 
-#Create Instance of PMML Bolt
+## Create Instance of PMML Bolt
  To create an instance of the `PMMLPredictorBolt`, you must provide the `ModelOutputs`, and a `ModelRunner` using a 
  `ModelRunnerFactory`. The `ModelOutputs` represents the streams and output fields declared by the `PMMLPredictorBolt`.
  The `ModelRunner` represents the runtime environment to execute the predictive scoring. It has only one method: 
@@ -27,7 +27,7 @@
  
  The `predicted`, `active`, and `output` fields are extracted from the PMML model.
 
-#Run Bundled Examples
+## Run Bundled Examples
 
 To run the examples you must execute the following command:
  

@@ -290,7 +290,7 @@ Sample response:
     "supervisors": [{ 
         "totalMem": 4096.0, 
         "host":"192.168.10.237",
-        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "id":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "uptime":"7m 8s",
         "totalCpu":400.0,
         "usedCpu":495.0,
@@ -305,12 +305,12 @@ Sample response:
         "topologyName":"ras",
         "topologyId":"ras-4-1460229987",
         "host":"192.168.10.237",
-        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "assignedMemOnHeap":704.0,
         "uptime":"2m 47s",
         "uptimeSeconds":167,
         "port":6707,
-        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
+        "workerLogLink":"http:\/\/host:8000\/log?file=ras-4-1460229987%2F6707%2Fworker.log",
         "componentNumTasks": {
             "word":5
         },
@@ -322,11 +322,11 @@ Sample response:
         "topologyName":"ras",
         "topologyId":"ras-4-1460229987",
         "host":"192.168.10.237",
-        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e-169.254.129.212",
+        "supervisorId":"bdfe8eff-f1d8-4bce-81f5-9d3ae1bf432e",
         "assignedMemOnHeap":904.0,
         "uptime":"2m 53s",
         "port":6706,
-        "workerLogLink":"http:\/\/192.168.10.237:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
+        "workerLogLink":"http:\/\/host:8000\/log?file=ras-4-1460229987%2F6706%2Fworker.log",
         "componentNumTasks":{
             "exclaim2":2,
             "exclaim1":3,
@@ -337,6 +337,63 @@ Sample response:
         "assignedCpu":165.0,
         "assignedMemOffHeap":80.0
     }]
+}
+```
+
+### /api/v1/owner-resources (GET)
+
+Returns summary information aggregated at the topology owner level. Pass an optional id for a specific owner (e.g. /api/v1/owner-resources/theowner)
+
+Response fields:
+
+|Field  |Value|Description|
+|---	|---	|---
+|owner  |String |Topology owner
+|totalTopologies|Integer|Total number of topologies owner is running
+|totalExecutors |Integer|Total number of executors used by owner
+|totalWorkers |Integer|Total number of workers used by owner
+|totalTasks|Integer|Total number of tasks used by owner
+|totalMemoryUsage|Double|Total Memory Assigned on behalf of owner in MB
+|totalCpuUsage|Double|Total CPU Resource Assigned on behalf of User. Every 100 means 1 core
+|memoryGuarantee|Double|The amount of memory resource (in MB) guaranteed to owner
+|cpuGuarantee|Double|The amount of CPU resource (every 100 means 1 core) guaranteed to owner
+|isolatedNodes|Integer|The amount of nodes that are guaranteed isolated to owner
+|memoryGuaranteeRemaining|Double|The amount of guaranteed memory resources (in MB) remaining
+|cpuGuaranteeRemaining|Double|The amount of guaranteed CPU resource (every 100 means 1 core) remaining
+|totalReqOnHeapMem|Double| Total On-Heap Memory Requested by User in MB
+|totalReqOffHeapMem|Double|Total Off-Heap Memory Requested by User in MB
+|totalReqMem|Double|Total Memory Requested by User in MB
+|totalReqCpu|Double|Total CPU Resource Requested by User. Every 100 means 1 core
+|totalAssignedOnHeapMem|Double|Total On-Heap Memory Assigned on behalf of owner in MB
+|totalAssignedOffHeapMem|Double|Total Off-Heap Memory Assigned on behalf of owner in MB
+
+Sample response:
+ 
+```json
+{
+    "owners": [
+        {
+            "totalReqOnHeapMem": 896,
+            "owner": "ownerA",
+            "totalExecutors": 7,
+            "cpuGuaranteeRemaining": 30,
+            "totalReqMem": 896,
+            "cpuGuarantee": 100,
+            "isolatedNodes": "N/A",
+            "memoryGuarantee": 4000,
+            "memoryGuaranteeRemaining": 3104,
+            "totalTasks": 7,
+            "totalMemoryUsage": 896,
+            "totalReqOffHeapMem": 0,
+            "totalReqCpu": 70,
+            "totalWorkers": 2,
+            "totalCpuUsage": 70,
+            "totalAssignedOffHeapMem": 0,
+            "totalAssignedOnHeapMem": 896,
+            "totalTopologies": 1
+        }
+    ],
+    "schedulerDisplayResource": true
 }
 ```
 
@@ -396,9 +453,10 @@ Sample response:
 }
 ```
 
-### /api/v1/topology-workers/:id (GET)
+### /api/v1/topology-workers/\<id\> (GET)
 
-Returns the worker' information (host and port) for a topology.
+Returns the worker' information (host and port) for a topology whose id is substituted for \<id\>. 
+The topology id is obtained by the above /topology/summary call. 
 
 Response fields:
 
@@ -429,9 +487,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id (GET)
+### /api/v1/topology/\<id\> (GET)
 
-Returns topology information and statistics.  Substitute id with topology id.
+Returns topology information and statistics.  Substitute \<id\> with the topology id.
 
 Request parameters:
 
@@ -545,6 +603,25 @@ Sample response:
     "msgTimeout": 30,
     "windowHint": "10m 0s",
     "schedulerDisplayResource": true,
+    "workers": [{
+        "topologyName": "WordCount3",
+        "topologyId": "WordCount3-1-1402960825",
+        "host": "my-host",
+        "supervisorId": "9124ca9a-42e8-481e-9bf3-a041d9595430",
+        "assignedMemOnHeap": 1452.0,
+        "uptime": "27m 26s",
+        "port": 6702,
+        "workerLogLink": "logs",
+        "componentNumTasks": {
+            "spout": 2,
+            "count": 3,
+            "split": 10
+        },
+        "executorsTotal": 15,
+        "uptimeSeconds": 1646,
+        "assignedCpu": 260.0,
+        "assignedMemOffHeap": 160.0
+    }]
     "topologyStats": [
         {
             "windowPretty": "10m 0s",
@@ -690,9 +767,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id/metrics
+### /api/v1/topology/\<id\>/metrics
 
-Returns detailed metrics for topology. It shows metrics per component, which are aggregated by stream.
+Returns detailed metrics for topology for a topology whose id is substituted for \<id\>. It shows metrics per component, which are aggregated by stream.
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -967,9 +1044,9 @@ Sample response:
 }
 ```
 
-### /api/v1/topology/:id/component/:component (GET)
+### /api/v1/topology/\<id\>/component/\<component\> (GET)
 
-Returns detailed metrics and executor information
+Returns detailed metrics and executor information for a topology whose id is substituted for \<id\> and a component whose id is substituted for \<component\>
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1205,9 +1282,10 @@ Sample response:
 
 ## Profiling and Debugging GET Operations
 
-###  /api/v1/topology/:id/profiling/start/:host-port/:timeout (GET)
+###  /api/v1/topology/\<id\>/profiling/start/\<host-port\>/\<timeout\> (GET)
 
 Request to start profiler on worker with timeout. Returns status and link to profiler artifacts for worker.
+Substitute appropriate values for \<id\>, \<host-port\> and \<timeout\>.
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1243,9 +1321,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpprofile/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpprofile/\<host-port\> (GET)
 
 Request to dump profiler recording on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1274,9 +1353,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/stop/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/stop/\<host-port\> (GET)
 
 Request to stop profiler on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1305,9 +1385,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpjstack/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpjstack/\<host-port\> (GET)
 
 Request to dump jstack on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1336,9 +1417,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/dumpheap/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/dumpheap/\<host-port\> (GET)
 
 Request to dump heap (jmap) on worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1367,9 +1449,10 @@ Sample response:
 }
 ```
 
-###  /api/v1/topology/:id/profiling/restartworker/:host-port (GET)
+###  /api/v1/topology/\<id\>/profiling/restartworker/\<host-port\> (GET)
 
 Request to request the worker. Returns status and worker id for the request.
+Substitute for \<id\> and \<host-port\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1400,9 +1483,9 @@ Sample response:
 
 ## POST Operations
 
-### /api/v1/topology/:id/activate (POST)
+### /api/v1/topology/\<id\>/activate (POST)
 
-Activates a topology.
+Activates a topology. Substitute for \<id\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1415,9 +1498,9 @@ Sample Response:
 ```
 
 
-### /api/v1/topology/:id/deactivate (POST)
+### /api/v1/topology/\<id\>/deactivate (POST)
 
-Deactivates a topology.
+Deactivates a topology. Substitute for \<id\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1430,9 +1513,10 @@ Sample Response:
 ```
 
 
-### /api/v1/topology/:id/rebalance/:wait-time (POST)
+### /api/v1/topology/\<id\>/rebalance/\<wait-time\> (POST)
 
 Rebalances a topology.
+Substitute for \<id\> and \<wait-time\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1464,9 +1548,10 @@ Sample Response:
 
 
 
-### /api/v1/topology/:id/kill/:wait-time (POST)
+### /api/v1/topology/\<id\>/kill/\<wait-time\> (POST)
 
 Kills a topology.
+Substitute for \<id\> and \<wait-time\>. 
 
 |Parameter |Value   |Description  |
 |----------|--------|-------------|
@@ -1495,3 +1580,28 @@ Sample response:
   "errorMessage": "java.lang.NullPointerException\n\tat clojure.core$name.invoke(core.clj:1505)\n\tat org.apache.storm.ui.core$component_page.invoke(core.clj:752)\n\tat org.apache.storm.ui.core$fn__7766.invoke(core.clj:782)\n\tat compojure.core$make_route$fn__5755.invoke(core.clj:93)\n\tat compojure.core$if_route$fn__5743.invoke(core.clj:39)\n\tat compojure.core$if_method$fn__5736.invoke(core.clj:24)\n\tat compojure.core$routing$fn__5761.invoke(core.clj:106)\n\tat clojure.core$some.invoke(core.clj:2443)\n\tat compojure.core$routing.doInvoke(core.clj:106)\n\tat clojure.lang.RestFn.applyTo(RestFn.java:139)\n\tat clojure.core$apply.invoke(core.clj:619)\n\tat compojure.core$routes$fn__5765.invoke(core.clj:111)\n\tat ring.middleware.reload$wrap_reload$fn__6880.invoke(reload.clj:14)\n\tat org.apache.storm.ui.core$catch_errors$fn__7800.invoke(core.clj:836)\n\tat ring.middleware.keyword_params$wrap_keyword_params$fn__6319.invoke(keyword_params.clj:27)\n\tat ring.middleware.nested_params$wrap_nested_params$fn__6358.invoke(nested_params.clj:65)\n\tat ring.middleware.params$wrap_params$fn__6291.invoke(params.clj:55)\n\tat ring.middleware.multipart_params$wrap_multipart_params$fn__6386.invoke(multipart_params.clj:103)\n\tat ring.middleware.flash$wrap_flash$fn__6675.invoke(flash.clj:14)\n\tat ring.middleware.session$wrap_session$fn__6664.invoke(session.clj:43)\n\tat ring.middleware.cookies$wrap_cookies$fn__6595.invoke(cookies.clj:160)\n\tat ring.adapter.jetty$proxy_handler$fn__6112.invoke(jetty.clj:16)\n\tat ring.adapter.jetty.proxy$org.mortbay.jetty.handler.AbstractHandler$0.handle(Unknown Source)\n\tat org.mortbay.jetty.handler.HandlerWrapper.handle(HandlerWrapper.java:152)\n\tat org.mortbay.jetty.Server.handle(Server.java:326)\n\tat org.mortbay.jetty.HttpConnection.handleRequest(HttpConnection.java:542)\n\tat org.mortbay.jetty.HttpConnection$RequestHandler.headerComplete(HttpConnection.java:928)\n\tat org.mortbay.jetty.HttpParser.parseNext(HttpParser.java:549)\n\tat org.mortbay.jetty.HttpParser.parseAvailable(HttpParser.java:212)\n\tat org.mortbay.jetty.HttpConnection.handle(HttpConnection.java:404)\n\tat org.mortbay.jetty.bio.SocketConnector$Connection.run(SocketConnector.java:228)\n\tat org.mortbay.thread.QueuedThreadPool$PoolThread.run(QueuedThreadPool.java:582)\n"
 }
 ```
+
+# DRPC REST API
+
+If DRPC is configured with either an http or https port it will expose a REST endpoint. (See [Setting up a Storm cluster](Setting-up-a-Storm-cluster.html) for how to do that)
+
+In all of these commands `:func` is the DRPC function and `:args` is the arguments to it.  The only difference is in how those arguments are supplied.  In all cases the response
+is in the response's body.
+
+In all cases DRPC does not have state, so if your request times out or results in an error please retry the request, but preferably with an exponential backoff to avoid doing a
+DDOS on the DRPC servers.
+
+### /drpc/:func (POST)
+
+In this case the `:args` to the drpc request are in the body of the post.
+
+### /drpc/:func/:args (GET)
+
+In this case the `:args` are supplied as a part of the URL itself.  There are limitations on URL lengths by many tools, so if this is above a hundred characters it is recomended 
+to use the POST option instead.
+
+### /drpc/:func (GET)
+
+In some rare cases `:args` may not be needed by the DRPC command.  If no `:args` section is given in the DRPC request and empty string `""` will be used for the arguments.
+
+

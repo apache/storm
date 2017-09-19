@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p/>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,6 +29,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+// FIXME: it should be moved to storm-client when serialization-test.clj can be removed
 public class SerializationTest {
 
     @Test
@@ -78,17 +79,17 @@ public class SerializationTest {
     }
 
     private Map mkConf(Map extra) {
-        Map config = Utils.readDefaultConfig();
+        Map<String, Object> config = Utils.readDefaultConfig();
         config.putAll(extra);
         return config;
     }
 
-    private byte[] serialize(List vals, Map conf) throws IOException {
+    private byte[] serialize(List vals, Map<String, Object> conf) throws IOException {
         KryoValuesSerializer serializer = new KryoValuesSerializer(mkConf(conf));
         return serializer.serialize(vals);
     }
 
-    private List deserialize(byte[] bytes, Map conf) throws IOException {
+    private List deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(mkConf(conf));
         return deserializer.deserialize(bytes);
     }
@@ -97,7 +98,7 @@ public class SerializationTest {
         return roundtrip(vals, new HashMap());
     }
 
-    private List roundtrip(List vals, Map conf) throws IOException {
+    private List roundtrip(List vals, Map<String, Object> conf) throws IOException {
         return deserialize(serialize(vals, conf), conf);
     }
 

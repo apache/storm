@@ -18,24 +18,14 @@
 package org.apache.storm.starter.streams;
 
 import org.apache.storm.Config;
-import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.starter.spout.RandomIntegerSpout;
 import org.apache.storm.streams.Pair;
-import org.apache.storm.streams.PairStream;
-import org.apache.storm.streams.Stream;
 import org.apache.storm.streams.StreamBuilder;
 import org.apache.storm.streams.operations.CombinerAggregator;
-import org.apache.storm.streams.operations.mappers.TupleValueMapper;
-import org.apache.storm.streams.operations.mappers.TupleValueMappers;
 import org.apache.storm.streams.operations.mappers.ValueMapper;
-import org.apache.storm.streams.tuple.Tuple3;
 import org.apache.storm.streams.windowing.TumblingWindows;
 import org.apache.storm.topology.base.BaseWindowedBolt;
-import org.apache.storm.trident.windowing.config.TumblingDurationWindow;
-import org.apache.storm.utils.Utils;
-
-import static org.apache.storm.topology.base.BaseWindowedBolt.Count;
 
 /**
  * An example that illustrates the global aggregate
@@ -56,15 +46,12 @@ public class AggregateExample {
                 .print();
 
         Config config = new Config();
+        String topoName = "AGG_EXAMPLE";
         if (args.length > 0) {
-            config.setNumWorkers(1);
-            StormSubmitter.submitTopologyWithProgressBar(args[0], config, builder.build());
-        } else {
-            try (LocalCluster cluster = new LocalCluster();
-                 LocalCluster.LocalTopology topo = cluster.submitTopology("test", config, builder.build())) {
-                Utils.sleep(60_000);
-            }
+            topoName = args[0];
         }
+        config.setNumWorkers(1);
+        StormSubmitter.submitTopologyWithProgressBar(topoName, config, builder.build());
     }
 
     private static class Avg implements CombinerAggregator<Integer, Pair<Integer, Integer>, Double> {

@@ -18,23 +18,26 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
-public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartitionedTridentSpout.Coordinator<List<TopicPartition>>, Serializable {
+public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
+        Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaqueCoordinator.class);
 
-    private KafkaTridentSpoutManager<K,V> kafkaManager;
+    private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
+    private final KafkaTridentSpoutManager<K,V> kafkaManager;
 
     public KafkaTridentSpoutOpaqueCoordinator(KafkaTridentSpoutManager<K, V> kafkaManager) {
         this.kafkaManager = kafkaManager;
-        LOG.debug("Created {}", this);
+        LOG.debug("Created {}", this.toString());
     }
 
     @Override
@@ -44,10 +47,12 @@ public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartition
     }
 
     @Override
-    public List<TopicPartition> getPartitionsForBatch() {
+    public List<Map<String, Object>> getPartitionsForBatch() {
         final ArrayList<TopicPartition> topicPartitions = new ArrayList<>(kafkaManager.getTopicPartitions());
         LOG.debug("TopicPartitions for batch {}", topicPartitions);
-        return topicPartitions;
+        return topicPartitions.stream()
+            .map(tp -> tpSerializer.toMap(tp))
+            .collect(Collectors.toList());
     }
 
     @Override
@@ -56,9 +61,9 @@ public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartition
     }
 
     @Override
-    public String toString() {
-        return super.toString() +
-                "{kafkaManager=" + kafkaManager +
-                '}';
+    public final String toString() {
+        return super.toString()
+                + "{kafkaManager=" + kafkaManager
+                + '}';
     }
 }

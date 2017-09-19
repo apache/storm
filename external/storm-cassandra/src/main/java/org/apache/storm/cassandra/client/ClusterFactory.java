@@ -19,17 +19,14 @@
 package org.apache.storm.cassandra.client;
 
 import com.datastax.driver.core.Cluster;
+import com.datastax.driver.core.HostDistance;
 import com.datastax.driver.core.PlainTextAuthProvider;
+import com.datastax.driver.core.PoolingOptions;
 import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
 import com.datastax.driver.core.policies.ExponentialReconnectionPolicy;
-import com.datastax.driver.core.policies.RoundRobinPolicy;
-import com.datastax.driver.core.policies.TokenAwarePolicy;
+import java.util.Map;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.storm.cassandra.context.BaseBeanFactory;
-
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Default interface to build cassandra Cluster from the a Storm Topology configuration.
@@ -38,12 +35,12 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
 
     /**
      * Creates a new Cluster based on the specified configuration.
-     * @param stormConf the storm configuration.
+     * @param topoConf the storm configuration.
      * @return a new a new {@link com.datastax.driver.core.Cluster} instance.
      */
     @Override
-    protected Cluster make(Map<String, Object> stormConf) {
-        CassandraConf cassandraConf = new CassandraConf(stormConf);
+    protected Cluster make(Map<String, Object> topoConf) {
+        CassandraConf cassandraConf = new CassandraConf(topoConf);
 
         Cluster.Builder cluster = Cluster.builder()
                 .withoutJMXReporting()
@@ -54,7 +51,9 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
                 .withReconnectionPolicy(new ExponentialReconnectionPolicy(
                         cassandraConf.getReconnectionPolicyBaseMs(),
                         cassandraConf.getReconnectionPolicyMaxMs()))
-                .withLoadBalancingPolicy(new TokenAwarePolicy(new RoundRobinPolicy()));
+                .withLoadBalancingPolicy(cassandraConf.getLoadBalancingPolicy());
+        cluster.getConfiguration().getSocketOptions().setReadTimeoutMillis((int)cassandraConf.getSocketReadTimeoutMillis());
+        cluster.getConfiguration().getSocketOptions().setConnectTimeoutMillis((int)cassandraConf.getSocketConnectTimeoutMillis());
 
         final String username = cassandraConf.getUsername();
         final String password = cassandraConf.getPassword();
@@ -67,6 +66,13 @@ public class ClusterFactory extends BaseBeanFactory<Cluster> {
                 .setConsistencyLevel(cassandraConf.getConsistencyLevel());
         cluster.withQueryOptions(options);
 
+        PoolingOptions poolOps = new PoolingOptions();
+        poolOps.setMaxQueueSize(cassandraConf.getPoolMaxQueueSize());
+        poolOps.setHeartbeatIntervalSeconds(cassandraConf.getHeartbeatIntervalSeconds());
+        poolOps.setIdleTimeoutSeconds(cassandraConf.getIdleTimeoutSeconds());
+        poolOps.setMaxRequestsPerConnection(HostDistance.LOCAL, cassandraConf.getMaxRequestPerConnectionLocal());
+        poolOps.setMaxRequestsPerConnection(HostDistance.REMOTE, cassandraConf.getMaxRequestPerConnectionRemote());
+        cluster.withPoolingOptions(poolOps);
 
         return cluster.build();
     }

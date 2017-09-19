@@ -6,15 +6,16 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.redis.trident.state;
 
 import org.apache.storm.task.IMetricsContext;
@@ -229,11 +230,13 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
          * {@inheritDoc}
          */
         @Override
-        public State makeState(@SuppressWarnings("rawtypes") Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(@SuppressWarnings("rawtypes") Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
-                                                            jedisClusterConfig.getTimeout(),
-                                                            jedisClusterConfig.getMaxRedirections(),
-                                                            DEFAULT_POOL_CONFIG);
+                    jedisClusterConfig.getTimeout(),
+                    jedisClusterConfig.getTimeout(),
+                    jedisClusterConfig.getMaxRedirections(),
+                    jedisClusterConfig.getPassword(),
+                    DEFAULT_POOL_CONFIG);
 
             RedisClusterMapState state = new RedisClusterMapState(jedisCluster, options, serializer, keyFactory);
             CachedMap c = new CachedMap(state, options.localCacheSize);
@@ -301,21 +304,21 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
         String[] stringKeys = keys.toArray(new String[keys.size()]);
         RedisDataTypeDescription description = this.options.dataTypeDescription;
         switch (description.getDataType()) {
-        case STRING:
-            List<String> values = Lists.newArrayList();
+            case STRING:
+                List<String> values = Lists.newArrayList();
 
-            for (String stringKey : keys) {
-                String value = jedisCluster.get(stringKey);
-                values.add(value);
-            }
+                for (String stringKey : keys) {
+                    String value = jedisCluster.get(stringKey);
+                    values.add(value);
+                }
 
-            return values;
+                return values;
 
-        case HASH:
-            return jedisCluster.hmget(description.getAdditionalKey(), stringKeys);
+            case HASH:
+                return jedisCluster.hmget(description.getAdditionalKey(), stringKeys);
 
-        default:
-            throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
+            default:
+                throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
         }
     }
 
@@ -326,25 +329,25 @@ public class RedisClusterMapState<T> extends AbstractRedisMapState<T> {
     protected void updateStatesToRedis(Map<String, String> keyValues) {
         RedisDataTypeDescription description = this.options.dataTypeDescription;
         switch (description.getDataType()) {
-        case STRING:
-            for (Map.Entry<String, String> kvEntry : keyValues.entrySet()) {
-                if(this.options.expireIntervalSec > 0){
-                    jedisCluster.setex(kvEntry.getKey(), this.options.expireIntervalSec, kvEntry.getValue());
-                } else {
-                    jedisCluster.set(kvEntry.getKey(), kvEntry.getValue());
+            case STRING:
+                for (Map.Entry<String, String> kvEntry : keyValues.entrySet()) {
+                    if (this.options.expireIntervalSec > 0) {
+                        jedisCluster.setex(kvEntry.getKey(), this.options.expireIntervalSec, kvEntry.getValue());
+                    } else {
+                        jedisCluster.set(kvEntry.getKey(), kvEntry.getValue());
+                    }
                 }
-            }
-            break;
+                break;
 
-        case HASH:
-            jedisCluster.hmset(description.getAdditionalKey(), keyValues);
-            if (this.options.expireIntervalSec > 0) {
-                jedisCluster.expire(description.getAdditionalKey(), this.options.expireIntervalSec);
-            }
-            break;
+            case HASH:
+                jedisCluster.hmset(description.getAdditionalKey(), keyValues);
+                if (this.options.expireIntervalSec > 0) {
+                    jedisCluster.expire(description.getAdditionalKey(), this.options.expireIntervalSec);
+                }
+                break;
 
-        default:
-            throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
+            default:
+                throw new IllegalArgumentException("Cannot process such data type: " + description.getDataType());
         }
     }
 }

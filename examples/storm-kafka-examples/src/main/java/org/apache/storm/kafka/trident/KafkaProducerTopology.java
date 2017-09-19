@@ -23,28 +23,36 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.bolt.KafkaBolt;
 import org.apache.storm.kafka.bolt.mapper.FieldNameBasedTupleToKafkaMapper;
 import org.apache.storm.kafka.bolt.selector.DefaultTopicSelector;
-import org.apache.storm.starter.spout.RandomSentenceSpout;
 import org.apache.storm.topology.TopologyBuilder;
 
 import java.util.Properties;
+import java.util.UUID;
+import org.apache.storm.lambda.LambdaSpout;
+import org.apache.storm.utils.Utils;
 
 public class KafkaProducerTopology {
     /**
+     * Create a new topology that writes random UUIDs to Kafka.
+     *
      * @param brokerUrl Kafka broker URL
      * @param topicName Topic to which publish sentences
-     * @return A Storm topology that produces random sentences using {@link RandomSentenceSpout} and uses a {@link KafkaBolt} to
-     * publish the sentences to the kafka topic specified
+     * @return A Storm topology that produces random UUIDs using a {@link LambdaSpout} and uses a {@link KafkaBolt} to publish the UUIDs to
+     *     the kafka topic specified
      */
     public static StormTopology newTopology(String brokerUrl, String topicName) {
         final TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("spout", new RandomSentenceSpout.TimeStamped(""), 2);
+        builder.setSpout("spout", () -> {
+            Utils.sleep(1000); //Throttle this spout a bit to avoid maxing out CPU
+            return UUID.randomUUID().toString();
+        });
 
-        /* The output field of the RandomSentenceSpout ("word") is provided as the boltMessageField
-          so that this gets written out as the message in the kafka topic. */
+        /* The output field of the spout ("lambda") is provided as the boltMessageField
+          so that this gets written out as the message in the kafka topic.
+          The tuples have no key field, so the messages are written to Kafka without a key.*/
         final KafkaBolt<String, String> bolt = new KafkaBolt<String, String>()
-                .withProducerProperties(newProps(brokerUrl, topicName))
-                .withTopicSelector(new DefaultTopicSelector(topicName))
-                .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper<>("key", "word"));
+            .withProducerProperties(newProps(brokerUrl, topicName))
+            .withTopicSelector(new DefaultTopicSelector(topicName))
+            .withTupleToKafkaMapper(new FieldNameBasedTupleToKafkaMapper<>("key", "lambda"));
 
         builder.setBolt("forwardToKafka", bolt, 1).shuffleGrouping("spout");
 

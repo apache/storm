@@ -18,6 +18,9 @@
 
 package org.apache.storm.kafka.spout.trident;
 
+import java.io.Serializable;
+import java.util.Collection;
+import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
@@ -27,10 +30,6 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Set;
 
 public class KafkaTridentSpoutManager<K, V> implements Serializable {
     private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutManager.class);
@@ -43,15 +42,18 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     // Declare some KafkaSpoutConfig references for convenience
     private Fields fields;
 
+    /**
+     * Create a KafkaConsumer manager for the trident spout.
+     * @param kafkaSpoutConfig The consumer config
+     */
     public KafkaTridentSpoutManager(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.fields = getFields();
-        LOG.debug("Created {}", this);
+        LOG.debug("Created {}", this.toString());
     }
 
     KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
-        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
-                kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
+        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
 
         kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
         return kafkaConsumer;
@@ -65,7 +67,7 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
         return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
     }
 
-    Fields getFields() {
+    final Fields getFields() {
         if (fields == null) {
             RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
             Fields fs = null;
@@ -89,11 +91,11 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     }
 
     @Override
-    public String toString() {
-        return super.toString() +
-                "{kafkaConsumer=" + kafkaConsumer +
-                ", kafkaSpoutConfig=" + kafkaSpoutConfig +
-                '}';
+    public final String toString() {
+        return super.toString()
+                + "{kafkaConsumer=" + kafkaConsumer
+                + ", kafkaSpoutConfig=" + kafkaSpoutConfig
+                + '}';
     }
 
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {

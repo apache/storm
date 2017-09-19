@@ -19,7 +19,7 @@ package org.apache.storm.hdfs.blobstore;
 
 import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStoreFile;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -139,7 +139,7 @@ public class HdfsBlobStoreImpl {
         }
 
         Object shouldCleanup = conf.get(Config.BLOBSTORE_CLEANUP_ENABLE);
-        if (Utils.getBoolean(shouldCleanup, false)) {
+        if (ObjectReader.getBoolean(shouldCleanup, false)) {
             LOG.debug("Starting hdfs blobstore cleaner");
             _cleanup = new TimerTask() {
                 @Override

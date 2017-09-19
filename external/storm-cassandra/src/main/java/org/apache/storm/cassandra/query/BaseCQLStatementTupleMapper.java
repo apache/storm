@@ -37,7 +37,7 @@ public abstract class BaseCQLStatementTupleMapper implements CQLStatementTupleMa
      * {@inheritDoc}
      */
     @Override
-    public List<Statement> map(Map conf, Session session, ITuple tuple) {
+    public List<Statement> map(Map<String, Object> conf, Session session, ITuple tuple) {
         return Arrays.asList(map(tuple));
     }
 

@@ -1,4 +1,5 @@
-#Storm Apache Kafka integration using the kafka-client jar (This includes the new Apache Kafka consumer API)
+# Storm Apache Kafka integration using the kafka-client jar
+This includes the new Apache Kafka consumer API.
 
 Spouts and Bolts that write to and read from Kafka through the kafka-client library.
 

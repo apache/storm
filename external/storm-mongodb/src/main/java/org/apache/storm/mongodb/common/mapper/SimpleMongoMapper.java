@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.common.mapper;
+
+import java.util.List;
 
 import org.apache.storm.mongodb.common.MongoUtils;
 import org.apache.storm.tuple.ITuple;
 import org.bson.Document;
-
-import java.util.List;
 
 public class SimpleMongoMapper implements MongoMapper {
 
@@ -34,7 +35,7 @@ public class SimpleMongoMapper implements MongoMapper {
     @Override
     public Document toDocument(ITuple tuple) {
         Document document = new Document();
-        for(String field : fields){
+        for (String field : fields) {
             document.append(field, tuple.getValueByField(field));
         }
         return document;
@@ -43,7 +44,7 @@ public class SimpleMongoMapper implements MongoMapper {
     @Override
     public Document toDocumentByKeys(List<Object> keys) {
         Document document = new Document();
-        document.append("_id", MongoUtils.getID(keys));
+        document.append("_id", MongoUtils.getId(keys));
         return document;
     }
 

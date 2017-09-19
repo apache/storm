@@ -40,7 +40,7 @@ public class HiveStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         LOG.info("makeState(partitonIndex={}, numpartitions={}", partitionIndex, numPartitions);
         HiveState state = new HiveState(this.options);
         state.prepare(conf, metrics, partitionIndex, numPartitions);

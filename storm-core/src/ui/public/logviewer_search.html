@@ -40,6 +40,9 @@
   <div class="row">
     <div id="result"></div>
   </div>
+  <div>
+    <p id="page-rendered-at-timestamp"></p>
+  </div>
 </div>
 </body>
 <script>
@@ -55,12 +58,15 @@ $(document).ready(function() {
         $("#search-form").append(Mustache.render($(template).filter("#search-single-file").html(),{file: file, search: search, isDaemon: isDaemon}));
 
         var result = $("#result");
-        var url = "/search/"+encodeURIComponent(file)+"?search-string="+search+"&start-byte-offset="+offset+"&is-daemon="+isDaemon;
+        var url = "/api/v1/search?file="+encodeURIComponent(file)+"&search-string="+search+"&start-byte-offset="+offset+"&is-daemon="+isDaemon;
         $.getJSON(url,function(response,status,jqXHR) {
            response.file = file;
            result.append(Mustache.render($(template).filter("#logviewer-search-result-template").html(),response));
        });
     });
   });
+
+getPageRenderedTimestamp("page-rendered-at-timestamp");
+
 </script>
 </html>

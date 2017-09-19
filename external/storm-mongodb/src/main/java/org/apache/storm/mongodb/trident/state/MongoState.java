@@ -15,14 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.trident.state;
+
+import com.google.common.collect.Lists;
 
 import java.io.Serializable;
 import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.Validate;
-import org.apache.storm.mongodb.common.MongoDBClient;
+import org.apache.storm.mongodb.common.MongoDbClient;
 import org.apache.storm.mongodb.common.QueryFilterCreator;
 import org.apache.storm.mongodb.common.mapper.MongoLookupMapper;
 import org.apache.storm.mongodb.common.mapper.MongoMapper;
@@ -36,14 +39,12 @@ import org.bson.conversions.Bson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.collect.Lists;
-
 public class MongoState implements State {
 
     private static final Logger LOG = LoggerFactory.getLogger(MongoState.class);
 
     private Options options;
-    private MongoDBClient mongoClient;
+    private MongoDbClient mongoClient;
     private Map map;
 
     protected MongoState(Map map, Options options) {
@@ -88,7 +89,7 @@ public class MongoState implements State {
         Validate.notEmpty(options.url, "url can not be blank or null");
         Validate.notEmpty(options.collectionName, "collectionName can not be blank or null");
 
-        this.mongoClient = new MongoDBClient(options.url, options.collectionName);
+        this.mongoClient = new MongoDbClient(options.url, options.collectionName);
     }
 
     @Override
@@ -101,6 +102,11 @@ public class MongoState implements State {
         LOG.debug("commit is noop.");
     }
 
+    /**
+     * Update Mongo state.
+     * @param tuples trident tuples
+     * @param collector trident collector
+     */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         List<Document> documents = Lists.newArrayList();
         for (TridentTuple tuple : tuples) {
@@ -116,6 +122,11 @@ public class MongoState implements State {
         }
     }
 
+    /**
+     * Batch retrieve values.
+     * @param tridentTuples trident tuples
+     * @return values
+     */
     public List<List<Values>> batchRetrieve(List<TridentTuple> tridentTuples) {
         List<List<Values>> batchRetrieveResult = Lists.newArrayList();
         try {

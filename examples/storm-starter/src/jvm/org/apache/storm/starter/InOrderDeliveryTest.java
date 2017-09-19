@@ -24,7 +24,6 @@ import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.FailedException;
-import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseBasicBolt;
@@ -32,12 +31,11 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.NimbusClient;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Random;
 
 public class InOrderDeliveryTest {
   public static class InOrderSpout extends BaseRichSpout {
@@ -46,7 +44,7 @@ public class InOrderDeliveryTest {
     int _i = 0;
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
       _collector = collector;
       _base = context.getThisTaskIndex();
     }
@@ -97,7 +95,7 @@ public class InOrderDeliveryTest {
     }
   }
 
-  public static void printMetrics(Nimbus.Client client, String name) throws Exception {
+  public static void printMetrics(Nimbus.Iface client, String name) throws Exception {
     ClusterSummary summary = client.getClusterInfo();
     String id = null;
     for (TopologySummary ts: summary.get_topologies()) {
@@ -137,7 +135,7 @@ public class InOrderDeliveryTest {
     System.out.println("uptime: "+uptime+" acked: "+acked+" avgLatency: "+avgLatency+" acked/sec: "+(((double)acked)/uptime+" failed: "+failed));
   } 
 
-  public static void kill(Nimbus.Client client, String name) throws Exception {
+  public static void kill(Nimbus.Iface client, String name) throws Exception {
     KillOptions opts = new KillOptions();
     opts.set_wait_secs(0);
     client.killTopologyWithOpts(name, opts);
@@ -163,7 +161,7 @@ public class InOrderDeliveryTest {
 
     Map clusterConf = Utils.readStormConfig();
     clusterConf.putAll(Utils.readCommandLineOpts());
-    Nimbus.Client client = NimbusClient.getConfiguredClient(clusterConf).getClient();
+    Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 
     //Sleep for 50 mins
     for (int i = 0; i < 50; i++) {

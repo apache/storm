@@ -39,7 +39,7 @@ public class ExclamationTopology extends ConfigurableTopology {
     OutputCollector _collector;
 
     @Override
-    public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
       _collector = collector;
     }
 
@@ -71,11 +71,7 @@ public class ExclamationTopology extends ConfigurableTopology {
 
     String topologyName = "test";
 
-    if (isLocal) {
-      ttl = 10;
-    } else {
-      conf.setNumWorkers(3);
-    }
+    conf.setNumWorkers(3);
 
     if (args != null && args.length > 0) {
       topologyName = args[0];

@@ -16,7 +16,6 @@
  * limitations under the License.
  */
 
-
 package org.apache.storm.hive.trident;
 
 import org.apache.storm.trident.operation.TridentCollector;
@@ -24,7 +23,6 @@ import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.topology.FailedException;
-import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.hive.hcatalog.streaming.*;
 import org.apache.storm.hive.common.HiveOptions;
@@ -35,8 +33,6 @@ import org.slf4j.LoggerFactory;
 
 
 import java.io.IOException;
-import java.io.Serializable;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +57,7 @@ public class HiveState implements State {
     private UserGroupInformation ugi = null;
     private Boolean kerberosEnabled = false;
     private Map<HiveEndPoint, HiveWriter> allWriters;
+    private boolean tokenAuthEnabled;
 
     public HiveState(HiveOptions options) {
         this.options = options;
@@ -76,24 +73,14 @@ public class HiveState implements State {
     public void commit(Long txId) {
     }
 
-    public void prepare(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions)  {
+    public void prepare(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions)  {
         try {
-            if(options.getKerberosPrincipal() == null && options.getKerberosKeytab() == null) {
-                kerberosEnabled = false;
-            } else if(options.getKerberosPrincipal() != null && options.getKerberosKeytab() != null) {
-                kerberosEnabled = true;
-            } else {
-                throw new IllegalArgumentException("To enable Kerberos, need to set both KerberosPrincipal " +
-                                                   " & KerberosKeytab");
-            }
-
-            if (kerberosEnabled) {
-                try {
-                    ugi = HiveUtils.authenticate(options.getKerberosKeytab(), options.getKerberosPrincipal());
-                } catch(HiveUtils.AuthenticationFailed ex) {
-                    LOG.error("Hive kerberos authentication failed " + ex.getMessage(), ex);
-                    throw new IllegalArgumentException(ex);
-                }
+            tokenAuthEnabled = HiveUtils.isTokenAuthEnabled(conf);
+            try {
+                ugi = HiveUtils.authenticate(tokenAuthEnabled, options.getKerberosKeytab(), options.getKerberosPrincipal());
+            } catch(HiveUtils.AuthenticationFailed ex) {
+                LOG.error("Hive kerberos authentication failed " + ex.getMessage(), ex);
+                throw new IllegalArgumentException(ex);
             }
 
             allWriters = new ConcurrentHashMap<HiveEndPoint,HiveWriter>();
@@ -203,7 +190,7 @@ public class HiveState implements State {
             HiveWriter writer = allWriters.get( endPoint );
             if( writer == null ) {
                 LOG.info("Creating Writer to Hive end point : " + endPoint);
-                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options);
+                writer = HiveUtils.makeHiveWriter(endPoint, callTimeoutPool, ugi, options, tokenAuthEnabled);
                 if(allWriters.size() > (options.getMaxOpenConnections() - 1)){
                     int retired = retireIdleWriters();
                     if(retired==0) {

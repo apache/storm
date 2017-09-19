@@ -23,15 +23,12 @@ import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.AccessControlType;
 
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.security.auth.SingleUserPrincipal;
-import org.apache.storm.utils.Utils;
 import org.apache.commons.io.FileUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
@@ -39,7 +36,6 @@ import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -56,12 +52,10 @@ import java.util.Set;
 import java.util.Iterator;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ArrayList;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.*;
 
 public class BlobStoreTest {
   private static final Logger LOG = LoggerFactory.getLogger(BlobStoreTest.class);
@@ -69,7 +63,7 @@ public class BlobStoreTest {
   protected static Configuration hadoopConf = null;
   URI base;
   File baseFile;
-  private static Map conf = new HashMap();
+  private static Map<String, Object> conf = new HashMap();
   public static final int READ = 0x01;
   public static final int WRITE = 0x02;
   public static final int ADMIN = 0x04;
@@ -170,7 +164,7 @@ public class BlobStoreTest {
     } catch (IOException e) {
       LOG.error("error creating MiniDFSCluster");
     }
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap();
     conf.put(Config.BLOBSTORE_DIR, dirName);
     conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN,"org.apache.storm.security.auth.DefaultPrincipalToLocal");
     conf.put(Config.STORM_BLOBSTORE_REPLICATION_FACTOR, 3);

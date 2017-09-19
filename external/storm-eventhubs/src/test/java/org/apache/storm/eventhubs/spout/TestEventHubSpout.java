@@ -17,11 +17,12 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import static org.junit.Assert.*;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import static org.junit.Assert.assertEquals;
+
 
 
 public class TestEventHubSpout {
@@ -40,7 +41,7 @@ public class TestEventHubSpout {
         "namespace", "entityname", 16);
     conf.setZkConnectionString("zookeeper");
     conf.setCheckpointIntervalInSeconds(1);
-    assertEquals(conf.getConnectionString(), "amqps://username:pas%5Cs%2Bw%2Ford@namespace.servicebus.windows.net");
+    assertEquals(conf.getConnectionString(), "Endpoint=amqps://namespace.servicebus.windows.net;EntityPath=entityname;SharedAccessKeyName=username;SharedAccessKey=pas\\s+w/ord;OperationTimeout=PT1M;RetryPolicy=Default");
   }
 
   @Test

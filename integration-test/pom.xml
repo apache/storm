@@ -27,7 +27,6 @@
     </parent>
 
     <name>Storm Integration Test</name>
-    <groupId>org.apache.storm</groupId>
     <artifactId>storm-integration-test</artifactId>
     <packaging>jar</packaging>
 
@@ -39,6 +38,7 @@
         <regression.downloadWorkerLogs>false</regression.downloadWorkerLogs>
         <storm.conf.dir>/etc/storm/conf</storm.conf.dir>
         <hadoop.conf.dir>/etc/hadoop/conf</hadoop.conf.dir>
+        <skipTests>true</skipTests>
     </properties>
 
     <profiles>
@@ -65,84 +65,36 @@
             <artifactId>joda-time</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-firefox-driver</artifactId>
-            <version>2.45.0</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.seleniumhq.selenium</groupId>
-            <artifactId>selenium-support</artifactId>
-            <version>2.45.0</version>
-            <scope>test</scope>
+            <groupId>org.apache.storm</groupId>
+            <artifactId>storm-client</artifactId>
+            <version>${project.version}</version>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-server</artifactId>
             <version>${project.version}</version>
-            <scope>provided</scope>
+            <scope>${provided.scope}</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-solr</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.google.code.gson</groupId>
+            <artifactId>gson</artifactId>
+            <version>2.8.0</version>
         </dependency>
         <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-starter</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.apache.storm</groupId>
-            <artifactId>storm-hdfs</artifactId>
-            <version>${project.version}</version>
+            <groupId>com.google.code.findbugs</groupId>
+            <artifactId>jsr305</artifactId>
+            <version>3.0.2</version>
         </dependency>
     </dependencies>
 
     <build>
-        <sourceDirectory>src/main/java</sourceDirectory>
-        <testSourceDirectory>src/test/java</testSourceDirectory>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-compiler-plugin</artifactId>
-                    <version>2.3.2</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.6</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.18.1</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>2.4.1</version>
-                </plugin>
-            </plugins>
-        </pluginManagement>
-
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
+                <artifactId>maven-deploy-plugin</artifactId>
                 <configuration>
-                    <source>1.7</source>
-                    <target>1.7</target>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <version>2.6</version>
-                <configuration>
-                    <encoding>UTF-8</encoding>
+                    <skip>true</skip>
                 </configuration>
             </plugin>
 
@@ -150,8 +102,8 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
+                    <skipTests>${skipTests}</skipTests>
                     <redirectTestOutputToFile>${redirectTestOutputToFile}</redirectTestOutputToFile>
-                    <forkCount>1C</forkCount>
                     <argLine>-Xmx1024m</argLine>
                     <properties>
                         <property>
@@ -166,12 +118,6 @@
                         <!-- Hack to get the dir in CP through CLI and idea -->
                         <additionalClasspathElement>${storm.conf.dir}</additionalClasspathElement>
                         <additionalClasspathElement>${hadoop.conf.dir}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.1}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.2}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.3}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.4}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.5}</additionalClasspathElement>
-                        <additionalClasspathElement>${extra.classpath.6}</additionalClasspathElement>
                     </additionalClasspathElements>
                 </configuration>
             </plugin>

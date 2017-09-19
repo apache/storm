@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.mongodb.bolt;
 
 import org.apache.commons.lang.Validate;
@@ -28,9 +29,7 @@ import org.bson.conversions.Bson;
 
 /**
  * Basic bolt for updating from MongoDB.
- *
  * Note: Each MongoUpdateBolt defined in a topology is tied to a specific collection.
- *
  */
 public class MongoUpdateBolt extends AbstractMongoBolt {
 
@@ -40,6 +39,13 @@ public class MongoUpdateBolt extends AbstractMongoBolt {
     private boolean upsert;  //the default is false.
     private boolean many;  //the default is false.
 
+    /**
+     * MongoUpdateBolt Constructor.
+     * @param url The MongoDB server url
+     * @param collectionName The collection where reading/writing data
+     * @param queryCreator QueryFilterCreator
+     * @param mapper MongoMapper converting tuple to an MongoDB document
+     */
     public MongoUpdateBolt(String url, String collectionName, QueryFilterCreator queryCreator, MongoUpdateMapper mapper) {
         super(url, collectionName);
 
@@ -56,7 +62,7 @@ public class MongoUpdateBolt extends AbstractMongoBolt {
             return;
         }
 
-        try{
+        try {
             //get document
             Document doc = mapper.toDocument(tuple);
             //get query filter

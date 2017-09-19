@@ -106,7 +106,7 @@ Aws sdk version that this was tested with is 1.10.77
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-core</artifactId>
+            <artifactId>storm-client</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
         </dependency>

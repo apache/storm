@@ -17,7 +17,10 @@
  */
 package org.apache.storm.starter;
 
+import java.util.concurrent.TimeUnit;
+
 import org.apache.storm.Config;
+import org.apache.storm.StormSubmitter;
 import org.apache.storm.bolt.JoinBolt;
 import org.apache.storm.starter.bolt.PrinterBolt;
 import org.apache.storm.testing.FeederSpout;
@@ -25,14 +28,14 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.LocalCluster;
-
-import java.util.concurrent.TimeUnit;
+import org.apache.storm.utils.NimbusClient;
 
 public class JoinBoltExample {
     public static void main(String[] args) throws Exception {
-
+        if (!NimbusClient.isLocalOverride()) {
+            throw new IllegalStateException("This example only works in local mode.  " 
+                    + "Run with storm local not storm jar");
+        }
         FeederSpout genderSpout = new FeederSpout(new Fields("id", "gender"));
         FeederSpout ageSpout = new FeederSpout(new Fields("id", "age"));
 
@@ -53,16 +56,11 @@ public class JoinBoltExample {
         builder.setBolt("printer", new PrinterBolt() ).shuffleGrouping("joiner");
 
         Config conf = new Config();
-
-        LocalCluster cluster = new LocalCluster();
-        cluster.submitTopology("join-example", conf, builder.createTopology());
+        StormSubmitter.submitTopologyWithProgressBar("join-example", conf, builder.createTopology());
 
         generateGenderData(genderSpout);
 
         generateAgeData(ageSpout);
-
-        Utils.sleep(30000);
-        cluster.shutdown();
     }
 
     private static void generateAgeData(FeederSpout ageSpout) {

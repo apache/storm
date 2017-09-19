@@ -17,16 +17,15 @@
  */
 package org.apache.storm.elasticsearch.trident;
 
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.elasticsearch.common.EsConfig;
-import org.apache.storm.elasticsearch.common.EsTupleMapper;
-
-import org.apache.storm.trident.state.State;
-import org.apache.storm.trident.state.StateFactory;
+import static java.util.Objects.requireNonNull;
 
 import java.util.Map;
 
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
 
 /**
  * StateFactory for providing EsState.
@@ -42,12 +41,12 @@ public class EsStateFactory implements StateFactory {
      * @param tupleMapper Tuple to ES document mapper {@link EsTupleMapper}
      */
     public EsStateFactory(EsConfig esConfig, EsTupleMapper tupleMapper) {
-        this.esConfig = checkNotNull(esConfig);
-        this.tupleMapper = checkNotNull(tupleMapper);
+        this.esConfig = requireNonNull(esConfig);
+        this.tupleMapper = requireNonNull(tupleMapper);
     }
 
     @Override
-    public State makeState(Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
         EsState esState = new EsState(esConfig, tupleMapper);
         esState.prepare();
         return esState;

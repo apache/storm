@@ -20,12 +20,9 @@ package org.apache.storm.ui;
 import com.google.common.base.Joiner;
 import com.google.common.collect.ImmutableMap;
 
-import org.apache.storm.Config;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
-import org.apache.storm.security.auth.AuthUtils;
-import org.apache.storm.security.auth.IHttpCredentialsPlugin;
-import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.ObjectReader;
 import org.eclipse.jetty.server.Connector;
 import org.eclipse.jetty.server.DispatcherType;
 import org.eclipse.jetty.server.Server;
@@ -44,7 +41,6 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.URLEncoder;
 import java.util.*;
-import java.util.Map.Entry;
 
 public class UIHelpers {
 
@@ -221,7 +217,7 @@ public class UIHelpers {
      */
     public static Server jettyCreateServer(Integer port, String host, Integer httpsPort) {
         SelectChannelConnector connector = new SelectChannelConnector();
-        connector.setPort(Utils.getInt(port, 80));
+        connector.setPort(ObjectReader.getInt(port, 80));
         connector.setHost(host);
         connector.setMaxIdleTime(200000);
 

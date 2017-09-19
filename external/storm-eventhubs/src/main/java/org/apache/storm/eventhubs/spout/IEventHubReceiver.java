@@ -19,18 +19,15 @@ package org.apache.storm.eventhubs.spout;
 
 import java.util.Map;
 
-import com.microsoft.eventhubs.client.EventHubException;
-import com.microsoft.eventhubs.client.IEventHubFilter;
-
 public interface IEventHubReceiver {
 
-  void open(IEventHubFilter filter) throws EventHubException;
+  void open(IEventFilter filter) throws EventHubException;
 
   void close();
-  
+
   boolean isOpen();
 
-  EventData receive(long timeoutInMilliseconds);
-  
+  EventDataWrap receive();
+
   Map getMetricsData();
 }

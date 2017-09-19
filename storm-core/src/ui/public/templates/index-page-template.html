@@ -87,7 +87,7 @@
                 <span data-toggle="tooltip" data-placement="top" title="Storm version this nimbus host is running.">Version</span>
             </th>
             <th>
-                <span data-toggle="tooltip" data-placement="left" title="Time since this nimbus host has been running.">UpTime</span>
+                <span data-toggle="tooltip" data-placement="left" title="Time since this nimbus host has been running.">Uptime</span>
             </th>
         </tr>
         </thead>
@@ -152,6 +152,71 @@
       </tbody>
     </table>
 </script>
+<script id="owner-summary-template" type="text/html">
+  <table class="table table-striped compact" id="owner-summary-table">
+    <thead>
+    <tr>
+      <th>
+        Owner
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="Total number of topologies owned by user.">
+          Total Topologies
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="Total number of executors used by user.">
+          Total Executors
+      </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="Total number of workers used by user.">
+          Total Workers
+      </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) used by user.">
+          Memory Usage (MB)
+        </span>
+      </th>
+      {{#schedulerDisplayResource}}
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of memory resource (in MB) guaranteed to user.">
+            Memory Guarantee (MB)
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed memory resources (in MB) remaining.">
+          Memory Guarantee Remaining (MB)
+        </span>
+      </th>
+      <th>
+          <span data-toggle="tooltip" data-placement="top" title="Total CPU Resource Assigned on behalf of Owner. Every 100 means 1 core.">
+           CPU Usage (%)
+          </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of CPU resource (every 100 means 1 core) guaranteed to user.">
+            CPU Guarantee (%)
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of guaranteed CPU resource (every 100 means 1 core) remaining.">
+          CPU Guarantee Remaining (%)
+        </span>
+      </th>
+      <th>
+        <span data-toggle="tooltip" data-placement="top" title="The amount of isolated nodes user may use">
+          Isolated Nodes Guarantee
+        </span>
+      </th>
+      {{/schedulerDisplayResource}}
+    </tr>
+    </thead>
+    <tbody>
+    </tbody>
+  </table>
+</script>
 <script id="topology-summary-template" type="text/html">
   <table class="table table-striped compact" id="topology-summary-table">
     <thead>
@@ -213,13 +278,23 @@
             Scheduler Info
           </span>
         </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="The version of this topology">
+            Topology Version
+          </span>
+        </th>
+        <th>
+          <span data-toggle="tooltip" data-placement="left" title="The version of the storm client that this topology request (was launched with)">
+            Storm Version
+          </span>
+        </th>
       </tr>
     </thead>
     <tbody>
       {{#topologies}}
       <tr>
         <td><a href="/topology.html?id={{encodedId}}">{{name}}</a></td>
-        <td>{{owner}}</td>
+        <td><a href="/owner.html?id={{owner}}">{{owner}}</a></td>
         <td>{{status}}</td>
         <td>{{uptime}}</td>
         <td>{{workersTotal}}</td>
@@ -231,6 +306,8 @@
         <td>{{assignedCpu}}</td>
         {{/schedulerDisplayResource}}
         <td>{{schedulerInfo}}</td>
+        <td>{{topologyVersion}}</td>
+        <td>{{stormVersion}}</td>
       </tr>
       {{/topologies}}
     </tbody>
