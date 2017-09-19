@@ -49,18 +49,6 @@ public abstract class EventDataScheme implements IEventDataScheme {
 	private static final long serialVersionUID = 1L;
 	private static final Logger logger = LoggerFactory.getLogger(EventDataScheme.class);
 
-	protected boolean includeApplicationProperties = true; // backward compatibility
-	protected boolean includeSystemProperties = false; // backward compatibility
-
-	public EventDataScheme() {
-
-	}
-
-	public EventDataScheme(boolean includeApplicationProperties, boolean includeSystemProperties) {
-		this.includeApplicationProperties = includeApplicationProperties;
-		this.includeSystemProperties = includeSystemProperties;
-	}
-
 	@Override
 	public List<Object> deserialize(EventHubMessage eventHubMessage) {
 		final List<Object> fieldContents = new ArrayList<Object>();

@@ -157,14 +157,14 @@ public class EventHubSpout extends BaseRichSpout {
 
 	@Override
 	public void open(Map config, TopologyContext context, SpoutOutputCollector collector) {
-		logger.info("EventHubSpout start: open()");
+		logger.debug("EventHubSpout start: open()");
 		String topologyName = (String) config.get(Config.TOPOLOGY_NAME);
 		eventHubConfig.setTopologyName(topologyName);
 
 		int totalTasks = context.getComponentTasks(context.getThisComponentId()).size();
 		int taskIndex = context.getThisTaskIndex();
 		if (totalTasks > eventHubConfig.getPartitionCount()) {
-			throw new RuntimeException("total tasks of EventHubSpout " + totalTasks
+			throw new RuntimeException("Total tasks of EventHubSpout " + totalTasks
 					+ " is greater than partition count: " + eventHubConfig.getPartitionCount());
 		}
 
@@ -189,7 +189,7 @@ public class EventHubSpout extends BaseRichSpout {
 				return concatMetricsDataMaps;
 			}
 		}, Integer.parseInt(config.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS).toString()));
-		logger.info("EventHubSpout end: open()");
+		logger.debug("EventHubSpout end: open()");
 	}
 
 	@Override
