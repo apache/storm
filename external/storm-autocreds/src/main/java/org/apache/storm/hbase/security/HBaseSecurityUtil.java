@@ -45,7 +45,7 @@ public class HBaseSecurityUtil {
     public static final String HBASE_KEYTAB_FILE_KEY = "hbase.keytab.file";
     public static final String HBASE_PRINCIPAL_KEY = "hbase.kerberos.principal";
 
-    private static UserProvider legacyProvider = null;
+    private static volatile UserProvider legacyProvider = null;
 
     private HBaseSecurityUtil() {
     }
