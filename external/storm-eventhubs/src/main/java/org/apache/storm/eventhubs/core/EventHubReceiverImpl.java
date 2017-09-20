@@ -124,7 +124,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 		try {
 			receivedEvents = receiver.receiveSync(batchSize);
 			if (receivedEvents != null) {
-				logger.info("Batchsize: " + batchSize + ", Received event count: " + Iterables.size(receivedEvents));
+				logger.debug("Batchsize: " + batchSize + ", Received event count: " + Iterables.size(receivedEvents));
 			}
 		} catch (ServiceBusException e) {
 			logger.error("Exception occured during receive" + e.toString());
