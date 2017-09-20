@@ -21,6 +21,7 @@ import java.io.Serializable;
 
 import org.apache.storm.eventhubs.format.EventHubMessageDataScheme;
 import org.apache.storm.eventhubs.format.IEventDataScheme;
+import org.apache.storm.eventhubs.format.StringEventDataScheme;
 
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
@@ -46,7 +47,7 @@ public class EventHubConfig implements Serializable {
 	protected long enqueueTimeFilter = 0;
 	protected String connectionString;
 	protected String topologyName;
-	protected IEventDataScheme eventDataScheme = new EventHubMessageDataScheme();
+	protected IEventDataScheme eventDataScheme = new StringEventDataScheme();
 	protected String consumerGroupName = EventHubClient.DEFAULT_CONSUMER_GROUP_NAME;
 
 	public EventHubConfig(String namespace, String entityPath, String userName, String password, int partitionCount) {

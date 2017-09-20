@@ -17,16 +17,42 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.apache.storm.eventhubs.core.EventHubMessage;
+import org.apache.storm.eventhubs.format.EventHubMessageDataScheme;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-
 public class TestEventHubSpout {
+
+	private Consumer<List<Object>> stringSchemeValidator;
+	private Consumer<List<Object>> eventHubMessageSchemeValidator;
 
 	@Before
 	public void setUp() throws Exception {
+		/*
+		 * String scheme should have only one value in tuple. The value should be a
+		 * String instance
+		 */
+		stringSchemeValidator = ((tuple) -> {
+			assertEquals(1, tuple.size());
+			assert (tuple.get(0) instanceof String);
+		});
+
+		eventHubMessageSchemeValidator = ((tuple) -> {
+			assertEquals(1, tuple.size());
+			assertTrue("tuple.get(0) is not instance of EventHubMessage", tuple.get(0) instanceof EventHubMessage);
+			EventHubMessage ehm = (EventHubMessage) tuple.get(0);
+			assertTrue("partition is cannot be null", ehm.getPartitionId() != null);
+			assertTrue("offset cannot be null", ehm.getOffset() != null);
+			assertTrue("enqueue time cannot be null", ehm.getEnqueuedTime() != null);
+		});
 	}
 
 	@After
@@ -71,6 +97,20 @@ public class TestEventHubSpout {
 		EventHubSpoutCallerMock mock = new EventHubSpoutCallerMock(16, 8, 6, 10);
 		String result = mock.execute("r6,f6_0,a6_1,a6_2,a14_0,a14_2,r4,f14_1,r2");
 		assertEquals("6_0,14_0,6_1,14_1,6_2,14_2,6_0,14_3,6_3,14_4,6_4,14_1", result);
+	}
+
+	@Test
+	public void testSpoutWithDefaultEventDataScheme() {
+
+		EventHubSpoutCallerMock mock = new EventHubSpoutCallerMock(16, 8, 6, 10, null, stringSchemeValidator);
+		String result = mock.execute("r1");
+	}
+
+	@Test
+	public void testSpoutWithEventHubMessageDataScheme() {
+		EventHubSpoutCallerMock mock = new EventHubSpoutCallerMock(16, 8, 6, 10, new EventHubMessageDataScheme(),
+				eventHubMessageSchemeValidator);
+		String result = mock.execute("r1");
 	}
 
 	@Test

@@ -32,6 +32,14 @@ public class EventHubSpoutConfig extends EventHubConfig {
 	private String targetAddress;
 	private String outputStreamId;
 
+	/**
+	 * Constructor to configure EventHub connection parameters, and partition settings.
+	 * @param username username to connect as
+	 * @param password password to connect as 
+	 * @param namespace Service bus namespace. For soverign clouds
+	 * @param entityPath
+	 * @param partitionCount
+	 */
 	public EventHubSpoutConfig(String username, String password, String namespace, String entityPath,
 			int partitionCount) {
 		super(namespace, entityPath, username, password, partitionCount);

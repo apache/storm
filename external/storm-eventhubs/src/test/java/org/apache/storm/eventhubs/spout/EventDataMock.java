@@ -26,8 +26,10 @@ public class EventDataMock extends EventData {
 	private static final long serialVersionUID = -1362022940535977850L;
 	private SystemProperties sysprops;
 
-	public EventDataMock(byte[] data, HashMap<String, Object> map) {
+	
+	public EventDataMock(byte[] data, HashMap<String, Object> map) {		
 		super(data);
+		
 		this.sysprops = new SystemProperties(map);
 		
 		System.out.println("OFF: " + sysprops.getOffset());

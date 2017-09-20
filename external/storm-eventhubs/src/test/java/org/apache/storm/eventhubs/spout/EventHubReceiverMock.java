@@ -38,14 +38,24 @@ import com.microsoft.azure.servicebus.amqp.AmqpConstants;
  * and increase by 1 each time.
  */
 public class EventHubReceiverMock implements IEventHubReceiver {
+	private enum BodyType {
+		Data, AmqpSequence, AmqpValue
+	};
+
 	private static boolean isPaused = false;
 	private final String partitionId;
 	private long currentOffset;
 	private boolean isOpen;
+	private BodyType bodyType;
 
 	public EventHubReceiverMock(String pid) {
+		this(pid, BodyType.Data);
+	}
+
+	public EventHubReceiverMock(String pid, BodyType bodyType) {
 		partitionId = pid;
 		isPaused = false;
+		this.bodyType = bodyType;
 	}
 
 	/**

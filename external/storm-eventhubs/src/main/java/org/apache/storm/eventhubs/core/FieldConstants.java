@@ -31,4 +31,5 @@ public class FieldConstants {
 	public static final String PARTITION_ID_KEY = "partitionId";
 	public static final int DEFAULT_PREFETCH_COUNT = 999;
 	public static final int DEFAULT_MAX_PENDING_PER_PARTITION = 1024;
+	public static final long DEFAULT_SEQUENCE_NUMBER = 0L;
 }

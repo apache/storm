@@ -31,25 +31,26 @@ import com.microsoft.azure.eventhubs.EventData;
  * Represents a message from EventHub. Encapsulates the actual pay load received
  * from EventHub.
  * 
- * It encapsuates the raw bytes from the content, any AMQP application
+ * It encapsulates the raw bytes from the content, any AMQP application
  * properties set, and the system properties (partition key, offset, enqueue
  * time, sequence number, and publisher) set on the Eventhub message.
  */
 public class EventHubMessage implements Comparable<EventHubMessage> {
 	private byte[] content;
-	private String partitionId;
-	private String partitionKey;
-	private String offset;
-	private Instant enqueuedTime;
+	private final String partitionId;
+	private final String partitionKey;
+	private final String offset;
+	private final Instant enqueuedTime;
 	private long sequenceNumber;
-	private String publisher;
-	private MessageId messageId;
+	private final String publisher;
+	private final MessageId messageId;
 
-	private Map<String, Object> applicationProperties;
-	private Map<String, Object> systemProperties;
+	private final Map<String, Object> applicationProperties;
+	private final Map<String, Object> systemProperties;
 
 	public EventHubMessage(EventData eventdata, String partitionId) {
 		this.partitionId = partitionId;
+
 		if (eventdata.getBytes() != null) {
 			content = eventdata.getBytes();
 		} else if (eventdata.getObject() != null) {
@@ -70,6 +71,12 @@ public class EventHubMessage implements Comparable<EventHubMessage> {
 			enqueuedTime = props.getEnqueuedTime();
 			sequenceNumber = props.getSequenceNumber();
 			publisher = props.getPublisher();
+		} else {
+			this.offset = null;
+			this.partitionKey = null;
+			this.enqueuedTime = null;
+			this.sequenceNumber = FieldConstants.DEFAULT_SEQUENCE_NUMBER;
+			this.publisher = null;
 		}
 
 		messageId = new MessageId(partitionId, offset, sequenceNumber);

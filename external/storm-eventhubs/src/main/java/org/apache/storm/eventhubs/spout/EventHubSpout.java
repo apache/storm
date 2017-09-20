@@ -213,8 +213,7 @@ public class EventHubSpout extends BaseRichSpout {
 
 		if (ehm != null) {
 			MessageId messageId = ehm.getMessageId();
-			List<Object> tuples = new LinkedList<Object>();
-			tuples.add(ehm);
+			List<Object> tuples = eventHubConfig.getEventDataScheme().deserialize(ehm);
 			collector.emit(tuples, messageId);
 		}
 

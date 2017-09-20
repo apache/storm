@@ -79,6 +79,11 @@ public class EventHubBoltConfig implements Serializable {
 	 * Constructs an instance with specified credentials, eventhub name and
 	 * partition mode.
 	 * 
+	 * <p>
+	 * For soverign clouds please use the constructor
+	 * {@link EventHubBolt#EventHubBolt(String, String)}.
+	 * </p>
+	 * 
 	 * @param userName
 	 *            user name to connect as
 	 * @param password
@@ -127,8 +132,7 @@ public class EventHubBoltConfig implements Serializable {
 	 * @param namespace
 	 *            servicebus namespace
 	 * @param fqdnSuffix
-	 *            FQDN suffix for the servicebus entity url. (Default is:
-	 *            servicebus.windows.net)
+	 *            FQDN suffix for the servicebus entity url. servicebus.windows.net)
 	 * @param entityPath
 	 *            Name of the EventHub
 	 */
@@ -149,7 +153,7 @@ public class EventHubBoltConfig implements Serializable {
 	 * @param namespace
 	 *            servicebus namespace
 	 * @param fqdnSuffix
-	 *            FQDN suffix for the servicebus entity url. (Default is:
+	 *            FQDN suffix for the servicebus entity url.
 	 * @param entityPath
 	 *            Name of the EventHub
 	 * @param partitionMode
@@ -173,8 +177,8 @@ public class EventHubBoltConfig implements Serializable {
 	 * @param namespace
 	 *            servicebus namespace
 	 * @param fqdnSuffix
-	 *            FQDN suffix for the servicebus entity url. 
-	 *            (example: servicebus.windows.net)
+	 *            FQDN suffix for the servicebus entity url. (example:
+	 *            servicebus.windows.net)
 	 * @param entityPath
 	 *            Name of the EventHub
 	 * @param partitionMode

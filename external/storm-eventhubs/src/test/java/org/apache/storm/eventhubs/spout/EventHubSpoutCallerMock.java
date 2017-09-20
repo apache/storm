@@ -17,11 +17,15 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import java.util.List;
+import java.util.function.Consumer;
+
 import org.apache.storm.eventhubs.core.EventHubConfig;
 import org.apache.storm.eventhubs.core.EventHubMessage;
 import org.apache.storm.eventhubs.core.IEventHubReceiver;
 import org.apache.storm.eventhubs.core.IEventHubReceiverFactory;
 import org.apache.storm.eventhubs.core.MessageId;
+import org.apache.storm.eventhubs.format.IEventDataScheme;
 import org.apache.storm.eventhubs.state.IStateStore;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.slf4j.Logger;
@@ -38,10 +42,19 @@ public class EventHubSpoutCallerMock {
 	private SpoutOutputCollectorMock collector;
 
 	public EventHubSpoutCallerMock(int totalPartitions, int totalTasks, int taskIndex, int checkpointInterval) {
+		this(totalPartitions, totalTasks, taskIndex, checkpointInterval, null, null);
+	}
+
+	public EventHubSpoutCallerMock(int totalPartitions, int totalTasks, int taskIndex, int checkpointInterval,
+			IEventDataScheme scheme, Consumer<List<Object>> consumer) {
 		stateStore = new StateStoreMock();
 		EventHubSpoutConfig conf = new EventHubSpoutConfig("username", "password", "namespace", "entityname",
 				totalPartitions, "zookeeper", checkpointInterval, 1024);
 		conf.setTopologyName("TestTopo");
+		if (scheme != null) {
+			conf.setEventDataScheme(scheme);
+		}
+
 		IEventHubReceiverFactory recvFactory = new IEventHubReceiverFactory() {
 			@Override
 			public IEventHubReceiver create(EventHubConfig config, String partitionId) {
@@ -52,6 +65,9 @@ public class EventHubSpoutCallerMock {
 		spout = new EventHubSpout(conf, stateStore, null, recvFactory);
 
 		collector = new SpoutOutputCollectorMock();
+		if (consumer != null) {
+			collector.setConsumer(consumer);
+		}
 
 		try {
 			spout.preparePartitions(null, totalTasks, taskIndex, new SpoutOutputCollector(collector));

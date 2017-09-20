@@ -55,9 +55,16 @@ public class PartitionManager extends SimplePartitionManager {
 			return;
 		}
 
+		String startOffset = null;
+		String endOffset = null;
 		for (EventData ed : receivedEvents) {
-			waitingToEmit.add(new EventHubMessage(ed, partitionId));
+			EventHubMessage ehm = new EventHubMessage(ed, partitionId);
+			startOffset = (startOffset == null) ? ehm.getOffset() : startOffset;
+			endOffset = ehm.getOffset();
+			waitingToEmit.add(ehm);
 		}
+
+		logger.debug("Received Messages Start Offset: " + startOffset + ", End Offset: " + endOffset);
 	}
 
 	@Override
