@@ -53,7 +53,7 @@ public class TickTupleTest {
             Config topoConf = new Config();
             topoConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
             try (ILocalTopology topo = cluster.submitTopology("test", topoConf,  topology)) {
-                //Give the cluster some time to come up
+                //Give the topology some time to come up
                 long time = 0;
                 while (tickTupleTimes.size() <= 0) {
                     assert time <= 100_000 : "took over " + time + " ms of simulated time to get a message back...";
@@ -61,21 +61,11 @@ public class TickTupleTest {
                     time += 10_000;
                 }
                 tickTupleTimes.clear();
-                cluster.advanceClusterTime(1);
-                time += 1000;
-                assertEquals(time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS).longValue());
-                cluster.advanceClusterTime(1);
-                time += 1000;
-                assertEquals(time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS).longValue());
-                cluster.advanceClusterTime(1);
-                time += 1000;
-                assertEquals(time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS).longValue());
-                cluster.advanceClusterTime(1);
-                time += 1000;
-                assertEquals(time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS).longValue());
-                cluster.advanceClusterTime(1);
-                time += 1000;
-                assertEquals(time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS).longValue());
+                for (int i = 0; i < 5; i++) {
+                    cluster.advanceClusterTime(1);
+                    time += 1_000;
+                    assertEquals("Iteration " + i, (Long)time, tickTupleTimes.poll(100, TimeUnit.MILLISECONDS));
+                }
             }
             assertNull("The bolt got a tuple that is not a tick tuple " + nonTickTuple.get(), nonTickTuple.get());
         }
@@ -123,8 +113,8 @@ public class TickTupleTest {
 
     private StormTopology createNoOpTopology() {
         TopologyBuilder builder = new TopologyBuilder();
-        builder.setSpout("1", new NoopSpout());
-        builder.setBolt("2", new NoopBolt()).fieldsGrouping("1", new Fields("tuple"));
+        builder.setSpout("Spout", new NoopSpout());
+        builder.setBolt("Bolt", new NoopBolt()).fieldsGrouping("Spout", new Fields("tuple"));
         return builder.createTopology();
     }
 }
