@@ -145,7 +145,7 @@ public class EventHubSpout extends BaseRichSpout {
 		}
 		stateStore.open();
 
-		logger.info("TaskIndex: " + taskIndex + ", totalTasks: " + totalTasks + ", Total Partitions:"
+		logger.info("TaskIndex: " + taskIndex + ", TotalTasks: " + totalTasks + ", Total Partitions:"
 				+ eventHubConfig.getPartitionCount());
 		partitionCoordinator = new StaticPartitionCoordinator(eventHubConfig, taskIndex, totalTasks, stateStore,
 				pmFactory, recvFactory);
@@ -169,7 +169,7 @@ public class EventHubSpout extends BaseRichSpout {
 		}
 
 		logger.info(
-				String.format("topologyName: %s, totalTasks: %d, taskIndex: %d", topologyName, totalTasks, taskIndex));
+				String.format("TopologyName: %s, TotalTasks: %d, TaskIndex: %d", topologyName, totalTasks, taskIndex));
 
 		try {
 			preparePartitions(config, totalTasks, taskIndex, collector);

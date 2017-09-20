@@ -36,12 +36,12 @@ import com.microsoft.azure.eventhubs.EventData;
  * time, sequence number, and publisher) set on the Eventhub message.
  */
 public class EventHubMessage implements Comparable<EventHubMessage> {
-	private byte[] content;
+	private final byte[] content;
 	private final String partitionId;
 	private final String partitionKey;
 	private final String offset;
 	private final Instant enqueuedTime;
-	private long sequenceNumber;
+	private final long sequenceNumber;
 	private final String publisher;
 	private final MessageId messageId;
 
@@ -59,6 +59,8 @@ public class EventHubMessage implements Comparable<EventHubMessage> {
 			} catch (IOException e) {
 				throw new RuntimeException(e);
 			}
+		} else {
+			throw new RuntimeException("Failed to retrieve payload from EventData");
 		}
 
 		applicationProperties = eventdata.getProperties();
