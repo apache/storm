@@ -99,7 +99,7 @@ public interface IStormClusterState {
 
     public void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
 
-    public void workerBackpressure(String stormId, String node, Long port, boolean on);
+    public void workerBackpressure(String stormId, String node, Long port, long timestamp);
 
     public boolean topologyBackpressure(String stormId, Runnable callback);
 

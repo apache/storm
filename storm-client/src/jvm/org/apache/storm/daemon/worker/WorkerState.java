@@ -211,8 +211,8 @@ public class WorkerState {
     final Map<String, Object> userSharedResources;
     final LoadMapping loadMapping;
     final AtomicReference<Map<String, VersionedData<Assignment>>> assignmentVersions;
-    // Whether this worker is going slow
-    final AtomicBoolean backpressure = new AtomicBoolean(false);
+    // Whether this worker is going slow. 0 indicates the backpressure is off
+    final AtomicLong backpressure = new AtomicLong(0);
     // If the transfer queue is backed-up
     final AtomicBoolean transferBackpressure = new AtomicBoolean(false);
     // a trigger for synchronization with executors

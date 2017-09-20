@@ -144,6 +144,16 @@ public class ClusterUtils {
         return backpressureStormRoot(stormId) + ZK_SEPERATOR + node + "-" + port;
     }
 
+    /**
+     * Get the backpressure znode full path.
+     * @param stormId The topology id
+     * @param shortPath A string in the form of "node-port"
+     * @return The backpressure znode path
+     */
+    public static String backpressurePath(String stormId, String shortPath) {
+        return backpressureStormRoot(stormId) + ZK_SEPERATOR + shortPath;
+    }
+
     public static String errorStormRoot(String stormId) {
         return ERRORS_SUBTREE + ZK_SEPERATOR + stormId;
     }
