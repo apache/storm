@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.messaging.netty;
 
 import org.apache.storm.utils.Utils;
@@ -33,10 +34,9 @@ public class NettyUncaughtExceptionHandler implements Thread.UncaughtExceptionHa
 
         try {
             Utils.handleUncaughtException(e);
-        } catch (Throwable throwable) {
-            LOG.error("Exception thrown while handling uncaught exception " + throwable.getCause());
+        } catch (Error error) {
+            LOG.error("Exception thrown while handling uncaught exception " + error.getCause());
+            Runtime.getRuntime().exit(1);
         }
-        LOG.info("Received error in netty thread.. terminating server...");
-        Runtime.getRuntime().exit(1);
     }
 }

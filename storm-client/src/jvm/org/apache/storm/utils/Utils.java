@@ -534,29 +534,43 @@ public class Utils {
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
     }
 
-    public static void handleUncaughtException(Throwable t) {
-        handleUncaughtException(t, defaultAllowedExceptions);
+    public static void handleUncaughtExceptionWithoutKillingProcess(Throwable t) {
+        handleUncaughtException(t, defaultAllowedExceptions, true);
     }
 
     public static void handleUncaughtException(Throwable t, Set<Class> allowedExceptions) {
+        handleUncaughtException(t, allowedExceptions, false);
+    }
+
+    public static void handleUncaughtException(Throwable t) {
+        handleUncaughtException(t, defaultAllowedExceptions, false);
+    }
+
+    public static void handleUncaughtException(Throwable t, Set<Class> allowedExceptions, Boolean alwaysSwallow) {
         if (t != null) {
-            if (t instanceof OutOfMemoryError) {
-                try {
-                    System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
-                } catch (Throwable err) {
-                    //Again we don't want to exit because of logging issues.
+            if (t instanceof Error) {
+                if (t instanceof OutOfMemoryError) {
+                    try {
+                        System.err.println("Halting due to Out Of Memory Error..." + Thread.currentThread().getName());
+                    } catch (Throwable err) {
+                        //Again we don't want to exit because of logging issues.
+                    }
+                    Runtime.getRuntime().halt(-1);
+                } else {
+                    LOG.info("Bubble up the Error {} {}", t.getClass(), t);
+                    throw new Error(t);
                 }
-                Runtime.getRuntime().halt(-1);
             }
-        }
 
-        if(allowedExceptions.contains(t.getClass())) {
-            LOG.info("Swallowing {} {}", t.getClass(), t);
-            return;
-        }
+            if(alwaysSwallow || allowedExceptions.contains(t.getClass())) {
+                LOG.info("Swallowing {} {}", t.getClass(), t);
+                return;
+            }
 
-        //Running in daemon mode, we would pass Error to calling thread.
-        throw new Error(t);
+            //Running in daemon mode, we would pass Error to calling thread.
+            LOG.info("Bubble up the Error {} {}", t.getClass(), t);
+            throw new Error(t);
+        }
     }
 
     public static byte[] thriftSerialize(TBase t) {
@@ -865,7 +879,7 @@ public class Utils {
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread thread, Throwable thrown) {
                     try {
-                        handleUncaughtException(thrown);
+                        handleUncaughtExceptionWithoutKillingProcess(thrown);
                     } catch (Error err) {
                         LOG.error("Received error in main thread.. terminating server...", err);
                         Runtime.getRuntime().exit(-2);
