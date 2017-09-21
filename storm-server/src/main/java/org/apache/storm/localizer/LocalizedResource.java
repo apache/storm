@@ -127,4 +127,17 @@ public class LocalizedResource {
     return System.nanoTime();
   }
 
+  @Override
+  public boolean equals(Object other) {
+    if (other instanceof LocalizedResource) {
+        LocalizedResource l = (LocalizedResource)other;
+        return _key.equals(l._key) && _uncompressed == l._uncompressed && _localPath.equals(l._localPath);
+    }
+    return false;
+  }
+
+  @Override
+  public int hashCode() {
+     return _key.hashCode() + Boolean.hashCode(_uncompressed) + _localPath.hashCode();
+  }
 }

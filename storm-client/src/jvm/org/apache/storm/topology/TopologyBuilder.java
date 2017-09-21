@@ -46,7 +46,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
 import org.json.simple.JSONValue;
-import org.json.simple.parser.ParseException;
 
 import java.io.NotSerializableException;
 import java.nio.ByteBuffer;
@@ -577,7 +576,7 @@ public class TopologyBuilder {
                 throw new IllegalArgumentException("Cannot set serializations for a component using fluent API");
             }
             String currConf = _commons.get(_id).get_json_conf();
-            _commons.get(_id).set_json_conf(mergeIntoJson(parseJson(currConf), conf));
+            _commons.get(_id).set_json_conf(mergeIntoJson(Utils.parseJson(currConf), conf));
             return (T) this;
         }
         
@@ -695,19 +694,7 @@ public class TopologyBuilder {
             return grouping(id.get_componentId(), id.get_streamId(), grouping);
         }        
     }
-    
-    private static Map parseJson(String json) {
-        if (json==null) {
-            return new HashMap();
-        } else {
-            try {
-                return (Map) JSONValue.parseWithException(json);
-            } catch (ParseException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-    
+
     private static String mergeIntoJson(Map into, Map newMap) {
         Map res = new HashMap(into);
         if(newMap!=null) res.putAll(newMap);

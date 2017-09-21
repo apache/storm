@@ -1085,13 +1085,13 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           case 4: // USED_PORTS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list602 = iprot.readListBegin();
-                struct.used_ports = new ArrayList<Long>(_list602.size);
-                long _elem603;
-                for (int _i604 = 0; _i604 < _list602.size; ++_i604)
+                org.apache.thrift.protocol.TList _list622 = iprot.readListBegin();
+                struct.used_ports = new ArrayList<Long>(_list622.size);
+                long _elem623;
+                for (int _i624 = 0; _i624 < _list622.size; ++_i624)
                 {
-                  _elem603 = iprot.readI64();
-                  struct.used_ports.add(_elem603);
+                  _elem623 = iprot.readI64();
+                  struct.used_ports.add(_elem623);
                 }
                 iprot.readListEnd();
               }
@@ -1103,13 +1103,13 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           case 5: // META
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list605 = iprot.readListBegin();
-                struct.meta = new ArrayList<Long>(_list605.size);
-                long _elem606;
-                for (int _i607 = 0; _i607 < _list605.size; ++_i607)
+                org.apache.thrift.protocol.TList _list625 = iprot.readListBegin();
+                struct.meta = new ArrayList<Long>(_list625.size);
+                long _elem626;
+                for (int _i627 = 0; _i627 < _list625.size; ++_i627)
                 {
-                  _elem606 = iprot.readI64();
-                  struct.meta.add(_elem606);
+                  _elem626 = iprot.readI64();
+                  struct.meta.add(_elem626);
                 }
                 iprot.readListEnd();
               }
@@ -1121,15 +1121,15 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           case 6: // SCHEDULER_META
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map608 = iprot.readMapBegin();
-                struct.scheduler_meta = new HashMap<String,String>(2*_map608.size);
-                String _key609;
-                String _val610;
-                for (int _i611 = 0; _i611 < _map608.size; ++_i611)
+                org.apache.thrift.protocol.TMap _map628 = iprot.readMapBegin();
+                struct.scheduler_meta = new HashMap<String,String>(2*_map628.size);
+                String _key629;
+                String _val630;
+                for (int _i631 = 0; _i631 < _map628.size; ++_i631)
                 {
-                  _key609 = iprot.readString();
-                  _val610 = iprot.readString();
-                  struct.scheduler_meta.put(_key609, _val610);
+                  _key629 = iprot.readString();
+                  _val630 = iprot.readString();
+                  struct.scheduler_meta.put(_key629, _val630);
                 }
                 iprot.readMapEnd();
               }
@@ -1157,15 +1157,15 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           case 9: // RESOURCES_MAP
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map612 = iprot.readMapBegin();
-                struct.resources_map = new HashMap<String,Double>(2*_map612.size);
-                String _key613;
-                double _val614;
-                for (int _i615 = 0; _i615 < _map612.size; ++_i615)
+                org.apache.thrift.protocol.TMap _map632 = iprot.readMapBegin();
+                struct.resources_map = new HashMap<String,Double>(2*_map632.size);
+                String _key633;
+                double _val634;
+                for (int _i635 = 0; _i635 < _map632.size; ++_i635)
                 {
-                  _key613 = iprot.readString();
-                  _val614 = iprot.readDouble();
-                  struct.resources_map.put(_key613, _val614);
+                  _key633 = iprot.readString();
+                  _val634 = iprot.readDouble();
+                  struct.resources_map.put(_key633, _val634);
                 }
                 iprot.readMapEnd();
               }
@@ -1207,9 +1207,9 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           oprot.writeFieldBegin(USED_PORTS_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.used_ports.size()));
-            for (long _iter616 : struct.used_ports)
+            for (long _iter636 : struct.used_ports)
             {
-              oprot.writeI64(_iter616);
+              oprot.writeI64(_iter636);
             }
             oprot.writeListEnd();
           }
@@ -1221,9 +1221,9 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           oprot.writeFieldBegin(META_FIELD_DESC);
           {
             oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, struct.meta.size()));
-            for (long _iter617 : struct.meta)
+            for (long _iter637 : struct.meta)
             {
-              oprot.writeI64(_iter617);
+              oprot.writeI64(_iter637);
             }
             oprot.writeListEnd();
           }
@@ -1235,10 +1235,10 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           oprot.writeFieldBegin(SCHEDULER_META_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, struct.scheduler_meta.size()));
-            for (Map.Entry<String, String> _iter618 : struct.scheduler_meta.entrySet())
+            for (Map.Entry<String, String> _iter638 : struct.scheduler_meta.entrySet())
             {
-              oprot.writeString(_iter618.getKey());
-              oprot.writeString(_iter618.getValue());
+              oprot.writeString(_iter638.getKey());
+              oprot.writeString(_iter638.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1262,10 +1262,10 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           oprot.writeFieldBegin(RESOURCES_MAP_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, struct.resources_map.size()));
-            for (Map.Entry<String, Double> _iter619 : struct.resources_map.entrySet())
+            for (Map.Entry<String, Double> _iter639 : struct.resources_map.entrySet())
             {
-              oprot.writeString(_iter619.getKey());
-              oprot.writeDouble(_iter619.getValue());
+              oprot.writeString(_iter639.getKey());
+              oprot.writeDouble(_iter639.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1320,28 +1320,28 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       if (struct.is_set_used_ports()) {
         {
           oprot.writeI32(struct.used_ports.size());
-          for (long _iter620 : struct.used_ports)
+          for (long _iter640 : struct.used_ports)
           {
-            oprot.writeI64(_iter620);
+            oprot.writeI64(_iter640);
           }
         }
       }
       if (struct.is_set_meta()) {
         {
           oprot.writeI32(struct.meta.size());
-          for (long _iter621 : struct.meta)
+          for (long _iter641 : struct.meta)
           {
-            oprot.writeI64(_iter621);
+            oprot.writeI64(_iter641);
           }
         }
       }
       if (struct.is_set_scheduler_meta()) {
         {
           oprot.writeI32(struct.scheduler_meta.size());
-          for (Map.Entry<String, String> _iter622 : struct.scheduler_meta.entrySet())
+          for (Map.Entry<String, String> _iter642 : struct.scheduler_meta.entrySet())
           {
-            oprot.writeString(_iter622.getKey());
-            oprot.writeString(_iter622.getValue());
+            oprot.writeString(_iter642.getKey());
+            oprot.writeString(_iter642.getValue());
           }
         }
       }
@@ -1354,10 +1354,10 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       if (struct.is_set_resources_map()) {
         {
           oprot.writeI32(struct.resources_map.size());
-          for (Map.Entry<String, Double> _iter623 : struct.resources_map.entrySet())
+          for (Map.Entry<String, Double> _iter643 : struct.resources_map.entrySet())
           {
-            oprot.writeString(_iter623.getKey());
-            oprot.writeDouble(_iter623.getValue());
+            oprot.writeString(_iter643.getKey());
+            oprot.writeDouble(_iter643.getValue());
           }
         }
       }
@@ -1377,41 +1377,41 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       }
       if (incoming.get(1)) {
         {
-          org.apache.thrift.protocol.TList _list624 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-          struct.used_ports = new ArrayList<Long>(_list624.size);
-          long _elem625;
-          for (int _i626 = 0; _i626 < _list624.size; ++_i626)
+          org.apache.thrift.protocol.TList _list644 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+          struct.used_ports = new ArrayList<Long>(_list644.size);
+          long _elem645;
+          for (int _i646 = 0; _i646 < _list644.size; ++_i646)
           {
-            _elem625 = iprot.readI64();
-            struct.used_ports.add(_elem625);
+            _elem645 = iprot.readI64();
+            struct.used_ports.add(_elem645);
           }
         }
         struct.set_used_ports_isSet(true);
       }
       if (incoming.get(2)) {
         {
-          org.apache.thrift.protocol.TList _list627 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-          struct.meta = new ArrayList<Long>(_list627.size);
-          long _elem628;
-          for (int _i629 = 0; _i629 < _list627.size; ++_i629)
+          org.apache.thrift.protocol.TList _list647 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+          struct.meta = new ArrayList<Long>(_list647.size);
+          long _elem648;
+          for (int _i649 = 0; _i649 < _list647.size; ++_i649)
           {
-            _elem628 = iprot.readI64();
-            struct.meta.add(_elem628);
+            _elem648 = iprot.readI64();
+            struct.meta.add(_elem648);
           }
         }
         struct.set_meta_isSet(true);
       }
       if (incoming.get(3)) {
         {
-          org.apache.thrift.protocol.TMap _map630 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-          struct.scheduler_meta = new HashMap<String,String>(2*_map630.size);
-          String _key631;
-          String _val632;
-          for (int _i633 = 0; _i633 < _map630.size; ++_i633)
+          org.apache.thrift.protocol.TMap _map650 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+          struct.scheduler_meta = new HashMap<String,String>(2*_map650.size);
+          String _key651;
+          String _val652;
+          for (int _i653 = 0; _i653 < _map650.size; ++_i653)
           {
-            _key631 = iprot.readString();
-            _val632 = iprot.readString();
-            struct.scheduler_meta.put(_key631, _val632);
+            _key651 = iprot.readString();
+            _val652 = iprot.readString();
+            struct.scheduler_meta.put(_key651, _val652);
           }
         }
         struct.set_scheduler_meta_isSet(true);
@@ -1426,15 +1426,15 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       }
       if (incoming.get(6)) {
         {
-          org.apache.thrift.protocol.TMap _map634 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.resources_map = new HashMap<String,Double>(2*_map634.size);
-          String _key635;
-          double _val636;
-          for (int _i637 = 0; _i637 < _map634.size; ++_i637)
+          org.apache.thrift.protocol.TMap _map654 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.resources_map = new HashMap<String,Double>(2*_map654.size);
+          String _key655;
+          double _val656;
+          for (int _i657 = 0; _i657 < _map654.size; ++_i657)
           {
-            _key635 = iprot.readString();
-            _val636 = iprot.readDouble();
-            struct.resources_map.put(_key635, _val636);
+            _key655 = iprot.readString();
+            _val656 = iprot.readDouble();
+            struct.resources_map.put(_key655, _val656);
           }
         }
         struct.set_resources_map_isSet(true);

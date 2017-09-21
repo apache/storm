@@ -905,7 +905,7 @@ public class Utils {
 
     /**
      * parses the arguments to extract jvm heap memory size in MB.
-     * @param input
+     * @param options
      * @param defaultValue
      * @return the value of the JVM heap memory setting (in MB) in a java command.
      */
@@ -1286,6 +1286,18 @@ public class Utils {
             return null;
         }
         return findOne(pred, (Set<T>) map.entrySet());
+    }
+
+    public static Map<String, Object> parseJson(String json) {
+        if (json==null) {
+            return new HashMap<>();
+        } else {
+            try {
+                return (Map<String, Object>) JSONValue.parseWithException(json);
+            } catch (ParseException e) {
+                throw new RuntimeException(e);
+            }
+        }
     }
 
     // Non-static impl methods exist for mocking purposes.

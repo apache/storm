@@ -561,10 +561,10 @@ def deactivate(*args):
         extrajars=[USER_CONF_DIR, STORM_BIN_DIR])
 
 def rebalance(*args):
-    """Syntax: [storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*]
+    """Syntax: [storm rebalance topology-name [-w wait-time-secs] [-n new-num-workers] [-e component=parallelism]*  [-r '{"component1": {"resource1": new_amount, "resource2": new_amount, ... }*}'] [-t '{"conf1": newValue, *}']]
 
-    Sometimes you may wish to spread out where the workers for a topology
-    are running. For example, let's say you have a 10 node cluster running
+    Sometimes you may wish to spread out the workers for a running topology.
+    For example, let's say you have a 10 node cluster running
     4 workers per node, and then let's say you add another 10 nodes to
     the cluster. You may wish to have Storm spread out the workers for the
     running topology so that each node runs 2 workers. One way to do this
@@ -572,14 +572,15 @@ def rebalance(*args):
     command that provides an easier way to do this.
 
     Rebalance will first deactivate the topology for the duration of the
-    message timeout (overridable with the -w flag) and then redistribute
-    the workers evenly around the cluster. The topology will then return to
-    its previous state of activation (so a deactivated topology will still
-    be deactivated and an activated topology will go back to being activated).
+    message timeout (overridable with the -w flag) make requested adjustments to the topology
+    and let the scheduler try to find a better scheduling based off of the
+    new situation. The topology will then return to its previous state of activation
+    (so a deactivated topology will still be deactivated and an activated
+    topology will go back to being activated).
 
-    The rebalance command can also be used to change the parallelism of a running topology.
-    Use the -n and -e switches to change the number of workers or number of executors of a component
-    respectively.
+    Some of what you can change about a topology includes the number of requested workers (-n flag)
+    The number of executors for a given component (-e flag) the resources each component is
+    requesting as used by the resource aware scheduler (-r flag) and configs (-t flag).
     """
     if not args:
         print_usage(command="rebalance")

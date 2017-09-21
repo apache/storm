@@ -58,6 +58,9 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
   private static final org.apache.thrift.protocol.TField WAIT_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("wait_secs", org.apache.thrift.protocol.TType.I32, (short)1);
   private static final org.apache.thrift.protocol.TField NUM_WORKERS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_workers", org.apache.thrift.protocol.TType.I32, (short)2);
   private static final org.apache.thrift.protocol.TField NUM_EXECUTORS_FIELD_DESC = new org.apache.thrift.protocol.TField("num_executors", org.apache.thrift.protocol.TType.MAP, (short)3);
+  private static final org.apache.thrift.protocol.TField TOPOLOGY_RESOURCES_OVERRIDES_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_resources_overrides", org.apache.thrift.protocol.TType.MAP, (short)4);
+  private static final org.apache.thrift.protocol.TField TOPOLOGY_CONF_OVERRIDES_FIELD_DESC = new org.apache.thrift.protocol.TField("topology_conf_overrides", org.apache.thrift.protocol.TType.STRING, (short)5);
+  private static final org.apache.thrift.protocol.TField PRINCIPAL_FIELD_DESC = new org.apache.thrift.protocol.TField("principal", org.apache.thrift.protocol.TType.STRING, (short)6);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -68,12 +71,18 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
   private int wait_secs; // optional
   private int num_workers; // optional
   private Map<String,Integer> num_executors; // optional
+  private Map<String,Map<String,Double>> topology_resources_overrides; // optional
+  private String topology_conf_overrides; // optional
+  private String principal; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
     WAIT_SECS((short)1, "wait_secs"),
     NUM_WORKERS((short)2, "num_workers"),
-    NUM_EXECUTORS((short)3, "num_executors");
+    NUM_EXECUTORS((short)3, "num_executors"),
+    TOPOLOGY_RESOURCES_OVERRIDES((short)4, "topology_resources_overrides"),
+    TOPOLOGY_CONF_OVERRIDES((short)5, "topology_conf_overrides"),
+    PRINCIPAL((short)6, "principal");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -94,6 +103,12 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
           return NUM_WORKERS;
         case 3: // NUM_EXECUTORS
           return NUM_EXECUTORS;
+        case 4: // TOPOLOGY_RESOURCES_OVERRIDES
+          return TOPOLOGY_RESOURCES_OVERRIDES;
+        case 5: // TOPOLOGY_CONF_OVERRIDES
+          return TOPOLOGY_CONF_OVERRIDES;
+        case 6: // PRINCIPAL
+          return PRINCIPAL;
         default:
           return null;
       }
@@ -137,7 +152,7 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
   private static final int __WAIT_SECS_ISSET_ID = 0;
   private static final int __NUM_WORKERS_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.WAIT_SECS,_Fields.NUM_WORKERS,_Fields.NUM_EXECUTORS};
+  private static final _Fields optionals[] = {_Fields.WAIT_SECS,_Fields.NUM_WORKERS,_Fields.NUM_EXECUTORS,_Fields.TOPOLOGY_RESOURCES_OVERRIDES,_Fields.TOPOLOGY_CONF_OVERRIDES,_Fields.PRINCIPAL};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -149,6 +164,16 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.I32))));
+    tmpMap.put(_Fields.TOPOLOGY_RESOURCES_OVERRIDES, new org.apache.thrift.meta_data.FieldMetaData("topology_resources_overrides", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+            new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+            new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
+                new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)))));
+    tmpMap.put(_Fields.TOPOLOGY_CONF_OVERRIDES, new org.apache.thrift.meta_data.FieldMetaData("topology_conf_overrides", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.PRINCIPAL, new org.apache.thrift.meta_data.FieldMetaData("principal", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(RebalanceOptions.class, metaDataMap);
   }
@@ -167,6 +192,27 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       Map<String,Integer> __this__num_executors = new HashMap<String,Integer>(other.num_executors);
       this.num_executors = __this__num_executors;
     }
+    if (other.is_set_topology_resources_overrides()) {
+      Map<String,Map<String,Double>> __this__topology_resources_overrides = new HashMap<String,Map<String,Double>>(other.topology_resources_overrides.size());
+      for (Map.Entry<String, Map<String,Double>> other_element : other.topology_resources_overrides.entrySet()) {
+
+        String other_element_key = other_element.getKey();
+        Map<String,Double> other_element_value = other_element.getValue();
+
+        String __this__topology_resources_overrides_copy_key = other_element_key;
+
+        Map<String,Double> __this__topology_resources_overrides_copy_value = new HashMap<String,Double>(other_element_value);
+
+        __this__topology_resources_overrides.put(__this__topology_resources_overrides_copy_key, __this__topology_resources_overrides_copy_value);
+      }
+      this.topology_resources_overrides = __this__topology_resources_overrides;
+    }
+    if (other.is_set_topology_conf_overrides()) {
+      this.topology_conf_overrides = other.topology_conf_overrides;
+    }
+    if (other.is_set_principal()) {
+      this.principal = other.principal;
+    }
   }
 
   public RebalanceOptions deepCopy() {
@@ -180,6 +226,9 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
     set_num_workers_isSet(false);
     this.num_workers = 0;
     this.num_executors = null;
+    this.topology_resources_overrides = null;
+    this.topology_conf_overrides = null;
+    this.principal = null;
   }
 
   public int get_wait_secs() {
@@ -260,6 +309,86 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
     }
   }
 
+  public int get_topology_resources_overrides_size() {
+    return (this.topology_resources_overrides == null) ? 0 : this.topology_resources_overrides.size();
+  }
+
+  public void put_to_topology_resources_overrides(String key, Map<String,Double> val) {
+    if (this.topology_resources_overrides == null) {
+      this.topology_resources_overrides = new HashMap<String,Map<String,Double>>();
+    }
+    this.topology_resources_overrides.put(key, val);
+  }
+
+  public Map<String,Map<String,Double>> get_topology_resources_overrides() {
+    return this.topology_resources_overrides;
+  }
+
+  public void set_topology_resources_overrides(Map<String,Map<String,Double>> topology_resources_overrides) {
+    this.topology_resources_overrides = topology_resources_overrides;
+  }
+
+  public void unset_topology_resources_overrides() {
+    this.topology_resources_overrides = null;
+  }
+
+  /** Returns true if field topology_resources_overrides is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topology_resources_overrides() {
+    return this.topology_resources_overrides != null;
+  }
+
+  public void set_topology_resources_overrides_isSet(boolean value) {
+    if (!value) {
+      this.topology_resources_overrides = null;
+    }
+  }
+
+  public String get_topology_conf_overrides() {
+    return this.topology_conf_overrides;
+  }
+
+  public void set_topology_conf_overrides(String topology_conf_overrides) {
+    this.topology_conf_overrides = topology_conf_overrides;
+  }
+
+  public void unset_topology_conf_overrides() {
+    this.topology_conf_overrides = null;
+  }
+
+  /** Returns true if field topology_conf_overrides is set (has been assigned a value) and false otherwise */
+  public boolean is_set_topology_conf_overrides() {
+    return this.topology_conf_overrides != null;
+  }
+
+  public void set_topology_conf_overrides_isSet(boolean value) {
+    if (!value) {
+      this.topology_conf_overrides = null;
+    }
+  }
+
+  public String get_principal() {
+    return this.principal;
+  }
+
+  public void set_principal(String principal) {
+    this.principal = principal;
+  }
+
+  public void unset_principal() {
+    this.principal = null;
+  }
+
+  /** Returns true if field principal is set (has been assigned a value) and false otherwise */
+  public boolean is_set_principal() {
+    return this.principal != null;
+  }
+
+  public void set_principal_isSet(boolean value) {
+    if (!value) {
+      this.principal = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case WAIT_SECS:
@@ -286,6 +415,30 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       }
       break;
 
+    case TOPOLOGY_RESOURCES_OVERRIDES:
+      if (value == null) {
+        unset_topology_resources_overrides();
+      } else {
+        set_topology_resources_overrides((Map<String,Map<String,Double>>)value);
+      }
+      break;
+
+    case TOPOLOGY_CONF_OVERRIDES:
+      if (value == null) {
+        unset_topology_conf_overrides();
+      } else {
+        set_topology_conf_overrides((String)value);
+      }
+      break;
+
+    case PRINCIPAL:
+      if (value == null) {
+        unset_principal();
+      } else {
+        set_principal((String)value);
+      }
+      break;
+
     }
   }
 
@@ -299,6 +452,15 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
 
     case NUM_EXECUTORS:
       return get_num_executors();
+
+    case TOPOLOGY_RESOURCES_OVERRIDES:
+      return get_topology_resources_overrides();
+
+    case TOPOLOGY_CONF_OVERRIDES:
+      return get_topology_conf_overrides();
+
+    case PRINCIPAL:
+      return get_principal();
 
     }
     throw new IllegalStateException();
@@ -317,6 +479,12 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       return is_set_num_workers();
     case NUM_EXECUTORS:
       return is_set_num_executors();
+    case TOPOLOGY_RESOURCES_OVERRIDES:
+      return is_set_topology_resources_overrides();
+    case TOPOLOGY_CONF_OVERRIDES:
+      return is_set_topology_conf_overrides();
+    case PRINCIPAL:
+      return is_set_principal();
     }
     throw new IllegalStateException();
   }
@@ -361,6 +529,33 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
         return false;
     }
 
+    boolean this_present_topology_resources_overrides = true && this.is_set_topology_resources_overrides();
+    boolean that_present_topology_resources_overrides = true && that.is_set_topology_resources_overrides();
+    if (this_present_topology_resources_overrides || that_present_topology_resources_overrides) {
+      if (!(this_present_topology_resources_overrides && that_present_topology_resources_overrides))
+        return false;
+      if (!this.topology_resources_overrides.equals(that.topology_resources_overrides))
+        return false;
+    }
+
+    boolean this_present_topology_conf_overrides = true && this.is_set_topology_conf_overrides();
+    boolean that_present_topology_conf_overrides = true && that.is_set_topology_conf_overrides();
+    if (this_present_topology_conf_overrides || that_present_topology_conf_overrides) {
+      if (!(this_present_topology_conf_overrides && that_present_topology_conf_overrides))
+        return false;
+      if (!this.topology_conf_overrides.equals(that.topology_conf_overrides))
+        return false;
+    }
+
+    boolean this_present_principal = true && this.is_set_principal();
+    boolean that_present_principal = true && that.is_set_principal();
+    if (this_present_principal || that_present_principal) {
+      if (!(this_present_principal && that_present_principal))
+        return false;
+      if (!this.principal.equals(that.principal))
+        return false;
+    }
+
     return true;
   }
 
@@ -382,6 +577,21 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
     list.add(present_num_executors);
     if (present_num_executors)
       list.add(num_executors);
+
+    boolean present_topology_resources_overrides = true && (is_set_topology_resources_overrides());
+    list.add(present_topology_resources_overrides);
+    if (present_topology_resources_overrides)
+      list.add(topology_resources_overrides);
+
+    boolean present_topology_conf_overrides = true && (is_set_topology_conf_overrides());
+    list.add(present_topology_conf_overrides);
+    if (present_topology_conf_overrides)
+      list.add(topology_conf_overrides);
+
+    boolean present_principal = true && (is_set_principal());
+    list.add(present_principal);
+    if (present_principal)
+      list.add(principal);
 
     return list.hashCode();
   }
@@ -424,6 +634,36 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_topology_resources_overrides()).compareTo(other.is_set_topology_resources_overrides());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_topology_resources_overrides()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topology_resources_overrides, other.topology_resources_overrides);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_topology_conf_overrides()).compareTo(other.is_set_topology_conf_overrides());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_topology_conf_overrides()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.topology_conf_overrides, other.topology_conf_overrides);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_principal()).compareTo(other.is_set_principal());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_principal()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.principal, other.principal);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -462,6 +702,36 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
         sb.append("null");
       } else {
         sb.append(this.num_executors);
+      }
+      first = false;
+    }
+    if (is_set_topology_resources_overrides()) {
+      if (!first) sb.append(", ");
+      sb.append("topology_resources_overrides:");
+      if (this.topology_resources_overrides == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.topology_resources_overrides);
+      }
+      first = false;
+    }
+    if (is_set_topology_conf_overrides()) {
+      if (!first) sb.append(", ");
+      sb.append("topology_conf_overrides:");
+      if (this.topology_conf_overrides == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.topology_conf_overrides);
+      }
+      first = false;
+    }
+    if (is_set_principal()) {
+      if (!first) sb.append(", ");
+      sb.append("principal:");
+      if (this.principal == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.principal);
       }
       first = false;
     }
@@ -546,6 +816,54 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 4: // TOPOLOGY_RESOURCES_OVERRIDES
+            if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
+              {
+                org.apache.thrift.protocol.TMap _map570 = iprot.readMapBegin();
+                struct.topology_resources_overrides = new HashMap<String,Map<String,Double>>(2*_map570.size);
+                String _key571;
+                Map<String,Double> _val572;
+                for (int _i573 = 0; _i573 < _map570.size; ++_i573)
+                {
+                  _key571 = iprot.readString();
+                  {
+                    org.apache.thrift.protocol.TMap _map574 = iprot.readMapBegin();
+                    _val572 = new HashMap<String,Double>(2*_map574.size);
+                    String _key575;
+                    double _val576;
+                    for (int _i577 = 0; _i577 < _map574.size; ++_i577)
+                    {
+                      _key575 = iprot.readString();
+                      _val576 = iprot.readDouble();
+                      _val572.put(_key575, _val576);
+                    }
+                    iprot.readMapEnd();
+                  }
+                  struct.topology_resources_overrides.put(_key571, _val572);
+                }
+                iprot.readMapEnd();
+              }
+              struct.set_topology_resources_overrides_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 5: // TOPOLOGY_CONF_OVERRIDES
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.topology_conf_overrides = iprot.readString();
+              struct.set_topology_conf_overrides_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 6: // PRINCIPAL
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.principal = iprot.readString();
+              struct.set_principal_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -574,13 +892,50 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
           oprot.writeFieldBegin(NUM_EXECUTORS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, struct.num_executors.size()));
-            for (Map.Entry<String, Integer> _iter570 : struct.num_executors.entrySet())
+            for (Map.Entry<String, Integer> _iter578 : struct.num_executors.entrySet())
             {
-              oprot.writeString(_iter570.getKey());
-              oprot.writeI32(_iter570.getValue());
+              oprot.writeString(_iter578.getKey());
+              oprot.writeI32(_iter578.getValue());
             }
             oprot.writeMapEnd();
           }
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.topology_resources_overrides != null) {
+        if (struct.is_set_topology_resources_overrides()) {
+          oprot.writeFieldBegin(TOPOLOGY_RESOURCES_OVERRIDES_FIELD_DESC);
+          {
+            oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, struct.topology_resources_overrides.size()));
+            for (Map.Entry<String, Map<String,Double>> _iter579 : struct.topology_resources_overrides.entrySet())
+            {
+              oprot.writeString(_iter579.getKey());
+              {
+                oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, _iter579.getValue().size()));
+                for (Map.Entry<String, Double> _iter580 : _iter579.getValue().entrySet())
+                {
+                  oprot.writeString(_iter580.getKey());
+                  oprot.writeDouble(_iter580.getValue());
+                }
+                oprot.writeMapEnd();
+              }
+            }
+            oprot.writeMapEnd();
+          }
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.topology_conf_overrides != null) {
+        if (struct.is_set_topology_conf_overrides()) {
+          oprot.writeFieldBegin(TOPOLOGY_CONF_OVERRIDES_FIELD_DESC);
+          oprot.writeString(struct.topology_conf_overrides);
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.principal != null) {
+        if (struct.is_set_principal()) {
+          oprot.writeFieldBegin(PRINCIPAL_FIELD_DESC);
+          oprot.writeString(struct.principal);
           oprot.writeFieldEnd();
         }
       }
@@ -611,7 +966,16 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       if (struct.is_set_num_executors()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.is_set_topology_resources_overrides()) {
+        optionals.set(3);
+      }
+      if (struct.is_set_topology_conf_overrides()) {
+        optionals.set(4);
+      }
+      if (struct.is_set_principal()) {
+        optionals.set(5);
+      }
+      oprot.writeBitSet(optionals, 6);
       if (struct.is_set_wait_secs()) {
         oprot.writeI32(struct.wait_secs);
       }
@@ -621,19 +985,42 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       if (struct.is_set_num_executors()) {
         {
           oprot.writeI32(struct.num_executors.size());
-          for (Map.Entry<String, Integer> _iter571 : struct.num_executors.entrySet())
+          for (Map.Entry<String, Integer> _iter581 : struct.num_executors.entrySet())
           {
-            oprot.writeString(_iter571.getKey());
-            oprot.writeI32(_iter571.getValue());
+            oprot.writeString(_iter581.getKey());
+            oprot.writeI32(_iter581.getValue());
           }
         }
+      }
+      if (struct.is_set_topology_resources_overrides()) {
+        {
+          oprot.writeI32(struct.topology_resources_overrides.size());
+          for (Map.Entry<String, Map<String,Double>> _iter582 : struct.topology_resources_overrides.entrySet())
+          {
+            oprot.writeString(_iter582.getKey());
+            {
+              oprot.writeI32(_iter582.getValue().size());
+              for (Map.Entry<String, Double> _iter583 : _iter582.getValue().entrySet())
+              {
+                oprot.writeString(_iter583.getKey());
+                oprot.writeDouble(_iter583.getValue());
+              }
+            }
+          }
+        }
+      }
+      if (struct.is_set_topology_conf_overrides()) {
+        oprot.writeString(struct.topology_conf_overrides);
+      }
+      if (struct.is_set_principal()) {
+        oprot.writeString(struct.principal);
       }
     }
 
     @Override
     public void read(org.apache.thrift.protocol.TProtocol prot, RebalanceOptions struct) throws org.apache.thrift.TException {
       TTupleProtocol iprot = (TTupleProtocol) prot;
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         struct.wait_secs = iprot.readI32();
         struct.set_wait_secs_isSet(true);
@@ -644,18 +1031,52 @@ public class RebalanceOptions implements org.apache.thrift.TBase<RebalanceOption
       }
       if (incoming.get(2)) {
         {
-          org.apache.thrift.protocol.TMap _map572 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
-          struct.num_executors = new HashMap<String,Integer>(2*_map572.size);
-          String _key573;
-          int _val574;
-          for (int _i575 = 0; _i575 < _map572.size; ++_i575)
+          org.apache.thrift.protocol.TMap _map584 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.I32, iprot.readI32());
+          struct.num_executors = new HashMap<String,Integer>(2*_map584.size);
+          String _key585;
+          int _val586;
+          for (int _i587 = 0; _i587 < _map584.size; ++_i587)
           {
-            _key573 = iprot.readString();
-            _val574 = iprot.readI32();
-            struct.num_executors.put(_key573, _val574);
+            _key585 = iprot.readString();
+            _val586 = iprot.readI32();
+            struct.num_executors.put(_key585, _val586);
           }
         }
         struct.set_num_executors_isSet(true);
+      }
+      if (incoming.get(3)) {
+        {
+          org.apache.thrift.protocol.TMap _map588 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.MAP, iprot.readI32());
+          struct.topology_resources_overrides = new HashMap<String,Map<String,Double>>(2*_map588.size);
+          String _key589;
+          Map<String,Double> _val590;
+          for (int _i591 = 0; _i591 < _map588.size; ++_i591)
+          {
+            _key589 = iprot.readString();
+            {
+              org.apache.thrift.protocol.TMap _map592 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
+              _val590 = new HashMap<String,Double>(2*_map592.size);
+              String _key593;
+              double _val594;
+              for (int _i595 = 0; _i595 < _map592.size; ++_i595)
+              {
+                _key593 = iprot.readString();
+                _val594 = iprot.readDouble();
+                _val590.put(_key593, _val594);
+              }
+            }
+            struct.topology_resources_overrides.put(_key589, _val590);
+          }
+        }
+        struct.set_topology_resources_overrides_isSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.topology_conf_overrides = iprot.readString();
+        struct.set_topology_conf_overrides_isSet(true);
+      }
+      if (incoming.get(5)) {
+        struct.principal = iprot.readString();
+        struct.set_principal_isSet(true);
       }
     }
   }

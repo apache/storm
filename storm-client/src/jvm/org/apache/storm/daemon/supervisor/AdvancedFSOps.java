@@ -24,6 +24,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -280,6 +281,25 @@ public class AdvancedFSOps implements IAdvancedFSOps {
     }
 
     /**
+     * Makes a directory, including any necessary but nonexistent parent
+     * directories.
+     *
+     * @param path the directory to create
+     * @throws IOException on any error
+     */
+    public void forceMkdir(Path path) throws IOException {
+        Files.createDirectories(path);
+    }
+
+    public DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException {
+        return Files.newDirectoryStream(dir, filter);
+    }
+
+    public DirectoryStream<Path> newDirectoryStream(Path dir) throws IOException {
+        return Files.newDirectoryStream(dir);
+    }
+
+    /**
      * Check if a file exists or not
      * @param path the path to check
      * @return true if it exists else false
@@ -287,6 +307,16 @@ public class AdvancedFSOps implements IAdvancedFSOps {
      */
     public boolean fileExists(File path) throws IOException {
         return path.exists();
+    }
+
+    /**
+     * Check if a file exists or not
+     * @param path the path to check
+     * @return true if it exists else false
+     * @throws IOException on any error.
+     */
+    public boolean fileExists(Path path) throws IOException {
+        return Files.exists(path);
     }
 
     /**

@@ -117,6 +117,11 @@ public class HdfsClientBlobStore extends ClientBlobStore {
 
     @Override
     public void shutdown() {
+        close();
+    }
+
+    @Override
+    public void close() {
         if(client != null) {
             client.close();
             client = null;
