@@ -95,7 +95,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
     private Thread transferThread;
     private WorkerBackpressureThread backpressureThread;
-
+    // How long until the backpressure znode is invalid.
+    private long backpressureZnodeTimeoutMs;
     private AtomicReference<Credentials> credentialsAtom;
     private Subject subject;
     private Collection<IAutoCredentials> autoCreds;
@@ -152,6 +153,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
         autoCreds = AuthUtils.GetAutoCredentials(topologyConf);
         subject = AuthUtils.populateSubject(null, autoCreds, initCreds);
+        backpressureZnodeTimeoutMs = ObjectReader.getInt(topologyConf.get(Config.BACKPRESSURE_ZNODE_TIMEOUT_SECS)) * 1000;
 
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
             @Override public Object run() throws Exception {
@@ -224,11 +226,11 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.transferQueue
                     .setLowWaterMark(ObjectReader.getDouble(topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
 
-                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler();
+                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler(topologyConf);
                 backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, workerState, backpressureCallback);
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
-                    stormClusterState.topologyBackpressure(topologyId, workerState::refreshThrottle);
+                    stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, workerState::refreshThrottle);
                     
                     int pollingSecs = ObjectReader.getInt(topologyConf.get(Config.TASK_BACKPRESSURE_POLL_SECS));
                     workerState.refreshBackpressureTimer.scheduleRecurring(0, pollingSecs, workerState::refreshThrottle);
@@ -366,7 +368,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public void checkThrottleChanged() {
-        boolean throttleOn = workerState.stormClusterState.topologyBackpressure(topologyId, this::checkThrottleChanged);
+        boolean throttleOn = workerState.stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, this::checkThrottleChanged);
         workerState.throttleOn.set(throttleOn);
     }
 
@@ -402,29 +404,41 @@ public class Worker implements Shutdownable, DaemonCommon {
     /**
      * make a handler that checks and updates worker's backpressure flag
      */
-    private WorkerBackpressureCallback mkBackpressureHandler() {
+    private WorkerBackpressureCallback mkBackpressureHandler(Map<String, Object> topologyConf) {
         final List<IRunningExecutor> executors = executorsAtom.get();
+        final long updateFreqMs = ObjectReader.getInt(topologyConf.get(Config.BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS)) * 1000;
         return new WorkerBackpressureCallback() {
             @Override public void onEvent(Object obj) {
-                String topologyId = workerState.topologyId;
-                String assignmentId = workerState.assignmentId;
-                int port = workerState.port;
-                IStormClusterState stormClusterState = workerState.stormClusterState;
-                boolean prevBackpressureFlag = workerState.backpressure.get();
-                boolean currBackpressureFlag = prevBackpressureFlag;
                 if (null != executors) {
-                    currBackpressureFlag = workerState.transferQueue.getThrottleOn() || (executors.stream()
-                        .map(IRunningExecutor::getBackPressureFlag).reduce((op1, op2) -> (op1 || op2)).get());
-                }
+                    String topologyId = workerState.topologyId;
+                    String assignmentId = workerState.assignmentId;
+                    int port = workerState.port;
+                    IStormClusterState stormClusterState = workerState.stormClusterState;
+                    long prevBackpressureTimestamp = workerState.backpressure.get();
+                    long currTimestamp = System.currentTimeMillis();
+                    long currBackpressureTimestamp = 0;
+                    // the backpressure flag is true if at least one of the disruptor queues has throttle-on
+                    boolean backpressureFlag = workerState.transferQueue.getThrottleOn() || (executors.stream()
+                            .map(IRunningExecutor::getBackPressureFlag).reduce((op1, op2) -> (op1 || op2)).get());
 
-                if (currBackpressureFlag != prevBackpressureFlag) {
-                    try {
-                        LOG.debug("worker backpressure flag changing from {} to {}", prevBackpressureFlag, currBackpressureFlag);
-                        stormClusterState.workerBackpressure(topologyId, assignmentId, (long) port, currBackpressureFlag);
-                        // doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
-                        workerState.backpressure.set(currBackpressureFlag);
-                    } catch (Exception ex) {
-                        LOG.error("workerBackpressure update failed when connecting to ZK ... will retry", ex);
+                    if (backpressureFlag) {
+                        // update the backpressure timestamp every updateFreqMs ms
+                        if ((currTimestamp - prevBackpressureTimestamp) > updateFreqMs) {
+                            currBackpressureTimestamp = currTimestamp;
+                        } else {
+                            currBackpressureTimestamp = prevBackpressureTimestamp;
+                        }
+                    }
+
+                    if (currBackpressureTimestamp != prevBackpressureTimestamp) {
+                        try {
+                            LOG.debug("worker backpressure timestamp changing from {} to {}", prevBackpressureTimestamp, currBackpressureTimestamp);
+                            stormClusterState.workerBackpressure(topologyId, assignmentId, (long) port, currBackpressureTimestamp);
+                            // doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
+                            workerState.backpressure.set(currBackpressureTimestamp);
+                        } catch (Exception ex) {
+                            LOG.error("workerBackpressure update failed when connecting to ZK ... will retry", ex);
+                        }
                     }
                 }
             }
