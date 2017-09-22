@@ -101,7 +101,7 @@ public interface IStormClusterState {
 
     public void workerBackpressure(String stormId, String node, Long port, long timestamp);
 
-    public boolean topologyBackpressure(String stormId, Runnable callback);
+    public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
 
     public void setupBackpressure(String stormId);
 

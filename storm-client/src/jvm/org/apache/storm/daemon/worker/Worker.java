@@ -95,7 +95,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     private AtomicReference<List<IRunningExecutor>> executorsAtom;
     private Thread transferThread;
     private WorkerBackpressureThread backpressureThread;
-
+    // How long until the backpressure znode is invalid.
+    private long backpressureZnodeTimeoutMs;
     private AtomicReference<Credentials> credentialsAtom;
     private Subject subject;
     private Collection<IAutoCredentials> autoCreds;
@@ -152,6 +153,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
         autoCreds = AuthUtils.GetAutoCredentials(topologyConf);
         subject = AuthUtils.populateSubject(null, autoCreds, initCreds);
+        backpressureZnodeTimeoutMs = ObjectReader.getInt(topologyConf.get(Config.BACKPRESSURE_ZNODE_TIMEOUT_SECS)) * 1000;
 
         Subject.doAs(subject, new PrivilegedExceptionAction<Object>() {
             @Override public Object run() throws Exception {
@@ -224,11 +226,11 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState.transferQueue
                     .setLowWaterMark(ObjectReader.getDouble(topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
 
-                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler();
+                WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler(topologyConf);
                 backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, workerState, backpressureCallback);
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
-                    stormClusterState.topologyBackpressure(topologyId, workerState::refreshThrottle);
+                    stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, workerState::refreshThrottle);
                     
                     int pollingSecs = ObjectReader.getInt(topologyConf.get(Config.TASK_BACKPRESSURE_POLL_SECS));
                     workerState.refreshBackpressureTimer.scheduleRecurring(0, pollingSecs, workerState::refreshThrottle);
@@ -366,7 +368,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public void checkThrottleChanged() {
-        boolean throttleOn = workerState.stormClusterState.topologyBackpressure(topologyId, this::checkThrottleChanged);
+        boolean throttleOn = workerState.stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, this::checkThrottleChanged);
         workerState.throttleOn.set(throttleOn);
     }
 
@@ -402,8 +404,9 @@ public class Worker implements Shutdownable, DaemonCommon {
     /**
      * make a handler that checks and updates worker's backpressure flag
      */
-    private WorkerBackpressureCallback mkBackpressureHandler() {
+    private WorkerBackpressureCallback mkBackpressureHandler(Map<String, Object> topologyConf) {
         final List<IRunningExecutor> executors = executorsAtom.get();
+        final long updateFreqMs = ObjectReader.getInt(topologyConf.get(Config.BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS)) * 1000;
         return new WorkerBackpressureCallback() {
             @Override public void onEvent(Object obj) {
                 if (null != executors) {
@@ -419,8 +422,8 @@ public class Worker implements Shutdownable, DaemonCommon {
                             .map(IRunningExecutor::getBackPressureFlag).reduce((op1, op2) -> (op1 || op2)).get());
 
                     if (backpressureFlag) {
-                        // update the backpressure timestamp every 15 seconds
-                        if ((currTimestamp - prevBackpressureTimestamp) > 15000) {
+                        // update the backpressure timestamp every updateFreqMs ms
+                        if ((currTimestamp - prevBackpressureTimestamp) > updateFreqMs) {
                             currBackpressureTimestamp = currTimestamp;
                         } else {
                             currBackpressureTimestamp = prevBackpressureTimestamp;

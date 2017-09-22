@@ -424,13 +424,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * if znode exists and timestamp is 0?, delete; if exists and timestamp is larger than 0?, do nothing;
-     * if not exists and timestamp is larger than 0?, create the node and set the timestamp; if not exists and timestamp is 0?, do nothing;
-     * 
-     * @param stormId
-     * @param node
-     * @param port
-     * @param timestamp
+     * If znode exists and timestamp is 0, delete;
+     * if exists and timestamp is larger than 0, update the timestamp;
+     * if not exists and timestamp is larger than 0, create the znode and set the timestamp;
+     * if not exists and timestamp is 0, do nothing.
+     * @param stormId The topology Id
+     * @param node The node id
+     * @param port The port number
+     * @param timestamp The backpressure timestamp. 0 means turning off the worker backpressure
      */
     @Override
     public void workerBackpressure(String stormId, String node, Long port, long timestamp) {
@@ -439,6 +440,9 @@ public class StormClusterStateImpl implements IStormClusterState {
         if (existed) {
             if (timestamp == 0) {
                 stateStorage.delete_node(path);
+            } else {
+                byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
+                stateStorage.set_data(path, data, acls);
             }
         } else {
             if (timestamp > 0) {
@@ -451,14 +455,15 @@ public class StormClusterStateImpl implements IStormClusterState {
     /**
      * Check whether a topology is in throttle-on status or not:
      * if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
-     * But if the backpresure/storm-id dir is not empty and has not been updated for more than 30s, we treat it as throttle-off.
+     * But if the backpresure/storm-id dir is not empty and has not been updated for more than timeoutMs, we treat it as throttle-off.
      * This will prevent the spouts from getting stuck indefinitely if something wrong happens.
-     * @param stormId
-     * @param callback
-     * @return
+     * @param stormId The topology Id
+     * @param timeoutMs How long until the backpressure znode is invalid.
+     * @param callback The callback function
+     * @return True is backpresure/storm-id dir is not empty and at least one of the backpressure znodes has not timed out; false otherwise.
      */
     @Override
-    public boolean topologyBackpressure(String stormId, Runnable callback) {
+    public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback) {
         if (callback != null) {
             backPressureCallback.put(stormId, callback);
         }
@@ -466,10 +471,14 @@ public class StormClusterStateImpl implements IStormClusterState {
         long mostRecentTimestamp = 0;
         if(stateStorage.node_exists(path, false)) {
             List<String> children = stateStorage.get_children(path, callback != null);
-            mostRecentTimestamp = children.stream().map(childPath -> stateStorage.get_data(ClusterUtils.backpressurePath(stormId, childPath), false))
-                    .filter(data -> data != null).mapToLong(data -> ByteBuffer.wrap(data).getLong()).max().orElse(0);
+            mostRecentTimestamp = children.stream()
+                    .map(childPath -> stateStorage.get_data(ClusterUtils.backpressurePath(stormId, childPath), false))
+                    .filter(data -> data != null)
+                    .mapToLong(data -> ByteBuffer.wrap(data).getLong())
+                    .max()
+                    .orElse(0);
         }
-        boolean ret =  ((System.currentTimeMillis() - mostRecentTimestamp) < 30000);
+        boolean ret =  ((System.currentTimeMillis() - mostRecentTimestamp) < timeoutMs);
         LOG.debug("topology backpressure is {}", ret ? "on" : "off");
         return ret;
     }
