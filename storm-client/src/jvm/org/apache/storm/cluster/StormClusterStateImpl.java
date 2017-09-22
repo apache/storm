@@ -424,21 +424,21 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * If znode exists and timestamp is 0, delete;
+     * If znode exists and timestamp is non-positive, delete;
      * if exists and timestamp is larger than 0, update the timestamp;
      * if not exists and timestamp is larger than 0, create the znode and set the timestamp;
-     * if not exists and timestamp is 0, do nothing.
+     * if not exists and timestamp is non-positive, do nothing.
      * @param stormId The topology Id
      * @param node The node id
      * @param port The port number
-     * @param timestamp The backpressure timestamp. 0 means turning off the worker backpressure
+     * @param timestamp The backpressure timestamp. Non-positive means turning off the worker backpressure
      */
     @Override
     public void workerBackpressure(String stormId, String node, Long port, long timestamp) {
         String path = ClusterUtils.backpressurePath(stormId, node, port);
         boolean existed = stateStorage.node_exists(path, false);
         if (existed) {
-            if (timestamp == 0) {
+            if (timestamp <= 0) {
                 stateStorage.delete_node(path);
             } else {
                 byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
@@ -478,7 +478,7 @@ public class StormClusterStateImpl implements IStormClusterState {
                     .max()
                     .orElse(0);
         }
-        boolean ret =  ((System.currentTimeMillis() - mostRecentTimestamp) < timeoutMs);
+        boolean ret = ((System.currentTimeMillis() - mostRecentTimestamp) < timeoutMs);
         LOG.debug("topology backpressure is {}", ret ? "on" : "off");
         return ret;
     }
