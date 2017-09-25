@@ -24,6 +24,7 @@ import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
+import org.apache.storm.scheduler.blacklist.reporters.LogReporter;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -39,6 +40,9 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
     private static Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
 
+    public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
+    public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
+
     private IReporter _reporter;
 
     private int _toleranceCount;
@@ -49,41 +53,25 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
     @Override
     public void prepare(Map conf){
-        if (conf.containsKey(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT)) {
-            _toleranceCount = ObjectReader.getInt( conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT));
-        }
-        if (conf.containsKey(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME)) {
-            _resumeTime = ObjectReader.getInt( conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME));
-        }
-        String reporterClassName = conf.containsKey(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER) ? (String) conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER) : "org.apache.storm.scheduler.blacklist.reporters.LogReporter" ;
-        try {
-            _reporter = (IReporter) Class.forName(reporterClassName).newInstance();
-        } catch (ClassNotFoundException e) {
-            LOG.error("Can't find blacklist reporter for name {}", reporterClassName);
-            throw new RuntimeException(e);
-        } catch (InstantiationException e) {
-            LOG.error("Throw InstantiationException blacklist reporter for name {}", reporterClassName);
-            throw new RuntimeException(e);
-        } catch (IllegalAccessException e) {
-            LOG.error("Throw illegalAccessException blacklist reporter for name {}", reporterClassName);
-            throw new RuntimeException(e);
-        }
+        _toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT), DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+        _resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
-        _nimbusMonitorFreqSecs = ObjectReader.getInt( conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
+        String reporterClassName = ObjectReader.getString(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
+                LogReporter.class.getName());
+        _reporter = (IReporter) initializeInstance(reporterClassName, "blacklist reporter");
+
+        _nimbusMonitorFreqSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
         blacklist = new TreeMap<>();
     }
 
     @Override
-    public Set<String> getBlacklist(List<HashMap<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster, Topologies topologies) {
+    public Set<String> getBlacklist(List<Map<String, Set<Integer>>> supervisorsWithFailures, Cluster cluster, Topologies topologies) {
         Map<String, Integer> countMap = new HashMap<String, Integer>();
 
         for (Map<String, Set<Integer>> item : supervisorsWithFailures) {
             Set<String> supervisors = item.keySet();
             for (String supervisor : supervisors) {
-                int supervisorCount = 0;
-                if (countMap.containsKey(supervisor)) {
-                    supervisorCount = countMap.get(supervisor);
-                }
+                int supervisorCount = countMap.getOrDefault(supervisor, 0);
                 countMap.put(supervisor, supervisorCount + 1);
             }
         }
@@ -91,9 +79,9 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             String supervisor = entry.getKey();
             int count = entry.getValue();
             if (count >= _toleranceCount) {
-                if (!blacklist.containsKey(supervisor)) {// if not in blacklist then add it and set the resume time according to config
-                    LOG.info("add supervisor {} to blacklist", supervisor);
-                    LOG.info("supervisorsWithFailures : {}", supervisorsWithFailures);
+                if (!blacklist.containsKey(supervisor)) { // if not in blacklist then add it and set the resume time according to config
+                    LOG.debug("add supervisor {} to blacklist", supervisor);
+                    LOG.debug("supervisorsWithFailures : {}", supervisorsWithFailures);
                     _reporter.reportBlacklist(supervisor, supervisorsWithFailures);
                     blacklist.put(supervisor, _resumeTime / _nimbusMonitorFreqSecs);
                 }
@@ -103,6 +91,7 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
         return blacklist.keySet();
     }
 
+    @Override
     public void resumeFromBlacklist() {
         Set<String> readyToRemove = new HashSet<String>();
         for (Map.Entry<String, Integer> entry : blacklist.entrySet()) {
@@ -116,11 +105,11 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
         }
         for (String key : readyToRemove) {
             blacklist.remove(key);
-            LOG.info("supervisor {} reach the resume time ,removed from blacklist", key);
+            LOG.info("Supervisor {} has been blacklisted more than resume period. Removed from blacklist.", key);
         }
     }
 
-    public void releaseBlacklistWhenNeeded(Cluster cluster, Topologies topologies) {
+    private void releaseBlacklistWhenNeeded(Cluster cluster, Topologies topologies) {
         if (blacklist.size() > 0) {
             int totalNeedNumWorkers = 0;
             List<TopologyDetails> needSchedulingTopologies = cluster.needsSchedulingTopologies();
@@ -145,12 +134,12 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
                         , totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
                 //release earliest blacklist
                 Set<String> readyToRemove = new HashSet<>();
-                for (String supervisor : blacklist.keySet()) {//blacklist is treeMap sorted by value, value minimum meas earliest
+                for (String supervisor : blacklist.keySet()) { //blacklist is treeMap sorted by value, minimum value means earliest
                     if (availableSupervisors.containsKey(supervisor)) {
                         Set<Integer> ports = cluster.getAvailablePorts(availableSupervisors.get(supervisor));
                         readyToRemove.add(supervisor);
                         shortage -= ports.size();
-                        if (shortage <= 0) {//released enough supervisor
+                        if (shortage <= 0) { //released enough supervisor
                             break;
                         }
                     }
@@ -160,6 +149,21 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
                     LOG.info("release supervisor {} for shortage of worker slots.", key);
                 }
             }
+        }
+    }
+
+    private Object initializeInstance(String className, String representation) {
+        try {
+            return Class.forName(className).newInstance();
+        } catch (ClassNotFoundException e) {
+            LOG.error("Can't find {} for name {}", representation, className);
+            throw new RuntimeException(e);
+        } catch (InstantiationException e) {
+            LOG.error("Throw InstantiationException {} for name {}", representation, className);
+            throw new RuntimeException(e);
+        } catch (IllegalAccessException e) {
+            LOG.error("Throw IllegalAccessException {} for name {}", representation, className);
+            throw new RuntimeException(e);
         }
     }
 }

@@ -19,6 +19,7 @@ package org.apache.storm.scheduler.blacklist;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -34,6 +35,7 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -75,9 +77,7 @@ public class TestBlacklistScheduler {
         bs.schedule(topologies, cluster);
         cluster = new Cluster(iNimbus, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         bs.schedule(topologies, cluster);
-        Set<String> hosts = new HashSet<>();
-        hosts.add("host-0");
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
     }
 
     @Test
@@ -109,9 +109,7 @@ public class TestBlacklistScheduler {
         bs.schedule(topologies, cluster);
         cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         bs.schedule(topologies, cluster);
-        Set<String> hosts = new HashSet<>();
-        hosts.add("host-0");
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
     }
 
     @Test
@@ -142,16 +140,13 @@ public class TestBlacklistScheduler {
         bs.schedule(topologies, cluster);
         cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         bs.schedule(topologies, cluster);
-        Set<String> hosts = new HashSet<>();
-        hosts.add("host-0");
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
         for (int i = 0; i < 300 / 10 - 2; i++) {
             bs.schedule(topologies, cluster);
         }
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
         bs.schedule(topologies, cluster);
-        hosts.clear();
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.emptySet(), cluster.getBlacklistedHosts());
     }
 
     @Test
@@ -185,17 +180,14 @@ public class TestBlacklistScheduler {
         bs.schedule(topologies, cluster);
         cluster = new Cluster(iNimbus, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         bs.schedule(topologies, cluster);
-        Set<String> hosts = new HashSet<>();
-        hosts.add("host-0");
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.singleton("host-0"), cluster.getBlacklistedHosts());
         topoMap.put(topo2.getId(), topo2);
         topoMap.put(topo3.getId(), topo3);
         topoMap.put(topo4.getId(), topo4);
         topologies = new Topologies(topoMap);
         cluster = new Cluster(iNimbus, supMap, TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
         bs.schedule(topologies, cluster);
-        hosts.clear();
-        Assert.assertEquals("blacklist", hosts, cluster.getBlacklistedHosts());
+        Assert.assertEquals("blacklist", Collections.emptySet(), cluster.getBlacklistedHosts());
     }
 
     @Test
@@ -218,21 +210,21 @@ public class TestBlacklistScheduler {
 
         List<Map<Integer, List<Integer>>> faultList = new ArrayList<>();
 
-        faultList.add(new HashMap<Integer, List<Integer>>());
-        faultList.add((Map) ImmutableMap.of(0, ImmutableList.of(0, 1)));
-        faultList.add((Map) ImmutableMap.of(0, new ArrayList<>()));
+        faultList.add(new HashMap<>());
+        faultList.add(ImmutableMap.of(0, ImmutableList.of(0, 1)));
+        faultList.add(ImmutableMap.of(0, new ArrayList<>()));
         for (int i = 0; i < 17; i++) {
-            faultList.add(new HashMap<Integer, List<Integer>>());
+            faultList.add(new HashMap<>());
         }
-        faultList.add((Map) ImmutableMap.of(0, ImmutableList.of(0, 1)));
-        faultList.add((Map) ImmutableMap.of(1, ImmutableList.of(1)));
+        faultList.add(ImmutableMap.of(0, ImmutableList.of(0, 1)));
+        faultList.add(ImmutableMap.of(1, ImmutableList.of(1)));
         for (int i = 0; i < 8; i++) {
-            faultList.add(new HashMap<Integer, List<Integer>>());
+            faultList.add(new HashMap<>());
         }
-        faultList.add((Map) ImmutableMap.of(0, ImmutableList.of(1)));
-        faultList.add((Map) ImmutableMap.of(1, ImmutableList.of(1)));
+        faultList.add(ImmutableMap.of(0, ImmutableList.of(1)));
+        faultList.add(ImmutableMap.of(1, ImmutableList.of(1)));
         for (int i = 0; i < 30; i++) {
-            faultList.add(new HashMap<Integer, List<Integer>>());
+            faultList.add(new HashMap<>());
         }
 
         List<Map<String, SupervisorDetails>> supervisorsList = FaultGenerateUtils.getSupervisorsList(3, 4, faultList);
@@ -285,9 +277,9 @@ public class TestBlacklistScheduler {
 
     @Test
     public void removeLongTimeDisappearFromCache(){
-        INimbus iNimbus=new TestUtilsForBlacklistScheduler.INimbusTest();
+        INimbus iNimbus = new TestUtilsForBlacklistScheduler.INimbusTest();
 
-        Map<String, SupervisorDetails> supMap=TestUtilsForBlacklistScheduler.genSupervisors(3,4);
+        Map<String, SupervisorDetails> supMap = TestUtilsForBlacklistScheduler.genSupervisors(3,4);
 
         Config config = new Config();
         config.putAll(Utils.readDefaultConfig());
@@ -301,27 +293,24 @@ public class TestBlacklistScheduler {
 
         Topologies topologies = new Topologies(topoMap);
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
-        BlacklistScheduler bs=new BlacklistScheduler(new DefaultScheduler());
+        BlacklistScheduler bs = new BlacklistScheduler(new DefaultScheduler());
         bs.prepare(config);
         bs.schedule(topologies,cluster);
         cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supMap,"sup-0"),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        for(int i=0;i<20;i++){
+        for (int i = 0 ; i < 20 ; i++){
             bs.schedule(topologies,cluster);
         }
-        Set<String> cached=new HashSet<>();
+        Set<String> cached = new HashSet<>();
         cached.add("sup-1");
         cached.add("sup-2");
         Assert.assertEquals(cached,bs.cachedSupervisors.keySet());
         cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, config);
         bs.schedule(topologies,cluster);
         cluster = new Cluster(iNimbus, TestUtilsForBlacklistScheduler.removePortFromSupervisors(supMap,"sup-0",0),TestUtilsForBlacklistScheduler.assignmentMapToImpl(cluster.getAssignments()), topologies, config);
-        for(int i=0;i<20;i++){
-            bs.schedule(topologies,cluster);
+        for (int i = 0 ;i < 20 ; i++){
+            bs.schedule(topologies, cluster);
         }
-        Set<Integer> cachedPorts=new HashSet<>();
-        cachedPorts.add(1);
-        cachedPorts.add(2);
-        cachedPorts.add(3);
-        Assert.assertEquals(cachedPorts,bs.cachedSupervisors.get("sup-0"));
+        Set<Integer> cachedPorts = Sets.newHashSet(1, 2, 3);
+        Assert.assertEquals(cachedPorts, bs.cachedSupervisors.get("sup-0"));
     }
 }

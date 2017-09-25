@@ -41,7 +41,7 @@ public interface IBlacklistStrategy {
      *       the `cluster` object.
      * @return blacklisted supervisors' id set
      */
-    Set<String> getBlacklist(List<HashMap<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster, Topologies topologies);
+    Set<String> getBlacklist(List<Map<String, Set<Integer>>> badSupervisorsToleranceSlidingWindow, Cluster cluster, Topologies topologies);
 
     /**
      * resume supervisors form blacklist. Blacklist is just a temporary list for supervisors,

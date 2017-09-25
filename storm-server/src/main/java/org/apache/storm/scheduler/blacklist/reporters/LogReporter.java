@@ -20,8 +20,8 @@ package org.apache.storm.scheduler.blacklist.reporters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class LogReporter implements IReporter {
@@ -33,8 +33,8 @@ public class LogReporter implements IReporter {
     }
 
     @Override
-    public void reportBlacklist(String supervisor, List<HashMap<String, Set<Integer>>> toleranceBuffer) {
-        String message = "add supervisor " + supervisor + " to blacklist. The bad slot history of supervisors is :" + toleranceBuffer;
-        report(message);
+    public void reportBlacklist(String supervisor, List<Map<String, Set<Integer>>> toleranceBuffer) {
+        LOG.warn("add supervisor {}  to blacklist. The bad slot history of supervisors is : {}",
+                supervisor, toleranceBuffer);
     }
 }

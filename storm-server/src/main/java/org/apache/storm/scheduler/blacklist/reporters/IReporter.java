@@ -17,8 +17,8 @@
  */
 package org.apache.storm.scheduler.blacklist.reporters;
 
-import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -27,5 +27,5 @@ import java.util.Set;
 public interface IReporter {
     void report(String message);
 
-    void reportBlacklist(String supervisor, List<HashMap<String, Set<Integer>>> toleranceBuffer);
+    void reportBlacklist(String supervisor, List<Map<String, Set<Integer>>> toleranceBuffer);
 }

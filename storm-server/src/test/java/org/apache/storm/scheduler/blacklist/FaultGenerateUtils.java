@@ -30,17 +30,6 @@ import java.util.Map;
 
 public class FaultGenerateUtils {
 
-    public static List<Map<String, SupervisorDetails>> getSupervisorsList(int supervisorCount, int slotCount, int[][][] faults) {
-        List<Map<String, SupervisorDetails>> supervisorsList = new ArrayList<>(faults.length);
-        for (int[][] fault : faults) {
-            Map<String, SupervisorDetails> supervisors = TestUtilsForBlacklistScheduler.genSupervisors(supervisorCount, slotCount);
-            if (fault.length == 1 && fault[0][0] == -1) {
-                TestUtilsForBlacklistScheduler.removeSupervisorFromSupervisors(supervisors, "sup-0");
-            }
-        }
-        return supervisorsList;
-    }
-
     public static List<Map<String, SupervisorDetails>> getSupervisorsList(int supervisorCount, int slotCount, List<Map<Integer, List<Integer>>> faultList) {
         List<Map<String, SupervisorDetails>> supervisorsList = new ArrayList<>(faultList.size());
         for (Map<Integer, List<Integer>> faults : faultList) {
