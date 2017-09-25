@@ -79,6 +79,11 @@
   </div>
   <div class="row">
     <div class="col-md-12">
+      <div id="bad-supervisor-summary"></div>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12">
       <h2>Nimbus Configuration</h2>
       <div id="nimbus-configuration"></div>
     </div>
@@ -117,6 +122,7 @@ $(document).ready(function() {
     var nimbusSummary = $("#nimbus-summary");
     var topologySummary = $("#topology-summary");
     var supervisorSummary = $("#supervisor-summary");
+    var badSupervisorSummary = $("#bad-supervisor-summary");
     var config = $("#nimbus-configuration");
 
     getStatic("/templates/index-page-template.html", function(indexTemplate) {
@@ -174,6 +180,11 @@ $(document).ready(function() {
               ]
             });
             $('#supervisor-summary [data-toggle="tooltip"]').tooltip();
+            badSupervisorSummary.append(Mustache.render($(indexTemplate).filter("#bad-supervisor-summary-template").html(),response));
+            //id, error
+            dtAutoPage("#bad-supervisor-summary-table", {});
+            $('#bad-supervisor-summary [data-toggle="tooltip"]').tooltip();
+
         });
 
         $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {

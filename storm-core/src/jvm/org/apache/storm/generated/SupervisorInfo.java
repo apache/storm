@@ -64,6 +64,7 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
   private static final org.apache.thrift.protocol.TField UPTIME_SECS_FIELD_DESC = new org.apache.thrift.protocol.TField("uptime_secs", org.apache.thrift.protocol.TType.I64, (short)7);
   private static final org.apache.thrift.protocol.TField VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("version", org.apache.thrift.protocol.TType.STRING, (short)8);
   private static final org.apache.thrift.protocol.TField RESOURCES_MAP_FIELD_DESC = new org.apache.thrift.protocol.TField("resources_map", org.apache.thrift.protocol.TType.MAP, (short)9);
+  private static final org.apache.thrift.protocol.TField ERR_STR_FIELD_DESC = new org.apache.thrift.protocol.TField("err_str", org.apache.thrift.protocol.TType.STRING, (short)10);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -80,6 +81,7 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
   private long uptime_secs; // optional
   private String version; // optional
   private Map<String,Double> resources_map; // optional
+  private String err_str; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -91,7 +93,8 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
     SCHEDULER_META((short)6, "scheduler_meta"),
     UPTIME_SECS((short)7, "uptime_secs"),
     VERSION((short)8, "version"),
-    RESOURCES_MAP((short)9, "resources_map");
+    RESOURCES_MAP((short)9, "resources_map"),
+    ERR_STR((short)10, "err_str");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -124,6 +127,8 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           return VERSION;
         case 9: // RESOURCES_MAP
           return RESOURCES_MAP;
+        case 10: // ERR_STR
+          return ERR_STR;
         default:
           return null;
       }
@@ -167,7 +172,7 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
   private static final int __TIME_SECS_ISSET_ID = 0;
   private static final int __UPTIME_SECS_ISSET_ID = 1;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.ASSIGNMENT_ID,_Fields.USED_PORTS,_Fields.META,_Fields.SCHEDULER_META,_Fields.UPTIME_SECS,_Fields.VERSION,_Fields.RESOURCES_MAP};
+  private static final _Fields optionals[] = {_Fields.ASSIGNMENT_ID,_Fields.USED_PORTS,_Fields.META,_Fields.SCHEDULER_META,_Fields.UPTIME_SECS,_Fields.VERSION,_Fields.RESOURCES_MAP,_Fields.ERR_STR};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -195,6 +200,8 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
         new org.apache.thrift.meta_data.MapMetaData(org.apache.thrift.protocol.TType.MAP, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING), 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE))));
+    tmpMap.put(_Fields.ERR_STR, new org.apache.thrift.meta_data.FieldMetaData("err_str", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorInfo.class, metaDataMap);
   }
@@ -244,6 +251,9 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       Map<String,Double> __this__resources_map = new HashMap<String,Double>(other.resources_map);
       this.resources_map = __this__resources_map;
     }
+    if (other.is_set_err_str()) {
+      this.err_str = other.err_str;
+    }
   }
 
   public SupervisorInfo deepCopy() {
@@ -263,6 +273,7 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
     this.uptime_secs = 0;
     this.version = null;
     this.resources_map = null;
+    this.err_str = null;
   }
 
   public long get_time_secs() {
@@ -522,6 +533,29 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
     }
   }
 
+  public String get_err_str() {
+    return this.err_str;
+  }
+
+  public void set_err_str(String err_str) {
+    this.err_str = err_str;
+  }
+
+  public void unset_err_str() {
+    this.err_str = null;
+  }
+
+  /** Returns true if field err_str is set (has been assigned a value) and false otherwise */
+  public boolean is_set_err_str() {
+    return this.err_str != null;
+  }
+
+  public void set_err_str_isSet(boolean value) {
+    if (!value) {
+      this.err_str = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case TIME_SECS:
@@ -596,6 +630,14 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       }
       break;
 
+    case ERR_STR:
+      if (value == null) {
+        unset_err_str();
+      } else {
+        set_err_str((String)value);
+      }
+      break;
+
     }
   }
 
@@ -628,6 +670,9 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
     case RESOURCES_MAP:
       return get_resources_map();
 
+    case ERR_STR:
+      return get_err_str();
+
     }
     throw new IllegalStateException();
   }
@@ -657,6 +702,8 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       return is_set_version();
     case RESOURCES_MAP:
       return is_set_resources_map();
+    case ERR_STR:
+      return is_set_err_str();
     }
     throw new IllegalStateException();
   }
@@ -755,6 +802,15 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
         return false;
     }
 
+    boolean this_present_err_str = true && this.is_set_err_str();
+    boolean that_present_err_str = true && that.is_set_err_str();
+    if (this_present_err_str || that_present_err_str) {
+      if (!(this_present_err_str && that_present_err_str))
+        return false;
+      if (!this.err_str.equals(that.err_str))
+        return false;
+    }
+
     return true;
   }
 
@@ -806,6 +862,11 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
     list.add(present_resources_map);
     if (present_resources_map)
       list.add(resources_map);
+
+    boolean present_err_str = true && (is_set_err_str());
+    list.add(present_err_str);
+    if (present_err_str)
+      list.add(err_str);
 
     return list.hashCode();
   }
@@ -908,6 +969,16 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_err_str()).compareTo(other.is_set_err_str());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_err_str()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.err_str, other.err_str);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -1002,6 +1073,16 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
         sb.append("null");
       } else {
         sb.append(this.resources_map);
+      }
+      first = false;
+    }
+    if (is_set_err_str()) {
+      if (!first) sb.append(", ");
+      sb.append("err_str:");
+      if (this.err_str == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.err_str);
       }
       first = false;
     }
@@ -1174,6 +1255,14 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 10: // ERR_STR
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.err_str = iprot.readString();
+              struct.set_err_str_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1272,6 +1361,13 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           oprot.writeFieldEnd();
         }
       }
+      if (struct.err_str != null) {
+        if (struct.is_set_err_str()) {
+          oprot.writeFieldBegin(ERR_STR_FIELD_DESC);
+          oprot.writeString(struct.err_str);
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1313,7 +1409,10 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       if (struct.is_set_resources_map()) {
         optionals.set(6);
       }
-      oprot.writeBitSet(optionals, 7);
+      if (struct.is_set_err_str()) {
+        optionals.set(7);
+      }
+      oprot.writeBitSet(optionals, 8);
       if (struct.is_set_assignment_id()) {
         oprot.writeString(struct.assignment_id);
       }
@@ -1361,6 +1460,9 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           }
         }
       }
+      if (struct.is_set_err_str()) {
+        oprot.writeString(struct.err_str);
+      }
     }
 
     @Override
@@ -1370,7 +1472,7 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
       struct.set_time_secs_isSet(true);
       struct.hostname = iprot.readString();
       struct.set_hostname_isSet(true);
-      BitSet incoming = iprot.readBitSet(7);
+      BitSet incoming = iprot.readBitSet(8);
       if (incoming.get(0)) {
         struct.assignment_id = iprot.readString();
         struct.set_assignment_id_isSet(true);
@@ -1438,6 +1540,10 @@ public class SupervisorInfo implements org.apache.thrift.TBase<SupervisorInfo, S
           }
         }
         struct.set_resources_map_isSet(true);
+      }
+      if (incoming.get(7)) {
+        struct.err_str = iprot.readString();
+        struct.set_err_str_isSet(true);
       }
     }
   }
