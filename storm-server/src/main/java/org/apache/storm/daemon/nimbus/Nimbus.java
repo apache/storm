@@ -18,6 +18,8 @@
 
 package org.apache.storm.daemon.nimbus;
 
+import com.codahale.metrics.ExponentiallyDecayingReservoir;
+import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
@@ -215,6 +217,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter getSupervisorPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getSupervisorPageInfo-calls");
     private static final Meter getComponentPageInfoCalls = StormMetricsRegistry.registerMeter("nimbus:num-getComponentPageInfo-calls");
     private static final Meter getOwnerResourceSummariesCalls = StormMetricsRegistry.registerMeter("nimbus:num-getOwnerResourceSummaries-calls");
+    private static final Histogram scheduleTopologyTimeMs = StormMetricsRegistry.registerHistogram("nimbus:time-scheduleTopology-ms", new ExponentiallyDecayingReservoir());
     private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter("nimbus:num-shutdown-calls");
     // END Metrics
     
@@ -1602,7 +1605,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         Map<String, SupervisorDetails> supervisors = readAllSupervisorDetails(supervisorToDeadPorts, topologies, missingAssignmentTopologies);
         Cluster cluster = new Cluster(inimbus, supervisors, topoToSchedAssignment, topologies, conf);
         cluster.setStatusMap(idToSchedStatus.get());
+
+        long beforeSchedule = System.currentTimeMillis();
         scheduler.schedule(topologies, cluster);
+        long scheduleTimeElapsedMs = System.currentTimeMillis() - beforeSchedule;
+        LOG.info("Scheduling took {} ms for {} topologies", scheduleTimeElapsedMs, topologies.getTopologies().size());
+        scheduleTopologyTimeMs.update(scheduleTimeElapsedMs);
 
         //merge with existing statuses
         idToSchedStatus.set(Utils.merge(idToSchedStatus.get(), cluster.getStatusMap()));
