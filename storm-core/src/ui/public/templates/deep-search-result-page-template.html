@@ -30,7 +30,7 @@
 <script id="search-result-identified-template" type="text/html">
     {{#matches}}
     <tr id="aResult">
-      <td><a href="http://{{host}}:{{logviewerPort}}/logviewer_search.html?file={{fileName}}&search={{searchString}}">{{host}}:{{port}}</a></td>
+      <td><a href="{{logviewerScheme}}://{{host}}:{{logviewerPort}}/logviewer_search.html?file={{fileName}}&search={{searchString}}">{{host}}:{{port}}</a></td>
       <td><pre>{{beforeString}}<b><a href="{{logviewerURL}}">{{matchString}}</a></b>{{afterString}}</pre></td>
     </tr>
     {{/matches}}

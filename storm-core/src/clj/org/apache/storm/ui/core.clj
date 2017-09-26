@@ -131,8 +131,20 @@
   (let [ret (group-by #(.get_component_id ^ExecutorSummary %) summs)]
     (into (sorted-map) ret )))
 
+(defn secure-logviewer? [secure-ui?]
+  ;; if ui is using HTTPS, or logviewer.https.port is non-negative,
+  ;; we should use HTTPS for logviewer
+  (if (and (not-nil? (*STORM-CONF* LOGVIEWER-HTTPS-PORT))
+          (>= (*STORM-CONF* LOGVIEWER-HTTPS-PORT) 0))
+    true
+    (if secure-ui?
+       (do
+         (log-warn "Logviewer must use HTTPS because UI is using HTTPS.")
+         true)
+       false)))
+
 (defn logviewer-link [host fname secure?]
-  (if (and secure? (*STORM-CONF* LOGVIEWER-HTTPS-PORT))
+  (if (secure-logviewer? secure?)
     (UIHelpers/urlFormat "https://%s:%s/api/v1/log?file=%s"
       (to-array
         [host
@@ -154,11 +166,27 @@
     (let [fname (WebAppUtils/logsFilename topology-id (str port))]
       (logviewer-link host fname secure?))))
 
-(defn nimbus-log-link [host]
-  (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
+(defn nimbus-log-link [host secure?]
+  (if (secure-logviewer? secure?)
+    (UIHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
+    (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=nimbus.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
 
-(defn supervisor-log-link [host]
-  (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)])))
+(defn supervisor-log-link [host secure?]
+  (if (secure-logviewer? secure?)
+    (UIHelpers/urlFormat "https://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-HTTPS-PORT)]))
+    (UIHelpers/urlFormat "http://%s:%s/api/v1/daemonlog?file=supervisor.log" (to-array [host (*STORM-CONF* LOGVIEWER-PORT)]))))
+
+(defn logviewer-scheme [secure?]
+  (if (secure-logviewer? secure?) "https" "http"))
+
+(defn logviewer-port []
+  (if (and (not-nil? (*STORM-CONF* LOGVIEWER-HTTPS-PORT)) (>= (*STORM-CONF* LOGVIEWER-HTTPS-PORT) 0))
+    (*STORM-CONF* LOGVIEWER-HTTPS-PORT)
+    (*STORM-CONF* LOGVIEWER-PORT)))
+
+
+(defn secure? [scheme]
+  (= scheme :https))
 
 (defn get-error-data
   [error]
@@ -183,12 +211,18 @@
   (if error
     (.get_error_time_secs ^ErrorInfo error)))
 
-(defn worker-dump-link [host port topology-id]
-  (UIHelpers/urlFormat "http://%s:%s/api/v1/dumps/%s/%s"
-    (to-array [(URLEncoder/encode host)
-              (*STORM-CONF* LOGVIEWER-PORT)
-              (URLEncoder/encode topology-id)
-              (str (URLEncoder/encode host) ":" (URLEncoder/encode port))])))
+(defn worker-dump-link [host port topology-id secure?]
+  (if (secure-logviewer? secure?)
+    (UIHelpers/urlFormat "https://%s:%s/api/v1/dumps/%s/%s"
+                         (to-array [(URLEncoder/encode host)
+                                    (*STORM-CONF* LOGVIEWER-HTTPS-PORT)
+                                    (URLEncoder/encode topology-id)
+                                    (str (URLEncoder/encode host) ":" (URLEncoder/encode port))]))
+    (UIHelpers/urlFormat "http://%s:%s/api/v1/dumps/%s/%s"
+                         (to-array [(URLEncoder/encode host)
+                                    (*STORM-CONF* LOGVIEWER-PORT)
+                                    (URLEncoder/encode topology-id)
+                                    (str (URLEncoder/encode host) ":" (URLEncoder/encode port))]))))
 
 (defn stats-times
   [stats-map]
@@ -431,11 +465,11 @@
     ))
 
 (defn nimbus-summary
-  ([]
+  ([secure?]
     (thrift/with-configured-nimbus-connection nimbus
       (nimbus-summary
-        (.get_nimbuses (.getClusterInfo ^Nimbus$Client nimbus)))))
-  ([nimbuses]
+        (.get_nimbuses (.getClusterInfo ^Nimbus$Client nimbus)) secure?)))
+  ([nimbuses secure?]
     (let [nimbus-seeds (set (map #(str %1 ":" (*STORM-CONF* NIMBUS-THRIFT-PORT)) (remove #(Utils/isLocalhostAddress %) (set (*STORM-CONF* NIMBUS-SEEDS)))))
           alive-nimbuses (set (map #(str (.get_host %1) ":" (.get_port %1)) nimbuses))
           offline-nimbuses (clojure.set/difference nimbus-seeds alive-nimbuses)
@@ -447,7 +481,7 @@
          {
           "host" (.get_host n)
           "port" (.get_port n)
-          "nimbusLogLink" (nimbus-log-link (.get_host n))
+          "nimbusLogLink" (nimbus-log-link (.get_host n) secure?)
           "status" (if (.is_isLeader n) "Leader" "Not a Leader")
           "version" (.get_version n)
           "nimbusUpTime" (UIHelpers/prettyUptimeSec uptime)
@@ -474,7 +508,7 @@
      "workerLogLink" (worker-log-link host port topology-id secure?)}))
 
 (defn supervisor-summary-to-json 
-  [summary]
+  [summary secure?]
   (let [slotsTotal (.get_num_workers summary)
         slotsUsed (.get_num_used_workers summary)
         slotsFree (max (- slotsTotal slotsUsed) 0)
@@ -495,7 +529,7 @@
    "totalCpu" totalCpu
    "usedMem" usedMem
    "usedCpu" usedCpu
-   "logLink" (supervisor-log-link (.get_host summary))
+   "logLink" (supervisor-log-link (.get_host summary) secure?)
    "availMem" availMem
    "availCpu" availCpu
    "version" (.get_version summary)}))
@@ -510,20 +544,20 @@
   ([^SupervisorPageInfo supervisor-page-info secure?]
     ;; ask nimbus to return supervisor workers + any details user is allowed
     ;; access on a per-topology basis (i.e. components)
-    (let [supervisors-json (map supervisor-summary-to-json (.get_supervisor_summaries supervisor-page-info))]
+    (let [supervisors-json (map  #(supervisor-summary-to-json % secure?) (.get_supervisor_summaries supervisor-page-info))]
       {"supervisors" supervisors-json
        "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)
        "workers" (into [] (for [^WorkerSummary worker-summary (.get_worker_summaries supervisor-page-info)]
                             (worker-summary-to-json secure? worker-summary)))})))
 
 (defn supervisor-summary
-  ([]
+  ([secure?]
    (thrift/with-configured-nimbus-connection nimbus
                 (supervisor-summary
-                  (.get_supervisors (.getClusterInfo ^Nimbus$Client nimbus)))))
-  ([summs]
+                  (.get_supervisors (.getClusterInfo ^Nimbus$Client nimbus)) secure?)))
+  ([summs secure?]
    {"supervisors" (for [^SupervisorSummary s summs]
-                    (supervisor-summary-to-json s))
+                    (supervisor-summary-to-json s secure?))
     "schedulerDisplayResource" (*STORM-CONF* SCHEDULER-DISPLAY-RESOURCE)}))
 
 (defnk get-topologies-map [summs :conditional (fn [t] true) :keys nil]
@@ -1021,7 +1055,7 @@
      :timestamp  (.get_time_stamp request)}))
 
 (defn get-active-profile-actions
-  [nimbus topology-id component]
+  [nimbus topology-id component secure?]
   (let [profile-actions  (.getComponentPendingProfileActions nimbus
                                                topology-id
                                                component
@@ -1030,7 +1064,7 @@
         active-actions (map (fn [profile-action]
                               {"host" (:host profile-action)
                                "port" (str (:port profile-action))
-                               "dumplink" (worker-dump-link (:host profile-action) (str (:port profile-action)) topology-id)
+                               "dumplink" (worker-dump-link (:host profile-action) (str (:port profile-action)) topology-id secure?)
                                "timestamp" (str (- (:timestamp profile-action) (System/currentTimeMillis)))})
                             latest-profile-actions)]
     (log-message "Latest-active actions are: " (pr-str active-actions))
@@ -1085,7 +1119,7 @@
        "profilingAndDebuggingCapable" (not (Utils/isOnWindows))
        "profileActionEnabled" (*STORM-CONF* WORKER-PROFILER-ENABLED)
        "profilerActive" (if (*STORM-CONF* WORKER-PROFILER-ENABLED)
-                          (get-active-profile-actions nimbus topology-id component)
+                          (get-active-profile-actions nimbus topology-id component secure?)
                           [])))))
 
 (defn unpack-owner-resource-summary [summary]
@@ -1218,11 +1252,11 @@
       (json-response (assoc (cluster-summary user)
                           "bugtracker-url" (*STORM-CONF* UI-PROJECT-BUGTRACKER-URL)
                           "central-log-url" (*STORM-CONF* UI-CENTRAL-LOGGING-URL)) (:callback m))))
-  (GET "/api/v1/nimbus/summary" [:as {:keys [cookies servlet-request]} & m]
+  (GET "/api/v1/nimbus/summary" [:as {:keys [cookies servlet-request scheme]} & m]
     (.mark ui:num-nimbus-summary-http-requests)
     (populate-context! servlet-request)
     (assert-authorized-user "getClusterInfo")
-    (json-response (nimbus-summary) (:callback m)))
+    (json-response (nimbus-summary (secure? scheme)) (:callback m)))
   (GET "/api/v1/owner-resources" [:as {:keys [cookies servlet-request scheme]} id & m]
     (.mark ui:num-get-owner-resource-summaries-http-requests)
     (populate-context! servlet-request)
@@ -1236,12 +1270,13 @@
   (GET "/api/v1/history/summary" [:as {:keys [cookies servlet-request]} & m]
     (let [user (.getUserName http-creds-handler servlet-request)]
       (json-response (topology-history-info user) (:callback m))))
-  (GET "/api/v1/supervisor/summary" [:as {:keys [cookies servlet-request]} & m]
+  (GET "/api/v1/supervisor/summary" [:as {:keys [cookies servlet-request scheme]} & m]
     (.mark ui:num-supervisor-summary-http-requests)
     (populate-context! servlet-request)
     (assert-authorized-user "getClusterInfo")
-    (json-response (assoc (supervisor-summary)
-                     "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m)))
+    (json-response (assoc (supervisor-summary (secure? scheme))
+                     "logviewerPort" (logviewer-port)
+                     "logviewerScheme" (logviewer-scheme (secure? scheme))) (:callback m)))
   (GET "/api/v1/supervisor" [:as {:keys [cookies servlet-request scheme]} & m]
     (.mark ui:num-supervisor-http-requests)
     (populate-context! servlet-request)
@@ -1250,23 +1285,25 @@
     ;; that said, if both the id and host are provided, the id wins
     (let [id (:id m)
           host (:host m)]
-      (json-response (assoc (supervisor-page-info id host (check-include-sys? (:sys m)) (= scheme :https))
-                            "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)) (:callback m))))
+      (json-response (assoc (supervisor-page-info id host (check-include-sys? (:sys m)) (secure? scheme))
+                            "logviewerPort" (logviewer-port)
+                            "logviewerScheme" (logviewer-scheme (secure? scheme))) (:callback m))))
   (GET "/api/v1/topology/summary" [:as {:keys [cookies servlet-request]} & m]
     (.mark ui:num-all-topologies-summary-http-requests)
     (populate-context! servlet-request)
     (assert-authorized-user "getClusterInfo")
     (json-response (all-topologies-summary) (:callback m)))
-  (GET  "/api/v1/topology-workers/:id" [:as {:keys [cookies servlet-request]} id & m]
+  (GET  "/api/v1/topology-workers/:id" [:as {:keys [cookies servlet-request scheme]} id & m]
     (let [id (URLDecoder/decode id)]
       (json-response {"hostPortList" (worker-host-port id)
-                      "logviewerPort" (*STORM-CONF* LOGVIEWER-PORT)} (:callback m))))
+                      "logviewerPort" (logviewer-port)
+                      "logviewerScheme" (logviewer-scheme (secure? scheme))} (:callback m))))
   (GET "/api/v1/topology/:id" [:as {:keys [cookies servlet-request scheme]} id & m]
     (.mark ui:num-topology-page-http-requests)
     (populate-context! servlet-request)
     (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
-      (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (= scheme :https)) (:callback m))))
+      (json-response (topology-page id (:window m) (check-include-sys? (:sys m)) user (secure? scheme)) (:callback m))))
   (GET "/api/v1/topology/:id/metrics" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-topology-metric-http-requests)
     (populate-context! servlet-request)
@@ -1294,7 +1331,7 @@
     (assert-authorized-user "getTopology" (topology-config id))
     (let [user (get-user-name servlet-request)]
       (json-response
-          (component-page id component (:window m) (check-include-sys? (:sys m)) user (= scheme :https))
+          (component-page id component (:window m) (check-include-sys? (:sys m)) user (secure? scheme))
           (:callback m))))
   (GET "/api/v1/topology/:id/logconfig" [:as {:keys [cookies servlet-request]} id & m]
     (.mark ui:num-log-config-http-requests)
@@ -1421,7 +1458,7 @@
         (json-response (log-config id) (m "callback")))))
 
   (GET "/api/v1/topology/:id/profiling/start/:host-port/:timeout"
-       [:as {:keys [servlet-request]} id host-port timeout & m]
+       [:as {:keys [servlet-request scheme]} id host-port timeout & m]
        (if (get *STORM-CONF* WORKER-PROFILER-ENABLED)
          (do
            (populate-context! servlet-request)
@@ -1440,7 +1477,8 @@
                                "dumplink" (worker-dump-link
                                            host
                                            port
-                                           id)}
+                                           id
+                                           (secure? scheme))}
                               (m "callback")))))
          (json-profiling-disabled (m "callback"))))
 
