@@ -1,0 +1,8 @@
+HDFS_BLOBSTORE_DIR='hdfs://some-hdfs-namenode:8080/srv/storm/my-storm-blobstore'
+LOCAL_BLOBSTORE_DIR='/srv/storm'
+HADOOP_CLASSPATH='/hadoop-2.6.5/etc/hadoop/:/hadoop-2.6.5/share/hadoop/common/lib/*:/hadoop-2.6.5/share/hadoop/common/*:/hadoop-2.6.5/share/hadoop/hdfs:/hadoop-2.6.5/share/hadoop/hdfs/lib/*:/hadoop-2.6.5/share/hadoop/hdfs/*:/hadoop-2.6.5/share/hadoop/yarn/lib/*:/hadoop-2.6.5/share/hadoop/yarn/*:/hadoop-2.6.5/share/hadoop/mapreduce/lib/*:/hadoop-2.6.5/share/hadoop/mapreduce/*'
+
+## Optional security configs
+BLOBSTORE_PRINCIPAL='stormUser/my-nimbus-host.example.com@STORM.EXAMPLE.COM'
+KEYTAB_FILE='/srv/my-keytab/stormUser.kt'
+JAAS_CONF='/storm/conf/storm_jaas.conf'
