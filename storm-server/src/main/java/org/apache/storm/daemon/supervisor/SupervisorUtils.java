@@ -69,8 +69,19 @@ public class SupervisorUtils {
      * @param blobInfo
      * @return
      */
-    public static Boolean shouldUncompressBlob(Map<String, Object> blobInfo) {
+    public static boolean shouldUncompressBlob(Map<String, Object> blobInfo) {
         return ObjectReader.getBoolean(blobInfo.get("uncompress"), false);
+    }
+
+    /**
+     * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or
+     * if it's not specified then returns false
+     *
+     * @param blobInfo
+     * @return
+     */
+    public static boolean needsCallback(Map<String, Object> blobInfo) {
+        return ObjectReader.getBoolean(blobInfo.get("workerRestart"), false);
     }
 
     /**
@@ -83,7 +94,8 @@ public class SupervisorUtils {
         List<LocalResource> localResourceList = new ArrayList<>();
         if (blobstoreMap != null) {
             for (Map.Entry<String, Map<String, Object>> map : blobstoreMap.entrySet()) {
-                LocalResource localResource = new LocalResource(map.getKey(), shouldUncompressBlob(map.getValue()));
+                Map<String, Object> blobConf = map.getValue();
+                LocalResource localResource = new LocalResource(map.getKey(), shouldUncompressBlob(blobConf), needsCallback(blobConf));
                 localResourceList.add(localResource);
             }
         }

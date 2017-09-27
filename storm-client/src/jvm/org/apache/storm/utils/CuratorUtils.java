@@ -45,7 +45,7 @@ public class CuratorUtils {
     }
 
     public static CuratorFramework newCurator(Map<String, Object> conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
-        List<String> serverPorts = new ArrayList<String>();
+        List<String> serverPorts = new ArrayList<>();
         for (String zkServer : servers) {
             serverPorts.add(zkServer + ":" + ObjectReader.getInt(port));
         }

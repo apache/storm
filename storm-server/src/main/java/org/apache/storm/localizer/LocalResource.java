@@ -15,30 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.localizer;
 
 /**
- * Local Resource requested by the topology
+ * Local Resource requested by the topology.
  */
 public class LocalResource {
-  private String _blobKey;
-  private boolean _uncompress;
+    private final boolean needsCallback;
+    private final String blobKey;
+    private final boolean uncompress;
 
-  public LocalResource(String keyname, boolean uncompress) {
-    _blobKey = keyname;
-    _uncompress = uncompress;
-  }
+    /**
+     * Constructor.
+     * @param keyname the key of the blob to download.
+     * @param uncompress should the blob be uncompressed or not.
+     * @param needsCallback if the blobs changes should a callback happen so the worker is restarted.
+     */
+    public LocalResource(String keyname, boolean uncompress, boolean needsCallback) {
+        blobKey = keyname;
+        this.uncompress = uncompress;
+        this.needsCallback = needsCallback;
+    }
 
-  public String getBlobName() {
-    return _blobKey;
-  }
+    public String getBlobName() {
+        return blobKey;
+    }
 
-  public boolean shouldUncompress() {
-    return _uncompress;
-  }
+    public boolean shouldUncompress() {
+        return uncompress;
+    }
 
-  @Override
-  public String toString() {
-    return "Key: " + _blobKey + " uncompress: " + _uncompress;
-  }
+    public boolean needsCallback() {
+        return needsCallback;
+    }
+
+    @Override
+    public String toString() {
+        return "Key: " + blobKey + " uncompress: " + uncompress;
+    }
 }
