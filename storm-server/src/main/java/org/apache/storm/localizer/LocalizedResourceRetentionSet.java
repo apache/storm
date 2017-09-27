@@ -15,23 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.localizer;
 
 import com.google.common.annotations.VisibleForTesting;
-import java.nio.file.Path;
-import java.util.concurrent.ConcurrentHashMap;
-import org.apache.commons.io.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * A set of resources that we can look at to see which ones we retain and which ones should be
@@ -39,24 +37,22 @@ import java.util.TreeMap;
  */
 public class LocalizedResourceRetentionSet {
     public static final Logger LOG = LoggerFactory.getLogger(LocalizedResourceRetentionSet.class);
-    private long delSize;
     private long currentSize;
     // targetSize in Bytes
     private long targetSize;
     @VisibleForTesting
-    final SortedMap<ComparableResource, CleanableResourceSet> noReferences;
-    private int resourceCount = 0;
+    final SortedMap<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>> noReferences;
 
     LocalizedResourceRetentionSet(long targetSize) {
         this(targetSize, new LRUComparator());
     }
 
-    LocalizedResourceRetentionSet(long targetSize, Comparator<? super ComparableResource> cmp) {
+    LocalizedResourceRetentionSet(long targetSize, Comparator<? super LocallyCachedBlob> cmp) {
         this(targetSize, new TreeMap<>(cmp));
     }
 
     LocalizedResourceRetentionSet(long targetSize,
-                                  SortedMap<ComparableResource, CleanableResourceSet> retain) {
+                                  SortedMap<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>> retain) {
         this.noReferences = retain;
         this.targetSize = targetSize;
     }
@@ -66,287 +62,88 @@ public class LocalizedResourceRetentionSet {
         return noReferences.size();
     }
 
-    protected void addResourcesForSet(Iterator<LocalizedResource> setIter, LocalizedResourceSet set) {
-        CleanableLocalizedResourceSet cleanset = new CleanableLocalizedResourceSet(set);
-        for (Iterator<LocalizedResource> iter = setIter; setIter.hasNext(); ) {
-            LocalizedResource lrsrc = iter.next();
-            currentSize += lrsrc.getSize();
-            resourceCount ++;
-            if (lrsrc.getRefCount() > 0) {
-                // always retain resources in use
-                continue;
-            }
-            noReferences.put(new LocalizedBlobComparableResource(lrsrc), cleanset);
-        }
-    }
-
-    public void addResources(LocalizedResourceSet set) {
-        addResourcesForSet(set.getLocalFilesIterator(), set);
-        addResourcesForSet(set.getLocalArchivesIterator(), set);
-    }
-
-    public void addResources(ConcurrentHashMap<String, LocallyCachedBlob> blobs) {
-        CleanableLocalizedLocallyCachedBlob set = new CleanableLocalizedLocallyCachedBlob(blobs);
+    /**
+     * Add blobs to be checked if they can be deleted.
+     * @param blobs a map of blob name to the blob object.  The blobs in this map will be deleted from the map
+     *     if they are deleted on disk too.
+     */
+    public void addResources(ConcurrentMap<String, ? extends LocallyCachedBlob> blobs) {
         for (LocallyCachedBlob b: blobs.values()) {
             currentSize += b.getSizeOnDisk();
-            resourceCount ++;
             if (b.isUsed()) {
+                LOG.debug("NOT going to clean up {}, {} depends on it", b.getKey(), b.getDependencies());
                 // always retain resources in use
                 continue;
             }
-            LocallyCachedBlobComparableResource cb = new LocallyCachedBlobComparableResource(b);
-            noReferences.put(cb, set);
+            LOG.debug("Possibly going to clean up {} ts {} size {}", b.getKey(), b.getLastUsed(), b.getSizeOnDisk());
+            noReferences.put(b, blobs);
         }
     }
 
-    public void cleanup() {
+    /**
+     * Actually cleanup the blobs to try and get below the target cache size.
+     * @param store the blobs store client used to check if the blob has been deleted from the blobstore.  If it has, the blob will be
+     *     deleted even if the cache is not over the target size.
+     */
+    public void cleanup(ClientBlobStore store) {
         LOG.debug("cleanup target size: {} current size is: {}", targetSize, currentSize);
-        for (Iterator<Map.Entry<ComparableResource, CleanableResourceSet>> i =
-             noReferences.entrySet().iterator();
-             currentSize - delSize > targetSize && i.hasNext();) {
-            Map.Entry<ComparableResource, CleanableResourceSet> rsrc = i.next();
-            ComparableResource resource = rsrc.getKey();
-            CleanableResourceSet set = rsrc.getValue();
-            if (resource != null && set.remove(resource)) {
-                if (set.deleteUnderlyingResource(resource)) {
-                    delSize += resource.getSize();
-                    LOG.info("deleting: {} with size of: {}", resource.getNameForDebug(), resource.getSize());
+        long bytesOver = currentSize - targetSize;
+        //First delete everything that no longer exists...
+        for (Iterator<Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>>> i = noReferences.entrySet().iterator();
+             i.hasNext();) {
+            Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>> rsrc = i.next();
+            LocallyCachedBlob resource = rsrc.getKey();
+            try {
+                resource.getRemoteVersion(store);
+            } catch (AuthorizationException e) {
+                //Ignored
+            } catch (KeyNotFoundException e) {
+                //The key was removed so we should delete it too.
+                Map<String, ? extends LocallyCachedBlob> set = rsrc.getValue();
+                if (removeBlob(resource, set)) {
+                    bytesOver -= resource.getSizeOnDisk();
+                    LOG.info("Deleted blob: {} (KEY NOT FOUND).", resource.getKey());
                     i.remove();
-                } else {
-                    // since it failed to delete add it back so it gets retried
-                    set.add(resource.getKey(), resource);
                 }
             }
         }
+
+        for (Iterator<Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>>> i = noReferences.entrySet().iterator();
+             bytesOver > 0 && i.hasNext();) {
+            Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>> rsrc = i.next();
+            LocallyCachedBlob resource = rsrc.getKey();
+            Map<String, ? extends LocallyCachedBlob> set = rsrc.getValue();
+            if (removeBlob(resource, set)) {
+                bytesOver -= resource.getSizeOnDisk();
+                LOG.info("Deleted blob: {} (OVER SIZE LIMIT).", resource.getKey());
+                i.remove();
+            }
+        }
     }
 
-    @VisibleForTesting
-    public boolean deleteResource(CleanableResourceSet set, ComparableResource resource) {
-        return set.deleteUnderlyingResource(resource);
-    }
-
-    public long getCurrentSize() {
-        return currentSize;
-    }
-
-    public int getResourceCount() {
-        return resourceCount;
+    private boolean removeBlob(LocallyCachedBlob blob, Map<String, ? extends LocallyCachedBlob> blobs) {
+        synchronized (blob) {
+            if (!blob.isUsed()) {
+                try {
+                    blob.completelyRemove();
+                } catch (Exception e) {
+                    LOG.warn("Tried to remove {} but failed with", blob, e);
+                }
+                blobs.remove(blob.getKey());
+                return true;
+            }
+            return false;
+        }
     }
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("Cache: ").append(currentSize).append(", ");
-        sb.append("Deleted: ").append(delSize);
-        return sb.toString();
+        return "Cache: " + currentSize;
     }
 
-    interface ComparableResource {
-        long getLastAccessTime();
-
-        long getSize();
-
-        String getNameForDebug();
-
-        String getKey();
-    }
-
-    interface CleanableResourceSet {
-        boolean remove(ComparableResource resource);
-
-        void add(String key, ComparableResource resource);
-
-        boolean deleteUnderlyingResource(ComparableResource resource);
-    }
-
-    public static class LocallyCachedBlobComparableResource implements ComparableResource {
-        private final LocallyCachedBlob blob;
-
-        public LocallyCachedBlobComparableResource(LocallyCachedBlob blob) {
-            this.blob = blob;
-        }
-
-        @Override
-        public long getLastAccessTime() {
-            return blob.getLastUsed();
-        }
-
-        @Override
-        public long getSize() {
-            return blob.getSizeOnDisk();
-        }
-
-        @Override
-        public String getNameForDebug() {
-            return blob.getKey();
-        }
-
-        @Override
-        public String getKey() {
-            return blob.getKey();
-        }
-
-        @Override
-        public String toString() {
-            return blob.toString();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (other instanceof LocallyCachedBlobComparableResource) {
-                return blob.equals(((LocallyCachedBlobComparableResource) other).blob);
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return blob.hashCode();
-        }
-    }
-
-    private static class CleanableLocalizedLocallyCachedBlob implements CleanableResourceSet {
-        private final ConcurrentHashMap<String, LocallyCachedBlob> blobs;
-
-        public CleanableLocalizedLocallyCachedBlob(ConcurrentHashMap<String, LocallyCachedBlob> blobs) {
-            this.blobs = blobs;
-        }
-
-        @Override
-        public boolean remove(ComparableResource resource) {
-            if (!(resource instanceof LocallyCachedBlobComparableResource)) {
-                throw new IllegalStateException(resource + " must be a LocallyCachedBlobComparableResource");
-            }
-            LocallyCachedBlob blob = ((LocallyCachedBlobComparableResource)resource).blob;
-            synchronized (blob) {
-                if (!blob.isUsed()) {
-                    try {
-                        blob.completelyRemove();
-                    } catch (Exception e) {
-                        LOG.warn("Tried to remove {} but failed with", blob, e);
-                    }
-                    blobs.remove(blob.getKey());
-                    return true;
-                }
-                return false;
-            }
-        }
-
-        @Override
-        public void add(String key, ComparableResource resource) {
-            ///NOOP not used
-        }
-
-        @Override
-        public boolean deleteUnderlyingResource(ComparableResource resource) {
-            //NOOP not used
-            return true;
-        }
-    }
-
-    private static class LocalizedBlobComparableResource implements ComparableResource {
-        private final LocalizedResource resource;
-
-        private LocalizedBlobComparableResource(LocalizedResource resource) {
-            this.resource = resource;
-        }
-
-        @Override
-        public long getLastAccessTime() {
-            return resource.getLastAccessTime();
-        }
-
-        @Override
-        public long getSize() {
-            return resource.getSize();
-        }
-
-        @Override
-        public String getNameForDebug() {
-            return resource.getFilePath();
-        }
-
-        @Override
-        public String getKey() {
-            return resource.getKey();
-        }
-
-        @Override
-        public String toString() {
-            return resource.getKey() + " at " + resource.getFilePathWithVersion();
-        }
-
-        @Override
-        public boolean equals(Object other) {
-            if (other instanceof LocalizedBlobComparableResource) {
-                return resource.equals(((LocalizedBlobComparableResource) other).resource);
-            }
-            return false;
-        }
-
-        @Override
-        public int hashCode() {
-            return resource.hashCode();
-        }
-    }
-
-    private static class CleanableLocalizedResourceSet implements CleanableResourceSet {
-        private final LocalizedResourceSet set;
-
-        public CleanableLocalizedResourceSet(LocalizedResourceSet set) {
-            this.set = set;
-        }
-
-        @Override
-        public boolean remove(ComparableResource resource) {
-            if (!(resource instanceof LocalizedBlobComparableResource)) {
-                throw new IllegalStateException(resource + " must be a LocalizedBlobComparableResource");
-            }
-            return set.remove(((LocalizedBlobComparableResource)resource).resource);
-        }
-
-        @Override
-        public void add(String key, ComparableResource resource) {
-            if (!(resource instanceof LocalizedBlobComparableResource)) {
-                throw new IllegalStateException(resource + " must be a LocalizedBlobComparableResource");
-            }
-            LocalizedResource r = ((LocalizedBlobComparableResource)resource).resource;
-            set.add(key, r, r.isUncompressed());
-        }
-
-        @Override
-        public boolean deleteUnderlyingResource(ComparableResource resource) {
-            if (resource instanceof LocalizedBlobComparableResource) {
-                LocalizedResource lr = ((LocalizedBlobComparableResource) resource).resource;
-                try {
-                    Path fileWithVersion = new File(lr.getFilePathWithVersion()).toPath();
-                    Path currentSymLink = new File(lr.getCurrentSymlinkPath()).toPath();
-                    Path versionFile = new File(lr.getVersionFilePath()).toPath();
-
-                    if (lr.isUncompressed()) {
-                        if (Files.exists(fileWithVersion)) {
-                            // this doesn't follow symlinks, which is what we want
-                            FileUtils.deleteDirectory(fileWithVersion.toFile());
-                        }
-                    } else {
-                        Files.deleteIfExists(fileWithVersion);
-                    }
-                    Files.deleteIfExists(currentSymLink);
-                    Files.deleteIfExists(versionFile);
-                    return true;
-                } catch (IOException e) {
-                    LOG.warn("Could not delete: {}", resource.getNameForDebug(), e);
-                }
-                return false;
-            }  else {
-                throw new IllegalArgumentException("Don't know how to handle a " + resource.getClass());
-            }
-        }
-    }
-
-    static class LRUComparator implements Comparator<ComparableResource> {
-        public int compare(ComparableResource r1, ComparableResource r2) {
-            long ret = r1.getLastAccessTime() - r2.getLastAccessTime();
+    static class LRUComparator implements Comparator<LocallyCachedBlob> {
+        public int compare(LocallyCachedBlob r1, LocallyCachedBlob r2) {
+            long ret = r1.getLastUsed() - r2.getLastUsed();
             if (0 == ret) {
                 return System.identityHashCode(r1) - System.identityHashCode(r2);
             }

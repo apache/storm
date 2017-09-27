@@ -21,7 +21,7 @@
     <property name="pattern">%d{yyyy-MM-dd HH:mm:ss.SSS} %c{1.} %t [%p] %msg%n</property>
 </properties>
 <appenders>
-    <RollingFile name="A1" immediateFlush="false"
+    <RollingFile name="A1" 
                  fileName="${sys:storm.log.dir}/${sys:logfile.name}"
                  filePattern="${sys:storm.log.dir}/${sys:logfile.name}.%i.gz">
         <PatternLayout>
@@ -32,7 +32,7 @@
         </Policies>
         <DefaultRolloverStrategy max="9"/>
     </RollingFile>
-    <RollingFile name="WEB-ACCESS" immediateFlush="false"
+    <RollingFile name="WEB-ACCESS" 
                  fileName="${sys:storm.log.dir}/access-web-${sys:daemon.name}.log"
                  filePattern="${sys:storm.log.dir}/access-web-${sys:daemon.name}.log.%i.gz">
         <PatternLayout>
@@ -43,7 +43,7 @@
         </Policies>
         <DefaultRolloverStrategy max="9"/>
     </RollingFile>
-    <RollingFile name="THRIFT-ACCESS" immediateFlush="false"
+    <RollingFile name="THRIFT-ACCESS" 
                  fileName="${sys:storm.log.dir}/access-${sys:logfile.name}"
                  filePattern="${sys:storm.log.dir}/access-${sys:logfile.name}.%i.gz">
     <PatternLayout>
