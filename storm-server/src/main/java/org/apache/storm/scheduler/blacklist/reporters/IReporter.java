@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler.blacklist.reporters;
 
 import java.util.List;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * report blacklist to alert system
+ * report blacklist to alert system.
  */
 public interface IReporter {
     void report(String message);

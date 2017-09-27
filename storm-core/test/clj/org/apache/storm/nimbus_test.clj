@@ -1619,13 +1619,12 @@
                     {STORM-ZOOKEEPER-AUTH-SCHEME scheme
                      STORM-ZOOKEEPER-AUTH-PAYLOAD digest
                      STORM-PRINCIPAL-TO-LOCAL-PLUGIN "org.apache.storm.security.auth.DefaultPrincipalToLocal"
+                     NIMBUS-MONITOR-FREQ-SECS 10
                      NIMBUS-THRIFT-PORT 6666})
           expected-acls Nimbus/ZK_ACLS
           fake-inimbus (reify INimbus (getForcedScheduler [this] nil) (prepare [this conf dir] nil))
           fake-cu (proxy [ServerConfigUtils] []
                     (nimbusTopoHistoryStateImpl [conf] nil))
-          fake-ru (proxy [ReflectionUtils] []
-                    (newInstanceImpl [_]))
           fake-utils (proxy [Utils] []
                        (makeUptimeComputer [] (proxy [Utils$UptimeComputer] []
                                                 (upTime [] 0))))
@@ -1633,7 +1632,6 @@
 	  fake-common (proxy [StormCommon] []
                              (mkAuthorizationHandler [_] nil))]
       (with-open [_ (ServerConfigUtilsInstaller. fake-cu)
-                  _ (ReflectionUtilsInstaller. fake-ru)
                   _ (UtilsInstaller. fake-utils)
                   - (StormCommonInstaller. fake-common)
                   zk-le (MockedZookeeper. (proxy [Zookeeper] []

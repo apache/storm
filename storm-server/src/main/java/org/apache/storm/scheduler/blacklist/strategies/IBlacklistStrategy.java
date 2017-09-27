@@ -15,22 +15,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler.blacklist.strategies;
 
-import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.Topologies;
-
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.storm.scheduler.Cluster;
+import org.apache.storm.scheduler.Topologies;
 
 public interface IBlacklistStrategy {
 
     void prepare(Map conf);
 
     /**
-     * Get blacklist by blacklist strategy
+     * Get blacklist by blacklist strategy.
+     *
      * @param badSupervisorsToleranceSlidingWindow bad supervisors buffered in sliding window
      * @param cluster the cluster these topologies are running in. `cluster` contains everything user
      *       need to develop a new scheduling logic. e.g. supervisors information, available slots, current

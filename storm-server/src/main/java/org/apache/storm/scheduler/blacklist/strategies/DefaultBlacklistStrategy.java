@@ -15,7 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler.blacklist.strategies;
+
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.scheduler.Cluster;
@@ -29,13 +37,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
-
 public class DefaultBlacklistStrategy implements IBlacklistStrategy {
 
     private static Logger LOG = LoggerFactory.getLogger(DefaultBlacklistStrategy.class);
@@ -43,24 +44,25 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME = 1800;
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT = 3;
 
-    private IReporter _reporter;
+    private IReporter reporter;
 
-    private int _toleranceCount;
-    private int _resumeTime;
-    private int _nimbusMonitorFreqSecs;
+    private int toleranceCount;
+    private int resumeTime;
+    private int nimbusMonitorFreqSecs;
 
     private TreeMap<String, Integer> blacklist;
 
     @Override
-    public void prepare(Map conf){
-        _toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT), DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
-        _resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
+    public void prepare(Map conf) {
+        toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
+                DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
+        resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);
 
         String reporterClassName = ObjectReader.getString(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_REPORTER),
                 LogReporter.class.getName());
-        _reporter = (IReporter) initializeInstance(reporterClassName, "blacklist reporter");
+        reporter = (IReporter) initializeInstance(reporterClassName, "blacklist reporter");
 
-        _nimbusMonitorFreqSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
+        nimbusMonitorFreqSecs = ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_MONITOR_FREQ_SECS));
         blacklist = new TreeMap<>();
     }
 
@@ -78,12 +80,12 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
         for (Map.Entry<String, Integer> entry : countMap.entrySet()) {
             String supervisor = entry.getKey();
             int count = entry.getValue();
-            if (count >= _toleranceCount) {
+            if (count >= toleranceCount) {
                 if (!blacklist.containsKey(supervisor)) { // if not in blacklist then add it and set the resume time according to config
                     LOG.debug("add supervisor {} to blacklist", supervisor);
                     LOG.debug("supervisorsWithFailures : {}", supervisorsWithFailures);
-                    _reporter.reportBlacklist(supervisor, supervisorsWithFailures);
-                    blacklist.put(supervisor, _resumeTime / _nimbusMonitorFreqSecs);
+                    reporter.reportBlacklist(supervisor, supervisorsWithFailures);
+                    blacklist.put(supervisor, resumeTime / nimbusMonitorFreqSecs);
                 }
             }
         }
@@ -130,8 +132,9 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
             int shortage = totalNeedNumWorkers - availableSlotsNotInBlacklistCount;
 
             if (shortage > 0) {
-                LOG.info("total needed num of workers :{}, available num of slots not in blacklist :{},num blacklist :{}, will release some blacklist."
-                        , totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
+                LOG.info("total needed num of workers :{}, available num of slots not in blacklist :{}, num blacklist :{}, " +
+                        "will release some blacklist.", totalNeedNumWorkers, availableSlotsNotInBlacklistCount, blacklist.size());
+
                 //release earliest blacklist
                 Set<String> readyToRemove = new HashSet<>();
                 for (String supervisor : blacklist.keySet()) { //blacklist is treeMap sorted by value, minimum value means earliest

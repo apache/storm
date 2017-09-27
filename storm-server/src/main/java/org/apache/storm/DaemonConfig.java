@@ -18,15 +18,25 @@
 
 package org.apache.storm;
 
+import static org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isType;
+import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
+
+import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
-import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
-import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
-import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
-import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
-import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
@@ -35,8 +45,6 @@ import org.apache.storm.validation.Validated;
 
 import java.util.ArrayList;
 import java.util.Map;
-
-import static org.apache.storm.validation.ConfigValidationAnnotations.*;
 
 /**
  * Storm configs are specified as a plain old map. This class provides constants for
@@ -110,32 +118,32 @@ public class DaemonConfig implements Validated {
     public static final String STORM_SCHEDULER = "storm.scheduler";
 
     /**
-     * The number of seconds that the blacklist scheduler will concern of bad slots or supervisors
+     * The number of seconds that the blacklist scheduler will concern of bad slots or supervisors.
      */
-    @isInteger
+    @isPositiveNumber
     public static final String BLACKLIST_SCHEDULER_TOLERANCE_TIME = "blacklist.scheduler.tolerance.time.secs";
 
     /**
-     * The number of hit count that will trigger blacklist in tolerance time
+     * The number of hit count that will trigger blacklist in tolerance time.
      */
-    @isInteger
+    @isPositiveNumber
     public static final String BLACKLIST_SCHEDULER_TOLERANCE_COUNT = "blacklist.scheduler.tolerance.count";
 
     /**
-     * The number of seconds that the blacklisted slots or supervisor will be resumed
+     * The number of seconds that the blacklisted slots or supervisor will be resumed.
      */
-    @isInteger
+    @isPositiveNumber
     public static final String BLACKLIST_SCHEDULER_RESUME_TIME = "blacklist.scheduler.resume.time.secs";
 
     /**
-     * The class that the blacklist scheduler will report the blacklist
+     * The class that the blacklist scheduler will report the blacklist.
      */
     @NotNull
     @isImplementationOfClass(implementsClass = IReporter.class)
     public static final String BLACKLIST_SCHEDULER_REPORTER = "blacklist.scheduler.reporter";
 
     /**
-     * The class that specifies the eviction strategy to use in blacklist scheduler
+     * The class that specifies the eviction strategy to use in blacklist scheduler.
      */
     @NotNull
     @isImplementationOfClass(implementsClass = IBlacklistStrategy.class)
@@ -144,7 +152,7 @@ public class DaemonConfig implements Validated {
     /**
      * Whether we want to display all the resource capacity and scheduled usage on the UI page.
      * You MUST have this variable set if you are using any kind of resource-related scheduler.
-     *
+     * <p/>
      * If this is not set, we will not display resource capacity and usage on the UI.
      */
     @isBoolean
@@ -155,7 +163,7 @@ public class DaemonConfig implements Validated {
      * Provides a way for a @link{STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN}
      * implementation to access optional settings.
      */
-    @isType(type=Map.class)
+    @isType(type = Map.class)
     public static final String STORM_GROUP_MAPPING_SERVICE_PARAMS = "storm.group.mapping.service.params";
 
     /**
@@ -873,7 +881,9 @@ public class DaemonConfig implements Validated {
      * A map of users to another map of the resource guarantees of the user. Used by Resource Aware Scheduler to ensure
      * per user resource guarantees.
      */
-    @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class}, valueValidatorClasses = {ConfigValidation.UserResourcePoolEntryValidator.class})
+    @isMapEntryCustom(
+            keyValidatorClasses = {ConfigValidation.StringValidator.class},
+            valueValidatorClasses = {ConfigValidation.UserResourcePoolEntryValidator.class})
     public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS = "resource.aware.scheduler.user.pools";
 
     /**
