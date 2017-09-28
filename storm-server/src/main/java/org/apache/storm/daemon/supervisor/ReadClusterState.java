@@ -41,7 +41,7 @@ import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.localizer.ILocalizer;
+import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
@@ -60,7 +60,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final AtomicInteger readRetry = new AtomicInteger(0);
     private final String assignmentId;
     private final ISupervisor iSuper;
-    private final ILocalizer localizer;
+    private final AsyncLocalizer localizer;
     private final ContainerLauncher launcher;
     private final String host;
     private final LocalState localState;

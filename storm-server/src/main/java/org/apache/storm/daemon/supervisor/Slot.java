@@ -43,7 +43,7 @@ import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileAction;
 import org.apache.storm.generated.ProfileRequest;
-import org.apache.storm.localizer.ILocalizer;
+import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
@@ -79,7 +79,7 @@ public class Slot extends Thread implements AutoCloseable {
     }
     
     static class StaticState {
-        public final ILocalizer localizer;
+        public final AsyncLocalizer localizer;
         public final long hbTimeoutMs;
         public final long firstHbTimeoutMs;
         public final long killSleepMs;
@@ -90,10 +90,10 @@ public class Slot extends Thread implements AutoCloseable {
         public final ISupervisor iSupervisor;
         public final LocalState localState;
         
-        StaticState(ILocalizer localizer, long hbTimeoutMs, long firstHbTimeoutMs,
-                long killSleepMs, long monitorFreqMs,
-                ContainerLauncher containerLauncher, String host, int port,
-                ISupervisor iSupervisor, LocalState localState) {
+        StaticState(AsyncLocalizer localizer, long hbTimeoutMs, long firstHbTimeoutMs,
+                    long killSleepMs, long monitorFreqMs,
+                    ContainerLauncher containerLauncher, String host, int port,
+                    ISupervisor iSupervisor, LocalState localState) {
             this.localizer = localizer;
             this.hbTimeoutMs = hbTimeoutMs;
             this.firstHbTimeoutMs = firstHbTimeoutMs;
@@ -684,12 +684,12 @@ public class Slot extends Thread implements AutoCloseable {
     private volatile DynamicState dynamicState;
     private final AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments;
     
-    public Slot(ILocalizer localizer, Map<String, Object> conf, 
-            ContainerLauncher containerLauncher, String host,
-            int port, LocalState localState,
-            IStormClusterState clusterState,
-            ISupervisor iSupervisor,
-            AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments) throws Exception {
+    public Slot(AsyncLocalizer localizer, Map<String, Object> conf,
+                ContainerLauncher containerLauncher, String host,
+                int port, LocalState localState,
+                IStormClusterState clusterState,
+                ISupervisor iSupervisor,
+                AtomicReference<Map<Long, LocalAssignment>> cachedCurrentAssignments) throws Exception {
         super("SLOT_"+port);
 
         this.cachedCurrentAssignments = cachedCurrentAssignments;
