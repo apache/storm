@@ -310,7 +310,7 @@ public class DaemonConfig implements Validated {
     public static final String LOGVIEWER_MAX_PER_WORKER_LOGS_SIZE_MB = "logviewer.max.per.worker.logs.size.mb";
 
     /**
-     * Storm Logviewer HTTPS port.
+     * Storm Logviewer HTTPS port. Logviewer must use HTTPS if Storm UI is using HTTPS.
      */
     @isInteger
     @isPositiveNumber
@@ -413,7 +413,7 @@ public class DaemonConfig implements Validated {
     public static final String UI_HEADER_BUFFER_BYTES = "ui.header.buffer.bytes";
 
     /**
-     * This port is used by Storm DRPC for receiving HTTPS (SSL) DPRC requests from clients.
+     * This port is used by Storm UI for receiving HTTPS (SSL) requests from clients.
      */
     @isInteger
     @isPositiveNumber

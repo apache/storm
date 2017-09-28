@@ -91,11 +91,12 @@ $(document).ready(function() {
             $('#search-form [data-toggle="tooltip"]').tooltip();
         });
 
-        function render_file(file, host, logviewerPort, count, template) {
+        function render_file(file, host, logviewerPort, logviewerScheme, count, template) {
             file.host = host;
             file.id = id;
             file.count = count;
             file.logviewerPort = logviewerPort;
+            file.logviewerScheme = logviewerScheme;
             file.search_archived = search_archived;
             if (file.matches == 0) {
                file.resultNotFound = true;
@@ -131,6 +132,7 @@ $(document).ready(function() {
                 result.append(Mustache.render($(template).filter("#search-result-files-template").html(),response));
 
                 var logviewerPort = response.logviewerPort;
+                var logviewerScheme = response.logviewerScheme;
                 var distinct_hosts = {};
                 for (var index in response.supervisors) {
                     distinct_hosts[response.supervisors[index].host] = true;
@@ -138,7 +140,7 @@ $(document).ready(function() {
 
 
                 for (var host in distinct_hosts) {
-                    var searchURL = "http://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
+                    var searchURL = logviewerScheme + "://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&port="+port;
                     if(search_archived)
                         searchURL += "&search-archived=" + search_archived;
                     
@@ -152,13 +154,13 @@ $(document).ready(function() {
                                 if(port == "*") {
                                     for(var by_port in data) {
                                         for(var i in data[by_port].matches) {
-                                            render_file(data[by_port].matches[i], this.host, logviewerPort, count, template);
+                                            render_file(data[by_port].matches[i], this.host, logviewerPort, logviewerScheme, count, template);
                                         }
                                     }
                                 }
                                 else {
                                     for(var i in data.matches) {
-                                        render_file(data.matches[i], this.host, logviewerPort, count, template);
+                                        render_file(data.matches[i], this.host, logviewerPort, logviewerScheme, count, template);
                                     }
                                 }
                             }, {host: host, id: id})

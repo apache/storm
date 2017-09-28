@@ -66,14 +66,15 @@ $(document).ready(function() {
            result.append(Mustache.render($(template).filter("#search-result-files-template").html(),response));
 
            var logviewerPort = response.logviewerPort;
+           var logviewerScheme = response.logviewerScheme;
            for (var index in response.hostPortList) {
              var host = response.hostPortList[index].host;
              var port = response.hostPortList[index].port;
              var elemId = response.hostPortList[index].elemId;
              var file = id+"/"+port+"/worker.log";
-             var searchURL = "http://"+host+":"+logviewerPort+"/api/v1/search?file="+encodeURIComponent(file)+"&search-string="+search+"&num-matches="+count;
+             var searchURL = logviewerScheme + "://"+host+":"+logviewerPort+"/api/v1/search?file="+encodeURIComponent(file)+"&search-string="+search+"&num-matches="+count;
              if (searchArchived != "") {
-               searchURL = "http://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&search-archived=true&port="+port;
+               searchURL = logviewerScheme + "://"+host+":"+logviewerPort+"/api/v1/deepSearch/"+id+"?search-string="+search+"&num-matches="+count+"&search-archived=true&port="+port;
              }
 
              $.ajax({dataType: "json",
@@ -87,6 +88,7 @@ $(document).ready(function() {
                                   data.port = this.port;
                                   data.id = id;
                                   data.logviewerPort = logviewerPort;
+                                  data.logviewerScheme = logviewerScheme;
                                   var searchTemp = $(template).filter("#search-result-identified-template").html();
                                   if (searchArchived != "") {
                                     searchTemp = $(template).filter("#deepsearch-result-identified-template").html();
