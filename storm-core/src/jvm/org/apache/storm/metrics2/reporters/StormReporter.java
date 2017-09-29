@@ -22,7 +22,7 @@ import com.codahale.metrics.Reporter;
 
 import java.util.Map;
 
-public interface StormReporter<T extends Reporter> {
+public interface StormReporter extends Reporter {
     String REPORT_PERIOD = "report.period";
     String REPORT_PERIOD_UNITS = "report.period.units";
 

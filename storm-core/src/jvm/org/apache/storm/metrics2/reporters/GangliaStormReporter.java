@@ -30,7 +30,7 @@ import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class GangliaStormReporter extends ScheduledStormReporter<GangliaReporter> {
+public class GangliaStormReporter extends ScheduledStormReporter {
     private final static Logger LOG = LoggerFactory.getLogger(GangliaStormReporter.class);
 
     public static final String GANGLIA_HOST = "ganglia.host";
@@ -99,7 +99,6 @@ public class GangliaStormReporter extends ScheduledStormReporter<GangliaReporter
             GMetric sender = new GMetric(group, port, mode, ttl);
             reporter = builder.build(sender);
         }catch (IOException ioe){
-            //TODO
             LOG.error("Exception in GangliaReporter config", ioe);
         }
     }

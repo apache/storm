@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class GraphiteStormReporter extends ScheduledStormReporter<GraphiteReporter> {
+public class GraphiteStormReporter extends ScheduledStormReporter {
     private final static Logger LOG = LoggerFactory.getLogger(GraphiteStormReporter.class);
 
     public static final String GRAPHITE_PREFIXED_WITH = "graphite.prefixed.with";
@@ -76,11 +76,9 @@ public class GraphiteStormReporter extends ScheduledStormReporter<GraphiteReport
         Integer port = getMetricsTargetPort(reporterConf);
         String transport = getMetricsTargetTransport(reporterConf);
         GraphiteSender sender = null;
-        //TODO: error checking
         if (transport.equalsIgnoreCase("udp")) {
             sender = new GraphiteUDP(host, port);
         } else {
-            //TODO: pickled support
             sender = new Graphite(host, port);
         }
         reporter = builder.build(sender);

@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class JmxStormReporter implements StormReporter<JmxReporter> {
+public class JmxStormReporter implements StormReporter {
     private final static Logger LOG = LoggerFactory.getLogger(JmxStormReporter.class);
     public static final String JMX_DOMAIN = "jmx.domain";
     JmxReporter reporter = null;

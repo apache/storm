@@ -27,11 +27,11 @@ import org.slf4j.LoggerFactory;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public abstract class ScheduledStormReporter<T extends ScheduledReporter> implements StormReporter{
+public abstract class ScheduledStormReporter implements StormReporter{
     private static final Logger LOG = LoggerFactory.getLogger(ScheduledStormReporter.class);
     protected ScheduledReporter reporter;
-    long reportingPeriod;
-    TimeUnit reportingPeriodUnit;
+    protected long reportingPeriod;
+    protected TimeUnit reportingPeriodUnit;
 
     @Override
     public void start() {
@@ -54,7 +54,7 @@ public abstract class ScheduledStormReporter<T extends ScheduledReporter> implem
     }
 
 
-    static TimeUnit getReportPeriodUnit(Map<String, Object> reporterConf) {
+    public static TimeUnit getReportPeriodUnit(Map<String, Object> reporterConf) {
         TimeUnit unit = getTimeUnitForConfig(reporterConf, REPORT_PERIOD_UNITS);
         return unit == null ? TimeUnit.SECONDS : unit;
     }
@@ -67,11 +67,11 @@ public abstract class ScheduledStormReporter<T extends ScheduledReporter> implem
         return null;
     }
 
-    static long getReportPeriod(Map reporterConf) {
+    public static long getReportPeriod(Map reporterConf) {
         return Utils.getInt(reporterConf.get(REPORT_PERIOD), 10).longValue();
     }
 
-    static StormMetricsFilter getMetricsFilter(Map reporterConf){
+    public static StormMetricsFilter getMetricsFilter(Map reporterConf){
         StormMetricsFilter filter = null;
         Map<String, Object> filterConf = (Map)reporterConf.get("filter");
         String clazz = (String) filterConf.get("class");

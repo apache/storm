@@ -23,6 +23,7 @@ import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.metrics2.reporters.StormReporter;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,8 +47,8 @@ public class StormMetricRegistry {
     public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, String componentId, Integer port){
         SimpleGauge<T> gauge = new SimpleGauge<>(initialValue);
         String metricName = metricName(name, topologyId, componentId, port);
-            if(REGISTRY.getGauges().containsKey(metricName)){
-                return (SimpleGauge)REGISTRY.getGauges().get(metricName);
+        if(REGISTRY.getGauges().containsKey(metricName)){
+            return (SimpleGauge)REGISTRY.getGauges().get(metricName);
         } else {
             return REGISTRY.register(metricName, gauge);
         }
@@ -72,16 +73,12 @@ public class StormMetricRegistry {
     }
 
     public static void start(Map<String, Object> stormConfig, DaemonType type){
-        String localHost = (String)stormConfig.get(Config.STORM_LOCAL_HOSTNAME);
-        if(localHost != null){
-            hostName = localHost;
-        } else {
-            try {
-                hostName = InetAddress.getLocalHost().getCanonicalHostName();
-            } catch (UnknownHostException e) {
-                 LOG.warn("Unable to determine hostname while starting the metrics system. Hostname ill be reported" +
-                         " as 'localhost'.");
-            }
+        String localHost = "localhost";
+        try {
+            hostName = Utils.localHostname();
+        } catch (UnknownHostException e) {
+             LOG.warn("Unable to determine hostname while starting the metrics system. Hostname ill be reported" +
+                     " as 'localhost'.");
         }
 
         LOG.info("Starting metrics reporters...");

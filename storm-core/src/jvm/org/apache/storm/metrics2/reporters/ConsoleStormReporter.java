@@ -28,7 +28,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class ConsoleStormReporter extends ScheduledStormReporter<ConsoleReporter> {
+public class ConsoleStormReporter extends ScheduledStormReporter {
     private final static Logger LOG = LoggerFactory.getLogger(ConsoleStormReporter.class);
 
     @Override

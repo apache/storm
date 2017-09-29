@@ -31,7 +31,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
-public class CsvStormReporter extends ScheduledStormReporter<CsvReporter> {
+public class CsvStormReporter extends ScheduledStormReporter {
     private final static Logger LOG = LoggerFactory.getLogger(CsvStormReporter.class);
 
     public static final String CSV_LOG_DIR = "csv.log.dir";
