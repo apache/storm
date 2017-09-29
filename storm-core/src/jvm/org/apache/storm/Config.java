@@ -139,7 +139,7 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
 
-    @isType(type=List.class)
+    @isListEntryCustom(entryValidatorClasses={MetricReportersValidator.class})
     public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
 
     /**

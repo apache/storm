@@ -493,6 +493,46 @@ public class ConfigValidation {
         }
     }
 
+    public static class MetricReportersValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if(o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if(!((Map) o).containsKey("class") ) {
+                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            }
+            if(!((Map) o).containsKey("daemons") ) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: daemons");
+            } else {
+                // daemons can only be 'nimbus', 'supervisor', or 'worker'
+                Object list = ((Map)o).get("daemons");
+                if(list == null || !(list instanceof List)){
+                    throw new IllegalArgumentException("Field 'daemons' must be a non-null list.");
+                }
+                List daemonList = (List)list;
+                for(Object string : daemonList){
+                    if (string instanceof String &&
+                            (((String) string).equals("nimbus") ||
+                                    ((String) string).equals("supervisor") ||
+                                    ((String) string).equals("worker"))) {
+                        return;
+                    }
+                    throw new IllegalArgumentException("Field daemons must contain at least one of \"nimbus\", \"supervisor\", or \"worker\"");
+                }
+
+            }
+            if(((Map)o).containsKey("filter")){
+                Map filterMap = (Map)((Map)o).get("filter");
+                SimpleTypeValidator.validateField("filter", String.class, filterMap.get("class"));
+            }
+            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
+
+        }
+    }
+
     public static class MapOfStringToMapOfStringToObjectValidator extends Validator {
       @Override
       public  void validateField(String name, Object o) {
