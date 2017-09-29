@@ -366,6 +366,7 @@
         <module>external/storm-jms</module>
         <module>external/storm-pmml</module>
         <module>external/storm-rocketmq</module>
+        <module>external/storm-blobstore-migration</module>
         <module>integration-test</module>
 
         <!-- examples -->
