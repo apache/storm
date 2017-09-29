@@ -274,6 +274,12 @@ topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.sch
 resource.aware.scheduler.eviction.strategy: "org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy"
 resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
 
+blacklist.scheduler.tolerance.time.secs: 300
+blacklist.scheduler.tolerance.count: 3
+blacklist.scheduler.resume.time.secs: 1800
+blacklist.scheduler.reporter: "org.apache.storm.scheduler.blacklist.reporters.LogReporter"
+blacklist.scheduler.strategy: "org.apache.storm.scheduler.blacklist.strategies.DefaultBlacklistStrategy"
+
 dev.zookeeper.path: "/tmp/dev-storm-zookeeper"
 
 pacemaker.servers: []
