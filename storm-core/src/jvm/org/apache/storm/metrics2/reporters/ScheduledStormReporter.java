@@ -74,13 +74,15 @@ public abstract class ScheduledStormReporter implements StormReporter{
     public static StormMetricsFilter getMetricsFilter(Map reporterConf){
         StormMetricsFilter filter = null;
         Map<String, Object> filterConf = (Map)reporterConf.get("filter");
-        String clazz = (String) filterConf.get("class");
-        if(filterConf != null && clazz != null){
-            try {
-                filter = (StormMetricsFilter) Metrics2Utils.instantiate(clazz);
-                filter.prepare(filterConf);
-            } catch (Exception e) {
-                LOG.warn("Unable to instantiate StormMetricsFilter class: {}", clazz);
+        if(filterConf != null) {
+            String clazz = (String) filterConf.get("class");
+            if (clazz != null) {
+                try {
+                    filter = (StormMetricsFilter) Metrics2Utils.instantiate(clazz);
+                    filter.prepare(filterConf);
+                } catch (Exception e) {
+                    LOG.warn("Unable to instantiate StormMetricsFilter class: {}", clazz);
+                }
             }
         }
         return filter;
