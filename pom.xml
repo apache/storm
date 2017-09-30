@@ -1113,6 +1113,7 @@
                             <include>${java.unit.test.include}</include>
                         </includes>
                         <argLine>-Xmx1536m</argLine>
+                        <trimStackTrace>false</trimStackTrace>
                     </configuration>
                 </plugin>
                 <plugin>
