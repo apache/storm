@@ -61,7 +61,7 @@ import org.slf4j.LoggerFactory;
  */
 public abstract class BlobStore implements Shutdownable {
     private static final Logger LOG = LoggerFactory.getLogger(BlobStore.class);
-    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\.:_-]+$", Pattern.UNICODE_CHARACTER_CLASS);
+    private static final Pattern KEY_PATTERN = Pattern.compile("^[\\w \\t\\._-]+$", Pattern.UNICODE_CHARACTER_CLASS);
     protected static final String BASE_BLOBS_DIR_NAME = "blobs";
 
     /**
@@ -193,10 +193,10 @@ public abstract class BlobStore implements Shutdownable {
      * Validates key checking for potentially harmful patterns
      * @param key Key for the blob.
      */
-    public static final void validateKey(String key) throws AuthorizationException {
+    public static final void validateKey(String key) throws IllegalArgumentException {
         if (StringUtils.isEmpty(key) || "..".equals(key) || ".".equals(key) || !KEY_PATTERN.matcher(key).matches()) {
-            LOG.error("'{}' does not appear to be valid {}", key, KEY_PATTERN);
-            throw new AuthorizationException(key+" does not appear to be a valid blob key");
+            LOG.error("'{}' does not appear to be valid. It must match {}. And it can't be \".\", \"..\", null or empty string.", key, KEY_PATTERN);
+            throw new IllegalArgumentException(key+" does not appear to be a valid blob key");
         }
     }
 

@@ -89,12 +89,6 @@ public class ServerUtils {
     public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
-    /**
-     * Make sure a given key name is valid for the storm config.
-     * Throw RuntimeException if the key isn't valid.
-     * @param name The name of the config key to check.
-     */
-    private static final Set<String> disallowedKeys = new HashSet<>(Arrays.asList(new String[] {"/", ".", ":", "\\"}));
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
@@ -634,18 +628,6 @@ public class ServerUtils {
             }
         } finally {
             zipFile.close();
-        }
-    }
-
-    public static void validateKeyName(String name) {
-
-        for(String key : disallowedKeys) {
-            if( name.contains(key) ) {
-                throw new RuntimeException("Key name cannot contain any of the following: " + disallowedKeys.toString());
-            }
-        }
-        if(name.trim().isEmpty()) {
-            throw new RuntimeException("Key name cannot be blank");
         }
     }
 
