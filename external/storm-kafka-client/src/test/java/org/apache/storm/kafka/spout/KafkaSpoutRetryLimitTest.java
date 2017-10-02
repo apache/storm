@@ -15,7 +15,6 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.getKafkaSpoutConfigBuilder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Matchers.*;
@@ -45,6 +44,8 @@ import org.mockito.Captor;
 import org.mockito.InOrder;
 import org.mockito.MockitoAnnotations;
 
+import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+
 public class KafkaSpoutRetryLimitTest {
     
     private final long offsetCommitPeriodMs = 2_000;
@@ -65,7 +66,7 @@ public class KafkaSpoutRetryLimitTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        spoutConfig = getKafkaSpoutConfigBuilder(-1)
+        spoutConfig = createKafkaSpoutConfigBuilder(-1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
             .setRetry(ZERO_RETRIES_RETRY_SERVICE)
             .build();
