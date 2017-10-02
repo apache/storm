@@ -94,6 +94,7 @@ public class LogviewerServer implements AutoCloseable {
                 throw new RuntimeException("Can't locate static resource directory " + STATIC_RESOURCE_DIRECTORY_PATH);
             }
 
+            context.setWelcomeFiles(new String[]{"logviewer.html"});
             context.setContextPath("/");
             ret.setHandler(context);
 
