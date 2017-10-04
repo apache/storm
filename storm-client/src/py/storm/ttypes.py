@@ -3025,6 +3025,8 @@ class SupervisorSummary:
    - total_resources
    - used_mem
    - used_cpu
+   - fragmented_mem
+   - fragmented_cpu
   """
 
   thrift_spec = (
@@ -3038,9 +3040,11 @@ class SupervisorSummary:
     (7, TType.MAP, 'total_resources', (TType.STRING,None,TType.DOUBLE,None), None, ), # 7
     (8, TType.DOUBLE, 'used_mem', None, None, ), # 8
     (9, TType.DOUBLE, 'used_cpu', None, None, ), # 9
+    (10, TType.DOUBLE, 'fragmented_mem', None, None, ), # 10
+    (11, TType.DOUBLE, 'fragmented_cpu', None, None, ), # 11
   )
 
-  def __init__(self, host=None, uptime_secs=None, num_workers=None, num_used_workers=None, supervisor_id=None, version=thrift_spec[6][4], total_resources=None, used_mem=None, used_cpu=None,):
+  def __init__(self, host=None, uptime_secs=None, num_workers=None, num_used_workers=None, supervisor_id=None, version=thrift_spec[6][4], total_resources=None, used_mem=None, used_cpu=None, fragmented_mem=None, fragmented_cpu=None,):
     self.host = host
     self.uptime_secs = uptime_secs
     self.num_workers = num_workers
@@ -3050,6 +3054,8 @@ class SupervisorSummary:
     self.total_resources = total_resources
     self.used_mem = used_mem
     self.used_cpu = used_cpu
+    self.fragmented_mem = fragmented_mem
+    self.fragmented_cpu = fragmented_cpu
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -3111,6 +3117,16 @@ class SupervisorSummary:
           self.used_cpu = iprot.readDouble()
         else:
           iprot.skip(ftype)
+      elif fid == 10:
+        if ftype == TType.DOUBLE:
+          self.fragmented_mem = iprot.readDouble()
+        else:
+          iprot.skip(ftype)
+      elif fid == 11:
+        if ftype == TType.DOUBLE:
+          self.fragmented_cpu = iprot.readDouble()
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -3161,6 +3177,14 @@ class SupervisorSummary:
       oprot.writeFieldBegin('used_cpu', TType.DOUBLE, 9)
       oprot.writeDouble(self.used_cpu)
       oprot.writeFieldEnd()
+    if self.fragmented_mem is not None:
+      oprot.writeFieldBegin('fragmented_mem', TType.DOUBLE, 10)
+      oprot.writeDouble(self.fragmented_mem)
+      oprot.writeFieldEnd()
+    if self.fragmented_cpu is not None:
+      oprot.writeFieldBegin('fragmented_cpu', TType.DOUBLE, 11)
+      oprot.writeDouble(self.fragmented_cpu)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -3189,6 +3213,8 @@ class SupervisorSummary:
     value = (value * 31) ^ hash(self.total_resources)
     value = (value * 31) ^ hash(self.used_mem)
     value = (value * 31) ^ hash(self.used_cpu)
+    value = (value * 31) ^ hash(self.fragmented_mem)
+    value = (value * 31) ^ hash(self.fragmented_cpu)
     return value
 
   def __repr__(self):

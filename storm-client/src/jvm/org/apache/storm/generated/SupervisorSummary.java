@@ -64,6 +64,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private static final org.apache.thrift.protocol.TField TOTAL_RESOURCES_FIELD_DESC = new org.apache.thrift.protocol.TField("total_resources", org.apache.thrift.protocol.TType.MAP, (short)7);
   private static final org.apache.thrift.protocol.TField USED_MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("used_mem", org.apache.thrift.protocol.TType.DOUBLE, (short)8);
   private static final org.apache.thrift.protocol.TField USED_CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("used_cpu", org.apache.thrift.protocol.TType.DOUBLE, (short)9);
+  private static final org.apache.thrift.protocol.TField FRAGMENTED_MEM_FIELD_DESC = new org.apache.thrift.protocol.TField("fragmented_mem", org.apache.thrift.protocol.TType.DOUBLE, (short)10);
+  private static final org.apache.thrift.protocol.TField FRAGMENTED_CPU_FIELD_DESC = new org.apache.thrift.protocol.TField("fragmented_cpu", org.apache.thrift.protocol.TType.DOUBLE, (short)11);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -80,6 +82,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private Map<String,Double> total_resources; // optional
   private double used_mem; // optional
   private double used_cpu; // optional
+  private double fragmented_mem; // optional
+  private double fragmented_cpu; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -91,7 +95,9 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     VERSION((short)6, "version"),
     TOTAL_RESOURCES((short)7, "total_resources"),
     USED_MEM((short)8, "used_mem"),
-    USED_CPU((short)9, "used_cpu");
+    USED_CPU((short)9, "used_cpu"),
+    FRAGMENTED_MEM((short)10, "fragmented_mem"),
+    FRAGMENTED_CPU((short)11, "fragmented_cpu");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -124,6 +130,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
           return USED_MEM;
         case 9: // USED_CPU
           return USED_CPU;
+        case 10: // FRAGMENTED_MEM
+          return FRAGMENTED_MEM;
+        case 11: // FRAGMENTED_CPU
+          return FRAGMENTED_CPU;
         default:
           return null;
       }
@@ -169,8 +179,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
   private static final int __NUM_USED_WORKERS_ISSET_ID = 2;
   private static final int __USED_MEM_ISSET_ID = 3;
   private static final int __USED_CPU_ISSET_ID = 4;
+  private static final int __FRAGMENTED_MEM_ISSET_ID = 5;
+  private static final int __FRAGMENTED_CPU_ISSET_ID = 6;
   private byte __isset_bitfield = 0;
-  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU};
+  private static final _Fields optionals[] = {_Fields.VERSION,_Fields.TOTAL_RESOURCES,_Fields.USED_MEM,_Fields.USED_CPU,_Fields.FRAGMENTED_MEM,_Fields.FRAGMENTED_CPU};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -193,6 +205,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     tmpMap.put(_Fields.USED_MEM, new org.apache.thrift.meta_data.FieldMetaData("used_mem", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
     tmpMap.put(_Fields.USED_CPU, new org.apache.thrift.meta_data.FieldMetaData("used_cpu", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.FRAGMENTED_MEM, new org.apache.thrift.meta_data.FieldMetaData("fragmented_mem", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
+    tmpMap.put(_Fields.FRAGMENTED_CPU, new org.apache.thrift.meta_data.FieldMetaData("fragmented_cpu", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.DOUBLE)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(SupervisorSummary.class, metaDataMap);
@@ -244,6 +260,8 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     }
     this.used_mem = other.used_mem;
     this.used_cpu = other.used_cpu;
+    this.fragmented_mem = other.fragmented_mem;
+    this.fragmented_cpu = other.fragmented_cpu;
   }
 
   public SupervisorSummary deepCopy() {
@@ -267,6 +285,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     this.used_mem = 0.0;
     set_used_cpu_isSet(false);
     this.used_cpu = 0.0;
+    set_fragmented_mem_isSet(false);
+    this.fragmented_mem = 0.0;
+    set_fragmented_cpu_isSet(false);
+    this.fragmented_cpu = 0.0;
   }
 
   public String get_host() {
@@ -482,6 +504,50 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __USED_CPU_ISSET_ID, value);
   }
 
+  public double get_fragmented_mem() {
+    return this.fragmented_mem;
+  }
+
+  public void set_fragmented_mem(double fragmented_mem) {
+    this.fragmented_mem = fragmented_mem;
+    set_fragmented_mem_isSet(true);
+  }
+
+  public void unset_fragmented_mem() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __FRAGMENTED_MEM_ISSET_ID);
+  }
+
+  /** Returns true if field fragmented_mem is set (has been assigned a value) and false otherwise */
+  public boolean is_set_fragmented_mem() {
+    return EncodingUtils.testBit(__isset_bitfield, __FRAGMENTED_MEM_ISSET_ID);
+  }
+
+  public void set_fragmented_mem_isSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __FRAGMENTED_MEM_ISSET_ID, value);
+  }
+
+  public double get_fragmented_cpu() {
+    return this.fragmented_cpu;
+  }
+
+  public void set_fragmented_cpu(double fragmented_cpu) {
+    this.fragmented_cpu = fragmented_cpu;
+    set_fragmented_cpu_isSet(true);
+  }
+
+  public void unset_fragmented_cpu() {
+    __isset_bitfield = EncodingUtils.clearBit(__isset_bitfield, __FRAGMENTED_CPU_ISSET_ID);
+  }
+
+  /** Returns true if field fragmented_cpu is set (has been assigned a value) and false otherwise */
+  public boolean is_set_fragmented_cpu() {
+    return EncodingUtils.testBit(__isset_bitfield, __FRAGMENTED_CPU_ISSET_ID);
+  }
+
+  public void set_fragmented_cpu_isSet(boolean value) {
+    __isset_bitfield = EncodingUtils.setBit(__isset_bitfield, __FRAGMENTED_CPU_ISSET_ID, value);
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case HOST:
@@ -556,6 +622,22 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       }
       break;
 
+    case FRAGMENTED_MEM:
+      if (value == null) {
+        unset_fragmented_mem();
+      } else {
+        set_fragmented_mem((Double)value);
+      }
+      break;
+
+    case FRAGMENTED_CPU:
+      if (value == null) {
+        unset_fragmented_cpu();
+      } else {
+        set_fragmented_cpu((Double)value);
+      }
+      break;
+
     }
   }
 
@@ -588,6 +670,12 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     case USED_CPU:
       return get_used_cpu();
 
+    case FRAGMENTED_MEM:
+      return get_fragmented_mem();
+
+    case FRAGMENTED_CPU:
+      return get_fragmented_cpu();
+
     }
     throw new IllegalStateException();
   }
@@ -617,6 +705,10 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       return is_set_used_mem();
     case USED_CPU:
       return is_set_used_cpu();
+    case FRAGMENTED_MEM:
+      return is_set_fragmented_mem();
+    case FRAGMENTED_CPU:
+      return is_set_fragmented_cpu();
     }
     throw new IllegalStateException();
   }
@@ -715,6 +807,24 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         return false;
     }
 
+    boolean this_present_fragmented_mem = true && this.is_set_fragmented_mem();
+    boolean that_present_fragmented_mem = true && that.is_set_fragmented_mem();
+    if (this_present_fragmented_mem || that_present_fragmented_mem) {
+      if (!(this_present_fragmented_mem && that_present_fragmented_mem))
+        return false;
+      if (this.fragmented_mem != that.fragmented_mem)
+        return false;
+    }
+
+    boolean this_present_fragmented_cpu = true && this.is_set_fragmented_cpu();
+    boolean that_present_fragmented_cpu = true && that.is_set_fragmented_cpu();
+    if (this_present_fragmented_cpu || that_present_fragmented_cpu) {
+      if (!(this_present_fragmented_cpu && that_present_fragmented_cpu))
+        return false;
+      if (this.fragmented_cpu != that.fragmented_cpu)
+        return false;
+    }
+
     return true;
   }
 
@@ -766,6 +876,16 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
     list.add(present_used_cpu);
     if (present_used_cpu)
       list.add(used_cpu);
+
+    boolean present_fragmented_mem = true && (is_set_fragmented_mem());
+    list.add(present_fragmented_mem);
+    if (present_fragmented_mem)
+      list.add(fragmented_mem);
+
+    boolean present_fragmented_cpu = true && (is_set_fragmented_cpu());
+    list.add(present_fragmented_cpu);
+    if (present_fragmented_cpu)
+      list.add(fragmented_cpu);
 
     return list.hashCode();
   }
@@ -868,6 +988,26 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         return lastComparison;
       }
     }
+    lastComparison = Boolean.valueOf(is_set_fragmented_mem()).compareTo(other.is_set_fragmented_mem());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_fragmented_mem()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.fragmented_mem, other.fragmented_mem);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_fragmented_cpu()).compareTo(other.is_set_fragmented_cpu());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_fragmented_cpu()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.fragmented_cpu, other.fragmented_cpu);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
     return 0;
   }
 
@@ -945,6 +1085,18 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (!first) sb.append(", ");
       sb.append("used_cpu:");
       sb.append(this.used_cpu);
+      first = false;
+    }
+    if (is_set_fragmented_mem()) {
+      if (!first) sb.append(", ");
+      sb.append("fragmented_mem:");
+      sb.append(this.fragmented_mem);
+      first = false;
+    }
+    if (is_set_fragmented_cpu()) {
+      if (!first) sb.append(", ");
+      sb.append("fragmented_cpu:");
+      sb.append(this.fragmented_cpu);
       first = false;
     }
     sb.append(")");
@@ -1096,6 +1248,22 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 10: // FRAGMENTED_MEM
+            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
+              struct.fragmented_mem = iprot.readDouble();
+              struct.set_fragmented_mem_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 11: // FRAGMENTED_CPU
+            if (schemeField.type == org.apache.thrift.protocol.TType.DOUBLE) {
+              struct.fragmented_cpu = iprot.readDouble();
+              struct.set_fragmented_cpu_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1160,6 +1328,16 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
         oprot.writeDouble(struct.used_cpu);
         oprot.writeFieldEnd();
       }
+      if (struct.is_set_fragmented_mem()) {
+        oprot.writeFieldBegin(FRAGMENTED_MEM_FIELD_DESC);
+        oprot.writeDouble(struct.fragmented_mem);
+        oprot.writeFieldEnd();
+      }
+      if (struct.is_set_fragmented_cpu()) {
+        oprot.writeFieldBegin(FRAGMENTED_CPU_FIELD_DESC);
+        oprot.writeDouble(struct.fragmented_cpu);
+        oprot.writeFieldEnd();
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1195,7 +1373,13 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (struct.is_set_used_cpu()) {
         optionals.set(3);
       }
-      oprot.writeBitSet(optionals, 4);
+      if (struct.is_set_fragmented_mem()) {
+        optionals.set(4);
+      }
+      if (struct.is_set_fragmented_cpu()) {
+        optionals.set(5);
+      }
+      oprot.writeBitSet(optionals, 6);
       if (struct.is_set_version()) {
         oprot.writeString(struct.version);
       }
@@ -1215,6 +1399,12 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (struct.is_set_used_cpu()) {
         oprot.writeDouble(struct.used_cpu);
       }
+      if (struct.is_set_fragmented_mem()) {
+        oprot.writeDouble(struct.fragmented_mem);
+      }
+      if (struct.is_set_fragmented_cpu()) {
+        oprot.writeDouble(struct.fragmented_cpu);
+      }
     }
 
     @Override
@@ -1230,7 +1420,7 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       struct.set_num_used_workers_isSet(true);
       struct.supervisor_id = iprot.readString();
       struct.set_supervisor_id_isSet(true);
-      BitSet incoming = iprot.readBitSet(4);
+      BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         struct.version = iprot.readString();
         struct.set_version_isSet(true);
@@ -1257,6 +1447,14 @@ public class SupervisorSummary implements org.apache.thrift.TBase<SupervisorSumm
       if (incoming.get(3)) {
         struct.used_cpu = iprot.readDouble();
         struct.set_used_cpu_isSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.fragmented_mem = iprot.readDouble();
+        struct.set_fragmented_mem_isSet(true);
+      }
+      if (incoming.get(5)) {
+        struct.fragmented_cpu = iprot.readDouble();
+        struct.set_fragmented_cpu_isSet(true);
       }
     }
   }
