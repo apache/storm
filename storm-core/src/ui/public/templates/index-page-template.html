@@ -119,6 +119,11 @@
             </span>
         </th>
         <th>
+          <span data-toggle="tooltip" data-placement="right" title="Total Fragmented Memory in Cluster in MB.">
+            Total Fragmented Memory (MB)
+          </span>
+        </th>
+        <th>
             <span data-toggle="tooltip" data-placement="top" title="Percent Utilization of Memory Resources in Cluster.">
               Memory Utilization (%)
             </span>
@@ -134,6 +139,11 @@
             </span>
         </th>
         <th>
+          <span data-toggle="tooltip" data-placement="top" title="Total Fragmented CPU Resources in Cluster. Every 100 means 1 core.">
+            Fragmented CPU (%)
+          </span>
+        </th>
+        <th>
             <span data-toggle="tooltip" data-placement="top" title="Percent Utilization of CPU Resources in Cluster.">
              CPU Utilization (%)
             </span>
@@ -144,9 +154,11 @@
       <tr>
         <td>{{totalMem}}</td>
         <td>{{availMem}}</td>
+        <td>{{fragmentedMem}}</td>
         <td>{{memAssignedPercentUtil}}</td>
         <td>{{totalCpu}}</td>
         <td>{{availCpu}}</td>
+        <td>{{fragmentedCpu}}</td>
         <td>{{cpuAssignedPercentUtil}}</td>
       </tr>
       </tbody>

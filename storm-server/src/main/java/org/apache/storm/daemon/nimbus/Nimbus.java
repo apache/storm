@@ -1594,20 +1594,22 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private boolean isFragmented(SupervisorResources supervisorResources) {
-        double minMemory = ObjectReader.getInt(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), 256)
-            + ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB), 128);
-        double minCPU = ObjectReader.getInt(conf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 50)
-            + ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT), 50);
+        double minMemory = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), 256.0)
+            + ObjectReader.getDouble(conf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB), 128.0);
+        double minCPU = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 50.0)
+            + ObjectReader.getDouble(conf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT), 50.0);
 
         return minMemory > supervisorResources.getAvailableMem() || minCPU > supervisorResources.getAvailableCpu();
     }
 
     private double fragmentedMemory() {
-        return nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableMem).sum();
+        Double res = nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableMem).filter(x -> x > 0).sum();
+        return res.intValue();
     }
 
-    private double fragmentedCpu() {
-        return nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableCpu).sum();
+    private int fragmentedCpu() {
+        Double res = nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableCpu).filter(x -> x > 0).sum();
+        return res.intValue();
     }
 
     private Map<String, SchedulerAssignment> computeNewSchedulerAssignments(Map<String, Assignment> existingAssignments,
@@ -1846,7 +1848,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 //map.forEach((x, y) -> System.out.println(x + ": " + y));
                 nodeIdToResources.get().forEach((id, node) ->
                     LOG.info("Node Id: {} Total Mem: {}, Used Mem: {}, Avialble Mem: {}, Total CPU: {}, Used CPU: {}, Available CPU: {}, fragmented: {}",
-                        id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(), node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu()));
+                        id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(), node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
                 idToResources.set(new HashMap<>());
                 idToWorkerResources.set(new HashMap<>());
             }
@@ -2251,6 +2253,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (resources != null) {
             ret.set_used_mem(resources.getUsedMem());
             ret.set_used_cpu(resources.getUsedCpu());
+            if (isFragmented(resources)) {
+                ret.set_fragmented_cpu(resources.getAvailableCpu());
+                ret.set_fragmented_mem(resources.getAvailableMem());
+            }
         }
         if (info.is_set_version()) {
             ret.set_version(info.get_version());

@@ -428,13 +428,17 @@
                                      :let [sup-total-mem (get (.get_total_resources s) Config/SUPERVISOR_MEMORY_CAPACITY_MB)
                                            sup-total-cpu (get (.get_total_resources s) Config/SUPERVISOR_CPU_CAPACITY)
                                            sup-avail-mem (max (- sup-total-mem (.get_used_mem s)) 0.0)
-                                           sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)]]
-                                 [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu]))
-                             [0.0 0.0 0.0 0.0])
+                                           sup-avail-cpu (max (- sup-total-cpu (.get_used_cpu s)) 0.0)
+                                           sup-fragmented-cpu (.get_fragmented_cpu s)
+                                           sup-fragmented-mem (.get_fragmented_mem s)]]
+                                 [sup-total-mem sup-total-cpu sup-avail-mem sup-avail-cpu sup-fragmented-cpu sup-fragmented-mem]))
+                             [0.0 0.0 0.0 0.0 0.0 0.0])
            total-mem (nth resourceSummary 0)
            total-cpu (nth resourceSummary 1)
            avail-mem (nth resourceSummary 2)
-           avail-cpu (nth resourceSummary 3)]
+           avail-cpu (nth resourceSummary 3)
+           fragmented-cpu (nth resourceSummary 4)
+           fragmented-mem (nth resourceSummary 5)]
        {"user" user
         "stormVersion" STORM-VERSION
         "supervisors" (count sups)
@@ -449,6 +453,8 @@
         "totalCpu" total-cpu
         "availMem" avail-mem
         "availCpu" avail-cpu
+        "fragmentedMem" fragmented-mem
+        "fragmentedCpu" fragmented-cpu
         "memAssignedPercentUtil" (if (and (not (nil? total-mem)) (> total-mem 0.0)) (format "%.1f" (* (/ (- total-mem avail-mem) total-mem) 100.0)) 0.0)
         "cpuAssignedPercentUtil" (if (and (not (nil? total-cpu)) (> total-cpu 0.0)) (format "%.1f" (* (/ (- total-cpu avail-cpu) total-cpu) 100.0)) 0.0)})))
 
