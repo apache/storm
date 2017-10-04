@@ -197,10 +197,10 @@ public class KafkaSpoutRebalanceTest {
         Subscription subscriptionMock = mock(Subscription.class);
         doNothing()
             .when(subscriptionMock)
-            .subscribe(any(), rebalanceListenerCapture.capture(), any());
+            .subscribe(any(KafkaConsumer.class), rebalanceListenerCapture.capture(), any(TopologyContext.class));
         KafkaSpout<String, String> spout = new KafkaSpout<>(createKafkaSpoutConfigBuilder(subscriptionMock, -1)
             .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST)
-            .build(), consumerFactory);
+            .build(), consumerFactoryMock);
         String topic = SingleTopicKafkaSpoutConfiguration.TOPIC;
         TopicPartition assignedPartition = new TopicPartition(topic, 1);
         TopicPartition newPartition = new TopicPartition(topic, 2);

@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.TimeUnit;
 import org.apache.commons.lang.Validate;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.utils.Time;
 
 /**
@@ -289,8 +290,8 @@ public class KafkaSpoutRetryExponentialBackoff implements KafkaSpoutRetryService
     }
 
     @Override
-    public KafkaSpoutMessageId getMessageId(TopicPartition tp, long offset) {
-        KafkaSpoutMessageId msgId = new KafkaSpoutMessageId(tp, offset);
+    public KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record) {
+        KafkaSpoutMessageId msgId = new KafkaSpoutMessageId(record);
         if (isScheduled(msgId)) {
             for (KafkaSpoutMessageId originalMsgId : toRetryMsgs) {
                 if (originalMsgId.equals(msgId)) {

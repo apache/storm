@@ -156,7 +156,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                  * Emitted messages for partitions that are no longer assigned to this spout can't
                  * be acked and should not be retried, hence remove them from emitted collection.
                  */
-                emitted.removeIf(msgId -> !partitions.contains(msgId.getTopicPartition()));
+                Iterator<KafkaSpoutMessageId> msgIdIterator = emitted.iterator();
+                while (msgIdIterator.hasNext()) {
+                    KafkaSpoutMessageId msgId = msgIdIterator.next();
+                    if (!partitions.contains(msgId.getTopicPartition())) {
+                        msgIdIterator.remove();
+                    }
+                }
             }
 
             Set<TopicPartition> newPartitions = new HashSet<>(partitions);
@@ -312,7 +318,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
      */
     private boolean emitTupleIfNotEmitted(ConsumerRecord<K, V> record) {
         final TopicPartition tp = new TopicPartition(record.topic(), record.partition());
-        final KafkaSpoutMessageId msgId = retryService.getMessageId(tp, record.offset());
+        final KafkaSpoutMessageId msgId = retryService.getMessageId(record);
         if (offsetManagers.containsKey(tp) && offsetManagers.get(tp).contains(msgId)) {   // has been acked
             LOG.trace("Tuple for record [{}] has already been acked. Skipping", record);
         } else if (emitted.contains(msgId)) {   // has been emitted and it's pending ack or fail

@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.utils.Time;
@@ -44,17 +45,21 @@ public class KafkaSpoutRetryExponentialBackoffTest {
         return new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(1), TimeInterval.seconds(0), 1, TimeInterval.seconds(1));
     }
 
+    private ConsumerRecord<String, String> createRecord(TopicPartition tp, long offset) {
+        return new ConsumerRecord<>(tp.topic(), tp.partition(), offset, null, null);
+    }
+    
     @Test
     public void testCanScheduleRetry() {
         KafkaSpoutRetryExponentialBackoff retryService = createNoWaitRetryService();
         long offset = 0;
-        KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+        KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
         msgId.incrementNumFails();
 
         boolean scheduled = retryService.schedule(msgId);
 
         assertThat("The service must schedule the message for retry", scheduled, is(true));
-        KafkaSpoutMessageId retrievedMessageId = retryService.getMessageId(testTopic, offset);
+        KafkaSpoutMessageId retrievedMessageId = retryService.getMessageId(createRecord(testTopic, offset));
         assertThat("The service should return the original message id when asked for the same tp/offset twice", retrievedMessageId, sameInstance(msgId));
         assertThat(retryService.isScheduled(msgId), is(true));
         assertThat(retryService.isReady(msgId), is(true));
@@ -68,7 +73,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
-            KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+            KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
             msgId.incrementNumFails();
 
             retryService.schedule(msgId);
@@ -79,7 +84,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             Time.advanceTime(500);
             assertThat("The message should not be ready for retry yet since it was rescheduled", retryService.isReady(msgId), is(false));
             assertThat(retryService.isScheduled(msgId), is(true));
-            assertThat(retryService.earliestRetriableOffsets(), is(Collections.emptyMap()));
+            assertThat(retryService.earliestRetriableOffsets(), is(Collections.<TopicPartition, Long>emptyMap()));
             assertThat(retryService.readyMessageCount(), is(0));
             Time.advanceTime(500);
             assertThat("The message should be ready for retry once the full delay has passed", retryService.isReady(msgId), is(true));
@@ -95,7 +100,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
 
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
-            KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+            KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
             msgId.incrementNumFails();
 
             retryService.schedule(msgId);
@@ -113,7 +118,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
     public void testCanRemoveRetry() {
         KafkaSpoutRetryExponentialBackoff retryService = createNoWaitRetryService();
         long offset = 0;
-        KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+        KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
         msgId.incrementNumFails();
 
         retryService.schedule(msgId);
@@ -122,7 +127,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
         assertThat(removed, is(true));
         assertThat(retryService.isScheduled(msgId), is(false));
         assertThat(retryService.isReady(msgId), is(false));
-        assertThat(retryService.earliestRetriableOffsets(), is(Collections.emptyMap()));
+        assertThat(retryService.earliestRetriableOffsets(), is(Collections.<TopicPartition, Long>emptyMap()));
         assertThat(retryService.readyMessageCount(), is(0));
     }
 
@@ -133,8 +138,8 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
 
-            KafkaSpoutMessageId msgIdTp1 = retryService.getMessageId(testTopic, offset);
-            KafkaSpoutMessageId msgIdTp2 = retryService.getMessageId(testTopic2, offset);
+            KafkaSpoutMessageId msgIdTp1 = retryService.getMessageId(createRecord(testTopic, offset));
+            KafkaSpoutMessageId msgIdTp2 = retryService.getMessageId(createRecord(testTopic2, offset));
             msgIdTp1.incrementNumFails();
             msgIdTp2.incrementNumFails();
 
@@ -179,8 +184,8 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             KafkaSpoutRetryExponentialBackoff retryService = createOneSecondWaitRetryService();
             long offset = 0;
 
-            KafkaSpoutMessageId msgIdEarliest = retryService.getMessageId(testTopic, offset);
-            KafkaSpoutMessageId msgIdLatest = retryService.getMessageId(testTopic, offset + 1);
+            KafkaSpoutMessageId msgIdEarliest = retryService.getMessageId(createRecord(testTopic, offset));
+            KafkaSpoutMessageId msgIdLatest = retryService.getMessageId(createRecord(testTopic, offset + 1));
             msgIdEarliest.incrementNumFails();
             msgIdLatest.incrementNumFails();
 
@@ -213,7 +218,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.seconds(0), maxRetries, TimeInterval.seconds(0));
             long offset = 0;
 
-            KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+            KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
             for (int i = 0; i < maxRetries; i++) {
                 msgId.incrementNumFails();
             }
@@ -240,7 +245,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(500), TimeInterval.seconds(0), 1, TimeInterval.seconds(maxDelaySecs));
             long offset = 0;
 
-            KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+            KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
             msgId.incrementNumFails();
 
             retryService.schedule(msgId);
@@ -263,7 +268,7 @@ public class KafkaSpoutRetryExponentialBackoffTest {
             KafkaSpoutRetryExponentialBackoff retryService = new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.seconds(4), Integer.MAX_VALUE, TimeInterval.seconds(Integer.MAX_VALUE));
             long offset = 0;
 
-            KafkaSpoutMessageId msgId = retryService.getMessageId(testTopic, offset);
+            KafkaSpoutMessageId msgId = retryService.getMessageId(createRecord(testTopic, offset));
             msgId.incrementNumFails();
             msgId.incrementNumFails(); //First failure is the initial delay, so not interesting
 
