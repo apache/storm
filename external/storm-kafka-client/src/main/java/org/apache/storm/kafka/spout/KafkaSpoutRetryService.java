@@ -18,11 +18,11 @@
 
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.common.TopicPartition;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 
 /**
@@ -84,10 +84,11 @@ public interface KafkaSpoutRetryService extends Serializable {
     int readyMessageCount();
 
     /**
-     * Gets the {@link KafkaSpoutMessageId} for the record on the given topic partition and offset.
-     * @param topicPartition The topic partition of the record
-     * @param offset The offset of the record
-     * @return The id the record was scheduled for retry with, or a new {@link KafkaSpoutMessageId} if the record was not scheduled for retry.
+     * Gets the {@link KafkaSpoutMessageId} for the given record.
+     *
+     * @param record The record to fetch the id for
+     * @return The id the record was scheduled for retry with, or a new {@link KafkaSpoutMessageId} if the record was not scheduled for
+     * retry.
      */
-    KafkaSpoutMessageId getMessageId(TopicPartition topicPartition, long offset);
+    KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record);
 }
