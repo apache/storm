@@ -36,7 +36,6 @@ import java.util.concurrent.TimeoutException;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.mockito.Matchers.anyCollection;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyListOf;
 import static org.mockito.Matchers.anyObject;
@@ -53,12 +52,14 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.hamcrest.Matchers;
 import org.junit.Before;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
@@ -79,6 +80,7 @@ public class SingleTopicKafkaSpoutTest {
     private KafkaConsumerFactory<String, String> consumerFactory;
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
+    private final int maxRetries = 3;
 
     @Before
     public void setUp() {
@@ -134,7 +136,7 @@ public class SingleTopicKafkaSpoutTest {
     public void testSeekToCommittedOffsetIfConsumerPositionIsBehindWhenCommitting() throws Exception {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             int messageCount = maxPollRecords * 2;
-            prepareSpout(messageCount);
+            initializeSpout(messageCount);
 
             //Emit all messages and fail the first one while acking the rest
             for (int i = 0; i < messageCount; i++) {

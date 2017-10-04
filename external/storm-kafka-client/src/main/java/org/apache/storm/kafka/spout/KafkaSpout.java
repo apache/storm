@@ -133,6 +133,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
             LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
                     kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
+            previousAssignment = partitions;
             if (!consumerAutoCommitMode && initialized) {
                 initialized = false;
                 commitOffsetsForAckedTuples();
@@ -150,7 +151,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         private void initialize(Collection<TopicPartition> partitions) {
             if (!consumerAutoCommitMode) {
                 offsetManagers.keySet().retainAll(partitions);   // remove from acked all partitions that are no longer assigned to this spout
-            }
+                retryService.retainAll(partitions);
 
                 /*
                  * Emitted messages for partitions that are no longer assigned to this spout can't
