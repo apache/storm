@@ -42,6 +42,8 @@ import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
 
+import org.mockito.stubbing.OngoingStubbing;
+
 public class KafkaSpoutCommitTest {
 
     private final long offsetCommitPeriodMs = 2_000;
@@ -94,7 +96,7 @@ public class KafkaSpoutCommitTest {
                 spout.ack(messageId);
             }
 
-            // Advance time and then trigger first call to kafka consumer commit; the commit will progress till offset 4
+            // Advance time and then trigger first call to kafka consumer commit; the commit must progress to offset 9
             Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + offsetCommitPeriodMs);
             when(consumerMock.poll(anyLong()))
                     .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
@@ -104,25 +106,8 @@ public class KafkaSpoutCommitTest {
             inOrder.verify(consumerMock).commitSync(commitCapture.capture());
             inOrder.verify(consumerMock).poll(anyLong());
 
-            //verify that Offset 4 was last committed offset
-            //the offset void should be bridged in the next commit
-            Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
-            assertTrue(commits.containsKey(partition));
-            assertEquals(4, commits.get(partition).offset());
-
-            //Trigger second kafka consumer commit
-            reset(consumerMock);
-            when(consumerMock.poll(anyLong()))
-                    .thenReturn(new ConsumerRecords<>(Collections.emptyMap()));
-            Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + offsetCommitPeriodMs);
-            spout.nextTuple();
-
-            inOrder = inOrder(consumerMock);
-            inOrder.verify(consumerMock).commitSync(commitCapture.capture());
-            inOrder.verify(consumerMock).poll(anyLong());
-
             //verify that Offset 9 was last committed offset
-            commits = commitCapture.getValue();
+            Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
             assertTrue(commits.containsKey(partition));
             assertEquals(9, commits.get(partition).offset());
         }
