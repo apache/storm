@@ -1592,7 +1592,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         return ret;
     }
-    
+
+    private boolean isFragmented(SupervisorResources supervisorResources) {
+        double minMemory = ObjectReader.getInt(conf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), 256)
+            + ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_RESOURCES_ONHEAP_MEMORY_MB), 128);
+        double minCPU = ObjectReader.getInt(conf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 50)
+            + ObjectReader.getInt(conf.get(Config.TOPOLOGY_ACKER_CPU_PCORE_PERCENT), 50);
+
+        return minMemory > supervisorResources.getAvailableMem() || minCPU > supervisorResources.getAvailableCpu();
+    }
+
+    private double fragmentedMemory() {
+        return nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableMem).sum();
+    }
+
+    private double fragmentedCpu() {
+        return nodeIdToResources.get().values().parallelStream().filter(x -> isFragmented(x) == true).mapToDouble(SupervisorResources::getAvailableCpu).sum();
+    }
+
     private Map<String, SchedulerAssignment> computeNewSchedulerAssignments(Map<String, Assignment> existingAssignments,
             Topologies topologies, Map<String, StormBase> bases, String scratchTopologyId) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
         Map<String, Set<List<Integer>>> topoToExec = computeTopologyToExecutors(bases);
@@ -1825,6 +1842,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
             if (!newAssignments.equals(existingAssignments)) {
                 LOG.debug("RESETTING id->resources and id->worker-resources cache!");
+                LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
+                //map.forEach((x, y) -> System.out.println(x + ": " + y));
+                nodeIdToResources.get().forEach((id, node) ->
+                    LOG.info("Node Id: {} Total Mem: {}, Used Mem: {}, Avialble Mem: {}, Total CPU: {}, Used CPU: {}, Available CPU: {}, fragmented: {}",
+                        id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(), node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu()));
                 idToResources.set(new HashMap<>());
                 idToWorkerResources.set(new HashMap<>());
             }
@@ -2445,7 +2467,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                         }
                     });
             
-            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null));
+            StormMetricsRegistry.registerGauge("nimbus:num-supervisors", () -> state.supervisors(null).size());
+            StormMetricsRegistry.registerGauge("nimbus:fragmented-memory", () -> fragmentedMemory());
+            StormMetricsRegistry.registerGauge("nimbus:fragmented-cpu", () -> fragmentedCpu());
+            StormMetricsRegistry.registerGauge("nimbus:available-memory", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(SupervisorResources::getAvailableMem).sum());
+            StormMetricsRegistry.registerGauge("nimbus:available-cpu", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(SupervisorResources::getAvailableCpu).sum());
+            StormMetricsRegistry.registerGauge("nimbus:total-memory", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(SupervisorResources::getTotalMem).sum());
+            StormMetricsRegistry.registerGauge("nimbus:total-cpu", () -> nodeIdToResources.get().values().parallelStream().mapToDouble(SupervisorResources::getTotalCpu).sum());
             StormMetricsRegistry.startMetricsReporters(conf);
             
             if (clusterConsumerExceutors != null) {
