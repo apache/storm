@@ -485,7 +485,7 @@ public class WorkerState {
         refreshActiveTimer.schedule(delaySecs, new Runnable() {
             @Override public void run() {
                 if (areAllConnectionsReady()) {
-                    LOG.info("All connections are ready for worker {}:{} with id", assignmentId, port, workerId);
+                    LOG.info("All connections are ready for worker {}:{} with id {}", assignmentId, port, workerId);
                     isWorkerActive.set(Boolean.TRUE);
                 } else {
                     refreshActiveTimer.schedule(recurSecs, () -> activateWorkerWhenAllConnectionsReady(), false, 0);
