@@ -44,7 +44,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 import org.junit.*;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import org.mockito.internal.util.reflection.Whitebox;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
 import org.apache.storm.kafka.*;
@@ -59,6 +58,8 @@ import java.util.concurrent.Future;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.*;
+
+import java.lang.reflect.Field;
 
 public class KafkaBoltTest {
 
@@ -120,7 +121,7 @@ public class KafkaBoltTest {
 
     /* test synchronous sending */
     @Test
-    public void executeWithByteArrayKeyAndMessageSync() {
+    public void executeWithByteArrayKeyAndMessageSync() throws Exception {
         boolean async = false;
         boolean fireAndForget = false;
         bolt = generateDefaultSerializerBolt(async, fireAndForget, null);
@@ -136,7 +137,7 @@ public class KafkaBoltTest {
 
     /* test asynchronous sending (default) */
     @Test
-    public void executeWithByteArrayKeyAndMessageAsync() {
+    public void executeWithByteArrayKeyAndMessageAsync() throws Exception {
         boolean async = true;
         boolean fireAndForget = false;
         String keyString = "test-key";
@@ -165,7 +166,7 @@ public class KafkaBoltTest {
 
     /* test with fireAndForget option enabled */
     @Test
-    public void executeWithByteArrayKeyAndMessageFire() {
+    public void executeWithByteArrayKeyAndMessageFire() throws Exception {
         boolean async = true;
         boolean fireAndForget = true;
         bolt = generateDefaultSerializerBolt(async, fireAndForget, null);
@@ -216,7 +217,7 @@ public class KafkaBoltTest {
     }
 
     private KafkaBolt generateDefaultSerializerBolt(boolean async, boolean fireAndForget,
-                                                    KafkaProducer<?, ?> mockProducer) {
+                                                    KafkaProducer<?, ?> mockProducer) throws Exception {
         Properties props = new Properties();
         props.put("acks", "1");
         props.put("bootstrap.servers", broker.getBrokerConnectionString());
@@ -229,7 +230,9 @@ public class KafkaBoltTest {
         bolt.setAsync(async);
         bolt.setFireAndForget(fireAndForget);
         if (mockProducer != null) {
-            Whitebox.setInternalState(bolt, "producer", mockProducer);
+            Field producerField = bolt.getClass().getDeclaredField("producer");
+            producerField.setAccessible(true);
+            producerField.set(bolt, mockProducer);
         }
         return bolt;
     }

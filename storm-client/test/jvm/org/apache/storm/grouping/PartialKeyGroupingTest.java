@@ -53,7 +53,7 @@ public class PartialKeyGroupingTest {
         PartialKeyGrouping pkg = new PartialKeyGrouping(new Fields("test"));
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
         when(context.getComponentOutputFields(any(GlobalStreamId.class))).thenReturn(new Fields("test"));
-        pkg.prepare(context, null, Lists.newArrayList(0, 1, 2, 3, 4, 5));
+        pkg.prepare(context, mock(GlobalStreamId.class), Lists.newArrayList(0, 1, 2, 3, 4, 5));
         Values message = new Values("key1");
         List<Integer> choice1 = pkg.chooseTasks(0, message);
         assertThat(choice1.size(), is(1));

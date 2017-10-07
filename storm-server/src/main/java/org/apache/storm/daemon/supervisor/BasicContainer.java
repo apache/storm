@@ -269,7 +269,7 @@ public class BasicContainer extends Container {
         @SuppressWarnings("unchecked")
         Map<String, String> env = (Map<String, String>) _topoConf.get(Config.TOPOLOGY_ENVIRONMENT);
         if (env == null) {
-            env = new HashMap<String, String>();
+            env = new HashMap<>();
         }
 
         String str = ConfigUtils.workerArtifactsPidPath(_conf, _topologyId, _port);

@@ -42,7 +42,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static org.mockito.AdditionalAnswers.returnsArgAt;
@@ -65,11 +64,6 @@ public class WindowStateTest {
     private ArgumentCaptor<Long> longCaptor;
     @Captor
     private ArgumentCaptor<WindowState.WindowPartition<Integer>> windowValuesCaptor;
-
-    @Before
-    public void setUp() throws Exception {
-        MockitoAnnotations.initMocks(this);
-    }
 
     @Test
     public void testAdd() throws Exception {
@@ -124,8 +118,6 @@ public class WindowStateTest {
                 return null;
             }
         }).when(windowState).delete(Mockito.anyLong());
-
-        Mockito.when(supplier.get()).thenReturn(Collections.emptyMap());
 
         WindowState<Integer> ws = getWindowState(10 * WindowState.MAX_PARTITION_EVENTS);
 
@@ -185,8 +177,6 @@ public class WindowStateTest {
                 return null;
             }
         }).when(windowState).put(Mockito.any(), Mockito.any());
-
-        Mockito.when(supplier.get()).thenReturn(Collections.emptyMap());
 
         WindowState<Integer> ws = getWindowState(10 * WindowState.MAX_PARTITION_EVENTS);
 

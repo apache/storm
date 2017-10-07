@@ -28,7 +28,7 @@
   (:import [org.apache.storm.generated DRPCExecutionException DRPCRequest])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:import [org.apache.storm Thrift])
-  (:import [org.mockito ArgumentCaptor Mockito Matchers])
+  (:import [org.mockito ArgumentCaptor Mockito ArgumentMatchers])
   (:use [org.apache.storm config])
   (:use [org.apache.storm clojure])
   (:use [conjure core]))
@@ -239,9 +239,9 @@
     ;; mock getServiceId s.t. DRPCSpout uses our handler
     (. (Mockito/when (.getServiceId handler)) thenReturn service-id)
     ;; mock fetchRequest s.t. DRPCSpout has a request to process on nextTuple
-    (. (Mockito/when (.fetchRequest handler (Matchers/anyString))) thenReturn (DRPCRequest. "square 2" "bar"))
+    (. (Mockito/when (.fetchRequest handler (ArgumentMatchers/anyString))) thenReturn (DRPCRequest. "square 2" "bar"))
     ;; mock failRequest s.t. DRPCSpout attempts retry on .fail
-    (.failRequest (.when (Mockito/doThrow (DRPCExecutionException.)) handler) (Matchers/anyString))
+    (.failRequest (.when (Mockito/doThrow (into-array [(DRPCExecutionException.)])) handler) (ArgumentMatchers/anyString))
 
     (let [spout (DRPCSpout. "test" handler)]
       ;; tell the spout to use the mock collector
@@ -253,7 +253,7 @@
       (.fail spout (.getValue captor))
       ;; attempt 2 reconnects 
       (.reconnectClient (Mockito/verify handler (Mockito/times 2)))
-      (.failRequest (Mockito/verify handler (Mockito/times 3)) (Matchers/anyString)))))
+      (.failRequest (Mockito/verify handler (Mockito/times 3)) (ArgumentMatchers/anyString)))))
 
 (deftest test-drpc-stops-retrying-after-successful-reconnect
   (let [handler (Mockito/mock DRPCInvocationsClient 
@@ -267,10 +267,10 @@
     ;; mock getServiceId s.t. DRPCSpout uses our handler
     (. (Mockito/when (.getServiceId handler)) thenReturn service-id)
     ;; mock fetchRequest s.t. DRPCSpout has a request to process on nextTuple
-    (. (Mockito/when (.fetchRequest handler (Matchers/anyString))) thenReturn (DRPCRequest. "square 2" "bar"))
+    (. (Mockito/when (.fetchRequest handler (ArgumentMatchers/anyString))) thenReturn (DRPCRequest. "square 2" "bar"))
     ;; mock failRequest s.t. DRPCSpout attempts retry on .fail the first time only, but succeed the second time
     (.failRequest (.when (.doNothing
-                         (Mockito/doThrow (DRPCExecutionException.))) handler) (Matchers/anyString))
+                         (Mockito/doThrow (into-array [(DRPCExecutionException.)]))) handler) (ArgumentMatchers/anyString))
 
     (let [spout (DRPCSpout. "test" handler)]
       ;; tell the spout to use the mock collector
@@ -282,4 +282,4 @@
       (.fail spout (.getValue captor))
       ;; reconnect once after a failure
       (.reconnectClient (Mockito/verify handler (Mockito/times 1)))
-      (.failRequest (Mockito/verify handler (Mockito/times 2)) (Matchers/anyString)))))
+      (.failRequest (Mockito/verify handler (Mockito/times 2)) (ArgumentMatchers/anyString)))))

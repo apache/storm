@@ -177,23 +177,17 @@
         <!-- end of transitive dependency management -->
 
         <!-- test -->
-        <!-- hamcrest-core dependency is shaded inside the mockito-all and junit depends on newer version of hamcrest-core.
-        To give higher precedence to classes from newer version of hamcrest-core, Junit has been placed above mockito.
-         -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
             <artifactId>mockito-core</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.hamcrest</groupId>
-            <artifactId>hamcrest-library</artifactId>
-            <scope>test</scope>
+            <artifactId>java-hamcrest</artifactId>
         </dependency>
     </dependencies>
 

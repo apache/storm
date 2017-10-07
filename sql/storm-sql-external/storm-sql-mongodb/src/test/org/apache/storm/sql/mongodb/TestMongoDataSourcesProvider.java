@@ -33,7 +33,6 @@ import org.bson.Document;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-import org.mockito.internal.util.reflection.Whitebox;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -49,74 +48,80 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.lang.reflect.Field;
+
 public class TestMongoDataSourcesProvider {
-  private static final List<FieldInfo> FIELDS = ImmutableList.of(
-      new FieldInfo("ID", int.class, true),
-      new FieldInfo("val", String.class, false));
-  private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
-  private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
-  private static final Properties TBL_PROPERTIES = new Properties();
 
-  static {
-    TBL_PROPERTIES.put("collection.name", "collection1");
-    TBL_PROPERTIES.put("trident.ser.field", "tridentSerField");
-  }
+    private static final List<FieldInfo> FIELDS = ImmutableList.of(
+        new FieldInfo("ID", int.class, true),
+        new FieldInfo("val", String.class, false));
+    private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
+    private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
+    private static final Properties TBL_PROPERTIES = new Properties();
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testMongoSink() {
-    ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
-            URI.create("mongodb://127.0.0.1:27017/test"), null, null, TBL_PROPERTIES, FIELDS);
-    Assert.assertNotNull(ds);
-
-    ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
-
-    Assert.assertEquals(MongoStateFactory.class, consumer.getStateFactory().getClass());
-    Assert.assertEquals(MongoStateUpdater.class, consumer.getStateUpdater().getClass());
-
-    MongoState state = (MongoState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
-    StateUpdater stateUpdater = consumer.getStateUpdater();
-
-    MongoDbClient mongoClient = mock(MongoDbClient.class);
-    Whitebox.setInternalState(state, "mongoClient", mongoClient);
-
-    List<TridentTuple> tupleList = mockTupleList();
-
-    for (TridentTuple t : tupleList) {
-      stateUpdater.updateState(state, Collections.singletonList(t), null);
-      verify(mongoClient).insert(argThat(new MongoArgMatcher(t)) , eq(true));
-    }
-
-    verifyNoMoreInteractions(mongoClient);
-  }
-
-  private static List<TridentTuple> mockTupleList() {
-    List<TridentTuple> tupleList = new ArrayList<>();
-    TridentTuple t0 = mock(TridentTuple.class);
-    TridentTuple t1 = mock(TridentTuple.class);
-    doReturn(1).when(t0).get(0);
-    doReturn(2).when(t1).get(0);
-    doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
-    doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
-    tupleList.add(t0);
-    tupleList.add(t1);
-    return tupleList;
-  }
-
-  private static class MongoArgMatcher extends ArgumentMatcher<List<Document>> {
-    private final TridentTuple tuple;
-
-    private MongoArgMatcher(TridentTuple tuple) {
-      this.tuple = tuple;
+    static {
+        TBL_PROPERTIES.put("collection.name", "collection1");
+        TBL_PROPERTIES.put("trident.ser.field", "tridentSerField");
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public boolean matches(Object o) {
-      Document doc = ((List<Document>)o).get(0);
-      ByteBuffer buf = ByteBuffer.wrap((byte[])doc.get(TBL_PROPERTIES.getProperty("trident.ser.field")));
-      ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
-      return b.equals(buf);
+    @Test
+    public void testMongoSink() throws Exception {
+        ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
+            URI.create("mongodb://127.0.0.1:27017/test"), null, null, TBL_PROPERTIES, FIELDS);
+        Assert.assertNotNull(ds);
+
+        ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
+
+        Assert.assertEquals(MongoStateFactory.class, consumer.getStateFactory().getClass());
+        Assert.assertEquals(MongoStateUpdater.class, consumer.getStateUpdater().getClass());
+
+        MongoState state = (MongoState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
+        StateUpdater stateUpdater = consumer.getStateUpdater();
+
+        MongoDbClient mongoClient = mock(MongoDbClient.class);
+        Field clientField = state.getClass().getDeclaredField("mongoClient");
+        clientField.setAccessible(true);
+        clientField.set(state, mongoClient);
+
+        List<TridentTuple> tupleList = mockTupleList();
+
+        for (TridentTuple t : tupleList) {
+            stateUpdater.updateState(state, Collections.singletonList(t), null);
+            verify(mongoClient).insert(argThat(new MongoArgMatcher(t)), eq(true));
+        }
+
+        verifyNoMoreInteractions(mongoClient);
     }
-  }
+
+    private static List<TridentTuple> mockTupleList() {
+        List<TridentTuple> tupleList = new ArrayList<>();
+        TridentTuple t0 = mock(TridentTuple.class);
+        TridentTuple t1 = mock(TridentTuple.class);
+        doReturn(1).when(t0).get(0);
+        doReturn(2).when(t1).get(0);
+        doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
+        doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
+        tupleList.add(t0);
+        tupleList.add(t1);
+        return tupleList;
+    }
+
+    private static class MongoArgMatcher implements ArgumentMatcher<List<Document>> {
+
+        private final TridentTuple tuple;
+
+        private MongoArgMatcher(TridentTuple tuple) {
+            this.tuple = tuple;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean matches(List<Document> docs) {
+            Document doc = docs.get(0);
+            ByteBuffer buf = ByteBuffer.wrap((byte[]) doc.get(TBL_PROPERTIES.getProperty("trident.ser.field")));
+            ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
+            return b.equals(buf);
+        }
+    }
 }

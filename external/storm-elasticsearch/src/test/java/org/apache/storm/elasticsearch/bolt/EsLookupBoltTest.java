@@ -92,7 +92,6 @@ public class EsLookupBoltTest extends AbstractEsBoltTest<EsLookupBolt> {
         when(tupleMapper.getIndex(tuple)).thenReturn(index);
         when(tupleMapper.getType(tuple)).thenReturn(type);
         when(tupleMapper.getId(tuple)).thenReturn(documentId);
-        when(output.toValues(any(Response.class))).thenReturn(Collections.singleton(new Values("")));
     }
 
     private void makeRequestAndThrow(Exception exception) throws IOException {

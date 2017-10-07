@@ -17,20 +17,24 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
-import static org.mockito.Matchers.any;
+import static org.hamcrest.CoreMatchers.instanceOf;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
+import org.apache.storm.elasticsearch.response.PercolateResponse;
 import org.apache.storm.testing.IntegrationTest;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
-import org.elasticsearch.action.percolate.PercolateResponse;
 import org.elasticsearch.client.ResponseException;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.ArgumentCaptor;
 
 @Category(IntegrationTest.class)
 public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercolateBolt> {
@@ -57,7 +61,10 @@ public class EsPercolateBoltTest extends AbstractEsBoltIntegrationTest<EsPercola
         bolt.execute(tuple);
 
         verify(outputCollector).ack(tuple);
-        verify(outputCollector).emit(new Values(source, any(PercolateResponse.Match.class)));
+        ArgumentCaptor<Values> emitCaptor = ArgumentCaptor.forClass(Values.class);
+        verify(outputCollector).emit(emitCaptor.capture());
+        assertThat(emitCaptor.getValue().get(0), is(source));
+        assertThat(emitCaptor.getValue().get(1), instanceOf(PercolateResponse.Match.class));
     }
 
     @Test
