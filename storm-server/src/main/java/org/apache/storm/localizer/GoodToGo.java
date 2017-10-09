@@ -29,12 +29,12 @@ import java.util.concurrent.Future;
 public class GoodToGo {
     public static class GoodToGoLatch {
         private final CountDownLatch latch;
-        private final Future<Void> doneChangeing;
+        private final Future<Void> doneChanging;
         private boolean wasCounted = false;
 
-        public GoodToGoLatch(CountDownLatch latch, Future<Void> doneChangeing) {
+        public GoodToGoLatch(CountDownLatch latch, Future<Void> doneChanging) {
             this.latch = latch;
-            this.doneChangeing = doneChangeing;
+            this.doneChanging = doneChanging;
         }
 
         public synchronized Future<Void> countDown() {
@@ -42,15 +42,15 @@ public class GoodToGo {
                 latch.countDown();
                 wasCounted = true;
             }
-            return doneChangeing;
+            return doneChanging;
         }
     }
 
     private final GoodToGoLatch latch;
     private boolean gotLatch = false;
 
-    public GoodToGo(CountDownLatch latch, Future<Void> doneChangeing) {
-        this.latch = new GoodToGoLatch(latch, doneChangeing);
+    public GoodToGo(CountDownLatch latch, Future<Void> doneChanging) {
+        this.latch = new GoodToGoLatch(latch, doneChanging);
     }
 
     /**

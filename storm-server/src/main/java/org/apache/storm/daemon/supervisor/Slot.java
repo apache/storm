@@ -115,8 +115,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         }
     }
 
-    //TODO go through all of the state transitions and make sure we handle changingBlobs
-    //TODO make sure to add in transition helpers that clean changingBlobs && pendingChangeingBlobs for not the current topology
     static class DynamicState {
         public final MachineState state;
         public final LocalAssignment newAssignment;
@@ -126,9 +124,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         public final Future<Void> pendingDownload;
         public final Set<TopoProfileAction> profileActions;
         public final Set<TopoProfileAction> pendingStopProfileActions;
-        public final Set<BlobChangeing> changingBlobs;
+        public final Set<BlobChanging> changingBlobs;
         public final LocalAssignment pendingChangingBlobsAssignment;
-        public final Set<Future<Void>> pendingChangeingBlobs;
+        public final Set<Future<Void>> pendingChangingBlobs;
         
         /**
          * The last time that WAITING_FOR_WORKER_START, KILL, or KILL_AND_RELAUNCH were entered into.
@@ -156,7 +154,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             this.pendingStopProfileActions = Collections.emptySet();
             this.changingBlobs = Collections.emptySet();
             this.pendingChangingBlobsAssignment = null;
-            this.pendingChangeingBlobs = Collections.emptySet();
+            this.pendingChangingBlobs = Collections.emptySet();
         }
 
         public DynamicState(final MachineState state, final LocalAssignment newAssignment,
@@ -164,7 +162,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                             final LocalAssignment pendingLocalization, final long startTime,
                             final Future<Void> pendingDownload, final Set<TopoProfileAction> profileActions,
                             final Set<TopoProfileAction> pendingStopProfileActions,
-                            final Set<BlobChangeing> changingBlobs,
+                            final Set<BlobChanging> changingBlobs,
                             final Set<Future<Void>> pendingChangingBlobs, final LocalAssignment pendingChaningBlobsAssignment) {
             assert pendingChangingBlobs != null;
             assert !(pendingChangingBlobs.isEmpty() ^ (pendingChaningBlobsAssignment == null));
@@ -178,7 +176,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             this.profileActions = profileActions;
             this.pendingStopProfileActions = pendingStopProfileActions;
             this.changingBlobs = changingBlobs;
-            this.pendingChangeingBlobs = pendingChangingBlobs;
+            this.pendingChangingBlobs = pendingChangingBlobs;
             this.pendingChangingBlobsAssignment = pendingChaningBlobsAssignment;
         }
         
@@ -206,7 +204,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 this.pendingLocalization, this.startTime,
                 this.pendingDownload, this.profileActions,
                 this.pendingStopProfileActions, this.changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
 
         public DynamicState withPendingLocalization(LocalAssignment pendingLocalization, Future<Void> pendingDownload) {
@@ -215,7 +213,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 pendingLocalization, this.startTime,
                 pendingDownload, this.profileActions,
                 this.pendingStopProfileActions, this.changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
         
         public DynamicState withPendingLocalization(Future<Void> pendingDownload) {
@@ -229,7 +227,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 this.pendingLocalization, newStartTime,
                 this.pendingDownload, this.profileActions,
                 this.pendingStopProfileActions, this.changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
 
         public DynamicState withCurrentAssignment(final Container container, final LocalAssignment currentAssignment) {
@@ -238,7 +236,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 this.pendingLocalization, this.startTime,
                 this.pendingDownload, this.profileActions,
                 this.pendingStopProfileActions, this.changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
 
         public DynamicState withProfileActions(Set<TopoProfileAction> profileActions, Set<TopoProfileAction> pendingStopProfileActions) {
@@ -247,10 +245,10 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 this.pendingLocalization, this.startTime,
                 this.pendingDownload, profileActions,
                 pendingStopProfileActions, this.changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
 
-        public DynamicState withChangingBlobs(Set<BlobChangeing> changingBlobs) {
+        public DynamicState withChangingBlobs(Set<BlobChanging> changingBlobs) {
             if (changingBlobs == this.changingBlobs) {
                 return this;
             }
@@ -259,18 +257,18 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 this.pendingLocalization, this.startTime,
                 this.pendingDownload, profileActions,
                 this.pendingStopProfileActions, changingBlobs,
-                this.pendingChangeingBlobs, this.pendingChangingBlobsAssignment);
+                this.pendingChangingBlobs, this.pendingChangingBlobsAssignment);
         }
 
-        public DynamicState withPendingChangeingBlobs(Set<Future<Void>> pendingChangeingBlobs,
-                                                      LocalAssignment pendingChangeingBlobsAssignment) {
+        public DynamicState withPendingChangingBlobs(Set<Future<Void>> pendingChangingBlobs,
+                                                     LocalAssignment pendingChangingBlobsAssignment) {
             return new DynamicState(this.state, this.newAssignment,
                 this.container, this.currentAssignment,
                 this.pendingLocalization, this.startTime,
                 this.pendingDownload, profileActions,
                 this.pendingStopProfileActions, this.changingBlobs,
-                pendingChangeingBlobs,
-                pendingChangeingBlobsAssignment);
+                pendingChangingBlobs,
+                pendingChangingBlobsAssignment);
         }
     };
 
@@ -318,12 +316,12 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     /**
      * Holds the information about a blob that is changing.
      */
-    static class BlobChangeing {
+    static class BlobChanging {
         private final LocalAssignment assignment;
         private final LocallyCachedBlob blob;
         private final GoodToGo.GoodToGoLatch latch;
 
-        public BlobChangeing(LocalAssignment assignment, LocallyCachedBlob blob, GoodToGo.GoodToGoLatch latch) {
+        public BlobChanging(LocalAssignment assignment, LocallyCachedBlob blob, GoodToGo.GoodToGoLatch latch) {
             this.assignment = assignment;
             this.blob = blob;
             this.latch = latch;
@@ -501,20 +499,20 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
     }
 
     /**
-     * Drop all of the changingBlobs and pendingChangeingBlobs.
+     * Drop all of the changingBlobs and pendingChangingBlobs.
      * @param dynamicState current state.
      * @return the next state.
      */
     private static DynamicState drainAllChangingBlobs(DynamicState dynamicState) {
         if (!dynamicState.changingBlobs.isEmpty()) {
-            for (BlobChangeing rc : dynamicState.changingBlobs) {
+            for (BlobChanging rc : dynamicState.changingBlobs) {
                 rc.latch.countDown();
             }
             dynamicState = dynamicState.withChangingBlobs(Collections.emptySet());
         }
 
-        if (!dynamicState.pendingChangeingBlobs.isEmpty()) {
-            dynamicState = dynamicState.withPendingChangeingBlobs(Collections.emptySet(), null);
+        if (!dynamicState.pendingChangingBlobs.isEmpty()) {
+            dynamicState = dynamicState.withPendingChangingBlobs(Collections.emptySet(), null);
         }
 
         return dynamicState;
@@ -535,17 +533,17 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         Set<Future<Void>> futures = new HashSet<>(dynamicState.changingBlobs.size());
         if (forSameTopology(dynamicState.pendingChangingBlobsAssignment, assignment)) {
             //We need to add the new futures to the existing ones
-            futures.addAll(dynamicState.pendingChangeingBlobs);
+            futures.addAll(dynamicState.pendingChangingBlobs);
         }
         //Otherwise they will just be replaced
 
-        for (BlobChangeing rc: dynamicState.changingBlobs) {
+        for (BlobChanging rc: dynamicState.changingBlobs) {
             futures.add(rc.latch.countDown());
         }
 
-        LOG.debug("found changeing blobs {} moving them to pending...", dynamicState.changingBlobs);
+        LOG.debug("found changing blobs {} moving them to pending...", dynamicState.changingBlobs);
         return dynamicState.withChangingBlobs(Collections.emptySet())
-            .withPendingChangeingBlobs(futures, assignment);
+            .withPendingChangingBlobs(futures, assignment);
     }
 
     /**
@@ -561,8 +559,8 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             return dynamicState;
         }
 
-        HashSet<BlobChangeing> savedBlobs = new HashSet<>(dynamicState.changingBlobs.size());
-        for (BlobChangeing rc: dynamicState.changingBlobs) {
+        HashSet<BlobChanging> savedBlobs = new HashSet<>(dynamicState.changingBlobs.size());
+        for (BlobChanging rc: dynamicState.changingBlobs) {
             if (forSameTopology(assignment, rc.assignment)) {
                 savedBlobs.add(rc);
             } else {
@@ -602,11 +600,11 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             if (!equivalent(dynamicState.newAssignment, dynamicState.pendingLocalization)) {
                 //Scheduling changed
                 staticState.localizer.releaseSlotFor(dynamicState.pendingLocalization, staticState.port);
-                return prepareForNewAssignmentNoWorkersRunning(dynamicState.withPendingChangeingBlobs(Collections.emptySet(), null),
+                return prepareForNewAssignmentNoWorkersRunning(dynamicState.withPendingChangingBlobs(Collections.emptySet(), null),
                     staticState);
             }
 
-            if (!dynamicState.pendingChangeingBlobs.isEmpty()) {
+            if (!dynamicState.pendingChangingBlobs.isEmpty()) {
                 LOG.info("There are pending changes, waiting for them to finish before launching container...");
                 //We cannot launch the container yet the resources may still be updating
                 return dynamicState.withState(MachineState.WAITING_FOR_BLOB_UPDATE)
@@ -644,7 +642,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
      * State Transitions for WAITING_FOR_BLOB_UPDATE state.
      *
      * PRECONDITION: container is null
-     * PRECONDITION: pendingChangeingBlobs is not empty (otherwise why did we go to this state)
+     * PRECONDITION: pendingChangingBlobs is not empty (otherwise why did we go to this state)
      * PRECONDITION: pendingChangingBlobsAssignment is not null.
      *
      * @param dynamicState current state
@@ -656,7 +654,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         throws Exception {
         assert dynamicState.container == null;
         assert dynamicState.pendingChangingBlobsAssignment != null;
-        assert !dynamicState.pendingChangeingBlobs.isEmpty();
+        assert !dynamicState.pendingChangingBlobs.isEmpty();
 
         if (!equivalent(dynamicState.newAssignment, dynamicState.currentAssignment)) {
             //We were rescheduled while waiting for the resources to be updated,
@@ -668,7 +666,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             }
             staticState.localizer.releaseSlotFor(dynamicState.pendingChangingBlobsAssignment, staticState.port);
             return prepareForNewAssignmentNoWorkersRunning(dynamicState.withCurrentAssignment(null, null)
-                    .withPendingChangeingBlobs(Collections.emptySet(), null),
+                    .withPendingChangingBlobs(Collections.emptySet(), null),
                 staticState);
         }
 
@@ -680,7 +678,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         //We only have a set amount of time we can wait for before looping around again
         long start = Time.nanoTime();
         try {
-            for (Future<Void> pending: dynamicState.pendingChangeingBlobs) {
+            for (Future<Void> pending: dynamicState.pendingChangingBlobs) {
                 long now = Time.nanoTime();
                 long timeLeft = ONE_SEC_IN_NANO - (now - start);
                 if (timeLeft <= 0) {
@@ -693,7 +691,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 staticState.localState);
             return dynamicState
                 .withCurrentAssignment(c, dynamicState.pendingChangingBlobsAssignment).withState(MachineState.WAITING_FOR_WORKER_START)
-                .withPendingChangeingBlobs(Collections.emptySet(), null);
+                .withPendingChangingBlobs(Collections.emptySet(), null);
         } catch (TimeoutException ex) {
             return dynamicState;
         }
@@ -964,7 +962,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
 
     private final AtomicReference<LocalAssignment> newAssignment = new AtomicReference<>();
     private final AtomicReference<Set<TopoProfileAction>> profiling = new AtomicReference<>(new HashSet<>());
-    private final BlockingQueue<BlobChangeing> changingBlobs = new LinkedBlockingQueue<>();
+    private final BlockingQueue<BlobChanging> changingBlobs = new LinkedBlockingQueue<>();
     private final StaticState staticState;
     private final IStormClusterState clusterState;
     private volatile boolean done = false;
@@ -1040,7 +1038,7 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         assert port == staticState.port : "got a callaback that is not for us " + port + " != " + staticState.port;
         //This is called async so lets assume that it is something we care about
         try {
-            changingBlobs.put(new BlobChangeing(assignment, blob, go.getLatch()));
+            changingBlobs.put(new BlobChanging(assignment, blob, go.getLatch()));
         } catch (InterruptedException e) {
             throw new RuntimeException("This should not have happend, but it did (the queue is unbounded)", e);
         }
@@ -1101,15 +1099,15 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
                 Set<TopoProfileAction> origProfileActions = new HashSet<>(profiling.get());
                 Set<TopoProfileAction> removed = new HashSet<>(origProfileActions);
 
-                Set<BlobChangeing> changingResourcesToHandle = dynamicState.changingBlobs;
+                Set<BlobChanging> changingResourcesToHandle = dynamicState.changingBlobs;
                 if (!changingBlobs.isEmpty()) {
                     changingResourcesToHandle = new HashSet<>(changingResourcesToHandle);
                     changingBlobs.drainTo(changingResourcesToHandle);
-                    Iterator<BlobChangeing> it = changingResourcesToHandle.iterator();
+                    Iterator<BlobChanging> it = changingResourcesToHandle.iterator();
 
                     //Remove/Clean up changed requests that are not for us
                     while(it.hasNext()) {
-                        BlobChangeing rc = it.next();
+                        BlobChanging rc = it.next();
                         if (!forSameTopology(rc.assignment, dynamicState.currentAssignment) &&
                             !forSameTopology(rc.assignment, dynamicState.newAssignment)) {
                             rc.latch.countDown(); //Ignore the future

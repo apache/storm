@@ -26,7 +26,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import org.apache.storm.daemon.supervisor.Slot.StaticState;
@@ -532,12 +531,12 @@ public class SlotTest {
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
                 containerLauncher, "localhost", port, iSuper, state, cb);
 
-            Set<Slot.BlobChangeing> changing = new HashSet<>();
+            Set<Slot.BlobChanging> changing = new HashSet<>();
             LocallyCachedBlob stormJar = mock(LocallyCachedBlob.class);
             GoodToGo.GoodToGoLatch stormJarLatch = mock(GoodToGo.GoodToGoLatch.class);
             CompletableFuture<Void> stormJarLatchFuture = mock(CompletableFuture.class);
             when(stormJarLatch.countDown()).thenReturn(stormJarLatchFuture);
-            changing.add(new Slot.BlobChangeing(cAssignment, stormJar, stormJarLatch));
+            changing.add(new Slot.BlobChanging(cAssignment, stormJar, stormJarLatch));
 
             DynamicState dynamicState = new DynamicState(cAssignment, cContainer, cAssignment).withChangingBlobs(changing);
 
@@ -549,7 +548,7 @@ public class SlotTest {
             assertNull(nextState.pendingDownload);
             assertNull(nextState.pendingLocalization);
             assertEquals(changing, nextState.changingBlobs);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertNull(nextState.pendingChangingBlobsAssignment);
             assertTrue(Time.currentTimeMillis() > 1000);
 
@@ -559,7 +558,7 @@ public class SlotTest {
             assertNull(nextState.pendingDownload);
             assertNull(nextState.pendingLocalization);
             assertEquals(changing, nextState.changingBlobs);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertNull(nextState.pendingChangingBlobsAssignment);
             assertTrue(Time.currentTimeMillis() > 2000);
 
@@ -573,7 +572,7 @@ public class SlotTest {
             verify(containerLauncher).launchContainer(port, cAssignment, state);
             assertEquals(MachineState.WAITING_FOR_WORKER_START, nextState.state);
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertSame(cAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
@@ -581,7 +580,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertSame(cAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 2000);
@@ -589,7 +588,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertSame(cAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 3000);
@@ -597,7 +596,7 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(nextState.pendingChangeingBlobs.isEmpty());
+            assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertSame(cAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
             assertTrue(Time.currentTimeMillis() > 4000);

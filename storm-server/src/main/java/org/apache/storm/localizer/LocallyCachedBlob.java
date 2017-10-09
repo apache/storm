@@ -156,7 +156,7 @@ public abstract class LocallyCachedBlob {
     }
 
     /**
-     * Mark that a given port and assignemnt are using this.
+     * Mark that a given port and assignment are using this.
      * @param pna the slot and assignment that are using this blob.
      * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
@@ -191,7 +191,6 @@ public abstract class LocallyCachedBlob {
             try {
                 PortAndAssignment pna = entry.getKey();
                 BlobChangingCallback cb = entry.getValue();
-                //TODO we probably want to not use this, or make it just return something that has less power to modify things
                 cb.blobChanging(pna.getAssignment(), pna.getPort(), this, gtg);
             } finally {
                 gtg.countDownIfLatchWasNotGotten();
@@ -200,7 +199,8 @@ public abstract class LocallyCachedBlob {
         try {
             cdl.await(3, TimeUnit.MINUTES);
         } catch (InterruptedException e) {
-            //TODO need to think about error handling here in general.
+            //Interrupted is thrown when we are shutting down.
+            // So just ignore it for now...
         }
     }
 
