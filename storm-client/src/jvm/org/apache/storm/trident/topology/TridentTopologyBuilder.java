@@ -517,12 +517,12 @@ public class TridentTopologyBuilder {
                 @Override
                 public void declare(InputDeclarer declarer) {
                     declarer.localOrShuffleGrouping(component);
-                }                
+                }
 
                 @Override
                 public String getComponent() {
                     return component;
-                }                
+                }
 
                 @Override
                 public String getStream() {
@@ -538,12 +538,12 @@ public class TridentTopologyBuilder {
                 @Override
                 public void declare(InputDeclarer declarer) {
                     declarer.localOrShuffleGrouping(component, streamId);
-                }                
+                }
 
                 @Override
                 public String getComponent() {
                     return component;
-                }                
+                }
 
                 @Override
                 public String getStream() {
@@ -552,7 +552,49 @@ public class TridentTopologyBuilder {
             });
             return this;
         }
-        
+
+        @Override
+        public BoltDeclarer localityAwareShuffleGrouping(final String component) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localityAwareShuffleGrouping(component);
+                }
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }
+
+                @Override
+                public String getStream() {
+                    return null;
+                }
+            });
+            return this;
+        }
+
+        @Override
+        public BoltDeclarer localityAwareShuffleGrouping(final String component, final String streamId) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localityAwareShuffleGrouping(component, streamId);
+                }
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }
+
+                @Override
+                public String getStream() {
+                    return streamId;
+                }
+            });
+            return this;
+        }
+
         @Override
         public BoltDeclarer noneGrouping(final String component) {
             addDeclaration(new InputDeclaration() {

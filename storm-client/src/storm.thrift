@@ -58,6 +58,7 @@ union Grouping {
   6: JavaObject custom_object;
   7: binary custom_serialized;
   8: NullStruct local_or_shuffle; // prefer sending to tasks in the same worker process, otherwise shuffle
+  9: NullStruct locality_aware; // locality aware shuffle grouping
 }
 
 struct StreamInfo {

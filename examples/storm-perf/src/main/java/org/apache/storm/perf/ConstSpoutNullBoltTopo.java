@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.bolt.DevNullBolt;
@@ -28,6 +27,8 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.BoltDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /***
  * This topo helps measure the messaging speed between a spout and a bolt.
@@ -36,6 +37,8 @@ import org.apache.storm.utils.Utils;
  */
 
 public class ConstSpoutNullBoltTopo {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConstSpoutNullBoltTopo.class);
 
     public static final String TOPOLOGY_NAME = "ConstSpoutNullBoltTopo";
     public static final String SPOUT_ID = "constSpout";
@@ -48,6 +51,7 @@ public class ConstSpoutNullBoltTopo {
 
     public static final String LOCAL_GROPING = "local";
     public static final String SHUFFLE_GROUPING = "shuffle";
+    public static final String LOCALITY_AWARE_GROUPING = "locality_aware";
     public static final String DEFAULT_GROUPING = LOCAL_GROPING;
 
     public static StormTopology getTopology(Map<String, Object> conf) {
@@ -66,10 +70,18 @@ public class ConstSpoutNullBoltTopo {
         BoltDeclarer bd = builder.setBolt(BOLT_ID, bolt, Helper.getInt(conf, BOLT_COUNT, 1));
 
         String groupingType = Helper.getStr(conf, GROUPING);
-        if(groupingType==null || groupingType.equalsIgnoreCase(DEFAULT_GROUPING) )
+        LOG.info("Grouping type is {}", groupingType);
+        if (groupingType==null || groupingType.equalsIgnoreCase(DEFAULT_GROUPING)) {
             bd.localOrShuffleGrouping(SPOUT_ID);
-        else if(groupingType.equalsIgnoreCase(SHUFFLE_GROUPING) )
+        }
+        else if (groupingType.equalsIgnoreCase(SHUFFLE_GROUPING)) {
             bd.shuffleGrouping(SPOUT_ID);
+        }
+        else if (groupingType.equalsIgnoreCase(LOCALITY_AWARE_GROUPING)) {
+            LOG.info("Using LocalityAwareShuffleGrouping");
+            bd.localityAwareShuffleGrouping(SPOUT_ID);
+        }
+
         return builder.createTopology();
     }
 

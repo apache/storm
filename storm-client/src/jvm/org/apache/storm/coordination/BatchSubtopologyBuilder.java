@@ -284,6 +284,38 @@ public class BatchSubtopologyBuilder {
             });
             return this;
         }
+
+        @Override
+        public BoltDeclarer localityAwareShuffleGrouping(final String component) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localityAwareShuffleGrouping(component);
+                }
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }
+            });
+            return this;
+        }
+
+        @Override
+        public BoltDeclarer localityAwareShuffleGrouping(final String component, final String streamId) {
+            addDeclaration(new InputDeclaration() {
+                @Override
+                public void declare(InputDeclarer declarer) {
+                    declarer.localityAwareShuffleGrouping(component, streamId);
+                }
+
+                @Override
+                public String getComponent() {
+                    return component;
+                }
+            });
+            return this;
+        }
         
         @Override
         public BoltDeclarer noneGrouping(final String component) {
