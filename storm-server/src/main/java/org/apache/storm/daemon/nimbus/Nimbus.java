@@ -1845,7 +1845,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (!newAssignments.equals(existingAssignments)) {
                 LOG.debug("RESETTING id->resources and id->worker-resources cache!");
                 LOG.info("Fragmentation after scheduling is: {} MB, {} PCore CPUs", fragmentedMemory(), fragmentedCpu());
-                //map.forEach((x, y) -> System.out.println(x + ": " + y));
                 nodeIdToResources.get().forEach((id, node) ->
                     LOG.info("Node Id: {} Total Mem: {}, Used Mem: {}, Avialble Mem: {}, Total CPU: {}, Used CPU: {}, Available CPU: {}, fragmented: {}",
                         id, node.getTotalMem(), node.getUsedMem(), node.getAvailableMem(), node.getTotalCpu(), node.getUsedCpu(), node.getAvailableCpu(), isFragmented(node)));
