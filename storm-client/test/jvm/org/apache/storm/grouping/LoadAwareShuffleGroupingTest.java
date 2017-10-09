@@ -18,13 +18,19 @@
 package org.apache.storm.grouping;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Sets;
 import com.google.common.util.concurrent.MoreExecutors;
 import java.util.Arrays;
+
+import org.apache.commons.collections.map.HashedMap;
+import org.apache.storm.Config;
 import org.apache.storm.daemon.GrouperFactory;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.NullStruct;
 import org.apache.storm.task.WorkerTopologyContext;
+import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
@@ -44,20 +50,39 @@ import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public class LoadAwareShuffleGroupingTest {
     public static final double ACCEPTABLE_MARGIN = 0.015;
     private static final Logger LOG = LoggerFactory.getLogger(LoadAwareShuffleGroupingTest.class);
 
+    private WorkerTopologyContext mockContext(List<Integer> availableTaskIds) {
+        Map<String, Object> conf = new HashMap<>();
+        conf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
+        conf.put(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT, 0.8);
+        conf.put(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT, 0.2);
+
+        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        when(context.getConf()).thenReturn(conf);
+        Map<Integer, NodeInfo> taskNodeToPort = new HashMap<>();
+        NodeInfo nodeInfo = new NodeInfo("node-id", Sets.newHashSet(6700L));
+        availableTaskIds.forEach(e -> taskNodeToPort.put(e, nodeInfo));
+        when(context.getTaskToNodePort()).thenReturn(new AtomicReference<>(taskNodeToPort));
+        when(context.getThisWorkerHost()).thenReturn("node-id");
+        when(context.getThisWorkerPort()).thenReturn(6700);
+        return context;
+    }
+
     @Test
     public void testUnevenLoadOverTime() throws Exception {
         LoadAwareShuffleGrouping grouping = new LoadAwareShuffleGrouping();
-        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        WorkerTopologyContext context = mockContext(Arrays.asList(1, 2));
         grouping.prepare(context, new GlobalStreamId("a", "default"), Arrays.asList(1, 2));
         double expectedOneWeight = 100.0;
         double expectedTwoWeight = 100.0;
@@ -122,7 +147,7 @@ public class LoadAwareShuffleGroupingTest {
         final List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
         final LoadMapping loadMapping = buildLocalTasksEvenLoadMapping(availableTaskIds);
 
-        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        final WorkerTopologyContext context = mockContext(availableTaskIds);
         grouper.prepare(context, null, availableTaskIds);
 
         // Keep track of how many times we see each taskId
@@ -152,7 +177,7 @@ public class LoadAwareShuffleGroupingTest {
         final List<Integer> availableTaskIds = getAvailableTaskIds(numTasks);
         final LoadMapping loadMapping = buildLocalTasksEvenLoadMapping(availableTaskIds);
 
-        final WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        final WorkerTopologyContext context = mockContext(availableTaskIds);
         grouper.prepare(context, null, availableTaskIds);
 
         // force triggers building ring
@@ -222,7 +247,7 @@ public class LoadAwareShuffleGroupingTest {
     public void testShuffleLoadEven() {
         // port test-shuffle-load-even
         LoadAwareCustomStreamGrouping shuffler = GrouperFactory
-            .mkGrouper(null, "comp", "stream", null, Grouping.shuffle(new NullStruct()),
+            .mkGrouper(mockContext(Lists.newArrayList(1, 2)), "comp", "stream", null, Grouping.shuffle(new NullStruct()),
                 Lists.newArrayList(1, 2), Collections.emptyMap());
         int numMessages = 100000;
         int minPrCount = (int) (numMessages * (0.5 - ACCEPTABLE_MARGIN));
@@ -367,7 +392,7 @@ public class LoadAwareShuffleGroupingTest {
         // Task Id not used, so just pick a static value
         final int inputTaskId = 100;
 
-        WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        WorkerTopologyContext context = mockContext(availableTaskIds);
         grouper.prepare(context, null, availableTaskIds);
 
         // periodically calls refreshLoad in 1 sec to simulate worker load update timer
@@ -405,7 +430,7 @@ public class LoadAwareShuffleGroupingTest {
         // Task Id not used, so just pick a static value
         final int inputTaskId = 100;
 
-        final WorkerTopologyContext context = mock(WorkerTopologyContext.class);
+        final WorkerTopologyContext context = mockContext(availableTaskIds);
 
         // Call prepare with our available taskIds
         grouper.prepare(context, null, availableTaskIds);
