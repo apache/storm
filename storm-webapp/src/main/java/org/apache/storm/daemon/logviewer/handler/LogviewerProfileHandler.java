@@ -68,10 +68,10 @@ public class LogviewerProfileHandler {
      */
     public Response listDumpFiles(String topologyId, String hostPort, String user) throws IOException {
         String portStr = hostPort.split(":")[1];
-        File dir = new File(String.join(ServerUtils.FILE_PATH_SEPARATOR, logRoot, topologyId, portStr));
+        File dir = new File(String.join(File.separator, logRoot, topologyId, portStr));
 
         if (dir.exists()) {
-            String workerFileRelativePath = String.join(ServerUtils.FILE_PATH_SEPARATOR, topologyId, portStr, WORKER_LOG_FILENAME);
+            String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 String content = buildDumpFileListPage(topologyId, hostPort, dir);
                 return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
@@ -95,11 +95,11 @@ public class LogviewerProfileHandler {
      */
     public Response downloadDumpFile(String topologyId, String hostPort, String fileName, String user) throws IOException {
         String portStr = hostPort.split(":")[1];
-        File dir = new File(String.join(ServerUtils.FILE_PATH_SEPARATOR, logRoot, topologyId, portStr));
+        File dir = new File(String.join(File.separator, logRoot, topologyId, portStr));
         File file = new File(dir, fileName);
 
         if (dir.exists() && file.exists()) {
-            String workerFileRelativePath = String.join(ServerUtils.FILE_PATH_SEPARATOR, topologyId, portStr, WORKER_LOG_FILENAME);
+            String workerFileRelativePath = String.join(File.separator, topologyId, portStr, WORKER_LOG_FILENAME);
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 return LogviewerResponseBuilder.buildDownloadFile(file);
             } else {

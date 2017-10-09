@@ -1,0 +1,2 @@
+# Some storm-webapp logviewer tests require input files to have LF line endings due to byte counting.
+storm-webapp/src/test/resources/*.log.test text eol=lf

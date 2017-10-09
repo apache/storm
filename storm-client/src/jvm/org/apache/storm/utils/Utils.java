@@ -106,7 +106,6 @@ public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
     private static final Set<Class> defaultAllowedExceptions = new HashSet<>();
-    public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
     private static final List<String> LOCALHOST_ADDRESSES = Lists.newArrayList("localhost", "127.0.0.1", "0:0:0:0:0:0:0:1");
 
     private static ThreadLocal<TSerializer> threadSer = new ThreadLocal<TSerializer>();

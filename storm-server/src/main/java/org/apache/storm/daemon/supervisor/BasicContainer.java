@@ -66,7 +66,7 @@ public class BasicContainer extends Container {
     private static final Logger LOG = LoggerFactory.getLogger(BasicContainer.class);
     private static final FilenameFilter jarFilter = (dir, name) -> name.endsWith(".jar");
     private static final Joiner CPJ = 
-            Joiner.on(ServerUtils.CLASS_PATH_SEPARATOR).skipNulls();
+            Joiner.on(File.pathSeparator).skipNulls();
     
     protected final LocalState _localState;
     protected final String _profileCmd;
@@ -156,7 +156,7 @@ public class BasicContainer extends Container {
         }
 
         if (profileCmd == null) {
-            profileCmd = _stormHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR
+            profileCmd = _stormHome + File.separator + "bin" + File.separator
                     + conf.get(DaemonConfig.WORKER_PROFILER_COMMAND);
         }
         _profileCmd = profileCmd;
@@ -350,10 +350,10 @@ public class BasicContainer extends Container {
      * @return the java.library.path/LD_LIBRARY_PATH to use so native libraries load correctly.
      */
     protected String javaLibraryPath(String stormRoot, Map<String, Object> conf) {
-        String resourceRoot = stormRoot + Utils.FILE_PATH_SEPARATOR + ServerConfigUtils.RESOURCES_SUBDIR;
+        String resourceRoot = stormRoot + File.separator + ServerConfigUtils.RESOURCES_SUBDIR;
         String os = System.getProperty("os.name").replaceAll("\\s+", "_");
         String arch = System.getProperty("os.arch");
-        String archResourceRoot = resourceRoot + Utils.FILE_PATH_SEPARATOR + os + "-" + arch;
+        String archResourceRoot = resourceRoot + File.separator + os + "-" + arch;
         String ret = CPJ.join(archResourceRoot, resourceRoot,
                 conf.get(DaemonConfig.JAVA_LIBRARY_PATH));
         return ret;
@@ -514,16 +514,16 @@ public class BasicContainer extends Container {
 
         if (StringUtils.isNotBlank(log4jConfigurationDir)) {
             if (!ServerUtils.isAbsolutePath(log4jConfigurationDir)) {
-                log4jConfigurationDir = _stormHome + Utils.FILE_PATH_SEPARATOR + log4jConfigurationDir;
+                log4jConfigurationDir = _stormHome + File.separator + log4jConfigurationDir;
             }
         } else {
-            log4jConfigurationDir = _stormHome + Utils.FILE_PATH_SEPARATOR + "log4j2";
+            log4jConfigurationDir = _stormHome + File.separator + "log4j2";
         }
  
         if (ServerUtils.IS_ON_WINDOWS && !log4jConfigurationDir.startsWith("file:")) {
             log4jConfigurationDir = "file:///" + log4jConfigurationDir;
         }
-        return log4jConfigurationDir + Utils.FILE_PATH_SEPARATOR + "worker.xml";
+        return log4jConfigurationDir + File.separator + "worker.xml";
     }
     
     private static class TopologyMetaData {
@@ -692,7 +692,7 @@ public class BasicContainer extends Container {
         String ret = null;
         String javaHome = System.getenv().get("JAVA_HOME");
         if (StringUtils.isNotBlank(javaHome)) {
-            ret = javaHome + Utils.FILE_PATH_SEPARATOR + "bin" + Utils.FILE_PATH_SEPARATOR + cmd;
+            ret = javaHome + File.separator + "bin" + File.separator + cmd;
         } else {
             ret = cmd;
         }

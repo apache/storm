@@ -43,7 +43,7 @@ public class LogFileDownloader {
     }
 
     /**
-     * Checks authorization for the log file and download
+     * Checks authorization for the log file and download.
      *
      * @param fileName file to download
      * @param user username

@@ -67,10 +67,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.GZIPInputStream;
@@ -80,8 +78,6 @@ import java.util.zip.ZipFile;
 public class ServerUtils {
     public static final Logger LOG = LoggerFactory.getLogger(ServerUtils.class);
 
-    public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
-    public static final String CLASS_PATH_SEPARATOR = System.getProperty("path.separator");
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
     public static final String CURRENT_BLOB_SUFFIX_ID = "current";
 
@@ -282,11 +278,11 @@ public class ServerUtils {
     }
 
     public static String containerFilePath (String dir) {
-        return dir + FILE_PATH_SEPARATOR + "launch_container.sh";
+        return dir + File.separator + "launch_container.sh";
     }
 
     public static String scriptFilePath (String dir) {
-        return dir + FILE_PATH_SEPARATOR + "storm-worker-script.sh";
+        return dir + File.separator + "storm-worker-script.sh";
     }
 
     /**

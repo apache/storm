@@ -18,14 +18,14 @@
 
 package org.apache.storm.utils;
 
-public class WebAppUtils {
-    public static final String FILE_PATH_SEPARATOR = System.getProperty("file.separator");
+import java.io.File;
 
+public class WebAppUtils {
     public static String eventLogsFilename(String stormId, String port) {
-        return stormId + FILE_PATH_SEPARATOR + port + FILE_PATH_SEPARATOR + "events.log";
+        return stormId + File.separator + port + File.separator + "events.log";
     }
 
     public static String logsFilename(String stormId, String port) {
-        return stormId + FILE_PATH_SEPARATOR + port + FILE_PATH_SEPARATOR + "worker.log";
+        return stormId + File.separator + port + File.separator + "worker.log";
     }
 }

@@ -318,7 +318,7 @@ public class AsyncLocalizer implements AutoCloseable {
                     }
                 }
                 boolean deleteAll = true;
-                String tmproot = ServerConfigUtils.supervisorTmpDir(conf) + Utils.FILE_PATH_SEPARATOR + Utils.uuid();
+                String tmproot = ServerConfigUtils.supervisorTmpDir(conf) + File.separator + Utils.uuid();
                 File tr = new File(tmproot);
                 try {
                     downloadBaseBlobs(tr);
@@ -379,7 +379,7 @@ public class AsyncLocalizer implements AutoCloseable {
             String resourcesJar = resourcesJar();
             URL url = classloader.getResource(ServerConfigUtils.RESOURCES_SUBDIR);
 
-            String targetDir = tmproot + Utils.FILE_PATH_SEPARATOR;
+            String targetDir = tmproot + File.separator;
             if (resourcesJar != null) {
                 LOG.info("Extracting resources from jar at {} to {}", resourcesJar, targetDir);
                 ServerUtils.extractDirFromJar(resourcesJar, ServerConfigUtils.RESOURCES_SUBDIR, new File(targetDir));
