@@ -21,56 +21,47 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.spout.CheckpointSpout;
 import org.apache.storm.state.KeyValueState;
-import org.apache.storm.state.State;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.topology.IStatefulBolt;
-import org.apache.storm.topology.StatefulBoltExecutor;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 
 import static org.apache.storm.spout.CheckPointState.Action.*;
 import static org.apache.storm.spout.CheckpointSpout.*;
+import static org.mockito.Mockito.mock;
 
 /**
  * Unit tests for {@link StatefulBoltExecutor}
  */
 public class StatefulBoltExecutorTest {
-    StatefulBoltExecutor<KeyValueState<String, String>> executor;
-    IStatefulBolt<KeyValueState<String, String>> mockBolt;
-    TopologyContext mockTopologyContext;
-    Tuple mockTuple;
-    Tuple mockCheckpointTuple;
-    Map<String, Object> mockStormConf = new HashMap<>();
-    OutputCollector mockOutputCollector;
-    State mockState;
-    Map<GlobalStreamId, Grouping> mockGlobalStream;
-    Set<GlobalStreamId> mockStreamIds;
+    private StatefulBoltExecutor<KeyValueState<String, String>> executor;
+    private IStatefulBolt<KeyValueState<String, String>> mockBolt;
+    private TopologyContext mockTopologyContext;
+    private Tuple mockTuple;
+    private Tuple mockCheckpointTuple;
+    private Map<String, Object> mockStormConf = new HashMap<>();
+    private OutputCollector mockOutputCollector;
+    private KeyValueState<String, String> mockState;
+    
     @Before
     public void setUp() throws Exception {
         mockBolt = Mockito.mock(IStatefulBolt.class);
         executor = new StatefulBoltExecutor<>(mockBolt);
-        GlobalStreamId mockGlobalStreamId = Mockito.mock(GlobalStreamId.class);
-        Mockito.when(mockGlobalStreamId.get_streamId()).thenReturn(CheckpointSpout.CHECKPOINT_STREAM_ID);
-        mockStreamIds = new HashSet<>();
-        mockStreamIds.add(mockGlobalStreamId);
         mockTopologyContext = Mockito.mock(TopologyContext.class);
         mockOutputCollector = Mockito.mock(OutputCollector.class);
-        mockGlobalStream = Mockito.mock(Map.class);
-        mockState = Mockito.mock(State.class);
+        mockState = Mockito.mock(KeyValueState.class);
         Mockito.when(mockTopologyContext.getThisComponentId()).thenReturn("test");
         Mockito.when(mockTopologyContext.getThisTaskId()).thenReturn(1);
-        Mockito.when(mockTopologyContext.getThisSources()).thenReturn(mockGlobalStream);
-        Mockito.when(mockTopologyContext.getComponentTasks(Mockito.anyString())).thenReturn(Collections.singletonList(1));
-        Mockito.when(mockGlobalStream.keySet()).thenReturn(mockStreamIds);
+        GlobalStreamId globalStreamId = new GlobalStreamId("test", CheckpointSpout.CHECKPOINT_STREAM_ID);
+        Map<GlobalStreamId, Grouping> thisSources = Collections.singletonMap(globalStreamId, mock(Grouping.class));
+        Mockito.when(mockTopologyContext.getThisSources()).thenReturn(thisSources);
+        Mockito.when(mockTopologyContext.getComponentTasks(Mockito.any())).thenReturn(Collections.singletonList(1));
         mockTuple = Mockito.mock(Tuple.class);
         mockCheckpointTuple = Mockito.mock(Tuple.class);
         executor.prepare(mockStormConf, mockTopologyContext, mockOutputCollector, mockState);

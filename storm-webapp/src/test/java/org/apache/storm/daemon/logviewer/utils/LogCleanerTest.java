@@ -24,13 +24,15 @@ import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_AGE_MINS;
 import static org.apache.storm.DaemonConfig.LOGVIEWER_CLEANUP_INTERVAL_SECS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyBoolean;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyMapOf;
-import static org.mockito.Matchers.anySetOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyListOf;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyMapOf;
+import static org.mockito.ArgumentMatchers.anySet;
+import static org.mockito.ArgumentMatchers.anySetOf;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -118,12 +120,12 @@ public class LogCleanerTest {
             prevUtils = Utils.setInstance(mockUtils);
 
             DirectoryCleaner mockDirectoryCleaner = mock(DirectoryCleaner.class);
-            when(mockDirectoryCleaner.getStreamForDirectory(any(File.class))).thenAnswer(invocationOnMock -> {
+            when(mockDirectoryCleaner.getStreamForDirectory(any())).thenAnswer(invocationOnMock -> {
                 File file = (File) invocationOnMock.getArguments()[0];
                 List<Path> paths = Arrays.stream(file.listFiles()).map(f -> mkMockPath(f)).collect(toList());
                 return mkDirectoryStream(paths);
             });
-            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(anyListOf(File.class), anyLong(), anyBoolean(), anySetOf(String.class)))
+            when(mockDirectoryCleaner.deleteOldestWhileTooLarge(any(), anyLong(), anyBoolean(), any()))
                     .thenCallRealMethod();
 
             long nowMillis = Time.currentTimeMillis();

@@ -32,7 +32,6 @@ import org.apache.storm.trident.tuple.TridentTuple;
 import org.junit.Assert;
 import org.junit.Test;
 import org.mockito.ArgumentMatcher;
-import org.mockito.internal.util.reflection.Whitebox;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
@@ -46,80 +45,85 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
+import java.lang.reflect.Field;
+
 public class TestKafkaDataSourcesProvider {
-  private static final List<FieldInfo> FIELDS = ImmutableList.of(
-          new FieldInfo("ID", int.class, true),
-          new FieldInfo("val", String.class, false));
-  private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
-  private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
-  private static final Properties TBL_PROPERTIES = new Properties();
 
-  static {
-    Map<String,Object> map = new HashMap<>();
-    map.put("bootstrap.servers", "localhost:9092");
-    map.put("acks", "1");
-    map.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-    map.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
-    TBL_PROPERTIES.put("producer", map);
-  }
+    private static final List<FieldInfo> FIELDS = ImmutableList.of(
+        new FieldInfo("ID", int.class, true),
+        new FieldInfo("val", String.class, false));
+    private static final List<String> FIELD_NAMES = ImmutableList.of("ID", "val");
+    private static final JsonSerializer SERIALIZER = new JsonSerializer(FIELD_NAMES);
+    private static final Properties TBL_PROPERTIES = new Properties();
 
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testKafkaSink() {
-    ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
-            URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
-    Assert.assertNotNull(ds);
-
-    ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
-
-    Assert.assertEquals(TridentKafkaStateFactory.class, consumer.getStateFactory().getClass());
-    Assert.assertEquals(TridentKafkaUpdater.class, consumer.getStateUpdater().getClass());
-
-    TridentKafkaState state = (TridentKafkaState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
-    KafkaProducer producer = mock(KafkaProducer.class);
-    doReturn(mock(Future.class)).when(producer).send(any(ProducerRecord.class));
-    Whitebox.setInternalState(state, "producer", producer);
-
-    List<TridentTuple> tupleList = mockTupleList();
-    for (TridentTuple t : tupleList) {
-      state.updateState(Collections.singletonList(t), null);
-      verify(producer).send(argThat(new KafkaMessageMatcher(t)));
-    }
-    verifyNoMoreInteractions(producer);
-  }
-
-  private static List<TridentTuple> mockTupleList() {
-    List<TridentTuple> tupleList = new ArrayList<>();
-    TridentTuple t0 = mock(TridentTuple.class);
-    TridentTuple t1 = mock(TridentTuple.class);
-    doReturn(1).when(t0).get(0);
-    doReturn(2).when(t1).get(0);
-    doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
-    doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
-    tupleList.add(t0);
-    tupleList.add(t1);
-    return tupleList;
-  }
-
-  private static class KafkaMessageMatcher extends ArgumentMatcher<ProducerRecord> {
-    private static final int PRIMARY_INDEX = 0;
-    private final TridentTuple tuple;
-
-    private KafkaMessageMatcher(TridentTuple tuple) {
-      this.tuple = tuple;
+    static {
+        Map<String, Object> map = new HashMap<>();
+        map.put("bootstrap.servers", "localhost:9092");
+        map.put("acks", "1");
+        map.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        map.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
+        TBL_PROPERTIES.put("producer", map);
     }
 
     @SuppressWarnings("unchecked")
-    @Override
-    public boolean matches(Object o) {
-      ProducerRecord<Object, ByteBuffer> m = (ProducerRecord<Object,ByteBuffer>)o;
-      if (m.key() != tuple.get(PRIMARY_INDEX)) {
-        return false;
-      }
-      ByteBuffer buf = m.value();
-      ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
-      return b.equals(buf);
+    @Test
+    public void testKafkaSink() throws Exception {
+        ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
+            URI.create("kafka://mock?topic=foo"), null, null, TBL_PROPERTIES, FIELDS);
+        Assert.assertNotNull(ds);
+
+        ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
+
+        Assert.assertEquals(TridentKafkaStateFactory.class, consumer.getStateFactory().getClass());
+        Assert.assertEquals(TridentKafkaUpdater.class, consumer.getStateUpdater().getClass());
+
+        TridentKafkaState state = (TridentKafkaState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
+        KafkaProducer producer = mock(KafkaProducer.class);
+        doReturn(mock(Future.class)).when(producer).send(any(ProducerRecord.class));
+        Field producerField = state.getClass().getDeclaredField("producer");
+        producerField.setAccessible(true);
+        producerField.set(state, producer);
+
+        List<TridentTuple> tupleList = mockTupleList();
+        for (TridentTuple t : tupleList) {
+            state.updateState(Collections.singletonList(t), null);
+            verify(producer).send(argThat(new KafkaMessageMatcher(t)));
+        }
+        verifyNoMoreInteractions(producer);
     }
-  }
+
+    private static List<TridentTuple> mockTupleList() {
+        List<TridentTuple> tupleList = new ArrayList<>();
+        TridentTuple t0 = mock(TridentTuple.class);
+        TridentTuple t1 = mock(TridentTuple.class);
+        doReturn(1).when(t0).get(0);
+        doReturn(2).when(t1).get(0);
+        doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
+        doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
+        tupleList.add(t0);
+        tupleList.add(t1);
+        return tupleList;
+    }
+
+    private static class KafkaMessageMatcher implements ArgumentMatcher<ProducerRecord<Object, ByteBuffer>> {
+
+        private static final int PRIMARY_INDEX = 0;
+        private final TridentTuple tuple;
+
+        private KafkaMessageMatcher(TridentTuple tuple) {
+            this.tuple = tuple;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public boolean matches(ProducerRecord<Object, ByteBuffer> record) {
+            if (record.key() != tuple.get(PRIMARY_INDEX)) {
+                return false;
+            }
+            ByteBuffer buf = record.value();
+            ByteBuffer b = SERIALIZER.write(tuple.getValues(), null);
+            return b.equals(buf);
+        }
+    }
 
 }

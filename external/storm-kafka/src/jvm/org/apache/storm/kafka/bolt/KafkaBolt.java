@@ -76,7 +76,7 @@ public class KafkaBolt<K, V> extends BaseTickTupleAwareRichBolt {
     private boolean async = true;
 
     public KafkaBolt() {}
-
+    
     public KafkaBolt<K,V> withTupleToKafkaMapper(TupleToKafkaMapper<K,V> mapper) {
         this.mapper = mapper;
         return this;

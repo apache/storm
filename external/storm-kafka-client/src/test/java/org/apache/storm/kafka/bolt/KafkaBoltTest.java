@@ -17,8 +17,8 @@
  */
 package org.apache.storm.kafka.bolt;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.argThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -75,9 +75,8 @@ public class KafkaBoltTest {
         bolt.execute(testTuple);
         verify(producer).send(argThat(new ArgumentMatcher<ProducerRecord<String, String>>() {
             @Override
-            public boolean matches(Object argument) {
-                LOG.info("GOT {} ->", argument);
-                ProducerRecord<String, String> arg = (ProducerRecord<String, String>) argument;
+            public boolean matches(ProducerRecord<String, String> arg) {
+                LOG.info("GOT {} ->", arg);
                 LOG.info("  {} {} {}", arg.topic(), arg.key(), arg.value());
                 return "MY_TOPIC".equals(arg.topic()) &&
                         "KEY".equals(arg.key()) &&

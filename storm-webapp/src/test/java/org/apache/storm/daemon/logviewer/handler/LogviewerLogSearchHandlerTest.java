@@ -20,10 +20,11 @@ package org.apache.storm.daemon.logviewer.handler;
 
 import static java.util.stream.Collectors.joining;
 import static org.junit.Assert.assertEquals;
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.anyInt;
-import static org.mockito.Matchers.anyListOf;
-import static org.mockito.Matchers.anyString;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -676,7 +677,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(4)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(4)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(4)).logsForPort(isNull(), any(File.class));
 
             // File offset and byte offset should always be zero when searching multiple workers (multiple ports).
             assertEquals(logFiles, files.getAllValues().get(0));
@@ -718,7 +719,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(4)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(4)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(4)).logsForPort(isNull(), any(File.class));
 
             // File offset and byte offset should always be zero when searching multiple workers (multiple ports).
             assertEquals(Collections.singletonList(logFiles.get(0)), files.getAllValues().get(0));
@@ -760,7 +761,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
 
             assertEquals(logFiles, files.getAllValues().get(0));
             assertEquals(Integer.valueOf(20), numMatches.getAllValues().get(0));
@@ -783,7 +784,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
 
             assertEquals(logFiles, files.getAllValues().get(0));
             assertEquals(Integer.valueOf(20), numMatches.getAllValues().get(0));
@@ -806,7 +807,7 @@ public class LogviewerLogSearchHandlerTest {
 
             verify(handler, times(1)).findNMatches(files.capture(), numMatches.capture(), fileOffset.capture(),
                     offset.capture(), search.capture());
-            verify(handler, times(2)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
 
             // File offset should be zero, since search-archived is false.
             assertEquals(Collections.singletonList(logFiles.get(0)), files.getAllValues().get(0));
@@ -822,8 +823,8 @@ public class LogviewerLogSearchHandlerTest {
 
             handler.deepSearchLogsForTopology("", null, "search", "20", "6700", "1", "100", true, null, null);
 
-            verify(handler, times(1)).findNMatches(anyListOf(File.class), anyInt(), anyInt(), anyInt(), anyString());
-            verify(handler, times(2)).logsForPort(anyString(), any(File.class));
+            verify(handler, times(1)).findNMatches(anyList(), anyInt(), anyInt(), anyInt(), anyString());
+            verify(handler, times(2)).logsForPort(isNull(), any(File.class));
         }
 
         @Test
@@ -850,14 +851,14 @@ public class LogviewerLogSearchHandlerTest {
                     new ResourceAuthorizer(stormConf));
             handler = spy(handler);
 
-            doReturn(logFiles).when(handler).logsForPort(anyString(), any(File.class));
+            doReturn(logFiles).when(handler).logsForPort(any(), any());
             doAnswer(invocationOnMock -> {
                 Object[] arguments = invocationOnMock.getArguments();
                 int fileOffset = (Integer) arguments[2];
                 String search = (String) arguments[4];
 
                 return new LogviewerLogSearchHandler.Matched(fileOffset, search, Collections.emptyList());
-            }).when(handler).findNMatches(anyListOf(File.class), anyInt(), anyInt(), anyInt(), anyString());
+            }).when(handler).findNMatches(any(), anyInt(), anyInt(), anyInt(), any());
 
             return handler;
         }

@@ -34,7 +34,6 @@ import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.internal.util.reflection.Whitebox;
 
 import java.io.File;
 import java.io.IOException;
@@ -49,81 +48,86 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
+import java.lang.reflect.Field;
+
 public class TestHdfsDataSourcesProvider {
-  private static final List<FieldInfo> FIELDS = ImmutableList.of(
-      new FieldInfo("ID", int.class, true),
-      new FieldInfo("val", String.class, false));
-  private static final Properties TBL_PROPERTIES = new Properties();
 
-  private static String hdfsURI;
-  private static MiniDFSCluster hdfsCluster;
+    private static final List<FieldInfo> FIELDS = ImmutableList.of(
+        new FieldInfo("ID", int.class, true),
+        new FieldInfo("val", String.class, false));
+    private static final Properties TBL_PROPERTIES = new Properties();
 
-  static {
-    TBL_PROPERTIES.put("hdfs.file.path", "/unittest");
-    TBL_PROPERTIES.put("hdfs.file.name", "test1.txt");
-    TBL_PROPERTIES.put("hdfs.rotation.time.seconds", "120");
-  }
+    private static String hdfsURI;
+    private static MiniDFSCluster hdfsCluster;
 
-  @Before
-  public void setup() throws Exception {
-    Configuration conf = new Configuration();
-    conf.set("fs.trash.interval", "10");
-    conf.setBoolean("dfs.permissions", true);
-    File baseDir = new File("./target/hdfs/").getAbsoluteFile();
-    FileUtil.fullyDelete(baseDir);
-    conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
-
-    MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-    hdfsCluster = builder.build();
-    hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
-  }
-
-  @After
-  public void shutDown() throws IOException {
-    hdfsCluster.shutdown();
-  }
-
-  @SuppressWarnings("unchecked")
-  @Test
-  public void testHdfsSink() {
-    ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
-            URI.create(hdfsURI), null, null, TBL_PROPERTIES, FIELDS);
-    Assert.assertNotNull(ds);
-
-    ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
-
-    Assert.assertEquals(HdfsStateFactory.class, consumer.getStateFactory().getClass());
-    Assert.assertEquals(HdfsUpdater.class, consumer.getStateUpdater().getClass());
-
-    HdfsState state = (HdfsState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
-    StateUpdater stateUpdater = consumer.getStateUpdater();
-
-    HdfsFileOptions options = mock(HdfsFileOptions.class);
-    Whitebox.setInternalState(state, "options", options);
-
-    List<TridentTuple> tupleList = mockTupleList();
-
-    for (TridentTuple t : tupleList) {
-      stateUpdater.updateState(state, Collections.singletonList(t), null);
-      try {
-        verify(options).execute(Collections.singletonList(t));
-      } catch (IOException e) {
-        throw new RuntimeException(e);
-      }
+    static {
+        TBL_PROPERTIES.put("hdfs.file.path", "/unittest");
+        TBL_PROPERTIES.put("hdfs.file.name", "test1.txt");
+        TBL_PROPERTIES.put("hdfs.rotation.time.seconds", "120");
     }
-  }
 
-  private static List<TridentTuple> mockTupleList() {
-    List<TridentTuple> tupleList = new ArrayList<>();
-    TridentTuple t0 = mock(TridentTuple.class);
-    TridentTuple t1 = mock(TridentTuple.class);
-    doReturn(1).when(t0).get(0);
-    doReturn(2).when(t1).get(0);
-    doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
-    doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
-    tupleList.add(t0);
-    tupleList.add(t1);
-    return tupleList;
-  }
+    @Before
+    public void setup() throws Exception {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+
+        MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
+        hdfsCluster = builder.build();
+        hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
+    }
+
+    @After
+    public void shutDown() throws IOException {
+        hdfsCluster.shutdown();
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    public void testHdfsSink() throws Exception {
+        ISqlTridentDataSource ds = DataSourcesRegistry.constructTridentDataSource(
+            URI.create(hdfsURI), null, null, TBL_PROPERTIES, FIELDS);
+        Assert.assertNotNull(ds);
+
+        ISqlTridentDataSource.SqlTridentConsumer consumer = ds.getConsumer();
+
+        Assert.assertEquals(HdfsStateFactory.class, consumer.getStateFactory().getClass());
+        Assert.assertEquals(HdfsUpdater.class, consumer.getStateUpdater().getClass());
+
+        HdfsState state = (HdfsState) consumer.getStateFactory().makeState(Collections.emptyMap(), null, 0, 1);
+        StateUpdater stateUpdater = consumer.getStateUpdater();
+
+        HdfsFileOptions options = mock(HdfsFileOptions.class);
+        Field optionsField = state.getClass().getDeclaredField("options");
+        optionsField.setAccessible(true);
+        optionsField.set(state, options);
+
+        List<TridentTuple> tupleList = mockTupleList();
+
+        for (TridentTuple t : tupleList) {
+            stateUpdater.updateState(state, Collections.singletonList(t), null);
+            try {
+                verify(options).execute(Collections.singletonList(t));
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    private static List<TridentTuple> mockTupleList() {
+        List<TridentTuple> tupleList = new ArrayList<>();
+        TridentTuple t0 = mock(TridentTuple.class);
+        TridentTuple t1 = mock(TridentTuple.class);
+        doReturn(1).when(t0).get(0);
+        doReturn(2).when(t1).get(0);
+        doReturn(Lists.<Object>newArrayList(1, "2")).when(t0).getValues();
+        doReturn(Lists.<Object>newArrayList(2, "3")).when(t1).getValues();
+        tupleList.add(t0);
+        tupleList.add(t1);
+        return tupleList;
+    }
 
 }
