@@ -18,12 +18,12 @@
 
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.common.TopicPartition;
 
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.common.TopicPartition;
 
 /**
  * Represents the logic that manages the retrial of failed tuples.
@@ -85,8 +85,10 @@ public interface KafkaSpoutRetryService extends Serializable {
 
     /**
      * Gets the {@link KafkaSpoutMessageId} for the given record.
+     *
      * @param record The record to fetch the id for
-     * @return The id the record was scheduled for retry with, or a new {@link KafkaSpoutMessageId} if the record was not scheduled for retry.
+     * @return The id the record was scheduled for retry with, or a new {@link KafkaSpoutMessageId} if the record was not scheduled for
+     * retry.
      */
     KafkaSpoutMessageId getMessageId(ConsumerRecord<?, ?> record);
 }
