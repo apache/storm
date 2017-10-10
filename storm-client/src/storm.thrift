@@ -188,6 +188,8 @@ struct SupervisorSummary {
   7: optional map<string, double> total_resources;
   8: optional double used_mem;
   9: optional double used_cpu;
+  10: optional double fragmented_mem;
+  11: optional double fragmented_cpu;
 }
 
 struct NimbusSummary {

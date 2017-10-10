@@ -81,6 +81,14 @@ public class Cluster implements ISchedulingState {
             return totalCpu;
         }
 
+        public double getAvailableCpu() {
+            return totalCpu - usedCpu;
+        }
+
+        public double getAvailableMem() {
+            return totalMem - usedMem;
+        }
+
         private SupervisorResources add(WorkerResources wr) {
             return new SupervisorResources(
                 totalMem,
@@ -934,7 +942,7 @@ public class Cluster implements ISchedulingState {
     public Map<String, SupervisorResources> getSupervisorsResourcesMap() {
         Map<String, SupervisorResources> ret = new HashMap<>();
         for (SupervisorDetails sd : supervisors.values()) {
-            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalMemory(), 0, 0));
+            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalCPU(), 0, 0));
         }
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             for (Entry<WorkerSlot, WorkerResources> entry :
