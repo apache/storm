@@ -18,6 +18,7 @@
 
 package org.apache.storm.localizer;
 
+import static org.apache.storm.blobstore.BlobStoreAclHandler.WORLD_EVERYTHING;
 import static org.apache.storm.localizer.AsyncLocalizer.USERCACHE;
 import static org.junit.Assert.*;
 import static org.junit.Assert.assertEquals;
@@ -46,6 +47,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -87,6 +89,36 @@ public class AsyncLocalizerTest {
         return f.getPath();
     }
 
+    private class MockInputStreamWithMeta extends InputStreamWithMeta {
+        private int at = 0;
+        private final int len;
+        private final int version;
+
+        public MockInputStreamWithMeta(int len, int version) {
+            this.len = len;
+            this.version = version;
+        }
+
+        @Override
+        public long getVersion() throws IOException {
+            return version;
+        }
+
+        @Override
+        public long getFileLength() throws IOException {
+            return len;
+        }
+
+        @Override
+        public int read() throws IOException {
+            at++;
+            if (at > len) {
+                return -1;
+            }
+            return 0;
+        }
+    }
+
     @Test
     public void testRequestDownloadBaseTopologyBlobs() throws Exception {
         final String topoId = "TOPO";
@@ -99,12 +131,7 @@ public class AsyncLocalizerTest {
         ei.set_task_end(1);
         la.add_to_executors(ei);
         final int port = 8080;
-        final String jarKey = topoId + "-stormjar.jar";
-        final String codeKey = topoId + "-stormcode.ser";
-        final String confKey = topoId + "-stormconf.ser";
-        final String stormLocal = "/tmp/storm-local/";
-        final String stormRoot = stormLocal+topoId+"/";
-        final File fStormRoot = new File(stormRoot);
+        final String stormLocal = "./target/DOWNLOAD-TEST/storm-local/";
         ClientBlobStore blobStore = mock(ClientBlobStore.class);
         Map<String, Object> conf = new HashMap<>();
         conf.put(DaemonConfig.SUPERVISOR_BLOBSTORE, ClientBlobStore.class.getName());
@@ -112,40 +139,55 @@ public class AsyncLocalizerTest {
         conf.put(Config.STORM_CLUSTER_MODE, "distributed");
         conf.put(Config.STORM_LOCAL_DIR, stormLocal);
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
-        ConfigUtils mockedCU = mock(ConfigUtils.class);
         ReflectionUtils mockedRU = mock(ReflectionUtils.class);
         ServerUtils mockedU = mock(ServerUtils.class);
-        
-        Map<String, Object> topoConf = new HashMap<>(conf);
-        
-        AsyncLocalizer bl = new AsyncLocalizer(conf, getTestLocalizerRoot(), ops, new AtomicReference<>(new HashMap<>()), null);
-        ConfigUtils orig = ConfigUtils.setInstance(mockedCU);
+
+        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, getTestLocalizerRoot(), new AtomicReference<>(new HashMap<>()), null));
+        LocallyCachedTopologyBlob jarBlob = mock(LocallyCachedTopologyBlob.class);
+        doReturn(jarBlob).when(bl).getTopoJar(topoId);
+        when(jarBlob.getLocalVersion()).thenReturn(-1L);
+        when(jarBlob.getRemoteVersion(any())).thenReturn(100L);
+        when(jarBlob.downloadToTempLocation(any())).thenReturn(100L);
+
+        LocallyCachedTopologyBlob codeBlob = mock(LocallyCachedTopologyBlob.class);
+        doReturn(codeBlob).when(bl).getTopoCode(topoId);
+        when(codeBlob.getLocalVersion()).thenReturn(-1L);
+        when(codeBlob.getRemoteVersion(any())).thenReturn(200L);
+        when(codeBlob.downloadToTempLocation(any())).thenReturn(200L);
+
+        LocallyCachedTopologyBlob confBlob = mock(LocallyCachedTopologyBlob.class);
+        doReturn(confBlob).when(bl).getTopoConf(topoId);
+        when(confBlob.getLocalVersion()).thenReturn(-1L);
+        when(confBlob.getRemoteVersion(any())).thenReturn(300L);
+        when(confBlob.downloadToTempLocation(any())).thenReturn(300L);
+
         ReflectionUtils origRU = ReflectionUtils.setInstance(mockedRU);
         ServerUtils origUtils = ServerUtils.setInstance(mockedU);
         try {
-            when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
-            when(mockedCU.supervisorLocalDirImpl(conf)).thenReturn(stormLocal);
             when(mockedRU.newInstanceImpl(ClientBlobStore.class)).thenReturn(blobStore);
-            when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
 
-            Future<Void> f = bl.requestDownloadBaseTopologyBlobs(la, port);
+            Future<Void> f = bl.requestDownloadBaseTopologyBlobs(la, port, null);
             f.get(20, TimeUnit.SECONDS);
-            // We should be done now...
-            
-            verify(blobStore).prepare(conf);
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(jarKey), startsWith(stormLocal), eq(blobStore));
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(codeKey), startsWith(stormLocal), eq(blobStore));
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(confKey), startsWith(stormLocal), eq(blobStore));
-            verify(blobStore).shutdown();
-            //Extracting the dir from the jar
-            verify(mockedU).extractDirFromJarImpl(endsWith("stormjar.jar"), eq("resources"), any(File.class));
-            verify(ops).moveDirectoryPreferAtomic(any(File.class), eq(fStormRoot));
-            verify(ops).setupStormCodeDir(user, fStormRoot);
-            
-            verify(ops, never()).deleteIfExists(any(File.class));
+
+            verify(jarBlob).downloadToTempLocation(any());
+            verify(jarBlob).informAllOfChangeAndWaitForConsensus();
+            verify(jarBlob).commitNewVersion(100L);
+            verify(jarBlob).informAllChangeComplete();
+            verify(jarBlob).cleanupOrphanedData();
+
+            verify(codeBlob).downloadToTempLocation(any());
+            verify(codeBlob).informAllOfChangeAndWaitForConsensus();
+            verify(codeBlob).commitNewVersion(200L);
+            verify(codeBlob).informAllChangeComplete();
+            verify(codeBlob).cleanupOrphanedData();
+
+            verify(confBlob).downloadToTempLocation(any());
+            verify(confBlob).informAllOfChangeAndWaitForConsensus();
+            verify(confBlob).commitNewVersion(300L);
+            verify(confBlob).informAllChangeComplete();
+            verify(confBlob).cleanupOrphanedData();
         } finally {
             bl.close();
-            ConfigUtils.setInstance(orig);
             ReflectionUtils.setInstance(origRU);
             ServerUtils.setInstance(origUtils);
         }
@@ -199,7 +241,7 @@ public class AsyncLocalizerTest {
         LocalizedResource simpleLocal = new LocalizedResource(simpleKey, simpleLocalFile, false);
         localizedList.add(simpleLocal);
 
-        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, localizerRoot, ops, new AtomicReference<>(new HashMap<>()), null));
+        AsyncLocalizer bl = spy(new AsyncLocalizer(conf, ops, localizerRoot, new AtomicReference<>(new HashMap<>()), null));
         ConfigUtils orig = ConfigUtils.setInstance(mockedCU);
         try {
             when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
@@ -207,10 +249,12 @@ public class AsyncLocalizerTest {
             when(mockedCU.readSupervisorTopologyImpl(conf, topoId, ops)).thenReturn(st);
 
             //Write the mocking backwards so the actual method is not called on the spy object
+            doReturn(CompletableFuture.supplyAsync(() -> null)).when(bl)
+                .requestDownloadBaseTopologyBlobs(la, port, null);
             doReturn(userDir).when(bl).getLocalUserFileCacheDir(user);
             doReturn(localizedList).when(bl).getBlobs(any(List.class), eq(user), eq(topoName), eq(userDir));
 
-            Future<Void> f = bl.requestDownloadTopologyBlobs(la, port);
+            Future<Void> f = bl.requestDownloadTopologyBlobs(la, port, null);
             f.get(20, TimeUnit.SECONDS);
             // We should be done now...
 
@@ -242,7 +286,7 @@ public class AsyncLocalizerTest {
     class TestLocalizer extends AsyncLocalizer {
 
         TestLocalizer(Map<String, Object> conf, String baseDir) throws IOException {
-            super(conf, baseDir, AdvancedFSOps.make(conf), new AtomicReference<>(new HashMap<>()), null);
+            super(conf, AdvancedFSOps.make(conf), baseDir, new AtomicReference<>(new HashMap<>()), null);
         }
 
         @Override
@@ -460,7 +504,7 @@ public class AsyncLocalizerTest {
         localizer.setTargetCacheSize(1);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
-        rbm.set_settable(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING));
+        rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
         when(mockblobstore.getBlobMeta(key1)).thenReturn(rbm);
 
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta(new
@@ -537,7 +581,7 @@ public class AsyncLocalizerTest {
         localizer.setTargetCacheSize(1);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
-        rbm.set_settable(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING));
+        rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
         when(mockblobstore.getBlobMeta(key1)).thenReturn(rbm);
 
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta());
@@ -606,7 +650,7 @@ public class AsyncLocalizerTest {
         localizer.setTargetCacheSize(68);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
-        rbm.set_settable(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING));
+        rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
         when(mockblobstore.getBlobMeta(anyString())).thenReturn(rbm);
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta());
         when(mockblobstore.getBlob(key2)).thenReturn(new TestInputStreamWithMeta());
@@ -736,7 +780,7 @@ public class AsyncLocalizerTest {
         localizer.setTargetCacheSize(68);
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
-        rbm.set_settable(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING));
+        rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
         when(mockblobstore.getBlobMeta(anyString())).thenReturn(rbm);
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta());
         when(mockblobstore.getBlob(key2)).thenReturn(new TestInputStreamWithMeta());
@@ -816,7 +860,7 @@ public class AsyncLocalizerTest {
 
         ReadableBlobMeta rbm = new ReadableBlobMeta();
         rbm.set_version(1);
-        rbm.set_settable(new SettableBlobMeta(BlobStoreAclHandler.WORLD_EVERYTHING));
+        rbm.set_settable(new SettableBlobMeta(WORLD_EVERYTHING));
         when(mockblobstore.getBlobMeta(key1)).thenReturn(rbm);
         when(mockblobstore.getBlob(key1)).thenReturn(new TestInputStreamWithMeta());
 

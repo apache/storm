@@ -21,6 +21,8 @@ package org.apache.storm.command;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.RebalanceOptions;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.storm.utils.Utils;
+import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,6 +39,8 @@ public class Rebalance {
         Map<String, Object> cl = CLI.opt("w", "wait", null, CLI.AS_INT)
             .opt("n", "num-workers", null, CLI.AS_INT)
             .opt("e", "executor", null, new ExecutorParser(), CLI.INTO_MAP)
+            .opt("r", "resources", null, new ResourcesParser(), CLI.INTO_MAP)
+            .opt("t", "topology-conf", null, new ConfParser(), CLI.INTO_MAP)
             .arg("topologyName", CLI.FIRST_WINS)
             .parse(args);
         final String name = (String) cl.get("topologyName");
@@ -44,6 +48,8 @@ public class Rebalance {
         Integer wait = (Integer) cl.get("w");
         Integer numWorkers = (Integer) cl.get("n");
         Map<String, Integer> numExecutors = (Map<String, Integer>) cl.get("e");
+        Map<String, Map<String, Double>> resourceOverrides = (Map<String, Map<String, Double>>) cl.get("r");
+        Map<String, Object> confOverrides = (Map<String, Object>) cl.get("t");
 
         if (null != wait) {
             rebalanceOptions.set_wait_secs(wait);
@@ -55,6 +61,14 @@ public class Rebalance {
             rebalanceOptions.set_num_executors(numExecutors);
         }
 
+        if (null != resourceOverrides) {
+            rebalanceOptions.set_topology_resources_overrides(resourceOverrides);
+        }
+
+        if (null != confOverrides) {
+            rebalanceOptions.set_topology_conf_overrides(JSONValue.toJSONString(confOverrides));
+        }
+
         NimbusClient.withConfiguredClient(new NimbusClient.WithNimbus() {
             @Override
             public void run(Nimbus.Iface nimbus) throws Exception {
@@ -64,9 +78,49 @@ public class Rebalance {
         });
     }
 
+    static final class ConfParser implements CLI.Parse {
+        @Override
+        public Object parse(String value) {
+            if (value == null) {
+                throw new RuntimeException("No arguments found for topology config override!");
+            }
+            try {
+                return Utils.parseJson(value);
+            } catch (Exception e) {
+                throw new RuntimeException("Error trying to parse topology config override", e);
+            }
+        }
+    }
+
+    static final class ResourcesParser implements CLI.Parse {
+        @Override
+        public Object parse(String value) {
+            if (value == null) {
+                throw new RuntimeException("No arguments found for topology resources override!");
+            }
+            try {
+                //This is a bit ugly The JSON we are expecting should be in the form
+                // {"component": {"resource": value, ...}, ...}
+                // But because value is coming from JSON it is going to be a Number, and we want it to be a Double.
+                // So the goal is to go through each entry and update it accordingly
+                Map<String, Map<String, Double>> ret = new HashMap<>();
+                for (Map.Entry<String, Object> compEntry: Utils.parseJson(value).entrySet()) {
+                    String comp = compEntry.getKey();
+                    Map<String, Number> numResources = (Map<String, Number>) compEntry.getValue();
+                    Map<String, Double> doubleResource = new HashMap<>();
+                    for (Map.Entry<String, Number> entry: numResources.entrySet()) {
+                        doubleResource.put(entry.getKey(), entry.getValue().doubleValue());
+                    }
+                    ret.put(comp, doubleResource);
+                }
+                return ret;
+            } catch (Exception e) {
+                throw new RuntimeException("Error trying to parse resource override", e);
+            }
+        }
+    }
 
     static final class ExecutorParser implements CLI.Parse {
-
         @Override
         public Object parse(String value) {
             try {

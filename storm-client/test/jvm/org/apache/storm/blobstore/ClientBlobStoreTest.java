@@ -90,6 +90,10 @@ public class ClientBlobStoreTest {
     }
 
     @Override
+    public void close() {
+    }
+
+    @Override
     public int getBlobReplication(String key) {
       return -1;
     }

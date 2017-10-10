@@ -4977,11 +4977,11 @@ class getComponentPendingProfileActions_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype758, _size755) = iprot.readListBegin()
-          for _i759 in xrange(_size755):
-            _elem760 = ProfileRequest()
-            _elem760.read(iprot)
-            self.success.append(_elem760)
+          (_etype776, _size773) = iprot.readListBegin()
+          for _i777 in xrange(_size773):
+            _elem778 = ProfileRequest()
+            _elem778.read(iprot)
+            self.success.append(_elem778)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -4998,8 +4998,8 @@ class getComponentPendingProfileActions_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter761 in self.success:
-        iter761.write(oprot)
+      for iter779 in self.success:
+        iter779.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     oprot.writeFieldStop()
@@ -10070,11 +10070,11 @@ class getOwnerResourceSummaries_result:
       if fid == 0:
         if ftype == TType.LIST:
           self.success = []
-          (_etype765, _size762) = iprot.readListBegin()
-          for _i766 in xrange(_size762):
-            _elem767 = OwnerResourceSummary()
-            _elem767.read(iprot)
-            self.success.append(_elem767)
+          (_etype783, _size780) = iprot.readListBegin()
+          for _i784 in xrange(_size780):
+            _elem785 = OwnerResourceSummary()
+            _elem785.read(iprot)
+            self.success.append(_elem785)
           iprot.readListEnd()
         else:
           iprot.skip(ftype)
@@ -10097,8 +10097,8 @@ class getOwnerResourceSummaries_result:
     if self.success is not None:
       oprot.writeFieldBegin('success', TType.LIST, 0)
       oprot.writeListBegin(TType.STRUCT, len(self.success))
-      for iter768 in self.success:
-        iter768.write(oprot)
+      for iter786 in self.success:
+        iter786.write(oprot)
       oprot.writeListEnd()
       oprot.writeFieldEnd()
     if self.aze is not None:

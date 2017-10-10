@@ -1199,6 +1199,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             updated.set_num_workers(rbo.get_num_workers());
         }
         stormClusterState.updateStorm(topoId, updated);
+        updateBlobStore(topoId, rbo, ServerUtils.principalNameToSubject(rbo.get_principal()));
         mkAssignments(topoId);
     }
     
@@ -1273,6 +1274,33 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         topoCache.addTopology(topoId, subject, topology);
         if (store instanceof LocalFsBlobStore) {
             clusterState.setupBlobstore(codeKey, hostPortInfo, getVersionForKey(codeKey, hostPortInfo, conf));
+        }
+    }
+
+    private void updateTopologyResources(String topoId, Map<String, Map<String, Double>> resourceOverrides, Subject subject)
+        throws AuthorizationException, IOException, KeyNotFoundException {
+        StormTopology topo = topoCache.readTopology(topoId, subject);
+        topo = topo.deepCopy();
+        ResourceUtils.updateStormTopologyResources(topo, resourceOverrides);
+        topoCache.updateTopology(topoId, subject, topo);
+    }
+
+    private void updateTopologyConf(String topoId, Map<String, Object> configOverride, Subject subject)
+        throws AuthorizationException, IOException, KeyNotFoundException {
+        Map<String, Object> topoConf = new HashMap<>(topoCache.readTopoConf(topoId, subject)); //Copy the data
+        topoConf.putAll(configOverride);
+        topoCache.updateTopoConf(topoId, subject,  topoConf);
+    }
+
+    private void updateBlobStore(String topoId, RebalanceOptions rbo, Subject subject)
+        throws AuthorizationException, IOException, KeyNotFoundException {
+        Map<String, Map<String, Double>> resourceOverrides = rbo.get_topology_resources_overrides();
+        if (resourceOverrides != null && !resourceOverrides.isEmpty()) {
+            updateTopologyResources(topoId, resourceOverrides, subject);
+        }
+        String confOverride = rbo.get_topology_conf_overrides();
+        if (confOverride != null && !confOverride.isEmpty()) {
+            updateTopologyConf(topoId, Utils.parseJson(confOverride), subject);
         }
     }
     
@@ -2796,12 +2824,32 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             topoConf = Utils.merge(conf, topoConf);
             final String operation = "rebalance";
             checkAuthorization(topoName, topoConf, operation);
+            // Set principal in RebalanceOptions to nil because users are not suppose to set this
+            options.set_principal(null);
             Map<String, Integer> execOverrides = options.is_set_num_executors() ? options.get_num_executors() : Collections.emptyMap();
             for (Integer value : execOverrides.values()) {
                 if (value == null || value <= 0) {
                     throw new InvalidTopologyException("Number of executors must be greater than 0");
                 }
             }
+            if (options.is_set_topology_conf_overrides()) {
+                Map<String, Object> topoConfigOverrides = Utils.parseJson(options.get_topology_conf_overrides());
+                //Clean up some things the user should not set.  (Not a security issue, just might confuse the topology)
+                topoConfigOverrides.remove(Config.TOPOLOGY_SUBMITTER_PRINCIPAL);
+                topoConfigOverrides.remove(Config.TOPOLOGY_SUBMITTER_USER);
+                topoConfigOverrides.remove(Config.STORM_ZOOKEEPER_SUPERACL);
+                topoConfigOverrides.remove(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME);
+                topoConfigOverrides.remove(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+                if ((boolean) conf.getOrDefault(DaemonConfig.STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED, false)) {
+                    topoConfigOverrides.remove(Config.TOPOLOGY_CLASSPATH_BEGINNING);
+                }
+                options.set_topology_conf_overrides(JSONValue.toJSONString(topoConfigOverrides));
+            }
+            Subject subject = getSubject();
+            if (subject != null) {
+                options.set_principal(subject.getPrincipals().iterator().next().getName());
+            }
+
             transitionName(topoName, TopologyActions.REBALANCE, options, true);
             notifyTopologyActionListener(topoName, operation);
         } catch (Exception e) {

@@ -23,6 +23,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.nio.file.DirectoryStream;
+import java.nio.file.Path;
 import java.util.Map;
 
 public interface IAdvancedFSOps {
@@ -116,12 +118,46 @@ public interface IAdvancedFSOps {
     void forceMkdir(File path) throws IOException;
 
     /**
+     * Makes a directory, including any necessary but nonexistent parent
+     * directories.
+     *
+     * @param path the directory to create
+     * @throws IOException on any error
+     */
+    void forceMkdir(Path path) throws IOException;
+
+    /**
+     * List the contents of a directory.
+     * @param dir the driectory to list the contents of
+     * @param filter a filter to decide if it should be included or not
+     * @return A stream of directory entries
+     * @throws IOException on any error
+     */
+    DirectoryStream<Path> newDirectoryStream(Path dir, DirectoryStream.Filter<? super Path> filter) throws IOException;
+
+    /**
+     * List the contents of a directory.
+     * @param dir the driectory to list the contents of
+     * @return A stream of directory entries
+     * @throws IOException on any error
+     */
+    DirectoryStream<Path> newDirectoryStream(Path dir) throws IOException;
+
+    /**
      * Check if a file exists or not
      * @param path the path to check
      * @return true if it exists else false
      * @throws IOException on any error.
      */
     boolean fileExists(File path) throws IOException;
+
+    /**
+     * Check if a file exists or not
+     * @param path the path to check
+     * @return true if it exists else false
+     * @throws IOException on any error.
+     */
+    boolean fileExists(Path path) throws IOException;
 
     /**
      * Get a writer for the given location

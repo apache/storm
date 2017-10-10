@@ -100,13 +100,6 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         } catch (Exception e) {
             LOG.warn("Error trying to clean up old workers", e);
         }
-
-        //All the slots/assignments should be recovered now, so we can clean up anything that we don't expect to be here
-        try {
-            localizer.cleanupUnusedTopologies();
-        } catch (Exception e) {
-            LOG.warn("Error trying to clean up old topologies", e);
-        }
         
         for (Slot slot: slots.values()) {
             slot.start();

@@ -18,6 +18,7 @@
 
 package org.apache.storm.utils;
 
+import javax.security.auth.Subject;
 import org.apache.commons.compress.archivers.tar.TarArchiveEntry;
 import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
 import org.apache.commons.exec.CommandLine;
@@ -32,6 +33,7 @@ import org.apache.storm.blobstore.BlobStoreAclHandler;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.blobstore.LocalFsBlobStore;
+import org.apache.storm.blobstore.LocalModeClientBlobStore;
 import org.apache.storm.daemon.StormCommon;
 import org.apache.storm.generated.AccessControl;
 import org.apache.storm.generated.AccessControlType;
@@ -43,6 +45,7 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.resource.ResourceUtils;
+import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -212,8 +215,13 @@ public class ServerUtils {
     }
 
     public static ClientBlobStore getClientBlobStoreForSupervisor(Map<String, Object> conf) {
-        ClientBlobStore store = (ClientBlobStore) ReflectionUtils.newInstance(
+        ClientBlobStore store;
+        if (ConfigUtils.isLocalMode(conf)) {
+            store = new LocalModeClientBlobStore(getNimbusBlobStore(conf, null));
+        } else {
+            store = (ClientBlobStore) ReflectionUtils.newInstance(
                 (String) conf.get(DaemonConfig.SUPERVISOR_BLOBSTORE));
+        }
         store.prepare(conf);
         return store;
     }
@@ -766,5 +774,12 @@ public class ServerUtils {
             ret = Math.min(maxParallel, numTasks);
         }
         return ret;
+    }
+
+    public static Subject principalNameToSubject(String name) {
+        SingleUserPrincipal principal = new SingleUserPrincipal(name);
+        Subject sub = new Subject();
+        sub.getPrincipals().add(principal);
+        return sub;
     }
 }
