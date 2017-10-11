@@ -96,36 +96,6 @@ public class AsyncLocalizerTest {
         return f.getPath();
     }
 
-    private class MockInputStreamWithMeta extends InputStreamWithMeta {
-        private int at = 0;
-        private final int len;
-        private final int version;
-
-        public MockInputStreamWithMeta(int len, int version) {
-            this.len = len;
-            this.version = version;
-        }
-
-        @Override
-        public long getVersion() throws IOException {
-            return version;
-        }
-
-        @Override
-        public long getFileLength() throws IOException {
-            return len;
-        }
-
-        @Override
-        public int read() throws IOException {
-            at++;
-            if (at > len) {
-                return -1;
-            }
-            return 0;
-        }
-    }
-
     @Test
     public void testRequestDownloadBaseTopologyBlobs() throws Exception {
         final String topoId = "TOPO";
@@ -312,7 +282,6 @@ public class AsyncLocalizerTest {
                 if (lrsrcSet != null) {
                     LocalizedResource lrsrc = lrsrcSet.get(blob.getBlobName());
                     if (lrsrc != null) {
-                        lrsrc.addReference(pna, blob.needsCallback() ? cb : null);
                         lrsrc.addReference(pna, blob.needsCallback() ? cb : null);
                         LOG.debug("added reference for topo: {} key: {}", pna, blob);
                     } else {
