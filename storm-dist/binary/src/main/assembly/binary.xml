@@ -194,13 +194,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-jmxetric</directory>
-            <outputDirectory>external/storm-jmxetric</outputDirectory>
-            <includes>
-                <include>*/**</include>
-            </includes>
-        </fileSet>
-               <fileSet>
            <directory>${project.basedir}/../../external/storm-jms/target</directory>
            <outputDirectory>external/storm-jms</outputDirectory>
            <includes>
@@ -209,7 +202,7 @@
             <excludes>
               <exclude>*-test*.jar</exclude>
             </excludes>
-       </fileSet>
+        </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
             <outputDirectory>external/storm-eventhubs</outputDirectory>
