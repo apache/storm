@@ -281,6 +281,7 @@
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
         <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
+        <java.integration.test.include>no.tests</java.integration.test.include>
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
 
@@ -553,7 +554,6 @@
             <id>all-tests</id>
             <properties>
                 <java.integration.test.include>**/*.java</java.integration.test.include>
-                <java.integration.test.group>org.apache.storm.testing.IntegrationTest</java.integration.test.group>
                 <clojure.test.set>*.*</clojure.test.set>
             </properties>
         </profile>
@@ -563,7 +563,6 @@
                 <!--Java-->
                 <java.unit.test.include>no.unit.tests</java.unit.test.include>
                 <java.integration.test.include>**/*.java</java.integration.test.include>
-                <java.integration.test.group>org.apache.storm.testing.IntegrationTest</java.integration.test.group>
                 <!--Clojure-->
                 <clojure.test.set>integration.*</clojure.test.set>
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
@@ -1032,10 +1031,11 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-surefire.version}</version>
                     <configuration>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <includes>
                             <include>${java.integration.test.include}</include>
                         </includes>
-                        <groups>${java.integration.test.group}</groups>  <!--set in integration-test the profile-->
+                        <groups>org.apache.storm.testing.IntegrationTest</groups>
                         <argLine>-Xmx1536m</argLine>
                     </configuration>
                     <executions>
