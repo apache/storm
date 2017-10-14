@@ -166,13 +166,15 @@ public class PartitionManager {
     }
 
     public Map getMetricsDataMap() {
+        String metricPrefix = _partition.getId();
+
         Map<String, Object> ret = new HashMap<>();
-        ret.put(_partition + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
-        ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
-        ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
-        ret.put(_partition + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
-        ret.put(_partition + "/lostMessageCount", _lostMessageCount.getValueAndReset());
-        ret.put(_partition + "/messageIneligibleForRetryCount", _messageIneligibleForRetryCount.getValueAndReset());
+        ret.put(metricPrefix + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
+        ret.put(metricPrefix + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
+        ret.put(metricPrefix + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
+        ret.put(metricPrefix + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
+        ret.put(metricPrefix + "/lostMessageCount", _lostMessageCount.getValueAndReset());
+        ret.put(metricPrefix + "/messageIneligibleForRetryCount", _messageIneligibleForRetryCount.getValueAndReset());
         return ret;
     }
 
