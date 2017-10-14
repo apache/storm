@@ -15,8 +15,6 @@
  */
 package org.apache.storm.kafka.spout;
 
-import static org.mockito.Matchers.anyLong;
-import static org.mockito.Matchers.anyObject;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -45,6 +43,11 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 
 import static org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyObject;
+import static org.mockito.ArgumentMatchers.anyString;
 
 public class KafkaSpoutEmitTest {
 
@@ -81,7 +84,7 @@ public class KafkaSpoutEmitTest {
 
         spout.nextTuple();
 
-        verify(collectorMock, times(1)).emit(anyObject(), anyObject(), anyObject());
+        verify(collectorMock, times(1)).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
     }
 
     @Test
@@ -107,7 +110,7 @@ public class KafkaSpoutEmitTest {
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(recordsForPartition.size())).emit(anyObject(), anyObject(), messageIds.capture());
+            verify(collectorMock, times(recordsForPartition.size())).emit(anyString(), anyList(), messageIds.capture());
 
             for (KafkaSpoutMessageId messageId : messageIds.getAllValues()) {
                 spout.fail(messageId);
@@ -122,7 +125,7 @@ public class KafkaSpoutEmitTest {
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> retryMessageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(recordsForPartition.size())).emit(anyObject(), anyObject(), retryMessageIds.capture());
+            verify(collectorMock, times(recordsForPartition.size())).emit(anyString(), anyList(), retryMessageIds.capture());
 
             //Verify that the poll started at the earliest retriable tuple offset
             List<Long> failedOffsets = new ArrayList<>();
@@ -182,7 +185,7 @@ public class KafkaSpoutEmitTest {
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(firstPollRecordsForPartition.size())).emit(anyObject(), anyObject(), messageIds.capture());
+            verify(collectorMock, times(firstPollRecordsForPartition.size())).emit(anyString(), anyList(), messageIds.capture());
 
             KafkaSpoutMessageId failedMessageId = messageIds.getAllValues().get(messageIds.getAllValues().size() - 1);
             spout.fail(failedMessageId);
@@ -197,7 +200,7 @@ public class KafkaSpoutEmitTest {
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> retryBatchMessageIdsCaptor = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(maxPollRecords)).emit(anyObject(), anyObject(), retryBatchMessageIdsCaptor.capture());
+            verify(collectorMock, times(maxPollRecords)).emit(anyString(), anyList(), retryBatchMessageIdsCaptor.capture());
             reset(collectorMock);
             
             //Check that the consumer started polling at the failed tuple offset
@@ -215,12 +218,12 @@ public class KafkaSpoutEmitTest {
             for (int i = 0; i < firstPollRecordsForPartition.size() + maxPollRecords; i++) {
                 spout.nextTuple();
             }
-            verify(collectorMock, never()).emit(anyObject(), anyObject(), anyObject());
+            verify(collectorMock, never()).emit(any(), any(), any());
             
             //Fail the last tuple, which brings the number of nonretriable tuples back under the limit, and check that the spout polls again
             spout.fail(firstTupleFromRetryBatch);
             spout.nextTuple();
-            verify(collectorMock, times(1)).emit(anyObject(), anyObject(), anyObject());
+            verify(collectorMock, times(1)).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
         }
     }
 

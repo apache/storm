@@ -197,7 +197,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
 
         /**
-         * sets the cursor to the location dictated by the first poll strategy and returns the fetch offset.
+         * Sets the cursor to the location dictated by the first poll strategy and returns the fetch offset.
          */
         private long doSeek(TopicPartition tp, OffsetAndMetadata committedOffset) {
             if (committedOffset != null) {             // offset was committed for this TopicPartition
@@ -206,8 +206,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 } else if (firstPollOffsetStrategy.equals(LATEST)) {
                     kafkaConsumer.seekToEnd(Collections.singleton(tp));
                 } else {
-                    // By default polling starts at the last committed offset. +1 to point fetch to the first uncommitted offset.
-                    kafkaConsumer.seek(tp, committedOffset.offset() + 1);
+                    // By default polling starts at the last committed offset, i.e. the first offset that was not marked as processed.
+                    kafkaConsumer.seek(tp, committedOffset.offset());
                 }
             } else {    // no commits have ever been done, so start at the beginning or end depending on the strategy
                 if (firstPollOffsetStrategy.equals(EARLIEST) || firstPollOffsetStrategy.equals(UNCOMMITTED_EARLIEST)) {
