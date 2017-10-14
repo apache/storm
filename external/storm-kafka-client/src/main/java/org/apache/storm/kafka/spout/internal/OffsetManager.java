@@ -97,7 +97,7 @@ public class OffsetManager {
                         So, if the topic doesn't contain offset = nextCommitOffset (possible
                         if the topic is compacted or deleted), the consumer should jump to
                         the next logical point in the topic. Next logical offset should be the
-                        first element after nextCommitOffsset in the ascending ordered emitted set.
+                        first element after nextCommitOffset in the ascending ordered emitted set.
                      */
                     LOG.debug("Processed non-sequential offset."
                         + " The earliest uncommitted offset is no longer part of the topic."
