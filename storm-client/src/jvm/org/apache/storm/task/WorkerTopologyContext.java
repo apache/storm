@@ -17,6 +17,7 @@
  */
 package org.apache.storm.task;
 
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
 import java.io.File;
@@ -24,6 +25,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class WorkerTopologyContext extends GeneralTopologyContext {
     public static final String SHARED_EXECUTOR = "executor";
@@ -34,6 +36,8 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     private String _pidDir;
     Map<String, Object> _userResources;
     Map<String, Object> _defaultResources;
+    private AtomicReference<Map<Integer, NodeInfo>> taskToNodePort;
+    private String assignmentId;
     
     public WorkerTopologyContext(
             StormTopology topology,
@@ -47,7 +51,9 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
             Integer workerPort,
             List<Integer> workerTasks,
             Map<String, Object> defaultResources,
-            Map<String, Object> userResources
+            Map<String, Object> userResources,
+            AtomicReference<Map<Integer, NodeInfo>> taskToNodePort,
+            String assignmentId
             ) {
         super(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId);
         _codeDir = codeDir;
@@ -64,6 +70,26 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
         }
         _workerPort = workerPort;
         _workerTasks = workerTasks;
+        this.taskToNodePort = taskToNodePort;
+        this.assignmentId = assignmentId;
+
+    }
+
+    public WorkerTopologyContext(
+            StormTopology topology,
+            Map<String, Object> topoConf,
+            Map<Integer, String> taskToComponent,
+            Map<String, List<Integer>> componentToSortedTasks,
+            Map<String, Map<String, Fields>> componentToStreamToFields,
+            String stormId,
+            String codeDir,
+            String pidDir,
+            Integer workerPort,
+            List<Integer> workerTasks,
+            Map<String, Object> defaultResources,
+            Map<String, Object> userResources) {
+        this(topology, topoConf, taskToComponent, componentToSortedTasks, componentToStreamToFields, stormId,
+                codeDir, pidDir, workerPort, workerTasks, defaultResources, userResources, null, null);
     }
 
     /**
@@ -76,6 +102,18 @@ public class WorkerTopologyContext extends GeneralTopologyContext {
     
     public Integer getThisWorkerPort() {
         return _workerPort;
+    }
+
+    public String getThisWorkerHost() {
+        return assignmentId;
+    }
+
+    /**
+     * Get a map from task Id to NodePort
+     * @return a map from task To NodePort
+     */
+    public AtomicReference<Map<Integer, NodeInfo>> getTaskToNodePort() {
+        return taskToNodePort;
     }
 
     /**

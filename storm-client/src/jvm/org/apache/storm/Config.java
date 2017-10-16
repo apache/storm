@@ -65,6 +65,24 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DISABLE_LOADAWARE_MESSAGING = "topology.disable.loadaware.messaging";
 
     /**
+     * This signifies the load congestion among target tasks in scope. Currently it's only used in LoadAwareShuffleGrouping.
+     * When the average load is higher than the higher bound, the executor should choose target tasks in a higher scope,
+     * The scopes and their orders are: EVERYTHING > RACK_LOCAL > HOST_LOCAL > WORKER_LOCAL
+     */
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT = "topology.localityaware.higher.bound.percent";
+
+    /**
+     * This signifies the load congestion among target tasks in scope. Currently it's only used in LoadAwareShuffleGrouping.
+     * When the average load is lower than the lower bound, the executor should choose target tasks in a lower scope.
+     * The scopes and their orders are: EVERYTHING > RACK_LOCAL > HOST_LOCAL > WORKER_LOCAL
+     */
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT = "topology.localityaware.lower.bound.percent";
+
+    /**
      * Try to serialize all tuples, even for local transfers.  This should only be used
      * for testing, as a sanity check that all of your tuples are setup properly.
      */

@@ -199,4 +199,8 @@ public class GeneralTopologyContext implements JSONAware {
         }
         return max;
     }
+
+    public Map<String, Object> getConf() {
+        return _topoConf;
+    }
 }

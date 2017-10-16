@@ -585,7 +585,7 @@ public class WorkerState {
             return new WorkerTopologyContext(systemTopology, topologyConf, taskToComponent, componentToSortedTasks,
                 componentToStreamToFields, topologyId, codeDir, pidDir, port, taskIds,
                 defaultSharedResources,
-                userSharedResources);
+                userSharedResources, cachedTaskToNodePort, assignmentId);
         } catch (IOException e) {
             throw Utils.wrapInRuntime(e);
         }
