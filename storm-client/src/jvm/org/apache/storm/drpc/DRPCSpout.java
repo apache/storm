@@ -213,12 +213,12 @@ public class DRPCSpout extends BaseRichSpout {
                     }
                 } catch (AuthorizationException aze) {
                     reconnectAsync(client);
-                    LOG.error("Not authorized to fetch DRPC result from DRPC server", aze);
+                    LOG.error("Not authorized to fetch DRPC request from DRPC server", aze);
                 } catch (TException e) {
                     reconnectAsync(client);
-                    LOG.error("Failed to fetch DRPC result from DRPC server", e);
+                    LOG.error("Failed to fetch DRPC request from DRPC server", e);
                 } catch (Exception e) {
-                    LOG.error("Failed to fetch DRPC result from DRPC server", e);
+                    LOG.error("Failed to fetch DRPC request from DRPC server", e);
                 }
             }
             checkFutures();
