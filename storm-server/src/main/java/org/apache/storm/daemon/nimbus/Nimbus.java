@@ -2673,7 +2673,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
             Map<String, Object> otherConf = Utils.getConfigFromClasspath(cp, conf);
             Map<String, Object> totalConfToSave = Utils.merge(otherConf, topoConf);
-            Map<String, Object> totalConf = Utils.merge(totalConfToSave, conf);
+            Map<String, Object> totalConf = Utils.merge(conf, totalConfToSave);
             //When reading the conf in nimbus we want to fall back to our own settings
             // if the other config does not have it set.
             topology = normalizeTopology(totalConf, topology);
