@@ -56,8 +56,7 @@ public class LoggingMetricsConsumer implements IMetricsConsumer {
     @Override
     public void handleDataPoints(TaskInfo taskInfo, Collection<DataPoint> dataPoints) {
         StringBuilder sb = new StringBuilder();
-        String header = String.format("%d\t%15s:%-4d\t%3d:%-11s\t",
-            taskInfo.timestamp,
+        String header = String.format("%15s:%-4d\t%3d:%-11s\t",
             taskInfo.srcWorkerHost, taskInfo.srcWorkerPort,
             taskInfo.srcTaskId,
             taskInfo.srcComponentId);
