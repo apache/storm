@@ -247,7 +247,8 @@
         <commons-codec.version>1.6</commons-codec.version>
         <commons-cli.version>1.3.1</commons-cli.version>
         <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>2.12.0</curator.version>
+        <curator.version>4.0.0</curator.version>
+        <curator-test.version>2.12.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
         <ring.version>1.3.1</ring.version>
         <ring-json.version>0.3.1</ring-json.version>
@@ -764,10 +765,6 @@
                 <version>${curator.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.jboss.netty</groupId>
                         <artifactId>netty</artifactId>
                     </exclusion>
@@ -777,16 +774,6 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -796,7 +783,10 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
-                <version>${curator.version}</version>
+                <!-- curator-test is not compatible with Zookeeper 3.4.x.
+                Curator works around this by using an older curator-test jar.
+                See https://github.com/apache/curator/tree/6ba4de36d4e8b2b65d45c005a6a92dd85c3c497f/curator-test-zk34-->
+                <version>${curator-test.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
