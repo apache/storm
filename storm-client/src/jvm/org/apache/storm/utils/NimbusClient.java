@@ -90,6 +90,10 @@ public class NimbusClient extends ThriftClient {
     private static String oldLeader = "";
 
     private static synchronized boolean shouldLogLeader(String leader) {
+        if (LOG.isDebugEnabled()) {
+            //If debug logging is turned on we shoudl just log the leader all the time....
+            return true;
+        }
         //Only log if the leader has changed.  It is not interesting otherwise.
         if (oldLeader.equals(leader)) {
             return false;
@@ -137,7 +141,7 @@ public class NimbusClient extends ThriftClient {
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
-                    if (LOG.isDebugEnabled() || shouldLogLeader(leaderNimbus)) {
+                    if (shouldLogLeader(leaderNimbus)) {
                         LOG.info("Found leader nimbus : {}", leaderNimbus);
                     }
                     if (nimbusSummary.get_host().equals(host) && nimbusSummary.get_port() == port) {
