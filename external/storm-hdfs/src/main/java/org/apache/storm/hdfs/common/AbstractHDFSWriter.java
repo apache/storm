@@ -26,46 +26,58 @@ import org.apache.storm.hdfs.bolt.rotation.ClosingFilesPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.tuple.Tuple;
 
-abstract public class AbstractHDFSWriter implements Writer {
+public abstract class AbstractHDFSWriter implements Writer {
     protected long lastUsedTime;
     protected long offset;
     protected boolean needsRotation;
-    final protected Path filePath;
-    final protected FileRotationPolicy rotationPolicy;
+    protected final Path filePath;
+    protected final FileRotationPolicy rotationPolicy;
     ClosingFilesPolicy closingFilesPolicy;
 
-
+    /**
+     * Abstract constructor with FileRotationPolicy.
+     * @param policy File Rotation Policy
+     * @param path Path
+     */
     public AbstractHDFSWriter(FileRotationPolicy policy, Path path) {
         //This must be defensively copied, because a bolt probably has only one rotation policy object
         this.rotationPolicy = policy.copy();
         this.filePath = path;
     }
 
+    /**
+     * Abstract constructor with ClosingFilesPolicy.
+     * @param policy ClosingFilesPolicy
+     */
     public AbstractHDFSWriter withClosingFilesPolicy(ClosingFilesPolicy policy) {
         this.closingFilesPolicy = policy;
         return this;
     }
 
-    final public long write(Tuple tuple) throws IOException {
+    /**
+     * Method to write data to hdfs.
+     * @param tuple Tuple value to write.
+     */
+    public final long write(Tuple tuple) throws IOException {
         doWrite(tuple);
         this.needsRotation = rotationPolicy.mark(tuple, offset);
 
         return this.offset;
     }
 
-    final public void sync() throws IOException {
+    public final void sync() throws IOException {
         doSync();
     }
 
-    final public void close() throws IOException {
+    public final void close() throws IOException {
         doClose();
     }
 
-    final public void updateClosingPolicy() {
+    public final void updateClosingPolicy() {
         this.needsRotation = closingFilesPolicy.closeWriter();
     }
 
-    final public void resetClosingPolicy() {
+    public final void resetClosingPolicy() {
         closingFilesPolicy.reset();
     }
 
@@ -77,10 +89,10 @@ abstract public class AbstractHDFSWriter implements Writer {
         return this.filePath;
     }
 
-    abstract protected void doWrite(Tuple tuple) throws IOException;
+    protected abstract void doWrite(Tuple tuple) throws IOException;
 
-    abstract protected void doSync() throws IOException;
+    protected abstract void doSync() throws IOException;
 
-    abstract protected void doClose() throws IOException;
+    protected abstract void doClose() throws IOException;
 
 }
