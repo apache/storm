@@ -29,7 +29,6 @@ import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -181,12 +180,19 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         private Map<Integer, Long> targetTaskStats = Maps.newConcurrentMap();
 
         public Integer chooseTask(List<Integer> assignedTasks) {
-            Integer selectedTask = assignedTasks.stream()
-                    .min(Comparator.comparing(task -> targetTaskStats.getOrDefault(task, 0L)))
-                    .orElse(null);
+            Integer taskIdWithMinLoad = null;
+            Long minTaskLoad = Long.MAX_VALUE;
 
-            targetTaskStats.put(selectedTask, targetTaskStats.getOrDefault(selectedTask, 0L) + 1);
-            return selectedTask;
+            for (Integer currentTaskId : assignedTasks) {
+                final Long currentTaskLoad = targetTaskStats.getOrDefault(currentTaskId, 0L);
+                if (currentTaskLoad < minTaskLoad) {
+                    minTaskLoad = currentTaskLoad;
+                    taskIdWithMinLoad = currentTaskId;
+                }
+            }
+
+            targetTaskStats.put(taskIdWithMinLoad, targetTaskStats.getOrDefault(taskIdWithMinLoad, 0L) + 1);
+            return taskIdWithMinLoad;
         }
     }
 }
