@@ -366,7 +366,7 @@ public class KafkaOffsetLagUtil {
             for (Map.Entry<String, List<TopicPartition>> leader: leadersAndTopicPartitions.entrySet()) {
                 try {
                     simpleConsumer = new SimpleConsumer(leader.getKey().split(":")[0], Integer.parseInt(leader.getKey().split(":")[1]), 10000, 64 *
-                            1024, "LogHeadOffsetRequest");
+                            1024, "LogHeadOffsetRequest", securityProtocol);
                     Map<TopicAndPartition, PartitionOffsetRequestInfo> requestInfo = new HashMap<TopicAndPartition, PartitionOffsetRequestInfo>();
                     for (TopicPartition topicPartition : leader.getValue()) {
                         requestInfo.put(new TopicAndPartition(topicPartition.topic(), topicPartition.partition()), partitionOffsetRequestInfo);

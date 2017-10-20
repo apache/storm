@@ -44,7 +44,7 @@
         <dependency>
             <groupId>org.apache.kafka</groupId>
             <artifactId>kafka-clients</artifactId>
-            <version>${storm.kafka.client.version}</version>
+            <version>${storm.kafka.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.kafka</groupId>
