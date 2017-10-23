@@ -266,7 +266,7 @@ use Kafka-clients 0.10.0.0, you would use the following dependency in your `pom.
 You can also override the kafka clients version while building from maven, with parameter `storm.kafka.client.version`
 e.g. `mvn clean install -Dstorm.kafka.client.version=0.10.0.0`
 
-When selecting a kafka client version, you should ensure - 
+When selecting a kafka client version, you should ensure -
  1. kafka api is compatible. storm-kafka-client module only supports **0.10 or newer** kafka client API. For older versions,
  you can use storm-kafka module (https://github.com/apache/storm/tree/master/external/storm-kafka).  
  2. The kafka client selected by you should be wire compatible with the broker. e.g. 0.9.x client will not work with 
@@ -298,25 +298,46 @@ Currently the Kafka spout has has the following default values, which have been 
 * max.uncommitted.offsets = 10000000
 <br/>
 
-# Messaging reliability modes
+# Processing Guarantees
 
-In some cases you may not need or want the spout to guarantee at-least-once processing of messages. The spout also supports at-most-once and any-times modes. At-most-once guarantees that any tuple emitted to the topology will never be reemitted. Any-times makes no guarantees, but may reduce the overhead of committing offsets to Kafka in cases where you truly don't care how many times a message is processed.
+The `KafkaSpoutConfig.ProcessingGuarantee` enum parameter controls when an offset is committed to Kafka. This is
+conceptually equivalent to marking the tuple with the `ConsumerRecord` for that offset as being successfully processed
+because the tuple won't get re-emitted in case of failure or time out.
 
-To set the processing guarantee, use the KafkaSpoutConfig.Builder.setProcessingGuarantee method, e.g.
+For the AT_LEAST_ONCE and AT_MOST_ONCE processing guarantees the spout controls when the commit happens.
+When the guarantee is NONE Kafka controls when the commit happens.
+
+* AT_LEAST_ONCE - an offset is ready to commit only after the corresponding tuple has been processed (at-least-once)
+     and acked. If a tuple fails or times out it will be re-emitted. A tuple can be processed more than once if for instance
+     the ack gets lost.
+
+* AT_MOST_ONCE - Offsets will be committed to Kafka right after being polled but before being emitted to the downstream
+     components of the topology. Offsets are processed at most once because tuples that fail or timeout won't be retried.
+
+* NONE - the polled offsets are committed to Kafka periodically as controlled by the Kafka properties
+     "enable.auto.commit" and "auto.commit.interval.ms". Because the spout does not control when the commit happens
+     it cannot give any message processing guarantees, i.e. a message may be processed 0, 1 or more times.
+     This option requires "enable.auto.commit=true". If "enable.auto.commit=false" an exception will be thrown.
+
+To set the processing guarantee use the `KafkaSpoutConfig.Builder.setProcessingGuarantee` method as follows:
+
 ```java
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
   .builder(String bootstrapServers, String ... topics)
   .setProcessingGuarantee(ProcessingGuarantee.AT_MOST_ONCE)
 ```
 
-The spout will disable tuple tracking for emitted tuples by default when you use at-most-once or any-times. In some cases you may want to enable tracking anyway, because tuple tracking is necessary for some features of Storm, e.g. showing complete latency in Storm UI, or enabling backpressure through the `Config.TOPOLOGY_MAX_SPOUT_PENDING` parameter.
+# Tuple Tracking
 
-If you need to enable tracking, use the KafkaSpoutConfig.Builder.setForceEnableTupleTracking method, e.g.
+By default the spout only tracks emitted tuples when the processing guarantee is AT_LEAST_ONCE. It may be necessary to track
+emitted tuples with other processing guarantees to benefit from Storm features such as showing complete latency in the UI,
+or enabling backpressure with Config.TOPOLOGY_MAX_SPOUT_PENDING.
+
 ```java
 KafkaSpoutConfig<String, String> kafkaConf = KafkaSpoutConfig
   .builder(String bootstrapServers, String ... topics)
   .setProcessingGuarantee(ProcessingGuarantee.AT_MOST_ONCE)
-  .setForceEnableTupleTracking(true)
+  .setTupleTrackingEnforced(true)
 ```
 
-Note that this setting has no effect in at-least-once mode, where tuple tracking is always enabled.
+Note: This setting has no effect with AT_LEAST_ONCE processing guarantee, where tuple tracking is required and therefore always enabled.
