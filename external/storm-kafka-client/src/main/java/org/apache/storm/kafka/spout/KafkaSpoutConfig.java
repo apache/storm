@@ -56,10 +56,13 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final int DEFAULT_MAX_UNCOMMITTED_OFFSETS = 10_000_000;
     // 2s
     public static final long DEFAULT_PARTITION_REFRESH_PERIOD_MS = 2_000;
+
     public static final FirstPollOffsetStrategy DEFAULT_FIRST_POLL_OFFSET_STRATEGY = FirstPollOffsetStrategy.UNCOMMITTED_EARLIEST;
+
     public static final KafkaSpoutRetryService DEFAULT_RETRY_SERVICE =
         new KafkaSpoutRetryExponentialBackoff(TimeInterval.seconds(0), TimeInterval.milliSeconds(2),
             DEFAULT_MAX_RETRIES, TimeInterval.seconds(10));
+
     public static final ProcessingGuarantee DEFAULT_PROCESSING_GUARANTEE = ProcessingGuarantee.AT_LEAST_ONCE;
 
     public static final KafkaTupleListener DEFAULT_TUPLE_LISTENER = new EmptyKafkaTupleListener();
@@ -83,7 +86,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final SerializableDeserializer<V> valueDes;
     private final Class<? extends Deserializer<V>> valueDesClazz;
     private final ProcessingGuarantee processingGuarantee;
-    private final boolean forceEnableTupleTracking;
+    private final boolean tupleTrackingEnforced;
 
     /**
      * Creates a new KafkaSpoutConfig using a Builder.
@@ -108,7 +111,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDes = builder.valueDes;
         this.valueDesClazz = builder.valueDesClazz;
         this.processingGuarantee = builder.processingGuarantee;
-        this.forceEnableTupleTracking = builder.forceEnableTupleTracking;
+        this.tupleTrackingEnforced = builder.tupleTrackingEnforced;
     }
 
     /**
@@ -135,22 +138,29 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     /**
-     * The processing guarantee supported by the spout. This parameter affects when the spout commits offsets to Kafka, marking them as
-     * processed.
+     * This enum controls when the tuple with the {@link ConsumerRecord} for an offset is marked as processed,
+     * i.e. when the offset is committed to Kafka. For AT_LEAST_ONCE and AT_MOST_ONCE the spout controls when
+     * the commit happens. When the guarantee is NONE Kafka controls when the commit happens.
      *
      * <ul>
-     * <li>AT_LEAST_ONCE means that the Kafka spout considers an offset ready for commit once a tuple corresponding to that offset has been
-     * acked on the spout. This corresponds to an at-least-once guarantee.</li>
-     * <li>ANY_TIMES means that the Kafka spout may commit polled offsets at any time. This means the message may be processed any number of
-     * times (including 0), and causes the spout to enable auto offset committing on the underlying consumer.</li>
-     * <li>AT_MOST_ONCE means that the spout will commit polled offsets before emitting them to the topology. This guarantees at-most-once
-     * processing.</li>
+     * <li>AT_LEAST_ONCE - an offset is ready to commit only after the corresponding tuple has been processed (at-least-once)
+     * and acked. If a tuple fails or times-out it will be re-emitted. A tuple can be processed more than once if for instance
+     * the ack gets lost.</li>
+     * <br/>
+     * <li>AT_MOST_ONCE - every offset will be committed to Kafka right after being polled but before being emitted
+     * to the downstream components of the topology. It guarantees that the offset is processed at-most-once because it
+     * won't retry tuples that fail or timeout after the commit to Kafka has been done.</li>
+     * <br/>
+     * <li>NONE - the polled offsets are committed to Kafka periodically as controlled by the Kafka properties
+     * "enable.auto.commit" and "auto.commit.interval.ms". Because the spout does not control when the commit happens
+     * it cannot give any message processing guarantees, i.e. a message may be processed 0, 1 or more times.
+     * This option requires "enable.auto.commit=true". If "enable.auto.commit=false" an exception will be thrown.</li>
      * </ul>
      */
-    public static enum ProcessingGuarantee {
+    public enum ProcessingGuarantee {
         AT_LEAST_ONCE,
-        ANY_TIMES,
-        AT_MOST_ONCE
+        AT_MOST_ONCE,
+        NONE,
     }
 
     public static class Builder<K, V> {
@@ -171,7 +181,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private long partitionRefreshPeriodMs = DEFAULT_PARTITION_REFRESH_PERIOD_MS;
         private boolean emitNullTuples = false;
         private ProcessingGuarantee processingGuarantee = DEFAULT_PROCESSING_GUARANTEE;
-        private boolean forceEnableTupleTracking = false;
+        private boolean tupleTrackingEnforced = false;
 
         public Builder(String bootstrapServers, String... topics) {
             this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
@@ -649,10 +659,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
          * {@link Config#TOPOLOGY_MAX_SPOUT_PENDING} to have an effect, and enables some spout metrics (e.g. complete-latency) that would
          * otherwise be disabled.
          *
-         * @param forceEnableTupleTracking true if Storm should track emitted tuples, false otherwise
+         * @param tupleTrackingEnforced true if Storm should track emitted tuples, false otherwise
          */
-        public Builder<K, V> setForceEnableTupleTracking(boolean forceEnableTupleTracking) {
-            this.forceEnableTupleTracking = forceEnableTupleTracking;
+        public Builder<K, V> setTupleTrackingEnforced(boolean tupleTrackingEnforced) {
+            this.tupleTrackingEnforced = tupleTrackingEnforced;
             return this;
         }
 
@@ -706,14 +716,15 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 + " Instead use KafkaSpoutConfig.Builder.setProcessingGuarantee."
                 + " This will be treated as an error in the next major release."
                 + " For now the spout will be configured to behave like it would have in pre-1.2.0 releases.");
-            boolean enableAutoCommit = (boolean)builder.kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+
+            final boolean enableAutoCommit = (boolean)builder.kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
             if(enableAutoCommit) {
-                builder.processingGuarantee = ProcessingGuarantee.ANY_TIMES;
+                builder.processingGuarantee = ProcessingGuarantee.NONE;
             } else {
                 builder.processingGuarantee = ProcessingGuarantee.AT_LEAST_ONCE;
             }
         }
-        if (builder.processingGuarantee == ProcessingGuarantee.ANY_TIMES) {
+        if (builder.processingGuarantee == ProcessingGuarantee.NONE) {
             builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         } else {
             builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
@@ -788,8 +799,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return processingGuarantee;
     }
 
-    public boolean getForceEnableTupleTracking() {
-        return forceEnableTupleTracking;
+    public boolean isTupleTrackingEnforced() {
+        return tupleTrackingEnforced;
     }
 
     public String getConsumerGroupId() {
