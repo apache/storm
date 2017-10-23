@@ -31,7 +31,7 @@
             IdentityBolt CountingCommitBolt OpaqueMemoryTransactionalSpout])
   (:import [org.apache.storm.utils ZookeeperAuthInfo Utils])
   (:import [org.apache.curator.framework CuratorFramework])
-  (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModePathAndBytesable])
+  (:import [org.apache.curator.framework.api CreateBuilder ProtectACLCreateModeStatPathAndBytesable])
   (:import [org.apache.zookeeper CreateMode ZooDefs ZooDefs$Ids])
   (:import [org.mockito Matchers Mockito])
   (:import [org.mockito.exceptions.base MockitoAssertionError])
@@ -692,7 +692,7 @@
   (testing "Creates ZooKeeper nodes with the correct ACLs"
     (let [curator (Mockito/mock CuratorFramework)
           builder0 (Mockito/mock CreateBuilder)
-          builder1 (Mockito/mock ProtectACLCreateModePathAndBytesable)
+          builder1 (Mockito/mock ProtectACLCreateModeStatPathAndBytesable)
           expectedAcls ZooDefs$Ids/CREATOR_ALL_ACL]
       (. (Mockito/when (.create curator)) (thenReturn builder0))
       (. (Mockito/when (.creatingParentsIfNeeded builder0)) (thenReturn builder1))
