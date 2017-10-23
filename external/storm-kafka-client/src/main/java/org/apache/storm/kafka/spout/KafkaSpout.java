@@ -165,8 +165,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.info("Partitions reassignment. [task-ID={}, consumer-group={}, consumer={}, topic-partitions={}]",
                 context.getThisTaskId(), kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
 
-            tupleListener.onPartitionsReassigned(partitions);
             initialize(partitions);
+            tupleListener.onPartitionsReassigned(partitions);
         }
 
         private void initialize(Collection<TopicPartition> partitions) {
