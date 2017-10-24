@@ -20,11 +20,11 @@ package org.apache.storm.daemon.drpc;
 
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
-
+import javax.servlet.DispatcherType;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.drpc.webapp.DRPCApplication;
@@ -41,8 +41,8 @@ import org.apache.storm.ui.UIHelpers;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.eclipse.jetty.server.Server;
+import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.FilterHolder;
-import org.eclipse.jetty.servlet.FilterMapping;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.glassfish.jersey.servlet.ServletContainer;
@@ -64,7 +64,7 @@ public class DRPCServer implements AutoCloseable {
     public static void addRequestContextFilter(ServletContextHandler context, String configName, Map<String, Object> conf) {
         IHttpCredentialsPlugin auth = AuthUtils.GetHttpCredentialsPlugin(conf, (String)conf.get(configName));
         ReqContextFilter filter = new ReqContextFilter(auth);
-        context.addFilter(new FilterHolder(filter), "/*", FilterMapping.ALL);
+        context.addFilter(new FilterHolder(filter), "/*", EnumSet.allOf(DispatcherType.class));
     }
  
     private static ThriftServer mkHandlerServer(final DistributedRPC.Iface service, Integer port, Map<String, Object> conf) {
@@ -210,7 +210,7 @@ public class DRPCServer implements AutoCloseable {
     public int getHttpServerPort() {
         assert httpServer.getConnectors().length == 1;
         
-        return httpServer.getConnectors()[0].getLocalPort();
+        return ((ServerConnector) (httpServer.getConnectors()[0])).getLocalPort();
     }
 
     /**
