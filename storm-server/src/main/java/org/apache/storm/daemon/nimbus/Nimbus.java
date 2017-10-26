@@ -3923,6 +3923,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public TopologyHistoryInfo getTopologyHistory(String user) throws AuthorizationException, TException {
         try {
             List<String> adminUsers = (List<String>) conf.getOrDefault(Config.NIMBUS_ADMINS, Collections.emptyList());
+            List<String> adminGroups = (List<String>) conf.getOrDefault(Config.NIMBUS_ADMINS_GROUPS, Collections.emptyList());
             IStormClusterState state = stormClusterState;
             List<String> assignedIds = state.assignments(null);
             Set<String> ret = new HashSet<>();
@@ -3934,6 +3935,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 List<String> topoLogUsers = ServerConfigUtils.getTopoLogsUsers(topoConf);
                 if (user == null || isAdmin ||
                         isUserPartOf(user, groups) ||
+                        isUserPartOf(user, adminGroups) ||
                         topoLogUsers.contains(user)) {
                     ret.add(topoId);
                 }

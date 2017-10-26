@@ -27,6 +27,7 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.AccessControlType;
 
+import org.apache.storm.security.auth.FixedGroupsMapping;
 import org.apache.storm.security.auth.NimbusPrincipal;
 import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.commons.io.FileUtils;
@@ -92,6 +93,19 @@ public class BlobStoreTest {
   // Method which initializes nimbus admin
   public static void initializeConfigs() {
     conf.put(Config.NIMBUS_ADMINS,"admin");
+    conf.put(Config.NIMBUS_ADMINS_GROUPS,"adminsGroup");
+
+    // Construct a groups mapping for the FixedGroupsMapping class
+    Map<String, Set<String>> groupsMapping = new HashMap<String, Set<String>>();
+    Set<String> groupSet = new HashSet<String>();
+    groupSet.add("adminsGroup");
+    groupsMapping.put("adminsGroupsUser", groupSet);
+
+    // Now create a params map to put it in to our conf
+    Map<String, Object> paramMap = new HashMap<String, Object>();
+    paramMap.put(FixedGroupsMapping.STORM_FIXED_GROUP_MAPPING, groupsMapping);
+    conf.put(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN, "org.apache.storm.security.auth.FixedGroupsMapping");
+    conf.put(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS, paramMap);
     conf.put(Config.NIMBUS_SUPERVISOR_USERS,"supervisor");
   }
 
@@ -238,6 +252,18 @@ public class BlobStoreTest {
     assertEquals("Blobstore replication not matching", store.getBlobReplication("test", supervisor), 5);
     store.deleteBlob("test", supervisor);
 
+    Subject adminsGroupsUser = getSubject("adminsGroupsUser");
+    metadata = new SettableBlobMeta(BlobStoreAclHandler.DEFAULT);
+    metadata.set_replication_factor(4);
+    out = store.createBlob("test", metadata, adminsGroupsUser);
+    out.write(1);
+    out.close();
+    assertStoreHasExactly(store, "test");
+    assertEquals("Blobstore replication not matching", store.getBlobReplication("test", adminsGroupsUser), 4);
+    store.updateBlobReplication("test", 5, adminsGroupsUser);
+    assertEquals("Blobstore replication not matching", store.getBlobReplication("test", adminsGroupsUser), 5);
+    store.deleteBlob("test", adminsGroupsUser);
+
     //Test for a user having read or write or admin access to read replication for a blob
     String createSubject = "createSubject";
     String writeSubject = "writeSubject";
@@ -283,6 +309,16 @@ public class BlobStoreTest {
     out.write(1);
     out.close();
     store.deleteBlob("test", admin);
+
+    //Test for Nimbus Groups Admin
+    Subject adminsGroupsUser = getSubject("adminsGroupsUser");
+    assertStoreHasExactly(store);
+    metadata = new SettableBlobMeta(BlobStoreAclHandler.DEFAULT);
+    out = store.createBlob("test", metadata, adminsGroupsUser);
+    assertStoreHasExactly(store, "test");
+    out.write(1);
+    out.close();
+    store.deleteBlob("test", adminsGroupsUser);
 
     //Test for Supervisor Admin
     Subject supervisor = getSubject("supervisor");
