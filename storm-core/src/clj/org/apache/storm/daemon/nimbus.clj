@@ -47,7 +47,7 @@
                                        KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
                                        ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
                                        BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
-                                       ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType SupervisorAssignments])
+                                       ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType SupervisorAssignments SupervisorWorkerHeartbeats SupervisorWorkerHeartbeat])
   (:import [org.apache.storm.daemon Shutdownable])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
   (:import [org.apache.storm.assignments AssignmentDistributionService])
@@ -143,6 +143,20 @@
         (let [leader-address (.getLeader leader-elector)]
           (throw (RuntimeException. (str "not a leader, current leader is " leader-address))))))))
 
+(defn is-heartbeats-recovered
+  "Decide if the heartbeats is recovered for a master, will wait for all the assignments nodes to recovery,
+  every node will take care its node heartbeats."
+  [nimbus]
+  (if @(:heartbeats-ready-flag nimbus)
+    true
+    (let [assignments (.assignments-info (:storm-cluster-state nimbus))
+          assignments-nodes (reduce-kv (fn [m _ assignment]
+                                         (into m (keys (:node->host assignment)))) #{} assignments)
+          is-ready (.isReady (:heartbeats-recovery-strategy nimbus) assignments-nodes)]
+      (if is-ready
+        (reset! (:heartbeats-ready-flag nimbus) true))
+      is-ready)))
+
 (def NIMBUS-ZK-ACLS
   [(first ZooDefs$Ids/CREATOR_ALL_ACL)
    (ACL. (bit-or ZooDefs$Perms/READ ZooDefs$Perms/CREATE) ZooDefs$Ids/ANYONE_ID_UNSAFE)])
@@ -210,6 +224,8 @@
      :cred-update-lock (Object.)
      :log-update-lock (Object.)
      :heartbeats-cache (atom {})
+     :heartbeats-ready-flag (atom false)
+     :heartbeats-recovery-strategy (get-worker-heartbeats-recovery-strategy conf)
      :downloaders (file-cache-map conf)
      :uploaders (file-cache-map conf)
      :blob-store blob-store
@@ -604,31 +620,27 @@
                        (>= (time-delta nimbus-time) timeout))
        :nimbus-time nimbus-time
        :executor-reported-time reported-time
-       :heartbeat hb}))
+       }))
 
-(defn update-heartbeat-cache [cache executor-beats all-executors timeout]
-  (let [cache (select-keys cache all-executors)]
-    (into {}
-      (for [executor all-executors :let [curr (cache executor)]]
-        [executor
-         (update-executor-cache curr (get executor-beats executor) timeout)]
-         ))))
+(defn- update-cached-heartbeats-from-worker[nimbus ^SupervisorWorkerHeartbeat worker-hb]
+  (let [hb (converter/clojurify-supervisor-worker-hb worker-hb)
+        cache (@(:heartbeats-cache nimbus) (:storm-id hb))]
+    ;; check if the heartbeat comes from a cluster storm
+    ;; the id is registered when submit a new topology after which we will update
+    ;; and cleaned when killed
+    (doseq[executor (:executors hb) :let [curr (get cache executor)
+                                          updated (update-executor-cache curr hb ((:conf nimbus) NIMBUS-TASK-TIMEOUT-SECS))]]
+      (swap! (:heartbeats-cache nimbus) assoc-in [(:storm-id hb) executor] updated))))
 
-(defn update-heartbeats! [nimbus storm-id all-executors existing-assignment]
-  (log-debug "Updating heartbeats for " storm-id " " (pr-str all-executors))
-  (let [storm-cluster-state (:storm-cluster-state nimbus)
-        executor-beats (.executor-beats storm-cluster-state storm-id (:executor->node+port existing-assignment))
-        cache (update-heartbeat-cache (@(:heartbeats-cache nimbus) storm-id)
-                                      executor-beats
-                                      all-executors
-                                      ((:conf nimbus) NIMBUS-TASK-TIMEOUT-SECS))]
-      (swap! (:heartbeats-cache nimbus) assoc storm-id cache)))
-
-(defn- update-all-heartbeats! [nimbus existing-assignments topology->executors]
-  "update all the heartbeats for all the topologies's executors"
-  (doseq [[tid assignment] existing-assignments
-          :let [all-executors (topology->executors tid)]]
-    (update-heartbeats! nimbus tid all-executors assignment)))
+(defn- update-cached-heartbeats-from-supervisor[nimbus ^SupervisorWorkerHeartbeats worker-hbs]
+  "update nimbus cached heartbeats from a supervisor heartbeats report"
+  (doseq [worker-hb (.get_worker_heartbeats worker-hbs)]
+    (update-cached-heartbeats-from-worker nimbus worker-hb))
+  ;; report node id to IWorkerHeartbeatsRecoveryStrategy if is a master leader recovery
+  (if (not @(:heartbeats-ready-flag nimbus))
+    (let [supervisor-id (.get_supervisor_id worker-hbs)]
+      (when-not (clojure.string/blank? supervisor-id)
+        (.reportNodeId (:heartbeats-recovery-strategy nimbus) supervisor-id)))))
 
 (defn- alive-executors
   [nimbus ^TopologyDetails topology-details all-executors existing-assignment]
@@ -651,7 +663,8 @@
                    (or
                     (< (time-delta start-time)
                        (conf NIMBUS-TASK-LAUNCH-SECS))
-                    (not is-timed-out)
+                    ;; nil is-timed-out means worker never reported any heartbeat
+                    (and (not-nil? is-timed-out) (not is-timed-out))
                     ))
               true
               (do
@@ -854,8 +867,7 @@
   (let [conf (:conf nimbus)
         storm-cluster-state (:storm-cluster-state nimbus)
         topology->executors (compute-topology->executors nimbus (keys existing-assignments))
-        ;; update the executors heartbeats first.
-        _ (update-all-heartbeats! nimbus existing-assignments topology->executors)
+
         topology->alive-executors (compute-topology->alive-executors nimbus
                                                                      existing-assignments
                                                                      topologies
@@ -1003,9 +1015,9 @@
     (try
       (let [node-assignments (assignments-for-node new-assignments node)]
         (.addAssignmentsForNode assignment-service node (converter/thriftify-supervisor-assignments node-assignments)))
-      (catch Throwable e
+      (catch Throwable t
         ;; just skip when any error happens wait for next round assignments reassign
-        (log-error (.getMessage e) ": Exception when create thrift client for " node)))))
+        (log-error t ": Exception when create thrift client for " node)))))
 
 (defn notify-supervisors-as-killed
   [cluster-state old-assignment assignment-service]
@@ -1028,13 +1040,20 @@
   (assoc assignment
          :owner (.getTopologySubmitter td)))
 
+(defn- is-ready-for-mk-assignments [nimbus]
+  (if (is-leader nimbus :throw-exception false)
+    (if (is-heartbeats-recovered nimbus)
+      true
+      (log-message "waiting for worker heartbeats recovery, skipping assignments"))
+    (log-message "not a leader, skipping assignments")))
+
 ;; get existing assignment (just the executor->node+port map) -> default to {}
 ;; filter out ones which have a executor timeout
 ;; figure out available slots on cluster. add to that the used valid slots to get total slots. figure out how many executors should be in each slot (e.g., 4, 4, 4, 5)
 ;; only keep existing slots that satisfy one of those slots. for rest, reassign them across remaining slots
 ;; edge case for slots with no executor timeout but with supervisor timeout... just treat these as valid slots that can be reassigned to. worst comes to worse the executor will timeout and won't assign here next time around
 (defnk mk-assignments [nimbus :scratch-topology-id nil]
-  (if (is-leader nimbus :throw-exception false)
+  (if (is-ready-for-mk-assignments nimbus)
     (let [conf (:conf nimbus)
         storm-cluster-state (:storm-cluster-state nimbus)
         ^INimbus inimbus (:inimbus nimbus)
@@ -1130,8 +1149,7 @@
                 [topology-id (map to-worker-slot (newly-added-slots existing-assignment assignment))]
                 )))
             (into {})
-            (.assignSlots inimbus topologies)))))
-    (log-message "not a leader, skipping assignments")))
+            (.assignSlots inimbus topologies)))))))
 
 (defn notify-topology-action-listener [nimbus storm-id action]
   (let [topology-action-notifier (:nimbus-topology-action-notifier nimbus)]
@@ -1228,6 +1246,7 @@
                 (filter [this key] (get-id-from-blob-key key)))]
     (set (.filterAndListKeys blob-store to-id))))
 
+;;TODO: should remove heartbeats dependency from zookeeper.
 (defn cleanup-storm-ids [storm-cluster-state blob-store]
   (let [heartbeat-ids (set (.heartbeat-storms storm-cluster-state))
         error-ids (set (.error-topologies storm-cluster-state))
@@ -1696,8 +1715,8 @@
                   base (.storm-base storm-cluster-state storm-id nil)
                   launch-time-secs (get-launch-time-secs base storm-id)
                   assignment (.assignment-info storm-cluster-state storm-id nil)
-                  beats (map-val :heartbeat (get @(:heartbeats-cache nimbus)
-                                                 storm-id))
+                  ;; get it from cluster state/zookeeper every time to collect the UI stats, may replace it with other StateStore later on.
+                  beats (.executor-beats storm-cluster-state storm-id (:executor->node+port assignment))
                   all-components (set (vals task->component))]
               {:storm-name storm-name
                :storm-cluster-state storm-cluster-state
@@ -1838,6 +1857,7 @@
                          (.get_wait_secs options)
                          )]
           (transition-name! nimbus storm-name [:kill wait-amt] true)
+          (swap! (:heartbeats-cache nimbus) dissoc storm-id)
           (notify-topology-action-listener nimbus storm-name operation))
         (add-topology-to-history-log storm-id nimbus topology-conf)))
 
@@ -2499,6 +2519,14 @@
           (converter/thriftify-supervisor-assignments assignments-for-node)
           ;;when not leader just return nil which will cause client to get an unknown error.
           )))
+
+    (^void sendSupervisorWorkerHeartbeats[this ^SupervisorWorkerHeartbeats heartbeats]
+      (if (is-leader nimbus :throw-exception false)
+        (update-cached-heartbeats-from-supervisor nimbus heartbeats)))
+
+    (^void sendSupervisorWorkerHeartbeat[this ^SupervisorWorkerHeartbeat heartbeat]
+      (if (is-leader nimbus :throw-exception false)
+        (update-cached-heartbeats-from-worker nimbus heartbeat)))
     Shutdownable
     (shutdown [this]
       (mark! nimbus:num-shutdown-calls)

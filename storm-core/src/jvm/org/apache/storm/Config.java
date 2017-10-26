@@ -17,6 +17,7 @@
  */
 package org.apache.storm;
 
+import org.apache.storm.nimbus.IWorkerHeartbeatsRecoveryStrategy;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
@@ -726,6 +727,13 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREAD_QUEUE_SIZE = "nimbus.assignments.service.thread.queue.size";
 
     /**
+     * class controls heartbeats recovery strategy
+     */
+    @isString
+    @isImplementationOfClass(implementsClass = IWorkerHeartbeatsRecoveryStrategy.class)
+    public static final String NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS = "nimbus.worker.heartbeats.recovery.strategy.class";
+
+    /**
      * Storm UI binds to this host/interface.
      */
     @isString
@@ -1291,6 +1299,12 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     @isInteger
     public static final String SUPERVISOR_BLOBSTORE_DOWNLOAD_MAX_RETRIES = "supervisor.blobstore.download.max_retries";
+
+    /**
+     * max timeout for supervisor reported heartbeats when master gains leadership
+     */
+    @isInteger
+    public static final String SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS = "supervisor.worker.heartbeats.max.timeout.secs";
 
     /**
      * The blobstore super user has all read/write/admin permissions to all blobs - user running

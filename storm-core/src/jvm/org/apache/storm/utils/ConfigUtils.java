@@ -24,13 +24,13 @@ import org.apache.storm.assignments.ILocalAssignmentsBackend;
 import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.nimbus.IWorkerHeartbeatsRecoveryStrategy;
+import org.apache.storm.nimbus.WorkerHeartbeatsRecoveryStrategyFactory;
 import org.apache.storm.validation.ConfigValidation;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URLEncoder;
@@ -552,5 +552,9 @@ public class ConfigUtils {
 
     public static ILocalAssignmentsBackend getAssignmentsBackend(Map conf) throws IOException {
         return LocalAssignmentsBackendFactory.getBackend(conf);
+    }
+
+    public static IWorkerHeartbeatsRecoveryStrategy getHeartbeatsRecoveryStrategy(Map conf) {
+        return WorkerHeartbeatsRecoveryStrategyFactory.getStrategy(conf);
     }
 }

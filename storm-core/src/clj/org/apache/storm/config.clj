@@ -21,7 +21,8 @@
   (:import [org.apache.storm.utils Utils LocalState])
   (:import [org.apache.storm.validation ConfigValidation])
   (:import [org.apache.commons.io FileUtils]
-           (org.apache.storm.assignments LocalAssignmentsBackendFactory))
+           (org.apache.storm.assignments LocalAssignmentsBackendFactory)
+           (org.apache.storm.nimbus WorkerHeartbeatsRecoveryStrategyFactory))
   (:require [clojure [string :as str]])
   (:use [org.apache.storm log util]))
 
@@ -340,3 +341,7 @@
 (defn get-assignments-backend
   [conf]
   (LocalAssignmentsBackendFactory/getBackend conf))
+
+(defn get-worker-heartbeats-recovery-strategy
+  [conf]
+  (WorkerHeartbeatsRecoveryStrategyFactory/getStrategy conf))

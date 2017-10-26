@@ -16,7 +16,7 @@
 (ns org.apache.storm.converter
   (:import [org.apache.storm.generated SupervisorInfo NodeInfo Assignment WorkerResources
                                        StormBase TopologyStatus ClusterWorkerHeartbeat ExecutorInfo ErrorInfo Credentials RebalanceOptions KillOptions
-                                       TopologyActionOptions DebugOptions ProfileRequest SupervisorAssignments])
+                                       TopologyActionOptions DebugOptions ProfileRequest SupervisorAssignments SupervisorWorkerHeartbeat])
   (:use [org.apache.storm util stats log])
   (:require [org.apache.storm.daemon [common :as common]]))
 
@@ -245,6 +245,19 @@
       (.set_storm_id (:storm-id worker-hb))
       (.set_executor_stats (thriftify-stats (filter second (:executor-stats worker-hb))))
       (.set_time_secs (:time-secs worker-hb)))))
+
+(defn clojurify-supervisor-worker-hb [^SupervisorWorkerHeartbeat worker-hb]
+  (if worker-hb
+    {:storm-id (.get_storm_id worker-hb)
+     :time-secs (.get_time_secs worker-hb)
+     :executors (org.apache.storm.local-state/->executor-list (.get_executors worker-hb))}
+    {}))
+
+(defn thriftify-supervisor-worker-hb [worker-hb]
+  (doto (SupervisorWorkerHeartbeat.)
+    (.set_storm_id (:storm-id worker-hb))
+    (.set_time_secs (:time-secs worker-hb))
+    (.set_executors (org.apache.storm.local-state/->ExecutorInfo-list (:executors worker-hb)))))
 
 (defn clojurify-error [^ErrorInfo error]
   (if error

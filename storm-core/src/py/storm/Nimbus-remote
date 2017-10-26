@@ -88,6 +88,8 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  StormTopology getUserTopology(string id)')
   print('  TopologyHistoryInfo getTopologyHistory(string user)')
   print('  SupervisorAssignments getSupervisorAssignments(string node)')
+  print('  void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats)')
+  print('  void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat)')
   print('')
   sys.exit(0)
 
@@ -419,6 +421,18 @@ elif cmd == 'getSupervisorAssignments':
     print('getSupervisorAssignments requires 1 args')
     sys.exit(1)
   pp.pprint(client.getSupervisorAssignments(args[0],))
+
+elif cmd == 'sendSupervisorWorkerHeartbeats':
+  if len(args) != 1:
+    print('sendSupervisorWorkerHeartbeats requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.sendSupervisorWorkerHeartbeats(eval(args[0]),))
+
+elif cmd == 'sendSupervisorWorkerHeartbeat':
+  if len(args) != 1:
+    print('sendSupervisorWorkerHeartbeat requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.sendSupervisorWorkerHeartbeat(eval(args[0]),))
 
 else:
   print('Unrecognized method %s' % cmd)

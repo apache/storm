@@ -26,7 +26,7 @@
   (:import [java.util.concurrent Executors]
            [org.apache.storm.hooks IWorkerHook BaseWorkerHook])
   (:import [java.util ArrayList HashMap])
-  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue SupervisorClient])
+  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue SupervisorClient NimbusClient])
   (:import [org.apache.storm.grouping LoadMapping])
   (:import [org.apache.storm.messaging TransportFactory])
   (:import [org.apache.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
@@ -63,6 +63,38 @@
       (.remote-assignment-info cluster-state storm-id)
       )))
 
+(defn- remote-worker-heartbeat!
+  [conf hb]
+  (try
+    (let [master-cli (NimbusClient/getConfiguredClient conf)
+          thrift-hb (converter/thriftify-supervisor-worker-hb hb)]
+      (.sendSupervisorWorkerHeartbeat (.getClient master-cli) thrift-hb)
+      (try
+        (.close master-cli)
+        (catch Throwable e
+          (log-warn (.getMessage e) " Exception when close master client."))))
+    (catch Throwable t
+      ;; if any error/exception thrown, just ignore.
+      (log-error t " Exception when send heartbeat to master.")
+      )))
+
+(defn local-worker-heartbeat!
+  "Send a heartbeat to local supervisor first to check if supervisor is okey for heartbeating."
+  [conf hb]
+  (try
+    (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
+          thrift-hb (converter/thriftify-supervisor-worker-hb hb)]
+      (.sendSupervisorWorkerHeartbeat (.getClient supervisor-cli) thrift-hb)
+      (try
+        (.close supervisor-cli)
+        (catch Throwable e
+          (log-warn (.getMessage e) " Exception when close supervisor client."))))
+    (catch Throwable t
+      ;; if any error/exception thrown, report directly to nimbus.
+      (log-debug (.getMessage t) " Exception when send heartbeat to local supervisor.")
+      (remote-worker-heartbeat! conf hb)
+      )))
+
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")
   (let [assignment (:executor->node+port (get-local-assignment storm-conf storm-id storm-cluster-state))]
@@ -87,7 +119,7 @@
                :uptime ((:uptime worker))
                :time-secs (current-time-secs)
                }]
-    ;; do the zookeeper heartbeat
+    ;; report local stats to zookeeper, may replace the stats backend later on.
     (try
       (.worker-heartbeat! (:storm-cluster-state worker) (:storm-id worker) (:assignment-id worker) (:port worker) zk-hb)
       (catch Exception exc
@@ -95,9 +127,15 @@
 
 (defn do-heartbeat [worker]
   (let [conf (:conf worker)
-        state (worker-state conf (:worker-id worker))]
+        state (worker-state conf (:worker-id worker))
+        time-secs (current-time-secs)
+        local-hb {:storm-id (:storm-id worker)
+                  :executors (:executors worker)
+                  :time-secs time-secs}]
+    ;; do local rpc heartbeat, if any error/exception occurs, report it directly to master.
+    (local-worker-heartbeat! conf local-hb)
     ;; do the local-file-system heartbeat.
-    (ls-worker-heartbeat! state (current-time-secs) (:storm-id worker) (:executors worker) (:port worker))
+    (ls-worker-heartbeat! state time-secs (:storm-id worker) (:executors worker) (:port worker))
     (.cleanup state 60) ; this is just in case supervisor is down so that disk doesn't fill up.
                          ; it shouldn't take supervisor 120 seconds between listing dir and reading it
 

@@ -40,9 +40,7 @@ import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
-import org.apache.storm.daemon.supervisor.timer.SupervisorHealthCheck;
-import org.apache.storm.daemon.supervisor.timer.SupervisorHeartbeat;
-import org.apache.storm.daemon.supervisor.timer.UpdateBlobs;
+import org.apache.storm.daemon.supervisor.timer.*;
 import org.apache.storm.event.EventManager;
 import org.apache.storm.event.EventManagerImp;
 import org.apache.storm.generated.*;
@@ -77,6 +75,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     // used for reporting used ports when heartbeating
     private final AtomicReference<Map<Long, LocalAssignment>> currAssignment;
     private final StormTimer heartbeatTimer;
+    private final StormTimer workerHeartbeatTimer;
     private final StormTimer eventTimer;
     private final StormTimer blobUpdateTimer;
     private final Localizer localizer;
@@ -131,6 +130,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.currAssignment = new AtomicReference<Map<Long, LocalAssignment>>(new HashMap<Long, LocalAssignment>());
 
         this.heartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
+
+        this.workerHeartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
 
         this.eventTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
 
@@ -250,6 +251,10 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             // supervisor health check
             eventTimer.scheduleRecurring(300, 300, new SupervisorHealthCheck(this));
         }
+
+        ReportWorkerHeartbeats reportWorkerHeartbeats = new ReportWorkerHeartbeats(conf, this);
+        Integer workerHeartbeatFrequency = Utils.getInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS));
+        workerHeartbeatTimer.scheduleRecurring(workerHeartbeatFrequency, workerHeartbeatFrequency, reportWorkerHeartbeats);
         LOG.info("Starting supervisor with id {} at host {}.", getId(), getHostName());
     }
 
@@ -264,8 +269,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
-            //must invoke after launcher cause some service must be initialized
-            launcherSupervisorThriftServer(conf);
+            //must invoke after launch cause some service must be initialized
+            launchSupervisorThriftServer(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(new Runnable() {
                 @Override
                 public void run() {
@@ -280,7 +285,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
     }
 
-    private void launcherSupervisorThriftServer(Map conf) throws IOException {
+    private void launchSupervisorThriftServer(Map conf) throws IOException {
         // validate port
         try {
             ServerSocket socket = new ServerSocket(Utils.getInt(conf.get(Config.SUPERVISOR_THRIFT_PORT)));
@@ -306,38 +311,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 }
                 return assignment;
             }
+
+            @Override
+            public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heartbeat) throws AuthorizationException, TException {
+                // do nothing now
+            }
         });
         this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
         this.thriftServer.serve();
-    }
-
-    public void getAssignmentsFromMaster() {
-        NimbusClient master;
-        try {
-            master = NimbusClient.getConfiguredClient(conf);
-            SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(getHostName());
-            LOG.debug("Sync an assignments from master, will start to sync with assignments: {}", assignments);
-            assignedAssignmentsToLocal(assignments);
-            try{
-                master.close();
-            }catch (Throwable t) {
-                LOG.warn("Close master client exception", t);
-            }
-        }catch (Exception t) {
-            LOG.error("Get assignments from master exception", t);
-        }
-    }
-
-    public void assignedAssignmentsToLocal(SupervisorAssignments assignments) {
-        if (null == assignments ){
-            //unknown error, just skip
-            return;
-        }
-        Map<String, byte[]> serAssignments = new HashMap<>();
-        for(Map.Entry<String, Assignment> entry: assignments.get_storm_assignment().entrySet()) {
-            serAssignments.put(entry.getKey(), Utils.serialize(entry.getValue()));
-        }
-        this.stormClusterState.syncRemoteAssignments(serAssignments);
     }
 
     private void registerWorkerNumGauge(String name, final Map<String, Object> conf) {

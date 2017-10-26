@@ -57,6 +57,16 @@ class Iface:
     """
     pass
 
+  def sendSupervisorWorkerHeartbeat(self, heartbeat):
+    """
+    Send worker heartbeat to local supervisor
+
+
+    Parameters:
+     - heartbeat
+    """
+    pass
+
 
 class Client(Iface):
   def __init__(self, iprot, oprot=None):
@@ -137,6 +147,40 @@ class Client(Iface):
       raise result.aze
     raise TApplicationException(TApplicationException.MISSING_RESULT, "getLocalAssignmentForStorm failed: unknown result")
 
+  def sendSupervisorWorkerHeartbeat(self, heartbeat):
+    """
+    Send worker heartbeat to local supervisor
+
+
+    Parameters:
+     - heartbeat
+    """
+    self.send_sendSupervisorWorkerHeartbeat(heartbeat)
+    self.recv_sendSupervisorWorkerHeartbeat()
+
+  def send_sendSupervisorWorkerHeartbeat(self, heartbeat):
+    self._oprot.writeMessageBegin('sendSupervisorWorkerHeartbeat', TMessageType.CALL, self._seqid)
+    args = sendSupervisorWorkerHeartbeat_args()
+    args.heartbeat = heartbeat
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_sendSupervisorWorkerHeartbeat(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = sendSupervisorWorkerHeartbeat_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.aze is not None:
+      raise result.aze
+    return
+
 
 class Processor(Iface, TProcessor):
   def __init__(self, handler):
@@ -144,6 +188,7 @@ class Processor(Iface, TProcessor):
     self._processMap = {}
     self._processMap["sendSupervisorAssignments"] = Processor.process_sendSupervisorAssignments
     self._processMap["getLocalAssignmentForStorm"] = Processor.process_getLocalAssignmentForStorm
+    self._processMap["sendSupervisorWorkerHeartbeat"] = Processor.process_sendSupervisorWorkerHeartbeat
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -203,6 +248,28 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("getLocalAssignmentForStorm", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_sendSupervisorWorkerHeartbeat(self, seqid, iprot, oprot):
+    args = sendSupervisorWorkerHeartbeat_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = sendSupervisorWorkerHeartbeat_result()
+    try:
+      self._handler.sendSupervisorWorkerHeartbeat(args.heartbeat)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except AuthorizationException as aze:
+      msg_type = TMessageType.REPLY
+      result.aze = aze
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("sendSupervisorWorkerHeartbeat", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -486,6 +553,138 @@ class getLocalAssignmentForStorm_result:
     value = 17
     value = (value * 31) ^ hash(self.success)
     value = (value * 31) ^ hash(self.e)
+    value = (value * 31) ^ hash(self.aze)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class sendSupervisorWorkerHeartbeat_args:
+  """
+  Attributes:
+   - heartbeat
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'heartbeat', (SupervisorWorkerHeartbeat, SupervisorWorkerHeartbeat.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, heartbeat=None,):
+    self.heartbeat = heartbeat
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.heartbeat = SupervisorWorkerHeartbeat()
+          self.heartbeat.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('sendSupervisorWorkerHeartbeat_args')
+    if self.heartbeat is not None:
+      oprot.writeFieldBegin('heartbeat', TType.STRUCT, 1)
+      self.heartbeat.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.heartbeat)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class sendSupervisorWorkerHeartbeat_result:
+  """
+  Attributes:
+   - aze
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, aze=None,):
+    self.aze = aze
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('sendSupervisorWorkerHeartbeat_result')
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
     value = (value * 31) ^ hash(self.aze)
     return value
 

@@ -44,6 +44,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('Functions:')
   print('  void sendSupervisorAssignments(SupervisorAssignments assignments)')
   print('  Assignment getLocalAssignmentForStorm(string id)')
+  print('  void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heartbeat)')
   print('')
   sys.exit(0)
 
@@ -111,6 +112,12 @@ elif cmd == 'getLocalAssignmentForStorm':
     print('getLocalAssignmentForStorm requires 1 args')
     sys.exit(1)
   pp.pprint(client.getLocalAssignmentForStorm(args[0],))
+
+elif cmd == 'sendSupervisorWorkerHeartbeat':
+  if len(args) != 1:
+    print('sendSupervisorWorkerHeartbeat requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.sendSupervisorWorkerHeartbeat(eval(args[0]),))
 
 else:
   print('Unrecognized method %s' % cmd)
