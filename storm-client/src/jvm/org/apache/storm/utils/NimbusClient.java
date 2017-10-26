@@ -89,9 +89,16 @@ public class NimbusClient extends ThriftClient {
 
     private static String oldLeader = "";
 
+    /**
+     * Check to see if we should log the leader we are connecting to or not.  This typically happens when the leader changes or if debug
+     * logging is enabled. The code remembers the last leader it was called with, but it should be transparent to the caller.
+     * @param leader the leader we are trying to connect to.
+     * @return true if it should be logged else false.
+     */
     private static synchronized boolean shouldLogLeader(String leader) {
+        assert leader != null;
         if (LOG.isDebugEnabled()) {
-            //If debug logging is turned on we shoudl just log the leader all the time....
+            //If debug logging is turned on we should just log the leader all the time....
             return true;
         }
         //Only log if the leader has changed.  It is not interesting otherwise.
