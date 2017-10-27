@@ -17,7 +17,6 @@
  */
 package org.apache.storm.grouping;
 
-import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
@@ -85,7 +84,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         if (values.size() > 0) {
             final byte[] rawKeyBytes = getKeyBytes(values);
 
-            final List<Integer> taskAssignmentForKey = assignmentCreator.createAssignment(this.targetTasks, rawKeyBytes);
+            final int[] taskAssignmentForKey = assignmentCreator.createAssignment(this.targetTasks, rawKeyBytes);
             final int selectedTask = targetSelector.chooseTask(taskAssignmentForKey);
 
             boltIds.add(selectedTask);
@@ -147,14 +146,14 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
      * Storm Workers, thus each of them needs to come up with the same assignment for a given key.
      */
     public interface AssignmentCreator extends Serializable {
-        List<Integer> createAssignment(List<Integer> targetTasks, byte[] key);
+        int[] createAssignment(List<Integer> targetTasks, byte[] key);
     }
 
     /**
      * This interface chooses one element from a task assignment to send a specific Tuple to.
      */
     public interface TargetSelector extends Serializable {
-        Integer chooseTask(List<Integer> assignedTasks);
+        Integer chooseTask(int[] assignedTasks);
     }
 
     /*========== Implementations ==========*/
@@ -164,10 +163,10 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
         private HashFunction h1 = Hashing.murmur3_128(13);
         private HashFunction h2 = Hashing.murmur3_128(17);
 
-        public List<Integer> createAssignment(List<Integer> tasks, byte[] key) {
+        public int[] createAssignment(List<Integer> tasks, byte[] key) {
             int firstChoiceIndex = (int) (Math.abs(h1.hashBytes(key).asLong()) % tasks.size());
             int secondChoiceIndex = (int) (Math.abs(h2.hashBytes(key).asLong()) % tasks.size());
-            return Lists.newArrayList(tasks.get(firstChoiceIndex), tasks.get(secondChoiceIndex));
+            return new int[] {tasks.get(firstChoiceIndex), tasks.get(secondChoiceIndex)};
         }
     }
 
@@ -179,7 +178,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     public static class BalancedTargetSelector implements TargetSelector {
         private Map<Integer, Long> targetTaskStats = Maps.newConcurrentMap();
 
-        public Integer chooseTask(List<Integer> assignedTasks) {
+        public Integer chooseTask(int[] assignedTasks) {
             Integer taskIdWithMinLoad = null;
             Long minTaskLoad = Long.MAX_VALUE;
 
