@@ -20,24 +20,25 @@ package org.apache.storm.grouping;
 import com.google.common.collect.Maps;
 import com.google.common.hash.HashFunction;
 import com.google.common.hash.Hashing;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.task.WorkerTopologyContext;
-import org.apache.storm.tuple.Fields;
-
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.task.WorkerTopologyContext;
+import org.apache.storm.tuple.Fields;
+
 
 /**
  * A variation on FieldGrouping. This grouping operates on a partitioning of the incoming
- * tuples (like a FieldGrouping), but it can send Tuples from a given partition to multiple downstream tasks.
+ * tuples (like a FieldGrouping), but it can send Tuples from a given partition to
+ * multiple downstream tasks.
  *
- * Given a total pool of target tasks, this grouping will always send Tuples with a given key to one member of
- * a subset of those tasks. Each key is assigned a subset of tasks. Each tuple is then sent to one task
- * from that subset.
+ * Given a total pool of target tasks, this grouping will always send Tuples with a given
+ * key to one member of a subset of those tasks. Each key is assigned a subset of tasks.
+ * Each tuple is then sent to one task from that subset.
  *
  * Notes:
  * - the default TaskSelector ensures each task gets as close to a balanced number of Tuples as possible
@@ -63,7 +64,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     public PartialKeyGrouping(Fields fields, AssignmentCreator assignmentCreator) {
         this(fields, assignmentCreator, new BalancedTargetSelector());
     }
-
+    
     public PartialKeyGrouping(Fields fields, AssignmentCreator assignmentCreator, TargetSelector targetSelector) {
         this.fields = fields;
         this.assignmentCreator = assignmentCreator;
@@ -158,11 +159,18 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
 
     /*========== Implementations ==========*/
 
+    /**
+     * This implementation of AssignmentCreator chooses two target tasks by hashing the input's key.
+     * This matches the original behavior of this grouping and is thus the default.
+     */
     public static class HashingTwoTaskAssignmentCreator implements AssignmentCreator {
 
         private HashFunction h1 = Hashing.murmur3_128(13);
         private HashFunction h2 = Hashing.murmur3_128(17);
 
+        /**
+         * Creates a two task assignment by hashing the incoming key.
+         */
         public int[] createAssignment(List<Integer> tasks, byte[] key) {
             int firstChoiceIndex = (int) (Math.abs(h1.hashBytes(key).asLong()) % tasks.size());
             int secondChoiceIndex = (int) (Math.abs(h2.hashBytes(key).asLong()) % tasks.size());
@@ -178,6 +186,10 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     public static class BalancedTargetSelector implements TargetSelector {
         private Map<Integer, Long> targetTaskStats = Maps.newHashMap();
 
+        /**
+         * Chooses one of the incoming tasks and selects the one that has been selected
+         * the fewest times so far.
+         */
         public Integer chooseTask(int[] assignedTasks) {
             Integer taskIdWithMinLoad = null;
             Long minTaskLoad = Long.MAX_VALUE;
