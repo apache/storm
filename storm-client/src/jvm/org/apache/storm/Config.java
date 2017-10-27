@@ -91,11 +91,12 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * A map with blobstore keys mapped to each filename the worker will have access to in the
-     * launch directory to the blob by local file name and uncompress flag. Both localname and
-     * uncompress flag are optional. It uses the key is localname is not specified. Each topology
-     * will have different map of blobs.  Example: topology.blobstore.map: {"blobstorekey" :
+     * launch directory to the blob by local file name, uncompress flag, and if the worker
+     * should restart when the blob is updated. localname, workerRestart, and
+     * uncompress are optional. If localname is not specified the name of the key is used instead.
+     * Each topologywill have different map of blobs.  Example: topology.blobstore.map: {"blobstorekey" :
      * {"localname": "myblob", "uncompress": false}, "blobstorearchivekey" :
-     * {"localname": "myarchive", "uncompress": true}}
+     * {"localname": "myarchive", "uncompress": true, "workerRestart": true}}
      */
     @CustomValidator(validatorClass = MapOfStringToMapOfStringToObjectValidator.class)
     public static final String TOPOLOGY_BLOBSTORE_MAP = "topology.blobstore.map";

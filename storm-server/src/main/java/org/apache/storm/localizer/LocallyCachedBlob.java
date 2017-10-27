@@ -19,18 +19,24 @@
 package org.apache.storm.localizer;
 
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.blobstore.InputStreamWithMeta;
+import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -41,9 +47,10 @@ public abstract class LocallyCachedBlob {
     private static final Logger LOG = LoggerFactory.getLogger(LocallyCachedBlob.class);
     public static final long NOT_DOWNLOADED_VERSION = -1;
     // A callback that does nothing.
-    private static final BlobChangingCallback NOOP_CB = (assignment, port, resource, go) -> {};
+    private static final BlobChangingCallback NOOP_CB = (assignment, port, resource, go) -> {
+    };
 
-    private long lastUsed = System.currentTimeMillis();
+    private long lastUsed = Time.currentTimeMillis();
     private final Map<PortAndAssignment, BlobChangingCallback> references = new HashMap<>();
     private final String blobDescription;
     private final String blobKey;
@@ -51,8 +58,9 @@ public abstract class LocallyCachedBlob {
 
     /**
      * Create a new LocallyCachedBlob.
+     *
      * @param blobDescription a description of the blob this represents.  Typically it should at least be the blob key, but ideally also
-     * include if it is an archive or not, what user or topology it is for, or if it is a storm.jar etc.
+     *     include if it is an archive or not, what user or topology it is for, or if it is a storm.jar etc.
      */
     protected LocallyCachedBlob(String blobDescription, String blobKey) {
         this.blobDescription = blobDescription;
@@ -60,25 +68,53 @@ public abstract class LocallyCachedBlob {
     }
 
     /**
-     * Get the version of the blob cached locally.  If the version is unknown or it has not been downloaded NOT_DOWNLOADED_VERSION
-     * should be returned.
-     * PRECONDITION: this can only be called with a lock on this instance held.
+     * Get the version of the blob cached locally.  If the version is unknown or it has not been downloaded NOT_DOWNLOADED_VERSION should be
+     * returned. PRECONDITION: this can only be called with a lock on this instance held.
      */
     public abstract long getLocalVersion();
 
     /**
-     * Get the version of the blob in the blob store.
-     * PRECONDITION: this can only be called with a lock on this instance held.
+     * Get the version of the blob in the blob store. PRECONDITION: this can only be called with a lock on this instance held.
      */
     public abstract long getRemoteVersion(ClientBlobStore store) throws KeyNotFoundException, AuthorizationException;
 
     /**
      * Download the latest version to a temp location. This may also include unzipping some or all of the data to a temp location.
      * PRECONDITION: this can only be called with a lock on this instance held.
+     *
      * @param store the store to us to download the data.
      * @return the version that was downloaded.
      */
     public abstract long downloadToTempLocation(ClientBlobStore store) throws IOException, KeyNotFoundException, AuthorizationException;
+
+    protected static long downloadToTempLocation(ClientBlobStore store, String key, long currentVersion, IAdvancedFSOps fsOps,
+                                          Function<Long, Path> getTempPath)
+        throws KeyNotFoundException, AuthorizationException, IOException {
+        try (InputStreamWithMeta in = store.getBlob(key)) {
+            long newVersion = in.getVersion();
+            if (newVersion == currentVersion) {
+                LOG.warn("The version did not change, but going to download again {} {}", currentVersion, key);
+            }
+            Path tmpLocation = getTempPath.apply(newVersion);
+            long totalRead = 0;
+            //Make sure the parent directory is there and ready to go
+            fsOps.forceMkdir(tmpLocation.getParent());
+            try (OutputStream outStream = fsOps.getOutputStream(tmpLocation.toFile())) {
+                byte[] buffer = new byte[4096];
+                int read = 0;
+                while ((read = in.read(buffer)) > 0) {
+                    outStream.write(buffer, 0, read);
+                    totalRead += read;
+                }
+            }
+            long expectedSize = in.getFileLength();
+            if (totalRead != expectedSize) {
+                throw new IOException("We expected to download " + expectedSize + " bytes but found we got " + totalRead);
+            }
+
+            return newVersion;
+        }
+    }
 
     /**
      * Commit the new version and make it available for the end user.
@@ -110,32 +146,11 @@ public abstract class LocallyCachedBlob {
     public abstract long getSizeOnDisk();
 
     /**
-     * Updates the last updated time.  This should be called when references are added or removed.
-     */
-    private synchronized void touch() {
-        lastUsed = System.currentTimeMillis();
-    }
-
-    /**
-     * Get the last time that this used for LRU calculations.
-     */
-    public synchronized long getLastUsed() {
-        return lastUsed;
-    }
-
-    /**
-     * Return true if this blob is actively being used, else false (meaning it can be deleted, but might not be).
-     */
-    public synchronized boolean isUsed() {
-        return !references.isEmpty();
-    }
-
-    /**
      * Get the size of p in bytes.
      * @param p the path to read.
      * @return the size of p in bytes.
      */
-    protected long getSizeOnDisk(Path p) throws IOException {
+    protected static long getSizeOnDisk(Path p) throws IOException {
         if (!Files.exists(p)) {
             return 0;
         } else if (Files.isRegularFile(p)) {
@@ -153,6 +168,28 @@ public abstract class LocallyCachedBlob {
                     return 0;
                 }).sum();
         }
+    }
+
+    /**
+     * Updates the last updated time.  This should be called when references are added or removed.
+     */
+    protected synchronized void touch() {
+        lastUsed = Time.currentTimeMillis();
+        LOG.debug("Setting {} ts to {}", blobKey, lastUsed);
+    }
+
+    /**
+     * Get the last time that this used for LRU calculations.
+     */
+    public synchronized long getLastUsed() {
+        return lastUsed;
+    }
+
+    /**
+     * Return true if this blob is actively being used, else false (meaning it can be deleted, but might not be).
+     */
+    public synchronized boolean isUsed() {
+        return !references.isEmpty();
     }
 
     /**
@@ -177,6 +214,7 @@ public abstract class LocallyCachedBlob {
         if (references.remove(pna) == null) {
             LOG.warn("{} had no reservation for {}", pna, blobDescription);
         }
+        touch();
     }
 
     /**
@@ -217,4 +255,11 @@ public abstract class LocallyCachedBlob {
     public String getKey() {
         return blobKey;
     }
+
+
+    public Collection<PortAndAssignment> getDependencies() {
+        return references.keySet();
+    }
+
+    public abstract boolean isFullyDownloaded();
 }

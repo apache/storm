@@ -82,10 +82,7 @@ public class ServerUtils {
     public static final Logger LOG = LoggerFactory.getLogger(ServerUtils.class);
 
     public static final boolean IS_ON_WINDOWS = "Windows_NT".equals(System.getenv("OS"));
-    public static final String CURRENT_BLOB_SUFFIX_ID = "current";
 
-    public static final String DEFAULT_CURRENT_BLOB_SUFFIX = "." + CURRENT_BLOB_SUFFIX_ID;
-    public static final String DEFAULT_BLOB_VERSION_SUFFIX = ".version";
     public static final int SIGKILL = 9;
     public static final int SIGTERM = 15;
 
@@ -166,14 +163,6 @@ public class ServerUtils {
         return StringUtils.join(changedCommands, " ");
     }
 
-    public static String constructVersionFileName(String fileName) {
-        return fileName + DEFAULT_BLOB_VERSION_SUFFIX;
-    }
-
-    public static String constructBlobCurrentSymlinkName(String fileName) {
-        return fileName + DEFAULT_CURRENT_BLOB_SUFFIX;
-    }
-
     /**
      * Takes an input dir or file and returns the disk usage on that local directory.
      * Very basic implementation.
@@ -204,14 +193,6 @@ public class ServerUtils {
             }
             return size;
         }
-    }
-
-    public static long localVersionOfBlob(String localFile) {
-        return Utils.getVersionFromBlobVersionFile(new File(localFile + DEFAULT_BLOB_VERSION_SUFFIX));
-    }
-
-    public static String constructBlobWithVersionFileName(String fileName, long version) {
-        return fileName + "." + version;
     }
 
     public static ClientBlobStore getClientBlobStoreForSupervisor(Map<String, Object> conf) {

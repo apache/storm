@@ -18,71 +18,96 @@
 package org.apache.storm.localizer;
 
 
+import java.nio.file.Paths;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import org.apache.storm.blobstore.ClientBlobStore;
+import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
+import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.ReadableBlobMeta;
+import org.apache.storm.generated.SettableBlobMeta;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.doReturn;
-import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 public class LocalizedResourceRetentionSetTest {
 
-  @Test
-  public void testAddResources() throws Exception {
-    LocalizedResourceRetentionSet lrretset = new LocalizedResourceRetentionSet(10);
-    LocalizedResourceSet lrset = new LocalizedResourceSet("user1");
-    LocalizedResource localresource1 = new LocalizedResource("key1", "testfile1", false, "topo1");
-    LocalizedResource localresource2 = new LocalizedResource("key2", "testfile2", false, "topo1");
-    // check adding reference to local resource with topology of same name
-    localresource2.addReference(("topo2"));
+    @Test
+    public void testAddResources() throws Exception {
+        PortAndAssignment pna1 = new PortAndAssignment(1, new LocalAssignment("topo1", Collections.emptyList()));
+        PortAndAssignment pna2 = new PortAndAssignment(1, new LocalAssignment("topo2", Collections.emptyList()));
+        String user = "user";
+        Map<String, Object> conf = new HashMap<>();
+        IAdvancedFSOps ops = mock(IAdvancedFSOps.class);
+        LocalizedResourceRetentionSet lrretset = new LocalizedResourceRetentionSet(10);
+        ConcurrentMap<String, LocalizedResource> lrset = new ConcurrentHashMap<>();
+        LocalizedResource localresource1 = new LocalizedResource("key1", Paths.get("testfile1"), false, ops, conf, user);
+        localresource1.addReference(pna1, null);
+        LocalizedResource localresource2 = new LocalizedResource("key2", Paths.get("testfile2"), false, ops, conf, user);
+        localresource2.addReference(pna1, null);
+        // check adding reference to local resource with topology of same name
+        localresource2.addReference(pna2, null);
 
-    lrset.add("key1", localresource1, false);
-    lrset.add("key2", localresource2, false);
-    lrretset.addResources(lrset);
-    assertEquals("number to clean is not 0 " + lrretset.noReferences, 0, lrretset.getSizeWithNoReferences());
-    localresource1.removeReference(("topo1"));
-    lrretset = new LocalizedResourceRetentionSet(10);
-    lrretset.addResources(lrset);
-    assertEquals("number to clean is not 1 " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
+        lrset.put("key1", localresource1);
+        lrset.put("key2", localresource2);
+        lrretset.addResources(lrset);
+        assertEquals("number to clean is not 0 " + lrretset.noReferences, 0, lrretset.getSizeWithNoReferences());
+        localresource1.removeReference(pna1);
+        lrretset = new LocalizedResourceRetentionSet(10);
+        lrretset.addResources(lrset);
+        assertEquals("number to clean is not 1 " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
 
-    localresource2.removeReference(("topo1"));
-    lrretset = new LocalizedResourceRetentionSet(10);
-    lrretset.addResources(lrset);
-    assertEquals("number to clean is not 1  " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
+        localresource2.removeReference(pna1);
+        lrretset = new LocalizedResourceRetentionSet(10);
+        lrretset.addResources(lrset);
+        assertEquals("number to clean is not 1  " + lrretset.noReferences, 1, lrretset.getSizeWithNoReferences());
 
-    localresource2.removeReference(("topo2"));
-    lrretset = new LocalizedResourceRetentionSet(10);
-    lrretset.addResources(lrset);
-    assertEquals("number to clean is not 2 " + lrretset.noReferences, 2, lrretset.getSizeWithNoReferences());
-  }
+        localresource2.removeReference(pna2);
+        lrretset = new LocalizedResourceRetentionSet(10);
+        lrretset.addResources(lrset);
+        assertEquals("number to clean is not 2 " + lrretset.noReferences, 2, lrretset.getSizeWithNoReferences());
+    }
 
-  @Test
-  public void testCleanup() throws Exception {
-    LocalizedResourceRetentionSet lrretset = spy(new LocalizedResourceRetentionSet(10));
-    LocalizedResourceSet lrset = new LocalizedResourceSet("user1");
-    // no reference to key1
-    LocalizedResource localresource1 = new LocalizedResource("key1", "./target/TESTING/testfile1", false);
-    localresource1.setSize(10);
-    // no reference to archive1
-    LocalizedResource archiveresource1 = new LocalizedResource("archive1", "./target/TESTING/testarchive1", true);
-    archiveresource1.setSize(20);
-    // reference to key2
-    LocalizedResource localresource2 = new LocalizedResource("key2", "./target/TESTING/testfile2", false, "topo1");
-    // check adding reference to local resource with topology of same name
-    localresource2.addReference(("topo1"));
-    localresource2.setSize(10);
-    lrset.add("key1", localresource1, false);
-    lrset.add("key2", localresource2, false);
-    lrset.add("archive1", archiveresource1, true);
+    @Test
+    public void testCleanup() throws Exception {
+        ClientBlobStore mockBlobstore = mock(ClientBlobStore.class);
+        when (mockBlobstore.getBlobMeta(any())).thenReturn(new ReadableBlobMeta(new SettableBlobMeta(), 1));
+        PortAndAssignment pna1 = new PortAndAssignment(1, new LocalAssignment("topo1", Collections.emptyList()));
+        String user = "user";
+        Map<String, Object> conf = new HashMap<>();
+        IAdvancedFSOps ops = mock(IAdvancedFSOps.class);
+        LocalizedResourceRetentionSet lrretset = spy(new LocalizedResourceRetentionSet(10));
+        ConcurrentMap<String, LocalizedResource> lrFiles = new ConcurrentHashMap<>();
+        ConcurrentMap<String, LocalizedResource> lrArchives = new ConcurrentHashMap<>();
+        // no reference to key1
+        LocalizedResource localresource1 = new LocalizedResource("key1", Paths.get("./target/TESTING/testfile1"), false, ops, conf,
+            user);
+        localresource1.setSize(10);
+        // no reference to archive1
+        LocalizedResource archiveresource1 = new LocalizedResource("archive1", Paths.get("./target/TESTING/testarchive1"), true, ops,
+            conf, user);
+        archiveresource1.setSize(20);
+        // reference to key2
+        LocalizedResource localresource2 = new LocalizedResource("key2", Paths.get("./target/TESTING/testfile2"), false, ops, conf,
+            user);
+        localresource2.addReference(pna1, null);
+        // check adding reference to local resource with topology of same name
+        localresource2.addReference(pna1, null);
+        localresource2.setSize(10);
+        lrFiles.put("key1", localresource1);
+        lrFiles.put("key2", localresource2);
+        lrArchives.put("archive1", archiveresource1);
 
-    lrretset.addResources(lrset);
-    assertEquals("number to clean is not 2", 2, lrretset.getSizeWithNoReferences());
+        lrretset.addResources(lrFiles);
+        lrretset.addResources(lrArchives);
+        assertEquals("number to clean is not 2", 2, lrretset.getSizeWithNoReferences());
 
-    // make deleteUnderlyingResource return true even though file doesn't exist
-    doReturn(true).when(lrretset).deleteResource(any(), any());
-
-    lrretset.cleanup();
-    assertEquals("resource not cleaned up", 0, lrretset.getSizeWithNoReferences());
-  }
+        lrretset.cleanup(mockBlobstore);
+        assertEquals("resource not cleaned up", 0, lrretset.getSizeWithNoReferences());
+    }
 }
