@@ -176,7 +176,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
      * received the fewest Tuples overall from this instance of the grouping.
      */
     public static class BalancedTargetSelector implements TargetSelector {
-        private Map<Integer, Long> targetTaskStats = Maps.newConcurrentMap();
+        private Map<Integer, Long> targetTaskStats = Maps.newHashMap();
 
         public Integer chooseTask(int[] assignedTasks) {
             Integer taskIdWithMinLoad = null;
