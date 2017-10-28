@@ -1616,6 +1616,7 @@
       (UIHelpers/stormRunJetty  (int (conf UI-PORT))
                                 (conf UI-HOST)
                                 https-port
+                                header-buffer-size
                                 (reify IConfigurator
                                   (execute [this server]
                                     (UIHelpers/configSsl server
@@ -1628,9 +1629,8 @@
                                       https-ts-password
                                       https-ts-type
                                       https-need-client-auth
-                                      https-want-client-auth)
-                                    (doseq [connector (.getConnectors server)]
-                                      (.setRequestHeaderSize connector header-buffer-size))
+                                      https-want-client-auth
+                                      header-buffer-size)
                                     (UIHelpers/configFilter server (ring.util.servlet/servlet app) filters-confs)))))
    (catch Exception ex
      (log-error ex))))

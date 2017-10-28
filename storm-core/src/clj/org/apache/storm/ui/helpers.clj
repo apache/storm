@@ -28,14 +28,6 @@
   (:import [org.apache.storm.logging.filters AccessLoggingFilter])
   (:import [java.util EnumSet]
            [java.net URLEncoder])
-  (:import [org.eclipse.jetty.server Server]
-           [org.eclipse.jetty.server.nio SelectChannelConnector]
-           [org.eclipse.jetty.server.ssl SslSocketConnector]
-           [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-           [org.eclipse.jetty.util.ssl SslContextFactory]
-           [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter]
-           (org.json.simple JSONValue))
   (:require [ring.util servlet]
             [ring.util.response :as response])
   (:require [compojure.route :as route]
