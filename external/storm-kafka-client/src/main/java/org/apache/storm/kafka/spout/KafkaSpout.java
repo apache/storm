@@ -151,11 +151,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         
         @Override
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
+            initialized = false;
+            previousAssignment = partitions;
+
             LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
                     kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
-            previousAssignment = partitions;
-            if (isAtLeastOnceProcessing() && initialized) {
-                initialized = false;
+
+            if (isAtLeastOnceProcessing()) {
                 commitOffsetsForAckedTuples();
             }
         }
