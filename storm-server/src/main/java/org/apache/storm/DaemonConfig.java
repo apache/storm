@@ -159,14 +159,6 @@ public class DaemonConfig implements Validated {
     public static final String SCHEDULER_DISPLAY_RESOURCE = "scheduler.display.resource";
 
     /**
-     * Initialization parameters for the group mapping service plugin.
-     * Provides a way for a @link{STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN}
-     * implementation to access optional settings.
-     */
-    @isType(type = Map.class)
-    public static final String STORM_GROUP_MAPPING_SERVICE_PARAMS = "storm.group.mapping.service.params";
-
-    /**
      * The directory where storm's health scripts go.
      */
     @isString

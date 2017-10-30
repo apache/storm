@@ -1047,6 +1047,14 @@ public class Config extends HashMap<String, Object> {
     public static final String DRPC_INVOCATIONS_THREADS = "drpc.invocations.threads";
 
     /**
+     * Initialization parameters for the group mapping service plugin.
+     * Provides a way for a @link{STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN}
+     * implementation to access optional settings.
+     */
+    @isType(type=Map.class)
+    public static final String STORM_GROUP_MAPPING_SERVICE_PARAMS = "storm.group.mapping.service.params";
+
+    /**
      * The default transport plug-in for Thrift client/server communication
      */
     @isString
@@ -1416,6 +1424,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isStringList
     public static final String NIMBUS_ADMINS = "nimbus.admins";
+
+    /**
+     * A list of groups that are cluster admins and can run any command.
+     */
+    @isStringList
+    public static final String NIMBUS_ADMINS_GROUPS = "nimbus.admins.groups";
 
     /**
      *  For secure mode we would want to turn on this config

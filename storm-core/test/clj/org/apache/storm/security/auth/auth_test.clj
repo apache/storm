@@ -34,6 +34,7 @@
   (:import [org.apache.storm.generated AuthorizationException])
   (:import [org.apache.storm.daemon.nimbus Nimbus$StandaloneINimbus])
   (:import [org.apache.storm.utils NimbusClient Time])
+  (:import [org.apache.storm.security.auth FixedGroupsMapping FixedGroupsMapping])
   (:import [org.apache.storm.security.auth.authorizer SimpleWhitelistAuthorizer SimpleACLAuthorizer])
   (:import [org.apache.storm.security.auth AuthUtils ThriftServer ThriftClient ShellBasedGroupsMapping
             ReqContext SimpleTransportPlugin KerberosPrincipalToLocal ThriftConnectionType])
@@ -287,6 +288,29 @@
     (is (= true (.permit authorizer (ReqContext. user-a) "submitTopology" {})))
     (is (= false (.permit authorizer (ReqContext. user-b) "submitTopology" {})))
     (is (= true (.permit authorizer (ReqContext. admin-user) "fileUpload" nil)))
+    (is (= true (.permit authorizer (ReqContext. supervisor-user) "fileDownload" nil)))))
+
+(deftest simple-acl-nimbus-groups-auth-test
+  (let [cluster-conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
+                            {NIMBUS-ADMINS-GROUPS ["admin-group"]
+                             NIMBUS-USERS ["user-a"]
+                             NIMBUS-SUPERVISOR-USERS ["supervisor"]
+                             STORM-GROUP-MAPPING-SERVICE-PROVIDER-PLUGIN "org.apache.storm.security.auth.FixedGroupsMapping"
+                             STORM-GROUP-MAPPING-SERVICE-PARAMS {FixedGroupsMapping/STORM_FIXED_GROUP_MAPPING
+                                                                  {"admin" #{"admin-group"}
+                                                                   "not-admin" #{"not-admin-group"}}}})
+        authorizer (SimpleACLAuthorizer. )
+        admin-user (mk-subject "admin")
+        not-admin-user (mk-subject "not-admin")
+        supervisor-user (mk-subject "supervisor")
+        user-a (mk-subject "user-a")
+        user-b (mk-subject "user-b")]
+    (.prepare authorizer cluster-conf)
+    (is (= true (.permit authorizer (ReqContext. user-a) "submitTopology" {})))
+    (is (= false (.permit authorizer (ReqContext. user-b) "submitTopology" {})))
+    (is (= true (.permit authorizer (ReqContext. admin-user) "fileUpload" nil)))
+    (is (= false (.permit authorizer (ReqContext. not-admin-user) "fileUpload" nil)))
+    (is (= false (.permit authorizer (ReqContext. user-b) "fileUpload" nil)))
     (is (= true (.permit authorizer (ReqContext. supervisor-user) "fileDownload" nil)))))
 
 (deftest shell-based-groups-mapping-test

@@ -42,15 +42,15 @@ import org.slf4j.LoggerFactory;
 public class SimpleACLAuthorizer implements IAuthorizer {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleACLAuthorizer.class);
 
-    protected Set<String> _userCommands = new HashSet<>(Arrays.asList(
+    protected Set<String> userCommands = new HashSet<>(Arrays.asList(
             "submitTopology",
             "fileUpload",
             "getNimbusConf",
             "getClusterInfo",
             "getSupervisorPageInfo",
             "getOwnerResourceSummaries"));
-    protected Set<String> _supervisorCommands = new HashSet<>(Arrays.asList("fileDownload"));
-    protected Set<String> _topoReadOnlyCommands = new HashSet<>(Arrays.asList(
+    protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList("fileDownload"));
+    protected Set<String> topoReadOnlyCommands = new HashSet<>(Arrays.asList(
             "getTopologyConf",
             "getTopology",
             "getUserTopology",
@@ -60,7 +60,7 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "getWorkerProfileActionExpiry",
             "getComponentPendingProfileActions",
             "getLogConfig"));
-    protected Set<String> _topoCommands = new HashSet<>(Arrays.asList(
+    protected Set<String> topoCommands = new HashSet<>(Arrays.asList(
             "killTopology",
             "rebalance",
             "activate",
@@ -76,42 +76,50 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "debug"));
 
     {
-        _topoCommands.addAll(_topoReadOnlyCommands);
+        topoCommands.addAll(topoReadOnlyCommands);
     }
 
-    protected Set<String> _admins;
-    protected Set<String> _supervisors;
-    protected Set<String> _nimbusUsers;
-    protected Set<String> _nimbusGroups;
-    protected IPrincipalToLocal _ptol;
-    protected IGroupMappingServiceProvider _groupMappingProvider;
+    protected Set<String> admins;
+    protected Set<String> adminsGroups;
+    protected Set<String> supervisors;
+    protected Set<String> nimbusUsers;
+    protected Set<String> nimbusGroups;
+    protected IPrincipalToLocal ptol;
+    protected IGroupMappingServiceProvider groupMappingServiceProvider;
     /**
      * Invoked once immediately after construction
      * @param conf Storm configuration
      */
     @Override
     public void prepare(Map<String, Object> conf) {
-        _admins = new HashSet<>();
-        _supervisors = new HashSet<>();
-        _nimbusUsers = new HashSet<>();
-        _nimbusGroups = new HashSet<>();
+        admins = new HashSet<>();
+        adminsGroups = new HashSet<>();
+        supervisors = new HashSet<>();
+        nimbusUsers = new HashSet<>();
+        nimbusGroups = new HashSet<>();
 
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
-            _admins.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS));
+            admins.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS));
         }
+
+        if (conf.containsKey(Config.NIMBUS_ADMINS_GROUPS)) {
+            adminsGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_ADMINS_GROUPS));
+        }
+
         if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
-            _supervisors.addAll((Collection<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
+            supervisors.addAll((Collection<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         }
+
         if (conf.containsKey(Config.NIMBUS_USERS)) {
-            _nimbusUsers.addAll((Collection<String>)conf.get(Config.NIMBUS_USERS));
+            nimbusUsers.addAll((Collection<String>)conf.get(Config.NIMBUS_USERS));
         }
 
         if (conf.containsKey(Config.NIMBUS_GROUPS)) {
-            _nimbusGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_GROUPS));
+            nimbusGroups.addAll((Collection<String>)conf.get(Config.NIMBUS_GROUPS));
         }
 
-        _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
-        _groupMappingProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+        ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
+        groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
     }
 
     /**
@@ -124,35 +132,35 @@ public class SimpleACLAuthorizer implements IAuthorizer {
     @Override
     public boolean permit(ReqContext context, String operation, Map<String, Object> topoConf) {
         String principal = context.principal().getName();
-        String user = _ptol.toLocal(context.principal());
+        String user = ptol.toLocal(context.principal());
         Set<String> userGroups = new HashSet<>();
 
-        if (_groupMappingProvider != null) {
+        if (groupMappingServiceProvider != null) {
             try {
-                userGroups = _groupMappingProvider.getGroups(user);
+                userGroups = groupMappingServiceProvider.getGroups(user);
             } catch(IOException e) {
                 LOG.warn("Error while trying to fetch user groups",e);
             }
         }
 
-        if (_admins.contains(principal) || _admins.contains(user)) {
+        if (admins.contains(principal) || admins.contains(user) || checkUserGroupAllowed(userGroups, adminsGroups)) {
             return true;
         }
 
-        if (_supervisors.contains(principal) || _supervisors.contains(user)) {
-            return _supervisorCommands.contains(operation);
+        if (supervisors.contains(principal) || supervisors.contains(user)) {
+            return supervisorCommands.contains(operation);
         }
 
-        if (_userCommands.contains(operation)) {
-            return _nimbusUsers.size() == 0 || _nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, _nimbusGroups);
+        if (userCommands.contains(operation)) {
+            return nimbusUsers.size() == 0 || nimbusUsers.contains(user) || checkUserGroupAllowed(userGroups, nimbusGroups);
         }
 
-        if (_topoCommands.contains(operation)) {
+        if (topoCommands.contains(operation)) {
             if (checkTopoPermission(principal, user, userGroups, topoConf, Config.TOPOLOGY_USERS, Config.TOPOLOGY_GROUPS)) {
                 return true;
             }
 
-            if (_topoReadOnlyCommands.contains(operation) && checkTopoPermission(principal, user, userGroups,
+            if (topoReadOnlyCommands.contains(operation) && checkTopoPermission(principal, user, userGroups,
                     topoConf, Config.TOPOLOGY_READONLY_USERS, Config.TOPOLOGY_READONLY_GROUPS)) {
                 return true;
             }
