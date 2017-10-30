@@ -18,14 +18,15 @@
 package org.apache.storm.grouping;
 
 import com.google.common.collect.Maps;
-import com.google.common.hash.HashFunction;
-import com.google.common.hash.Hashing;
+
 import java.io.Serializable;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.Fields;
@@ -58,7 +59,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     }
 
     public PartialKeyGrouping(Fields fields) {
-        this(fields, new HashingTwoTaskAssignmentCreator(), new BalancedTargetSelector());
+        this(fields, new RandomTwoTaskAssignmentCreator(), new BalancedTargetSelector());
     }
 
     public PartialKeyGrouping(Fields fields, AssignmentCreator assignmentCreator) {
@@ -163,21 +164,21 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
      * This implementation of AssignmentCreator chooses two target tasks by hashing the input's key.
      * This matches the original behavior of this grouping and is thus the default.
      */
-    public static class HashingTwoTaskAssignmentCreator implements AssignmentCreator {
-
-        private HashFunction h1 = Hashing.murmur3_128(13);
-        private HashFunction h2 = Hashing.murmur3_128(17);
-
+    public static class RandomTwoTaskAssignmentCreator implements AssignmentCreator {
         /**
-         * Creates a two task assignment by hashing the incoming key.
+         * Creates a two task assignment by selecting random tasks.
          */
         public int[] createAssignment(List<Integer> tasks, byte[] key) {
-            int firstChoiceIndex = (int) (Math.abs(h1.hashBytes(key).asLong()) % tasks.size());
-            int secondChoiceIndex = (int) (Math.abs(h2.hashBytes(key).asLong()) % tasks.size());
-            return new int[] {tasks.get(firstChoiceIndex), tasks.get(secondChoiceIndex)};
+            // It is necessary that this produce a deterministic assignment based on the key, so seed the Random from the key
+            final long seedForRandom = Arrays.hashCode(key);
+            final Random random = new Random(seedForRandom);
+            final int choice1 = random.nextInt(tasks.size());
+            int choice2 = random.nextInt(tasks.size());
+            // ensure that choice1 and choice2 are not the same task
+            choice2 = choice1 == choice2 ? (choice2 + 1) % tasks.size() : choice2;
+            return new int[] {tasks.get(choice1), tasks.get(choice2)};
         }
     }
-
 
     /**
      * A basic implementation of target selection. This strategy chooses the task within the assignment that has
