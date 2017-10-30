@@ -161,8 +161,7 @@ public class PartialKeyGrouping implements CustomStreamGrouping, Serializable {
     /*========== Implementations ==========*/
 
     /**
-     * This implementation of AssignmentCreator chooses two target tasks by hashing the input's key.
-     * This matches the original behavior of this grouping and is thus the default.
+     * This implementation of AssignmentCreator chooses two arbitrary tasks.
      */
     public static class RandomTwoTaskAssignmentCreator implements AssignmentCreator {
         /**
