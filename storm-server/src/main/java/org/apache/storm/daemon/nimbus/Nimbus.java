@@ -134,7 +134,7 @@ import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.nimbus.ITopologyValidator;
 import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.scheduler.Cluster;
-import org.apache.storm.scheduler.Cluster.SupervisorResources;
+import org.apache.storm.scheduler.SupervisorResources;
 import org.apache.storm.scheduler.DefaultScheduler;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
@@ -971,7 +971,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (resourcesMap == null) {
             resourcesMap = new HashMap<>();
         }
-        ResourceUtils.checkIntialization(resourcesMap, compId, topoConf);
+        ResourceUtils.checkInitialization(resourcesMap, compId, topoConf);
         return resourcesMap;
     }
     

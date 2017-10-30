@@ -24,7 +24,6 @@ http://www.slideshare.net/HadoopSummit/resource-aware-scheduling-in-apache-storm
     2. [Specifying Topology Priority](#Specifying-Topology-Priority)
     3. [Specifying Scheduling Strategy](#Specifying-Scheduling-Strategy)
     4. [Specifying Topology Prioritization Strategy](#Specifying-Topology-Prioritization-Strategy)
-    5. [Specifying Eviction Strategy](#Specifying-Eviction-Strategy)
 4. [Profiling Resource Usage](#Profiling-Resource-Usage)
 5. [Enhancements on original DefaultResourceAwareStrategy](#Enhancements-on-original-DefaultResourceAwareStrategy)
 
@@ -157,6 +156,7 @@ Example of Usage:
 ### Other Configurations
 
 The user can set some default configurations for the Resource Aware Scheduler in *conf/storm.yaml*:
+
 ```
     //default value if on heap memory requirement is not specified for a component 
     topology.component.resources.onheap.memory.mb: 128.0
@@ -243,50 +243,72 @@ http://dl.acm.org/citation.cfm?id=2814808
 <div id='Specifying-Topology-Prioritization-Strategy'/>
 ### Specifying Topology Prioritization Strategy
 
-The order of scheduling is a pluggable interface in which a user could define a strategy that prioritizes topologies.  For a user to define his or her own prioritization strategy, he or she needs to implement the ISchedulingPriorityStrategy interface.  A user can set the scheduling priority strategy by setting the *Config.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY* to point to the class that implements the strategy. For instance:
+The order of scheduling and eviction is determined by a pluggable interface in which the cluster owner can define how topologies should be scheduled.  For the owner to define his or her own prioritization strategy, she or he needs to implement the ISchedulingPriorityStrategy interface.  A user can set the scheduling priority strategy by setting the `DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY` to point to the class that implements the strategy. For instance:
 ```
     resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
 ```
-A default strategy will be provided.  The following explains how the default scheduling priority strategy works.
+
+Topologies are scheduled starting at the beginning of the list returned by this plugin.  If there are not enough resources to schedule the topology others are evicted starting at the end of the list.  Eviction stops when there are no lower priority topologies left to evict.
 
 **DefaultSchedulingPriorityStrategy**
 
-The order of scheduling should be based on the distance between a user’s current resource allocation and his or her guaranteed allocation.  We should prioritize the users who are the furthest away from their resource guarantee. The difficulty of this problem is that a user may have multiple resource guarantees, and another user can have another set of resource guarantees, so how can we compare them in a fair manner?  Let's use the average percentage of resource guarantees satisfied as a method of comparison.
+In the past the order of scheduling was based on the distance between a user’s current resource allocation and his or her guaranteed allocation.
 
-For example:
+We currently use a slightly different approach. We simulate scheduling the highest priority topology for each user and score the topology for each of the resources using the formula
 
-|User|Resource Guarantee|Resource Allocated|
-|----|------------------|------------------|
-|A|<10 CPU, 50GB>|<2 CPU, 40 GB>|
-|B|< 20 CPU, 25GB>|<15 CPU, 10 GB>|
-
-User A’s average percentage satisfied of resource guarantee: 
-
-(2/10+40/50)/2  = 0.5
-
-User B’s average percentage satisfied of resource guarantee: 
-
-(15/20+10/25)/2  = 0.575
-
-Thus, in this example User A has a smaller average percentage of his or her resource guarantee satisfied than User B.  Thus, User A should get priority to be allocated more resource, i.e., schedule a topology submitted by User A.
-
-When scheduling, RAS sorts users by the average percentage satisfied of resource guarantee and schedule topologies from users based on that ordering starting from the users with the lowest average percentage satisfied of resource guarantee.  When a user’s resource guarantee is completely satisfied, the user’s average percentage satisfied of resource guarantee will be greater than or equal to 1.
-
-<div id='Specifying-Eviction-Strategy'/>
-### Specifying Eviction Strategy
-The eviction strategy is used when there are not enough free resources in the cluster to schedule new topologies. If the cluster is full, we need a mechanism to evict topologies so that user resource guarantees can be met and additional resource can be shared fairly among users. The strategy for evicting topologies is also a pluggable interface in which the user can implement his or her own topology eviction strategy.  For a user to implement his or her own eviction strategy, he or she needs to implement the IEvictionStrategy Interface and set *Config.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY* to point to the implemented strategy class. For instance:
 ```
-    resource.aware.scheduler.eviction.strategy: "org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy"
+(Requested + Assigned - Guaranteed)/Available
 ```
-A default eviction strategy is provided.  The following explains how the default topology eviction strategy works
 
-**DefaultEvictionStrategy**
+Where
 
-To determine if topology eviction should occur we should take into account the priority of the topology that we are trying to schedule and whether the resource guarantees for the owner of the topology have been met.  
+ * `Requested` is the resource requested by this topology (or a approximation of it for complex requests like shared memory)
+ * `Assigned` is the resources already assigned by the simulation.
+ * `Guaranteed` is the resource guarantee for this user
+ * `Available` is the amount of that resource currently available in the cluster.
 
-We should never evict a topology from a user that does not have his or her resource guarantees satisfied.  The following flow chart should describe the logic for the eviction process.
+This gives a score that is negative for guaranteed requests and a score that is positive for requests that are not within the guarantee.
 
-![Viewing metrics with VisualVM](images/resource_aware_scheduler_default_eviction_strategy.png)
+To combine different resources the maximum of all the indavidual resource scores is used.  This guarantees that if a user would go over a guarantee for a single resource it would not be offset by being under guarantee on any other resources.
+
+For Example:
+
+Assume we have to schedule the following topologies.
+
+|ID|User|CPU|Memory|Priority|
+|---|----|---|------|-------|
+|A-1|A|100|1,000|1|
+|A-2|A|100|1,000|10|
+|B-1|B|100|1,000|1|
+|B-2|B|100|1,000|10|
+
+The cluster as a whole has 300 CPU and 4,000 Memory.
+
+User A is guaranteed 100 CPU and 1,000 Memory.  User B is guaranteed 200 CPU and 1,500 Memory.  The scores for the most important, lowest priority number, topologies for each user would be.
+
+```
+A-1 Score = max(CPU: (100 + 0 - 100)/300, MEM: (1,000 + 0 - 1,000)/4,000) = 0
+B-1 Score = max(CPU: (100 + 0 - 200)/300, MEM: (1,000 + 0 - 1,500)/4,000) = -0.125
+``` 
+
+`B-1` has the lowest score so it would be the highest priority topology to schedule. In the next round the scores would be.
+
+```
+A-1 Score = max(CPU: (100 + 0 - 100)/200, MEM: (1,000 + 0 - 1,000)/3,000) = 0
+B-2 Score = max(CPU: (100 + 100 - 200)/200, MEM: (1,000 + 1,000 - 1,500)/3,000) = 0.167
+```
+
+`A-1` has the lowest score now so it would be the next higest priority topology to schedule.
+
+This process would be repeated until all of the topologies are ordered, even if there are no resources left on the cluster to schedule a topology.
+
+**FIFOSchedulingPriorityStrategy**
+
+The FIFO strategy is intended more for test or staging clusters where users are running integration tests or doing development work.  Topologies in these situations tend to be short lived and at times a user may forget that they are running a topology at all.
+
+To try and be as fair as possible to users running short lived topologies the `FIFOSchedulingPriorityStrategy` extends the `DefaultSchedulingPriorityStrategy` so that any negative score (a.k.a. a topology that fits within a user's guarantees) would remain unchanged, but positive scores are replaced with the uptime of the topology.
+
+This respects the guarantees of a user, but at the same time it gives priority for the rest of the resources to the most recently launched topology.  Older topologies, that have probably been forgotten about, are then least likely to get resources.
 
 <div id='Profiling-Resource-Usage'/>
 ## Profiling Resource Usage
@@ -294,7 +316,8 @@ We should never evict a topology from a user that does not have his or her resou
 Figuring out resource usage for your topology:
  
 To get an idea of how much memory/CPU your topology is actually using you can add the following to your topology launch code.
- ```
+
+```
     //Log all storm metrics
     conf.registerMetricsConsumer(backtype.storm.metric.LoggingMetricsConsumer.class);
  
@@ -303,7 +326,9 @@ To get an idea of how much memory/CPU your topology is actually using you can ad
     workerMetrics.put("CPU", "org.apache.storm.metrics.sigar.CPUMetric");
     conf.put(Config.TOPOLOGY_WORKER_METRICS, workerMetrics);
 ```
+
 The CPU metrics will require you to add
+
 ``` 
     <dependency>
         <groupId>org.apache.storm</groupId>
@@ -311,20 +336,23 @@ The CPU metrics will require you to add
         <version>1.0.0</version>
     </dependency>
 ```
+
 as a topology dependency (1.0.0 or higher).
  
 You can then go to your topology on the UI, turn on the system metrics, and find the log that the LoggingMetricsConsumer is writing to.  It will output results in the log like.
+
 ```
     1454526100 node1.nodes.com:6707 -1:__system CPU {user-ms=74480, sys-ms=10780}
     1454526100 node1.nodes.com:6707 -1:__system memory/nonHeap     {unusedBytes=2077536, virtualFreeBytes=-64621729, initBytes=2555904, committedBytes=66699264, maxBytes=-1, usedBytes=64621728}
     1454526100 node1.nodes.com:6707 -1:__system memory/heap  {unusedBytes=573861408, virtualFreeBytes=694644256, initBytes=805306368, committedBytes=657719296, maxBytes=778502144, usedBytes=83857888}
 ```
+
 The metrics with -1:__system are generally metrics for the entire worker.  In the example above that worker is running on node1.nodes.com:6707.  These metrics are collected every 60 seconds.  For the CPU you can see that over the 60 seconds this worker used  74480 + 10780 = 85260 ms of CPU time.  This is equivalent to 85260/60000 or about 1.5 cores.
  
 The Memory usage is similar but look at the usedBytes.  offHeap is 64621728 or about 62MB, and onHeap is 83857888 or about 80MB, but you should know what you set your heap to in each of your workers already.  How do you divide this up per bolt/spout?  That is a bit harder and may require some trial and error from your end.
 
 <div id='Enhancements-on-original-DefaultResourceAwareStrategy'/>
-## * Enhancements on original DefaultResourceAwareStrategy *
+## *Enhancements on original DefaultResourceAwareStrategy*
 
 The default resource aware scheduling strategy as described in the paper above has two main scheduling phases:
 

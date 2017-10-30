@@ -25,7 +25,6 @@ import java.util.Set;
 
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.scheduler.Cluster.SupervisorResources;
 
 /** An interface that provides access to the current scheduling state. */
 public interface ISchedulingState {
@@ -43,7 +42,7 @@ public interface ISchedulingState {
     List<TopologyDetails> needsSchedulingTopologies();
 
     /**
-     * Does the topology need scheduling?
+     * Does the topology need scheduling.
      *
      * <p>A topology needs scheduling if one of the following conditions holds:
      *
@@ -103,12 +102,14 @@ public interface ISchedulingState {
     Collection<ExecutorDetails> getUnassignedExecutors(TopologyDetails topology);
 
     /**
+     * Get the executor to component name map for executors that need to be scheduled.
      * @param topology the topology this is for
      * @return a executor -> component-id map which needs scheduling in this topology.
      */
     Map<ExecutorDetails, String> getNeedsSchedulingExecutorToComponents(TopologyDetails topology);
 
     /**
+     * Get the component name to executor list for executors that need to be scheduled.
      * @param topology the topology this is for
      * @return a component-id -> executors map which needs scheduling in this topology.
      */

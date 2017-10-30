@@ -24,7 +24,6 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologySummary;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler;
-import org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy;
 import org.apache.storm.topology.BoltDeclarer;
@@ -57,7 +56,6 @@ public class TestRebalance {
 
         Config conf = new Config();
         conf.put(DaemonConfig.STORM_SCHEDULER, ResourceAwareScheduler.class.getName());
-        conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY, DefaultEvictionStrategy.class.getName());
         conf.put(DaemonConfig.RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY, DefaultSchedulingPriorityStrategy.class.getName());
         conf.put(Config.TOPOLOGY_SCHEDULER_STRATEGY, DefaultResourceAwareStrategy.class.getName());
         conf.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10.0);

@@ -196,12 +196,12 @@ public class DefaultResourceAwareStrategy implements IStrategy {
                 targetSlot,
                 nodeToRack(targetNode));
         } else {
-            LOG.error("Not Enough Resources to schedule Task {}", exec);
+            LOG.error("Not Enough Resources to schedule Task {} - {}", td.getName(), exec);
         }
     }
 
     /**
-     * Find a worker to schedule executor exec on
+     * Find a worker to schedule executor exec on.
      *
      * @param exec the executor to schedule
      * @param td the topology that the executor is a part of
@@ -473,7 +473,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         }
 
         TreeSet<ObjectResources> sortedObjectResources =
-            new TreeSet<>(( o1, o2) -> {
+            new TreeSet<>((o1, o2) -> {
                 int execsScheduled1 = existingScheduleFunc.getNumExistingSchedule(o1.id);
                 int execsScheduled2 = existingScheduleFunc.getNumExistingSchedule(o2.id);
                 if (execsScheduled1 > execsScheduled2) {
@@ -611,7 +611,8 @@ public class DefaultResourceAwareStrategy implements IStrategy {
      * Order executors based on how many in and out connections it will potentially need to make, in descending order.
      * First order components by the number of in and out connections it will have.  Then iterate through the sorted list of components.
      * For each component sort the neighbors of that component by how many connections it will have to make with that component.
-     * Add an executor from this component and then from each neighboring component in sorted order.  Do this until there is nothing left to schedule
+     * Add an executor from this component and then from each neighboring component in sorted order.  Do this until there is nothing
+     * left to schedule
      *
      * @param td The topology the executors belong to
      * @param unassignedExecutors a collection of unassigned executors that need to be unassigned. Should only try to
