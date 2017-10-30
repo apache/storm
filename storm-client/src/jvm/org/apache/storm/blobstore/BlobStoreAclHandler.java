@@ -47,7 +47,7 @@ import java.util.Set;
 public class BlobStoreAclHandler {
     public static final Logger LOG = LoggerFactory.getLogger(BlobStoreAclHandler.class);
     private final IPrincipalToLocal _ptol;
-    private final IGroupMappingServiceProvider _groupMappingProvider;
+    private final IGroupMappingServiceProvider groupMappingServiceProvider;
 
     public static final int READ = 0x01;
     public static final int WRITE = 0x02;
@@ -55,29 +55,29 @@ public class BlobStoreAclHandler {
     public static final List<AccessControl> WORLD_EVERYTHING =
             Arrays.asList(new AccessControl(AccessControlType.OTHER, READ | WRITE | ADMIN));
     public static final List<AccessControl> DEFAULT = new ArrayList<AccessControl>();
-    private Set<String> _supervisors;
-    private Set<String> _admins;
-    private Set<String> _adminsGroups;
+    private Set<String> supervisors;
+    private Set<String> admins;
+    private Set<String> adminsGroups;
     private boolean doAclValidation;
 
     public BlobStoreAclHandler(Map<String, Object> conf) {
         _ptol = AuthUtils.GetPrincipalToLocalPlugin(conf);
         if (conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PROVIDER_PLUGIN) != null) {
-            _groupMappingProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
+            groupMappingServiceProvider = AuthUtils.GetGroupMappingServiceProviderPlugin(conf);
         } else {
-            _groupMappingProvider = null;
+            groupMappingServiceProvider = null;
         }
-        _supervisors = new HashSet<String>();
-        _admins = new HashSet<String>();
-        _adminsGroups = new HashSet<>();
+        supervisors = new HashSet<String>();
+        admins = new HashSet<String>();
+        adminsGroups = new HashSet<>();
         if (conf.containsKey(Config.NIMBUS_SUPERVISOR_USERS)) {
-            _supervisors.addAll((List<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
+            supervisors.addAll((List<String>)conf.get(Config.NIMBUS_SUPERVISOR_USERS));
         }
         if (conf.containsKey(Config.NIMBUS_ADMINS)) {
-            _admins.addAll((List<String>)conf.get(Config.NIMBUS_ADMINS));
+            admins.addAll((List<String>)conf.get(Config.NIMBUS_ADMINS));
         }
         if (conf.containsKey(Config.NIMBUS_ADMINS_GROUPS)) {
-            _adminsGroups.addAll((List<String>)conf.get(Config.NIMBUS_ADMINS_GROUPS));
+            adminsGroups.addAll((List<String>)conf.get(Config.NIMBUS_ADMINS_GROUPS));
         }
         if (conf.containsKey(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED)) {
            doAclValidation = (boolean)conf.get(Config.STORM_BLOBSTORE_ACL_VALIDATION_ENABLED);
@@ -197,19 +197,19 @@ public class BlobStoreAclHandler {
     private boolean isAdmin(Subject who) {
         Set<String> user = constructUserFromPrincipals(who);
         for (String u : user) {
-            if (_admins.contains(u)) {
+            if (admins.contains(u)) {
                 return true;
             }
-            if (_adminsGroups.size() > 0 && _groupMappingProvider != null) {
+            if (adminsGroups.size() > 0 && groupMappingServiceProvider != null) {
                 Set<String> userGroups = null;
                 try {
-                    userGroups = _groupMappingProvider.getGroups(u);
+                    userGroups = groupMappingServiceProvider.getGroups(u);
                 } catch (IOException e) {
                     LOG.warn("Error while trying to fetch user groups", e);
                 }
                 if (userGroups != null) {
                     for (String tgroup : userGroups) {
-                        if (_adminsGroups.contains(tgroup)) {
+                        if (adminsGroups.contains(tgroup)) {
                             return true;
                         }
                     }
@@ -230,7 +230,7 @@ public class BlobStoreAclHandler {
         Set<String> user = constructUserFromPrincipals(who);
         if (isReadOperation(operation)) {
             for (String u : user) {
-                if (_supervisors.contains(u)) {
+                if (supervisors.contains(u)) {
                     return true;
                 }
             }

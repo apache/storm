@@ -31,38 +31,39 @@ import org.slf4j.LoggerFactory;
 
 public class FixedGroupsMapping implements IGroupMappingServiceProvider {
 
-  public static Logger LOG = LoggerFactory.getLogger(FixedGroupsMapping.class);
-  public static final String STORM_FIXED_GROUP_MAPPING = "storm.fixed.group.mapping";
-  public Map<String, Set<String>> cachedGroups = new HashMap<String, Set<String>>();
+    public static Logger LOG = LoggerFactory.getLogger(FixedGroupsMapping.class);
+    public static final String STORM_FIXED_GROUP_MAPPING = "storm.fixed.group.mapping";
+    public Map<String, Set<String>> cachedGroups = new HashMap<String, Set<String>>();
 
-  /**
-   * Invoked once immediately after construction
-   * @param storm_conf Storm configuration
-   */
-  @Override
-  public void prepare(Map storm_conf) {
-    Map<?, ?> params = (Map<?, ?>) storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS);
-    Map<String, Set<String>> mapping = (Map<String, Set<String>>) params.get(STORM_FIXED_GROUP_MAPPING);
-    if (mapping != null) {
-      cachedGroups.putAll(mapping);
-    } else {
-      LOG.warn("There is no initial group mapping");
-    }
-  }
-
-  /**
-   * Returns list of groups for a user
-   *
-   * @param user get groups for this user
-   * @return list of groups for a given user
-   */
-  @Override
-  public Set<String> getGroups(String user) throws IOException {
-    if (cachedGroups.containsKey(user)) {
-      return cachedGroups.get(user);
+    /**
+     * Invoked once immediately after construction
+     *
+     * @param storm_conf Storm configuration
+     */
+    @Override
+    public void prepare(Map storm_conf) {
+        Map<?, ?> params = (Map<?, ?>) storm_conf.get(Config.STORM_GROUP_MAPPING_SERVICE_PARAMS);
+        Map<String, Set<String>> mapping = (Map<String, Set<String>>) params.get(STORM_FIXED_GROUP_MAPPING);
+        if (mapping != null) {
+            cachedGroups.putAll(mapping);
+        } else {
+            LOG.warn("There is no initial group mapping");
+        }
     }
 
-    // I don't have anything
-    return new HashSet<String>();
-  }
+    /**
+     * Returns list of groups for a user
+     *
+     * @param user get groups for this user
+     * @return list of groups for a given user
+     */
+    @Override
+    public Set<String> getGroups(String user) throws IOException {
+        if (cachedGroups.containsKey(user)) {
+            return cachedGroups.get(user);
+        }
+
+        // I don't have anything
+        return new HashSet<String>();
+    }
 }
