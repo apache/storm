@@ -109,7 +109,14 @@ public class ResourceAwareScheduler implements IScheduler {
         IStrategy rasStrategy = null;
         String strategyConf = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
         try {
-            rasStrategy = ReflectionUtils.newSchedulerStrategyInstance((String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY), conf);
+            String strategy = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
+            if (strategy.startsWith("backtype.storm")) {
+                // Storm supports to launch workers of older version.
+                // If the config of TOPOLOGY_SCHEDULER_STRATEGY comes from the older version, replace the package name.
+                strategy = strategy.replace("backtype.storm", "org.apache.storm");
+                LOG.debug("Replace backtype.storm with org.apache.storm for Config.TOPOLOGY_SCHEDULER_STRATEGY");
+            }
+            rasStrategy = ReflectionUtils.newSchedulerStrategyInstance(strategy, conf);
             rasStrategy.prepare(conf);
         } catch (DisallowedStrategyException e) {
             markFailedTopology(topologySubmitter, cluster, td,
