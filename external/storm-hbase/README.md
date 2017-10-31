@@ -1,4 +1,4 @@
-#Storm HBase
+# Storm HBase
 
 Storm/Trident integration for [Apache HBase](https://hbase.apache.org)
 
@@ -46,7 +46,7 @@ config.put("storm.kerberos.principal", "$principal");
 StormSubmitter.submitTopology("$topologyName", config, builder.createTopology());
 ```
 
-##Working with Secure HBASE using delegation tokens.
+## Working with Secure HBASE using delegation tokens.
 If your topology is going to interact with secure HBase, your bolts/states needs to be authenticated by HBase. 
 The approach described above requires that all potential worker hosts have "storm.keytab.file" on them. If you have 
 multiple topologies on a cluster , each with different hbase user, you will have to create multiple keytabs and distribute
@@ -131,17 +131,17 @@ HBaseBolt hbase = new HBaseBolt("WordCount", mapper);
  
  HBaseBolt params
 
-|Arg  |Description | Type | Default |
-|---	|--- |---
-|writeToWAL | To turn Durability SYNC_WAL or SKIP_WAL | Boolean (Optional) | True |
-|configKey | Any Hbase related configs | Map (Optional) | |
-|batchSize | Max no.of Tuples batched together to write to HBase | Int (Optional) | 15000 |
-|flushIntervalSecs| (In seconds)  If > 0 HBase Bolt will periodically flush transaction batches. Enabling this is recommended to avoid tuple timeouts while waiting for a batch to fill up. | Int (Optional) | 0 |
+| Arg              | Description                                         | Type               | Default |
+| ---------------- |---------------------------------------------------- |------------------- | ------- |
+| writeToWAL       | To turn Durability SYNC_WAL or SKIP_WAL             | Boolean (Optional) | True    |
+| configKey        | Any Hbase related configs                           | Map (Optional)     |         |
+| batchSize        | Max no.of Tuples batched together to write to HBase | Int (Optional)     | 15000   |
+| flushIntervalSecs| (In seconds)  If > 0 HBase Bolt will periodically flush transaction batches. Enabling this is recommended to avoid tuple timeouts while waiting for a batch to fill up. | Int (Optional) | 0 |
 
 
 The `HBaseBolt` will delegate to the `mapper` instance to figure out how to persist tuple data to HBase.
 
-###HBaseValueMapper
+### HBaseValueMapper
 This class allows you to transform the HBase lookup result into storm Values that will be emitted by the `HBaseLookupBolt`.
 
 ```java
@@ -158,7 +158,7 @@ The `declareOutputFields` should be used to declare the outputFields of the `HBa
 
 There is an example implementation in `examples/storm-hbase-examples/src/main/java` directory.
 
-###HBaseProjectionCriteria
+### HBaseProjectionCriteria
 This class allows you to specify the projection criteria for your HBase Get function. This is optional parameter
 for the lookupBolt and if you do not specify this instance all the columns will be returned by `HBaseLookupBolt`.
 
@@ -183,7 +183,7 @@ HBaseProjectionCriteria projectionCriteria = new HBaseProjectionCriteria()
     .addColumnFamily("cf2");
 ```
 
-###HBaseLookupBolt
+### HBaseLookupBolt
 To use the `HBaseLookupBolt`, Construct it with the name of the table to write to, an implementation of `HBaseMapper` 
 and an implementation of `HBaseRowToStormValueMapper`. You can optionally specify a `HBaseProjectionCriteria`. 
 
