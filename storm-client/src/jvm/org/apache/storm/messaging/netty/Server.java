@@ -22,6 +22,7 @@ import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.utils.ObjectReader;
@@ -249,6 +250,15 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
             }
         }
         ret.put("enqueued", enqueued);
+        
+        // Report messageSizes metric, if enabled (non-null).
+        if (_cb instanceof IMetric) {
+            Object metrics = ((IMetric) _cb).getValueAndReset();
+            if (metrics instanceof Map) {
+                ret.put("messageBytes", metrics);
+            }
+        }
+        
         return ret;
     }
 
