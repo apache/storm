@@ -29,6 +29,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.DirectoryStream;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.NoSuchFileException;
 import java.nio.file.Path;
@@ -259,7 +260,12 @@ public class LocalizedResource extends LocallyCachedBlob {
             LOG.debug("Downloading {} to {}", key, downloadFile);
             Path parent = downloadFile.getParent();
             if (!Files.exists(parent)) {
-                Files.createDirectory(parent);
+                //There is a race here that we can still lose
+                try {
+                    Files.createDirectory(parent);
+                } catch (FileAlreadyExistsException e) {
+                    //Ignored
+                }
             }
             try (FileOutputStream out = new FileOutputStream(downloadFile.toFile())) {
                 while ((len = in.read(buffer)) >= 0) {
