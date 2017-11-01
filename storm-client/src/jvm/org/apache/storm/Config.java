@@ -451,6 +451,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
 
     /**
+     * Enable tracking of network message byte counts per source-destination task. This is off by default as it
+     * creates tasks^2 metric values, but is useful for debugging as it exposes data skew when tuple sizes are uneven.
+     */
+    @isBoolean
+    public static final String TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS = "topology.serialized.message.size.metrics";
+
+    /**
      * A map of metric name to class name implementing IMetric that will be created once per worker JVM
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
