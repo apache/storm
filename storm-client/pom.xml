@@ -193,10 +193,6 @@
             <groupId>org.hamcrest</groupId>
             <artifactId>java-hamcrest</artifactId>
         </dependency>
-        <dependency>
-            <groupId>org.apache.curator</groupId>
-            <artifactId>curator-client</artifactId>
-        </dependency>
     </dependencies>
 
     <build>

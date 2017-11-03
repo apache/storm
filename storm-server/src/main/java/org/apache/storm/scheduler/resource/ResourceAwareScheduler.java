@@ -72,7 +72,9 @@ public class ResourceAwareScheduler implements IScheduler {
     public void schedule(Topologies topologies, Cluster cluster) {
         Map<String, User> userMap = getUsers(cluster);
         List<TopologyDetails> orderedTopologies = new ArrayList<>(schedulingPriorityStrategy.getOrderedTopologies(cluster, userMap));
-        LOG.info("Ordered list of topologies is: {}", orderedTopologies.stream().map((t) -> t.getId()).collect(Collectors.toList()));
+        if (LOG.isDebugEnabled()) {
+            LOG.debug("Ordered list of topologies is: {}", orderedTopologies.stream().map((t) -> t.getId()).collect(Collectors.toList()));
+        }
         for (TopologyDetails td : orderedTopologies) {
             if (!cluster.needsSchedulingRas(td)) {
                 //cluster forgets about its previous status, so if it is scheduled just leave it.
@@ -130,67 +132,70 @@ public class ResourceAwareScheduler implements IScheduler {
             try {
                 SchedulingResult result = rasStrategy.schedule(toSchedule, td);
                 LOG.debug("scheduling result: {}", result);
-                if (result != null) {
+                if (result == null) {
+                    markFailedTopology(topologySubmitter, cluster, td, "Internal scheduler error");
+                    return;
+                } else {
                     if (result.isSuccess()) {
                         cluster.updateFrom(toSchedule);
                         cluster.setStatus(td.getId(), "Running - " + result.getMessage());
                         //DONE
                         return;
                     } else if (result.getStatus() == SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES) {
-                        LOG.info("Not enough resources to schedule {}", td.getName());
+                        LOG.debug("Not enough resources to schedule {}", td.getName());
                         List<TopologyDetails> reversedList = ImmutableList.copyOf(orderedTopologies).reverse();
-                        try {
-                            boolean evictedSomething = false;
-                            LOG.debug("attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
-                            int tdIndex = reversedList.indexOf(td);
-                            double cpuNeeded = td.getTotalRequestedCpu();
-                            double memoryNeeded = td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap();
-                            SchedulerAssignment assignment = cluster.getAssignmentById(td.getId());
-                            if (assignment != null) {
-                                cpuNeeded -= getCpuUsed(assignment);
-                                memoryNeeded -= getMemoryUsed(assignment);
-                            }
-                            cluster.getTopologyResourcesMap();
-                            for (int index = 0; index < tdIndex; index++) {
-                                TopologyDetails topologyEvict = reversedList.get(index);
-                                SchedulerAssignment evictAssignemnt = workingState.getAssignmentById(topologyEvict.getId());
-                                if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
-                                    Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
+                        boolean evictedSomething = false;
+                        LOG.debug("attempting to make space for topo {} from user {}", td.getName(), td.getTopologySubmitter());
+                        int tdIndex = reversedList.indexOf(td);
+                        double cpuNeeded = td.getTotalRequestedCpu();
+                        double memoryNeeded = td.getTotalRequestedMemOffHeap() + td.getTotalRequestedMemOnHeap();
+                        SchedulerAssignment assignment = cluster.getAssignmentById(td.getId());
+                        if (assignment != null) {
+                            cpuNeeded -= getCpuUsed(assignment);
+                            memoryNeeded -= getMemoryUsed(assignment);
+                        }
+                        for (int index = 0; index < tdIndex; index++) {
+                            TopologyDetails topologyEvict = reversedList.get(index);
+                            SchedulerAssignment evictAssignemnt = workingState.getAssignmentById(topologyEvict.getId());
+                            if (evictAssignemnt != null && !evictAssignemnt.getSlots().isEmpty()) {
+                                Collection<WorkerSlot> workersToEvict = workingState.getUsedSlotsByTopologyId(topologyEvict.getId());
 
-                                    LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
-                                        topologyEvict.getTopologySubmitter());
-                                    cpuNeeded -= getCpuUsed(evictAssignemnt);
-                                    memoryNeeded -= getMemoryUsed(evictAssignemnt);
-                                    evictedSomething = true;
-                                    nodes.freeSlots(workersToEvict);
-                                    if (cpuNeeded <= 0 && memoryNeeded <= 0) {
-                                        //We evicted enough topologies to have a hope of scheduling, so try it now, and don't evict more
-                                        // than is needed
-                                        break;
-                                    }
+                                LOG.debug("Evicting Topology {} with workers: {} from user {}", topologyEvict.getName(), workersToEvict,
+                                    topologyEvict.getTopologySubmitter());
+                                cpuNeeded -= getCpuUsed(evictAssignemnt);
+                                memoryNeeded -= getMemoryUsed(evictAssignemnt);
+                                evictedSomething = true;
+                                nodes.freeSlots(workersToEvict);
+                                if (cpuNeeded <= 0 && memoryNeeded <= 0) {
+                                    //We evicted enough topologies to have a hope of scheduling, so try it now, and don't evict more
+                                    // than is needed
+                                    break;
                                 }
                             }
+                        }
 
-                            if (!evictedSomething) {
-                                markFailedTopology(topologySubmitter, cluster, td,
-                                    "Not enough resources to schedule - " + result.getErrorMessage());
-                                return;
+                        if (!evictedSomething) {
+                            StringBuilder message = new StringBuilder();
+                            message.append("Not enough resources to schedule ");
+                            if (memoryNeeded > 0 || cpuNeeded > 0) {
+                                if (memoryNeeded > 0) {
+                                    message.append(memoryNeeded).append(" MB ");
+                                }
+                                if (cpuNeeded > 0) {
+                                    message.append(cpuNeeded).append("% CPU ");
+                                }
+                                message.append("needed even after evicting lower priority topologies. ");
                             }
-                        } catch (Exception ex) {
-                            LOG.error("Exception thrown when running eviction to schedule topology {}."
-                                    + " No evictions will be done! Error: {}",
-                                td.getName(), ex.getClass().getName(), ex);
+                            message.append(result.getErrorMessage());
+                            markFailedTopology(topologySubmitter, cluster, td, message.toString());
+                            return;
                         }
                         //Only place we fall though to do the loop over again...
-                        continue;
-                    } else {
+                    } else { //Any other failure result
                         //The assumption is that the strategy set the status...
                         topologySubmitter.markTopoUnsuccess(td, cluster);
                         return;
                     }
-                } else {
-                    markFailedTopology(topologySubmitter, cluster, td, "Internal scheduler error");
-                    return;
                 }
             } catch (Exception ex) {
                 markFailedTopology(topologySubmitter, cluster, td,

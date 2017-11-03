@@ -660,7 +660,9 @@ public class TestResourceAwareScheduler {
         cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config2);
         rs.prepare(config2);
         rs.schedule(topologies, cluster);
-        assertEquals("Not enough resources to schedule - 0/5 executors scheduled", cluster.getStatusMap().get(topology2.getId()));
+        String status = cluster.getStatusMap().get(topology2.getId());
+        assert status.startsWith("Not enough resources to schedule") : status;
+        assert status.endsWith("0/5 executors scheduled") : status;
         assertEquals(5, cluster.getUnassignedExecutors(topology2).size());
     }
 
