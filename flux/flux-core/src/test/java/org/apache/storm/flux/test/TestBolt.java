@@ -128,4 +128,9 @@ public class TestBolt extends BaseBasicBolt {
     public TestClass[] getClasses() {
         return classes;
     }
+
+    // Factory methods
+    public static TestBolt factory() {
+        return new TestBolt(TestEnum.FOO);
+    }
 }

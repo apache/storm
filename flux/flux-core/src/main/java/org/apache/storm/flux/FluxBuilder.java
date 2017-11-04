@@ -316,7 +316,7 @@ public class FluxBuilder {
         if (def.hasConstructorArgs()) {
             LOG.debug("Found constructor arguments in definition: " + def.getConstructorArgs().getClass().getName());
             List<Object> cArgs = def.getConstructorArgs();
-            if(def.hasReferences()){
+            if (def.hasReferences()) {
                 cArgs = resolveReferences(cArgs, context);
             }
             Constructor con = findCompatibleConstructor(cArgs, clazz);
@@ -329,6 +329,26 @@ public class FluxBuilder {
                         cArgs);
                 throw new IllegalArgumentException(msg);
             }
+        } else if (def.hasFactory()){
+            Method method = null;
+            List<Object> methodArgs = new ArrayList<>(); // empty if no factoryArgs
+            if (def.hasFactoryArgs()) {
+                methodArgs = def.getFactoryArgs();
+                if(def.hasReferences()){
+                    methodArgs = resolveReferences(methodArgs, context);
+                }
+            }
+            method = findCompatibleMethod(methodArgs, clazz, def.getFactory());
+            if (method != null){
+                obj = method.invoke(null, getArgsWithListCoercian(methodArgs, method.getParameterTypes()));
+            } else {
+                String msg = String.format("Couldn't find a suitable static method '%s' for class '%s' with arguments '%s'.",
+                        def.getFactory(),
+                        clazz.getName(),
+                        methodArgs);
+                throw new IllegalArgumentException(msg);
+            }
+
         } else {
             obj = clazz.newInstance();
         }

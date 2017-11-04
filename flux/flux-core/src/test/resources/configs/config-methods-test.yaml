@@ -70,8 +70,10 @@ bolts:
             - "foo"
             - "bar"
             - "baz"
-
-
+  - id: "bolt-2"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "factory"
+    parallelism: 1
 #stream definitions
 # stream definitions define connections between spouts and bolts.
 # note that such connections can be cyclical

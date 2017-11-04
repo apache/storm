@@ -34,6 +34,8 @@ public class ObjectDef {
     private boolean hasReferences;
     private List<PropertyDef> properties;
     private List<ConfigMethodDef> configMethods;
+    private String factory;
+    private List<Object> factoryArgs;
 
     public String getClassName() {
         return className;
@@ -91,5 +93,46 @@ public class ObjectDef {
 
     public void setConfigMethods(List<ConfigMethodDef> configMethods) {
         this.configMethods = configMethods;
+    }
+
+    public boolean hasFactory() {
+        return this.factory != null && !this.factory.isEmpty();
+    }
+
+    public boolean hasFactoryArgs() {
+        return this.factoryArgs != null && this.factoryArgs.size() > 0;
+    }
+
+    public String getFactory() {
+        return this.factory;
+    }
+
+    public void setFactory(String factory) {
+        this.factory = factory;
+    }
+
+    public List<Object> getFactoryArgs() {
+        return this.factoryArgs;
+    }
+
+    public void setFactoryArgs(List<Object> factoryArgs) {
+        List<Object> newVal = new ArrayList<Object>();
+        for(Object obj : constructorArgs){
+            if(obj instanceof LinkedHashMap){
+                Map map = (Map)obj;
+                if(map.containsKey("ref") && map.size() == 1) {
+                    newVal.add(new BeanReference((String) map.get("ref")));
+                    this.hasReferences = true;
+                } else if (map.containsKey("reflist") && map.size() == 1) {
+                    newVal.add(new BeanListReference((List<String>) map.get("reflist")));
+                    this.hasReferences = true;
+                } else {
+                    newVal.add(obj);
+                }
+            } else {
+                newVal.add(obj);
+            }
+        }
+        this.factoryArgs = newVal;
     }
 }
