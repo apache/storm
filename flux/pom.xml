@@ -41,6 +41,7 @@
     <modules>
         <module>flux-wrappers</module>
         <module>flux-core</module>
+        <module>flux-examples</module>
     </modules>
 
     <dependencies>
