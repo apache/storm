@@ -19,10 +19,11 @@
   (:use [org.apache.storm.daemon common])
   (:gen-class))
 
-(defserverfn mk-local-supervisor [conf shared-context isupervisor]
+(defserverfn mk-local-supervisor [conf shared-context isupervisor nimbus]
   (if (not (ConfigUtils/isLocalMode conf))
     (throw
       (IllegalArgumentException. "Cannot start server in distrubuted mode!")))
   (let [supervisor-server (Supervisor. conf shared-context isupervisor)]
+    (.setLocalNimbus supervisor-server nimbus)
     (.launch supervisor-server)
     supervisor-server))

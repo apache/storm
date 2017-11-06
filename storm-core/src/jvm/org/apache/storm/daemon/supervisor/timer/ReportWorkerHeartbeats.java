@@ -22,7 +22,9 @@ import org.apache.storm.daemon.supervisor.SupervisorUtils;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.generated.SupervisorWorkerHeartbeats;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -92,18 +94,26 @@ public class ReportWorkerHeartbeats implements Runnable {
             // error/exception thrown, just skip
             return;
         }
-
-        NimbusClient master;
-        try {
-            master = NimbusClient.getConfiguredClient(conf);
-            master.getClient().sendSupervisorWorkerHeartbeats(supervisorWorkerHeartbeats);
+        // if is local mode, just get the local nimbus instance and set the heartbeats
+        if(ConfigUtils.isLocalMode(conf)){
             try {
-                master.close();
-            } catch (Throwable t) {
-                LOG.warn("Close master client exception", t);
+                this.supervisor.getLocalNimbus().sendSupervisorWorkerHeartbeats(supervisorWorkerHeartbeats);
+            } catch (TException tex) {
+                LOG.error("Send local supervisor heartbeats error", tex);
             }
-        } catch (Exception t) {
-            LOG.error("Send worker heartbeats to master exception", t);
+        } else {
+            NimbusClient master;
+            try {
+                master = NimbusClient.getConfiguredClient(conf);
+                master.getClient().sendSupervisorWorkerHeartbeats(supervisorWorkerHeartbeats);
+                try {
+                    master.close();
+                } catch (Throwable t) {
+                    LOG.warn("Close master client exception", t);
+                }
+            } catch (Exception t) {
+                LOG.error("Send worker heartbeats to master exception", t);
+            }
         }
     }
 }

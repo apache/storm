@@ -113,9 +113,10 @@
         id (or id (Utils/uuid))
         isupervisor (proxy [StandaloneSupervisor] []
                         (generateSupervisorId [] id))
-        daemon (local-supervisor/mk-local-supervisor supervisor-conf (:shared-context cluster-map) isupervisor)]
+        daemon (local-supervisor/mk-local-supervisor supervisor-conf (:shared-context cluster-map) isupervisor (:nimbus cluster-map))]
     (swap! (:supervisors cluster-map) conj daemon)
     (swap! (:tmp-dirs cluster-map) conj tmp-dir)
+    (.addSupervisor (:nimbus cluster-map) daemon)
     daemon))
 
 (defn mk-shared-context [conf]
@@ -157,7 +158,7 @@
                 (assoc daemon-conf STORM-LOCAL-DIR nimbus-tmp)
                 (if inimbus inimbus (nimbus/standalone-nimbus)))
         context (mk-shared-context daemon-conf)
-        nimbus-thrift-server (if nimbus-daemon (start-nimbus-daemon daemon-conf nimbus) nil)
+        nimbus-thrift-server (if nimbus-daemon  (start-nimbus-daemon daemon-conf nimbus) nil)
         cluster-map {:nimbus nimbus
                      :port-counter port-counter
                      :daemon-conf daemon-conf

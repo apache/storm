@@ -61,7 +61,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient]
+  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient ISupervisorsAware]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config)
@@ -992,21 +992,20 @@
         new-executor-node-port (:executor->node+port new-assignment)
         all-node->host (merge (:node->host existing-assignment) (:node->host new-assignment))]
     (if-not (and (not-nil? existing-assignment) (not-nil? new-assignment)) ;; kill or newly submit
-      (set (vals all-node->host))
+      (set (keys all-node->host))
       ;; rebalance
       (->> (reduce-kv (fn [m executor new-node-port]
                         (let [old-node-port (get old-executor-node-port executor)]
                           (when-not (= old-node-port new-node-port)
                             (conj m
-                                  (get all-node->host (first old-node-port))
-                                  (get all-node->host (first new-node-port))))))
+                                  (first old-node-port) (first new-node-port)))))
                       #{} new-executor-node-port)
            (remove nil?)))))
 
-(defn assignments-for-node [assignments host]
+(defn assignments-for-node [assignments node]
   (let [node-assignments (into {} (filter (fn [[tid assignment]]
-                                            (let [hosts (set (vals (:node->host assignment)))]
-                                              (contains? hosts host))) assignments))]
+                                            (let [nodes (set (keys (:node->host assignment)))]
+                                              (contains? nodes node))) assignments))]
     node-assignments))
 
 (defn notify-supervisors-assignments
@@ -2527,6 +2526,9 @@
     (^void sendSupervisorWorkerHeartbeat[this ^SupervisorWorkerHeartbeat heartbeat]
       (if (is-leader nimbus :throw-exception false)
         (update-cached-heartbeats-from-worker nimbus heartbeat)))
+    ISupervisorsAware
+    (^void addSupervisor [this ^org.apache.storm.daemon.supervisor.Supervisor supervisor]
+      (.addLocalSupervisor (:assignments-distributer nimbus) supervisor))
     Shutdownable
     (shutdown [this]
       (mark! nimbus:num-shutdown-calls)

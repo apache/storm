@@ -83,6 +83,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private EventManager eventManager;
     private ReadClusterState readState;
     private ThriftServer thriftServer;
+    //used for local cluster heartbeating
+    private Nimbus.Iface localNimbus;
 
     private Supervisor(ISupervisor iSupervisor) throws IOException {
         this(Utils.readStormConfig(), null, iSupervisor);
@@ -199,6 +201,16 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     }
 
     Supervisor getSupervisor() { return this; }
+
+    public void setLocalNimbus(Nimbus.Iface nimbus) {
+        this.localNimbus = nimbus;
+    }
+
+    public Nimbus.Iface getLocalNimbus() {
+        return this.localNimbus;
+    }
+
+
 
     /**
      * Launch the supervisor
@@ -319,6 +331,15 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         });
         this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
         this.thriftServer.serve();
+    }
+
+    /**
+     * Used for local cluster assignments distribution
+     * @param assignments
+     */
+    public void sendSupervisorAssignments(SupervisorAssignments assignments) {
+        SynchronizeAssignments syn = new SynchronizeAssignments(this, assignments, readState);
+        this.eventManager.add(syn);
     }
 
     private void registerWorkerNumGauge(String name, final Map<String, Object> conf) {

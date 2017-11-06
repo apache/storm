@@ -18,7 +18,10 @@
 package org.apache.storm.assignments;
 
 import org.apache.storm.Config;
+import org.apache.storm.daemon.supervisor.Supervisor;
+import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.SupervisorAssignments;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -26,9 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -75,7 +76,14 @@ public class AssignmentDistributionService implements Closeable {
      */
     private volatile Map<Integer, LinkedBlockingQueue<NodeAssignments>> assignmentsQueue;
 
+    /**
+     * local supervisors for local cluster assignments distribution
+     */
+    private Map<String, Supervisor> localSupervisors;
+
     private Map conf;
+
+    private boolean isLocalMode = false; // boolean cache for local mode decision
 
     /**
      * Function for initialization.
@@ -99,6 +107,11 @@ public class AssignmentDistributionService implements Closeable {
         //start the threads
         for (int i = 0; i < threadsNum; i++) {
             this.service.submit(new DistributeTask(this, i));
+        }
+        // for local cluster
+        localSupervisors = new HashMap<>();
+        if (ConfigUtils.isLocalMode(conf)) {
+            isLocalMode = true;
         }
     }
 
@@ -140,8 +153,13 @@ public class AssignmentDistributionService implements Closeable {
             return new NodeAssignments(node, assignments);
         }
 
+        //supervisor assignment id/supervisor id
         public String getNode() {
             return this.node;
+        }
+
+        public String getHost() {
+            return this.assignments.get_storm_assignment().entrySet().iterator().next().getValue().get_node_host().get(this.node);
         }
 
         public SupervisorAssignments getAssignments() {
@@ -180,30 +198,45 @@ public class AssignmentDistributionService implements Closeable {
         }
 
         private void sendAssignmentsToNode(NodeAssignments assignments) {
-            try {
-                SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(), assignments.getNode());
-                try {
-                    client.getClient().sendSupervisorAssignments(assignments.getAssignments());
-                } catch (Exception e) {
-                    //just ignore the exception.
-                    LOG.error("{} Exception when trying to send assignments to node: {}", e.getMessage(), assignments.getNode());
-                } finally {
-                    try {
-                        if (client != null) {
-                            client.close();
-                        }
-                    } catch (Exception e) {
-                        LOG.error("Exception closing client for node: {}", assignments.getNode());
-                    }
+            if (this.service.isLocalMode) {
+                //local node
+                Supervisor supervisor = this.service.localSupervisors.get(assignments.getNode());
+                if (supervisor != null) {
+                    supervisor.sendSupervisorAssignments(assignments.getAssignments());
+                } else {
+                    LOG.error("Can not find node {} for assignments distribution");
+                    throw new RuntimeException("null for node {} supervisor instance");
                 }
-            }catch (Throwable e) {
-                //just ignore any error/exception.
-                LOG.error("Exception to create supervisor client for node: {}", assignments.getNode());
+            } else {
+                // distributed mode
+                try {
+                    SupervisorClient client = SupervisorClient.getConfiguredClient(service.getConf(), assignments.getHost());
+                    try {
+                        client.getClient().sendSupervisorAssignments(assignments.getAssignments());
+                    } catch (Exception e) {
+                        //just ignore the exception.
+                        LOG.error("{} Exception when trying to send assignments to node: {}", e.getMessage(), assignments.getNode());
+                    } finally {
+                        try {
+                            if (client != null) {
+                                client.close();
+                            }
+                        } catch (Exception e) {
+                            LOG.error("Exception closing client for node: {}", assignments.getNode());
+                        }
+                    }
+                } catch (Throwable e) {
+                    //just ignore any error/exception.
+                    LOG.error("Exception to create supervisor client for node: {}", assignments.getNode());
+                }
+
             }
         }
-
     }
 
+    public void addLocalSupervisor(Supervisor supervisor) {
+        this.localSupervisors.put(supervisor.getId(), supervisor);
+    }
 
     private Integer nextQueueID() {
         return this.random.nextInt(threadsNum);
@@ -235,5 +268,4 @@ public class AssignmentDistributionService implements Closeable {
     public Map getConf() {
         return this.conf;
     }
-
 }
