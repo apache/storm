@@ -575,7 +575,8 @@
                                                                                      out-stream-id
                                                                                      tuple-id)]
                                                            (transfer-fn out-task out-tuple)))
-                                         (if has-eventloggers?
+                                         ; INTERIM Fix for BUG-87624
+                                         (if (and has-eventloggers? (.contains (.getComponentStreams worker-context component-id) EVENTLOGGER-STREAM-ID))
                                            (send-to-eventlogger executor-data task-data values component-id message-id rand))
                                          (if (and rooted?
                                                   (not (.isEmpty out-ids)))
@@ -773,7 +774,8 @@
                                                                                stream
                                                                                (MessageId/makeId anchors-to-ids))]
                                                           (transfer-fn t tuple))))
-                                    (if has-eventloggers?
+                                    ; INTERIM Fix for BUG-87624
+                                    (if (and has-eventloggers? (.contains (.getComponentStreams worker-context component-id) EVENTLOGGER-STREAM-ID))
                                       (send-to-eventlogger executor-data task-data values component-id nil rand))
                                     (or out-tasks [])))]]
           (builtin-metrics/register-all (:builtin-metrics task-data) storm-conf user-context)
