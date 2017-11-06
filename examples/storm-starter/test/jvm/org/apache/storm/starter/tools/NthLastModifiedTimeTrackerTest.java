@@ -23,6 +23,8 @@ import org.testng.annotations.Test;
 
 import static org.fest.assertions.api.Assertions.assertThat;
 
+import org.apache.storm.utils.Time.SimulatedTime;
+
 public class NthLastModifiedTimeTrackerTest {
 
   private static final int ANY_NUM_TIMES_TO_TRACK = 3;
@@ -55,19 +57,17 @@ public class NthLastModifiedTimeTrackerTest {
 
   @Test(dataProvider = "whenNotYetMarkedAsModifiedData")
   public void shouldReturnCorrectModifiedTimeEvenWhenNotYetMarkedAsModified(int secondsToAdvance) {
-    // given
-    Time.startSimulating();
-    NthLastModifiedTimeTracker tracker = new NthLastModifiedTimeTracker(ANY_NUM_TIMES_TO_TRACK);
+      // given
+      try (SimulatedTime t = new SimulatedTime()) {
+          NthLastModifiedTimeTracker tracker = new NthLastModifiedTimeTracker(ANY_NUM_TIMES_TO_TRACK);
 
-    // when
-    advanceSimulatedTimeBy(secondsToAdvance);
-    int seconds = tracker.secondsSinceOldestModification();
+          // when
+          Time.advanceTimeSecs(secondsToAdvance);
+          int seconds = tracker.secondsSinceOldestModification();
 
-    // then
-    assertThat(seconds).isEqualTo(secondsToAdvance);
-
-    // cleanup
-    Time.stopSimulating();
+          // then
+          assertThat(seconds).isEqualTo(secondsToAdvance);
+      }
   }
 
   @DataProvider
@@ -94,32 +94,26 @@ public class NthLastModifiedTimeTrackerTest {
         { 3, new int[]{ 1, 2, 3 }, new int[]{ 1, 3, 5 } } };
   }
 
-  @Test(dataProvider = "simulatedTrackerIterations")
-  public void shouldReturnCorrectModifiedTimeWhenMarkedAsModified(int numTimesToTrack,
-      int[] secondsToAdvancePerIteration, int[] expLastModifiedTimes) {
-    // given
-    Time.startSimulating();
-    NthLastModifiedTimeTracker tracker = new NthLastModifiedTimeTracker(numTimesToTrack);
+    @Test(dataProvider = "simulatedTrackerIterations")
+    public void shouldReturnCorrectModifiedTimeWhenMarkedAsModified(int numTimesToTrack,
+        int[] secondsToAdvancePerIteration, int[] expLastModifiedTimes) {
+        // given
+        try (SimulatedTime t = new SimulatedTime()) {
+            NthLastModifiedTimeTracker tracker = new NthLastModifiedTimeTracker(numTimesToTrack);
 
-    int[] modifiedTimes = new int[expLastModifiedTimes.length];
+            int[] modifiedTimes = new int[expLastModifiedTimes.length];
 
-    // when
-    int i = 0;
-    for (int secondsToAdvance : secondsToAdvancePerIteration) {
-      advanceSimulatedTimeBy(secondsToAdvance);
-      tracker.markAsModified();
-      modifiedTimes[i] = tracker.secondsSinceOldestModification();
-      i++;
+            // when
+            int i = 0;
+            for (int secondsToAdvance : secondsToAdvancePerIteration) {
+                Time.advanceTimeSecs(secondsToAdvance);
+                tracker.markAsModified();
+                modifiedTimes[i] = tracker.secondsSinceOldestModification();
+                i++;
+            }
+
+            // then
+            assertThat(modifiedTimes).isEqualTo(expLastModifiedTimes);
+        }
     }
-
-    // then
-    assertThat(modifiedTimes).isEqualTo(expLastModifiedTimes);
-
-    // cleanup
-    Time.stopSimulating();
-  }
-
-  private void advanceSimulatedTimeBy(int seconds) {
-    Time.advanceTime(seconds * MILLIS_IN_SEC);
-  }
 }

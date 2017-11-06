@@ -33,7 +33,6 @@ before_install:
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
   - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
-sudo: true
 cache:
   directories:
     - "$HOME/.m2/repository"

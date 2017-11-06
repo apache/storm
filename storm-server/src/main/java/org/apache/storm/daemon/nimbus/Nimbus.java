@@ -4132,6 +4132,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             stormClusterState.disconnect();
             downloaders.cleanup();
             uploaders.cleanup();
+            blobDownloaders.cleanup();
+            blobUploaders.cleanup();
+            blobListers.cleanup();
             blobStore.shutdown();
             leaderElector.close();
             ITopologyActionNotifierPlugin actionNotifier = nimbusTopologyActionNotifier;

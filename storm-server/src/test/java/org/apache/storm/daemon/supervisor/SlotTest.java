@@ -17,6 +17,9 @@
  */
 package org.apache.storm.daemon.supervisor;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.*;
 import static org.mockito.Mockito.*;
 
@@ -519,7 +522,6 @@ public class SlotTest {
             LSWorkerHeartbeat chb = mkWorkerHB(cTopoId, port, cExecList, Time.currentTimeSecs());
             when(cContainer.readHeartbeat()).thenReturn(chb);
             when(cContainer.areAllProcessesDead()).thenReturn(false, true);
-
             AsyncLocalizer localizer = mock(AsyncLocalizer.class);
             Container nContainer = mock(Container.class);
             LocalState state = mock(LocalState.class);
@@ -528,7 +530,8 @@ public class SlotTest {
             when(nContainer.readHeartbeat()).thenReturn(chb, chb);
 
             ISupervisor iSuper = mock(ISupervisor.class);
-            StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
+            long heartbeatTimeoutMs = 5000;
+            StaticState staticState = new StaticState(localizer, heartbeatTimeoutMs, 120_000, 1000, 1000,
                 containerLauncher, "localhost", port, iSuper, state, cb);
 
             Set<Slot.BlobChanging> changing = new HashSet<>();
@@ -539,7 +542,7 @@ public class SlotTest {
             changing.add(new Slot.BlobChanging(cAssignment, stormJar, stormJarLatch));
 
             DynamicState dynamicState = new DynamicState(cAssignment, cContainer, cAssignment).withChangingBlobs(changing);
-
+            
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
             assertEquals(MachineState.KILL_BLOB_UPDATE, nextState.state);
             verify(iSuper).killedWorker(port);
@@ -550,7 +553,7 @@ public class SlotTest {
             assertEquals(changing, nextState.changingBlobs);
             assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(Time.currentTimeMillis() > 1000);
+            assertThat(Time.currentTimeMillis(), greaterThan(1000L));
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.KILL_BLOB_UPDATE, nextState.state);
@@ -560,12 +563,12 @@ public class SlotTest {
             assertEquals(changing, nextState.changingBlobs);
             assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertNull(nextState.pendingChangingBlobsAssignment);
-            assertTrue(Time.currentTimeMillis() > 2000);
+            assertThat(Time.currentTimeMillis(), greaterThan(2000L));
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.WAITING_FOR_BLOB_UPDATE, nextState.state);
             verify(cContainer).cleanUp();
-            assertTrue(Time.currentTimeMillis() > 2000);
+            assertThat(Time.currentTimeMillis(), greaterThan(2000L));
 
             nextState = Slot.stateMachineStep(nextState, staticState);
             verify(stormJarLatchFuture).get(anyLong(), any());
@@ -575,8 +578,9 @@ public class SlotTest {
             assertTrue(nextState.pendingChangingBlobs.isEmpty());
             assertSame(cAssignment, nextState.currentAssignment);
             assertSame(nContainer, nextState.container);
-            assertTrue(Time.currentTimeMillis() > 2000);
-
+            assertThat(Time.currentTimeMillis(), greaterThan(2000L));
+            assertThat(Time.currentTimeMillis(), lessThan(heartbeatTimeoutMs));
+            
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.RUNNING, nextState.state);
             assertNull(nextState.pendingChangingBlobsAssignment);
