@@ -73,10 +73,24 @@ public class SupervisorHeartbeat implements Runnable {
 
     private Map<String, Double> mkSupervisorCapacities(Map<String, Object> conf) {
         Map<String, Double> ret = new HashMap<String, Double>();
+        // Put in legacy values
         Double mem = ObjectReader.getDouble(conf.get(Config.SUPERVISOR_MEMORY_CAPACITY_MB), 4096.0);
         ret.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, mem);
         Double cpu = ObjectReader.getDouble(conf.get(Config.SUPERVISOR_CPU_CAPACITY), 400.0);
         ret.put(Config.SUPERVISOR_CPU_CAPACITY, cpu);
+
+
+        // If configs are present in Generice map and legacy - the legacy values will be overwritten
+        Map<String, Double> resourcesMap = (Map<String,Double>) conf.get(Config.SUPERVISOR_RESOURCES_MAP);
+
+        if (resourcesMap == null) {
+            return ret;
+        }
+
+        for (Map.Entry<String, Double> stringDoubleEntry : resourcesMap.entrySet()) {
+            ret.put(stringDoubleEntry.getKey(), stringDoubleEntry.getValue());
+        }
+
         return ret;
     }
 

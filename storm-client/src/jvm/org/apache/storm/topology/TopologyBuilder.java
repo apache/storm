@@ -579,7 +579,12 @@ public class TopologyBuilder {
             _commons.get(_id).set_json_conf(mergeIntoJson(Utils.parseJson(currConf), conf));
             return (T) this;
         }
-        
+
+        @Override
+        public Map getConfiguration() {
+            return parseJson(_commons.get(_id).get_json_conf());
+        }
+
         @SuppressWarnings("unchecked")
         @Override
         public T addSharedMemory(SharedMemory request) {

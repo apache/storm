@@ -83,4 +83,29 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         }
         return (T) this;
     }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T addResources(Map<String, Double> resources) {
+        if(resources != null) {
+            return addConfiguration(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resources);
+        }
+        return (T) this;
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public T addResource(String resourceName, Double resourceValue) {
+        Map<String, Double> resourcesMap = (Map<String, Double>) ((Map<String, Object>) this).get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+
+        if (resourcesMap != null) {
+            resourcesMap = new HashMap<>();
+        }
+        resourcesMap.put(resourceName, resourceValue);
+
+        if (resourceValue != null) {
+            return addConfiguration(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
+        }
+        return (T) this;
+    }
 }

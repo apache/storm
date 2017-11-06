@@ -399,6 +399,11 @@ public class LinearDRPCTopologyBuilder {
         }
 
         @Override
+        public Map getConfiguration() {
+            return _component.componentConfs.get(_component.componentConfs.size() -1);
+        }
+
+        @Override
         public LinearDRPCInputDeclarer addSharedMemory(SharedMemory request) {
             _component.sharedMemory.add(request);
             return this;
