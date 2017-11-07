@@ -106,7 +106,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     private DRPCClient(DistributedRPC.Iface override) {
         super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE,
-                "localhost", 1234, null, null);
+                "localhost", 1234, null, null, true);
         this.host = "localhost";
         this.port = 1234;
         this.client = override;
@@ -119,7 +119,7 @@ public class DRPCClient extends ThriftClient implements DistributedRPC.Iface {
 
     public DRPCClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
         super(conf, _localOverrideClient != null ? ThriftConnectionType.LOCAL_FAKE : ThriftConnectionType.DRPC,
-                host, port, timeout, null);
+                host, port, timeout, null, true);
         this.host = host;
         this.port = port;
         if (_localOverrideClient != null) {

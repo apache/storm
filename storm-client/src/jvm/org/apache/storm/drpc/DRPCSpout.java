@@ -105,9 +105,14 @@ public class DRPCSpout extends BaseRichSpout {
 
         @Override
         public Void call() throws Exception {
-            DRPCInvocationsClient c = new DRPCInvocationsClient(conf, server, port);
-            synchronized (_clients) {
-                _clients.add(c);
+            try {
+                DRPCInvocationsClient c = new DRPCInvocationsClient(conf, server, port);
+
+                synchronized (_clients) {
+                    _clients.add(c);
+                }
+            } catch (Exception e) {
+                LOG.warn("Can't connect to drpcserver "+server+" when init drpcspout,please check your cluster");
             }
             return null;
         }

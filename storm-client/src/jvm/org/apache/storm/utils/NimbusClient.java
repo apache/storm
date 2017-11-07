@@ -161,25 +161,25 @@ public class NimbusClient extends ThriftClient {
     }
 
     public NimbusClient(Map<String, Object> conf, String host, int port, Integer timeout) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null);
+        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, null, true);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
 
     public NimbusClient(Map<String, Object> conf, String host, Integer port, Integer timeout, String asUser) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser);
+        super(conf, ThriftConnectionType.NIMBUS, host, port, timeout, asUser, true);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
 
     public NimbusClient(Map<String, Object> conf, String host) throws TTransportException {
-        super(conf, ThriftConnectionType.NIMBUS, host, null, null, null);
+        super(conf, ThriftConnectionType.NIMBUS, host, null, null, null, true);
         _client = new Nimbus.Client(_protocol);
         _isLocal = false;
     }
     
     private NimbusClient(Nimbus.Iface client) {
-        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null);
+        super(new HashMap<>(), ThriftConnectionType.LOCAL_FAKE, "localhost", null, null, null, true);
         _client = client;
         _isLocal = true;
     }

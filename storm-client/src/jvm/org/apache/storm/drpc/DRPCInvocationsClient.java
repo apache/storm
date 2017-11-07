@@ -36,21 +36,35 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
     private final AtomicReference<DistributedRPCInvocations.Client> client = new AtomicReference<>();
     private String host;
     private int port;
+    private int connectRetry = 5;
 
     public DRPCInvocationsClient(Map<String, Object> conf, String host, int port) throws TTransportException {
-        super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null);
+        super(conf, ThriftConnectionType.DRPC_INVOCATIONS, host, port, null, null, false);
         this.host = host;
         this.port = port;
-        client.set(new DistributedRPCInvocations.Client(_protocol));
+        if (isConnected() != true) {
+            for (int i=0; i < connectRetry; i++) {
+                try {
+                    this.reconnectClient();
+                } catch (Exception e) {
+                    LOG.warn("Can't connect to drpcServer "+host+",will attempt to retry.");
+                }
+                if (isConnected() == true) {
+                    break;
+                } else if (i == connectRetry) {
+                    LOG.warn("Can't connect to drpcServer "+host+" after "+connectRetry+" attempts,will ignore it.");
+                }
+            }
+        }
     }
-        
+
     public String getHost() {
         return host;
     }
-    
+
     public int getPort() {
         return port;
-    }       
+    }
 
     public void reconnectClient() throws TException {
         if (client.get() == null) {
@@ -91,7 +105,7 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
             client.compareAndSet(c, null);
             throw e;
         }
-    }    
+    }
 
     public void failRequest(String id) throws TException, AuthorizationException {
         DistributedRPCInvocations.Client c = client.get();

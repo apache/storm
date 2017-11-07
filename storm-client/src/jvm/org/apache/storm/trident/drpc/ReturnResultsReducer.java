@@ -102,7 +102,7 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
                 if(!_clients.containsKey(server)) {
                     try {
                         _clients.put(server, new DRPCInvocationsClient(conf, host, port));
-                    } catch (TTransportException ex) {
+                    } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 }

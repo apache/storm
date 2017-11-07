@@ -85,7 +85,7 @@ public class ReturnResults extends BaseRichBolt {
                 if(!_clients.containsKey(server)) {
                     try {
                         _clients.put(server, new DRPCInvocationsClient(_conf, host, port));
-                    } catch (TTransportException ex) {
+                    } catch (Exception ex) {
                         throw new RuntimeException(ex);
                     }
                 }
