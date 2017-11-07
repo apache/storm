@@ -164,7 +164,7 @@
                      :daemon-conf daemon-conf
                      :supervisors (atom [])
                      :state (mk-distributed-cluster-state daemon-conf)
-                     :storm-cluster-state (mk-storm-cluster-state daemon-conf)
+                     :storm-cluster-state (.getStormClusterState nimbus)
                      :tmp-dirs (atom [nimbus-tmp zk-tmp])
                      :zookeeper (if (not-nil? zk-handle) zk-handle)
                      :shared-context context

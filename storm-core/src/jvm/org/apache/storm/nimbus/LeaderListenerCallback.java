@@ -31,6 +31,7 @@ import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.zookeeper.Zookeeper;
 import org.apache.zookeeper.CreateMode;
@@ -70,7 +71,11 @@ public class LeaderListenerCallback {
         this.acls = acls;
     }
 
-    public void invoke(){
+    public void invoke() {
+        //in local mode, only one leader exist
+        if (ConfigUtils.isLocalMode(conf)) {
+            return;
+        }
         //set up nimbus-info to zk
         setUpNimbusInfo(acls);
         //sync zk assignments/id-info to local
@@ -117,7 +122,7 @@ public class LeaderListenerCallback {
         NimbusInfo nimbusInfo = NimbusInfo.fromConf(conf);
         if (Zookeeper.existsNode(zk, leaderInfoPath, false)) {
             Zookeeper.setData(zk, leaderInfoPath, Utils.javaSerialize(nimbusInfo));
-        }else {
+        } else {
             Zookeeper.createNode(zk, leaderInfoPath, Utils.javaSerialize(nimbusInfo), CreateMode.PERSISTENT, acls);
         }
     }

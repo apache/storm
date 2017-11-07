@@ -21,7 +21,7 @@
            [java.io Serializable])
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [org.apache.curator.framework CuratorFramework])
-  (:import [org.apache.storm.utils Utils])
+  (:import [org.apache.storm.utils Utils ConfigUtils])
   (:import [org.apache.storm.cluster ClusterState ClusterStateContext ClusterStateListener ConnectionState ClusterUtils])
   (:import [java.security MessageDigest])
   (:import [org.apache.zookeeper.server.auth DigestAuthenticationProvider])
@@ -615,7 +615,13 @@
 
       (storm-id
         [this storm-name]
-        (.getStormId assignments-backend storm-name))
+        (if (ConfigUtils/isLocalMode conf) ;; for test
+          (let [active-storms (active-storms this)]
+            (find-first
+              #(= storm-name (:storm-name (storm-base this % nil)))
+              active-storms)
+            )
+          (.getStormId assignments-backend storm-name)))
 
       (sync-remote-ids!
         [this remote]

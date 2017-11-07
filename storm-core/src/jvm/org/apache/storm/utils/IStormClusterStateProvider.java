@@ -17,11 +17,9 @@
  */
 package org.apache.storm.utils;
 
-import org.apache.storm.daemon.supervisor.Supervisor;
-
 /**
- * util interface for add local supervisors.
+ * util interface for reusing StormClusterState.
  */
-public interface ISupervisorsAware {
-    void addSupervisor(Supervisor supervisor);
+public interface IStormClusterStateProvider {
+    Object getStormClusterState();
 }

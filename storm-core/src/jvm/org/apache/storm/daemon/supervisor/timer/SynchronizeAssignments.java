@@ -22,8 +22,10 @@ import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.SupervisorAssignments;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.Utils;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,7 +52,7 @@ public class SynchronizeAssignments implements Runnable {
     public void run() {
         // first sync assignments to local, then sync processes.
         if (null == assignments) {
-            getAssignmentsFromMaster(this.supervisor.getConf(), this.supervisor.getStormClusterState(), this.supervisor.getHostName());
+            getAssignmentsFromMaster(this.supervisor.getConf(), this.supervisor.getStormClusterState(), this.supervisor.getAssignmentId());
         } else {
             assignedAssignmentsToLocal(this.supervisor.getStormClusterState(), assignments);
         }
@@ -61,13 +63,13 @@ public class SynchronizeAssignments implements Runnable {
      * Used by {@link Supervisor} to fetch assignments when start up.
      * @param supervisor
      */
-    public static void getAssignmentsFromMasterUntilSuccess(Supervisor supervisor) {
+    public void getAssignmentsFromMasterUntilSuccess(Supervisor supervisor) {
         boolean success = false;
         NimbusClient master;
         while (!success) {
             try {
                 master = NimbusClient.getConfiguredClient(supervisor.getConf());
-                SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(supervisor.getHostName());
+                SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(supervisor.getAssignmentId());
                 assignedAssignmentsToLocal(supervisor.getStormClusterState(), assignments);
                 success = true;
                 try {
@@ -91,20 +93,29 @@ public class SynchronizeAssignments implements Runnable {
 
     }
 
-    public static void getAssignmentsFromMaster(Map conf, IStormClusterState clusterState, String hostName) {
-        NimbusClient master;
-        try {
-            master = NimbusClient.getConfiguredClient(conf);
-            SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(hostName);
-            LOG.debug("Sync an assignments from master, will start to sync with assignments: {}", assignments);
-            assignedAssignmentsToLocal(clusterState, assignments);
+    public void getAssignmentsFromMaster(Map conf, IStormClusterState clusterState, String node) {
+        if(ConfigUtils.isLocalMode(conf)) {
             try {
-                master.close();
-            } catch (Throwable t) {
-                LOG.warn("Close master client exception", t);
+                SupervisorAssignments assignments = this.supervisor.getLocalNimbus().getSupervisorAssignments(node);
+                assignedAssignmentsToLocal(clusterState, assignments);
+            } catch (TException e) {
+                LOG.error("Get assignments from local master exception", e);
             }
-        } catch (Exception t) {
-            LOG.error("Get assignments from master exception", t);
+        } else {
+            NimbusClient master;
+            try {
+                master = NimbusClient.getConfiguredClient(conf);
+                SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(node);
+                LOG.debug("Sync an assignments from master, will start to sync with assignments: {}", assignments);
+                assignedAssignmentsToLocal(clusterState, assignments);
+                try {
+                    master.close();
+                } catch (Throwable t) {
+                    LOG.warn("Close master client exception", t);
+                }
+            } catch (Exception t) {
+                LOG.error("Get assignments from master exception", t);
+            }
         }
     }
 

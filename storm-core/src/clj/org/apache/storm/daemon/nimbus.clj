@@ -61,7 +61,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient ISupervisorsAware]
+  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient ISupervisorsAware IStormClusterStateProvider]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config)
@@ -992,15 +992,16 @@
         new-executor-node-port (:executor->node+port new-assignment)
         all-node->host (merge (:node->host existing-assignment) (:node->host new-assignment))]
     (if-not (and (not-nil? existing-assignment) (not-nil? new-assignment)) ;; kill or newly submit
-      (set (keys all-node->host))
+      all-node->host
       ;; rebalance
-      (->> (reduce-kv (fn [m executor new-node-port]
-                        (let [old-node-port (get old-executor-node-port executor)]
-                          (when-not (= old-node-port new-node-port)
-                            (conj m
-                                  (first old-node-port) (first new-node-port)))))
-                      #{} new-executor-node-port)
-           (remove nil?)))))
+      (reduce-kv (fn [m executor new-node-port]
+                   (let [old-node-port (get old-executor-node-port executor)]
+                     (when-not (= old-node-port new-node-port)
+                       (let [old-node (first old-node-port)
+                             new-node (first new-node-port)]
+                         (merge m {old-node (get all-node->host old-node)}
+                                {new-node (get all-node->host new-node)})))))
+                 {} new-executor-node-port))))
 
 (defn assignments-for-node [assignments node]
   (let [node-assignments (into {} (filter (fn [[tid assignment]]
@@ -1009,20 +1010,20 @@
     node-assignments))
 
 (defn notify-supervisors-assignments
-  [new-assignments ^AssignmentDistributionService assignment-service nodes]
-  (doseq [node nodes]
+  [new-assignments ^AssignmentDistributionService assignment-service node->host]
+  (doseq [[node host] node->host]
     (try
       (let [node-assignments (assignments-for-node new-assignments node)]
-        (.addAssignmentsForNode assignment-service node (converter/thriftify-supervisor-assignments node-assignments)))
+        (.addAssignmentsForNode assignment-service node host (converter/thriftify-supervisor-assignments node-assignments)))
       (catch Throwable t
         ;; just skip when any error happens wait for next round assignments reassign
-        (log-error t ": Exception when create thrift client for " node)))))
+        (log-error t ": Exception when add assignments distribution task for node " node)))))
 
 (defn notify-supervisors-as-killed
   [cluster-state old-assignment assignment-service]
-  (let [nodes (assignment-changed-nodes old-assignment nil)
+  (let [node->host (assignment-changed-nodes old-assignment nil)
         new-assignments (.assignments-info cluster-state)]
-    (notify-supervisors-assignments new-assignments assignment-service nodes)))
+    (notify-supervisors-assignments new-assignments assignment-service node->host)))
 
 (defn basic-supervisor-details-map [storm-cluster-state]
   (let [infos (all-supervisor-info storm-cluster-state)]
@@ -1137,9 +1138,8 @@
         (->> new-assignments
              (map (fn [[tid new-assignment]]
                     (let [existing-assignment (get existing-assignments tid)]
-                      (assignment-changed-nodes existing-assignment new-assignment ))))
-             (apply concat)
-             (into #{})
+                      (assignment-changed-nodes existing-assignment new-assignment))))
+             (apply merge)
              (notify-supervisors-assignments new-assignments (:assignments-distributer nimbus)))
 
         (->> new-assignments
@@ -2529,6 +2529,9 @@
     ISupervisorsAware
     (^void addSupervisor [this ^org.apache.storm.daemon.supervisor.Supervisor supervisor]
       (.addLocalSupervisor (:assignments-distributer nimbus) supervisor))
+    IStormClusterStateProvider
+    (^Object getStormClusterState[this]
+      (:storm-cluster-state nimbus))
     Shutdownable
     (shutdown [this]
       (mark! nimbus:num-shutdown-calls)
