@@ -13,7 +13,7 @@
 ;; WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
-(ns org.apache.storm.local-assignment-test
+(ns org.apache.storm.local-assignments-backend-test
   (:use [clojure test])
   (:use [org.apache.storm testing config])
   (:require [org.apache.storm.converter :as converter])
@@ -21,6 +21,9 @@
            (org.apache.storm.daemon.common Assignment)
            (org.apache.storm.assignments LocalAssignmentsBackendFactory)))
 
+(defn assignment-eq?
+  [ass1 ass2]
+  (= (:master-code-dir ass1) (:master-code-dir ass2)))
 
 (defn serialize-assignment
   [assignment]
@@ -56,13 +59,13 @@
                     (is (= nil (.getAssignment assbd "storm1")))
                     (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment1))
                     (.keepOrUpdateAssignment assbd storm2 (thriftify-assignment assignment2))
-                    (is (= assignment1 (deserialize-assignment (.getAssignment assbd storm1))))
-                    (is (= assignment2 (deserialize-assignment (.getAssignment assbd storm1))))
+                    (is (assignment-eq? assignment1 (deserialize-assignment (.getAssignment assbd storm1))))
+                    (is (assignment-eq? assignment2 (deserialize-assignment (.getAssignment assbd storm2))))
                     (.clearStateForStorm assbd storm1)
                     (is (= nil (.getAssignment assbd storm1)))
                     (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment1))
                     (.keepOrUpdateAssignment assbd storm1 (thriftify-assignment assignment2))
-                    (is (= assignment2 (deserialize-assignment (.getAssignment assbd storm1)))))))
+                    (is (assignment-eq? assignment2 (deserialize-assignment (.getAssignment assbd storm1)))))))
 
 (deftest test-local-id-info
   (with-local-tmp [dir1]
@@ -79,7 +82,7 @@
                     (is (= id2 (.getStormId assbd name2)))
                     (.deleteStormId assbd name1)
                     (is (= nil (.getStormId assbd name1)))
-                    (.clearStateForStorm assbd id1)
+                    (.clearStateForStorm assbd id2)
                     (is (= nil (.getStormId assbd name2)))
                     (.keepStormId assbd name1 id1)
                     (.keepStormId assbd name1 id3)

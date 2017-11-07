@@ -127,9 +127,9 @@ public class AssignmentDistributionService implements Closeable {
         this.assignmentsQueue = null;
     }
 
-    public void addAssignmentsForNode(String node, SupervisorAssignments assignments) {
+    public void addAssignmentsForNode(String node, String host, SupervisorAssignments assignments) {
         try {
-            boolean success = nextQueue().offer(NodeAssignments.getInstance(node, assignments), 5l, TimeUnit.SECONDS);
+            boolean success = nextQueue().offer(NodeAssignments.getInstance(node, host, assignments), 5l, TimeUnit.SECONDS);
             if (!success) {
                 LOG.warn("Discard an assignment distribution for node {} because the target sub queue is full", node);
             }
@@ -143,14 +143,16 @@ public class AssignmentDistributionService implements Closeable {
     static class NodeAssignments {
         private String node;
         private SupervisorAssignments assignments;
+        private String host;
 
-        private NodeAssignments(String node, SupervisorAssignments assignments) {
+        private NodeAssignments(String node, String host, SupervisorAssignments assignments) {
             this.node = node;
+            this.host = host;
             this.assignments = assignments;
         }
 
-        public static NodeAssignments getInstance(String node, SupervisorAssignments assignments) {
-            return new NodeAssignments(node, assignments);
+        public static NodeAssignments getInstance(String node, String host, SupervisorAssignments assignments) {
+            return new NodeAssignments(node, host, assignments);
         }
 
         //supervisor assignment id/supervisor id
@@ -159,7 +161,7 @@ public class AssignmentDistributionService implements Closeable {
         }
 
         public String getHost() {
-            return this.assignments.get_storm_assignment().entrySet().iterator().next().getValue().get_node_host().get(this.node);
+            return host;
         }
 
         public SupervisorAssignments getAssignments() {
@@ -215,7 +217,7 @@ public class AssignmentDistributionService implements Closeable {
                         client.getClient().sendSupervisorAssignments(assignments.getAssignments());
                     } catch (Exception e) {
                         //just ignore the exception.
-                        LOG.error("{} Exception when trying to send assignments to node: {}", e.getMessage(), assignments.getNode());
+                        LOG.error("Exception when trying to send assignments to node {}: {}", assignments.getNode(), e.getMessage());
                     } finally {
                         try {
                             if (client != null) {
@@ -227,7 +229,7 @@ public class AssignmentDistributionService implements Closeable {
                     }
                 } catch (Throwable e) {
                     //just ignore any error/exception.
-                    LOG.error("Exception to create supervisor client for node: {}", assignments.getNode());
+                    LOG.error("Exception to create supervisor client for node{}: {}", assignments.getNode(), e.getMessage());
                 }
 
             }

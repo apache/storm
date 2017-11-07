@@ -26,7 +26,7 @@
   (:import [java.util.concurrent Executors]
            [org.apache.storm.hooks IWorkerHook BaseWorkerHook])
   (:import [java.util ArrayList HashMap])
-  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue SupervisorClient NimbusClient])
+  (:import [org.apache.storm.utils Utils TransferDrainer ThriftTopologyUtils WorkerBackpressureThread DisruptorQueue SupervisorClient NimbusClient ConfigUtils])
   (:import [org.apache.storm.grouping LoadMapping])
   (:import [org.apache.storm.messaging TransportFactory])
   (:import [org.apache.storm.messaging TaskMessage IContext IConnection ConnectionWithStatus ConnectionWithStatus$Status])
@@ -50,18 +50,21 @@
 
 (defn get-local-assignment
   [conf storm-id cluster-state]
-  (try
-    (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
-          assignment (converter/clojurify-assignment (.getLocalAssignmentForStorm (.getClient supervisor-cli) storm-id))]
-      (try
-        (.close supervisor-cli)
-        (catch Throwable e
-          (log-warn (.getMessage e) "Exception when close supervisor client.")))
-      assignment)
-    (catch Throwable e
-      ;; if any error/exception thrown, fetch it from zookeeper
-      (.remote-assignment-info cluster-state storm-id)
-      )))
+  (if (not (ConfigUtils/isLocalMode conf))
+    (try
+      (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
+            assignment (converter/clojurify-assignment (.getLocalAssignmentForStorm (.getClient supervisor-cli) storm-id))]
+        (try
+          (.close supervisor-cli)
+          (catch Throwable e
+            (log-warn (.getMessage e) "Exception when close supervisor client.")))
+        assignment)
+      (catch Throwable e
+        ;; if any error/exception thrown, fetch it from zookeeper
+        (.remote-assignment-info cluster-state storm-id)
+        ))
+    ;; in local mode, fetch from zookeeper directly
+    (.remote-assignment-info cluster-state storm-id)))
 
 (defn- remote-worker-heartbeat!
   [conf hb]
@@ -81,19 +84,20 @@
 (defn local-worker-heartbeat!
   "Send a heartbeat to local supervisor first to check if supervisor is okey for heartbeating."
   [conf hb]
-  (try
-    (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
-          thrift-hb (converter/thriftify-supervisor-worker-hb hb)]
-      (.sendSupervisorWorkerHeartbeat (.getClient supervisor-cli) thrift-hb)
-      (try
-        (.close supervisor-cli)
-        (catch Throwable e
-          (log-warn (.getMessage e) " Exception when close supervisor client."))))
-    (catch Throwable t
-      ;; if any error/exception thrown, report directly to nimbus.
-      (log-debug (.getMessage t) " Exception when send heartbeat to local supervisor.")
-      (remote-worker-heartbeat! conf hb)
-      )))
+  (if (not (ConfigUtils/isLocalMode conf))
+    (try
+      (let [supervisor-cli (SupervisorClient/getConfiguredClient conf (memoized-local-hostname))
+            thrift-hb (converter/thriftify-supervisor-worker-hb hb)]
+        (.sendSupervisorWorkerHeartbeat (.getClient supervisor-cli) thrift-hb)
+        (try
+          (.close supervisor-cli)
+          (catch Throwable e
+            (log-warn (.getMessage e) " Exception when close supervisor client."))))
+      (catch Throwable t
+        ;; if any error/exception thrown, report directly to nimbus.
+        (log-debug (.getMessage t) " Exception when send heartbeat to local supervisor.")
+        (remote-worker-heartbeat! conf hb)
+        ))))
 
 (defn read-worker-executors [storm-conf storm-cluster-state storm-id assignment-id port assignment-versions]
   (log-message "Reading Assignments.")

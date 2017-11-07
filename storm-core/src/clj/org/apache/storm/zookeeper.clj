@@ -216,9 +216,9 @@
 (defnk mk-inprocess-zookeeper
   [localdir :port nil]
   (let [localfile (File. localdir)
-        zk (ZooKeeperServer. localfile localfile 2000)
+        zk (ZooKeeperServer. localfile localfile 2181)
         [retport factory]
-        (loop [retport (if port port 2000)]
+        (loop [retport (if port port 2181)]
           (if-let [factory-tmp
                    (try-cause
                      (doto (NIOServerCnxnFactory.)

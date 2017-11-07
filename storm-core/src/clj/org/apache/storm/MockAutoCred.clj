@@ -46,13 +46,13 @@
   (.put cred gateway-cred-key gateway-cred-renew-val))
 
 (defn -populateSubject
-  [subject credentials]
+  [this subject credentials]
   (.add (.getPublicCredentials subject) (.get credentials nimbus-cred-key))
   (.add (.getPublicCredentials subject) (.get credentials gateway-cred-key)))
 
 (defn -updateSubject
-  [subject credentials]
-  (-populateSubject subject credentials))
+  [this subject credentials]
+  (-populateSubject this subject credentials))
 
 
 

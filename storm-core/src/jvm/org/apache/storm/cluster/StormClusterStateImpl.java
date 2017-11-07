@@ -179,14 +179,7 @@ public class StormClusterStateImpl implements IStormClusterState {
 
     @Override
     public Map<String, Assignment> assignmentsInfo() {
-        Map<String, Assignment> ret = new HashMap<>();
-
-        Map<String, Assignment> assignments = this.backend.assignmentsInfo();
-        for (Map.Entry<String, Assignment> entry : assignments.entrySet()) {
-            ret.put(entry.getKey(), entry.getValue());
-        }
-
-        return ret;
+        return this.backend.assignmentsInfo();
     }
 
     @Override

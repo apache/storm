@@ -21,6 +21,7 @@ import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.generated.Assignment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -32,12 +33,19 @@ import java.util.Map;
 public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
     private static final Logger LOG = LoggerFactory.getLogger(InMemoryAssignmentBackend.class);
 
-    private Map<String, Assignment> idToAssignment;
-    private Map<String, String> idToName;
-    private Map<String, String> nameToId;
+    protected Map<String, Assignment> idToAssignment;
+    protected Map<String, String> idToName;
+    protected Map<String, String> nameToId;
+    /**
+     * Used for assignments set/get, assignments set/get should be kept thread safe
+     */
+    private final Object assignmentsLock = new Object();
+
+    public InMemoryAssignmentBackend() {}
 
     @Override
     public void prepare(Map conf) {
+        // do nothing for conf now
         this.idToAssignment = new HashMap<>();
         this.idToName = new HashMap<>();
         this.nameToId = new HashMap<>();
@@ -45,31 +53,45 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
 
     @Override
     public void keepOrUpdateAssignment(String stormID, Assignment assignment) {
-        this.idToAssignment.put(stormID, assignment);
+        synchronized (assignmentsLock) {
+            this.idToAssignment.put(stormID, assignment);
+        }
     }
 
     @Override
     public Assignment getAssignment(String stormID) {
-        return this.idToAssignment.get(stormID);
+        synchronized (assignmentsLock) {
+            return this.idToAssignment.get(stormID);
+        }
     }
 
     @Override
     public void removeAssignment(String stormID) {
-        this.idToAssignment.remove(stormID);
+        synchronized (assignmentsLock) {
+            this.idToAssignment.remove(stormID);
+        }
     }
 
     @Override
     public List<String> assignments() {
-        List<String> ids = new ArrayList<>();
-        for (String key : this.idToAssignment.keySet()) {
-            ids.add(key);
+        if(idToAssignment == null) {
+            return new ArrayList<>();
         }
-        return ids;
+        List<String> ret = new ArrayList<>();
+        synchronized (assignmentsLock) {
+            ret.addAll(this.idToAssignment.keySet());
+            return ret;
+        }
     }
 
     @Override
     public Map<String, Assignment> assignmentsInfo() {
-        return this.idToAssignment;
+        Map<String, Assignment> ret = new HashMap<>();
+        synchronized (assignmentsLock) {
+            ret.putAll(this.idToAssignment);
+        }
+
+        return ret;
     }
 
     @Override
@@ -114,7 +136,10 @@ public class InMemoryAssignmentBackend implements ILocalAssignmentsBackend {
 
     @Override
     public void clearStateForStorm(String stormID) {
-        this.idToAssignment.remove(stormID);
+        synchronized (assignmentsLock) {
+            this.idToAssignment.remove(stormID);
+        }
+
         String name = this.idToName.remove(stormID);
         if (null != name) {
             this.nameToId.remove(name);
