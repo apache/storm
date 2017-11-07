@@ -43,8 +43,7 @@ public class ResourceUtils {
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
                 Map<String, Double> topologyResources = parseResources(bolt.getValue().get_common().get_json_conf());
-                checkIntialization(topologyResources, bolt.getValue().toString(), topologyConf);
-                LOG.warn("Turned {} into {}", bolt.getValue().get_common().get_json_conf(), topologyResources);
+                checkInitialization(topologyResources, bolt.getKey(), topologyConf);
                 boltResources.put(bolt.getKey(), topologyResources);
             }
         }
@@ -57,7 +56,7 @@ public class ResourceUtils {
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
                 Map<String, Double> topologyResources = parseResources(spout.getValue().get_common().get_json_conf());
-                checkIntialization(topologyResources, spout.getValue().toString(), topologyConf);
+                checkInitialization(topologyResources, spout.getKey(), topologyConf);
                 spoutResources.put(spout.getKey(), topologyResources);
             }
         }
@@ -129,20 +128,23 @@ public class ResourceUtils {
         }
     }
 
-    public static void checkIntialization(Map<String, Double> topologyResources, String com,
-                                          Map<String, Object> topologyConf) {
+    public static void checkInitialization(Map<String, Double> topologyResources, String com,
+                                           Map<String, Object> topologyConf) {
         checkInitMem(topologyResources, com, topologyConf);
         checkInitCpu(topologyResources, com, topologyConf);
     }
 
     private static void checkInitMem(Map<String, Double> topologyResources, String com,
-                                    Map<String, Object> topologyConf) {
+                                     Map<String, Object> topologyConf) {
         if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
             Double onHeap = ObjectReader.getDouble(
                 topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), null);
             if (onHeap != null) {
                 topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
-                debugMessage("ONHEAP", com, topologyConf);
+                LOG.debug(
+                    "Unable to extract resource requirement for Component {}\n"
+                        + " Resource : Memory Type : On Heap set to default {}",
+                    com, onHeap);
             }
         }
         if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)) {
@@ -150,7 +152,10 @@ public class ResourceUtils {
                 topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB), null);
             if (offHeap != null) {
                 topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);
-                debugMessage("OFFHEAP", com, topologyConf);
+                LOG.debug(
+                    "Unable to extract resource requirement for Component {}\n"
+                        + " Resource : Memory Type : Off Heap set to default {}",
+                    com, offHeap);
             }
         }
     }
@@ -161,7 +166,10 @@ public class ResourceUtils {
             Double cpu = ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), null);
             if (cpu != null) {
                 topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, cpu);
-                debugMessage("CPU", com, topologyConf);
+                LOG.debug(
+                    "Unable to extract resource requirement for Component {}\n"
+                        + " Resource : CPU Pcore Percent set to default {}",
+                    com, cpu);
             }
         }
     }
@@ -196,25 +204,6 @@ public class ResourceUtils {
             return null;
         }
         return topologyResources;
-    }
-
-    private static void debugMessage(String memoryType, String com, Map<String, Object> topologyConf) {
-        if (memoryType.equals("ONHEAP")) {
-            LOG.debug(
-                    "Unable to extract resource requirement for Component {}\n"
-                        + " Resource : Memory Type : On Heap set to default {}",
-                    com, topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB));
-        } else if (memoryType.equals("OFFHEAP")) {
-            LOG.debug(
-                    "Unable to extract resource requirement for Component {}\n"
-                        + " Resource : Memory Type : Off Heap set to default {}",
-                    com, topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB));
-        } else {
-            LOG.debug(
-                    "Unable to extract resource requirement for Component {}\n"
-                        + " Resource : CPU Pcore Percent set to default {}",
-                    com, topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT));
-        }
     }
 
     /**

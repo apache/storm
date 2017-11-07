@@ -30,7 +30,7 @@ import org.junit.Test;
 public class ClusterTest {
 
     /** This should match the value in Cluster.getAssignedMemoryForSlot. */
-    final Double TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION = 768.0;
+    final double TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION = 768.0;
 
     private Map<String, Object> getConfig(String key, Object value) {
         Map<String, Object> topConf = getEmptyConfig();
@@ -62,13 +62,13 @@ public class ClusterTest {
      */
     private void singleValueTest(String key, String value, double expectedValue) {
         Map<String, Object> topConf = getConfig(key, value);
-        Assert.assertEquals(expectedValue, Cluster.getAssignedMemoryForSlot(topConf).doubleValue(), 0);
+        Assert.assertEquals(expectedValue, Cluster.getAssignedMemoryForSlot(topConf), 0);
     }
 
     @Test
     public void getAssignedMemoryForSlot_allNull() {
         Map<String, Object> topConf = getEmptyConfig();
-        Assert.assertEquals(TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION, Cluster.getAssignedMemoryForSlot(topConf));
+        Assert.assertEquals(TOPOLOGY_WORKER_DEFAULT_MEMORY_ALLOCATION, Cluster.getAssignedMemoryForSlot(topConf), 0);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ClusterTest {
     @Test
     public void getAssignedMemoryForSlot_workerHeapMemoryMb() {
         Map<String, Object> topConf = getConfig(Config.WORKER_HEAP_MEMORY_MB, 1024);
-        Assert.assertEquals(1024.0, Cluster.getAssignedMemoryForSlot(topConf).doubleValue(), 0);
+        Assert.assertEquals(1024.0, Cluster.getAssignedMemoryForSlot(topConf), 0);
     }
 
     @Test
@@ -106,6 +106,6 @@ public class ClusterTest {
     @Test
     public void getAssignedMemoryForSlot_all() {
         Map<String, Object> topConf = getPopulatedConfig();
-        Assert.assertEquals(128.0 + 64.0, Cluster.getAssignedMemoryForSlot(topConf).doubleValue(), 0);
+        Assert.assertEquals(128.0 + 64.0, Cluster.getAssignedMemoryForSlot(topConf), 0);
     }
 }

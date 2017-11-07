@@ -23,7 +23,6 @@ import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isType;
 import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
@@ -37,7 +36,6 @@ import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
-import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.validation.ConfigValidation;
@@ -879,18 +877,19 @@ public class DaemonConfig implements Validated {
     public static final String RESOURCE_AWARE_SCHEDULER_USER_POOLS = "resource.aware.scheduler.user.pools";
 
     /**
-     * The class that specifies the eviction strategy to use in ResourceAwareScheduler.
-     */
-    @NotNull
-    @isImplementationOfClass(implementsClass = IEvictionStrategy.class)
-    public static final String RESOURCE_AWARE_SCHEDULER_EVICTION_STRATEGY = "resource.aware.scheduler.eviction.strategy";
-
-    /**
      * the class that specifies the scheduling priority strategy to use in ResourceAwareScheduler.
      */
     @NotNull
     @isImplementationOfClass(implementsClass = ISchedulingPriorityStrategy.class)
     public static final String RESOURCE_AWARE_SCHEDULER_PRIORITY_STRATEGY = "resource.aware.scheduler.priority.strategy";
+
+    /**
+     * The maximum number of times that the RAS will attempt to schedule a topology. The default is 5.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS =
+        "resource.aware.scheduler.max.topology.scheduling.attempts";
 
     /**
      * How often nimbus's background thread to sync code for missing topologies should run.

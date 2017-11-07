@@ -34,7 +34,7 @@ import org.apache.storm.scheduler.TopologyDetails;
 public class User {
     private String userId;
 
-    //Topologies that was deemed to be invalid
+    //Topologies that were deemed to be invalid
     private final Set<TopologyDetails> unsuccess = new HashSet<>();
 
     private final double cpuGuarantee;
@@ -63,7 +63,7 @@ public class User {
 
     public TreeSet<TopologyDetails> getRunningTopologies(ISchedulingState cluster) {
         TreeSet<TopologyDetails> ret =
-            new TreeSet<TopologyDetails>(new PQsortByPriorityAndSubmittionTime());
+            new TreeSet<>(new PQsortByPriorityAndSubmittionTime());
         for (TopologyDetails td : cluster.getTopologies().getTopologiesOwnedBy(userId)) {
             if (!cluster.needsSchedulingRas(td)) {
                 ret.add(td);
@@ -74,7 +74,7 @@ public class User {
 
     public TreeSet<TopologyDetails> getPendingTopologies(ISchedulingState cluster) {
         TreeSet<TopologyDetails> ret =
-            new TreeSet<TopologyDetails>(new PQsortByPriorityAndSubmittionTime());
+            new TreeSet<>(new PQsortByPriorityAndSubmittionTime());
         for (TopologyDetails td : cluster.getTopologies().getTopologiesOwnedBy(userId)) {
             if (cluster.needsSchedulingRas(td) && !unsuccess.contains(td)) {
                 ret.add(td);
@@ -116,6 +116,24 @@ public class User {
             return Double.MAX_VALUE;
         }
         return getMemoryResourceUsedByUser(cluster) / memoryGuarantee;
+    }
+
+    public double getMemoryResourceRequest(ISchedulingState cluster) {
+        double sum = 0.0;
+        Set<TopologyDetails> topologyDetailsSet = new HashSet<>(cluster.getTopologies().getTopologiesOwnedBy(userId));
+        for (TopologyDetails topo : topologyDetailsSet) {
+            sum += topo.getTotalRequestedMemOnHeap() + topo.getTotalRequestedMemOffHeap();
+        }
+        return sum;
+    }
+
+    public double getCpuResourceRequest(ISchedulingState cluster) {
+        double sum = 0.0;
+        Set<TopologyDetails> topologyDetailsSet = new HashSet<>(cluster.getTopologies().getTopologiesOwnedBy(userId));
+        for (TopologyDetails topo : topologyDetailsSet) {
+            sum += topo.getTotalRequestedCpu();
+        }
+        return sum;
     }
 
     public double getCpuResourceUsedByUser(ISchedulingState cluster) {
@@ -185,22 +203,6 @@ public class User {
     @Override
     public String toString() {
         return this.userId;
-    }
-
-    public String getDetailedInfo() {
-        String ret = "\nUser: " + userId;
-        ret += "\n - " + " Resource Pool: " + cpuGuarantee + "% " + memoryGuarantee + "MB ";
-        ret += "\n - " + " Unsuccess Queue: " + unsuccess + " size: " + unsuccess.size();
-        return ret;
-    }
-
-    public static String getResourcePoolAverageUtilizationForUsers(
-        Collection<User> users, Cluster cluster) {
-        String ret = "";
-        for (User user : users) {
-            ret += user.getId() + " - " + user.getResourcePoolAverageUtilization(cluster) + " ";
-        }
-        return ret;
     }
 
     /**

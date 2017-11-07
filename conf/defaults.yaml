@@ -274,7 +274,6 @@ topology.component.resources.offheap.memory.mb: 0.0
 topology.component.cpu.pcore.percent: 10.0
 topology.worker.max.heap.size.mb: 768.0
 topology.scheduler.strategy: "org.apache.storm.scheduler.resource.strategies.scheduling.DefaultResourceAwareStrategy"
-resource.aware.scheduler.eviction.strategy: "org.apache.storm.scheduler.resource.strategies.eviction.DefaultEvictionStrategy"
 resource.aware.scheduler.priority.strategy: "org.apache.storm.scheduler.resource.strategies.priority.DefaultSchedulingPriorityStrategy"
 
 blacklist.scheduler.tolerance.time.secs: 300

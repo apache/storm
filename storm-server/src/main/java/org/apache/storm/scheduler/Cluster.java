@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
 import com.google.common.annotations.VisibleForTesting;
@@ -43,64 +44,6 @@ import org.slf4j.LoggerFactory;
 
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
-
-    public static class SupervisorResources {
-        private final double totalMem;
-        private final double totalCpu;
-        private final double usedMem;
-        private final double usedCpu;
-
-        /**
-         * Constructor for a Supervisor's resources.
-         *
-         * @param totalMem the total mem on the supervisor
-         * @param totalCpu the total CPU on the supervisor
-         * @param usedMem the used mem on the supervisor
-         * @param usedCpu the used CPU on the supervisor
-         */
-        public SupervisorResources(double totalMem, double totalCpu, double usedMem, double usedCpu) {
-            this.totalMem = totalMem;
-            this.totalCpu = totalCpu;
-            this.usedMem = usedMem;
-            this.usedCpu = usedCpu;
-        }
-
-        public double getUsedMem() {
-            return usedMem;
-        }
-
-        public double getUsedCpu() {
-            return usedCpu;
-        }
-
-        public double getTotalMem() {
-            return totalMem;
-        }
-
-        public double getTotalCpu() {
-            return totalCpu;
-        }
-
-        public double getAvailableCpu() {
-            return totalCpu - usedCpu;
-        }
-
-        public double getAvailableMem() {
-            return totalMem - usedMem;
-        }
-
-        private SupervisorResources add(WorkerResources wr) {
-            return new SupervisorResources(
-                totalMem,
-                totalCpu,
-                usedMem + wr.get_mem_off_heap() + wr.get_mem_on_heap(),
-                usedCpu + wr.get_cpu());
-        }
-
-        public SupervisorResources addMem(Double value) {
-            return new SupervisorResources(totalMem, totalCpu, usedMem + value, usedCpu);
-        }
-    }
 
     /**
      * key: supervisor id, value: supervisor details.
@@ -839,8 +782,8 @@ public class Cluster implements ISchedulingState {
      * @param topConf - the topology config
      * @return the assigned memory (in MB)
      */
-    public static Double getAssignedMemoryForSlot(final Map<String, Object> topConf) {
-        Double totalWorkerMemory = 0.0;
+    public static double getAssignedMemoryForSlot(final Map<String, Object> topConf) {
+        double totalWorkerMemory = 0.0;
         final Integer topologyWorkerDefaultMemoryAllocation = 768;
 
         List<String> topologyWorkerGcChildopts = ConfigUtils.getValueAsList(
@@ -885,6 +828,13 @@ public class Cluster implements ISchedulingState {
                 topoWorkerLwChildopts, 0.0);
         }
         return totalWorkerMemory;
+    }
+
+    /**
+     * set scheduler status for a topology.
+     */
+    public void setStatus(TopologyDetails td, String statusMessage) {
+        setStatus(td.getId(), statusMessage);
     }
 
     /**
