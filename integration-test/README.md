@@ -16,7 +16,7 @@ And runs all the tests against it.
 
 Running tests for development & debugging
 =========================================
-```vagrant up``` command is steup as a complete auto-pilot.
+```vagrant up``` command is setup as a complete auto-pilot.
 Following describes how we can run individual tests against this vagrant cluster or any other cluster.
 
 Configs for running

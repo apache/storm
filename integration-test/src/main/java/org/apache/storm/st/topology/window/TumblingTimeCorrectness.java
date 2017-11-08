@@ -55,9 +55,9 @@ public class TumblingTimeCorrectness implements TestableTopology {
     private final String spoutName;
     private final String boltName;
 
-    public TumblingTimeCorrectness(int timbleSec) {
-        this.tumbleSec = timbleSec;
-        final String prefix = this.getClass().getSimpleName() + "-timbleSec" + timbleSec;
+    public TumblingTimeCorrectness(int tumbleSec) {
+        this.tumbleSec = tumbleSec;
+        final String prefix = this.getClass().getSimpleName() + "-tumbleSec" + tumbleSec;
         spoutName = prefix + "IncrementingSpout";
         boltName = prefix + "VerificationBolt";
     }

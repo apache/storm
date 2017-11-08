@@ -53,7 +53,7 @@ public class TumblingWindowCorrectness implements TestableTopology {
 
     public TumblingWindowCorrectness(final int tumbleSize) {
         this.tumbleSize = tumbleSize;
-        final String prefix = this.getClass().getSimpleName() + "-tubleSize" + tumbleSize;
+        final String prefix = this.getClass().getSimpleName() + "-tumbleSize" + tumbleSize;
         spoutName = prefix + "IncrementingSpout";
         boltName = prefix + "VerificationBolt";
     }
