@@ -162,7 +162,7 @@ public class TopologySpoutLag {
 
             // if commands contains one or more null value, spout is compiled with lower version of storm-kafka / storm-kafka-client
             if (!commands.contains(null)) {
-                String resultFromMonitor = ShellUtils.execCommand(commands.toArray(new String[0]));
+                String resultFromMonitor = new ShellCommandRunnerImpl().execCommand(commands.toArray(new String[0]));
 
                 try {
                     result = (Map<String, Object>) JSONValue.parseWithException(resultFromMonitor);

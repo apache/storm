@@ -18,16 +18,20 @@
 
 package org.apache.storm.security.auth;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.io.IOException;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.StringTokenizer;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.Config;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.RotatingMap;
+import org.apache.storm.utils.ShellCommandRunner;
+import org.apache.storm.utils.ShellCommandRunnerImpl;
 import org.apache.storm.utils.ShellUtils;
-import org.apache.storm.utils.TimeCacheMap;
 import org.apache.storm.utils.ShellUtils.ExitCodeException;
+import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +40,21 @@ public class ShellBasedGroupsMapping implements
                                              IGroupMappingServiceProvider {
 
     public static final Logger LOG = LoggerFactory.getLogger(ShellBasedGroupsMapping.class);
-    public TimeCacheMap<String, Set<String>> cachedGroups;
+    public RotatingMap<String, Set<String>> cachedGroups;
+    
+    private final ShellCommandRunner shellCommandRunner;
+  
+    private long timeoutMs;
+    private volatile long lastRotationMs;
+
+    public ShellBasedGroupsMapping() {
+        this(new ShellCommandRunnerImpl());
+    }
+    
+    @VisibleForTesting
+    ShellBasedGroupsMapping(ShellCommandRunner shellCommandRunner) {
+        this.shellCommandRunner = shellCommandRunner;
+    }
 
     /**
      * Invoked once immediately after construction
@@ -44,10 +62,11 @@ public class ShellBasedGroupsMapping implements
      */
     @Override
     public void prepare(Map<String, Object> topoConf) {
-        int timeout = ObjectReader.getInt(topoConf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS));
-        cachedGroups = new TimeCacheMap<>(timeout);
+        timeoutMs = TimeUnit.SECONDS.toMillis(ObjectReader.getInt(topoConf.get(Config.STORM_GROUP_MAPPING_SERVICE_CACHE_DURATION_SECS)));
+        lastRotationMs = Time.currentTimeMillis();
+        cachedGroups = new RotatingMap<>(2);
     }
-
+    
     /**
      * Returns list of groups for a user
      *
@@ -57,6 +76,7 @@ public class ShellBasedGroupsMapping implements
     @Override
     public Set<String> getGroups(String user) throws IOException {
         synchronized(this) {
+            rotateIfNeeded();
             if (cachedGroups.containsKey(user)) {
                 return cachedGroups.get(user);
             }
@@ -69,6 +89,19 @@ public class ShellBasedGroupsMapping implements
         }
         return groups;
     }
+   
+    private void rotateIfNeeded() {
+        long nowMs = Time.currentTimeMillis();
+        if (nowMs >= lastRotationMs + timeoutMs) {
+            //Rotate once per timeout period that has passed since last time this was called.
+            //This is necessary since this method may be called at arbitrary intervals.
+            int rotationsToDo = (int)((nowMs - lastRotationMs) / timeoutMs);
+            for (int i = 0; i < rotationsToDo; i++) {
+                cachedGroups.rotate();
+            }
+            lastRotationMs = nowMs;
+        }
+    }
 
     /**
      * Get the current user's group list from Unix by running the command 'groups'
@@ -77,21 +110,19 @@ public class ShellBasedGroupsMapping implements
      * @return the groups set that the <code>user</code> belongs to
      * @throws IOException if encounter any error when running the command
      */
-    private static Set<String> getUnixGroups(final String user) throws IOException {
+    private Set<String> getUnixGroups(final String user) throws IOException {
         String result;
         try {
-            result = ShellUtils.execCommand(ShellUtils.getGroupsForUserCommand(user));
+            result = shellCommandRunner.execCommand(ShellUtils.getGroupsForUserCommand(user));
         } catch (ExitCodeException e) {
             // if we didn't get the group - just return empty list;
-            LOG.debug("unable to get groups for user " + user + ".ShellUtils command failed with exit code "+ e.getExitCode());
+            LOG.debug("Unable to get groups for user " + user + ". ShellUtils command failed with exit code "+ e.getExitCode());
             return new HashSet<>();
         }
 
-        StringTokenizer tokenizer =
-            new StringTokenizer(result, ShellUtils.TOKEN_SEPARATOR_REGEX);
         Set<String> groups = new HashSet<>();
-        while (tokenizer.hasMoreTokens()) {
-            groups.add(tokenizer.nextToken());
+        for (String group : result.split(shellCommandRunner.getTokenSeparatorRegex())) {
+            groups.add(group);
         }
         return groups;
     }

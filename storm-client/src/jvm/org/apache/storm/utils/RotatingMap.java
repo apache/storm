@@ -67,7 +67,7 @@ public class RotatingMap<K, V> {
 
     public RotatingMap(int numBuckets) {
         this(numBuckets, null);
-    }   
+    }
     
     public Map<K, V> rotate() {
         Map<K, V> dead = _buckets.removeLast();
