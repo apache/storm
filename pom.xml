@@ -323,6 +323,7 @@
         <j2html.version>1.0.0</j2html.version>
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
+        <jaxb-version>2.3.0</jaxb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
@@ -1049,6 +1050,11 @@
                 <groupId>com.github.ben-manes.caffeine</groupId>
                 <artifactId>caffeine</artifactId>
                 <version>${caffeine.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb-version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

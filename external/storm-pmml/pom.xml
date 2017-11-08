@@ -71,6 +71,11 @@
             <artifactId>pmml-evaluator</artifactId>
             <version>${jpmml.version}</version>
         </dependency>
+        <!-- JAXB api -->
+        <dependency>
+            <groupId>javax.xml.bind</groupId>
+            <artifactId>jaxb-api</artifactId>
+        </dependency>
     </dependencies>
 
     <build>
