@@ -61,6 +61,8 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.KillOptions;
 import org.apache.storm.generated.ListBlobsResult;
 import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.Nimbus.Iface;
+import org.apache.storm.generated.Nimbus.Processor;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.generated.NotAliveException;
 import org.apache.storm.generated.OwnerResourceSummary;
@@ -75,8 +77,6 @@ import org.apache.storm.generated.SupervisorPageInfo;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyPageInfo;
-import org.apache.storm.generated.Nimbus.Iface;
-import org.apache.storm.generated.Nimbus.Processor;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -93,12 +93,12 @@ import org.apache.storm.testing.TrackedTopology;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.DRPCClient;
 import org.apache.storm.utils.NimbusClient;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.StormCommonInstaller;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -109,10 +109,10 @@ import org.slf4j.LoggerFactory;
  * A stand alone storm cluster that runs inside a single process.
  * It is intended to be used for testing.  Both internal testing for
  * Apache Storm itself and for people building storm topologies.
- * 
+ *<p>
  * LocalCluster is an AutoCloseable so if you are using it in tests you can use
  * a try block to be sure it is shut down.
- * 
+ * </p>
  * try (LocalCluster cluster = new LocalCluster()) {
  *     // Do some tests
  * }
@@ -159,7 +159,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
         
         /**
-         * Set the number of slots/ports each supervisor should have
+         * Set the number of slots/ports each supervisor should have.
          */
         public Builder withPortsPerSupervisor(int portsPerSupervisor) {
             if (portsPerSupervisor < 0) {
@@ -180,7 +180,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
         
         /**
-         * Add an single key/value config to the daemon conf
+         * Add an single key/value config to the daemon conf.
          */
         public Builder withDaemonConf(String key, Object value) {
             this.daemonConf.put(key, value);
@@ -330,6 +330,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         }
         
         /**
+         * Builds a new LocalCluster.
          * @return the LocalCluster
          * @throws Exception on any one of many different errors.
          * This is intended for testing so yes it is ugly and throws Exception...
@@ -340,6 +341,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
     
     private static class TrackedStormCommon extends StormCommon {
+
         private final String id;
         public TrackedStormCommon(String id) {
             this.id = id;
@@ -367,7 +369,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private final SimulatedTime time;
     
     /**
-     * Create a default LocalCluster 
+     * Create a default LocalCluster.
      * @throws Exception on any error
      */
     public LocalCluster() throws Exception {
@@ -375,7 +377,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
     
     /**
-     * Create a LocalCluster that connects to an existing Zookeeper instance
+     * Create a LocalCluster that connects to an existing Zookeeper instance.
      * @param zkHost the host for ZK
      * @param zkPort the port for ZK
      * @throws Exception on any error
@@ -480,7 +482,13 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             }
         }
     }
-    
+
+    /**
+     * Checks if Nimbuses have elected a leader.
+     * @return boolean
+     * @throws AuthorizationException
+     * @throws TException
+     */
     private boolean hasLeader() throws AuthorizationException, TException {
         ClusterSummary summary = getNimbus().getClusterInfo();
         if (summary.is_set_nimbuses()) {
@@ -508,6 +516,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
     
     public static final KillOptions KILL_NOW = new KillOptions();
+
     static {
         KILL_NOW.set_wait_secs(0);
     }
@@ -920,7 +929,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
-    public List<ProfileRequest> getComponentPendingProfileActions(String id, String component_id, ProfileAction action)
+    public List<ProfileRequest> getComponentPendingProfileActions(String id, String componentId, ProfileAction action)
             throws TException {
         // TODO Auto-generated method stub
         throw new RuntimeException("NOT IMPLEMENTED YET");

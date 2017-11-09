@@ -25,7 +25,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.DefaultParser;
@@ -108,7 +107,7 @@ public class CaptureLoad {
         //Lets use the number of actually scheduled workers as a way to bridge RAS and non-RAS
         int numWorkers = tpinfo.get_num_workers();
         if (savedTopoConf.containsKey(Config.TOPOLOGY_WORKERS)) {
-            numWorkers = Math.max(numWorkers, ((Number)savedTopoConf.get(Config.TOPOLOGY_WORKERS)).intValue());
+            numWorkers = Math.max(numWorkers, ((Number) savedTopoConf.get(Config.TOPOLOGY_WORKERS)).intValue());
         }
         savedTopoConf.put(Config.TOPOLOGY_WORKERS, numWorkers);
 
@@ -372,26 +371,24 @@ public class CaptureLoad {
 
     //ResourceUtils.java is not a available on the classpath to let us parse out the resources we want.
     // So we have copied and pasted some of the needed methods here. (with a few changes to logging)
-    static Map<String, Map<String, Double>> getBoltsResources(StormTopology topology,
-                                                                     Map<String, Object> topologyConf) {
+    static Map<String, Map<String, Double>> getBoltsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Double>> boltResources = new HashMap<>();
         if (topology.get_bolts() != null) {
             for (Map.Entry<String, Bolt> bolt : topology.get_bolts().entrySet()) {
                 Map<String, Double> topologyResources = parseResources(bolt.getValue().get_common().get_json_conf());
-                checkIntialization(topologyResources, bolt.getValue().toString(), topologyConf);
+                checkInitialization(topologyResources, bolt.getValue().toString(), topologyConf);
                 boltResources.put(bolt.getKey(), topologyResources);
             }
         }
         return boltResources;
     }
 
-    static Map<String, Map<String, Double>> getSpoutsResources(StormTopology topology,
-                                                                      Map<String, Object> topologyConf) {
+    static Map<String, Map<String, Double>> getSpoutsResources(StormTopology topology, Map<String, Object> topologyConf) {
         Map<String, Map<String, Double>> spoutResources = new HashMap<>();
         if (topology.get_spouts() != null) {
             for (Map.Entry<String, SpoutSpec> spout : topology.get_spouts().entrySet()) {
                 Map<String, Double> topologyResources = parseResources(spout.getValue().get_common().get_json_conf());
-                checkIntialization(topologyResources, spout.getValue().toString(), topologyConf);
+                checkInitialization(topologyResources, spout.getValue().toString(), topologyConf);
                 spoutResources.put(spout.getKey(), topologyResources);
             }
         }
@@ -430,37 +427,40 @@ public class CaptureLoad {
         return topologyResources;
     }
 
-    static void checkIntialization(Map<String, Double> topologyResources, String com,
-                                          Map<String, Object> topologyConf) {
-        checkInitMem(topologyResources, com, topologyConf);
-        checkInitCpu(topologyResources, com, topologyConf);
+    /**
+     * Checks if the topology's resource requirements are initialized.
+     * Will modify topologyResources by adding the appropriate defaults
+     * @param topologyResources map of resouces requirements
+     * @param componentId component for which initialization is being conducted
+     * @param topologyConf topology configuration
+     * @throws Exception on any error
+     */
+    public static void checkInitialization(Map<String, Double> topologyResources, String componentId, Map topologyConf) {
+        StringBuilder msgBuilder = new StringBuilder();
+
+        for (String resourceName : topologyResources.keySet()) {
+            msgBuilder.append(checkInitResource(topologyResources, topologyConf, resourceName));
+        }
+
+        if (msgBuilder.length() > 0) {
+            String resourceDefaults = msgBuilder.toString();
+            LOG.debug(
+                    "Unable to extract resource requirement for Component {} \n Resources : {}",
+                    componentId, resourceDefaults);
+        }
     }
 
-    static void checkInitMem(Map<String, Double> topologyResources, String com,
-                                     Map<String, Object> topologyConf) {
-        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
-            Double onHeap = ObjectReader.getDouble(
-                topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), null);
-            if (onHeap != null) {
-                topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeap);
+    private static String checkInitResource(Map<String, Double> topologyResources, Map topologyConf, String resourceName) {
+        StringBuilder msgBuilder = new StringBuilder();
+        if (topologyResources.containsKey(resourceName)) {
+            Double resourceValue = (Double) topologyConf.getOrDefault(resourceName, null);
+            if (resourceValue != null) {
+                topologyResources.put(resourceName, resourceValue);
+                msgBuilder.append(resourceName.substring(resourceName.lastIndexOf(".")) + " has been set to " + resourceValue);
             }
         }
-        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)) {
-            Double offHeap = ObjectReader.getDouble(
-                topologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB), null);
-            if (offHeap != null) {
-                topologyResources.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, offHeap);
-            }
-        }
+
+        return msgBuilder.toString();
     }
 
-    static void checkInitCpu(Map<String, Double> topologyResources, String com,
-                                     Map<String, Object> topologyConf) {
-        if (!topologyResources.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
-            Double cpu = ObjectReader.getDouble(topologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), null);
-            if (cpu != null) {
-                topologyResources.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, cpu);
-            }
-        }
-    }
 }

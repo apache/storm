@@ -171,18 +171,16 @@ public interface ISchedulingState {
      * @param ws the slot to put it in
      * @param exec the executor to investigate
      * @param td the topology detains for this executor
+     * @param resourcesAvailable all the available resources
      * @param maxHeap the maximum heap size for ws
-     * @param memoryAvailable the amount of memory available
-     * @param cpuAvailable the amount of CPU available
      * @return true it fits else false
      */
     boolean wouldFit(
         WorkerSlot ws,
         ExecutorDetails exec,
         TopologyDetails td,
-        double maxHeap,
-        double memoryAvailable,
-        double cpuAvailable);
+        Map<String, Double> resourcesAvailable,
+        double maxHeap);
 
     /** get the current assignment for the topology. */
     SchedulerAssignment getAssignmentById(String topologyId);
@@ -206,6 +204,9 @@ public interface ISchedulingState {
 
     /** Get all the supervisors. */
     Map<String, SupervisorDetails> getSupervisors();
+
+    /** Get all scheduled resources for node **/
+    Map<String, Double> getAllScheduledResourcesForNode(String nodeId);
 
     /** Get the total amount of CPU resources in cluster. */
     double getClusterTotalCpuResource();

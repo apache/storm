@@ -18,9 +18,10 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import com.google.common.annotations.VisibleForTesting;
+
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -32,16 +33,14 @@ import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Component;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
-
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy implements IStrategy {
-
-    private static final Logger LOG = LoggerFactory.getLogger(BaseResourceAwareStrategy.class);
+public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy implements IStrategy {
+    private static final Logger LOG = LoggerFactory.getLogger(GenericResourceAwareStrategy.class);
 
     @Override
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
@@ -53,7 +52,7 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         }
         Collection<ExecutorDetails> unassignedExecutors =
                 new HashSet<>(this.cluster.getUnassignedExecutors(td));
-        LOG.debug("ExecutorsNeedScheduling: {}", unassignedExecutors);
+        LOG.info("ExecutorsNeedScheduling: {}", unassignedExecutors);
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
         List<Component> spouts = this.getSpouts(td);
 
@@ -68,7 +67,6 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         Collection<ExecutorDetails> executorsNotScheduled = new HashSet<>(unassignedExecutors);
         List<String> favoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_FAVORED_NODES);
         List<String> unFavoredNodes = (List<String>) td.getConf().get(Config.TOPOLOGY_SCHEDULER_UNFAVORED_NODES);
-        final List<ObjectResources> sortedNodes = this.sortAllNodes(td, null, favoredNodes, unFavoredNodes);
 
         for (ExecutorDetails exec : orderedExecutors) {
             LOG.debug(
@@ -76,13 +74,16 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
                     exec,
                     td.getExecutorToComponent().get(exec),
                     td.getTaskResourceReqList(exec));
+            final List<ObjectResources> sortedNodes = this.sortAllNodes(td, exec, favoredNodes, unFavoredNodes);
+
             scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
         }
 
         executorsNotScheduled.removeAll(scheduledTasks);
-        LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
+        LOG.error("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
+            final List<ObjectResources> sortedNodes = this.sortAllNodes(td, exec, favoredNodes, unFavoredNodes);
             scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
         }
 
@@ -104,6 +105,7 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         return result;
     }
 
+
     /**
      * Sort objects by the following two criteria. 1) the number executors of the topology that needs
      * to be scheduled is already on the object (node or rack) in descending order. The reasoning to
@@ -112,12 +114,17 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
      * availability percentage of a rack in descending order We calculate the resource availability
      * percentage by dividing the resource availability of the object (node or rack) by the resource
      * availability of the entire rack or cluster depending on if object references a node or a rack.
+     * How this differs from the DefaultResourceAwareStrategy is that the percentage boosts the node or rack
+     * if it is requested by the executor that the sorting is being done for and pulls it down if it is not.
      * By doing this calculation, objects (node or rack) that have exhausted or little of one of the
      * resources mentioned above will be ranked after racks that have more balanced resource
-     * availability. So we will be less likely to pick a rack that have a lot of one resource but a
-     * low amount of another.
+     * availability and nodes or racks that have resources that are not requested will be ranked below
+     * . So we will be less likely to pick a rack that have a lot of one resource but a
+     * low amount of another and have a lot of resources that are not requested by the executor.
      *
      * @param allResources contains all individual ObjectResources as well as cumulative stats
+     * @param exec executor for which the sorting is done
+     * @param topologyDetails topologyDetails for the above executor
      * @param existingScheduleFunc a function to get existing executors already scheduled on this object
      * @return a sorted list of ObjectResources
      */
@@ -126,33 +133,30 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
             final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
             final ExistingScheduleFunc existingScheduleFunc) {
 
-        for (ObjectResources objectResources : allResources.objectResources) {
+        Map<String, Double> requestedResources = topologyDetails.getTotalResources(exec);
+        AllResources affinityBasedAllResources = new AllResources(allResources);
+        for (ObjectResources objectResources : affinityBasedAllResources.objectResources) {
             StringBuilder sb = new StringBuilder();
-            if (ResourceUtils.getMinValuePresentInResourceMap(objectResources.availableResources) <= 0) {
-                objectResources.effectiveResources = 0.0;
-            } else {
-                List<Double> values = new LinkedList<>();
+            List<Double> values = new LinkedList<>();
 
-                Map<String, Double> percentageTotal = ResourceUtils.getPercentageOfTotalResourceMap(
-                        objectResources.availableResources, allResources.availableResourcesOverall
-                );
-                for(Map.Entry<String, Double> percentageEntry : percentageTotal.entrySet()) {
-                    values.add(percentageEntry.getValue());
-                    sb.append(String.format("%s %f(%f%%) ", percentageEntry.getKey(),
-                            objectResources.availableResources.get(percentageEntry.getKey()),
-                            percentageEntry.getValue())
-                    );
-
+            for (Map.Entry<String, Double> availableResourcesEntry : objectResources.availableResources.entrySet()) {
+                if (!requestedResources.containsKey(availableResourcesEntry.getKey())) {
+                    objectResources.availableResources.put(availableResourcesEntry.getKey(), -1.0 * availableResourcesEntry.getValue());
                 }
-
-                objectResources.effectiveResources = Collections.min(values);
             }
-            LOG.debug(
-                    "{}: Avail [ {} ] Total [ {} ] effective resources: {}",
-                    objectResources.id,
-                    sb.toString(),
-                    objectResources.totalResources,
-                    objectResources.effectiveResources);
+
+            Map<String, Double> percentageTotal = ResourceUtils.getPercentageOfTotalResourceMap(
+                    objectResources.availableResources, allResources.availableResourcesOverall
+            );
+            for(Map.Entry<String, Double> percentageEntry : percentageTotal.entrySet()) {
+                values.add(percentageEntry.getValue());
+                sb.append(String.format("%s %f(%f%%) ", percentageEntry.getKey(),
+                        objectResources.availableResources.get(percentageEntry.getKey()),
+                        percentageEntry.getValue())
+                );
+
+            }
+
         }
 
         TreeSet<ObjectResources> sortedObjectResources =
@@ -164,30 +168,25 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
                     } else if (execsScheduled1 < execsScheduled2) {
                         return 1;
                     } else {
-                        if (o1.effectiveResources > o2.effectiveResources) {
+                        Collection<Double> o1Values = ResourceUtils.getPercentageOfTotalResourceMap(
+                                o1.availableResources, allResources.availableResourcesOverall).values();
+                        Collection<Double> o2Values = ResourceUtils.getPercentageOfTotalResourceMap(
+                                o2.availableResources, allResources.availableResourcesOverall).values();
+
+                        double o1Avg = ResourceUtils.avg(o1Values);
+                        double o2Avg = ResourceUtils.avg(o2Values);
+
+                        if (o1Avg > o2Avg) {
                             return -1;
-                        } else if (o1.effectiveResources < o2.effectiveResources) {
+                        } else if (o1Avg < o2Avg) {
                             return 1;
                         } else {
-                            Collection<Double> o1Values = ResourceUtils.getPercentageOfTotalResourceMap(
-                                    o1.availableResources, allResources.availableResourcesOverall).values();
-                            Collection<Double> o2Values = ResourceUtils.getPercentageOfTotalResourceMap(
-                                    o2.availableResources, allResources.availableResourcesOverall).values();
-
-                            double o1Avg = ResourceUtils.avg(o1Values);
-                            double o2Avg = ResourceUtils.avg(o2Values);
-
-                            if (o1Avg > o2Avg) {
-                                return -1;
-                            } else if (o1Avg < o2Avg) {
-                                return 1;
-                            } else {
-                                return o1.id.compareTo(o2.id);
-                            }
+                            return o1.id.compareTo(o2.id);
                         }
+
                     }
                 });
-        sortedObjectResources.addAll(allResources.objectResources);
+        sortedObjectResources.addAll(affinityBasedAllResources.objectResources);
         LOG.debug("Sorted Object Resources: {}", sortedObjectResources);
         return sortedObjectResources;
     }

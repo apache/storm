@@ -26,11 +26,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,14 +49,13 @@ public class RAS_Node {
     // {TopologyId -> {WorkerId -> {Executors}}}
     private Map<String, Map<String, Collection<ExecutorDetails>>> topIdToUsedSlots = new HashMap<>();
 
-    private final double totalMemory;
-    private final double totalCpu;
     private final String nodeId;
     private String hostname;
     private boolean isAlive;
     private SupervisorDetails sup;
     private final Cluster cluster;
     private final Set<WorkerSlot> originallyFreeSlots;
+    private final Map<String, Double> totalResources;
 
     public RAS_Node(
         String nodeId,
@@ -87,8 +89,12 @@ public class RAS_Node {
             this.sup = sup;
         }
 
-        totalMemory = isAlive ? getTotalMemoryResources() : 0.0;
-        totalCpu = isAlive ? getTotalCpuResources() : 0.0;
+        if (isAlive) {
+            totalResources = getTotalResources();
+        } else {
+            totalResources = new HashMap<>();
+        }
+
         HashSet<String> freeById = new HashSet<>(slots.keySet());
         if (assignmentMap != null) {
             for (Map<String, Collection<ExecutorDetails>> assignment : assignmentMap.values()) {
@@ -361,9 +367,9 @@ public class RAS_Node {
             ws,
             exec,
             td,
-            td.getTopologyWorkerMaxHeapSize(),
-            getAvailableMemoryResources(),
-            getAvailableCpuResources());
+            this.getTotalAvailableResources(),
+            td.getTopologyWorkerMaxHeapSize()
+            );
     }
 
     @Override
@@ -424,8 +430,52 @@ public class RAS_Node {
      * @return the available memory for this node
      */
     public Double getAvailableMemoryResources() {
-        double used = cluster.getScheduledMemoryForNode(nodeId);
-        return totalMemory - used;
+        Map<String, Double> allAvailableResources = getTotalAvailableResources();
+        return allAvailableResources.getOrDefault(
+                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
+    }
+
+    /**
+     * Gets total resources for this node.
+     *
+     * @return Map<String, Double> of all resources
+     */
+    public Map<String, Double> getTotalResources() {
+        if (sup != null) {
+            return sup.getTotalResources();
+        } else {
+            return new HashMap<>();
+        }
+    }
+
+    /**
+     * Gets all available resources for this node.
+     *
+     * @return Map<String, Double> of all resources
+     */
+    public Map<String, Double> getTotalAvailableResources() {
+        if (sup != null) {
+            Map<String, Double> totalResources = sup.getTotalResources();
+            Map<String, Double> scheduledResources = cluster.getAllScheduledResourcesForNode(sup.getId());
+            Map<String, Double> availableResources = new HashMap<>();
+            for (Entry resource : totalResources.entrySet()) {
+                if(resource.getKey() == Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME) {
+                    availableResources.put(resource.getKey().toString(),
+                            ObjectReader.getDouble(resource.getValue())
+                                    - (scheduledResources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0)
+                                    + scheduledResources.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0))
+                    );
+                    continue;
+                }
+                availableResources.put(resource.getKey().toString(),
+                        ObjectReader.getDouble(resource.getValue())
+                                - scheduledResources.getOrDefault(resource.getKey(), 0.0));
+
+            }
+            return availableResources;
+        } else {
+            return new HashMap<>();
+        }
     }
 
     /**
@@ -447,7 +497,7 @@ public class RAS_Node {
      * @return the available cpu for this node
      */
     public double getAvailableCpuResources() {
-        return totalCpu - cluster.getScheduledCpuForNode(nodeId);
+        return getTotalAvailableResources().getOrDefault(Constants.COMMON_CPU_RESOURCE_NAME, 0.0);
     }
 
     /**

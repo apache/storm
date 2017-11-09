@@ -15,8 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.coordination;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.coordination.CoordinatedBolt.SourceArgs;
 import org.apache.storm.generated.GlobalStreamId;
@@ -32,12 +41,7 @@ import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.InputDeclarer;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+
 
 public class BatchSubtopologyBuilder {
     Map<String, Component> _bolts = new HashMap<String, Component>();
@@ -76,7 +80,9 @@ public class BatchSubtopologyBuilder {
     
     private BoltDeclarer setBolt(String id, IRichBolt bolt, Number parallelism) {
         Integer p = null;
-        if(parallelism!=null) p = parallelism.intValue();
+        if (parallelism != null) {
+            p = parallelism.intValue();
+        }
         Component component = new Component(bolt, p);
         _bolts.put(id, component);
         return new BoltDeclarerImpl(component);
@@ -84,18 +90,18 @@ public class BatchSubtopologyBuilder {
     
     public void extendTopology(TopologyBuilder builder) {
         BoltDeclarer declarer = builder.setBolt(_masterId, new CoordinatedBolt(_masterBolt.bolt), _masterBolt.parallelism);
-        for(InputDeclaration decl: _masterBolt.declarations) {
+        for (InputDeclaration decl: _masterBolt.declarations) {
             decl.declare(declarer);
         }
-        for(Map<String, Object> conf: _masterBolt.componentConfs) {
+        for (Map<String, Object> conf: _masterBolt.componentConfs) {
             declarer.addConfigurations(conf);
         }
-        for(String id: _bolts.keySet()) {
+        for (String id: _bolts.keySet()) {
             Component component = _bolts.get(id);
             Map<String, SourceArgs> coordinatedArgs = new HashMap<String, SourceArgs>();
-            for(String c: componentBoltSubscriptions(component)) {
+            for (String c: componentBoltSubscriptions(component)) {
                 SourceArgs source;
-                if(c.equals(_masterId)) {
+                if (c.equals(_masterId)) {
                     source = SourceArgs.single();
                 } else {
                     source = SourceArgs.all();
@@ -112,13 +118,13 @@ public class BatchSubtopologyBuilder {
             for (SharedMemory request: component.sharedMemory) {
                 input.addSharedMemory(request);
             }
-            for(Map<String, Object> conf: component.componentConfs) {
+            for (Map<String, Object> conf: component.componentConfs) {
                 input.addConfigurations(conf);
             }
-            for(String c: componentBoltSubscriptions(component)) {
+            for (String c: componentBoltSubscriptions(component)) {
                 input.directGrouping(c, Constants.COORDINATED_STREAM_ID);
             }
-            for(InputDeclaration d: component.declarations) {
+            for (InputDeclaration d: component.declarations) {
                 d.declare(input);
             }
         }        
@@ -126,7 +132,7 @@ public class BatchSubtopologyBuilder {
         
     private Set<String> componentBoltSubscriptions(Component component) {
         Set<String> ret = new HashSet<String>();
-        for(InputDeclaration d: component.declarations) {
+        for (InputDeclaration d: component.declarations) {
             ret.add(d.getComponent());
         }
         return ret;
@@ -450,8 +456,32 @@ public class BatchSubtopologyBuilder {
         }
 
         @Override
+        public Map getRASConfiguration() {
+            for (Map<String, Object> conf : _component.componentConfs) {
+                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
+                    return conf;
+                }
+            }
+            Map<String, Object> newConf = new HashMap<>();
+            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
+            _component.componentConfs.add(newConf);
+            return newConf;
+        }
+
+        @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
             _component.sharedMemory.add(request);
+            return this;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public BoltDeclarer addResource(String resourceName, Number resourceValue) {
+            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+
+            resourcesMap.put(resourceName, resourceValue.doubleValue());
+
+            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }

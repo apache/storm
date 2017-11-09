@@ -496,6 +496,8 @@ struct WorkerResources {
     3: optional double cpu;
     4: optional double shared_mem_on_heap; //This is just for accounting mem_on_heap should be used for enforcement
     5: optional double shared_mem_off_heap; //This is just for accounting mem_off_heap should be used for enforcement
+    6: optional map<string, double> resources; // Generic resources Map
+    7: optional map<string, double> shared_resources; // Shared Generic resources Map
 }
 struct Assignment {
     1: required string master_code_dir;
