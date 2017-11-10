@@ -20,6 +20,7 @@ import com.google.common.annotations.VisibleForTesting;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.NavigableSet;
+import java.util.NoSuchElementException;
 import java.util.TreeSet;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -64,6 +65,27 @@ public class OffsetManager {
 
     public void addToEmitMsgs(long offset) {
         this.emittedOffsets.add(offset);                  // O(Log N)
+    }
+    
+    public int getNumUncommittedOffsets() {
+        return this.emittedOffsets.size();
+    }
+    
+    /**
+     * Gets the offset of the nth emitted message after the committed offset. 
+     * Example: If the committed offset is 0 and offsets 1, 2, 8, 10 have been emitted,
+     * getNthUncommittedOffsetAfterCommittedOffset(3) returns 8.
+     * 
+     * @param index The index of the message to get the offset for
+     * @return The offset
+     * @throws NoSuchElementException if the index is out of range
+     */
+    public long getNthUncommittedOffsetAfterCommittedOffset(int index) {
+        Iterator<Long> offsetIter = emittedOffsets.iterator();
+        for (int i = 0; i < index - 1; i++) {
+            offsetIter.next();
+        }
+        return offsetIter.next();
     }
 
     /**

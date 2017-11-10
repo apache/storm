@@ -81,22 +81,19 @@ public class KafkaSpoutRetryLimitTest {
         try (SimulatedTime simulatedTime = new SimulatedTime()) {
             KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, Collections.singleton(partition));
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
-            List<ConsumerRecord<String, String>> recordsForPartition = new ArrayList<>();
             int lastOffset = 3;
-            for (int i = 0; i <= lastOffset; i++) {
-                recordsForPartition.add(new ConsumerRecord<>(partition.topic(), partition.partition(), i, "key", "value"));
-            }
-            records.put(partition, recordsForPartition);
+            int numRecords = lastOffset + 1;
+            records.put(partition, SpoutWithMockedConsumerSetupHelper.createRecords(partition, 0, numRecords));
             
             when(consumerMock.poll(anyLong()))
                 .thenReturn(new ConsumerRecords<>(records));
             
-            for (int i = 0; i < recordsForPartition.size(); i++) {
+            for (int i = 0; i < numRecords; i++) {
                 spout.nextTuple();
             }
             
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(recordsForPartition.size())).emit(anyString(), anyList(), messageIds.capture());
+            verify(collectorMock, times(numRecords)).emit(anyString(), anyList(), messageIds.capture());
             
             for (KafkaSpoutMessageId messageId : messageIds.getAllValues()) {
                 spout.fail(messageId);
