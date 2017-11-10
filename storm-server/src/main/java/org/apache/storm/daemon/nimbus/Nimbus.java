@@ -958,8 +958,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             List<DataPoint> metrics = new ArrayList<>();
             metrics.add(new DataPoint("slotsTotal", sup.get_num_workers()));
             metrics.add(new DataPoint("slotsUsed", sup.get_num_used_workers()));
-            metrics.add(new DataPoint("totalMem", sup.get_total_resources().get(Config.SUPERVISOR_MEMORY_CAPACITY_MB)));
-            metrics.add(new DataPoint("totalCpu", sup.get_total_resources().get(Config.SUPERVISOR_CPU_CAPACITY)));
+            metrics.add(new DataPoint("totalMem", sup.get_total_resources().get(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME)));
+            metrics.add(new DataPoint("totalCpu", sup.get_total_resources().get(Constants.COMMON_CPU_RESOURCE_NAME)));
             metrics.add(new DataPoint("usedMem", sup.get_used_mem()));
             metrics.add(new DataPoint("usedCpu", sup.get_used_cpu()));
             ret.put(info, metrics);
