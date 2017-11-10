@@ -15,9 +15,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.flux.model;
 
-import org.apache.storm.Config;
+package org.apache.storm.flux.model;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -49,13 +48,17 @@ public class ObjectDef {
         return constructorArgs;
     }
 
+    /**
+     * Sets the arguments for the constructor and checks for references.
+     * @param constructorArgs Constructor arguments
+     */
     public void setConstructorArgs(List<Object> constructorArgs) {
 
         List<Object> newVal = new ArrayList<Object>();
-        for(Object obj : constructorArgs){
-            if(obj instanceof LinkedHashMap){
+        for (Object obj : constructorArgs) {
+            if (obj instanceof LinkedHashMap) {
                 Map map = (Map)obj;
-                if(map.containsKey("ref") && map.size() == 1) {
+                if (map.containsKey("ref") && map.size() == 1) {
                     newVal.add(new BeanReference((String) map.get("ref")));
                     this.hasReferences = true;
                 } else if (map.containsKey("reflist") && map.size() == 1) {
@@ -71,11 +74,11 @@ public class ObjectDef {
         this.constructorArgs = newVal;
     }
 
-    public boolean hasConstructorArgs(){
+    public boolean hasConstructorArgs() {
         return this.constructorArgs != null && this.constructorArgs.size() > 0;
     }
 
-    public boolean hasReferences(){
+    public boolean hasReferences() {
         return this.hasReferences;
     }
 
@@ -115,12 +118,16 @@ public class ObjectDef {
         return this.factoryArgs;
     }
 
+    /**
+     * Sets factory method arguments and checks for references.
+     * @param factoryArgs factory method arguments
+     */
     public void setFactoryArgs(List<Object> factoryArgs) {
         List<Object> newVal = new ArrayList<Object>();
-        for(Object obj : constructorArgs){
-            if(obj instanceof LinkedHashMap){
+        for (Object obj : constructorArgs) {
+            if (obj instanceof LinkedHashMap) {
                 Map map = (Map)obj;
-                if(map.containsKey("ref") && map.size() == 1) {
+                if (map.containsKey("ref") && map.size() == 1) {
                     newVal.add(new BeanReference((String) map.get("ref")));
                     this.hasReferences = true;
                 } else if (map.containsKey("reflist") && map.size() == 1) {

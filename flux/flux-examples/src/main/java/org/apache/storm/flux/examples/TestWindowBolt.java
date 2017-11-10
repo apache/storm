@@ -15,7 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.flux.examples;
+
+import java.util.Map;
 
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -24,8 +27,6 @@ import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.windowing.TupleWindow;
-
-import java.util.Map;
 
 public class TestWindowBolt extends BaseWindowedBolt {
     private OutputCollector collector;
