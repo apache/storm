@@ -130,7 +130,11 @@ public class TestBolt extends BaseBasicBolt {
     }
 
     // Factory methods
-    public static TestBolt factory() {
-        return new TestBolt(TestEnum.FOO);
+    public static TestBolt newInstance() {
+        return newInstance(TestEnum.FOO);
+    }
+
+    public static TestBolt newInstance(TestEnum te){
+        return new TestBolt(te);
     }
 }
