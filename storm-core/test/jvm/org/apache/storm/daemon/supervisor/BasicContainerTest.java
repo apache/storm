@@ -370,7 +370,7 @@ public class BasicContainerTest {
         final String workerConf = ContainerTest.asAbsPath(log4jdir, "worker.xml");
         final String workerRoot = ContainerTest.asAbsPath(stormLocal, "workers", workerId);
         final String workerTmpDir = ContainerTest.asAbsPath(workerRoot, "tmp");
-        
+
         final StormTopology st = new StormTopology();
         st.set_spouts(new HashMap<String, SpoutSpec>());
         st.set_bolts(new HashMap<String, Bolt>());
@@ -407,7 +407,7 @@ public class BasicContainerTest {
             assertListEquals(Arrays.asList(
                     "java",
                     "-cp",
-                    "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                    "FRAMEWORK_CP" + File.pathSeparator + stormjar.getAbsolutePath(),
                     "-Dlogging.sensitivity=S3",
                     "-Dlogfile.name=worker.log",
                     "-Dstorm.home=" + stormHome,
@@ -416,7 +416,7 @@ public class BasicContainerTest {
                     "-Dworker.id=" + workerId,
                     "-Dworker.port=" + port,
                     "-Dstorm.log.dir=" + stormLogDir,
-                    "-Dlog4j.configurationFile=" + workerConf,
+                    "-Dlog4j.configurationFile=" + prependFilePrefixIfOnWindows(workerConf),
                     "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
                     "-Dstorm.local.dir=" + stormLocal,
                     "org.apache.storm.LogWriter",
@@ -430,7 +430,7 @@ public class BasicContainerTest {
                     "-Dworker.id=" + workerId,
                     "-Dworker.port=" + port,
                     "-Dstorm.log.dir=" + stormLogDir,
-                    "-Dlog4j.configurationFile=" + workerConf,
+                    "-Dlog4j.configurationFile=" + prependFilePrefixIfOnWindows(workerConf),
                     "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
                     "-Dstorm.local.dir=" + stormLocal,
                     "-Dtesting=true",
@@ -439,7 +439,7 @@ public class BasicContainerTest {
                     "-Dstorm.options=",
                     "-Djava.io.tmpdir="+workerTmpDir,
                     "-cp",
-                    "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                    "FRAMEWORK_CP" + File.pathSeparator + stormjar.getAbsolutePath(),
                     "org.apache.storm.daemon.worker", 
                     topoId, 
                     "SUPERVISOR",
@@ -486,5 +486,13 @@ public class BasicContainerTest {
         
         assertListEquals(Collections.<String>emptyList(), 
                 mc.substituteChildopts(null));
+    }
+
+
+    private String prependFilePrefixIfOnWindows(String path) {
+        if(Utils.IS_ON_WINDOWS) {
+            return "file:///" + path;
+        }
+        return path;
     }
 }

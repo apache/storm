@@ -62,15 +62,15 @@ public class AsyncLocalizerTest {
         final String jarKey = topoId + "-stormjar.jar";
         final String codeKey = topoId + "-stormcode.ser";
         final String confKey = topoId + "-stormconf.ser";
-        final String stormLocal = "/tmp/storm-local/";
-        final String stormRoot = stormLocal+topoId+"/";
+        final String stormLocalAbsolutePath = new File("/tmp/storm-local/").getAbsolutePath();
+        final String stormRoot = stormLocalAbsolutePath+topoId+"/";
         final File fStormRoot = new File(stormRoot);
         ClientBlobStore blobStore = mock(ClientBlobStore.class);
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.SUPERVISOR_BLOBSTORE, ClientBlobStore.class.getName());
         conf.put(Config.STORM_PRINCIPAL_TO_LOCAL_PLUGIN, DefaultPrincipalToLocal.class.getName());
         conf.put(Config.STORM_CLUSTER_MODE, "distributed");
-        conf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        conf.put(Config.STORM_LOCAL_DIR, stormLocalAbsolutePath);
         Localizer localizer = mock(Localizer.class);
         AdvancedFSOps ops = mock(AdvancedFSOps.class);
         ConfigUtils mockedCU = mock(ConfigUtils.class);
@@ -83,7 +83,7 @@ public class AsyncLocalizerTest {
         Utils origUtils = Utils.setInstance(mockedU);
         try {
             when(mockedCU.supervisorStormDistRootImpl(conf, topoId)).thenReturn(stormRoot);
-            when(mockedCU.supervisorLocalDirImpl(conf)).thenReturn(stormLocal);
+            when(mockedCU.supervisorLocalDirImpl(conf)).thenReturn(stormLocalAbsolutePath);
             when(mockedU.newInstanceImpl(ClientBlobStore.class)).thenReturn(blobStore);
             when(mockedCU.readSupervisorStormConfImpl(conf, topoId)).thenReturn(topoConf);
 
@@ -92,9 +92,9 @@ public class AsyncLocalizerTest {
             // We should be done now...
             
             verify(blobStore).prepare(conf);
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(jarKey), startsWith(stormLocal), eq(blobStore));
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(codeKey), startsWith(stormLocal), eq(blobStore));
-            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(confKey), startsWith(stormLocal), eq(blobStore));
+            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(jarKey), startsWith(stormLocalAbsolutePath), eq(blobStore));
+            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(codeKey), startsWith(stormLocalAbsolutePath), eq(blobStore));
+            verify(mockedU).downloadResourcesAsSupervisorImpl(eq(confKey), startsWith(stormLocalAbsolutePath), eq(blobStore));
             verify(blobStore).shutdown();
             //Extracting the dir from the jar
             verify(mockedU).extractDirFromJarImpl(endsWith("stormjar.jar"), eq("resources"), any(File.class));

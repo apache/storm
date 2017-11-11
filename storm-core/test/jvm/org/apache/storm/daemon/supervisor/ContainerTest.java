@@ -125,7 +125,8 @@ public class ContainerTest {
     private static final Joiner PATH_JOIN = Joiner.on(File.separator).skipNulls();
     private static final String DOUBLE_SEP = File.separator + File.separator;    
     static String asAbsPath(String ... parts) {
-        return (File.separator + PATH_JOIN.join(parts)).replace(DOUBLE_SEP, File.separator);
+        String path = (File.separator + PATH_JOIN.join(parts)).replace(DOUBLE_SEP, File.separator);
+        return new File(path).getAbsolutePath();
     }
     
     static File asAbsFile(String ... parts) {
