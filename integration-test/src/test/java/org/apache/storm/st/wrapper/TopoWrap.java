@@ -229,7 +229,7 @@ public class TopoWrap {
     public void assertProgress(int minEmits, String componentName, int maxWaitSec) throws TException {
         waitForProgress(minEmits, componentName, maxWaitSec);
         long emitCount = getAllTimeEmittedCount(componentName);
-        Assert.assertTrue(emitCount >= minEmits, "Count for component " + componentName + " is " + emitCount + " min is " + minEmits);
+        Assert.assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
     }
 
     public static class ExecutorURL {
@@ -373,7 +373,7 @@ public class TopoWrap {
         return retVal;
     }
 
-    public void killQuietly() {
-        cluster.killSilently(name);
+    public void killOrThrow() throws Exception {
+        cluster.killOrThrow(name);
     }
 }

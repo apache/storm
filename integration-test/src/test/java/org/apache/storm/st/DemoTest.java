@@ -79,7 +79,7 @@ public final class DemoTest extends AbstractTest {
     @AfterMethod
     public void cleanup() throws Exception {
         if (topo != null) {
-            topo.killQuietly();
+            topo.killOrThrow();
         }
     }
 }

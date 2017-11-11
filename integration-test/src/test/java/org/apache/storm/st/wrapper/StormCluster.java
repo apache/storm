@@ -38,6 +38,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class StormCluster {
     private static Logger log = LoggerFactory.getLogger(StormCluster.class);
@@ -83,13 +84,21 @@ public class StormCluster {
         return new ArrayList<>(filteredSummary);
     }
 
-    public void killSilently(String topologyName) {
-        try {
-            client.killTopologyWithOpts(topologyName, new KillOptions());
-            log.info("Topology killed: " + topologyName);
-        } catch (Throwable e){
-            log.warn("Couldn't kill topology: " + topologyName + " Exception: " + ExceptionUtils.getFullStackTrace(e));
+    public void killOrThrow(String topologyName) throws Exception {
+        long start = System.currentTimeMillis();
+        while (System.currentTimeMillis() < start + TimeUnit.SECONDS.toMillis(60)) {
+            try {
+                KillOptions killOptions = new KillOptions();
+                killOptions.set_wait_secs(0);
+                client.killTopologyWithOpts(topologyName, killOptions);
+                log.info("Topology killed: " + topologyName);
+                return;
+            } catch (Throwable e) {
+                log.warn("Couldn't kill topology: " + topologyName + ", going to retry soon. Exception: " + ExceptionUtils.getFullStackTrace(e));
+                Thread.sleep(TimeUnit.SECONDS.toMillis(2));
+            }
         }
+        throw new RuntimeException("Failed to kill topology " + topologyName + ". Subsequent tests may fail because worker slots are occupied");
     }
 
     public TopologySummary getOneActive() throws TException {
@@ -107,10 +116,10 @@ public class StormCluster {
         return client;
     }
 
-    public void killActiveTopologies() throws TException {
+    public void killActiveTopologies() throws Exception {
         List<TopologySummary> activeTopologies = getActive();
         for (TopologySummary activeTopology : activeTopologies) {
-            killSilently(activeTopology.get_name());
+            killOrThrow(activeTopology.get_name());
         }
 
         AssertUtil.empty(getActive());

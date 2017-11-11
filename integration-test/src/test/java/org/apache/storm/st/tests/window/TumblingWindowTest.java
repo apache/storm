@@ -48,7 +48,7 @@ public final class TumblingWindowTest extends AbstractTest {
     @Test(dataProvider = "generateWindows")
     public void testTumbleCount(int tumbleSize) throws Exception {
         final TumblingWindowCorrectness testable = new TumblingWindowCorrectness(tumbleSize);
-        final String topologyName = this.getClass().getSimpleName() + "t" + tumbleSize;
+        final String topologyName = this.getClass().getSimpleName() + "-size" + tumbleSize;
         if (tumbleSize <= 0) {
             try {
                 testable.newTopology();
@@ -77,7 +77,7 @@ public final class TumblingWindowTest extends AbstractTest {
     @Test(dataProvider = "generateTumbleTimes")
     public void testTumbleTime(int tumbleSec) throws Exception {
         final TumblingTimeCorrectness testable = new TumblingTimeCorrectness(tumbleSec);
-        final String topologyName = this.getClass().getSimpleName() + "t" + tumbleSec;
+        final String topologyName = this.getClass().getSimpleName() + "-sec" + tumbleSec;
         if (tumbleSec <= 0) {
             try {
                 testable.newTopology();
@@ -93,7 +93,7 @@ public final class TumblingWindowTest extends AbstractTest {
     @AfterMethod
     public void cleanup() throws Exception {
         if (topo != null) {
-            topo.killQuietly();
+            topo.killOrThrow();
         }
     }
 }
