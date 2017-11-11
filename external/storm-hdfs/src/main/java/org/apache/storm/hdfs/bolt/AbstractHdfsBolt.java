@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -49,6 +50,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
     private static final Integer DEFAULT_RETRY_COUNT = 3;
     /**
@@ -95,14 +97,19 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     /**
      * Marked as final to prevent override. Subclasses should implement the doPrepare() method.
+     *
      * @param conf
      * @param topologyContext
      * @param collector
      */
     public final void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector){
         this.writeLock = new Object();
-        if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");
-        if (this.rotationPolicy == null) throw new IllegalStateException("RotationPolicy must be specified.");
+        if (this.syncPolicy == null) {
+            throw new IllegalStateException("SyncPolicy must be specified.");
+        }
+        if (this.rotationPolicy == null) {
+            throw new IllegalStateException("RotationPolicy must be specified.");
+        }
         if (this.fsUrl == null) {
             throw new IllegalStateException("File system URL must be specified.");
         }
@@ -215,10 +222,8 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     /**
-     * A tuple must be mapped to a writer based on two factors:
-     *  - bolt specific logic that must separate tuples into different files in the same directory (see the avro bolt
-     *    for an example of this)
-     *  - the directory the tuple will be partioned into
+     * A tuple must be mapped to a writer based on two factors: - bolt specific logic that must separate tuples into different files in the
+     * same directory (see the avro bolt for an example of this) - the directory the tuple will be partioned into
      *
      * @param tuple
      * @return
@@ -252,6 +257,11 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
     }
 
+    @Override
+    public void cleanup() {
+        this.rotationTimer.cancel();
+    }
+
     private void syncAllWriters() throws IOException {
         for (AbstractHDFSWriter writer : writers.values()) {
             writer.sync();
@@ -281,8 +291,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         final String partitionPath = this.partitioner.getPartitionPath(tuple);
         final int rotation;
-        if (rotationCounterMap.containsKey(partitionPath))
-        {
+        if (rotationCounterMap.containsKey(partitionPath)) {
             rotation = rotationCounterMap.get(partitionPath) + 1;
         } else {
             rotation = 0;
@@ -300,6 +309,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     abstract protected AbstractHDFSWriter makeNewWriter(Path path, Tuple tuple) throws IOException;
 
     static class WritersMap extends LinkedHashMap<String, AbstractHDFSWriter> {
+
         final long maxWriters;
 
         public WritersMap(long maxWriters) {

@@ -19,6 +19,7 @@ package org.apache.storm.hdfs.avro;
 
 import org.apache.avro.Schema;
 import org.junit.Assert;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 public class TestGenericAvroSerializer {
@@ -30,12 +31,13 @@ public class TestGenericAvroSerializer {
             "\"name\":\"stormtest2\"," +
             "\"fields\":[{\"name\":\"foobar1\",\"type\":\"string\"}," +
             "{ \"name\":\"intint1\", \"type\":\"int\" }]}";
-    private static final Schema schema1;
-    private static final Schema schema2;
+    private static Schema schema1;
+    private static Schema schema2;
 
     AvroSchemaRegistry reg = new GenericAvroSerializer();
 
-    static {
+    @BeforeClass
+    public static void setupClass() {
 
         Schema.Parser parser = new Schema.Parser();
         schema1 = parser.parse(schemaString1);
@@ -50,7 +52,8 @@ public class TestGenericAvroSerializer {
         testTheSchema(schema2);
     }
 
-    @Test public void testDifferentFPs() {
+    @Test 
+    public void testDifferentFPs() {
         String fp1 = reg.getFingerprint(schema1);
         String fp2 = reg.getFingerprint(schema2);
 
