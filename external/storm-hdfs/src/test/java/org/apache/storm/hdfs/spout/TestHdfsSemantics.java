@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -9,196 +10,193 @@
  * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
  * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the specific language governing permissions
+ * and limitations under the License.
  */
-
 package org.apache.storm.hdfs.spout;
 
-import org.apache.hadoop.conf.Configuration;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.fail;
+import static org.mockito.ArgumentMatchers.notNull;
+
 import org.apache.hadoop.fs.CommonConfigurationKeys;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileAlreadyExistsException;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.hdfs.HdfsConfiguration;
-import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.hdfs.protocol.AlreadyBeingCreatedException;
 import org.apache.hadoop.ipc.RemoteException;
 import org.junit.After;
-import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.Rule;
 
 public class TestHdfsSemantics {
 
-  static MiniDFSCluster.Builder builder;
-  static MiniDFSCluster hdfsCluster;
-  static FileSystem fs;
-  static String hdfsURI;
-  static HdfsConfiguration conf = new  HdfsConfiguration();
+    @Rule
+    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule();
 
-  private Path dir = new Path("/tmp/filesdir");
+    private FileSystem fs;
+    private final HdfsConfiguration conf = new HdfsConfiguration();
 
-  @BeforeClass
-  public static void setupClass() throws IOException {
-    conf.set(CommonConfigurationKeys.IPC_PING_INTERVAL_KEY,"5000");
-    builder = new MiniDFSCluster.Builder(new Configuration());
-    hdfsCluster = builder.build();
-    fs  = hdfsCluster.getFileSystem();
-    hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
-  }
+    private final Path dir = new Path("/tmp/filesdir");
 
-  @AfterClass
-  public static void teardownClass() throws IOException {
-    fs.close();
-    hdfsCluster.shutdown();
-  }
+    @Before
+    public void setup() throws IOException {
+        conf.set(CommonConfigurationKeys.IPC_PING_INTERVAL_KEY, "5000");
+        fs = dfsClusterRule.getDfscluster().getFileSystem();
+        assert fs.mkdirs(dir);
+    }
 
-  @Before
-  public void setUp() throws Exception {
-    assert fs.mkdirs(dir) ;
-  }
+    @After
+    public void teardown() throws IOException {
+        fs.delete(dir, true);
+        fs.close();
+    }
 
-  @After
-  public void tearDown() throws Exception {
-    fs.delete(dir, true);
-  }
-
-
-  @Test
-  public void testDeleteSemantics() throws Exception {
-    Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
+    @Test
+    public void testDeleteSemantics() throws Exception {
+        Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
 //    try {
-    // 1) Delete absent file - should return false
-    Assert.assertFalse(fs.exists(file));
-    try {
-      Assert.assertFalse(fs.delete(file, false));
-    } catch (IOException e) {
-      e.printStackTrace();
+        // 1) Delete absent file - should return false
+        Assert.assertFalse(fs.exists(file));
+        try {
+            Assert.assertFalse(fs.delete(file, false));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        // 2) deleting open file - should return true
+        fs.create(file, false);
+        Assert.assertTrue(fs.delete(file, false));
+
+        // 3) deleting closed file  - should return true
+        FSDataOutputStream os = fs.create(file, false);
+        os.close();
+        Assert.assertTrue(fs.exists(file));
+        Assert.assertTrue(fs.delete(file, false));
+        Assert.assertFalse(fs.exists(file));
     }
 
-    // 2) deleting open file - should return true
-    fs.create(file, false);
-    Assert.assertTrue(fs.delete(file, false));
-
-    // 3) deleting closed file  - should return true
-    FSDataOutputStream os = fs.create(file, false);
-    os.close();
-    Assert.assertTrue(fs.exists(file));
-    Assert.assertTrue(fs.delete(file, false));
-    Assert.assertFalse(fs.exists(file));
-  }
-
-  @Test
-  public void testConcurrentDeletion() throws Exception {
-    Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
-    fs.create(file).close();
-    // 1 concurrent deletion - only one thread should succeed
-    FileDeletionThread[] thds = startThreads(10, file);
-    int successCount=0;
-    for (FileDeletionThread thd : thds) {
-      thd.join();
-      if( thd.succeeded)
-        successCount++;
-      if(thd.exception!=null)
-        Assert.assertNotNull(thd.exception);
-    }
-    System.err.println(successCount);
-    Assert.assertEquals(1, successCount);
-
-  }
-
-  @Test
-  public void testAppendSemantics() throws Exception {
-    //1 try to append to an open file
-    Path file1 = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
-    FSDataOutputStream os1 = fs.create(file1, false);
-    try {
-      fs.append(file1); // should fail
-      Assert.assertTrue("Append did not throw an exception", false);
-    } catch (RemoteException e) {
-      // expecting AlreadyBeingCreatedException inside RemoteException
-      Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
+    @Test
+    public void testConcurrentDeletion() throws Exception {
+        Path file = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
+        fs.create(file).close();
+        // 1 concurrent deletion - only one thread should succeed
+        FileDeletionThread[] threads = null;
+        try {
+            threads = startThreads(10, file);
+            int successCount = 0;
+            for (FileDeletionThread thd : threads) {
+                thd.join(30_000);
+                if (thd.succeeded) {
+                    successCount++;
+                }
+                if (thd.exception != null) {
+                    Assert.assertNotNull(thd.exception);
+                }
+            }
+            System.err.println(successCount);
+            Assert.assertEquals(1, successCount);
+        } finally {
+            if (threads != null) {
+                for (FileDeletionThread thread : threads) {
+                    thread.interrupt();
+                    thread.join(30_000);
+                    if (thread.isAlive()) {
+                        throw new RuntimeException("Failed to stop threads within 30 seconds, threads may leak into other tests");
+                    }
+                }
+            }
+        }
     }
 
-    //2 try to append to a closed file
-    os1.close();
-    FSDataOutputStream os2 = fs.append(file1); // should pass
-    os2.close();
-  }
+    @Test
+    public void testAppendSemantics() throws Exception {
+        //1 try to append to an open file
+        Path file1 = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
+        try (FSDataOutputStream os1 = fs.create(file1, false)) {
+            fs.append(file1); // should fail
+            fail("Append did not throw an exception");
+        } catch (RemoteException e) {
+            // expecting AlreadyBeingCreatedException inside RemoteException
+            Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
+        }
 
-  @Test
-  public void testDoubleCreateSemantics() throws Exception {
-    //1 create an already existing open file w/o override flag
-    Path file1 = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
-    FSDataOutputStream os1 = fs.create(file1, false);
-    try {
-      fs.create(file1, false); // should fail
-      Assert.assertTrue("Create did not throw an exception", false);
-    } catch (RemoteException e) {
-      Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
-    }
-    //2 close file and retry creation
-    os1.close();
-    try {
-      fs.create(file1, false);  // should still fail
-    } catch (FileAlreadyExistsException e) {
-      // expecting this exception
+        //2 try to append to a closed file
+        try (FSDataOutputStream os2 = fs.append(file1)) { 
+            assertThat(os2, notNull());
+        }
     }
 
-    //3 delete file and retry creation
-    fs.delete(file1, false);
-    FSDataOutputStream os2 = fs.create(file1, false);  // should pass
-    Assert.assertNotNull(os2);
-    os2.close();
-  }
+    @Test
+    public void testDoubleCreateSemantics() throws Exception {
+        //1 create an already existing open file w/o override flag
+        Path file1 = new Path(dir.toString() + Path.SEPARATOR_CHAR + "file1");
+        try (FSDataOutputStream os1 = fs.create(file1, false)) {
+            fs.create(file1, false); // should fail
+            fail("Create did not throw an exception");
+        } catch (RemoteException e) {
+            Assert.assertEquals(AlreadyBeingCreatedException.class, e.unwrapRemoteException().getClass());
+        }
+        //2 close file and retry creation
+        try {
+            fs.create(file1, false);  // should still fail
+            fail("Create did not throw an exception");
+        } catch (FileAlreadyExistsException e) {
+            // expecting this exception
+        }
 
-
-  private FileDeletionThread[] startThreads(int thdCount, Path file)
-          throws IOException {
-    FileDeletionThread[] result = new FileDeletionThread[thdCount];
-    for (int i = 0; i < thdCount; i++) {
-      result[i] = new FileDeletionThread(i, fs, file);
+        //3 delete file and retry creation
+        fs.delete(file1, false);
+        try (FSDataOutputStream os2 = fs.create(file1, false)) {
+            Assert.assertNotNull(os2);
+        }
     }
 
-    for (FileDeletionThread thd : result) {
-      thd.start();
+    private FileDeletionThread[] startThreads(int thdCount, Path file)
+        throws IOException {
+        FileDeletionThread[] result = new FileDeletionThread[thdCount];
+        for (int i = 0; i < thdCount; i++) {
+            result[i] = new FileDeletionThread(i, fs, file);
+        }
+
+        for (FileDeletionThread thd : result) {
+            thd.start();
+        }
+        return result;
     }
-    return result;
-  }
 
-  private static class FileDeletionThread extends Thread {
+    private static class FileDeletionThread extends Thread {
 
-    private final int thdNum;
-    private final FileSystem fs;
-    private final Path file;
-    public boolean succeeded;
-    public Exception exception = null;
+        private final int thdNum;
+        private final FileSystem fs;
+        private final Path file;
+        public boolean succeeded;
+        public Exception exception = null;
 
-    public FileDeletionThread(int thdNum, FileSystem fs, Path file)
+        public FileDeletionThread(int thdNum, FileSystem fs, Path file)
             throws IOException {
-      this.thdNum = thdNum;
-      this.fs = fs;
-      this.file = file;
-    }
+            this.thdNum = thdNum;
+            this.fs = fs;
+            this.file = file;
+        }
 
-    @Override
-    public void run() {
-      Thread.currentThread().setName("FileDeletionThread-" + thdNum);
-      try {
-        succeeded = fs.delete(file, false);
-      } catch (Exception e) {
-        exception = e;
-      }
-    } // run()
+        @Override
+        public void run() {
+            Thread.currentThread().setName("FileDeletionThread-" + thdNum);
+            try {
+                succeeded = fs.delete(file, false);
+            } catch (Exception e) {
+                exception = e;
+            }
+        } // run()
 
-  } // class FileLockingThread
+    } // class FileLockingThread
 }
