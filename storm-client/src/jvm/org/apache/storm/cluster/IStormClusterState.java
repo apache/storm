@@ -168,8 +168,8 @@ public interface IStormClusterState {
     default Optional<String> getTopoId(final String topologyName) {
         String ret = null;
         for (String topoId: activeStorms()) {
-            String name = stormBase(topoId, null).get_name();
-            if (topologyName.equals(name)) {
+            StormBase base = stormBase(topoId, null);
+            if(base != null && topologyName.equals(base.get_name())) {
                 ret = topoId;
                 break;
             }

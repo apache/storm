@@ -17,7 +17,6 @@
 
 package org.apache.storm.st.utils;
 
-import java.nio.charset.StandardCharsets;
 import org.apache.commons.lang.StringUtils;
 
 public class StringDecorator {
