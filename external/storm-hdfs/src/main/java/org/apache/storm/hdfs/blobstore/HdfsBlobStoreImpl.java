@@ -45,8 +45,9 @@ public class HdfsBlobStoreImpl {
 
     private static final long FULL_CLEANUP_FREQ = 60 * 60 * 1000l;
     private static final int BUCKETS = 1024;
-    private static final Timer timer = new Timer("HdfsBlobStore cleanup thread", true);
     private static final String BLOBSTORE_DATA = "data";
+    
+    private Timer timer;
 
     public class KeyInHashDirIterator implements Iterator<String> {
         private int currentBucket = 0;
@@ -112,7 +113,6 @@ public class HdfsBlobStoreImpl {
 
     private Path _fullPath;
     private FileSystem _fs;
-    private TimerTask _cleanup = null;
     private Configuration _hadoopConf;
 
     // blobstore directory is private!
@@ -141,7 +141,7 @@ public class HdfsBlobStoreImpl {
         Object shouldCleanup = conf.get(Config.BLOBSTORE_CLEANUP_ENABLE);
         if (ObjectReader.getBoolean(shouldCleanup, false)) {
             LOG.debug("Starting hdfs blobstore cleaner");
-            _cleanup = new TimerTask() {
+            TimerTask cleanup = new TimerTask() {
                 @Override
                 public void run() {
                     try {
@@ -151,7 +151,8 @@ public class HdfsBlobStoreImpl {
                     }
                 }
             };
-            timer.scheduleAtFixedRate(_cleanup, 0, FULL_CLEANUP_FREQ);
+            timer = new Timer("HdfsBlobStore cleanup thread", true);
+            timer.scheduleAtFixedRate(cleanup, 0, FULL_CLEANUP_FREQ);
         }
     }
 
@@ -304,9 +305,8 @@ public class HdfsBlobStoreImpl {
     }
 
     public void shutdown() {
-        if (_cleanup != null) {
-            _cleanup.cancel();
-            _cleanup = null;
+        if (timer != null) {
+            timer.cancel();
         }
     }
 }

@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -40,49 +41,67 @@ import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
 import org.junit.Before;
 import org.junit.After;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.Assert;
 
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.hdfs.MiniDFSCluster;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.hdfs.DistributedFileSystem;
 import org.apache.hadoop.fs.FSDataInputStream;
 
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.util.HashMap;
+import org.apache.hadoop.hdfs.DistributedFileSystem;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.BeforeClass;
+import org.junit.Rule;
+import org.junit.runner.RunWith;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AvroGenericRecordBoltTest {
 
-    private String hdfsURI;
+    @Rule
+    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+        return conf;
+    });
+    @Mock
+    private OutputCollector collector;
+    @Mock
+    private TopologyContext topologyContext;
+
     private DistributedFileSystem fs;
-    private MiniDFSCluster hdfsCluster;
+    private String hdfsURI;
     private static final String testRoot = "/unittest";
-    private static final Schema schema1;
-    private static final Schema schema2;
-    private static final Tuple tuple1;
-    private static final Tuple tuple2;
-    private static final String schemaV1 = "{\"type\":\"record\"," +
-            "\"name\":\"myrecord\"," +
-            "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"}," +
-            "{ \"name\":\"int1\", \"type\":\"int\" }]}";
+    private static Schema schema1;
+    private static Schema schema2;
+    private static Tuple tuple1;
+    private static Tuple tuple2;
+    private static final String schemaV1 = "{\"type\":\"record\","
+        + "\"name\":\"myrecord\","
+        + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
+        + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
 
-    private static final String schemaV2 = "{\"type\":\"record\"," +
-            "\"name\":\"myrecord\"," +
-            "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"}," +
-            "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" }," +
-            "{ \"name\":\"int1\", \"type\":\"int\" }]}";
+    private static final String schemaV2 = "{\"type\":\"record\","
+        + "\"name\":\"myrecord\","
+        + "\"fields\":[{\"name\":\"foo1\",\"type\":\"string\"},"
+        + "{ \"name\":\"bar\", \"type\":\"string\", \"default\":\"baz\" },"
+        + "{ \"name\":\"int1\", \"type\":\"int\" }]}";
 
-    static {
-
+    @BeforeClass
+    public static void setupClass() {
         Schema.Parser parser = new Schema.Parser();
         schema1 = parser.parse(schemaV1);
 
@@ -100,33 +119,19 @@ public class AvroGenericRecordBoltTest {
         tuple2 = generateTestTuple(builder2.build());
     }
 
-    @Mock private OutputCollector collector;
-    @Mock private TopologyContext topologyContext;
-
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        Configuration conf = new Configuration();
-        conf.set("fs.trash.interval", "10");
-        conf.setBoolean("dfs.permissions", true);
-        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
-        FileUtil.fullyDelete(baseDir);
-        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
-
-        MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-        hdfsCluster = builder.build();
-        fs = hdfsCluster.getFileSystem();
+        fs = dfsClusterRule.getDfscluster().getFileSystem();
         hdfsURI = fs.getUri() + "/";
     }
 
     @After
     public void shutDown() throws IOException {
         fs.close();
-        hdfsCluster.shutdown();
     }
 
-    @Test public void multipleTuplesOneFile() throws IOException
-    {
+    @Test
+    public void multipleTuplesOneFile() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, 1f, schemaV1);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -139,8 +144,8 @@ public class AvroGenericRecordBoltTest {
         verifyAllAvroFiles(testRoot);
     }
 
-    @Test public void multipleTuplesMutliplesFiles() throws IOException
-    {
+    @Test
+    public void multipleTuplesMutliplesFiles() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, .0001f, schemaV1);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -153,8 +158,8 @@ public class AvroGenericRecordBoltTest {
         verifyAllAvroFiles(testRoot);
     }
 
-    @Test public void forwardSchemaChangeWorks() throws IOException
-    {
+    @Test
+    public void forwardSchemaChangeWorks() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, 1000f, schemaV1);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -167,8 +172,8 @@ public class AvroGenericRecordBoltTest {
         verifyAllAvroFiles(testRoot);
     }
 
-    @Test public void backwardSchemaChangeWorks() throws IOException
-    {
+    @Test
+    public void backwardSchemaChangeWorks() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, 1000f, schemaV2);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -180,8 +185,8 @@ public class AvroGenericRecordBoltTest {
         verifyAllAvroFiles(testRoot);
     }
 
-    @Test public void schemaThrashing() throws IOException
-    {
+    @Test
+    public void schemaThrashing() throws IOException {
         AvroGenericRecordBolt bolt = makeAvroBolt(hdfsURI, 1, 1000f, schemaV2);
 
         bolt.prepare(new Config(), topologyContext, collector);
@@ -206,19 +211,19 @@ public class AvroGenericRecordBoltTest {
         FileNameFormat fieldsFileNameFormat = new DefaultFileNameFormat().withPath(testRoot);
 
         FileRotationPolicy rotationPolicy =
-                new FileSizeRotationPolicy(rotationSizeMB, FileSizeRotationPolicy.Units.MB);
+            new FileSizeRotationPolicy(rotationSizeMB, FileSizeRotationPolicy.Units.MB);
 
         return new AvroGenericRecordBolt()
-                .withFsUrl(nameNodeAddr)
-                .withFileNameFormat(fieldsFileNameFormat)
-                .withRotationPolicy(rotationPolicy)
-                .withSyncPolicy(fieldsSyncPolicy);
+            .withFsUrl(nameNodeAddr)
+            .withFileNameFormat(fieldsFileNameFormat)
+            .withRotationPolicy(rotationPolicy)
+            .withSyncPolicy(fieldsSyncPolicy);
     }
 
     private static Tuple generateTestTuple(GenericRecord record) {
         TopologyBuilder builder = new TopologyBuilder();
         GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("record");
@@ -250,24 +255,23 @@ public class AvroGenericRecordBoltTest {
         return nonZero;
     }
 
-    private void fileIsGoodAvro (Path path) throws IOException {
+    private void fileIsGoodAvro(Path path) throws IOException {
         DatumReader<GenericRecord> datumReader = new GenericDatumReader<>();
-        FSDataInputStream in = fs.open(path, 0);
-        FileOutputStream out = new FileOutputStream("target/FOO.avro");
-
-        byte[] buffer = new byte[100];
-        int bytesRead;
-        while ((bytesRead = in.read(buffer)) > 0) {
-            out.write(buffer, 0, bytesRead);
+        try (FSDataInputStream in = fs.open(path, 0); FileOutputStream out = new FileOutputStream("target/FOO.avro")) {
+            byte[] buffer = new byte[100];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) > 0) {
+                out.write(buffer, 0, bytesRead);
+            }
         }
-        out.close();
 
         java.io.File file = new File("target/FOO.avro");
 
-        DataFileReader<GenericRecord> dataFileReader = new DataFileReader<>(file, datumReader);
-        GenericRecord user = null;
-        while (dataFileReader.hasNext()) {
-            user = dataFileReader.next(user);
+        try (DataFileReader<GenericRecord> dataFileReader = new DataFileReader<>(file, datumReader)) {
+            GenericRecord user = null;
+            while (dataFileReader.hasNext()) {
+                user = dataFileReader.next(user);
+            }
         }
 
         file.delete();

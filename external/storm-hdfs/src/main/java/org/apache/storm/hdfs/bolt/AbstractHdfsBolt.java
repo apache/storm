@@ -255,6 +255,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     @Override
     public void cleanup() {
         doRotationAndRemoveAllWriters();
+        this.rotationTimer.cancel();
     }
 
     private void doRotationAndRemoveAllWriters() {

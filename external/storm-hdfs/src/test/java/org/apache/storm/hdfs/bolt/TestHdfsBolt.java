@@ -44,7 +44,7 @@ import org.junit.Assert;
 
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+
 import static org.mockito.Mockito.*;
 
 import org.apache.hadoop.conf.Configuration;
@@ -59,12 +59,27 @@ import org.apache.hadoop.hdfs.protocol.HdfsConstants.SafeModeAction;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TestHdfsBolt {
 
+    @Rule
+    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(() -> {
+        Configuration conf = new Configuration();
+        conf.set("fs.trash.interval", "10");
+        conf.setBoolean("dfs.permissions", true);
+        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+        FileUtil.fullyDelete(baseDir);
+        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+        return conf;
+    });
+    
     private String hdfsURI;
     private DistributedFileSystem fs;
-    private MiniDFSCluster hdfsCluster;
     private static final String testRoot = "/unittest";
     Tuple tuple1 = generateTestTuple(1, "First Tuple", "SFO", "CA");
     Tuple tuple2 = generateTestTuple(1, "Second Tuple", "SJO", "CA");
@@ -75,24 +90,13 @@ public class TestHdfsBolt {
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        Configuration conf = new Configuration();
-        conf.set("fs.trash.interval", "10");
-        conf.setBoolean("dfs.permissions", true);
-        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
-        FileUtil.fullyDelete(baseDir);
-        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
-
-        MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-        hdfsCluster = builder.build();
-        fs = hdfsCluster.getFileSystem();
-        hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
+        fs = dfsClusterRule.getDfscluster().getFileSystem();
+        hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
     }
 
     @After
     public void shutDown() throws IOException {
         fs.close();
-        hdfsCluster.shutdown();
     }
 
     @Test
@@ -241,7 +245,7 @@ public class TestHdfsBolt {
     private Tuple generateTestTuple(Object id, Object msg,Object city,Object state) {
         TopologyBuilder builder = new TopologyBuilder();
         GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+                new Config(), new HashMap<>(), new HashMap<>(), new HashMap<>(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
                 return new Fields("id", "msg","city","state");
@@ -250,23 +254,17 @@ public class TestHdfsBolt {
         return new TupleImpl(topologyContext, new Values(id, msg,city,state), 1, "");
     }
 
-    private void printFiles(String path) throws IOException {
-        Path p = new Path(path);
-        FileStatus[] fileStatuses = fs.listStatus(p);
-        for (FileStatus file : fileStatuses) {
-            System.out.println("@@@ " + file.getPath() + " [" + file.getLen() + "]");
-        }
-    }
-
     // Generally used to compare how files were actually written and compare to expectations based on total
     // amount of data written and rotation policies
     private int countNonZeroLengthFiles(String path) throws IOException {
         Path p = new Path(path);
         int nonZero = 0;
 
-        for (FileStatus file : fs.listStatus(p))
-            if (file.getLen() > 0)
+        for (FileStatus file : fs.listStatus(p)) {
+            if (file.getLen() > 0) {
                 nonZero++;
+            }
+        }
 
         return nonZero;
     }
@@ -275,9 +273,11 @@ public class TestHdfsBolt {
         Path p = new Path(path);
         int zeroLength = 0;
 
-        for (FileStatus file : fs.listStatus(p))
-            if (file.getLen() == 0)
+        for (FileStatus file : fs.listStatus(p)) {
+            if (file.getLen() == 0) {
                 zeroLength++;
+            }
+        }
 
         return zeroLength;
     }
