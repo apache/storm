@@ -80,6 +80,7 @@ public final class DemoTest extends AbstractTest {
     public void cleanup() throws Exception {
         if (topo != null) {
             topo.killOrThrow();
+            topo = null;
         }
     }
 }

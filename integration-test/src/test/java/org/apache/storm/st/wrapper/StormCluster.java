@@ -93,7 +93,7 @@ public class StormCluster {
                 client.killTopologyWithOpts(topologyName, killOptions);
                 log.info("Topology killed: " + topologyName);
                 return;
-            } catch (Throwable e) {
+            } catch (TException e) {
                 log.warn("Couldn't kill topology: " + topologyName + ", going to retry soon. Exception: " + ExceptionUtils.getFullStackTrace(e));
                 Thread.sleep(TimeUnit.SECONDS.toMillis(2));
             }
