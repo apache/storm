@@ -30,7 +30,7 @@ import org.testng.annotations.Test;
 
 public final class TumblingWindowTest extends AbstractTest {
     private static Logger log = LoggerFactory.getLogger(TumblingWindowTest.class);
-    TopoWrap topo;
+    private TopoWrap topo;
 
     @DataProvider
     public static Object[][] generateWindows() {
@@ -94,6 +94,7 @@ public final class TumblingWindowTest extends AbstractTest {
     public void cleanup() throws Exception {
         if (topo != null) {
             topo.killOrThrow();
+            topo = null;
         }
     }
 }

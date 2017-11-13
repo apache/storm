@@ -188,6 +188,7 @@ public final class SlidingWindowTest extends AbstractTest {
     public void cleanup() throws Exception {
         if (topo != null) {
             topo.killOrThrow();
+            topo = null;
         }
     }
 }
