@@ -46,7 +46,7 @@ public class ThriftClient implements AutoCloseable {
         this(topoConf, type, host, port, timeout, null, true);
     }
 
-    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser,Boolean toReconnect) {
+    public ThriftClient(Map<String, Object> topoConf, ThriftConnectionType type, String host, Integer port, Integer timeout, String asUser, Boolean toReconnect) {
         //create a socket with server
         if (host==null) {
             throw new IllegalArgumentException("host is not set");
@@ -62,7 +62,7 @@ public class ThriftClient implements AutoCloseable {
 
         if (port<=0 && !type.isFake()) {
             throw new IllegalArgumentException("invalid port: "+port);
-        }          
+        }
 
         _host = host;
         _port = port;
@@ -80,7 +80,7 @@ public class ThriftClient implements AutoCloseable {
     public synchronized TTransport transport() {
         return _transport;
     }
-    
+
     public synchronized void reconnect() {
         close();
         TSocket socket = null;
@@ -99,7 +99,7 @@ public class ThriftClient implements AutoCloseable {
             //TODO get this from type instead of hardcoding to Nimbus.
             //establish client-server transport via plugin
             //do retries if the connect fails
-            TBackoffConnect connectionRetry 
+            TBackoffConnect connectionRetry
                 = new TBackoffConnect(
                                       ObjectReader.getInt(_conf.get(Config.STORM_NIMBUS_RETRY_TIMES)),
                                       ObjectReader.getInt(_conf.get(Config.STORM_NIMBUS_RETRY_INTERVAL)),

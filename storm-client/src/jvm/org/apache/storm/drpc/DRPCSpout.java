@@ -55,31 +55,31 @@ public class DRPCSpout extends BaseRichSpout {
     static final long serialVersionUID = 2387848310969237877L;
 
     public static final Logger LOG = LoggerFactory.getLogger(DRPCSpout.class);
-    
+
     SpoutOutputCollector _collector;
     List<DRPCInvocationsClient> _clients = new ArrayList<>();
     transient LinkedList<Future<Void>> _futures = null;
     transient ExecutorService _backround = null;
     final String _function;
     final String _local_drpc_id;
-    
+
     private static class DRPCMessageId {
         String id;
         int index;
-        
+
         public DRPCMessageId(String id, int index) {
             this.id = id;
             this.index = index;
         }
     }
-    
-    
+
+
     public DRPCSpout(String function) {
         _function = function;
         if (DRPCClient.isLocalOverride()) {
             _local_drpc_id = DRPCClient.getOverrideServiceId();
         } else {
-            _local_drpc_id = null; 
+            _local_drpc_id = null;
         }
     }
 
@@ -112,7 +112,7 @@ public class DRPCSpout extends BaseRichSpout {
                     _clients.add(c);
                 }
             } catch (Exception e) {
-                LOG.warn("Can't connect to drpcserver "+server+" when init drpcspout,please check your cluster");
+                LOG.warn("Can't connect to drpcserver " + server + " when init drpcspout,please check your cluster");
             }
             return null;
         }
@@ -151,7 +151,7 @@ public class DRPCSpout extends BaseRichSpout {
             }
         }
     }
- 
+
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         _collector = collector;
@@ -167,19 +167,19 @@ public class DRPCSpout extends BaseRichSpout {
             int port = ObjectReader.getInt(conf.get(Config.DRPC_INVOCATIONS_PORT));
             List<String> servers = (List<String>) conf.get(Config.DRPC_SERVERS);
             if(servers == null || servers.isEmpty()) {
-                throw new RuntimeException("No DRPC servers configured for topology");   
+                throw new RuntimeException("No DRPC servers configured for topology");
             }
-            
+
             if (numTasks < servers.size()) {
                 for (String s: servers) {
                     _futures.add(_backround.submit(new Adder(s, port, conf)));
                 }
-            } else {        
+            } else {
                 int i = index % servers.size();
                 _futures.add(_backround.submit(new Adder(servers.get(i), port, conf)));
             }
         }
-        
+
     }
 
     @Override
@@ -237,7 +237,7 @@ public class DRPCSpout extends BaseRichSpout {
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", _local_drpc_id);
                         returnInfo.put("port", 0);
-                        _collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)), 
+                        _collector.emit(new Values(req.get_func_args(), JSONValue.toJSONString(returnInfo)),
                                         new DRPCMessageId(req.get_request_id(), 0));
                     }
                 } catch (AuthorizationException aze) {
@@ -257,7 +257,7 @@ public class DRPCSpout extends BaseRichSpout {
     public void fail(Object msgId) {
         DRPCMessageId did = (DRPCMessageId) msgId;
         DistributedRPCInvocations.Iface client;
-        
+
         if (_local_drpc_id == null) {
             client = _clients.get(did.index);
         } else {
@@ -288,5 +288,5 @@ public class DRPCSpout extends BaseRichSpout {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields("args", "return-info"));
-    }    
+    }
 }

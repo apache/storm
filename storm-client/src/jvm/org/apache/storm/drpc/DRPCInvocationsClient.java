@@ -43,16 +43,16 @@ public class DRPCInvocationsClient extends ThriftClient implements DistributedRP
         this.host = host;
         this.port = port;
         if (isConnected() != true) {
-            for (int i=0; i < connectRetry; i++) {
+            for (int i = 0; i < connectRetry; i++) {
                 try {
                     this.reconnectClient();
                 } catch (Exception e) {
-                    LOG.warn("Can't connect to drpcServer "+host+",will attempt to retry.");
+                    LOG.warn("Can't connect to drpcServer " + host + ",will attempt to retry.");
                 }
                 if (isConnected() == true) {
                     break;
                 } else if (i == connectRetry) {
-                    LOG.warn("Can't connect to drpcServer "+host+" after "+connectRetry+" attempts,will ignore it.");
+                    LOG.warn("Can't connect to drpcServer " + host + " after " + connectRetry + " attempts,will ignore it.");
                 }
             }
         }
