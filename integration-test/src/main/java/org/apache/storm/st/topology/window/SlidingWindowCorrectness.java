@@ -39,7 +39,6 @@ import org.apache.storm.st.utils.TimeUtil;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.concurrent.TimeUnit;
 
 /**
  * Computes sliding window sum
@@ -74,7 +73,6 @@ public class SlidingWindowCorrectness implements TestableTopology {
         builder.setSpout(getSpoutName(), new IncrementingSpout(), 1);
         builder.setBolt(getBoltName(),
                 new VerificationBolt()
-                        .withLag(new BaseWindowedBolt.Duration(10, TimeUnit.SECONDS))
                         .withWindow(new BaseWindowedBolt.Count(windowSize), new BaseWindowedBolt.Count(slideSize)),
                 1)
                 .shuffleGrouping(getSpoutName());

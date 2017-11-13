@@ -114,7 +114,9 @@ public class SlidingTimeCorrectness implements TestableTopology {
 
         @Override
         public void nextTuple() {
-            TimeUtil.sleepMilliSec(rng.nextInt(800));
+            //Emitting too quickly can lead to spurious test failures because the worker log may roll right before we read it
+            //Sleep a bit between emits
+            TimeUtil.sleepMilliSec(rng.nextInt(100));
             currentNum++;
             TimeData data = TimeData.newData(currentNum);
             final Values tuple = data.getValues();
