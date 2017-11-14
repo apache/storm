@@ -76,7 +76,7 @@ public class LogviewerProfileHandler {
                 String content = buildDumpFileListPage(topologyId, hostPort, dir);
                 return LogviewerResponseBuilder.buildSuccessHtmlResponse(content);
             } else {
-                return LogviewerResponseBuilder.buildResponseUnautohrizedUser(user);
+                return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
@@ -103,7 +103,7 @@ public class LogviewerProfileHandler {
             if (resourceAuthorizer.isUserAllowedToAccessFile(user, workerFileRelativePath)) {
                 return LogviewerResponseBuilder.buildDownloadFile(file);
             } else {
-                return LogviewerResponseBuilder.buildResponseUnautohrizedUser(user);
+                return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
