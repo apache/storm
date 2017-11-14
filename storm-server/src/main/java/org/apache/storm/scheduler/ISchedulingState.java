@@ -25,6 +25,8 @@ import java.util.Set;
 
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.WorkerResources;
+import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
 
 /** An interface that provides access to the current scheduling state. */
 public interface ISchedulingState {
@@ -179,7 +181,7 @@ public interface ISchedulingState {
         WorkerSlot ws,
         ExecutorDetails exec,
         TopologyDetails td,
-        Map<String, Double> resourcesAvailable,
+        NormalizedResourceOffer resourcesAvailable,
         double maxHeap);
 
     /** get the current assignment for the topology. */
@@ -205,8 +207,8 @@ public interface ISchedulingState {
     /** Get all the supervisors. */
     Map<String, SupervisorDetails> getSupervisors();
 
-    /** Get all scheduled resources for node **/
-    Map<String, Double> getAllScheduledResourcesForNode(String nodeId);
+    /** Get all scheduled resources for node. **/
+    NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId);
 
     /** Get the total amount of CPU resources in cluster. */
     double getClusterTotalCpuResource();

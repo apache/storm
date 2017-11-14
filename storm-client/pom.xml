@@ -261,7 +261,7 @@
                 <!--Note - the version would be inherited-->
                 <configuration>
                     <excludes>**/generated/**</excludes>
-                    <maxAllowedViolations>10298</maxAllowedViolations>
+                    <maxAllowedViolations>10263</maxAllowedViolations>
                 </configuration>
             </plugin>
             <plugin>

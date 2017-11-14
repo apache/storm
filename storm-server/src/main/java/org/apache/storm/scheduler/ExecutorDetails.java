@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,13 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
 public class ExecutorDetails {
-    int startTask;
-    int endTask;
+    public final int startTask;
+    public final int endTask;
 
-    public ExecutorDetails(int startTask, int endTask){
+    public ExecutorDetails(int startTask, int endTask) {
         this.startTask = startTask;
         this.endTask = endTask;
     }
@@ -34,6 +35,7 @@ public class ExecutorDetails {
         return endTask;
     }
 
+    @Override
     public boolean equals(Object other) {
         if (other == null || !(other instanceof ExecutorDetails)) {
             return false;
@@ -42,13 +44,14 @@ public class ExecutorDetails {
         ExecutorDetails executor = (ExecutorDetails)other;
         return (this.startTask == executor.startTask) && (this.endTask == executor.endTask);
     }
-    
+
+    @Override
     public int hashCode() {
         return this.startTask + 13 * this.endTask;
     }
     
     @Override
     public String toString() {
-    	return "[" + this.startTask + ", " + this.endTask + "]";
+        return "[" + this.startTask + ", " + this.endTask + "]";
     }
 }

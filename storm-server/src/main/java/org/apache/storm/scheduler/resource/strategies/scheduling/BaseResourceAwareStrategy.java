@@ -39,6 +39,7 @@ import org.apache.storm.scheduler.Component;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
+import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.RAS_Nodes;
 import org.apache.storm.scheduler.resource.ResourceUtils;
@@ -129,9 +130,9 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * a class to contain individual object resources as well as cumulative stats.
      */
     static class AllResources {
-        List<ObjectResources> objectResources = new LinkedList<ObjectResources>();
-        Map<String, Double> availableResourcesOverall = new HashMap<>();
-        Map<String, Double> totalResourcesOverall = new HashMap<>();
+        List<ObjectResources> objectResources = new LinkedList<>();
+        NormalizedResourceOffer availableResourcesOverall = new NormalizedResourceOffer();
+        NormalizedResourceOffer totalResourcesOverall = new NormalizedResourceOffer();
         String identifier;
 
         public AllResources(String identifier) {
@@ -139,19 +140,19 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         }
 
         public AllResources(AllResources other) {
-            this(   null,
-                    new HashMap<>(other.availableResourcesOverall),
-                    new HashMap(other.totalResourcesOverall),
-                    other.identifier);
+            this (null,
+                new NormalizedResourceOffer(other.availableResourcesOverall),
+                new NormalizedResourceOffer(other.totalResourcesOverall),
+                other.identifier);
             List<ObjectResources> objectResourcesList = new ArrayList<>();
             for (ObjectResources objectResource : other.objectResources) {
                 objectResourcesList.add(new ObjectResources(objectResource));
             }
             this.objectResources = objectResourcesList;
-
         }
 
-        public AllResources(List<ObjectResources> objectResources, Map<String, Double> availableResourcesOverall, Map<String, Double> totalResourcesOverall, String identifier) {
+        public AllResources(List<ObjectResources> objectResources, NormalizedResourceOffer availableResourcesOverall,
+                            NormalizedResourceOffer totalResourcesOverall, String identifier) {
             this.objectResources = objectResources;
             this.availableResourcesOverall = availableResourcesOverall;
             this.totalResourcesOverall = totalResourcesOverall;
@@ -163,10 +164,10 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
      * class to keep track of resources on a rack or node.
      */
     static class ObjectResources {
-        String id;
-        Map<String, Double> availableResources = new HashMap<>();
-        Map<String, Double> totalResources = new HashMap<>();
-        double effectiveResources = 0.0;
+        public final String id;
+        public NormalizedResourceOffer availableResources = new NormalizedResourceOffer();
+        public NormalizedResourceOffer totalResources = new NormalizedResourceOffer();
+        public double effectiveResources = 0.0;
 
         public ObjectResources(String id) {
             this.id = id;
@@ -176,7 +177,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             this(other.id, other.availableResources, other.totalResources, other.effectiveResources);
         }
 
-        public ObjectResources(String id, Map<String, Double> availableResources, Map<String, Double> totalResources, double effectiveResources) {
+        public ObjectResources(String id, NormalizedResourceOffer availableResources, NormalizedResourceOffer totalResources,
+                               double effectiveResources) {
             this.id = id;
             this.availableResources = availableResources;
             this.totalResources = totalResources;
@@ -220,10 +222,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             node.totalResources = rasNode.getTotalResources();
 
             nodes.add(node);
-            allResources.availableResourcesOverall = ResourceUtils.addResources(
-                    allResources.availableResourcesOverall, node.availableResources);
-            allResources.totalResourcesOverall = ResourceUtils.addResources(
-                    allResources.totalResourcesOverall, node.totalResources);
+            allResources.availableResourcesOverall.add(node.availableResources);
+            allResources.totalResourcesOverall.add(node.totalResources);
 
         }
 
@@ -234,7 +234,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             allResources.totalResourcesOverall);
 
         String topoId = topologyDetails.getId();
-        return this.sortObjectResources(
+        return sortObjectResources(
             allResources,
             exec,
             topologyDetails,
@@ -243,7 +243,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 public int getNumExistingSchedule(String objectId) {
 
                     //Get execs already assigned in rack
-                    Collection<ExecutorDetails> execs = new LinkedList<ExecutorDetails>();
+                    Collection<ExecutorDetails> execs = new LinkedList<>();
                     if (cluster.getAssignmentById(topoId) != null) {
                         for (Map.Entry<ExecutorDetails, WorkerSlot> entry :
                             cluster.getAssignmentById(topoId).getExecutorToSlot().entrySet()) {
@@ -331,13 +331,13 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             racks.add(rack);
             for (String nodeId : nodeIds) {
                 RAS_Node node = nodes.getNodeById(nodeHostnameToId(nodeId));
-                rack.availableResources = ResourceUtils.addResources(rack.availableResources, node.getTotalAvailableResources());
-                rack.totalResources = ResourceUtils.addResources(rack.totalResources, node.getTotalResources());
+                rack.availableResources.add(node.getTotalAvailableResources());
+                rack.totalResources.add(node.getTotalAvailableResources());
 
                 nodeIdToRackId.put(nodeId, rack.id);
 
-                allResources.totalResourcesOverall = ResourceUtils.addResources(allResources.totalResourcesOverall, rack.totalResources);
-                allResources.availableResourcesOverall = ResourceUtils.addResources(allResources.availableResourcesOverall, rack.availableResources);
+                allResources.totalResourcesOverall.add(rack.totalResources);
+                allResources.availableResourcesOverall.add(rack.availableResources);
 
             }
         }
@@ -347,30 +347,27 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             allResources.totalResourcesOverall);
 
         String topoId = topologyDetails.getId();
-        return this.sortObjectResources(
+        return sortObjectResources(
             allResources,
             exec,
             topologyDetails,
-            new ExistingScheduleFunc() {
-                @Override
-                public int getNumExistingSchedule(String objectId) {
-                    String rackId = objectId;
-                    //Get execs already assigned in rack
-                    Collection<ExecutorDetails> execs = new LinkedList<ExecutorDetails>();
-                    if (cluster.getAssignmentById(topoId) != null) {
-                        for (Map.Entry<ExecutorDetails, WorkerSlot> entry :
-                            cluster.getAssignmentById(topoId).getExecutorToSlot().entrySet()) {
-                            String nodeId = entry.getValue().getNodeId();
-                            String hostname = idToNode(nodeId).getHostname();
-                            ExecutorDetails exec = entry.getKey();
-                            if (nodeIdToRackId.get(hostname) != null
-                                && nodeIdToRackId.get(hostname).equals(rackId)) {
-                                execs.add(exec);
-                            }
+            (objectId) -> {
+                String rackId = objectId;
+                //Get execs already assigned in rack
+                Collection<ExecutorDetails> execs = new LinkedList<>();
+                if (cluster.getAssignmentById(topoId) != null) {
+                    for (Map.Entry<ExecutorDetails, WorkerSlot> entry :
+                        cluster.getAssignmentById(topoId).getExecutorToSlot().entrySet()) {
+                        String nodeId = entry.getValue().getNodeId();
+                        String hostname = idToNode(nodeId).getHostname();
+                        ExecutorDetails exec1 = entry.getKey();
+                        if (nodeIdToRackId.get(hostname) != null
+                            && nodeIdToRackId.get(hostname).equals(rackId)) {
+                            execs.add(exec1);
                         }
                     }
-                    return execs.size();
                 }
+                return execs.size();
             });
     }
 

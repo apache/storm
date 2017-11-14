@@ -26,13 +26,12 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.apache.storm.scheduler.resource.ResourceUtils.normalizedResourceMap;
+import static org.apache.storm.scheduler.resource.NormalizedResources.normalizedResourceMap;
 
 public class SupervisorHeartbeat implements Runnable {
 

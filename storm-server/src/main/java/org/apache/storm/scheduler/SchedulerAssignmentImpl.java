@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.scheduler;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     private final String topologyId;
 
     /**
-     * assignment detail, a mapping from executor to <code>WorkerSlot</code>
+     * assignment detail, a mapping from executor to <code>WorkerSlot</code>.
      */
     private final Map<ExecutorDetails, WorkerSlot> executorToSlot = new HashMap<>();
     private final Map<WorkerSlot, WorkerResources> resources = new HashMap<>();
@@ -47,6 +48,13 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
     //Used to cache the slotToExecutors mapping.
     private Map<WorkerSlot, Collection<ExecutorDetails>> slotToExecutorsCache = null;
 
+    /**
+     * Create a new assignment.
+     * @param topologyId the id of the topology the assignment is for.
+     * @param executorToSlot the executor to slot mapping for the assignment.  Can be null and set through other methods later.
+     * @param resources the resources for the current assignments.  Can be null and set through other methods later.
+     * @param nodeIdToTotalSharedOffHeap the shared memory for this assignment can be null and set through other methods later.
+     */
     public SchedulerAssignmentImpl(String topologyId, Map<ExecutorDetails, WorkerSlot> executorToSlot,
             Map<WorkerSlot, WorkerResources> resources, Map<String, Double> nodeIdToTotalSharedOffHeap) {
         this.topologyId = topologyId;       
@@ -84,6 +92,11 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         return this.getClass().getSimpleName() + " topo: " + topologyId + " execToSlots: " + executorToSlot;
     }
 
+    /**
+     * Like the equals command, but ignores the resources.
+     * @param other the object to check for equality against.
+     * @return true if they are equal, ignoring resources, else false.
+     */
     public boolean equalsIgnoreResources(Object other) {
         if (other == this) {
             return true;
@@ -93,8 +106,8 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         }
         SchedulerAssignmentImpl o = (SchedulerAssignmentImpl) other;
         
-        return this.topologyId.equals(o.topologyId) &&
-                this.executorToSlot.equals(o.executorToSlot);
+        return topologyId.equals(o.topologyId)
+            && executorToSlot.equals(o.executorToSlot);
     }
     
     @Override
@@ -113,8 +126,8 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         }
         SchedulerAssignmentImpl o = (SchedulerAssignmentImpl) other;
 
-        return this.resources.equals(o.resources) &&
-            this.nodeIdToTotalSharedOffHeap.equals(o.nodeIdToTotalSharedOffHeap);
+        return resources.equals(o.resources)
+            && nodeIdToTotalSharedOffHeap.equals(o.nodeIdToTotalSharedOffHeap);
     }
     
     @Override
@@ -131,7 +144,7 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
      * Assign the slot to executors.
      */
     public void assign(WorkerSlot slot, Collection<ExecutorDetails> executors, WorkerResources slotResources) {
-        assert(slot != null);
+        assert slot != null;
         for (ExecutorDetails executor : executors) {
             this.executorToSlot.put(executor, slot);
         }
@@ -178,33 +191,32 @@ public class SchedulerAssignmentImpl implements SchedulerAssignment {
         }
     }
 
-    /**
-     * @param slot
-     * @return true if slot is occupied by this assignment
-     */
+    @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
         return this.executorToSlot.containsValue(slot);
     }
 
+    @Override
     public boolean isExecutorAssigned(ExecutorDetails executor) {
         return this.executorToSlot.containsKey(executor);
     }
-    
+
+    @Override
     public String getTopologyId() {
         return this.topologyId;
     }
 
+    @Override
     public Map<ExecutorDetails, WorkerSlot> getExecutorToSlot() {
         return this.executorToSlot;
     }
 
-    /**
-     * @return the executors covered by this assignments
-     */
+    @Override
     public Set<ExecutorDetails> getExecutors() {
         return this.executorToSlot.keySet();
     }
 
+    @Override
     public Map<WorkerSlot, Collection<ExecutorDetails>> getSlotToExecutors() {
         Map<WorkerSlot, Collection<ExecutorDetails>> ret = slotToExecutorsCache;
         if (ret != null) {

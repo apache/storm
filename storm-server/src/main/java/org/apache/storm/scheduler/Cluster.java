@@ -19,7 +19,6 @@
 package org.apache.storm.scheduler;
 
 import com.google.common.annotations.VisibleForTesting;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,13 +28,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
+import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
@@ -43,7 +43,7 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.scheduler.resource.ResourceUtils.normalizedResourceMap;
+import static org.apache.storm.scheduler.resource.NormalizedResources.normalizedResourceMap;
 
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
@@ -79,7 +79,7 @@ public class Cluster implements ISchedulingState {
     private Set<String> blackListedHosts = new HashSet<>();
     private INimbus inimbus;
     private final Topologies topologies;
-    private final Map<String, Double> scheduledCPUCache = new HashMap<>();
+    private final Map<String, Double> scheduledCpuCache = new HashMap<>();
     private final Map<String, Double> scheduledMemoryCache = new HashMap<>();
 
     public Cluster(
@@ -327,10 +327,10 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getAssignablePorts(SupervisorDetails supervisor) {
-        if (isBlackListed(supervisor.id)) {
+        if (isBlackListed(supervisor.getId())) {
             return Collections.emptySet();
         }
-        return supervisor.allPorts;
+        return supervisor.getAllPorts();
     }
 
     @Override
@@ -417,33 +417,18 @@ public class Cluster implements ISchedulingState {
 
     private WorkerResources calculateWorkerResources(
         TopologyDetails td, Collection<ExecutorDetails> executors) {
-        Map<String, Double> totalResources = new HashMap<>();
+        NormalizedResourceRequest totalResources = new NormalizedResourceRequest();
         Map<String, Double> sharedTotalResources = new HashMap<>();
         for (ExecutorDetails exec : executors) {
-            Map<String, Double> allResources = td.getTotalResources(exec);
+            NormalizedResourceRequest allResources = td.getTotalResources(exec);
             if (allResources == null) {
                 continue;
             }
-            for (Entry<String, Double> resource : allResources.entrySet()) {
-
-                if (!totalResources.containsKey(resource.getKey())) {
-                    totalResources.put(resource.getKey(), 0.0);
-                }
-                totalResources.put(
-                        resource.getKey(),
-                        totalResources.get(resource.getKey()) + resource.getValue());
-            }
+            totalResources.add(allResources);
         }
-        totalResources = normalizedResourceMap(totalResources);
         for (SharedMemory shared : td.getSharedMemoryRequests(executors)) {
-            addResource(
-                    totalResources,
-                    Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, shared.get_off_heap_worker()
-            );
-            addResource(
-                    totalResources,
-                    Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, shared.get_on_heap()
-            );
+            totalResources.addOffHeap(shared.get_off_heap_worker());
+            totalResources.addOnHeap(shared.get_off_heap_worker());
 
             addResource(
                     sharedTotalResources,
@@ -456,21 +441,12 @@ public class Cluster implements ISchedulingState {
         }
         sharedTotalResources = normalizedResourceMap(sharedTotalResources);
         WorkerResources ret = new WorkerResources();
-        ret.set_resources(totalResources);
+        ret.set_resources(totalResources.toNormalizedMap());
         ret.set_shared_resources(sharedTotalResources);
 
-        ret.set_cpu(
-                totalResources.getOrDefault(
-                        Constants.COMMON_CPU_RESOURCE_NAME, 0.0)
-        );
-        ret.set_mem_off_heap(
-                totalResources.getOrDefault(
-                        Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
-        );
-        ret.set_mem_on_heap(
-                totalResources.getOrDefault(
-                        Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0)
-        );
+        ret.set_cpu(totalResources.getTotalCpu());
+        ret.set_mem_off_heap(totalResources.getOffHeapMemoryMb());
+        ret.set_mem_on_heap(totalResources.getOnHeapMemoryMb());
         ret.set_shared_mem_off_heap(
                 sharedTotalResources.getOrDefault(
                         Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
@@ -487,32 +463,12 @@ public class Cluster implements ISchedulingState {
         WorkerSlot ws,
         ExecutorDetails exec,
         TopologyDetails td,
-        Map<String, Double> resourcesAvailable,
+        NormalizedResourceOffer resourcesAvailable,
         double maxHeap) {
 
-        Map<String, Double> requestedResources = td.getTotalResources(exec);
-
-        for (Entry resourceNeededEntry : requestedResources.entrySet()) {
-            String resourceName = resourceNeededEntry.getKey().toString();
-            if (resourceName.equals(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME) ||
-                    resourceName.equals(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME)) {
-                continue;
-            }
-            Double resourceNeeded = ObjectReader.getDouble(resourceNeededEntry.getValue());
-            Double resourceAvailable = ObjectReader.getDouble(resourcesAvailable.get(resourceName), 0.0);
-            if (resourceNeeded > resourceAvailable) {
-                if (LOG.isTraceEnabled()) {
-                    LOG.trace("Could not schedule {}:{} on {} not enough {} {} > {}",
-                            td.getName(),
-                            exec,
-                            ws,
-                            resourceName,
-                            resourceNeeded,
-                            resourceAvailable);
-                }
-                //Not enough resources - stop trying
-                return false;
-            }
+        NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
+        if (!resourcesAvailable.couldHoldIgnoringMemory(requestedResources)) {
+            return false;
         }
 
         double currentTotal = 0.0;
@@ -539,8 +495,7 @@ public class Cluster implements ISchedulingState {
         }
 
         double memoryAdded = afterTotal - currentTotal;
-        double memoryAvailable = ObjectReader.getDouble(resourcesAvailable.get(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME), 0.0);
+        double memoryAvailable = resourcesAvailable.getTotalMemoryMb();
 
         if (memoryAdded > memoryAvailable) {
             if (LOG.isTraceEnabled()) {
@@ -613,7 +568,7 @@ public class Cluster implements ISchedulingState {
         String nodeId = slot.getNodeId();
         assignment.setTotalSharedOffHeapMemory(
             nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
-        scheduledCPUCache.remove(nodeId);
+        scheduledCpuCache.remove(nodeId);
         scheduledMemoryCache.remove(nodeId);
     }
 
@@ -684,7 +639,7 @@ public class Cluster implements ISchedulingState {
                 String nodeId = slot.getNodeId();
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
-                scheduledCPUCache.remove(nodeId);
+                scheduledCpuCache.remove(nodeId);
                 scheduledMemoryCache.remove(nodeId);
             }
         }
@@ -795,7 +750,7 @@ public class Cluster implements ISchedulingState {
     public double getClusterTotalCpuResource() {
         double sum = 0.0;
         for (SupervisorDetails sup : supervisors.values()) {
-            sum += sup.getTotalCPU();
+            sum += sup.getTotalCpu();
         }
         return sum;
     }
@@ -935,7 +890,7 @@ public class Cluster implements ISchedulingState {
     public Map<String, SupervisorResources> getSupervisorsResourcesMap() {
         Map<String, SupervisorResources> ret = new HashMap<>();
         for (SupervisorDetails sd : supervisors.values()) {
-            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalCPU(), 0, 0));
+            ret.put(sd.getId(), new SupervisorResources(sd.getTotalMemory(), sd.getTotalCpu(), 0, 0));
         }
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             for (Entry<WorkerSlot, WorkerResources> entry :
@@ -986,27 +941,18 @@ public class Cluster implements ISchedulingState {
     }
 
     @Override
-    public Map<String, Double> getAllScheduledResourcesForNode(String nodeId) {
-        Map<String, Double> totalScheduledResources = new HashMap<>();
+    public NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId) {
+        NormalizedResourceRequest totalScheduledResources = new NormalizedResourceRequest();
         for (SchedulerAssignmentImpl assignment : assignments.values()) {
             for (Entry<WorkerSlot, WorkerResources> entry :
                     assignment.getScheduledResources().entrySet()) {
                 if (nodeId.equals(entry.getKey().getNodeId())) {
-                    WorkerResources resources = entry.getValue();
-                    for (Map.Entry<String, Double> resourceEntry : resources.get_resources().entrySet()) {
-                        Double currentResourceValue = totalScheduledResources.getOrDefault(resourceEntry.getKey(), 0.0);
-                        totalScheduledResources.put(
-                                resourceEntry.getKey(),
-                                currentResourceValue + ObjectReader.getDouble(resourceEntry.getValue()));
-                    }
-
+                    totalScheduledResources.add(entry.getValue());
                 }
             }
             Double sharedOffHeap = assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId);
             if (sharedOffHeap != null) {
-                String resourceName = Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME;
-                Double currentResourceValue = totalScheduledResources.getOrDefault(resourceName, 0.0);
-                totalScheduledResources.put(resourceName, currentResourceValue + sharedOffHeap);
+                totalScheduledResources.addOffHeap(sharedOffHeap);
             }
         }
         return totalScheduledResources;
@@ -1038,7 +984,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public double getScheduledCpuForNode(String nodeId) {
-        Double ret = scheduledCPUCache.get(nodeId);
+        Double ret = scheduledCpuCache.get(nodeId);
         if (ret != null) {
             return ret;
         }
@@ -1052,7 +998,7 @@ public class Cluster implements ISchedulingState {
                 }
             }
         }
-        scheduledCPUCache.put(nodeId, totalCpu);
+        scheduledCpuCache.put(nodeId, totalCpu);
         return totalCpu;
     }
 

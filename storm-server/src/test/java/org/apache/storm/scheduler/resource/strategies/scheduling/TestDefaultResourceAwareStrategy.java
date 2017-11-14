@@ -201,7 +201,7 @@ public class TestDefaultResourceAwareStrategy {
     @Test
     public void testMultipleRacks() {
 
-        final Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
+        final Map<String, SupervisorDetails> supMap = new HashMap<>();
         final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
         final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 10, 200, 4000);
@@ -229,7 +229,7 @@ public class TestDefaultResourceAwareStrategy {
         DNSToSwitchMapping TestNetworkTopographyPlugin = new DNSToSwitchMapping() {
             @Override
             public Map<String, String> resolve(List<String> names) {
-                Map<String, String> ret = new HashMap<String, String>();
+                Map<String, String> ret = new HashMap<>();
                 for (SupervisorDetails sup : supMapRack1.values()) {
                     ret.put(sup.getHost(), "rack-0");
                 }
@@ -267,7 +267,7 @@ public class TestDefaultResourceAwareStrategy {
             String rack = entry.getValue();
             List<String> nodesForRack = rackToNodes.get(rack);
             if (nodesForRack == null) {
-                nodesForRack = new ArrayList<String>();
+                nodesForRack = new ArrayList<>();
                 rackToNodes.put(rack, nodesForRack);
             }
             nodesForRack.add(hostName);
@@ -277,7 +277,8 @@ public class TestDefaultResourceAwareStrategy {
         DefaultResourceAwareStrategy rs = new DefaultResourceAwareStrategy();
         
         rs.prepare(cluster);
-        TreeSet<ObjectResources> sortedRacks= rs.sortRacks(null, topo1);
+        TreeSet<ObjectResources> sortedRacks = rs.sortRacks(null, topo1);
+        LOG.info("Sorted Racks {}", sortedRacks);
 
         Assert.assertEquals("# of racks sorted", 5, sortedRacks.size());
         Iterator<ObjectResources> it = sortedRacks.iterator();

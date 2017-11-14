@@ -18,8 +18,6 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
-import com.google.common.annotations.VisibleForTesting;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -27,7 +25,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeSet;
-
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Component;
@@ -133,31 +130,7 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
             final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
             final ExistingScheduleFunc existingScheduleFunc) {
 
-        Map<String, Double> requestedResources = topologyDetails.getTotalResources(exec);
         AllResources affinityBasedAllResources = new AllResources(allResources);
-        for (ObjectResources objectResources : affinityBasedAllResources.objectResources) {
-            StringBuilder sb = new StringBuilder();
-            List<Double> values = new LinkedList<>();
-
-            for (Map.Entry<String, Double> availableResourcesEntry : objectResources.availableResources.entrySet()) {
-                if (!requestedResources.containsKey(availableResourcesEntry.getKey())) {
-                    objectResources.availableResources.put(availableResourcesEntry.getKey(), -1.0 * availableResourcesEntry.getValue());
-                }
-            }
-
-            Map<String, Double> percentageTotal = ResourceUtils.getPercentageOfTotalResourceMap(
-                    objectResources.availableResources, allResources.availableResourcesOverall
-            );
-            for(Map.Entry<String, Double> percentageEntry : percentageTotal.entrySet()) {
-                values.add(percentageEntry.getValue());
-                sb.append(String.format("%s %f(%f%%) ", percentageEntry.getKey(),
-                        objectResources.availableResources.get(percentageEntry.getKey()),
-                        percentageEntry.getValue())
-                );
-
-            }
-
-        }
 
         TreeSet<ObjectResources> sortedObjectResources =
                 new TreeSet<>((o1, o2) -> {
@@ -168,13 +141,8 @@ public class GenericResourceAwareStrategy extends BaseResourceAwareStrategy impl
                     } else if (execsScheduled1 < execsScheduled2) {
                         return 1;
                     } else {
-                        Collection<Double> o1Values = ResourceUtils.getPercentageOfTotalResourceMap(
-                                o1.availableResources, allResources.availableResourcesOverall).values();
-                        Collection<Double> o2Values = ResourceUtils.getPercentageOfTotalResourceMap(
-                                o2.availableResources, allResources.availableResourcesOverall).values();
-
-                        double o1Avg = ResourceUtils.avg(o1Values);
-                        double o2Avg = ResourceUtils.avg(o2Values);
+                        double o1Avg = allResources.availableResourcesOverall.calculateAveragePercentageUsedBy(o1.availableResources);
+                        double o2Avg = allResources.availableResourcesOverall.calculateAveragePercentageUsedBy(o2.availableResources);
 
                         if (o1Avg > o2Avg) {
                             return -1;
