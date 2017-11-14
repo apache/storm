@@ -17,6 +17,7 @@
  */
 package org.apache.storm.serialization;
 
+import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.Tuple;
 import com.esotericsoftware.kryo.io.Output;
@@ -46,6 +47,10 @@ public class KryoTupleSerializer implements ITupleSerializer {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    public byte[] serialize(BackPressureStatus status) {
+        return  _kryo.serializeObject(status);
     }
 
 //    public long crc32(Tuple tuple) {

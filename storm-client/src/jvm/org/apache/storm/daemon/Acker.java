@@ -116,7 +116,7 @@ public class Acker implements IBolt {
         }
 
         Integer task = curr.spoutTask;
-        if (curr != null && task != null) {
+        if (task != null) {
             Values tuple = new Values(id, getTimeDeltaMillis(curr.startTime));
             if (curr.val == 0) {
                 pending.remove(id);

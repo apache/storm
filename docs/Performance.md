@@ -98,15 +98,14 @@ It has 3 levels of idling and allows configuring how long to stay at each level 
    based on the Wait situation it is used in. This is the most CPU conserving state and it remains in this level for the remaining iterations.
 
 
-- **ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyPark' to use this.
+- **ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to `org.apache.storm.policy.WaitStrategyPark` to use this.
 This strategy disables the current thread for thread scheduling purposes by calling LockSupport.parkNanos(). The amount of park time is configured using either
 `topology.bolt.wait.park.microsec` or `topology.backpressure.wait.park.microsec` based on the wait situation it is used. Setting the park time to 0, effectively disables
-invocation of LockSupport.parkNanos and this mode can be used to achieve busy polling (if targeting best throughput & latency without regard for CPU utilization).
+invocation of LockSupport.parkNanos and this mode can be used to achieve busy polling (which at the cost of high CPU utilization even when idle, may improve latency and/or throughput).
 
 
 ## Max.spout.pending
-This is only used for ACK-mode. For single worker mode, disable this. For multi-worker mode set to a large number like maybe .... (TODO: ROSHAN revisit this).
-This should not be less than the `topology.producer.batch.size`.
+The back pressure mechanism no longer requires `topology.max.spout.pending`. It is recommend to set this to null (default).
 
 
 ## 4. Sampling Rate
@@ -116,8 +115,8 @@ possible to improve throughput and latency by reducing the sampling rate.
 
 
 # Budgeting CPU cores for Executors
-There are three main types of executors (i.e threads) to take into account when budgeting CPU cores for them. Spout Executors, Bolt Executors and Worker Transfer Thread.
-(WHAT ABOUT THREADS HANDLING INCOMING MESSAGES TO A WORKER ? TODO: ROSHAN revisit this)
+There are three main types of executors (i.e threads) to take into account when budgeting CPU cores for them. Spout Executors, Bolt Executors, Worker Transfer (handles outbound
+messages) and NettyWorker (handles inbound messages).
 The first two are used to run spout, bolt and acker instances. The Worker Transfer thread is used to serialize and send messages to other workers (in multi-worker mode).
 
 Executors that are expected to remain busy, either because they are handling a lot of messages, or because their processing is inherently CPU intensive, should be allocated

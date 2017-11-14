@@ -262,6 +262,8 @@ topology.backpressure.wait.progressive.millis : 1       # for org.apache.storm.p
 topology.backpressure.wait.progressive.step : 1              # controls progression to deeper wait levels for WaitStrategyProgressive
 topology.backpressure.wait.progressive.multiplier : 1000     # controls progression to deeper wait levels for WaitStrategyProgressive
 
+topology.backpressure.check.millis : 50   # how often to check if backpressure has relieved on executors under BP, for informing other workers to resume sending msgs to them. Must be > 0
+topology.executor.overflow.limit : 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting
 
 topology.error.throttle.interval.secs: 10
 topology.max.error.report.per.interval: 5
@@ -275,7 +277,7 @@ topology.environment: null
 topology.transfer.buffer.size: 1000   # size of recv  queue for transfer worker thread
 topology.transfer.batch.size: 1       # can be no larger than half of `topology.transfer.buffer.size`
 
-topology.executor.receive.buffer.size: 1000  # size of recv queue for spouts & bolts
+topology.executor.receive.buffer.size: 1000  # size of recv queue for spouts & bolts. Will be internally rounded off to next power of 2 (if it is not already)
 topology.producer.batch.size: 1              # can be no larger than half of `topology.executor.receive.buffer.size`
 
 topology.flush.tuple.freq.millis: 3  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).

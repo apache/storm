@@ -18,14 +18,17 @@
 package org.apache.storm.utils;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.atomic.AtomicLong;
 
 import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.messaging.netty.Client; // ROSHAN - REMOVE
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -34,6 +37,7 @@ public class TransferDrainer {
   private Map<Integer, ArrayList<TaskMessage>> bundles = new HashMap();
 
   private static final Logger LOG = LoggerFactory.getLogger(TransferDrainer.class);
+  public AtomicLong emitCount = new AtomicLong(0); // ROSHAN - remove
 
   // Cache the msgs grouped by destination node
   public void add(TaskMessage taskMsg) {
@@ -44,8 +48,14 @@ public class TransferDrainer {
       bundles.put(destId, msgs);
     }
     msgs.add(taskMsg);
+    emitCount.incrementAndGet();
   }
 
+  public void tell(Collection<IConnection> connections) { // ROSHAN - remove after stabilization
+    for (IConnection conn : connections) {
+      ((Client)conn).tellState(emitCount.get());
+    }
+  }
   public void send(Map<Integer, NodeInfo> taskToNode, Map<NodeInfo, IConnection> connections) {
     HashMap<NodeInfo, ArrayList<ArrayList<TaskMessage>>> bundleMapByDestination = groupBundleByDestination(taskToNode);
 

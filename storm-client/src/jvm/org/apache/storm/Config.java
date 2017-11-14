@@ -572,6 +572,25 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_PRODUCER_BATCH_SIZE="topology.producer.batch.size";
 
     /**
+     * If number of items in task's overflowQ exceeds this, new messages coming from other workers to this task will be dropped
+     * This prevents OutOfMemoryException that can occur in rare scenarios in the presence of BackPressure. This affects
+     * only inter-worker messages. Messages originating from within the same worker will not be dropped.
+     */
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    @NotNull
+    public static final String TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT="topology.executor.overflow.limit";
+
+    /**
+     * How often a worker should check and notify upstream workers about its tasks that are no longer experiencing BP
+     * and able to receive new messages
+     */
+    @isInteger
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_BACKPRESSURE_CHECK_MILLIS ="topology.backpressure.check.millis";
+
+    /**
      * How often to send flush tuple to the executors for flushing out batched events.
      */
     @isInteger

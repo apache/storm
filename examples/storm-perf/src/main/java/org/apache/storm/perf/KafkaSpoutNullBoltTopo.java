@@ -115,6 +115,7 @@ public class KafkaSpoutNullBoltTopo {
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
 
+        topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }

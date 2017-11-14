@@ -62,8 +62,13 @@ public class ConstSpoutNullBoltTopo {
         // 3 - Setup Topology  --------
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout(SPOUT_ID, spout,  Helper.getInt(conf, SPOUT_COUNT, 1) );
-        BoltDeclarer bd = builder.setBolt(BOLT_ID, bolt, Helper.getInt(conf, BOLT_COUNT, 1));
+        int numSpouts = Helper.getInt(conf, SPOUT_COUNT, 1);
+        builder.setSpout(SPOUT_ID, spout, numSpouts);
+
+        int numBolts = Helper.getInt(conf, BOLT_COUNT, 1);
+        BoltDeclarer bd = builder.setBolt(BOLT_ID, bolt, numBolts);
+
+        System.err.printf("====> Using : numSpouts = %d , numBolts = %d\n", numSpouts, numBolts);
 
         String groupingType = Helper.getStr(conf, GROUPING);
         if(groupingType==null || groupingType.equalsIgnoreCase(DEFAULT_GROUPING) )
@@ -86,7 +91,7 @@ public class ConstSpoutNullBoltTopo {
         //    -- ACKer=1:  ~1.3 mill/sec, lat= ~11 micros   (batchSz=1 & receive.buffer.size=1k, bolt.wait & bp.wait = Progressive[defaults])
         //    -- ACKer=1:  ~1.6 mill/sec, lat= ~300 micros  (batchSz=500 & bolt.wait.strategy=Park bolt.wait.park.micros=0)
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
-        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 2_000);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 500);
         topoConf.put(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE, 50_000);
         topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
@@ -98,6 +103,8 @@ public class ConstSpoutNullBoltTopo {
         if (args.length > 1) {
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
+        topoConf.putAll(Utils.readCommandLineOpts());
+
         if (args.length > 2) {
             System.err.println("args: [runDurationSec]  [optionalConfFile]");
             return;

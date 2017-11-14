@@ -61,13 +61,6 @@ public class SimplifiedWordCountTopo {
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
-        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
-        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
-        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
-
         if (args.length > 2) {
             String file = args[0];
             runTime = Integer.parseInt(args[1]);
@@ -78,6 +71,14 @@ public class SimplifiedWordCountTopo {
             System.err.println("args: file.txt [runDurationSec]  [optionalConfFile]");
             return;
         }
+        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+
+        topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to storm cluster
         Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }

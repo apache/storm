@@ -20,7 +20,6 @@ package org.apache.storm.serialization;
 import org.apache.storm.utils.ListDelegate;
 import com.esotericsoftware.kryo.Kryo;
 import com.esotericsoftware.kryo.io.Output;
-import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
@@ -35,7 +34,7 @@ public class KryoValuesSerializer {
         _kryoOut = new Output(2000, 2000000000);
     }
     
-    public void serializeInto(List<Object> values, Output out) throws IOException {
+    public void serializeInto(List<Object> values, Output out) {
         // this ensures that list of values is always written the same way, regardless
         // of whether it's a java collection or one of clojure's persistent collections 
         // (which have different serializers)
@@ -44,7 +43,7 @@ public class KryoValuesSerializer {
         _kryo.writeObject(out, _delegate); 
     }
     
-    public byte[] serialize(List<Object> values) throws IOException {
+    public byte[] serialize(List<Object> values) {
         _kryoOut.clear();
         serializeInto(values, _kryoOut);
         return _kryoOut.toBytes();

@@ -20,6 +20,7 @@ package org.apache.storm.serialization;
 import org.apache.storm.Config;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.serialization.types.ArrayListSerializer;
 import org.apache.storm.serialization.types.HashMapSerializer;
 import org.apache.storm.serialization.types.HashSetSerializer;

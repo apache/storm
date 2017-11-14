@@ -21,20 +21,28 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.storm.messaging.TaskMessage;
+import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.jboss.netty.buffer.ChannelBuffer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.frame.FrameDecoder;
 
-public class MessageDecoder extends FrameDecoder {    
+public class MessageDecoder extends FrameDecoder {
+
+    private KryoValuesDeserializer deser;
+
+    public MessageDecoder(KryoValuesDeserializer deser) {
+        this.deser = deser;
+    }
+
     /*
-     * Each ControlMessage is encoded as:
-     *  code (<0) ... short(2)
-     * Each TaskMessage is encoded as:
-     *  task (>=0) ... short(2)
-     *  len ... int(4)
-     *  payload ... byte[]     *  
-     */
+         * Each ControlMessage is encoded as:
+         *  code (<0) ... short(2)
+         * Each TaskMessage is encoded as:
+         *  task (>=0) ... short(2)
+         *  len ... int(4)
+         *  payload ... byte[]     *
+         */
     protected Object decode(ChannelHandlerContext ctx, Channel channel, ChannelBuffer buf) throws Exception {
         // Make sure that we have received at least a short 
         long available = buf.readableBytes();
@@ -99,7 +107,24 @@ public class MessageDecoder extends FrameDecoder {
                 return new SaslMessageToken(payload.array());
             }
 
-            // case 3: task Message
+            // case 3: BackPressureStatus
+            if (code == BackPressureStatus.IDENTIFIER) {
+                available = buf.readableBytes();
+                if(available < 4)
+                    return null;
+                int dataLen = buf.readInt();
+                if (available < 4 + dataLen) {
+                    // need more data
+                    buf.resetReaderIndex();
+                    return null;
+                }
+                byte[] bytes = new byte[dataLen];
+                buf.readBytes(bytes);
+                return BackPressureStatus.read(bytes, deser);
+
+            }
+
+            // case 4: task Message
 
             // Make sure that we have received at least an integer (length)
             if (available < 4) {

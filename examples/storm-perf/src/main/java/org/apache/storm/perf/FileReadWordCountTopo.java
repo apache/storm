@@ -70,6 +70,12 @@ public class FileReadWordCountTopo {
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
+        if (args.length > 0) {
+            runTime = Integer.parseInt(args[0]);
+        }
+        if (args.length > 1) {
+            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
+        }
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
@@ -77,12 +83,7 @@ public class FileReadWordCountTopo {
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
 
-        if (args.length > 0) {
-            runTime = Integer.parseInt(args[0]);
-        }
-        if (args.length > 1) {
-            topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
-        }
+        topoConf.putAll(Utils.readCommandLineOpts());
         if (args.length > 2) {
             System.err.println("args: [runDurationSec]  [optionalConfFile]");
             return;

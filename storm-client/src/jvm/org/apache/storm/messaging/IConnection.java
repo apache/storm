@@ -18,6 +18,8 @@
 package org.apache.storm.messaging;
 
 import org.apache.storm.grouping.Load;
+import org.apache.storm.messaging.netty.BackPressureStatus;
+
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
@@ -34,7 +36,12 @@ public interface IConnection {
      * @param taskToLoad a map from the task id to the load for that task.
      */
     public void sendLoadMetrics(Map<Integer, Double> taskToLoad);
-    
+
+    /**
+     * Sends the back pressure metrics to all downstream connections.
+     */
+    public void sendBackPressureStatus(BackPressureStatus bpStatus);
+
     /**
      * send a message with taskId and payload
      * @param taskId task ID

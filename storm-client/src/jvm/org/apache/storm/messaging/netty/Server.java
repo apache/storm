@@ -23,10 +23,10 @@ import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.utils.ObjectReader;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
@@ -38,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -61,8 +63,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     final ServerBootstrap bootstrap;
  
     private volatile boolean closing = false;
-    List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, null));
-    private KryoValuesSerializer _ser;
+    KryoValuesSerializer _ser;
+    KryoValuesDeserializer deser;
     private IConnectionCallback _cb = null; 
     private final int boundPort;
     
@@ -71,6 +73,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         this.topoConf = topoConf;
         this.port = port;
         _ser = new KryoValuesSerializer(topoConf);
+        deser = new KryoValuesDeserializer(topoConf);
 
         // Configure the server.
         int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -175,14 +178,17 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     @Override
-    public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
-        try {
-            MessageBatch mb = new MessageBatch(1);
-            mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
-            allChannels.write(mb);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    synchronized public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
+        MessageBatch mb = new MessageBatch(1);
+        mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
+        allChannels.write(mb);
+    }
+
+    // this method expected to be thread safe
+    @Override
+    synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus)  {
+        LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}, recvCount={}", bpStatus, receivedTotal.get());
+        allChannels.write(bpStatus);
     }
 
     @Override
@@ -257,8 +263,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         addChannel(c);
     }
 
+    public AtomicLong receivedTotal= new AtomicLong(0); // ROSHAN - remove
     public void received(Object message, String remote, Channel channel)  throws InterruptedException {
         List<TaskMessage>msgs = (List<TaskMessage>)message;
+        receivedTotal.addAndGet( msgs.size() );
         enqueue(msgs, remote);
     }
 

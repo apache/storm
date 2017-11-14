@@ -45,7 +45,7 @@ public class ConstSpoutIdBoltNullBoltTopo {
 
     // Configs
     public static final String BOLT1_COUNT = "bolt1.count";
-    public static final String BOLT2_COUNT = "bolt2.count";
+    public static final String BOLT2_COUNT = "bolt2.c1ount";
     public static final String SPOUT_COUNT = "spout.count";
 
     public static StormTopology getTopology(Map<String, Object> conf) {
@@ -61,14 +61,17 @@ public class ConstSpoutIdBoltNullBoltTopo {
         // 3 - Setup Topology  --------
         TopologyBuilder builder = new TopologyBuilder();
 
-        builder.setSpout(SPOUT_ID, spout,  Helper.getInt(conf, SPOUT_COUNT, 1) );
+        int numSpouts = Helper.getInt(conf, SPOUT_COUNT, 1);
+        builder.setSpout(SPOUT_ID, spout, numSpouts);
 
-        builder.setBolt(BOLT1_ID, bolt1, Helper.getInt(conf, BOLT1_COUNT, 1))
+        int numBolt1 = Helper.getInt(conf, BOLT1_COUNT, 1);
+        builder.setBolt(BOLT1_ID, bolt1, numBolt1)
                 .localOrShuffleGrouping(SPOUT_ID);
 
-        builder.setBolt(BOLT2_ID, bolt2, Helper.getInt(conf, BOLT2_COUNT, 1))
+        int numBolt2 = Helper.getInt(conf, BOLT2_COUNT, 1);
+        builder.setBolt(BOLT2_ID, bolt2, numBolt2)
                 .localOrShuffleGrouping(BOLT1_ID);
-
+        System.err.printf("====> Using : numSpouts = %d , numBolt1 = %d, numBolt2=%d\n", numSpouts, numBolt1, numBolt2);
         return builder.createTopology();
     }
 
@@ -80,9 +83,8 @@ public class ConstSpoutIdBoltNullBoltTopo {
         //     -- Expect ~5.3 mill/sec (3.2 mill/sec with batchSz=1)
         //     -- ~1 mill/sec, lat= ~20 microsec  with acker=1 & batchSz=1
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
-        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
-        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 500);
+        topoConf.put(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE, 50_000);
         topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
@@ -93,6 +95,8 @@ public class ConstSpoutIdBoltNullBoltTopo {
         if (args.length > 1) {
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
+        topoConf.putAll(Utils.readCommandLineOpts());
+
         if (args.length > 2) {
             System.err.println("args: [runDurationSec]  [optionalConfFile]");
             return;

@@ -56,7 +56,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class SpoutExecutor extends Executor {
@@ -76,7 +75,6 @@ public class SpoutExecutor extends Executor {
     private RotatingMap<Long, TupleInfo> pending;
     SpoutOutputCollectorImpl spoutOutputCollector;
     private RunningAvg latencySampled;
-    ConcurrentLinkedQueue<AddressedTuple> overflow = new ConcurrentLinkedQueue<>();
 
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
@@ -93,6 +91,7 @@ public class SpoutExecutor extends Executor {
     }
 
     public void init(final ArrayList<Task> idToTask, int idToTaskBase) {
+        executorTransfer.initLocalRecvQueues();
         latencySampled = new RunningAvg("[SAMPLED] Latency", 10_000_000);
         while (!stormActive.get()) {
             Utils.sleep(100);
@@ -152,7 +151,7 @@ public class SpoutExecutor extends Executor {
         return new Callable<Long>() {
             int i=0;
             final int recvqCheckSkipCount = getSpoutRecvqCheckSkipCount();
-            int idleCount = 0;
+            int bpIdleCount = 0;
             @Override
             public Long call() throws Exception {
                 int receiveCount = 0;
@@ -163,7 +162,7 @@ public class SpoutExecutor extends Executor {
                 long currCount = emittedCount.get();
                 boolean reachedMaxSpoutPending = (maxSpoutPending != 0) && (pending.size() >= maxSpoutPending);
                 boolean isActive = stormActive.get();
-                boolean overFlowIsEmpty = true;
+                boolean noEmits = true;
                 if (isActive) {
                     if (!lastActive.get()) {
                         lastActive.set(true);
@@ -172,13 +171,44 @@ public class SpoutExecutor extends Executor {
                             spout.activate();
                         }
                     }
-                    overFlowIsEmpty = ackingEnabled ? tryFlushOverflow() : true;
+                    boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
 
-                    if (!reachedMaxSpoutPending && overFlowIsEmpty) {
-                        for (int j = 0; j < spouts.size(); j++) { // perf critical loop. don't use iterators.
+                    if (!reachedMaxSpoutPending && tmpOverFlowIsEmpty) {
+                        for (int j = 0; j < spouts.size(); j++) { // in critical path. don't use iterators.
+//                            LOG.info("Calling nextTuple");
                             spouts.get(j).nextTuple();
                         }
+                        noEmits = (currCount == emittedCount.get());
+                        if (noEmits) {
+                            emptyEmitStreak.increment();
+                        } else {
+                            emptyEmitStreak.set(0);
+                        }
                     }
+
+                    if ( receiveCount>0 ) {
+                        // continue without idling
+                        return 0L;
+                    }
+                    if ( !tmpOverflow.isEmpty() ) { // then facing backpressure
+                        long start = Time.currentTimeMillis();
+                        if (bpIdleCount ==0) { // check avoids multiple log msgs when in a idle loop
+                            LOG.debug("Experiencing Back Pressure from downstream components. Entering BackPressure Wait.");
+                        }
+                        bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
+                        spoutThrottlingMetrics.skippedBackPressureMs(Time.currentTimeMillis() - start);
+                        return 0L;
+                    }
+                    bpIdleCount = 0;
+                    if ( noEmits ) {
+                        emptyEmitStreak.increment();
+                        long start = Time.currentTimeMillis();
+                        spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
+                        spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
+                        LOG.debug("There were no emits. Entering Spout Wait: {}", componentId);
+                        return 0L;
+                    }
+                    return 0L;
                 } else {
                     if (lastActive.get()) {
                         lastActive.set(false);
@@ -190,29 +220,15 @@ public class SpoutExecutor extends Executor {
                     long start = Time.currentTimeMillis();
                     Time.sleep(100);
                     spoutThrottlingMetrics.skippedInactiveMs(Time.currentTimeMillis() - start);
+                    return 0L;
                 }
-                if (currCount == emittedCount.get() && isActive) {
-                    if (!overFlowIsEmpty && receiveCount==0) {
-                        idleCount = backPressureWaitStrategy.idle(idleCount);
-                    } else {
-                        idleCount = 0;
-                        emptyEmitStreak.increment();
-                        long start = Time.currentTimeMillis();
-                        spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
-                        spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
-                    }
-                } else {
-                    emptyEmitStreak.set(0);
-                    idleCount = 0;
-                }
-                return 0L;
             }
 
-            // returns true if overflow is empty
-            private boolean tryFlushOverflow() {
-                for (AddressedTuple t = overflow.peek(); t != null; t = overflow.peek()) {
+            // returns true if tmpOverflow is empty
+            private boolean tryFlushTmpOverflow() {
+                for (AddressedTuple t = tmpOverflow.peek(); t != null; t = tmpOverflow.peek()) {
                     if (executorTransfer.tryTransfer(t, null)) {
-                        overflow.poll();
+                        tmpOverflow.poll();
                     } else { // to avoid reordering of emits, stop at first failure
                         return false;
                     }
@@ -305,9 +321,5 @@ public class SpoutExecutor extends Executor {
         if(ackingEnabled)
             return 0; // always check recQ if ACKing enabled
         return ObjectReader.getInt(conf.get(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS), 0);
-    }
-
-    public ConcurrentLinkedQueue<AddressedTuple> getOverflow() {
-        return overflow;
     }
 }

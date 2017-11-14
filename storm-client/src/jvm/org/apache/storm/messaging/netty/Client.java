@@ -26,6 +26,8 @@ import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
 import org.apache.storm.policy.WaitStrategyProgressive;
+import org.apache.storm.serialization.KryoValuesDeserializer;
+import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.StormBoundedExponentialBackoffRetry;
@@ -77,6 +79,9 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private static final String PREFIX = "Netty-Client-";
     private static final long NO_DELAY_MS = 0L;
     private static final Timer timer = new Timer("Netty-ChannelAlive-Timer", true);
+
+    KryoValuesSerializer ser;
+    KryoValuesDeserializer deser;
 
     private final Map<String, Object> topoConf;
     private final StormBoundedExponentialBackoffRetry retryPolicy;
@@ -141,7 +146,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final IWaitStrategy waitStrategy;
 
     @SuppressWarnings("rawtypes")
-    Client(Map<String, Object> topoConf, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
+    Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
         this.topoConf = topoConf;
         closing = false;
         this.scheduler = scheduler;
@@ -161,7 +166,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         retryPolicy = new StormBoundedExponentialBackoffRetry(minWaitMs, maxWaitMs, maxReconnectionAttempts);
 
         // Initiate connection to remote destination
-        bootstrap = createClientBootstrap(factory, bufferSize, lowWatermark, highWatermark, topoConf);
+        bootstrap = createClientBootstrap(factory, bufferSize, lowWatermark, highWatermark, topoConf, remoteBpStatus);
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -174,6 +179,8 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             waitStrategy = ReflectionUtils.newInstance(clazz);
         }
         waitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
+        ser = new KryoValuesSerializer(topoConf);
+        deser = new KryoValuesDeserializer(topoConf);
     }
 
     /**
@@ -203,14 +210,15 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
     private ClientBootstrap createClientBootstrap(ChannelFactory factory, int bufferSize,
                                                   int lowWatermark, int highWatermark,
-                                                  Map<String, Object> topoConf) {
+                                                  Map<String, Object> topoConf,
+                                                  AtomicBoolean[] remoteBpStatus) {
         ClientBootstrap bootstrap = new ClientBootstrap(factory);
         bootstrap.setOption("tcpNoDelay", true);
         bootstrap.setOption("sendBufferSize", bufferSize);
         bootstrap.setOption("keepAlive", true);
         bootstrap.setOption("writeBufferLowWaterMark", lowWatermark);
         bootstrap.setOption("writeBufferHighWaterMark", highWatermark);
-        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, topoConf));
+        bootstrap.setPipelineFactory(new StormClientPipelineFactory(this, remoteBpStatus, topoConf));
         return bootstrap;
     }
 
@@ -278,6 +286,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     @Override
+    public void sendBackPressureStatus(BackPressureStatus bpStatus) {
+        throw new RuntimeException("Client connection should not send BackPressure status");
+    }
+
+    @Override
     public void send(int taskId, byte[] payload) {
         TaskMessage msg = new TaskMessage(taskId, payload);
         List<TaskMessage> wrapper = new ArrayList<TaskMessage>(1);
@@ -331,6 +344,9 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         try {
             int idleCounter = 0;
             while (!channel.isWritable()) {
+                if (idleCounter==0) { // check avoids multiple log msgs when in a idle loop
+                    LOG.debug("Experiencing Back Pressure from Netty. Entering BackPressure Wait: Storm Client");
+                }
                 idleCounter = waitStrategy.idle(idleCounter);
             }
             flushMessages(channel, batch);
@@ -409,6 +425,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             }
 
         });
+    }
+
+    public void tellState(long emitted) {  // ROSHAN - remove this .. after stabilization
+        int sent = messagesSent.get();
+        LOG.debug("BackPressure Status :  Emitted={}, Sent={}, Emitted-Sent={}",  emitted, sent, emitted-sent);
     }
 
     /**

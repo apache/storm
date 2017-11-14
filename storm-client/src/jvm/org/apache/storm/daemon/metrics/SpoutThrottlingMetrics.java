@@ -23,10 +23,13 @@ import org.apache.storm.metric.api.CountMetric;
 public class SpoutThrottlingMetrics extends BuiltinMetrics {
     private final CountMetric skippedMaxSpoutMs = new CountMetric();
     private final CountMetric skippedInactiveMs = new CountMetric();
+    private final CountMetric skippedBackPressureMs = new CountMetric();
 
     public SpoutThrottlingMetrics() {
         metricMap.put("skipped-max-spout-ms", skippedMaxSpoutMs);
         metricMap.put("skipped-inactive-ms", skippedInactiveMs);
+        metricMap.put("skipped-backpressure-ms", skippedBackPressureMs);
+
     }
 
     public void skippedMaxSpoutMs(long ms) {
@@ -35,5 +38,9 @@ public class SpoutThrottlingMetrics extends BuiltinMetrics {
 
     public void skippedInactiveMs(long ms) {
         this.skippedInactiveMs.incrBy(ms);
+    }
+
+    public void skippedBackPressureMs(long ms) {
+        this.skippedBackPressureMs.incrBy(ms);
     }
 }

@@ -40,8 +40,9 @@ public class ExecutorTransfer  {
     private final boolean isDebug;
     private final int producerBatchSz;
     private int remotesBatchSz = 0;
-    private final ArrayList<JCQueue> localReceiveQueues; // [taksid]=queue : List of all recvQs local to this worker
-    private final ArrayList<JCQueue> queuesToFlush; // [taksid]=queue, some entries can be null. : outbound Qs for this executor instance
+    private int indexingBase = 0;
+    private ArrayList<JCQueue> localReceiveQueues; // [taksid-indexingBase] => queue : List of all recvQs local to this worker
+    private ArrayList<JCQueue> queuesToFlush; // [taksid-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
 
 
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {
@@ -49,49 +50,36 @@ public class ExecutorTransfer  {
         this.serializer = new KryoTupleSerializer(topoConf, workerData.getWorkerTopologyContext());
         this.isDebug = ObjectReader.getBoolean(topoConf.get(Config.TOPOLOGY_DEBUG), false);
         this.producerBatchSz = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
-        this.localReceiveQueues = Utils.convertToArray(workerData.getShortExecutorReceiveQueueMap(), 0);
+    }
+
+    // to be called after all Executor objects in the worker are created and before this object is used
+    public void initLocalRecvQueues() {
+        Integer minTaskId = workerData.getLocalReceiveQueues().keySet().stream().min(Integer::compareTo).get();
+        this.localReceiveQueues = Utils.convertToArray( workerData.getLocalReceiveQueues(), minTaskId);
+        this.indexingBase = minTaskId;
         this.queuesToFlush = new ArrayList<JCQueue>(Collections.nCopies(localReceiveQueues.size(), null) );
     }
 
-
-    public void transfer(AddressedTuple addressedTuple) throws InterruptedException {
+    // adds addressedTuple to destination Q if it is not full. else adds to tmpOverflow (if its not null)
+    public boolean tryTransfer(AddressedTuple addressedTuple, Queue<AddressedTuple> tmpOverflow) {
         if (isDebug) {
             LOG.info("TRANSFERRING tuple {}", addressedTuple);
         }
 
         JCQueue localQueue = getLocalQueue(addressedTuple);
         if (localQueue!=null) {
-            transferLocal(addressedTuple, localQueue);
-        }  else  {
-            workerData.transferRemote(addressedTuple);
-            ++remotesBatchSz;
-            if (remotesBatchSz >=producerBatchSz) {
-                workerData.flushRemotes();
-                remotesBatchSz =0;
-            }
-        }
-    }
-
-    // adds addressedTuple to destination Q is it is not full. else adds to overflow (if its not null)
-    public boolean tryTransfer(AddressedTuple addressedTuple, Queue<AddressedTuple> overflow) {
-        if (isDebug) {
-            LOG.info("TRANSFERRING tuple {}", addressedTuple);
-        }
-
-        JCQueue localQueue = getLocalQueue(addressedTuple);
-        if (localQueue!=null) {
-            return tryTransferLocal(addressedTuple, localQueue, overflow);
+            return tryTransferLocal(addressedTuple, localQueue, tmpOverflow);
         }  else  {
             if (remotesBatchSz >= producerBatchSz) {
                 if ( !workerData.tryFlushRemotes() ) {
-                    if (overflow != null) {
-                        overflow.add(addressedTuple);
+                    if (tmpOverflow != null) {
+                        tmpOverflow.add(addressedTuple);
                     }
                     return false;
                 }
                 remotesBatchSz = 0;
             }
-            if (workerData.tryTransferRemote(addressedTuple, overflow)) {
+            if (workerData.tryTransferRemote(addressedTuple, tmpOverflow)) {
                 ++remotesBatchSz;
                 if (remotesBatchSz >= producerBatchSz) {
                     workerData.tryFlushRemotes();
@@ -120,27 +108,23 @@ public class ExecutorTransfer  {
         }
     }
 
-    private JCQueue getLocalQueue(AddressedTuple tuple) {
-        if (tuple.dest>=localReceiveQueues.size())
+
+    public JCQueue getLocalQueue(AddressedTuple tuple) {
+        if ( (tuple.dest-indexingBase) >= localReceiveQueues.size()) {
             return null;
-        return localReceiveQueues.get(tuple.dest);
+        }
+        return localReceiveQueues.get(tuple.dest - indexingBase);
     }
 
-    public void transferLocal(AddressedTuple tuple, JCQueue localQueue) throws InterruptedException {
-        workerData.checkSerialize(serializer, tuple);
-        localQueue.publish(tuple);
-        queuesToFlush.set(tuple.dest, localQueue);
-    }
-
-    // tries to add to localQueue, else adds to overflow. returns false if it cannot add to localQueue.
-    public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> overflow) {
+    // tries to add to localQueue, else adds to tmpOverflow. returns false if it cannot add to localQueue.
+    public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> tmpOverflow) {
         workerData.checkSerialize(serializer, tuple);
         if (localQueue.tryPublish(tuple)) {
-            queuesToFlush.set(tuple.dest, localQueue);
+            queuesToFlush.set(tuple.dest - indexingBase, localQueue);
             return true;
         }
-        if (overflow!=null) {
-            overflow.add(tuple);
+        if (tmpOverflow!=null) {
+            tmpOverflow.add(tuple);
         }
         return false;
     }

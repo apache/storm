@@ -23,6 +23,7 @@ import com.google.common.collect.Sets;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
+import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
@@ -62,6 +63,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.*;
+import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutorService;
@@ -76,10 +78,12 @@ import java.util.stream.Collectors;
 public class WorkerState {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerState.class);
+    private static long dropCount=0;
 
     final Map<String, Object> conf;
     final IContext mqContext;
     private final WorkerTransfer workerTransfer;
+    private BackPressureTracker bpTracker;
 
     public Map getConf() {
         return conf;
@@ -119,6 +123,10 @@ public class WorkerState {
 
     public List<Integer> getLocalTaskIds() {
         return localTaskIds;
+    }
+
+    public Map<Integer, JCQueue> getLocalReceiveQueues() {
+        return localReceiveQueues;
     }
 
     public Map getTopologyConf() {
@@ -195,7 +203,9 @@ public class WorkerState {
 
     // executors and localTaskIds running in this worker
     final Set<List<Long>> executors;
-    final List<Integer> localTaskIds;
+    final ArrayList<Integer> localTaskIds;
+    final Map<Integer, JCQueue> localReceiveQueues = new HashMap<>(); // [taskId]-> JCQueue :  initialized after executors are initialized
+
     final Map<String, Object> topologyConf;
     final StormTopology topology;
     final StormTopology systemTopology;
@@ -241,10 +251,11 @@ public class WorkerState {
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
     final StormTimer flushTupleTimer = mkHaltingTimer("flush-tuple-timer");
     final StormTimer userTimer = mkHaltingTimer("user-timer");
+    final StormTimer backPressureCheckTimer = mkHaltingTimer("refresh-backpressure-status-timer");
 
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
-    private final AtomicLong nextUpdate = new AtomicLong(0);
+    private final AtomicLong nextLoadUpdate = new AtomicLong(0);
 
     private final boolean trySerializeLocal;
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
@@ -312,7 +323,7 @@ public class WorkerState {
         }
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
-
+        this.bpTracker = new BackPressureTracker(localTaskIds);
     }
 
     public void refreshConnections() {
@@ -373,7 +384,8 @@ public class WorkerState {
                     mqContext.connect(
                         topologyId,
                         assignment.get_node_host().get(nodeInfo.get_node()),    // Host
-                        nodeInfo.get_port().iterator().next().intValue()));     // Port
+                        nodeInfo.get_port().iterator().next().intValue(),       // Port
+                        workerTransfer.remoteBackPressureStatus));
             }
             return next;
         });
@@ -439,9 +451,25 @@ public class WorkerState {
         loadMapping.setLocal(localLoad);
         loadMapping.setRemote(remoteLoad);
 
-        if (now > nextUpdate.get()) {
+        if (now > nextLoadUpdate.get()) {
             receiver.sendLoadMetrics(localLoad);
-            nextUpdate.set(now + LOAD_REFRESH_INTERVAL_MS);
+            nextLoadUpdate.set(now + LOAD_REFRESH_INTERVAL_MS);
+        }
+    }
+
+    // checks if the tasks which had back pressure are now free again. if so, sends an update to other workers
+    public void refreshBackPressureStatus() {
+        LOG.debug("Checking for change in Backpressure status on worker's tasks");
+        boolean bpSituationChanged = bpTracker.refreshBpTaskList();
+        if (bpSituationChanged) {
+            BackPressureStatus bpStatus = bpTracker.getCurrStatus();
+            receiver.sendBackPressureStatus(bpStatus);
+        }
+        for (Entry<Integer, JCQueue> entry : localReceiveQueues.entrySet()) {
+            Integer task = entry.getKey();
+            if(task<=0)
+                continue;
+            JCQueue q = entry.getValue();
         }
     }
 
@@ -472,12 +500,9 @@ public class WorkerState {
             this::transferLocalBatch));
     }
 
-    public void transferRemote(AddressedTuple tuple) throws InterruptedException {
-        workerTransfer.transferRemote(tuple);
-    }
-
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
-        return workerTransfer.tryTransferRemote(tuple, overflow);
+    /* Not a Blocking call. If cannot emit, will add 'tuple' to tmpOverflow and return 'false'. 'tmpOverflow' can be null */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> tmpOverflow) {
+        return workerTransfer.tryTransferRemote(tuple, tmpOverflow);
     }
 
     public void flushRemotes() throws InterruptedException {
@@ -488,18 +513,50 @@ public class WorkerState {
         return workerTransfer.tryFlushRemotes();
     }
 
-
+    int recvTotal=0; // ROSHAN remove
+    // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
+    // informs other workers about back pressure situation. Runs in the NettyWorker thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
-        try {
-            for (int i = 0; i < tupleBatch.size(); i++) {
-                AddressedTuple tuple = tupleBatch.get(i);
-                JCQueue queue = shortExecutorReceiveQueueMap.get(tuple.dest);
-                queue.publish(tuple);
+        boolean bpIgnored = false; // ROSHAN remove this
+        int ofCount = 0;           // ROSHAN remove this
+        recvTotal+=tupleBatch.size();
+
+        for (int i = 0; i < tupleBatch.size(); i++) {
+            AddressedTuple tuple = tupleBatch.get(i);
+            JCQueue queue = shortExecutorReceiveQueueMap.get(tuple.dest);
+
+            // 1- try adding to main queue if its overflow is not empty
+            if (queue.isEmptyOverflow()) {
+                if (queue.tryPublish(tuple)) {
+                    continue;
+                }
             }
-        } catch (InterruptedException e) {
-            LOG.warn("Thread interrupted : transferLocalBatch(). Setting interrupt flag.");
-            Thread.currentThread().interrupt();
+
+            // 2- BP detected (i.e MainQ is full). So try adding to overflow
+            if (bpTracker.recordBackpressure(tuple.dest, queue)) {
+                receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
+            } else {
+                bpIgnored = true;
+                ofCount = queue.getOverflowCount();
+            }
+            if (queue.tryPublishToOverflow(tuple)) {
+                //TODO: Roshan: updateOverflowMetrics()
+            } else {
+                //TODO: Roshan: updateDropMetrics()
+                dropMessage(tuple, queue);
+            }
         }
+
+        if (bpIgnored && ofCount>50000) { // TODO: Roshan: temporary debug stmt. Remove this
+            LOG.info("Receiving BackPressure status being ignored. Overflow={}, recvTotal={}", ofCount, recvTotal);
+        }
+
+    }
+
+    private void dropMessage(AddressedTuple tuple, JCQueue queue) {
+        ++dropCount;
+//        LOG.warn("Dropping message as overflow threshold has reached for {}. OverflowCount = {}. Drop Count= {}, Dropped Message : {}",  queue.getName(), queue.getOverflowCount(), dropCount, tuple.toString() );
+        LOG.warn("Dropping message as overflow threshold has reached for {}. OverflowCount = {}. Recv = {}, Drop Count = {}",  queue.getName(), queue.getOverflowCount(), recvTotal, dropCount );
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
@@ -578,6 +635,8 @@ public class WorkerState {
     private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {
         Integer recvQueueSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE));
         Integer recvBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
+        Integer overflowLimit = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT));
+
         if (recvBatchSize > recvQueueSize / 2) {
             throw new IllegalArgumentException(Config.TOPOLOGY_PRODUCER_BATCH_SIZE + ":" + recvBatchSize +
                 " is greater than half of " + Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE + ":" + recvQueueSize);
@@ -587,7 +646,7 @@ public class WorkerState {
         Map<List<Long>, JCQueue> receiveQueueMap = new HashMap<>();
         for (List<Long> executor : executors) {
             receiveQueueMap.put(executor, new JCQueue("receive-queue" + executor.toString(),
-                recvQueueSize, recvBatchSize, backPressureWaitStrategy));
+                recvQueueSize, overflowLimit, recvBatchSize, backPressureWaitStrategy));
 
         }
         return receiveQueueMap;

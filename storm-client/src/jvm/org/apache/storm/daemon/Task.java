@@ -115,7 +115,10 @@ public class Task {
         if (grouping != null && grouping != GrouperFactory.DIRECT) {
             throw new IllegalArgumentException("Cannot emitDirect to a task expecting a regular grouping");
         }
-        new EmitInfo(values, stream, taskId, Collections.singletonList(outTaskId)).applyOn(userTopologyContext);
+        if(!userTopologyContext.getHooks().isEmpty()) {
+            new EmitInfo(values, stream, taskId, Collections.singletonList(outTaskId)).applyOn(userTopologyContext);
+        }
+
         try {
             if (emitSampler.getAsBoolean()) {
                 executorStats.emittedTuple(stream);
@@ -155,8 +158,9 @@ public class Task {
             throw new IllegalArgumentException("Unknown stream ID: " + stream);
         }
 
-        if(!userTopologyContext.getHooks().isEmpty())
+        if(!userTopologyContext.getHooks().isEmpty()) {
             new EmitInfo(values, stream, taskId, outTasks).applyOn(userTopologyContext);
+        }
         try {
             if (emitSampler.getAsBoolean()) {
                 executorStats.emittedTuple(stream);
@@ -192,28 +196,14 @@ public class Task {
         return builtInMetrics;
     }
 
-    // Blocking call. Wont return until emits to destination
-    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer) {
-        Tuple tuple = getTuple(stream, values);
-        List<Integer> tasks = getOutgoingTasks(stream, values);
-        try {
-            for (Integer t : tasks) {
-                AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
-                transfer.transfer(addressedTuple);
-            }
-        } catch (InterruptedException e) {
-            LOG.warn("Thread interrupted during sendUnanchored().");
-            throw new RuntimeException(e);
-        }
-    }
 
     // Non Blocking call. If cannot emmit to destination immediately, such tuples will be added to `outFailedEmits` argument
-    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> overflow) {
+    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> tmpOverflow) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);
         for (Integer t : tasks) {
             AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
-            transfer.tryTransfer(addressedTuple, overflow);
+            transfer.tryTransfer(addressedTuple, tmpOverflow);
         }
     }
 
@@ -221,7 +211,7 @@ public class Task {
      * Send sampled data to the eventlogger if the global or component level debug flag is set (via nimbus api).
      */
     public void sendToEventLogger(Executor executor, List values,
-                                  String componentId, Object messageId, Random random) {
+                                  String componentId, Object messageId, Random random, Queue<AddressedTuple> overflow) {
         Map<String, DebugOptions> componentDebug = executor.getStormComponentDebug().get();
         DebugOptions debugOptions = componentDebug.get(componentId);
         if (debugOptions == null) {
@@ -231,7 +221,7 @@ public class Task {
         if (spct > 0 && (random.nextDouble() * 100) < spct) {
             sendUnanchored(StormCommon.EVENTLOGGER_STREAM_ID,
                     new Values(componentId, messageId, System.currentTimeMillis(), values),
-                    executor.getExecutorTransfer());
+                    executor.getExecutorTransfer(), overflow);
         }
     }
 

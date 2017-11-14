@@ -136,7 +136,7 @@ public class LowThroughputTopo {
 
     public static void main(String[] args) throws Exception {
         int runTime = -1;
-        Map topoConf = Utils.readCommandLineOpts();
+        Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 1);
         if (args.length > 0) {
             long sleepMs = Integer.parseInt(args[0]);
@@ -149,6 +149,7 @@ public class LowThroughputTopo {
             System.err.println("args: spoutSleepMs [runDurationSec] ");
             return;
         }
+        topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to storm cluster
         Helper.runOnClusterAndPrintMetrics(runTime, "LowThroughputTopo", topoConf, getTopology(topoConf));
     }

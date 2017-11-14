@@ -128,6 +128,7 @@ public class StrGenSpoutHdfsBoltTopo {
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
 
+        topoConf.putAll(Utils.readCommandLineOpts());
         Helper.runOnClusterAndPrintMetrics(runTime, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
 

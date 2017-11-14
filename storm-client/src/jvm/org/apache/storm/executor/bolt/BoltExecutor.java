@@ -20,6 +20,7 @@ package org.apache.storm.executor.bolt;
 import com.google.common.collect.ImmutableMap;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 import org.apache.storm.Config;
@@ -33,15 +34,16 @@ import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
 import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
-import org.apache.storm.policy.WaitStrategyProgressive;
+import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.JCQueue.ExitCondition;
 import org.apache.storm.utils.ReflectionUtils;
-import org.apache.storm.utils.RunningAvg;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Time;
@@ -59,20 +61,34 @@ public class BoltExecutor extends Executor {
     private final BooleanSupplier executeSampler;
     private final boolean isSystemBoltExecutor;
     private final IWaitStrategy consumeWaitStrategy;
+    private final IWaitStrategy backPressureWaitStrategy;
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials);
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
-        if (isSystemBoltExecutor)
-            this.consumeWaitStrategy = new WaitStrategyProgressive();
-        else
+        if (isSystemBoltExecutor) {
+            this.consumeWaitStrategy = makeSystemBoltConsumeWaitStrategy();
+        } else {
             this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
-        this.consumeWaitStrategy.prepare(topoConf, WAIT_SITUATION.BOLT_WAIT);
+            this.consumeWaitStrategy.prepare(topoConf, WAIT_SITUATION.CONSUME_WAIT);
+        }
+        this.backPressureWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
+        this.backPressureWaitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
+
+    }
+
+    private static IWaitStrategy makeSystemBoltConsumeWaitStrategy() {
+        WaitStrategyPark ws = new WaitStrategyPark();
+        HashMap conf = new HashMap<String,Object>();
+        conf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 5000);
+        ws.prepare(conf, WAIT_SITUATION.CONSUME_WAIT);
+        return ws;
     }
 
     public void init(ArrayList<Task> idToTask, int idToTaskBase) {
+        executorTransfer.initLocalRecvQueues();
         while (!stormActive.get()) {
             Utils.sleep(100);
         }
@@ -117,18 +133,52 @@ public class BoltExecutor extends Executor {
         init(idToTask, idToTaskBase);
 
         return new Callable<Long>() {
+            private ExitCondition tillOverflowOccurs = () -> tmpOverflow.isEmpty();
+            int bpIdleCount = 0;
+            int consumeIdleCounter = 0;
             @Override
             public Long call() throws Exception {
-                int count = receiveQueue.consume(BoltExecutor.this);
-                for(int idleCounter=0; count==0; ) {
-                    idleCounter = consumeWaitStrategy.idle(idleCounter);
-                    if (Thread.interrupted()) {
-                        throw new InterruptedException();
+                boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
+                if (tmpOverFlowIsEmpty) {
+                    bpIdleCount = 0;
+//                    int szB4 = receiveQueue.size();
+                    int consumeCount = receiveQueue.consume(BoltExecutor.this, tillOverflowOccurs);
+//                    LOG.info("ROSHAN -Invoked consume(), b4= {} , consumeCount={}, overflow={}", szB4, consumeCount, tmpOverflow.size());
+                    if (consumeCount == 0) {
+//                        if (consumeIdleCounter==0) { // ROSHAN - uncomment
+//                            LOG.debug("Invoking consume wait strategy : {}", consumeIdleCounter);
+//                        }
+                        consumeIdleCounter = consumeWaitStrategy.idle(consumeIdleCounter);
+                        if (Thread.interrupted()) {
+                            throw new InterruptedException();
+                        }
+                    } else {
+                        consumeIdleCounter = 0;
                     }
-                    count = receiveQueue.consume(BoltExecutor.this);
+                } else {
+//                    if (bpIdleCount == 0) { // check avoids multiple log msgs when spinning in a idle loop    // ROSHAN - uncomment
+//                        LOG.debug("Experiencing Back Pressure. Entering BackPressure Wait: {}. OverflowSz = {}", bpIdleCount, tmpOverflow.size() );
+//                    }
+                    bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
                 }
+
                 return 0L;
             }
+
+            // returns true if tmpOverflow is empty
+            private boolean tryFlushTmpOverflow() {
+                int count = 0;
+                for (AddressedTuple t = tmpOverflow.peek(); t != null; t = tmpOverflow.peek()) {
+                    ++count;
+                    if (executorTransfer.tryTransfer(t, null)) {
+                        tmpOverflow.poll();
+                    } else { // to avoid reordering of emits, stop at first failure
+                        return false;
+                    }
+                }
+                return true;
+            }
+
         };
     }
 
@@ -170,5 +220,4 @@ public class BoltExecutor extends Executor {
             }
         }
     }
-
 }

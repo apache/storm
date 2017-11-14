@@ -33,8 +33,10 @@ import org.slf4j.LoggerFactory;
 
 import java.util.Map;
 import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
+// Transfers messages destined to other workers
 class WorkerTransfer implements JCQueue.Consumer {
     static final Logger LOG = LoggerFactory.getLogger(WorkerTransfer.class);
 
@@ -43,22 +45,27 @@ class WorkerTransfer implements JCQueue.Consumer {
     private final KryoTupleSerializer serializer;
     private IWaitStrategy backPressureWaitStrategy;
 
-    JCQueue transferQueue; // [reomteTaskId] -> JCQueue. Some entries maybe null (if no emits to those tasksIds from this worker)
+    JCQueue transferQueue; // [remoteTaskId] -> JCQueue. Some entries maybe null (if no emits to those tasksIds from this worker)
+    AtomicBoolean[] remoteBackPressureStatus; // [[remoteTaskId] -> true/false : indicates if remote task is under BP.
 
     public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
         this.workerState = workerState;
         this.serializer = new KryoTupleSerializer(topologyConf, workerState.getWorkerTopologyContext());
         this.backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         this.drainer = new TransferDrainer();
+        this.remoteBackPressureStatus = new AtomicBoolean[maxTaskIdInTopo+1];
+        for (int i = 0; i < remoteBackPressureStatus.length; i++) {
+            remoteBackPressureStatus[i] = new AtomicBoolean(false);
+        }
 
         Integer xferQueueSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE));
         Integer xferBatchSz = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
         if (xferBatchSz > xferQueueSz / 2) {
-            throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":" + xferBatchSz + " is greater than half of "
+            throw new IllegalArgumentException(Config.TOPOLOGY_TRANSFER_BATCH_SIZE + ":" + xferBatchSz + " must be no more than half of "
                 + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
         }
 
-        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, xferBatchSz, backPressureWaitStrategy);
+        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy);
     }
 
     public JCQueue getTransferQueue() {
@@ -93,18 +100,22 @@ class WorkerTransfer implements JCQueue.Consumer {
         drainer.clear();
     }
 
-    /* Blocking call, can be interrupted with Thread.interrupt() */
-    public void transferRemote(AddressedTuple tuple) throws InterruptedException {
-        transferQueue.publish(tuple);
-    }
-
-    /* Not a Blocking call. 'overflow' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> overflow) {
-        if (transferQueue.tryPublish(tuple)) {
-            return true;
+    /* Not a Blocking call. If cannot emit, will add 'tuple' to tmpOverflow and return 'false'. 'tmpOverflow' can be null */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> tmpOverflow) {
+        if (!remoteBackPressureStatus[tuple.dest].get()) {
+            if (transferQueue.tryPublish(tuple)) {
+                return true;
+            }
+        } else {
+            if(tmpOverflow!=null) {
+                LOG.info("tryTransferRemote(): Noticed Back Pressure for remote task {}.  LocalOverflowSz = ", tuple.dest, tmpOverflow.size()); // TODO: ROSHAN: change to debug log after stabilization
+            }  else {
+                LOG.info("tryTransferRemote(): Noticed Back Pressure for remote task {}.  LocalOverflowSz = ", tuple.dest); // TODO: ROSHAN: change to debug log after stabilization
+            }
+            drainer.tell(workerState.cachedNodeToPortSocket.get().values());
         }
-        if(overflow!=null) {
-            overflow.add(tuple);
+        if (tmpOverflow != null) {
+            tmpOverflow.add(tuple);
         }
         return false;
     }
@@ -121,4 +132,5 @@ class WorkerTransfer implements JCQueue.Consumer {
     public void haltTransferThd() {
         transferQueue.haltWithInterrupt();
     }
+
 }

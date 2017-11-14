@@ -135,14 +135,10 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             final TupleImpl tuple = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), this.taskId, stream, msgId);
             AddressedTuple adrTuple = new AddressedTuple(t, tuple);
-            if (hasAckers) {
-                executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getOverflow());
-            } else {
-                executor.getExecutorTransfer().transfer(adrTuple);
-            }
+            executor.getExecutorTransfer().tryTransfer(adrTuple, executor.getTmpOverflow());
         }
         if (isEventLoggers) {
-            taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random);
+            taskData.sendToEventLogger(executor, values, executor.getComponentId(), messageId, random, executor.getTmpOverflow());
         }
 
         if (needAck) {
@@ -160,7 +156,7 @@ public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
 
             pending.put(rootId, info);
             List<Object> ackInitTuple = new Values(rootId, Utils.bitXorVals(ackSeq), this.taskId);
-            taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer(), executor.getOverflow());
+            taskData.sendUnanchored(Acker.ACKER_INIT_STREAM_ID, ackInitTuple, executor.getExecutorTransfer(), executor.getTmpOverflow());
         } else if (messageId != null) {
             // Reusing TupleInfo object as we directly call executor.ackSpoutMsg() & are not sending msgs. perf critical
             globalTupleInfo.clear();

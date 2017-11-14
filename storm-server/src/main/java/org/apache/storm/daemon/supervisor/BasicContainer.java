@@ -79,6 +79,7 @@ public class BasicContainer extends Container {
     protected final long lowMemoryThresholdMB;
     protected final long mediumMemoryThresholdMb;
     protected final long mediumMemoryGracePeriodMs;
+    private static int port = 5006;  // TODO: Roshan: remove this after stabilization
 
     private class ProcessExitCallback implements ExitCodeCallback {
         private final String _logPrefix;
@@ -747,6 +748,11 @@ public class BasicContainer extends Container {
         commandList.add("-Dstorm.conf.file=" + topoConfFile);
         commandList.add("-Dstorm.options=" + stormOptions);
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
+        if (_topoConf.get("attach.debugger") != null)  // TODO: Roshan: remove this after stabilization
+            commandList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + port++);
+        if (_topoConf.get("attach.debugger.wait") != null)
+            commandList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + port++);
+
         commandList.addAll(classPathParams);
         commandList.add(getWorkerMain(topoVersion));
         commandList.add(_topologyId);

@@ -26,8 +26,11 @@ import java.util.concurrent.locks.LockSupport;
 
 /**
  * A Simple Progressive Wait Strategy
- * <p>
- * Initially spins, then downgrades to LockSupport.parkNanos(1), and eventually Thread.sleep()
+ * <p> Has three levels of idling. Stays in each level for a configured number of iterations before entering the next level.
+ * Level 1 - No idling. Returns immediately. Stays in this level for `step` number of iterations.
+ * Level 2 - Calls LockSupport.parkNanos(1). Stays in this level for `step X multiplier` iterations
+ * Level 3 - Calls Thread.sleep(). Stays in this level indefinitely.
+ *
  * <p>
  * The initial spin can be useful to prevent downstream bolt from repeatedly sleeping/parking when
  * the upstream component is a bit relatively slower. Allows downstream bolt can enter deeper wait states only
@@ -44,7 +47,7 @@ public class WaitStrategyProgressive implements IWaitStrategy {
 
     @Override
     public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
-        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+        if (waitSituation == WAIT_SITUATION.CONSUME_WAIT) {
             sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS));
             step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP));
             multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER));
@@ -64,7 +67,7 @@ public class WaitStrategyProgressive implements IWaitStrategy {
         } else if (idleCounter < step * multiplier) { // level 2 - parkNanos(1L)
             ++idleCounter;
             LockSupport.parkNanos(1L);
-        } else {                                      // level 3 - longer Thread.sleep()
+        } else {                                      // level 3 - longer idling with Thread.sleep()
             Thread.sleep(sleepMillis);
         }
         return idleCounter;

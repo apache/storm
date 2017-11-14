@@ -22,7 +22,6 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.WaitStrategyPark;
-import org.apache.storm.utils.JCQueue.ProducerKind;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -195,10 +194,10 @@ public class JCQueueTest {
     }
 
     private JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, ProducerKind.MULTI, queueSize, 1, waitStrategy);
+        return new JCQueue(name, queueSize, 0, 1, waitStrategy);
     }
 
     private JCQueue createQueue(String name, int batchSize, int queueSize) {
-        return new JCQueue(name, ProducerKind.MULTI, queueSize, batchSize, waitStrategy);
+        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy);
     }
 }

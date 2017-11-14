@@ -28,6 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
@@ -118,6 +119,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final AddressedTuple flushTuple;
 
     protected final ErrorReportingMetrics errorReportingMetrics;
+    protected final ConcurrentLinkedQueue<AddressedTuple> tmpOverflow = new ConcurrentLinkedQueue<>();
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         this.workerData = workerData;
@@ -200,7 +202,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             minId = Math.min(minId, taskId);
             try {
                 Task task = new Task(executor, taskId);
-                task.sendUnanchored( StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer()); // TODO: Roshan: does this get delivered/handled anywhere ?
+                task.sendUnanchored( StormCommon.SYSTEM_STREAM_ID, new Values("startup"), executor.getExecutorTransfer(), null); // TODO: Roshan: does this get delivered/handled anywhere ?
                 idToTask.put(taskId, task);
             } catch (IOException ex) {
                 throw Utils.wrapInRuntime(ex);
@@ -223,6 +225,10 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         } else {
             throw new RuntimeException("Could not find " + componentId + " in " + topology);
         }
+    }
+
+    public ConcurrentLinkedQueue<AddressedTuple> getTmpOverflow() {
+        return tmpOverflow;
     }
 
     /**
@@ -297,7 +303,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 }
                 if (!dataPoints.isEmpty()) {
                     task.sendUnanchored(Constants.METRICS_STREAM_ID,
-                            new Values(taskInfo, dataPoints), executorTransfer);
+                            new Values(taskInfo, dataPoints), executorTransfer, tmpOverflow);
                     executorTransfer.flush();
                 }
             }

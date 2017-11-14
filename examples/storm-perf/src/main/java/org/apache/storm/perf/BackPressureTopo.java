@@ -96,8 +96,9 @@ public class BackPressureTopo {
 
     public static void main(String[] args) throws Exception {
         int runTime = -1;
-        Map topoConf = Utils.readCommandLineOpts();
+        Config topoConf = new Config();
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 1);
+        topoConf.putAll( Utils.readCommandLineOpts() );
         if (args.length > 0) {
             long sleepMs = Integer.parseInt(args[0]);
             topoConf.put(SLEEP_MS, sleepMs);

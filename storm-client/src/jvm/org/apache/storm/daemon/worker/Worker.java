@@ -61,13 +61,11 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
-import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.JCQueue;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -196,19 +194,23 @@ public class Worker implements Shutdownable, DaemonCommon {
 
         workerState.runWorkerStartHooks();
 
-        List<IRunningExecutor> newExecutors = new ArrayList<IRunningExecutor>();
+        List<Executor> execs = new ArrayList<>();
         for (List<Long> e : workerState.getExecutors()) {
             if (ConfigUtils.isLocalMode(topologyConf)) {
-                newExecutors.add(
-                        LocalExecutor.mkExecutor(workerState, e, initCreds)
-                                .execute());
+                Executor executor = LocalExecutor.mkExecutor(workerState, e, initCreds);
+                execs.add( executor );
+                workerState.localReceiveQueues.put(executor.getTaskIds().get(0), executor.getReceiveQueue());
             } else {
-                newExecutors.add(
-                        Executor.mkExecutor(workerState, e, initCreds)
-                                .execute());
+                Executor executor = Executor.mkExecutor(workerState, e, initCreds);
+                workerState.localReceiveQueues.put(executor.getTaskIds().get(0), executor.getReceiveQueue());
+                execs.add(executor);
             }
         }
 
+        List<IRunningExecutor> newExecutors = new ArrayList<IRunningExecutor>();
+        for (Executor executor : execs) {
+            newExecutors.add(executor.execute());
+        }
         executorsAtom.set(newExecutors);
 
         // This thread will send out messages destined for remote tasks (on other workers)
@@ -256,6 +258,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 workerState::refreshStormActive);
 
         setupFlushTupleTimer(topologyConf, newExecutors);
+        setupBackPressureCheckTimer(topologyConf);
 
         LOG.info("Worker has topology config {}", Utils.redactValue(topologyConf, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD));
         LOG.info("Worker {} for storm {} on {}:{}  has finished loading", workerId, topologyId, assignmentId, port);
@@ -283,7 +286,23 @@ public class Worker implements Shutdownable, DaemonCommon {
                 }
             }
         });
-        return;
+        LOG.info("Flush tuple will be generated every {} microsecs", flushIntervalMicros);
+    }
+
+    private void setupBackPressureCheckTimer(final Map<String, Object> topologyConf) {
+        final Integer workerCount = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_WORKERS));
+        if (workerCount == 0) {
+            LOG.info("BackPressure change checking is disabled as there is only one worker");
+            return;
+        }
+        final Long bpCheckIntervalMs = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_CHECK_MILLIS));
+        workerState.backPressureCheckTimer.scheduleRecurringMs(bpCheckIntervalMs, bpCheckIntervalMs, new Runnable() {
+            @Override
+            public void run() {
+                workerState.refreshBackPressureStatus();
+            }
+        });
+        LOG.info("BackPressure status change checking will be performed every {} millis", bpCheckIntervalMs);
     }
 
     public void doHeartBeat() throws IOException {

@@ -30,8 +30,8 @@ public class JCToolsPerfTest {
 //        oneProducer2Consumers();
 //        producerFwdConsumer();
 
-//        JCQueue spoutQ = new JCQueue("spoutQ", JCQueue.ProducerKind.MULTI, 1024, 100, 0);
-//        JCQueue ackQ = new JCQueue("ackQ", JCQueue.ProducerKind.MULTI, 1024, 100, 0);
+//        JCQueue spoutQ = new JCQueue("spoutQ", 1024, 100, 0);
+//        JCQueue ackQ = new JCQueue("ackQ", 1024, 100, 0);
 //
 //        final AckingProducer ackingProducer = new AckingProducer(spoutQ, ackQ);
 //        final Acker acker = new Acker(ackQ, spoutQ);
