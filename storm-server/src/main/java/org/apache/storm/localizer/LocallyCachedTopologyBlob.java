@@ -217,6 +217,10 @@ public class LocallyCachedTopologyBlob extends LocallyCachedBlob {
 
     protected void extractDirFromJar(String jarpath, String dir, Path dest) throws IOException {
         LOG.debug("EXTRACTING {} from {} and placing it at {}", dir, jarpath, dest);
+        if (!Files.exists(dest)) {
+            //Create the directory no matter what. This is so we can check if it was downloaded in the future.
+            Files.createDirectories(dest);
+        }
         try (JarFile jarFile = new JarFile(jarpath)) {
             String toRemove = dir + '/';
             Enumeration<JarEntry> jarEnums = jarFile.entries();
