@@ -849,7 +849,7 @@
                     "bytes in size (inclusive)"))))
             (catch Exception ex
               (json-response (exception->json ex) callback :status 500))))
-        (json-response (unauthorized-user-json user) callback :status 401))
+        (json-response (unauthorized-user-json user) callback :status 403))
       (json-response {"error" "Not Found"
                       "errorMessage" "The file was not found on this node."}
         callback
