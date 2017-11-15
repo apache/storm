@@ -32,6 +32,7 @@ import javax.servlet.Servlet;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.logging.filters.AccessLoggingFilter;
 import org.apache.storm.utils.ObjectReader;
+import org.eclipse.jetty.http.HttpStatus;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.HttpConfiguration;
 import org.eclipse.jetty.server.HttpConnectionFactory;
@@ -292,9 +293,9 @@ public class UIHelpers {
         return callback != null ? wrapJsonInCallback(callback, serializedData) : serializedData;
     }
 
-    public static Map exceptionToJson(Exception ex) {
+    public static Map exceptionToJson(Exception ex, int statusCode) {
         StringWriter sw = new StringWriter();
         ex.printStackTrace(new PrintWriter(sw));
-        return ImmutableMap.of("error", "Internal Server Error", "errorMessage", sw.toString());
+        return ImmutableMap.of("error", statusCode + " " + HttpStatus.getMessage(statusCode), "errorMessage", sw.toString());
     }
 }
