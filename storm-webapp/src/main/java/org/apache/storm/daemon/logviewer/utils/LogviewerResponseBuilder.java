@@ -125,8 +125,9 @@ public class LogviewerResponseBuilder {
      * @param callback callback for JSONP
      */
     public static Response buildExceptionJsonResponse(Exception ex, String callback) {
-        return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(ex))
-                .setCallback(callback).setStatus(500).build();
+        int statusCode = 500;
+        return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(ex, statusCode))
+                .setCallback(callback).setStatus(statusCode).build();
     }
 
     private static Map<String, Object> getHeadersForSuccessResponse(String origin) {
