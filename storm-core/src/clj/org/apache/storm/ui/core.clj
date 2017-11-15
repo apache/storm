@@ -1586,7 +1586,8 @@
     (try
       (handler request)
       (catch Exception ex
-        (json-response (UIHelpers/exceptionToJson ex) ((:query-params request) "callback") :status 500)))))
+        (let [status-code (if (instance? AuthorizationException ex) 403 500)]
+          (json-response (UIHelpers/exceptionToJson ex status-code) ((:query-params request) "callback") :status status-code))))))
 
 (def app
   (handler/site (-> main-routes

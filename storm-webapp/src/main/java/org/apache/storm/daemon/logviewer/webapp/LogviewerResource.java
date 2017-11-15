@@ -231,8 +231,9 @@ public class LogviewerResource {
                     startByteOffset, callback, origin);
         } catch (InvalidRequestException e) {
             LOG.error(e.getMessage(), e);
-            return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(e)).setCallback(callback)
-                    .setStatus(400).build();
+            int statusCode = 400;
+            return new JsonResponseBuilder().setData(UIHelpers.exceptionToJson(e, statusCode)).setCallback(callback)
+                    .setStatus(statusCode).build();
         }
     }
 
