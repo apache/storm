@@ -610,20 +610,21 @@ public class FluxBuilder {
                 constructorParams[i] = bool.booleanValue();
                 continue;
             }
-            if (isPrimitiveNumber(paramType) && Number.class.isAssignableFrom(objectType)) {
-                LOG.debug("Its a primitive number.");
+            if ((isPrimitiveNumber(paramType) || Number.class.isAssignableFrom(paramType))
+                    && Number.class.isAssignableFrom(objectType)) {
+                LOG.debug("Its a number.");
                 Number num = (Number) args.get(i);
-                if (paramType == Float.TYPE) {
+                if (paramType == Float.TYPE || paramType == Float.class) {
                     constructorParams[i] = num.floatValue();
-                } else if (paramType == Double.TYPE) {
+                } else if (paramType == Double.TYPE || paramType == Double.class) {
                     constructorParams[i] = num.doubleValue();
-                } else if (paramType == Long.TYPE) {
+                } else if (paramType == Long.TYPE || paramType == Long.class) {
                     constructorParams[i] = num.longValue();
-                } else if (paramType == Integer.TYPE) {
+                } else if (paramType == Integer.TYPE || paramType == Integer.class) {
                     constructorParams[i] = num.intValue();
-                } else if (paramType == Short.TYPE) {
+                } else if (paramType == Short.TYPE || paramType == Short.class) {
                     constructorParams[i] = num.shortValue();
-                } else if (paramType == Byte.TYPE) {
+                } else if (paramType == Byte.TYPE || paramType == Byte.class) {
                     constructorParams[i] = num.byteValue();
                 } else {
                     constructorParams[i] = args.get(i);
@@ -688,7 +689,8 @@ public class FluxBuilder {
                 LOG.debug("Yes, assignment is possible.");
             } else if (isPrimitiveBoolean(paramType) && Boolean.class.isAssignableFrom(objectType)) {
                 LOG.debug("Yes, assignment is possible.");
-            } else if (isPrimitiveNumber(paramType) && Number.class.isAssignableFrom(objectType)) {
+            } else if (isPrimitiveNumber(paramType) || Number.class.isAssignableFrom(paramType)
+                    && Number.class.isAssignableFrom(objectType)) {
                 LOG.debug("Yes, assignment is possible.");
             } else if (paramType.isEnum() && objectType.equals(String.class)) {
                 LOG.debug("Yes, will convert a String to enum");

@@ -85,6 +85,8 @@ public class TestBolt extends BaseBasicBolt {
 
     }
 
+    public TestBolt(Long l){}
+
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
         LOG.info("{}", tuple);
