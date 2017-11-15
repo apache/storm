@@ -116,7 +116,7 @@ public class LogviewerResponseBuilder {
      */
     public static Response buildUnauthorizedUserJsonResponse(String user, String callback) {
         return new JsonResponseBuilder().setData(UIHelpers.unauthorizedUserJson(user))
-                .setCallback(callback).setStatus(401).build();
+                .setCallback(callback).setStatus(403).build();
     }
 
     /**
