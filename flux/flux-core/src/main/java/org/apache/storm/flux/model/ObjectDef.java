@@ -124,7 +124,7 @@ public class ObjectDef {
      */
     public void setFactoryArgs(List<Object> factoryArgs) {
         List<Object> newVal = new ArrayList<Object>();
-        for (Object obj : constructorArgs) {
+        for (Object obj : factoryArgs) {
             if (obj instanceof LinkedHashMap) {
                 Map map = (Map)obj;
                 if (map.containsKey("ref") && map.size() == 1) {
