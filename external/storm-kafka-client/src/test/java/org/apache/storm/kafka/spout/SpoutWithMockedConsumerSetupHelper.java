@@ -17,22 +17,32 @@
 package org.apache.storm.kafka.spout;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.mockito.ArgumentCaptor;
 
 public class SpoutWithMockedConsumerSetupHelper {
 
@@ -50,16 +60,17 @@ public class SpoutWithMockedConsumerSetupHelper {
      * @return The spout
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
-        TopologyContext contextMock, SpoutOutputCollector collectorMock, KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {
+        TopologyContext contextMock, SpoutOutputCollector collectorMock, KafkaConsumer<K, V> consumerMock, TopicPartition... assignedPartitions) {
+        Set<TopicPartition> assignedPartitionsSet = new HashSet<>(Arrays.asList(assignedPartitions));
         
-        stubAssignment(contextMock, consumerMock, assignedPartitions);
+        stubAssignment(contextMock, consumerMock, assignedPartitionsSet);
         KafkaConsumerFactory<K, V> consumerFactory = (kafkaSpoutConfig) -> consumerMock;
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory);
         
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();
 
-        verify(consumerMock).assign(assignedPartitions);
+        verify(consumerMock).assign(assignedPartitionsSet);
 
         return spout;
     }
@@ -102,6 +113,57 @@ public class SpoutWithMockedConsumerSetupHelper {
             recordsForPartition.add(new ConsumerRecord<>(topic.topic(), topic.partition(), startingOffset + i, null, null));
         }
         return recordsForPartition;
+    }
+
+    /**
+     * Creates messages for the input offsets, emits the messages by calling nextTuple once per offset and returns the captured message ids
+     * @param <K> The Kafka key type
+     * @param <V> The Kafka value type
+     * @param spout The spout
+     * @param consumerMock The consumer used by the spout
+     * @param expectedEmits The number of expected emits
+     * @param collectorMock The collector used by the spout
+     * @param partition The partition to emit messages on
+     * @param offsetsToEmit The offsets to emit
+     * @return The message ids emitted by the spout during the nextTuple calls
+     */
+    public static <K, V> List<KafkaSpoutMessageId> pollAndEmit(KafkaSpout<K, V> spout, KafkaConsumer<K, V> consumerMock, int expectedEmits, SpoutOutputCollector collectorMock, TopicPartition partition, int... offsetsToEmit) {
+        return pollAndEmit(spout, consumerMock, expectedEmits, collectorMock, Collections.singletonMap(partition, offsetsToEmit));
+    }
+
+    /**
+     * Creates messages for the input offsets, emits the messages by calling nextTuple once per offset and returns the captured message ids
+     * @param <K> The Kafka key type
+     * @param <V> The Kafka value type
+     * @param spout The spout
+     * @param consumerMock The consumer used by the spout
+     * @param collectorMock The collector used by the spout
+     * @param offsetsToEmit The offsets to emit per partition
+     * @return The message ids emitted by the spout during the nextTuple calls
+     */
+    public static <K, V> List<KafkaSpoutMessageId> pollAndEmit(KafkaSpout<K, V> spout, KafkaConsumer<K, V> consumerMock, int expectedEmits, SpoutOutputCollector collectorMock, Map<TopicPartition, int[]> offsetsToEmit) {
+        int totalOffsets = 0;
+        Map<TopicPartition, List<ConsumerRecord<K, V>>> records = new HashMap<>();
+        for (Entry<TopicPartition, int[]> entry : offsetsToEmit.entrySet()) {
+            TopicPartition tp = entry.getKey();
+            List<ConsumerRecord<K, V>> tpRecords = new ArrayList<>();
+            for (Integer offset : entry.getValue()) {
+                tpRecords.add(new ConsumerRecord<>(tp.topic(), tp.partition(), offset, null, null));
+                totalOffsets++;
+            }
+            records.put(tp, tpRecords);
+        }
+
+        when(consumerMock.poll(anyLong()))
+            .thenReturn(new ConsumerRecords<>(records));
+
+        for (int i = 0; i < totalOffsets; i++) {
+            spout.nextTuple();
+        }
+
+        ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+        verify(collectorMock, times(expectedEmits)).emit(anyString(), anyList(), messageIds.capture());
+        return messageIds.getAllValues();
     }
 
 }

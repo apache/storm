@@ -22,6 +22,7 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.Set;
 import java.util.regex.Pattern;
@@ -38,6 +39,8 @@ import org.apache.storm.kafka.spout.subscription.PatternTopicFilter;
 import org.apache.storm.kafka.spout.subscription.RoundRobinManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.Subscription;
 import org.apache.storm.tuple.Fields;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * KafkaSpoutConfig defines the required configuration to connect a consumer to a consumer group, as well as the subscribing topics.
@@ -65,6 +68,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static final ProcessingGuarantee DEFAULT_PROCESSING_GUARANTEE = ProcessingGuarantee.AT_LEAST_ONCE;
 
     public static final KafkaTupleListener DEFAULT_TUPLE_LISTENER = new EmptyKafkaTupleListener();
+    public static final Logger LOG = LoggerFactory.getLogger(KafkaSpoutConfig.class);
 
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
@@ -439,6 +443,27 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         if (builder.processingGuarantee == ProcessingGuarantee.NONE) {
             builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
         } else {
+            String autoOffsetResetPolicy = (String)builder.kafkaProps.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+            if (builder.processingGuarantee == ProcessingGuarantee.AT_LEAST_ONCE) {
+                if (autoOffsetResetPolicy == null) {
+                    /*
+                    If the user wants to explicitly set an auto offset reset policy, we should respect it, but when the spout is configured
+                    for at-least-once processing we should default to seeking to the earliest offset in case there's an offset out of range
+                    error, rather than seeking to the latest (Kafka's default). This type of error will typically happen when the consumer 
+                    requests an offset that was deleted.
+                     */
+                    builder.kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+                } else if (!autoOffsetResetPolicy.equals("earliest") && !autoOffsetResetPolicy.equals("none")) {
+                    LOG.warn("Cannot guarantee at-least-once processing with auto.offset.reset.policy other than 'earliest' or 'none'."
+                        + " Some messages may be skipped.");
+                }
+            } else if (builder.processingGuarantee == ProcessingGuarantee.AT_MOST_ONCE) {
+                if (autoOffsetResetPolicy != null
+                    && (!autoOffsetResetPolicy.equals("latest") && !autoOffsetResetPolicy.equals("none"))) {
+                    LOG.warn("Cannot guarantee at-most-once processing with auto.offset.reset.policy other than 'latest' or 'none'."
+                        + " Some messages may be processed more than once.");
+                }
+            }
             builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
         }
     }
