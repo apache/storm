@@ -29,9 +29,10 @@
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-	   [org.eclipse.jetty.util.ssl SslContextFactory]
+           [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
+           [org.eclipse.jetty.servlets CrossOriginFilter]
+           (org.eclipse.jetty.http HttpStatus))
   (:require [ring.util servlet]
             [ring.util.response :as response])
   (:require [compojure.route :as route]
@@ -269,9 +270,9 @@
            (serialize-fn data))})
 
 (defn exception->json
-  [ex]
-  {"error" "Internal Server Error"
+  [ex status-code]
+  {"error" (str status-code " " (HttpStatus/getMessage status-code))
    "errorMessage"
-   (let [sw (java.io.StringWriter.)]
-     (.printStackTrace ex (java.io.PrintWriter. sw))
-     (.toString sw))})
+           (let [sw (java.io.StringWriter.)]
+             (.printStackTrace ex (java.io.PrintWriter. sw))
+             (.toString sw))})
