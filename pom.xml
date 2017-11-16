@@ -991,7 +991,6 @@
                 <artifactId>kafka-clients</artifactId>
                 <version>${storm.kafka.client.version}</version>
             </dependency>
-
         </dependencies>
     </dependencyManagement>
 

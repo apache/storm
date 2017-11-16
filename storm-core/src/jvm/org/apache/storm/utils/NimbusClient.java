@@ -84,7 +84,7 @@ public class NimbusClient extends ThriftClient {
                 nimbusSummary = client.getClient().getLeader();
                 if (nimbusSummary != null) {
                     String leaderNimbus = nimbusSummary.get_host() + ":" + nimbusSummary.get_port();
-                    LOG.info("Found leader nimbus : {}", leaderNimbus);
+                    LOG.debug("Found leader nimbus : {}", leaderNimbus);
                     if (nimbusSummary.get_host().equals(host) && nimbusSummary.get_port() == port) {
                         NimbusClient ret = client;
                         client = null;

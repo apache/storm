@@ -28,12 +28,13 @@
   (:import [org.apache.zookeeper.data Stat])
   (:import [org.apache.zookeeper.server ZooKeeperServer NIOServerCnxnFactory])
   (:import [java.net InetSocketAddress BindException InetAddress])
-  (:import [org.apache.storm.nimbus ILeaderElector NimbusInfo])
+  (:import [org.apache.storm.nimbus ILeaderElector NimbusInfo LeaderListenerCallback])
   (:import [java.io File])
   (:import [java.util List Map])
   (:import [org.apache.storm.utils Utils ZookeeperAuthInfo]
            (org.apache.storm.blobstore KeyFilter BlobStore)
-           (org.apache.storm.zookeeper Zookeeper))
+           (org.apache.storm.zookeeper Zookeeper)
+           (org.apache.storm.cluster IStormClusterState))
   (:use [org.apache.storm util log config]))
 
 (def zk-keeper-states
@@ -250,15 +251,26 @@
                 (filter [this key] (get-id-from-blob-key key)))]
     (set (.filterAndListKeys blob-store to-id))))
 
+(defn mk-java-cluster-state
+  [cluster-state]
+  (reify IStormClusterState
+    ;; only need this two function now
+    (syncRemoteAssignments [this remote]
+      (.sync-remote-assignments! cluster-state remote))
+    (syncRemoteIds [this remote]
+      (.sync-remote-ids! cluster-state remote))))
+
 (defn zk-leader-elector
   "Zookeeper Implementation of ILeaderElector."
-  [conf blob-store]
+  [conf blob-store cluster-state acls]
   (let [servers (conf STORM-ZOOKEEPER-SERVERS)
-        zk (mk-client conf (conf STORM-ZOOKEEPER-SERVERS) (conf STORM-ZOOKEEPER-PORT) :auth-conf conf)
+        zk (mk-client conf servers (conf STORM-ZOOKEEPER-PORT) :auth-conf conf)
+        icluster (mk-java-cluster-state cluster-state)
         leader-lock-path (str (conf STORM-ZOOKEEPER-ROOT) "/leader-lock")
-        id (.toHostPortString (NimbusInfo/fromConf conf))
+        nimbus-info (NimbusInfo/fromConf conf)
+        id (.toHostPortString nimbus-info)
         leader-latch (atom (LeaderLatch. zk leader-lock-path id))
-        leader-latch-listener (atom (Zookeeper/leaderLatchListenerImpl conf zk blob-store @leader-latch))
+        leader-latch-listener (atom (Zookeeper/leaderLatchListenerImpl (LeaderListenerCallback. conf zk @leader-latch blob-store icluster acls)))
         ]
     (reify ILeaderElector
       (prepare [this conf]
@@ -269,7 +281,7 @@
         (if (.equals LeaderLatch$State/CLOSED (.getState @leader-latch))
           (do
             (reset! leader-latch (LeaderLatch. zk leader-lock-path id))
-            (reset! leader-latch-listener (Zookeeper/leaderLatchListenerImpl conf zk blob-store @leader-latch))
+            (reset! leader-latch-listener (Zookeeper/leaderLatchListenerImpl (LeaderListenerCallback. conf zk @leader-latch blob-store icluster acls)))
             (log-message "LeaderLatch was in closed state. Resetted the leaderLatch and listeners.")
             ))
 

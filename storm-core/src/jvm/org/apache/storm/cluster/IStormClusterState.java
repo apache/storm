@@ -29,6 +29,10 @@ public interface IStormClusterState {
 
     public Assignment assignmentInfo(String stormId, Runnable callback);
 
+    public Map<String, Assignment> assignmentsInfo();
+
+    public void syncRemoteAssignments(Map<String, byte[]> remote);
+
     public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
 
     public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
@@ -42,6 +46,10 @@ public interface IStormClusterState {
     public List<String> activeStorms();
 
     public StormBase stormBase(String stormId, Runnable callback);
+
+    public String stormId(String stormName);
+
+    public void syncRemoteIds(Map<String, String> ids);
 
     public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
 
@@ -70,6 +78,8 @@ public interface IStormClusterState {
     public List<String> errorTopologies();
 
     public List<String> backpressureTopologies();
+
+    public NimbusInfo getLeader(Runnable callback);
 
     public void setTopologyLogConfig(String stormId, LogConfig logConfig);
 

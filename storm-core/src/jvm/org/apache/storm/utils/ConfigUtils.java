@@ -20,6 +20,8 @@ package org.apache.storm.utils;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
+import org.apache.storm.assignments.ILocalAssignmentsBackend;
+import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.daemon.supervisor.AdvancedFSOps;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.validation.ConfigValidation;
@@ -546,5 +548,9 @@ public class ConfigUtils {
         List<String> ret = new ArrayList<String>(mergedGroups);
         Collections.sort(ret);
         return ret;
+    }
+
+    public static ILocalAssignmentsBackend getAssignmentsBackend(Map conf) throws IOException {
+        return LocalAssignmentsBackendFactory.getBackend(conf);
     }
 }

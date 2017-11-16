@@ -38,18 +38,19 @@
   (:use [org.apache.storm.scheduler.DefaultScheduler])
   (:import [org.apache.storm.scheduler INimbus SupervisorDetails WorkerSlot TopologyDetails
             Cluster Topologies SchedulerAssignment SchedulerAssignmentImpl DefaultScheduler ExecutorDetails])
-  (:import [org.apache.storm.nimbus NimbusInfo])
+  (:import [org.apache.storm.nimbus NimbusInfo LeaderListenerCallback])
   (:import [org.apache.storm.scheduler.resource ResourceUtils])
   (:import [org.apache.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
-            ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
-            KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
-            ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
-            BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
-            ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType])
+                                       ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
+                                       KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
+                                       ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
+                                       BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
+                                       ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType SupervisorAssignments])
   (:import [org.apache.storm.daemon Shutdownable])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
+  (:import [org.apache.storm.assignments AssignmentDistributionService])
   (:use [org.apache.storm util config log timer zookeeper local-state])
   (:require [org.apache.storm [cluster :as cluster]
                             [converter :as converter]
@@ -60,7 +61,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo Time]
+  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config)
@@ -181,8 +182,21 @@
                                        (get consumer "argument")))
     (get storm-conf STORM-CLUSTER-METRICS-CONSUMER-REGISTER)))
 
+(defn get-nimbus-acl
+  [conf]
+  (when
+    (Utils/isZkAuthenticationConfiguredStormServer
+      conf)
+    NIMBUS-ZK-ACLS))
+
 (defn nimbus-data [conf inimbus]
   (let [forced-scheduler (.getForcedScheduler inimbus)
+        acls (get-nimbus-acl conf)
+        storm-cluster-state (cluster/mk-storm-cluster-state conf
+                                                            :acls acls
+                                                            :context (ClusterStateContext. DaemonType/NIMBUS)
+                                                            :backend (get-assignments-backend conf))
+        ;; when nimbus gains leadership, sync all the assignments and id-info from zk to local
         blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))]
     {:conf conf
      :nimbus-host-port-info (NimbusInfo/fromConf conf)
@@ -190,11 +204,7 @@
      :authorization-handler (mk-authorization-handler (conf NIMBUS-AUTHORIZER) conf)
      :impersonation-authorization-handler (mk-authorization-handler (conf NIMBUS-IMPERSONATION-AUTHORIZER) conf)
      :submitted-count (atom 0)
-     :storm-cluster-state (cluster/mk-storm-cluster-state conf :acls (when
-                                                                       (Utils/isZkAuthenticationConfiguredStormServer
-                                                                         conf)
-                                                                       NIMBUS-ZK-ACLS)
-                                                          :context (ClusterStateContext. DaemonType/NIMBUS))
+     :storm-cluster-state storm-cluster-state
      :submit-lock (Object.)
      :sched-lock (Object.)
      :cred-update-lock (Object.)
@@ -213,7 +223,8 @@
                                  (exit-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (zk-leader-elector conf blob-store)
+     :leader-elector (zk-leader-elector conf blob-store storm-cluster-state acls)
+     :assignments-distributer (doto (AssignmentDistributionService.) (.prepare conf))
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
@@ -241,6 +252,7 @@
 
 (declare delay-event)
 (declare mk-assignments)
+(declare notify-supervisors-as-killed)
 
 (defn get-nimbus-subject
   []
@@ -322,8 +334,10 @@
             :kill (kill-transition nimbus storm-id)
             :remove (fn []
                       (log-message "Killing topology: " storm-id)
-                      (.remove-storm! (:storm-cluster-state nimbus)
-                                      storm-id)
+                      (let [old-assignment (.assignment-info (:storm-cluster-state nimbus) storm-id nil)]
+                        (.remove-storm! (:storm-cluster-state nimbus)
+                                        storm-id)
+                        (notify-supervisors-as-killed (:storm-cluster-state nimbus) old-assignment (:assignments-distributer nimbus)))
                       (when (instance? LocalFsBlobStore (:blob-store nimbus))
                         (doseq [blob-key (get-key-list-from-id (:conf nimbus) storm-id)]
                           (.remove-blobstore-key! (:storm-cluster-state nimbus) blob-key)
@@ -961,6 +975,43 @@
                       set)]
     (set/difference new-slots old-slots)))
 
+(defn assignment-changed-nodes [existing-assignment new-assignment]
+  (let [old-executor-node-port (:executor->node+port existing-assignment)
+        new-executor-node-port (:executor->node+port new-assignment)
+        all-node->host (merge (:node->host existing-assignment) (:node->host new-assignment))]
+    (if-not (and (not-nil? existing-assignment) (not-nil? new-assignment)) ;; kill or newly submit
+      (set (vals all-node->host))
+      ;; rebalance
+      (->> (reduce-kv (fn [m executor new-node-port]
+                        (let [old-node-port (get old-executor-node-port executor)]
+                          (when-not (= old-node-port new-node-port)
+                            (conj m
+                                  (get all-node->host (first old-node-port))
+                                  (get all-node->host (first new-node-port))))))
+                      #{} new-executor-node-port)
+           (remove nil?)))))
+
+(defn assignments-for-node [assignments host]
+  (let [node-assignments (into {} (filter (fn [[tid assignment]]
+                                            (let [hosts (set (vals (:node->host assignment)))]
+                                              (contains? hosts host))) assignments))]
+    node-assignments))
+
+(defn notify-supervisors-assignments
+  [new-assignments ^AssignmentDistributionService assignment-service nodes]
+  (doseq [node nodes]
+    (try
+      (let [node-assignments (assignments-for-node new-assignments node)]
+        (.addAssignmentsForNode assignment-service node (converter/thriftify-supervisor-assignments node-assignments)))
+      (catch Throwable e
+        ;; just skip when any error happens wait for next round assignments reassign
+        (log-error (.getMessage e) ": Exception when create thrift client for " node)))))
+
+(defn notify-supervisors-as-killed
+  [cluster-state old-assignment assignment-service]
+  (let [nodes (assignment-changed-nodes old-assignment nil)
+        new-assignments (.assignments-info cluster-state)]
+    (notify-supervisors-assignments new-assignments assignment-service nodes)))
 
 (defn basic-supervisor-details-map [storm-cluster-state]
   (let [infos (all-supervisor-info storm-cluster-state)]
@@ -1062,6 +1113,17 @@
               (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
               (.set-assignment! storm-cluster-state topology-id assignment)
               )))
+        ;; grouping assignment by node to see the nodes diff, then notify nodes/supervisors to synchronize its owned assignment
+        ;; because the number of existing assignments is small for every scheduling round,
+        ;; we expect to notify supervisors at almost the same time.
+        (->> new-assignments
+             (map (fn [[tid new-assignment]]
+                    (let [existing-assignment (get existing-assignments tid)]
+                      (assignment-changed-nodes existing-assignment new-assignment ))))
+             (apply concat)
+             (into #{})
+             (notify-supervisors-assignments new-assignments (:assignments-distributer nimbus)))
+
         (->> new-assignments
             (map (fn [[topology-id assignment]]
               (let [existing-assignment (get existing-assignments topology-id)]
@@ -1115,7 +1177,7 @@
 
 (defn try-read-storm-conf [conf storm-id blob-store]
   (try-cause
-    (read-storm-conf-as-nimbus conf storm-id blob-store)
+    (read-storm-conf-as-nimbus storm-id blob-store)
     (catch KeyNotFoundException e
        (throw (NotAliveException. (str storm-id))))))
 
@@ -2428,7 +2490,15 @@
         true
         (catch InvalidTopologyException e false)
         (catch AlreadyAliveException e false)))
- 
+
+    (^SupervisorAssignments getSupervisorAssignments [this ^String node]
+      (if (is-leader nimbus :throw-exception false)
+        (let [storm-cluster-state (:storm-cluster-state nimbus)
+              existing-assignments (.assignments-info storm-cluster-state)
+              assignments-for-node (assignments-for-node existing-assignments node)]
+          (converter/thriftify-supervisor-assignments assignments-for-node)
+          ;;when not leader just return nil which will cause client to get an unknown error.
+          )))
     Shutdownable
     (shutdown [this]
       (mark! nimbus:num-shutdown-calls)
@@ -2439,6 +2509,7 @@
       (.cleanup (:uploaders nimbus))
       (.shutdown (:blob-store nimbus))
       (.close (:leader-elector nimbus))
+      (.close (:assignments-distributer nimbus))
       (when (:nimbus-topology-action-notifier nimbus) (.cleanup (:nimbus-topology-action-notifier nimbus)))
       (log-message "Shut down master"))
     DaemonCommon

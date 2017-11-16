@@ -707,6 +707,25 @@ public class Config extends HashMap<String, Object> {
     public static final Object NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN_SCHEMA = String.class;
 
     /**
+     * Nimbus assignments backend for storing local assignments. We will use it to store physical plan and runtime storm ids.
+     */
+    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.assignments.ILocalAssignmentsBackend.class)
+    public static final String NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS = "nimbus.local.assignments.backend.class";
+
+    /**
+     * This controls the number of working threads for distributing master assignments to supervisors.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREADS = "nimbus.assignments.service.threads";
+
+    /**
+     * This controls the number of working thread queue size of assignment service.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREAD_QUEUE_SIZE = "nimbus.assignments.service.thread.queue.size";
+
+    /**
      * Storm UI binds to this host/interface.
      */
     @isString
@@ -1191,6 +1210,45 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @isListEntryCustom(entryValidatorClasses={IntegerValidator.class,PositiveNumberValidator.class})
     public static final String SUPERVISOR_SLOTS_PORTS = "supervisor.slots.ports";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Port used for supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_PORT = "supervisor.thrift.port";
+
+    @isString
+    /**
+     * The Supervisor invocations transport plug-in for Thrift client/server communication.
+     */
+    public static final String SUPERVISOR_THRIFT_TRANSPORT_PLUGIN = "supervisor.thrift.transport";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Supervisor thrift server queue size.
+     */
+    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * The number of threads that should be used by the supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_THREADS = "supervisor.thrift.threads";
+
+    @Deprecated
+    @isNumber
+    @isPositiveNumber
+    public static final String SUPERVISOR_THRIFT_MAX_BUFFER_SIZE = "supervisor.thrift.max_buffer_size";
+
+    /**
+     * How long before a supervisor Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS = "supervisor.thrift.socket.timeout.ms";
 
     /**
      * What blobstore implementation the supervisor should use.

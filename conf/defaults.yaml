@@ -80,6 +80,9 @@ topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600
 nimbus.queue.size: 100000
 scheduler.display.resource: false
+nimbus.local.assignments.backend.class: "org.apache.storm.assignments.InMemoryAssignmentBackend"
+nimbus.assignments.service.threads: 10
+nimbus.assignments.service.thread.queue.size: 100
 
 ### ui.* configs are for the master
 ui.host: 0.0.0.0
@@ -145,6 +148,11 @@ supervisor.slots.ports:
     - 6701
     - 6702
     - 6703
+supervisor.thrift.port: 6627
+supervisor.queue.size: 128
+supervisor.thrift.threads: 16
+supervisor.thrift.max_buffer_size: 1048576
+supervisor.thrift.socket.timeout.ms: 5000
 supervisor.childopts: "-Xmx256m"
 supervisor.run.worker.as.user: false
 #how long supervisor will wait to ensure that a worker process is started

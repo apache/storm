@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- *
+ * <p/>
  * http://www.apache.org/licenses/LICENSE-2.0
- *
+ * <p/>
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -19,6 +19,8 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,6 +34,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
 import org.apache.storm.StormTimer;
+import org.apache.storm.assignments.ILocalAssignmentsBackend;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
@@ -42,18 +45,18 @@ import org.apache.storm.daemon.supervisor.timer.SupervisorHeartbeat;
 import org.apache.storm.daemon.supervisor.timer.UpdateBlobs;
 import org.apache.storm.event.EventManager;
 import org.apache.storm.event.EventManagerImp;
-import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.*;
 import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.localizer.ILocalizer;
 import org.apache.storm.localizer.Localizer;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.LocalState;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.VersionInfo;
+import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.security.auth.ThriftServer;
+import org.apache.storm.utils.*;
+import org.apache.thrift.TException;
+import org.apache.thrift.TProcessor;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -80,11 +83,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
-    
+    private ThriftServer thriftServer;
+
     private Supervisor(ISupervisor iSupervisor) throws IOException {
         this(Utils.readStormConfig(), null, iSupervisor);
     }
-    
+
     public Supervisor(Map<String, Object> conf, IContext sharedContext, ISupervisor iSupervisor) throws IOException {
         this.conf = conf;
         this.iSupervisor = iSupervisor;
@@ -92,16 +96,17 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.upTime = Utils.makeUptimeComputer();
         this.stormVersion = VersionInfo.getVersion();
         this.sharedContext = sharedContext;
-        
+
         iSupervisor.prepare(conf, ConfigUtils.supervisorIsupervisorDir(conf));
-        
+
         List<ACL> acls = null;
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             acls = SupervisorUtils.supervisorZkAcls();
         }
 
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.SUPERVISOR));
+            ILocalAssignmentsBackend backend = ConfigUtils.getAssignmentsBackend(conf);
+            this.stormClusterState = ClusterUtils.mkStormClusterState(conf, backend, acls, new ClusterStateContext(DaemonType.SUPERVISOR));
         } catch (Exception e) {
             LOG.error("supervisor can't create stormClusterState");
             throw Utils.wrapInRuntime(e);
@@ -123,7 +128,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             throw Utils.wrapInRuntime(e);
         }
 
-        this.currAssignment = new AtomicReference<Map<Long, LocalAssignment>>(new HashMap<Long,LocalAssignment>());
+        this.currAssignment = new AtomicReference<Map<Long, LocalAssignment>>(new HashMap<Long, LocalAssignment>());
 
         this.heartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
 
@@ -131,11 +136,11 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         this.blobUpdateTimer = new StormTimer("blob-update-timer", new DefaultUncaughtExceptionHandler());
     }
-    
+
     public String getId() {
         return supervisorId;
     }
-    
+
     IContext getSharedContext() {
         return sharedContext;
     }
@@ -160,6 +165,10 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         return stormClusterState;
     }
 
+    public ReadClusterState getReadClusterState() {
+        return readState;
+    }
+
     LocalState getLocalState() {
         return localState;
     }
@@ -179,15 +188,17 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     public Localizer getLocalizer() {
         return localizer;
     }
-    
+
     ILocalizer getAsyncLocalizer() {
         return asyncLocalizer;
     }
-    
+
     EventManager getEventManger() {
         return eventManager;
     }
-    
+
+    Supervisor getSupervisor() { return this; }
+
     /**
      * Launch the supervisor
      */
@@ -206,7 +217,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         this.eventManager = new EventManagerImp(false);
         this.readState = new ReadClusterState(this);
-        
+
         Set<String> downloadedTopoIds = SupervisorUtils.readDownloadedTopologyIds(conf);
         Map<Integer, LocalAssignment> portToAssignments = localState.getLocalAssignmentsMap();
         if (portToAssignments != null) {
@@ -231,7 +242,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         if ((Boolean) conf.get(Config.SUPERVISOR_ENABLE)) {
             // This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
             // to date even if callbacks don't all work exactly right
-            eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(readState, eventManager));
+            eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState), eventManager));
 
             // Blob update thread. Starts with 30 seconds delay, every 30 seconds
             blobUpdateTimer.scheduleRecurring(30, 30, new EventManagerPushCallback(updateBlobsThread, eventManager));
@@ -253,7 +264,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
-            Utils.addShutdownHookWithForceKillIn1Sec(new Runnable(){ 
+            //must invoke after launcher cause some service must be initialized
+            launcherSupervisorThriftServer(conf);
+            Utils.addShutdownHookWithForceKillIn1Sec(new Runnable() {
                 @Override
                 public void run() {
                     close();
@@ -267,6 +280,66 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         }
     }
 
+    private void launcherSupervisorThriftServer(Map conf) throws IOException {
+        // validate port
+        try {
+            ServerSocket socket = new ServerSocket(Utils.getInt(conf.get(Config.SUPERVISOR_THRIFT_PORT)));
+            socket.close();
+        } catch (BindException e) {
+            LOG.error("{} is not available. Check if another process is already listening on {}", conf.get(Config.SUPERVISOR_THRIFT_PORT), conf.get(Config.SUPERVISOR_THRIFT_PORT));
+            throw new RuntimeException(e);
+        }
+
+        TProcessor processor = new org.apache.storm.generated.Supervisor.Processor(new org.apache.storm.generated.Supervisor.Iface() {
+            @Override
+            public void sendSupervisorAssignments(SupervisorAssignments assignments) throws AuthorizationException, TException {
+                LOG.info("Got an assignments from master, will start to sync with assignments: {}", assignments);
+                SynchronizeAssignments syn = new SynchronizeAssignments(getSupervisor(), assignments, getReadClusterState());
+                getEventManger().add(syn);
+            }
+
+            @Override
+            public Assignment getLocalAssignmentForStorm(String id) throws NotAliveException, AuthorizationException, TException {
+                Assignment assignment = getStormClusterState().assignmentInfo(id, null);
+                if (null == assignment) {
+                    throw new NotAliveException("No local assignment assigned for storm: " + id + " for node: " + getHostName());
+                }
+                return assignment;
+            }
+        });
+        this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
+        this.thriftServer.serve();
+    }
+
+    public void getAssignmentsFromMaster() {
+        NimbusClient master;
+        try {
+            master = NimbusClient.getConfiguredClient(conf);
+            SupervisorAssignments assignments = master.getClient().getSupervisorAssignments(getHostName());
+            LOG.debug("Sync an assignments from master, will start to sync with assignments: {}", assignments);
+            assignedAssignmentsToLocal(assignments);
+            try{
+                master.close();
+            }catch (Throwable t) {
+                LOG.warn("Close master client exception", t);
+            }
+        }catch (Exception t) {
+            LOG.error("Get assignments from master exception", t);
+        }
+    }
+
+    public void assignedAssignmentsToLocal(SupervisorAssignments assignments) {
+        if (null == assignments ){
+            //unknown error, just skip
+            return;
+        }
+        Map<String, byte[]> serAssignments = new HashMap<>();
+        for(Map.Entry<String, Assignment> entry: assignments.get_storm_assignment().entrySet()) {
+            serAssignments.put(entry.getKey(), Utils.serialize(entry.getValue()));
+        }
+        this.stormClusterState.syncRemoteAssignments(serAssignments);
+    }
+
     private void registerWorkerNumGauge(String name, final Map<String, Object> conf) {
         StormMetricsRegistry.registerGauge(name, new Callable<Integer>() {
             @Override
@@ -276,7 +349,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
         });
     }
-    
+
     @Override
     public void close() {
         try {
@@ -294,11 +367,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             asyncLocalizer.shutdown();
             localizer.shutdown();
             getStormClusterState().disconnect();
+            if(thriftServer != null) {
+                this.thriftServer.stop();
+            }
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);
         }
     }
-    
+
     void killWorkers(Collection<String> workerIds, ContainerLauncher launcher) throws InterruptedException, IOException {
         HashSet<Killable> containers = new HashSet<>();
         for (String workerId : workerIds) {
@@ -318,13 +394,13 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         if (!containers.isEmpty()) {
             Time.sleepSecs(shutdownSleepSecs);
         }
-        for (Killable k: containers) {
+        for (Killable k : containers) {
             try {
                 k.forceKill();
                 long start = Time.currentTimeMillis();
-                while(!k.areAllProcessesDead()) {
+                while (!k.areAllProcessesDead()) {
                     if ((Time.currentTimeMillis() - start) > 10_000) {
-                        throw new RuntimeException("Giving up on killing " + k 
+                        throw new RuntimeException("Giving up on killing " + k
                                 + " after " + (Time.currentTimeMillis() - start) + " ms");
                     }
                     Time.sleep(100);
