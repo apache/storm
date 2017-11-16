@@ -57,7 +57,7 @@ public class LogFileDownloader {
             if (isDaemon || resourceAuthorizer.isUserAllowedToAccessFile(user, fileName)) {
                 return LogviewerResponseBuilder.buildDownloadFile(file);
             } else {
-                return LogviewerResponseBuilder.buildResponseUnautohrizedUser(user);
+                return LogviewerResponseBuilder.buildResponseUnauthorizedUser(user);
             }
         } else {
             return LogviewerResponseBuilder.buildResponsePageNotFound();
