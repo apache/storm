@@ -93,9 +93,7 @@ public class BatchSubtopologyBuilder {
         for (InputDeclaration decl: masterBolt.declarations) {
             decl.declare(declarer);
         }
-        if (!masterBolt.componentConf.isEmpty()) {
-            declarer.addConfigurations(masterBolt.componentConf);
-        }
+        declarer.addConfigurations(masterBolt.componentConf);
         for (String id: bolts.keySet()) {
             Component component = bolts.get(id);
             Map<String, SourceArgs> coordinatedArgs = new HashMap<String, SourceArgs>();
@@ -451,16 +449,20 @@ public class BatchSubtopologyBuilder {
 
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
-            if (conf != null && !conf.isEmpty()) {
+            if (conf != null) {
                 component.componentConf.putAll(conf);
             }
             return this;
         }
 
         @Override
-        public Map<String, Object> getRASConfiguration() {
-            //TODO this should not be modifiable
-            return component.componentConf;
+        public BoltDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
+            }
+            return this;
         }
 
         @Override
@@ -472,11 +474,10 @@ public class BatchSubtopologyBuilder {
         @SuppressWarnings("unchecked")
         @Override
         public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }

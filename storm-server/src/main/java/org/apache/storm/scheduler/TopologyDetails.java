@@ -500,8 +500,7 @@ public class TopologyDetails {
 
         Map<String,Double> topologyComponentResourcesMap = (
                 Map<String, Double>) this.topologyConf.getOrDefault(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()
-        );
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>());
 
         topologyComponentResourcesMap = normalizedResourceMap(topologyComponentResourcesMap);
 

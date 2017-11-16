@@ -224,16 +224,20 @@ public class TransactionalTopologyBuilder {
     private class SpoutDeclarerImpl extends BaseConfigurationDeclarer<SpoutDeclarer> implements SpoutDeclarer {
         @Override
         public SpoutDeclarer addConfigurations(Map<String, Object> conf) {
-            if (conf != null && !conf.isEmpty()) {
+            if (conf != null) {
                 spoutConf.putAll(conf);
             }
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            //TODO this should be imutable
-            return spoutConf;
+        public SpoutDeclarerImpl addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) spoutConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
+            }
+            return this;
         }
 
         @Override
@@ -245,14 +249,10 @@ public class TransactionalTopologyBuilder {
         @SuppressWarnings("unchecked")
         @Override
         public SpoutDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) spoutConf.computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP,
+                (k) -> new HashMap<>());
 
-            if (resourcesMap == null) {
-                resourcesMap = new HashMap<>();
-            }
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }
@@ -552,18 +552,21 @@ public class TransactionalTopologyBuilder {
 
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
-            if (conf != null && !conf.isEmpty()) {
+            if (conf != null) {
                 component.componentConf.putAll(conf);
             }
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            //TODO this should be read only
-            return component.componentConf;
+        public BoltDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
+            }
+            return this;
         }
-
         @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
             component.sharedMemory.add(request);
@@ -573,11 +576,10 @@ public class TransactionalTopologyBuilder {
         @SuppressWarnings("unchecked")
         @Override
         public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }

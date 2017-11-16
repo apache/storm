@@ -401,8 +401,18 @@ public class LinearDRPCTopologyBuilder {
 
         @Override
         public LinearDRPCInputDeclarer addConfigurations(Map<String, Object> conf) {
-            if (conf != null && !conf.isEmpty()) {
+            if (conf != null) {
                 component.componentConf.putAll(conf);
+            }
+            return this;
+        }
+
+        @Override
+        public LinearDRPCInputDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
             }
             return this;
         }
@@ -410,17 +420,11 @@ public class LinearDRPCTopologyBuilder {
         @SuppressWarnings("unchecked")
         @Override
         public LinearDRPCInputDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
-        }
-
-        @Override
-        public Map getRASConfiguration() {
-            return component.componentConf;
         }
 
         @Override
