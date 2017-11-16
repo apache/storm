@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
+import java.time.Duration;
 
 
 public class TestBolt extends BaseBasicBolt {
@@ -115,6 +116,14 @@ public class TestBolt extends BaseBasicBolt {
     public void withClasses(TestClass...classes) {
         this.classes = classes;
     }
+
+    public void setTimeLen(Duration x) { x.toMillis(); }
+    public void setTimeLenArr(Duration[] x) { x.toString(); }
+
+    public void withDuration(Duration x) { x.toMillis(); }
+
+    public void withDurationArr(Duration[] x) { x.toString(); }
+
 
     public String getFoo(){
         return this.foo;
