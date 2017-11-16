@@ -48,7 +48,7 @@ public class NimbusTest {
         config1.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, 128.0);
         config1.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 129.0);
         try {
-            Nimbus.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1);
+            Nimbus.validateTopologyWorkerMaxHeapSizeConfigs(config1, stormTopology1, 768.0);
             fail("Expected exception not thrown");
         } catch (IllegalArgumentException e) {
             //Expected...
