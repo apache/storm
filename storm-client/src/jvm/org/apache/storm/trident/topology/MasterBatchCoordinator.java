@@ -308,7 +308,7 @@ public class MasterBatchCoordinator extends BaseRichSpout {
                 ", _maxTransactionActive=" + _maxTransactionActive +
                 ", _coordinators=" + _coordinators +
                 ", _managedSpoutIds=" + _managedSpoutIds +
-                ", spouts=" + _spouts +
+                ", _spouts=" + _spouts +
                 ", _throttler=" + _throttler +
                 ", _active=" + _active +
                 "}";

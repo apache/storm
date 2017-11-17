@@ -593,7 +593,7 @@ public class TopologyBuilder {
                 Map<String, Double> currentResources =
                     (Map<String, Double>) conf.computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
                 currentResources.putAll(resources);
-                commons.get(id).set_json_conf(JSONValue.toJSONString(currConf));
+                commons.get(id).set_json_conf(JSONValue.toJSONString(conf));
             }
             return (T) this;
         }

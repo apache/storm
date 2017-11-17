@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -6,9 +6,9 @@
  * to you under the Apache License, Version 2.0 (the
  * "License"); you may not use this file except in compliance
  * with the License.  You may obtain a copy of the License at
- * <p>
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -18,11 +18,17 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.INimbus;
@@ -33,10 +39,7 @@ import org.apache.storm.scheduler.SupervisorResources;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
-import org.apache.storm.scheduler.resource.SchedulingResult;
-import org.apache.storm.scheduler.resource.strategies.scheduling.BaseResourceAwareStrategy.ObjectResources;
 import org.apache.storm.topology.SharedOffHeapWithinNode;
 import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
@@ -46,21 +49,9 @@ import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.junit.Assert.*;
 import static org.apache.storm.scheduler.resource.TestUtilsForResourceAwareScheduler.*;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeSet;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestGenericResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestGenericResourceAwareStrategy.class);
@@ -123,7 +114,12 @@ public class TestGenericResourceAwareStrategy {
             assertTrue(supervisorId, resources.getTotalMem() >= resources.getUsedMem());
         }
 
-        // Everything should fit in a single slot
+        // If we didn't take GPUs into account everything would fit under a single slot
+        // But because there is only 1 GPU per node, and each of the 2 spouts needs a GPU
+        // It has to be scheduled on at least 2 nodes, and hence 2 slots.
+        // Because of this all of the bolts will be scheduled on a single slot with one of
+        // the spouts and the other spout is on its own slot.  So everything that can be shared is
+        // shared.
         int totalNumberOfTasks = (spoutParallelism + (boltParallelism * numBolts));
         double totalExpectedCPU = totalNumberOfTasks * cpuPercent;
         double totalExpectedOnHeap = (totalNumberOfTasks * memoryOnHeap) + sharedOnHeap;
@@ -151,8 +147,8 @@ public class TestGenericResourceAwareStrategy {
         assertEquals(totalExpectedOnHeap, totalFoundOnHeap, 0.01);
         assertEquals(totalExpectedWorkerOffHeap, totalFoundWorkerOffHeap, 0.01);
         assertEquals(sharedOffHeapNode, nodeToTotalShared.values().stream().mapToDouble((d) -> d).sum(), 0.01);
-        assertEquals(sharedOnHeap, scheduledResources.values().stream().mapToDouble((r) -> r.get_shared_mem_on_heap()).sum(), 0.01);
-        assertEquals(sharedOffHeapWorker, scheduledResources.values().stream().mapToDouble((r) -> r.get_shared_mem_off_heap()).sum(),
+        assertEquals(sharedOnHeap, scheduledResources.values().stream().mapToDouble(WorkerResources::get_shared_mem_on_heap).sum(), 0.01);
+        assertEquals(sharedOffHeapWorker, scheduledResources.values().stream().mapToDouble(WorkerResources::get_shared_mem_off_heap).sum(),
             0.01);
     }
 
@@ -178,7 +174,7 @@ public class TestGenericResourceAwareStrategy {
         INimbus iNimbus = new INimbusTest();
 
         Config conf = createGrasClusterConfig(50, 250, 250, null, Collections.emptyMap());
-        Map<String, Double> genericResourcesMap = new HashMap();
+        Map<String, Double> genericResourcesMap = new HashMap<>();
         genericResourcesMap.put("gpu.count", 2.0);
         Map<String, SupervisorDetails> supMap = genSupervisors(4, 4, 150, 1500, genericResourcesMap);
 
@@ -199,7 +195,11 @@ public class TestGenericResourceAwareStrategy {
         rs.prepare(conf);
         rs.schedule(topologies, cluster);
 
-        //We need to have 3 slots on 3 separate hosts to make the GPU situation work
+        //We need to have 3 slots on 3 separate hosts. The topology needs 6 GPUs 3500 MB memory and 350% CPU
+        // The bolt-3 instances must be on separate nodes because they each need 2 GPUs.
+        // The bolt-2 instances must be on the same node as they each need 1 GPU
+        // (this assumes that we are packing the components to avoid fragmentation).
+        // The bolt-1 and spout instances fill in the rest.
 
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
         expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
