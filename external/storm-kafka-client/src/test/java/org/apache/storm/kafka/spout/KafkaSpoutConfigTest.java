@@ -75,4 +75,50 @@ public class KafkaSpoutConfigTest {
         assertThat("Should allow users to pick a different auto offset reset policy than the one recommended for the at-least-once processing guarantee",
             (String)conf.getKafkaProps().get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), is("none"));
     }
+    
+    @Test
+    public void testCanConfigureWithExplicitTrueBooleanAutoCommitMode() {
+        /*
+         * Since adding setProcessingGuarantee to KafkaSpoutConfig we don't want users to set "enable.auto.commit" in the consumer config,
+         * because setting the processing guarantee will do it automatically. For backward compatibility we need to be able to handle the 
+         * property being set anyway for a few releases, and try to set a processing guarantee that corresponds to the property.
+         */
+        
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true)
+            .build();
+        
+        assertThat("When setting enable auto commit to true explicitly the spout should use the 'none' processing guarantee",
+            conf.getProcessingGuarantee(), is(KafkaSpoutConfig.ProcessingGuarantee.NONE));
+    }
+    
+    @Test
+    public void testCanConfigureWithExplicitFalseBooleanAutoCommitMode() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false)
+            .build();
+        
+        assertThat("When setting enable auto commit to false explicitly the spout should use the 'at-least-once' processing guarantee",
+            conf.getProcessingGuarantee(), is(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE));
+    }
+    
+    @Test
+    public void testCanConfigureWithExplicitTrueStringAutoCommitMode() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true")
+            .build();
+        
+        assertThat("When setting enable auto commit to true explicitly the spout should use the 'none' processing guarantee",
+            conf.getProcessingGuarantee(), is(KafkaSpoutConfig.ProcessingGuarantee.NONE));
+    }
+    
+    @Test
+    public void testCanConfigureWithExplicitFalseStringAutoCommitMode() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false")
+            .build();
+        
+        assertThat("When setting enable auto commit explicitly to false the spout should use the 'at-least-once' processing guarantee",
+            conf.getProcessingGuarantee(), is(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE));
+    }
 }
