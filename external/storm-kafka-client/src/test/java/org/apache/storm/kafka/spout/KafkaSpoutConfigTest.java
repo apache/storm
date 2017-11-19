@@ -40,7 +40,7 @@ public class KafkaSpoutConfigTest {
         assertTrue(conf.getTranslator() instanceof DefaultRecordTranslator);
         HashMap<String, Object> expected = new HashMap<>();
         expected.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:1234");
-        expected.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+        expected.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         expected.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
         expected.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         expected.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);

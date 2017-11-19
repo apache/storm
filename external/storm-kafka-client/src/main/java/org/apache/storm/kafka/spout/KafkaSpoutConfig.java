@@ -726,7 +726,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             }
         }
         if (builder.processingGuarantee == ProcessingGuarantee.NONE) {
-            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "true");
+            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
         } else {
             String autoOffsetResetPolicy = (String)builder.kafkaProps.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
             if (builder.processingGuarantee == ProcessingGuarantee.AT_LEAST_ONCE) {
@@ -749,7 +749,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                         + " Some messages may be processed more than once.");
                 }
             }
-            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, "false");
+            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
         }
     }
 
