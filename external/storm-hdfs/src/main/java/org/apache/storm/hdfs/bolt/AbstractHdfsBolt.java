@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -48,6 +49,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public abstract class AbstractHdfsBolt extends BaseRichBolt {
+
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHdfsBolt.class);
     private static final Integer DEFAULT_RETRY_COUNT = 3;
     /**
@@ -94,14 +96,19 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
     /**
      * Marked as final to prevent override. Subclasses should implement the doPrepare() method.
+     *
      * @param conf
      * @param topologyContext
      * @param collector
      */
-    public final void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector){
+    public final void prepare(Map conf, TopologyContext topologyContext, OutputCollector collector) {
         this.writeLock = new Object();
-        if (this.syncPolicy == null) throw new IllegalStateException("SyncPolicy must be specified.");
-        if (this.rotationPolicy == null) throw new IllegalStateException("RotationPolicy must be specified.");
+        if (this.syncPolicy == null) {
+            throw new IllegalStateException("SyncPolicy must be specified.");
+        }
+        if (this.rotationPolicy == null) {
+            throw new IllegalStateException("RotationPolicy must be specified.");
+        }
         if (this.fsUrl == null) {
             throw new IllegalStateException("File system URL must be specified.");
         }
@@ -111,21 +118,21 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         this.collector = collector;
         this.fileNameFormat.prepare(conf, topologyContext);
         this.hdfsConfig = new Configuration();
-        Map<String, Object> map = (Map<String, Object>)conf.get(this.configKey);
-        if(map != null){
-            for(String key : map.keySet()){
+        Map<String, Object> map = (Map<String, Object>) conf.get(this.configKey);
+        if (map != null) {
+            for (String key : map.keySet()) {
                 this.hdfsConfig.set(key, String.valueOf(map.get(key)));
             }
         }
 
-        try{
+        try {
             HdfsSecurityUtil.login(conf, hdfsConfig);
             doPrepare(conf, topologyContext, collector);
-        } catch (Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("Error preparing HdfsBolt: " + e.getMessage(), e);
         }
 
-        if(this.rotationPolicy instanceof TimedRotationPolicy){
+        if (this.rotationPolicy instanceof TimedRotationPolicy) {
             startTimedRotationPolicy();
         }
     }
@@ -214,10 +221,8 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     /**
-     * A tuple must be mapped to a writer based on two factors:
-     *  - bolt specific logic that must separate tuples into different files in the same directory (see the avro bolt
-     *    for an example of this)
-     *  - the directory the tuple will be partioned into
+     * A tuple must be mapped to a writer based on two factors: - bolt specific logic that must separate tuples into different files in the
+     * same directory (see the avro bolt for an example of this) - the directory the tuple will be partioned into
      *
      * @param tuple
      * @return
@@ -251,6 +256,11 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
     }
 
+    @Override
+    public void cleanup() {
+        this.rotationTimer.cancel();
+    }
+
     private void syncAllWriters() throws IOException {
         for (Writer writer : writers.values()) {
             writer.sync();
@@ -258,7 +268,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     private void startTimedRotationPolicy() {
-        long interval = ((TimedRotationPolicy)this.rotationPolicy).getInterval();
+        long interval = ((TimedRotationPolicy) this.rotationPolicy).getInterval();
         this.rotationTimer = new Timer(true);
         TimerTask task = new TimerTask() {
             @Override
@@ -280,8 +290,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
 
         final String partitionPath = this.partitioner.getPartitionPath(tuple);
         final int rotation;
-        if (rotationCounterMap.containsKey(partitionPath))
-        {
+        if (rotationCounterMap.containsKey(partitionPath)) {
             rotation = rotationCounterMap.get(partitionPath) + 1;
         } else {
             rotation = 0;
@@ -289,7 +298,7 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         rotationCounterMap.put(partitionPath, rotation);
 
         return new Path(this.fsUrl + this.fileNameFormat.getPath() + partitionPath,
-                this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
+            this.fileNameFormat.getName(rotation, System.currentTimeMillis()));
     }
 
     abstract protected void doPrepare(Map conf, TopologyContext topologyContext, OutputCollector collector) throws IOException;
@@ -299,10 +308,11 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     abstract protected Writer makeNewWriter(Path path, Tuple tuple) throws IOException;
 
     static class WritersMap extends LinkedHashMap<String, Writer> {
+
         final long maxWriters;
 
         public WritersMap(long maxWriters) {
-            super((int)maxWriters, 0.75f, true);
+            super((int) maxWriters, 0.75f, true);
             this.maxWriters = maxWriters;
         }
 

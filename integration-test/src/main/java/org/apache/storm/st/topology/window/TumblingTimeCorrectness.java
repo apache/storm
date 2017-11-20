@@ -55,9 +55,9 @@ public class TumblingTimeCorrectness implements TestableTopology {
     private final String spoutName;
     private final String boltName;
 
-    public TumblingTimeCorrectness(int timbleSec) {
-        this.tumbleSec = timbleSec;
-        final String prefix = this.getClass().getSimpleName() + "-timbleSec" + timbleSec;
+    public TumblingTimeCorrectness(int tumbleSec) {
+        this.tumbleSec = tumbleSec;
+        final String prefix = this.getClass().getSimpleName() + "-tumbleSec" + tumbleSec;
         spoutName = prefix + "IncrementingSpout";
         boltName = prefix + "VerificationBolt";
     }
@@ -111,7 +111,9 @@ public class TumblingTimeCorrectness implements TestableTopology {
 
         @Override
         public void nextTuple() {
-            TimeUtil.sleepMilliSec(rng.nextInt(800));
+            //Emitting too quickly can lead to spurious test failures because the worker log may roll right before we read it
+            //Sleep a bit between emits
+            TimeUtil.sleepMilliSec(rng.nextInt(100));
             currentNum++;
             TimeData data = TimeData.newData(currentNum);
             final Values tuple = data.getValues();

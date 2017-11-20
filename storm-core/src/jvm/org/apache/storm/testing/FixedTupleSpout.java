@@ -59,13 +59,21 @@ public class FixedTupleSpout implements IRichSpout {
     private Map<String, FixedTuple> _pending;
 
     private String _id;
-    private String _fieldName;
+    private Fields _fields;
 
     public FixedTupleSpout(List tuples) {
-        this(tuples, null);
+        this(tuples, (Fields) null);
     }
 
+    /**
+     * @deprecated please use {@link #FixedTupleSpout(List, Fields)}
+     */
+    @Deprecated
     public FixedTupleSpout(List tuples, String fieldName) {
+        this(tuples, new Fields(fieldName));
+    }
+
+    public FixedTupleSpout(List tuples, Fields fields) {
         _id = UUID.randomUUID().toString();
         synchronized(acked) {
             acked.put(_id, 0);
@@ -83,7 +91,7 @@ public class FixedTupleSpout implements IRichSpout {
             }
             _tuples.add(ft);
         }
-        _fieldName = fieldName;
+        _fields = fields;
     }
 
     public List<FixedTuple> getSourceTuples() {
@@ -167,8 +175,8 @@ public class FixedTupleSpout implements IRichSpout {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) { 
-        if (_fieldName != null) {
-            declarer.declare(new Fields(_fieldName));
+        if (_fields != null) {
+            declarer.declare(_fields);
         }
     }
 

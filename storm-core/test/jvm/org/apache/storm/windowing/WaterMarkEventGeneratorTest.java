@@ -18,6 +18,7 @@
 package org.apache.storm.windowing;
 
 import org.apache.storm.generated.GlobalStreamId;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -54,6 +55,11 @@ public class WaterMarkEventGeneratorTest {
         waterMarkEventGenerator = new WaterMarkEventGenerator<>(windowManager, 100000, 5,
                                                                 Collections.singleton(streamId("s1")));
         waterMarkEventGenerator.start();
+    }
+
+    @After
+    public void tearDown() {
+        waterMarkEventGenerator.shutdown();
     }
 
     @Test

@@ -53,6 +53,7 @@ import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -65,6 +66,8 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Pattern;
+import org.apache.storm.Config;
+import org.apache.storm.utils.Utils;
 
 public class TopoWrap {
     private static Logger log = LoggerFactory.getLogger(TopoWrap.class);
@@ -97,6 +100,9 @@ public class TopoWrap {
         submitConf.put("storm.zookeeper.topology.auth.scheme", "digest");
         submitConf.put("topology.workers", 3);
         submitConf.put("topology.debug", true);
+        //Set the metrics sample rate to 1 to force update the executor stats every time something happens
+        //This is necessary because getAllTimeEmittedCount relies on the executor emit stats to be accurate
+        submitConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 1);
         return submitConf;
     }
 
@@ -180,7 +186,7 @@ public class TopoWrap {
                 Map<String, Long> allTime = emitted.get(since);
                 if (allTime == null)
                     return 0L;
-                return allTime.get("default");
+                return allTime.get(Utils.DEFAULT_STREAM_ID);
             }
         });
         return sum(ackCounts).longValue();
@@ -213,7 +219,7 @@ public class TopoWrap {
             log.info(getInfo().toString());
             long emitCount = getAllTimeEmittedCount(componentName);
             log.info("Count for component " + componentName + " is " + emitCount);
-            if (emitCount > minEmits) {
+            if (emitCount >= minEmits) {
                 break;
             }
             TimeUtil.sleepSec(10);
@@ -223,7 +229,7 @@ public class TopoWrap {
     public void assertProgress(int minEmits, String componentName, int maxWaitSec) throws TException {
         waitForProgress(minEmits, componentName, maxWaitSec);
         long emitCount = getAllTimeEmittedCount(componentName);
-        Assert.assertTrue(emitCount >= minEmits, "Count for component " + componentName + " is " + emitCount + " min is " + minEmits);
+        Assert.assertTrue(emitCount >= minEmits, "Emit count for component '" + componentName + "' is " + emitCount + ", min is " + minEmits);
     }
 
     public static class ExecutorURL {
@@ -280,8 +286,13 @@ public class TopoWrap {
         }
     }
 
-    public <T extends FromJson<T>> List<T> getLogData(final String componentId, final FromJson<T> cls) throws TException, MalformedURLException {
+    public <T extends FromJson<T>> List<T> getLogData(final String componentId, final FromJson<T> cls) 
+            throws IOException, TException, MalformedURLException {
         final List<LogData> logData = getLogData(componentId);
+        return deserializeLogData(logData, cls);
+    }
+    
+    public <T extends FromJson<T>> List<T> deserializeLogData(final List<LogData> logData, final FromJson<T> cls) {
         final List<T> data = new ArrayList<>(
                 Collections2.transform(logData, new Function<LogData, T>() {
                     @Nullable
@@ -294,7 +305,7 @@ public class TopoWrap {
         return data;
     }
 
-    public List<LogData> getLogData(final String componentId) throws TException, MalformedURLException {
+    public List<LogData> getLogData(final String componentId) throws IOException, TException, MalformedURLException {
         final String logs = getLogs(componentId);
         final String dateRegex = "\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}";
         Pattern pattern = Pattern.compile("(?=\\n" + dateRegex + ")");
@@ -318,48 +329,38 @@ public class TopoWrap {
         return sortedLogs;
     }
 
-    public String getLogs(final String componentId) throws TException, MalformedURLException {
+    public String getLogs(final String componentId) throws IOException, TException, MalformedURLException {
         log.info("Fetching logs for componentId = " + componentId);
         List<ExecutorURL> exclaim2Urls = getLogUrls(componentId);
         log.info("Found " + exclaim2Urls.size() + " urls: " + exclaim2Urls.toString());
-        Collection<String> urlOuputs = Collections2.transform(exclaim2Urls, new Function<ExecutorURL, String>() {
-            @Nullable
-            @Override
-            public String apply(@Nullable ExecutorURL executorURL) {
-                if (executorURL == null || executorURL.getDownloadUrl() == null) {
-                    return "";
-                }
-                String warnMessage = "Couldn't fetch executorURL: " + executorURL;
-                try {
-                    log.info("Fetching: " + executorURL);
-                    final URL downloadUrl = executorURL.downloadUrl;
-                    final String urlContent = IOUtils.toString(downloadUrl);
-                    if (urlContent.length() < 500) {
-                        log.info("Fetched: " + urlContent);
-                    } else {
-                        log.info("Fetched: " + NumberFormat.getNumberInstance(Locale.US).format(urlContent.length()) + " bytes.");
-                    }
-                    if (System.getProperty("regression.downloadWorkerLogs").equalsIgnoreCase("true")) {
-                        final String userDir = System.getProperty("user.dir");
-                        final File target = new File(userDir, "target");
-                        final File logDir = new File(target, "logs");
-                        final File logFile = new File(logDir, downloadUrl.getHost() + "-" + downloadUrl.getFile().split("/")[2]);
-                        try {
-                            FileUtils.forceMkdir(logDir);
-                            FileUtils.write(logFile, urlContent);
-                        } catch (Throwable throwable) {
-                            log.info("Caught exteption: " + ExceptionUtils.getFullStackTrace(throwable));
-                        }
-                    }
-                    return urlContent;
-                } catch (IOException e) {
-                    log.warn(warnMessage);
-                }
-                String stars = StringUtils.repeat("*", 30);
-                return stars + "   " + warnMessage + "   " + stars;
+        List<String> urlContents = new ArrayList<>();
+        for(ExecutorURL executorUrl : exclaim2Urls) {
+            if(executorUrl == null || executorUrl.getDownloadUrl() == null) {
+                continue;
             }
-        });
-        return StringUtils.join(urlOuputs, '\n');
+            log.info("Fetching: " + executorUrl);
+            URL downloadUrl = executorUrl.downloadUrl;
+            String urlContent = IOUtils.toString(downloadUrl, StandardCharsets.UTF_8);
+            urlContents.add(urlContent);
+            if (urlContent.length() < 500) {
+                log.info("Fetched: " + urlContent);
+            } else {
+                log.info("Fetched: " + NumberFormat.getNumberInstance(Locale.US).format(urlContent.length()) + " bytes.");
+            }
+            if (System.getProperty("regression.downloadWorkerLogs").equalsIgnoreCase("true")) {
+                final String userDir = System.getProperty("user.dir");
+                final File target = new File(userDir, "target");
+                final File logDir = new File(target, "logs");
+                final File logFile = new File(logDir, downloadUrl.getHost() + "-" + downloadUrl.getFile().split("/")[2]);
+                try {
+                    FileUtils.forceMkdir(logDir);
+                    FileUtils.write(logFile, urlContent, StandardCharsets.UTF_8);
+                } catch (Throwable throwable) {
+                    log.info("Caught exception: " + ExceptionUtils.getFullStackTrace(throwable));
+                }
+            }
+        }
+        return StringUtils.join(urlContents, '\n');
     }
 
     private Number sum(Collection<? extends Number> nums) {
@@ -372,7 +373,7 @@ public class TopoWrap {
         return retVal;
     }
 
-    public void killQuietly() {
-        cluster.killSilently(name);
+    public void killOrThrow() throws Exception {
+        cluster.killOrThrow(name);
     }
 }
