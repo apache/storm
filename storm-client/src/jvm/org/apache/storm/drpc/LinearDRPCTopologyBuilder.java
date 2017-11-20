@@ -53,12 +53,12 @@ import org.apache.storm.tuple.Fields;
 // Trident subsumes the functionality provided by this class, so it's deprecated
 @Deprecated
 public class LinearDRPCTopologyBuilder {    
-    String _function;
-    List<Component> _components = new ArrayList<Component>();
+    String function;
+    List<Component> components = new ArrayList<>();
     
     
     public LinearDRPCTopologyBuilder(String function) {
-        _function = function;
+        this.function = function;
     }
         
     public LinearDRPCInputDeclarer addBolt(IBatchBolt bolt, Number parallelism) {
@@ -75,7 +75,7 @@ public class LinearDRPCTopologyBuilder {
             parallelism = 1;
         } 
         Component component = new Component(bolt, parallelism.intValue());
-        _components.add(component);
+        components.add(component);
         return new InputDeclarerImpl(component);
     }
     
@@ -93,11 +93,11 @@ public class LinearDRPCTopologyBuilder {
     }
         
     public StormTopology createLocalTopology(ILocalDRPC drpc) {
-        return createTopology(new DRPCSpout(_function, drpc));
+        return createTopology(new DRPCSpout(function, drpc));
     }
     
     public StormTopology createRemoteTopology() {
-        return createTopology(new DRPCSpout(_function));
+        return createTopology(new DRPCSpout(function));
     }
     
     
@@ -110,8 +110,8 @@ public class LinearDRPCTopologyBuilder {
         builder.setBolt(PREPARE_ID, new PrepareRequest())
                 .noneGrouping(SPOUT_ID);
         int i = 0;
-        for (; i < _components.size();i++) {
-            Component component = _components.get(i);
+        for (; i < components.size(); i++) {
+            Component component = components.get(i);
             
             Map<String, SourceArgs> source = new HashMap<String, SourceArgs>();
             if (i == 1) {
@@ -120,7 +120,7 @@ public class LinearDRPCTopologyBuilder {
                 source.put(boltId(i - 1), SourceArgs.all());
             }
             IdStreamSpec idSpec = null;
-            if (i == _components.size() - 1 && component.bolt instanceof FinishedCallback) {
+            if (i == components.size() - 1 && component.bolt instanceof FinishedCallback) {
                 idSpec = IdStreamSpec.makeDetectSpec(PREPARE_ID, PrepareRequest.ID_STREAM);
             }
             BoltDeclarer declarer = builder.setBolt(
@@ -132,8 +132,8 @@ public class LinearDRPCTopologyBuilder {
                 declarer.addSharedMemory(request);
             }
 
-            for (Map<String, Object> conf: component.componentConfs) {
-                declarer.addConfigurations(conf);
+            if (!component.componentConf.isEmpty()) {
+                declarer.addConfigurations(component.componentConf);
             }
             
             if (idSpec != null) {
@@ -157,7 +157,7 @@ public class LinearDRPCTopologyBuilder {
             }
         }
         
-        IRichBolt lastBolt = _components.get(_components.size() - 1).bolt;
+        IRichBolt lastBolt = components.get(components.size() - 1).bolt;
         OutputFieldsGetter getter = new OutputFieldsGetter();
         lastBolt.declareOutputFields(getter);
         Map<String, StreamInfo> streams = getter.getFieldsDeclaration();
@@ -188,7 +188,7 @@ public class LinearDRPCTopologyBuilder {
     private static class Component {
         public final IRichBolt bolt;
         public final int parallelism;
-        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Map<String, Object> componentConf = new HashMap<>();
         public final List<InputDeclaration> declarations = new ArrayList<>();
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
@@ -203,10 +203,10 @@ public class LinearDRPCTopologyBuilder {
     }
     
     private static class InputDeclarerImpl extends BaseConfigurationDeclarer<LinearDRPCInputDeclarer> implements LinearDRPCInputDeclarer {
-        Component _component;
+        Component component;
         
         public InputDeclarerImpl(Component component) {
-            _component = component;
+            this.component = component;
         }
         
         @Override
@@ -396,42 +396,40 @@ public class LinearDRPCTopologyBuilder {
         }
         
         private void addDeclaration(InputDeclaration declaration) {
-            _component.declarations.add(declaration);
+            component.declarations.add(declaration);
         }
 
         @Override
         public LinearDRPCInputDeclarer addConfigurations(Map<String, Object> conf) {
-            _component.componentConfs.add(conf);
+            if (conf != null) {
+                component.componentConf.putAll(conf);
+            }
+            return this;
+        }
+
+        @Override
+        public LinearDRPCInputDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
+            }
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public LinearDRPCInputDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            for (Map<String, Object> conf : _component.componentConfs) {
-                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
-                    return conf;
-                }
-            }
-            Map<String, Object> newConf = new HashMap<>();
-            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
-            _component.componentConfs.add(newConf);
-            return newConf;
-        }
-
-        @Override
         public LinearDRPCInputDeclarer addSharedMemory(SharedMemory request) {
-            _component.sharedMemory.add(request);
+            component.sharedMemory.add(request);
             return this;
         }
     }

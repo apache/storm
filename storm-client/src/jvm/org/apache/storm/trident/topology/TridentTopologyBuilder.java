@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.trident.topology;
 
 import org.apache.storm.Config;
@@ -51,14 +52,14 @@ import org.apache.storm.trident.topology.TridentBoltExecutor.CoordType;
 
 // based on transactional topologies
 public class TridentTopologyBuilder {
-    Map<GlobalStreamId, String> _batchIds = new HashMap();
-    Map<String, TransactionalSpoutComponent> _spouts = new HashMap();
-    Map<String, SpoutComponent> _batchPerTupleSpouts = new HashMap();
-    Map<String, Component> _bolts = new HashMap();
+    Map<GlobalStreamId, String> batchIds = new HashMap<>();
+    Map<String, TransactionalSpoutComponent> spouts = new HashMap<>();
+    Map<String, SpoutComponent> _batchPerTupleSpouts = new HashMap<>();
+    Map<String, Component> bolts = new HashMap<>();
         
     
     public SpoutDeclarer setBatchPerTupleSpout(String id, String streamName, IRichSpout spout, Integer parallelism, String batchGroup) {
-        Map<String, String> batchGroups = new HashMap();
+        Map<String, String> batchGroups = new HashMap<>();
         batchGroups.put(streamName, batchGroup);
         markBatchGroups(id, batchGroups);
         SpoutComponent c = new SpoutComponent(spout, streamName, parallelism, batchGroup);
@@ -71,12 +72,12 @@ public class TridentTopologyBuilder {
     }
     
     public SpoutDeclarer setSpout(String id, String streamName, String txStateId, ITridentSpout spout, Integer parallelism, String batchGroup) {
-        Map<String, String> batchGroups = new HashMap();
+        Map<String, String> batchGroups = new HashMap<>();
         batchGroups.put(streamName, batchGroup);
         markBatchGroups(id, batchGroups);
 
         TransactionalSpoutComponent c = new TransactionalSpoutComponent(spout, streamName, parallelism, txStateId, batchGroup);
-        _spouts.put(id, c);
+        spouts.put(id, c);
         return new SpoutDeclarerImpl(c);
     }
     
@@ -84,7 +85,7 @@ public class TridentTopologyBuilder {
     public BoltDeclarer setBolt(String id, ITridentBatchBolt bolt, Integer parallelism, Set<String> committerBatches, Map<String, String> batchGroups) {
         markBatchGroups(id, batchGroups);
         Component c = new Component(bolt, parallelism, committerBatches);
-        _bolts.put(id, c);
+        bolts.put(id, c);
         return new BoltDeclarerImpl(c);
         
     }
@@ -104,8 +105,8 @@ public class TridentTopologyBuilder {
     }
     
     Map<GlobalStreamId, String> fleshOutStreamBatchIds(boolean includeCommitStream) {
-        Map<GlobalStreamId, String> ret = new HashMap<>(_batchIds);
-        Set<String> allBatches = new HashSet(_batchIds.values());
+        Map<GlobalStreamId, String> ret = new HashMap<>(batchIds);
+        Set<String> allBatches = new HashSet<>(batchIds.values());
         for(String b: allBatches) {
             ret.put(new GlobalStreamId(masterCoordinator(b), MasterBatchCoordinator.BATCH_STREAM_ID), b);
             if(includeCommitStream) {
@@ -115,16 +116,16 @@ public class TridentTopologyBuilder {
             // and is just a metadata tuple to assist in cleanup, should not trigger batch tracking
         }
         
-        for(String id: _spouts.keySet()) {
-            TransactionalSpoutComponent c = _spouts.get(id);
+        for(String id: spouts.keySet()) {
+            TransactionalSpoutComponent c = spouts.get(id);
             if(c.batchGroupId!=null) {
                 ret.put(new GlobalStreamId(spoutCoordinator(id), MasterBatchCoordinator.BATCH_STREAM_ID), c.batchGroupId);
             }
         }
 
         //this takes care of setting up coord streams for spouts and bolts
-        for(GlobalStreamId s: _batchIds.keySet()) {
-            String b = _batchIds.get(s);
+        for(GlobalStreamId s: batchIds.keySet()) {
+            String b = batchIds.get(s);
             ret.put(new GlobalStreamId(s.get_componentId(), TridentBoltExecutor.COORD_STREAM(b)), b);
         }
         
@@ -139,8 +140,8 @@ public class TridentTopologyBuilder {
         Map<String, List<String>> batchesToCommitIds = new HashMap<>();
         Map<String, List<ITridentSpout>> batchesToSpouts = new HashMap<>();
         
-        for(String id: _spouts.keySet()) {
-            TransactionalSpoutComponent c = _spouts.get(id);
+        for(String id: spouts.keySet()) {
+            TransactionalSpoutComponent c = spouts.get(id);
             if(c.spout instanceof IRichSpout) {
                 
                 //TODO: wrap this to set the stream name
@@ -165,11 +166,9 @@ public class TridentTopologyBuilder {
                 for (SharedMemory request: c.sharedMemory) {
                     scd.addSharedMemory(request);
                 }
-                for(Map<String, Object> m: c.componentConfs) {
-                    scd.addConfigurations(m);
-                }
+                scd.addConfigurations(c.componentConf);
                 
-                Map<String, TridentBoltExecutor.CoordSpec> specs = new HashMap();
+                Map<String, TridentBoltExecutor.CoordSpec> specs = new HashMap<>();
                 specs.put(c.batchGroupId, new CoordSpec());
                 BoltDeclarer bd = builder.setBolt(id,
                         new TridentBoltExecutor(
@@ -182,22 +181,18 @@ public class TridentTopologyBuilder {
                         c.parallelism);
                 bd.allGrouping(spoutCoordinator(id), MasterBatchCoordinator.BATCH_STREAM_ID);
                 bd.allGrouping(masterCoordinator(batchGroup), MasterBatchCoordinator.SUCCESS_STREAM_ID);
-                if(c.spout instanceof ICommitterTridentSpout) {
+                if (c.spout instanceof ICommitterTridentSpout) {
                     bd.allGrouping(masterCoordinator(batchGroup), MasterBatchCoordinator.COMMIT_STREAM_ID);
                 }
-                for(Map<String, Object> m: c.componentConfs) {
-                    bd.addConfigurations(m);
-                }
+                bd.addConfigurations(c.componentConf);
             }
         }
         
         for(String id: _batchPerTupleSpouts.keySet()) {
             SpoutComponent c = _batchPerTupleSpouts.get(id);
             SpoutDeclarer d = builder.setSpout(id, new RichSpoutBatchTriggerer((IRichSpout) c.spout, c.streamName, c.batchGroupId), c.parallelism);
-            
-            for(Map<String, Object> conf: c.componentConfs) {
-                d.addConfigurations(conf);
-            }
+
+            d.addConfigurations(c.componentConf);
         }
 
         Number onHeap = masterCoordResources.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
@@ -222,8 +217,8 @@ public class TridentTopologyBuilder {
             }
         }
                 
-        for(String id: _bolts.keySet()) {
-            Component c = _bolts.get(id);
+        for(String id: bolts.keySet()) {
+            Component c = bolts.get(id);
             
             Map<String, CoordSpec> specs = new HashMap<>();
             
@@ -248,9 +243,7 @@ public class TridentTopologyBuilder {
             for (SharedMemory request: c.sharedMemory) {
                 d.addSharedMemory(request);
             }
-            for(Map<String, Object> conf: c.componentConfs) {
-                d.addConfigurations(conf);
-            }
+            d.addConfigurations(c.componentConf);
             
             for(InputDeclaration inputDecl: c.declarations) {
                inputDecl.declare(d);
@@ -273,7 +266,7 @@ public class TridentTopologyBuilder {
     
     private void markBatchGroups(String component, Map<String, String> batchGroups) {
         for(Map.Entry<String, String> entry: batchGroups.entrySet()) {
-            _batchIds.put(new GlobalStreamId(component, entry.getKey()), entry.getValue());
+            batchIds.put(new GlobalStreamId(component, entry.getKey()), entry.getValue());
         }
     }
     
@@ -281,7 +274,7 @@ public class TridentTopologyBuilder {
     private static class SpoutComponent {
         public final Object spout;
         public final Integer parallelism;
-        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Map<String, Object> componentConf = new HashMap<>();
         final String batchGroupId;
         final String streamName;
         final Set<SharedMemory> sharedMemory = new HashSet<>();
@@ -317,7 +310,7 @@ public class TridentTopologyBuilder {
         public final ITridentBatchBolt bolt;
         public final Integer parallelism;
         public final List<InputDeclaration> declarations = new ArrayList<>();
-        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Map<String, Object> componentConf = new HashMap<>();
         public final Set<String> committerBatches;
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
@@ -334,18 +327,18 @@ public class TridentTopologyBuilder {
     }
     
     Map<String, Set<String>> getBoltBatchToComponentSubscriptions(String id) {
-        Map<String, Set<String>> ret = new HashMap();
+        Map<String, Set<String>> ret = new HashMap<>();
         for(GlobalStreamId s: getBoltSubscriptionStreams(id)) {
-            String b = _batchIds.get(s);
-            if(!ret.containsKey(b)) ret.put(b, new HashSet());
+            String b = batchIds.get(s);
+            if(!ret.containsKey(b)) ret.put(b, new HashSet<>());
             ret.get(b).add(s.get_componentId());
         }
         return ret;
     }
     
     List<GlobalStreamId> getBoltSubscriptionStreams(String id) {
-        List<GlobalStreamId> ret = new ArrayList();
-        Component c = _bolts.get(id);
+        List<GlobalStreamId> ret = new ArrayList<>();
+        Component c = bolts.get(id);
         for(InputDeclaration d: c.declarations) {
             ret.add(new GlobalStreamId(d.getComponent(), d.getStream()));
         }
@@ -359,54 +352,52 @@ public class TridentTopologyBuilder {
     }
     
     private static class SpoutDeclarerImpl extends BaseConfigurationDeclarer<SpoutDeclarer> implements SpoutDeclarer {
-        SpoutComponent _component;
+        SpoutComponent component;
         
         public SpoutDeclarerImpl(SpoutComponent component) {
-            _component = component;
+            this.component = component;
         }
         
         @Override
         public SpoutDeclarer addConfigurations(Map<String, Object> conf) {
-            _component.componentConfs.add(conf);
+            if (conf != null) {
+                component.componentConf.putAll(conf);
+            }
+            return this;
+        }
+
+        @Override
+        public SpoutDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
+            }
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SpoutDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            for(Map<String, Object> conf : _component.componentConfs) {
-                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
-                    return conf;
-                }
-            }
-            Map<String, Object> newConf = new HashMap<>();
-            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
-            _component.componentConfs.add(newConf);
-            return newConf;
-        }
-
-        @Override
         public SpoutDeclarer addSharedMemory(SharedMemory request) {
-            _component.sharedMemory.add(request);
+            component.sharedMemory.add(request);
             return this;
         }        
     }
     
     private static class BoltDeclarerImpl extends BaseConfigurationDeclarer<BoltDeclarer> implements BoltDeclarer {
-        Component _component;
+        Component component;
         
         public BoltDeclarerImpl(Component component) {
-            _component = component;
+            this.component = component;
         }
         
         @Override
@@ -777,42 +768,40 @@ public class TridentTopologyBuilder {
         }
         
         private void addDeclaration(InputDeclaration declaration) {
-            _component.declarations.add(declaration);
+            component.declarations.add(declaration);
         }
 
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
-            _component.componentConfs.add(conf);
+            if (conf != null) {
+                component.componentConf.putAll(conf);
+            }
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            for(Map<String, Object> conf : _component.componentConfs) {
-                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
-                    return conf;
-                }
+        public BoltDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
             }
-            Map<String, Object> newConf = new HashMap<>();
-            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
-            _component.componentConfs.add(newConf);
-            return newConf;
+            return this;
         }
 
         @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
-            _component.sharedMemory.add(request);
+            component.sharedMemory.add(request);
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }    

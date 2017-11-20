@@ -25,7 +25,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.Acker;
@@ -37,7 +36,6 @@ import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.scheduler.resource.ResourceUtils;
-import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
@@ -334,7 +332,7 @@ public class TopologyDetails {
 
     /**
      * Get the total resource requirement for an executor.
-     * @param exec
+     * @param exec the executor to get the resources for.
      * @return Double the total about of cpu requirement for executor
      */
     public Map<String, Double> getTotalResources(ExecutorDetails exec) {
@@ -500,8 +498,7 @@ public class TopologyDetails {
 
         Map<String,Double> topologyComponentResourcesMap = (
                 Map<String, Double>) this.topologyConf.getOrDefault(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()
-        );
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>());
 
         topologyComponentResourcesMap = normalizedResourceMap(topologyComponentResourcesMap);
 

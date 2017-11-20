@@ -58,21 +58,21 @@ import java.util.Set;
  */
 @Deprecated
 public class TransactionalTopologyBuilder {
-    final String _id;
-    final String _spoutId;
-    final ITransactionalSpout _spout;
-    final Map<String, Component> _bolts = new HashMap<String, Component>();
-    final Integer _spoutParallelism;
-    final List<Map<String, Object>> _spoutConfs = new ArrayList<>();
-    final Set<SharedMemory> _spoutSharedMemory = new HashSet<>();
+    final String id;
+    final String spoutId;
+    final ITransactionalSpout spout;
+    final Map<String, Component> bolts = new HashMap<>();
+    final Integer spoutParallelism;
+    final Map<String, Object> spoutConf = new HashMap<>();
+    final Set<SharedMemory> spoutSharedMemory = new HashSet<>();
 
     // id is used to store the state of this transactionalspout in zookeeper
     // it would be very dangerous to have 2 topologies active with the same id in the same cluster    
     public TransactionalTopologyBuilder(String id, String spoutId, ITransactionalSpout spout, Number spoutParallelism) {
-        _id = id;
-        _spoutId = spoutId;
-        _spout = spout;
-        _spoutParallelism = (spoutParallelism == null) ? null : spoutParallelism.intValue();
+        this.id = id;
+        this.spoutId = spoutId;
+        this.spout = spout;
+        this.spoutParallelism = (spoutParallelism == null) ? null : spoutParallelism.intValue();
     }
     
     public TransactionalTopologyBuilder(String id, String spoutId, ITransactionalSpout spout) {
@@ -127,35 +127,35 @@ public class TransactionalTopologyBuilder {
         Integer p = null;
         if(parallelism!=null) p = parallelism.intValue();
         Component component = new Component(bolt, p, committer);
-        _bolts.put(id, component);
+        bolts.put(id, component);
         return new BoltDeclarerImpl(component);
     }
     
     public TopologyBuilder buildTopologyBuilder() {
-        String coordinator = _spoutId + "/coordinator";
+        String coordinator = spoutId + "/coordinator";
         TopologyBuilder builder = new TopologyBuilder();
-        SpoutDeclarer declarer = builder.setSpout(coordinator, new TransactionalSpoutCoordinator(_spout));
-        for (SharedMemory request: _spoutSharedMemory) {
+        SpoutDeclarer declarer = builder.setSpout(coordinator, new TransactionalSpoutCoordinator(spout));
+        for (SharedMemory request: spoutSharedMemory) {
             declarer.addSharedMemory(request);
         }
-        for(Map<String, Object> conf: _spoutConfs) {
-            declarer.addConfigurations(conf);
+        if (!spoutConf.isEmpty()) {
+            declarer.addConfigurations(spoutConf);
         }
-        declarer.addConfiguration(Config.TOPOLOGY_TRANSACTIONAL_ID, _id);
+        declarer.addConfiguration(Config.TOPOLOGY_TRANSACTIONAL_ID, id);
 
         BoltDeclarer emitterDeclarer = 
-                builder.setBolt(_spoutId,
-                        new CoordinatedBolt(new TransactionalSpoutBatchExecutor(_spout),
+                builder.setBolt(spoutId,
+                        new CoordinatedBolt(new TransactionalSpoutBatchExecutor(spout),
                                              null,
                                              null),
-                        _spoutParallelism)
+                    spoutParallelism)
                 .allGrouping(coordinator, TransactionalSpoutCoordinator.TRANSACTION_BATCH_STREAM_ID)
-                .addConfiguration(Config.TOPOLOGY_TRANSACTIONAL_ID, _id);
-        if(_spout instanceof ICommitterTransactionalSpout) {
+                .addConfiguration(Config.TOPOLOGY_TRANSACTIONAL_ID, id);
+        if(spout instanceof ICommitterTransactionalSpout) {
             emitterDeclarer.allGrouping(coordinator, TransactionalSpoutCoordinator.TRANSACTION_COMMIT_STREAM_ID);
         }
-        for(String id: _bolts.keySet()) {
-            Component component = _bolts.get(id);
+        for(String id: bolts.keySet()) {
+            Component component = bolts.get(id);
             Map<String, SourceArgs> coordinatedArgs = new HashMap<String, SourceArgs>();
             for(String c: componentBoltSubscriptions(component)) {
                 coordinatedArgs.put(c, SourceArgs.all());
@@ -173,8 +173,8 @@ public class TransactionalTopologyBuilder {
             for (SharedMemory request: component.sharedMemory) {
                 input.addSharedMemory(request);
             }
-            for(Map<String, Object> conf: component.componentConfs) {
-                input.addConfigurations(conf);
+            if (!component.componentConf.isEmpty()) {
+                input.addConfigurations(component.componentConf);
             }
             for(String c: componentBoltSubscriptions(component)) {
                 input.directGrouping(c, Constants.COORDINATED_STREAM_ID);
@@ -205,7 +205,7 @@ public class TransactionalTopologyBuilder {
         public final IRichBolt bolt;
         public final Integer parallelism;
         public final List<InputDeclaration> declarations = new ArrayList<>();
-        public final List<Map<String, Object>> componentConfs = new ArrayList<>();
+        public final Map<String, Object> componentConf = new HashMap<>();
         public final boolean committer;
         public final Set<SharedMemory> sharedMemory = new HashSet<>();
 
@@ -224,49 +224,44 @@ public class TransactionalTopologyBuilder {
     private class SpoutDeclarerImpl extends BaseConfigurationDeclarer<SpoutDeclarer> implements SpoutDeclarer {
         @Override
         public SpoutDeclarer addConfigurations(Map<String, Object> conf) {
-            _spoutConfs.add(conf);
+            if (conf != null) {
+                spoutConf.putAll(conf);
+            }
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            for(Map<String, Object> conf : _spoutConfs) {
-                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
-                    return conf;
-                }
+        public SpoutDeclarerImpl addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) spoutConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
             }
-            Map<String, Object> newConf = new HashMap<>();
-            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
-            _spoutConfs.add(newConf);
-            return newConf;
+            return this;
         }
 
         @Override
         public SpoutDeclarer addSharedMemory(SharedMemory request) {
-            _spoutSharedMemory.add(request);
+            spoutSharedMemory.add(request);
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public SpoutDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) spoutConf.computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP,
+                (k) -> new HashMap<>());
 
-            if (resourcesMap == null) {
-                resourcesMap = new HashMap<>();
-            }
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }
     
     private static class BoltDeclarerImpl extends BaseConfigurationDeclarer<BoltDeclarer> implements BoltDeclarer {
-        Component _component;
+        Component component;
         
         public BoltDeclarerImpl(Component component) {
-            _component = component;
+            this.component = component;
         }
         
         @Override
@@ -552,42 +547,39 @@ public class TransactionalTopologyBuilder {
         }
         
         private void addDeclaration(InputDeclaration declaration) {
-            _component.declarations.add(declaration);
+            component.declarations.add(declaration);
         }
 
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
-            _component.componentConfs.add(conf);
+            if (conf != null) {
+                component.componentConf.putAll(conf);
+            }
             return this;
         }
 
         @Override
-        public Map getRASConfiguration() {
-            for(Map<String, Object> conf : _component.componentConfs) {
-                if (conf.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP)) {
-                    return conf;
-                }
+        public BoltDeclarer addResources(Map<String, Double> resources) {
+            if (resources != null) {
+                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
+                currentResources.putAll(resources);
             }
-            Map<String, Object> newConf = new HashMap<>();
-            newConf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap());
-            _component.componentConfs.add(newConf);
-            return newConf;
+            return this;
         }
-
         @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
-            _component.sharedMemory.add(request);
+            component.sharedMemory.add(request);
             return this;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) getRASConfiguration().get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
+                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
 
             resourcesMap.put(resourceName, resourceValue.doubleValue());
-
-            getRASConfiguration().put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
             return this;
         }
     }

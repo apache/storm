@@ -86,13 +86,4 @@ public abstract class BaseConfigurationDeclarer<T extends ComponentConfiguration
         }
         return (T) this;
     }
-
-    @SuppressWarnings("unchecked")
-    @Override
-    public T addResources(Map<String, Double> resources) {
-        if (resources != null) {
-            return addConfiguration(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resources);
-        }
-        return (T) this;
-    }
 }
