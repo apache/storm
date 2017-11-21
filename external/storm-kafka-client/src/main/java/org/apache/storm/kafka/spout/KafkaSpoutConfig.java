@@ -718,7 +718,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                 + " This will be treated as an error in the next major release."
                 + " For now the spout will be configured to behave like it would have in pre-1.2.0 releases.");
 
-            final boolean enableAutoCommit = (boolean)builder.kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+            final boolean enableAutoCommit = Boolean.parseBoolean(builder.kafkaProps.get(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG).toString());
             if(enableAutoCommit) {
                 builder.processingGuarantee = ProcessingGuarantee.NONE;
             } else {
