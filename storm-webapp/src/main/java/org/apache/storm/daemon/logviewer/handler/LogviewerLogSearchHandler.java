@@ -414,7 +414,7 @@ public class LogviewerLogSearchHandler {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            currentFileMatch.put("port", truncatePathToLastElements(firstLogAbsPath, 2).getName(0));
+            currentFileMatch.put("port", truncatePathToLastElements(firstLogAbsPath, 2).getName(0).toString());
             newMatches.add(currentFileMatch);
 
             int newCount = matchCount + ((List<?>)theseMatches.get("matches")).size();
