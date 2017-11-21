@@ -22,6 +22,7 @@ import com.codahale.metrics.ExponentiallyDecayingReservoir;
 import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableMap;
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,12 +48,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NavigableMap;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import javax.security.auth.Subject;
+
+import com.google.common.collect.Lists;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.DaemonConfig;
@@ -71,69 +75,17 @@ import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.daemon.StormCommon;
-import org.apache.storm.generated.AlreadyAliveException;
-import org.apache.storm.generated.Assignment;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.BeginDownloadResult;
-import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.CommonAggregateStats;
-import org.apache.storm.generated.ComponentAggregateStats;
-import org.apache.storm.generated.ComponentPageInfo;
-import org.apache.storm.generated.ComponentType;
-import org.apache.storm.generated.Credentials;
-import org.apache.storm.generated.DebugOptions;
-import org.apache.storm.generated.ErrorInfo;
-import org.apache.storm.generated.ExecutorInfo;
-import org.apache.storm.generated.ExecutorStats;
-import org.apache.storm.generated.ExecutorSummary;
-import org.apache.storm.generated.GetInfoOptions;
-import org.apache.storm.generated.InvalidTopologyException;
-import org.apache.storm.generated.KeyAlreadyExistsException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.KillOptions;
-import org.apache.storm.generated.LSTopoHistory;
-import org.apache.storm.generated.ListBlobsResult;
-import org.apache.storm.generated.LogConfig;
-import org.apache.storm.generated.LogLevel;
-import org.apache.storm.generated.LogLevelAction;
+import org.apache.storm.daemon.supervisor.*;
+import org.apache.storm.generated.*;
 import org.apache.storm.generated.Nimbus.Iface;
 import org.apache.storm.generated.Nimbus.Processor;
-import org.apache.storm.generated.NimbusSummary;
-import org.apache.storm.generated.NodeInfo;
-import org.apache.storm.generated.NotAliveException;
-import org.apache.storm.generated.NumErrorsChoice;
-import org.apache.storm.generated.OwnerResourceSummary;
-import org.apache.storm.generated.ProfileAction;
-import org.apache.storm.generated.ProfileRequest;
-import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.RebalanceOptions;
-import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.generated.StormBase;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.generated.SubmitOptions;
-import org.apache.storm.generated.SupervisorInfo;
-import org.apache.storm.generated.SupervisorPageInfo;
-import org.apache.storm.generated.SupervisorSummary;
-import org.apache.storm.generated.TopologyActionOptions;
-import org.apache.storm.generated.TopologyHistoryInfo;
-import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.generated.TopologyInitialStatus;
-import org.apache.storm.generated.TopologyPageInfo;
-import org.apache.storm.generated.TopologyStatus;
-import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.generated.WorkerResources;
-import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.ThriftAccessLogger;
 import org.apache.storm.metric.ClusterMetricsConsumerExecutor;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metric.api.DataPoint;
 import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.apache.storm.metric.api.IClusterMetricsConsumer.ClusterInfo;
-import org.apache.storm.nimbus.DefaultTopologyValidator;
-import org.apache.storm.nimbus.ILeaderElector;
-import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
-import org.apache.storm.nimbus.ITopologyValidator;
-import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.nimbus.*;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.SupervisorResources;
 import org.apache.storm.scheduler.DefaultScheduler;
@@ -231,7 +183,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     @VisibleForTesting
     public static final List<ACL> ZK_ACLS = Arrays.asList(ZooDefs.Ids.CREATOR_ALL_ACL.get(0),
-            new ACL(ZooDefs.Perms.READ | ZooDefs.Perms.CREATE, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+            new ACL(ZooDefs.Perms.READ ^ ZooDefs.Perms.CREATE, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+
+    private static List<ACL> getNimbusACLs(Map<String, Object> conf) {
+        List<ACL> acls = null;
+        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
+            acls = ZK_ACLS;
+        }
+        return acls;
+    }
 
     private static final Subject NIMBUS_SUBJECT = new Subject();
 
@@ -309,7 +269,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final TopologyStateTransition REMOVE_TRANSITION = (args, nimbus, topoId, base) -> {
         LOG.info("Killing topology: {}", topoId);
         IStormClusterState state = nimbus.getStormClusterState();
+        Assignment oldAss = state.assignmentInfo(topoId, null);
         state.removeStorm(topoId);
+        notifySupervisorsAsKilled(state, oldAss, nimbus.getAssignmentsDistributer());
         BlobStore store = nimbus.getBlobStore();
         if (store instanceof LocalFsBlobStore) {
             for (String key: Nimbus.getKeyListFromId(nimbus.getConf(), topoId)) {
@@ -848,7 +810,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         final long now = Time.currentTimeMillis();
         final long ms = Time.secsToMillis(seconds);
         File dir = new File(dirLoc);
-        for (File f : dir.listFiles((f) -> f.isFile() && ((f.lastModified() + ms) <= now))) {
+        for (File f : dir.listFiles((file) -> file.isFile() && ((file.lastModified() + ms) <= now))) {
             if (f.delete()) {
                 LOG.info("Cleaning inbox ... deleted: {}", f.getName());
             } else {
@@ -1024,6 +986,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Object schedLock = new Object();
     private final Object credUpdateLock = new Object();
     private final AtomicReference<Map<String, Map<List<Integer>, Map<String, Object>>>> heartbeatsCache;
+    private final AtomicBoolean heartbeatsReadyFlag;
+    private final IWorkerHeartbeatsRecoveryStrategy heartbeatsRecoveryStrategy;
     @SuppressWarnings("deprecation")
     private final TimeCacheMap<String, BufferInputStream> downloaders;
     @SuppressWarnings("deprecation")
@@ -1041,6 +1005,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final StormTimer timer;
     private final IScheduler scheduler;
     private final ILeaderElector leaderElector;
+    private final AssignmentDistributionService assignmentsDistributer;
     private final AtomicReference<Map<String, String>> idToSchedStatus;
     private final AtomicReference<Map<String, SupervisorResources>> nodeIdToResources;
     private final AtomicReference<Map<String, TopologyResources>> idToResources;
@@ -1055,10 +1020,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final IPrincipalToLocal principalToLocal;
     
     private static IStormClusterState makeStormClusterState(Map<String, Object> conf) throws Exception {
-        List<ACL> acls = null;
-        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
-            acls = ZK_ACLS;
-        }
+        List<ACL> acls = getNimbusACLs(conf);
         return ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.NIMBUS));
     }
     
@@ -1092,6 +1054,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         this.stormClusterState = stormClusterState;
         this.heartbeatsCache = new AtomicReference<>(new HashMap<>());
+        this.heartbeatsReadyFlag = new AtomicBoolean(false);
+        this.heartbeatsRecoveryStrategy = WorkerHeartbeatsRecoveryStrategyFactory.getStrategy(conf);
         this.downloaders = fileCacheMap(conf);
         this.uploaders = fileCacheMap(conf);
         if (blobStore == null) {
@@ -1113,9 +1077,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         });
         this.scheduler = makeScheduler(conf, inimbus);
         if (leaderElector == null) {
-            leaderElector = Zookeeper.zkLeaderElector(conf, blobStore, topoCache);
+            leaderElector = Zookeeper.zkLeaderElector(conf, blobStore, topoCache, stormClusterState, getNimbusACLs(conf));
         }
         this.leaderElector = leaderElector;
+        this.assignmentsDistributer = AssignmentDistributionService.getInstance(conf);
         this.idToSchedStatus = new AtomicReference<>(new HashMap<>());
         this.nodeIdToResources = new AtomicReference<>(new HashMap<>());
         this.idToResources = new AtomicReference<>(new HashMap<>());
@@ -1146,6 +1111,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private IStormClusterState getStormClusterState() {
         return stormClusterState;
     }
+
+    private AssignmentDistributionService getAssignmentsDistributer() {
+        return assignmentsDistributer;
+    }
     
     @VisibleForTesting
     public AtomicReference<Map<String,Map<List<Integer>,Map<String,Object>>>> getHeartbeatsCache() {
@@ -1173,6 +1142,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     
     private String getInbox() throws IOException {
         return ServerConfigUtils.masterInbox(conf);
+    }
+
+    /**
+     * used for local cluster
+     * @param supervisor
+     */
+    public void addSupervisor(org.apache.storm.daemon.supervisor.Supervisor supervisor) {
+        assignmentsDistributer.addLocalSupervisor(supervisor);
     }
     
     void delayEvent(String topoId, int delaySecs, TopologyActions event, Object args) {
@@ -1374,16 +1351,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return new TopologyDetails(topoId, topoConf, topo, base.get_num_workers(), executorsToComponent, base.get_launch_time_secs(),
             base.get_owner());
     }
-    
+
     private void updateHeartbeats(String topoId, Set<List<Integer>> allExecutors, Assignment existingAssignment) {
         LOG.debug("Updating heartbeats for {} {}", topoId, allExecutors);
-        IStormClusterState state = stormClusterState;
-        Map<List<Integer>, Map<String, Object>> executorBeats = StatsUtil.convertExecutorBeats(state.executorBeats(topoId, existingAssignment.get_executor_node_port()));
-        Map<List<Integer>, Map<String, Object>> cache = StatsUtil.updateHeartbeatCache(heartbeatsCache.get().get(topoId),
-            executorBeats, allExecutors, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
-        heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
+        Map<List<Integer>, Map<String, Object>> cache = heartbeatsCache.get().get(topoId);
+        if(cache == null) {
+            cache = new HashMap<>();
+            heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
+        }
+        StatsUtil.updateHeartbeatCache(heartbeatsCache.get().get(topoId),
+            null, allExecutors, ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
     }
-    
+
     /**
      * Update all the heartbeats for all the topologies' executors.
      * @param existingAssignments current assignments (thrift)
@@ -1395,10 +1374,59 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             updateHeartbeats(topoId, topologyToExecutors.get(topoId), entry.getValue());
         }
     }
+
+    private void updateCachedHeartbeatsFromWorker(SupervisorWorkerHeartbeat workerHeartbeat) {
+        Map<List<Integer>, Map<String, Object>> executorBeats = StatsUtil.convertWorkerBeats(workerHeartbeat);
+        String topoId = workerHeartbeat.get_storm_id();
+        Map<List<Integer>, Map<String, Object>> cache = heartbeatsCache.get().get(topoId);
+        if(cache == null) {
+            cache = new HashMap<>();
+            heartbeatsCache.getAndUpdate(new Assoc<>(topoId, cache));
+        }
+        Set<List<Integer>> executors = new HashSet<>();
+        for(ExecutorInfo executorInfo : workerHeartbeat.get_executors()) {
+            executors.add(Arrays.asList(executorInfo.get_task_start(), executorInfo.get_task_end()));
+        }
+
+        StatsUtil.updateHeartbeatCache(heartbeatsCache.get().get(topoId), executorBeats, executors,
+                ObjectReader.getInt(conf.get(DaemonConfig.NIMBUS_TASK_TIMEOUT_SECS)));
+
+    }
+
+    private void updateCachedHeartbeatsFromSupervisor(SupervisorWorkerHeartbeats workerHeartbeats) {
+        workerHeartbeats.get_worker_heartbeats().forEach(this::updateCachedHeartbeatsFromWorker);
+        if(!heartbeatsReadyFlag.get() && !Strings.isNullOrEmpty(workerHeartbeats.get_supervisor_id())) {
+            heartbeatsRecoveryStrategy.reportNodeId(workerHeartbeats.get_supervisor_id());
+        }
+    }
+
+    /**
+     * decide if the heartbeats is recovered for a master, will wait for all the assignments nodes to recovery,
+     * every node will take care its node heartbeats reporting
+     * @return
+     */
+    private boolean isHeartbeatsRecovered() {
+        if(heartbeatsReadyFlag.get()) {
+            return true;
+        }
+        Set<String> allNodes = new HashSet<>();
+        for(Map.Entry<String, Assignment> assignmentEntry: stormClusterState.assignmentsInfo().entrySet()) {
+            allNodes.addAll(assignmentEntry.getValue().get_node_host().keySet());
+        }
+        boolean isReady = heartbeatsRecoveryStrategy.isReady(allNodes);
+        if(isReady) {
+            heartbeatsReadyFlag.getAndSet(true);
+        }
+        return isReady;
+    }
     
     private Set<List<Integer>> aliveExecutors(TopologyDetails td, Set<List<Integer>> allExecutors, Assignment assignment) {
         String topoId = td.getId();
         Map<List<Integer>, Map<String, Object>> hbCache = heartbeatsCache.get().get(topoId);
+        //in case that no workers report any heartbeats yet.
+        if(null == hbCache) {
+            hbCache = new HashMap<>();
+        }
         LOG.debug("NEW  Computing alive executors for {}\nExecutors: {}\nAssignment: {}\nHeartbeat cache: {}",
                 topoId, allExecutors, assignment, hbCache);
         
@@ -1413,9 +1441,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
 
             Long startTime = execToStartTimes.get(longExec);
-            Boolean isTimedOut = (Boolean)hbCache.get(StatsUtil.convertExecutor(longExec)).get("is-timed-out");
+            Map<String, Object> executorCache = hbCache.get(StatsUtil.convertExecutor(longExec));
+            //null isTimedOut means worker never reported any heartbeat
+            Boolean isTimedOut = executorCache == null ? null : (Boolean)executorCache.get("is-timed-out");
             Integer delta = startTime == null ? null : Time.deltaSecs(startTime.intValue());
-            if (startTime != null && ((delta < taskLaunchSecs) || !isTimedOut)) {
+            if (startTime != null && ((delta < taskLaunchSecs) || (isTimedOut != null && !isTimedOut))) {
                 ret.add(exec);
             } else {
                 LOG.info("Executor {}:{} not alive", topoId, exec);
@@ -1643,8 +1673,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
     private Map<String, SchedulerAssignment> computeNewSchedulerAssignments(Map<String, Assignment> existingAssignments,
             Topologies topologies, Map<String, StormBase> bases, String scratchTopologyId) throws KeyNotFoundException, AuthorizationException, InvalidTopologyException, IOException {
+
         Map<String, Set<List<Integer>>> topoToExec = computeTopologyToExecutors(bases);
-        
+
         updateAllHeartbeats(existingAssignments, topoToExec);
 
         Map<String, Set<List<Integer>>> topoToAliveExecutors = computeTopologyToAliveExecutors(existingAssignments, topologies,
@@ -1672,7 +1703,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         long beforeSchedule = System.currentTimeMillis();
         scheduler.schedule(topologies, cluster);
         long scheduleTimeElapsedMs = System.currentTimeMillis() - beforeSchedule;
-        LOG.info("Scheduling took {} ms for {} topologies", scheduleTimeElapsedMs, topologies.getTopologies().size());
+        LOG.debug("Scheduling took {} ms for {} topologies", scheduleTimeElapsedMs, topologies.getTopologies().size());
         scheduleTopologyTimeMs.update(scheduleTimeElapsedMs);
 
         //merge with existing statuses
@@ -1695,6 +1726,67 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         idToWorkerResources.getAndAccumulate(workerResources, (orig, update) -> Utils.merge(orig, update));
         
         return cluster.getAssignments();
+    }
+
+    private static Map<String, String> assignmentChangedNodes(Assignment oldAss, Assignment newAss) {
+        Map<List<Long>, NodeInfo> oldExecutorNodePort =  null;
+        Map<List<Long>, NodeInfo> newExecutorNodePort =  null;
+        Map<String, String> allNodeHost = new HashMap<>();
+        if(oldAss != null) {
+            oldExecutorNodePort = oldAss.get_executor_node_port();
+            allNodeHost.putAll(oldAss.get_node_host());
+        }
+        if(newAss != null) {
+            newExecutorNodePort = newAss.get_executor_node_port();
+            allNodeHost.putAll(newAss.get_node_host());
+        }
+        //kill or newly submit
+        if (oldAss == null || newAss == null) {
+            return allNodeHost;
+        } else {
+            // rebalance
+            Map<String, String> ret = new HashMap();
+            for(Map.Entry<List<Long>, NodeInfo> entry: newExecutorNodePort.entrySet()) {
+                NodeInfo newNodeInfo = entry.getValue();
+                NodeInfo oldNodeInfo = oldExecutorNodePort.get(entry.getKey());
+                if(null != oldNodeInfo) {
+                    if(!oldNodeInfo.equals(newNodeInfo)){
+                        ret.put(oldNodeInfo.get_node(), allNodeHost.get(oldNodeInfo.get_node()));
+                        ret.put(newNodeInfo.get_node(), allNodeHost.get(newNodeInfo.get_node()));
+                    }
+                }else {
+                    ret.put(newNodeInfo.get_node(), allNodeHost.get(newNodeInfo.get_node()));
+                }
+            }
+
+            return ret;
+        }
+    }
+
+    private static Map<String, Assignment> assignmentsForNode(Map<String, Assignment> assignmentMap, String nodeId) {
+        Map<String, Assignment> ret = new HashMap<>();
+        assignmentMap.entrySet().stream().filter(assignmentEntry -> assignmentEntry.getValue().get_node_host().keySet()
+                .contains(nodeId)).forEach(assignmentEntry -> { ret.put(assignmentEntry.getKey(), assignmentEntry.getValue()); });
+
+        return ret;
+    }
+
+    private static void notifySupervisorsAssignments(Map<String, Assignment> assignments, AssignmentDistributionService service, Map<String, String> nodeHost) {
+        for(Map.Entry<String, String> nodeEntry: nodeHost.entrySet()) {
+            try{
+                SupervisorAssignments supervisorAssignments = new SupervisorAssignments();
+                supervisorAssignments.set_storm_assignment(assignmentsForNode(assignments, nodeEntry.getKey()));
+                service.addAssignmentsForNode(nodeEntry.getKey(), nodeEntry.getValue(), supervisorAssignments);
+            } catch (Throwable tr1) {
+                //just skip when any error happens wait for next round assignments reassign
+                LOG.error("Exception when add assignments distribution task for node {}", nodeEntry.getKey());
+            }
+        }
+    }
+
+    private static void notifySupervisorsAsKilled(IStormClusterState clusterState, Assignment oldAss, AssignmentDistributionService service) {
+        Map<String, String> nodeHost = assignmentChangedNodes(oldAss, null);
+        notifySupervisorsAssignments(clusterState.assignmentsInfo(), service, nodeHost);
     }
     
     private TopologyResources getResourcesForTopology(String topoId, StormBase base) throws NotAliveException, AuthorizationException, InvalidTopologyException, IOException {
@@ -1733,13 +1825,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    private boolean isReadyForMKAssignments() throws Exception {
+        if(isLeader()) {
+            if(isHeartbeatsRecovered()) {
+                return true;
+            }
+            LOG.info("waiting for worker heartbeats recovery, skipping assignments");
+        } else {
+            LOG.info("not a leader, skipping assignments");
+        }
+        return false;
+    }
+
     private void mkAssignments() throws Exception {
         mkAssignments(null);
     }
     
     private void mkAssignments(String scratchTopoId) throws Exception {
-        if (!isLeader()) {
-            LOG.info("not a leader, skipping assignments");
+        if (!isReadyForMKAssignments()) {
             return;
         }
         // get existing assignment (just the topologyToExecutorToNodePort map) -> default to {}
@@ -1895,6 +1998,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     state.setAssignment(topoId, assignment);
                 }
             }
+
+            //grouping assignment by node to see the nodes diff, then notify nodes/supervisors to synchronize its owned assignment
+            //because the number of existing assignments is small for every scheduling round,
+            //we expect to notify supervisors at almost the same time
+            Map<String, String> totalAssignmentsChangedNodes = new HashMap<>();
+            for(Entry<String, Assignment> entry: newAssignments.entrySet()) {
+                String topoId = entry.getKey();
+                Assignment assignment = entry.getValue();
+                Assignment existingAssignment = existingAssignments.get(topoId);
+                totalAssignmentsChangedNodes.putAll(assignmentChangedNodes(existingAssignment, assignment));
+            }
+            notifySupervisorsAssignments(newAssignments, assignmentsDistributer, totalAssignmentsChangedNodes);
 
             Map<String, Collection<WorkerSlot>> addedSlots = new HashMap<>();
             for (Entry<String, Assignment> entry: newAssignments.entrySet()) {
@@ -2401,7 +2516,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ret.launchTimeSecs = 0;
         }
         ret.assignment = state.assignmentInfo(topoId, null);
-        ret.beats = Utils.OR(heartbeatsCache.get().get(topoId), Collections.emptyMap());
+        //get it from cluster state/zookeeper every time to collect the UI stats, may replace it with other StateStore later
+        ret.beats = Utils.OR(StatsUtil.convertExecutorBeats(state.executorBeats(topoId,
+                ret.assignment.get_executor_node_port())), Collections.emptyMap());
         ret.allComponents = new HashSet<>(ret.taskToComponent.values());
         return ret;
     }
@@ -2766,6 +2883,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 waitAmount = options.get_wait_secs();
             }
             transitionName(topoName, TopologyActions.KILL, waitAmount, true);
+            heartbeatsCache.getAndUpdate(new Dissoc<>((String)topoConf.get(Config.STORM_ID)));
             notifyTopologyActionListener(topoName, operation);
             addTopoToHistoryLog((String)topoConf.get(Config.STORM_ID), topoConf);
         } catch (Exception e) {
@@ -3547,13 +3665,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                             (Integer) heartbeat.getOrDefault("uptime", 0));
 
                     //heartbeats "stats"
-                    Map<String, Object> hb = (Map<String, Object>)heartbeat.get("heartbeat");
-                    if (hb != null) {
-                        Map ex = (Map) hb.get("stats");
-                        if (ex != null) {
-                            ExecutorStats stats = StatsUtil.thriftifyExecutorStats(ex);
-                            summ.set_stats(stats);
-                        }
+                    Map ex = (Map) heartbeat.get("stats");
+                    if (ex != null) {
+                        ExecutorStats stats = StatsUtil.thriftifyExecutorStats(ex);
+                        summ.set_stats(stats);
                     }
                     summaries.add(summ);
                 }
@@ -4120,7 +4235,43 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             throw new RuntimeException(e);
         }
     }
-    
+
+    @Override
+    public SupervisorAssignments getSupervisorAssignments(String node) throws AuthorizationException, TException {
+        try {
+            if(isLeader()) {
+                SupervisorAssignments supervisorAssignments = new SupervisorAssignments();
+                supervisorAssignments.set_storm_assignment(assignmentsForNode(stormClusterState.assignmentsInfo(), node));
+                return supervisorAssignments;
+            }
+        } catch (Exception e) {
+            //when not leader just return nil which will cause client to get an unknown error
+        }
+        return null;
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats) throws AuthorizationException, TException {
+        try {
+            if(isLeader()) {
+                updateCachedHeartbeatsFromSupervisor(heartbeats);
+            }
+        } catch (Exception e) {
+            //when not leader just return nil which will cause client to get an unknown error
+        }
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat hb) throws AuthorizationException, TException {
+        try {
+            if(isLeader()) {
+                updateCachedHeartbeatsFromWorker(hb);
+            }
+        } catch (Exception e) {
+            //when not leader just return nil which will cause client to get an unknown error
+        }
+    }
+
     // Shutdownable methods
     
     @SuppressWarnings("deprecation")
@@ -4138,6 +4289,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             blobListers.cleanup();
             blobStore.shutdown();
             leaderElector.close();
+            assignmentsDistributer.close();
             ITopologyActionNotifierPlugin actionNotifier = nimbusTopologyActionNotifier;
             if (actionNotifier != null) {
                 actionNotifier.cleanup();

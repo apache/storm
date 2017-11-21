@@ -21,9 +21,12 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.*;
 import org.apache.curator.framework.state.ConnectionState;
+import org.apache.storm.Config;
+import org.apache.storm.assignments.ILocalAssignmentsBackend;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.*;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Time;
 import org.apache.zookeeper.KeeperException;
@@ -43,6 +46,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     private static Logger LOG = LoggerFactory.getLogger(StormClusterStateImpl.class);
 
     private IStateStorage stateStorage;
+    private ILocalAssignmentsBackend backend;
 
     private ConcurrentHashMap<String, Runnable> assignmentInfoCallback;
     private ConcurrentHashMap<String, Runnable> assignmentInfoWithVersionCallback;
@@ -50,6 +54,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     private AtomicReference<Runnable> supervisorsCallback;
     // we want to reigister a topo directory getChildren callback for all workers of this dir
     private ConcurrentHashMap<String, Runnable> backPressureCallback;
+    private AtomicReference<Runnable> leaderInfoCallback;
     private AtomicReference<Runnable> assignmentsCallback;
     private ConcurrentHashMap<String, Runnable> stormBaseCallback;
     private AtomicReference<Runnable> blobstoreCallback;
@@ -60,17 +65,18 @@ public class StormClusterStateImpl implements IStormClusterState {
     private String stateId;
     private boolean solo;
 
-    public StormClusterStateImpl(IStateStorage StateStorage, List<ACL> acls, ClusterStateContext context, boolean solo) throws Exception {
+    public StormClusterStateImpl(IStateStorage StateStorage, ILocalAssignmentsBackend backend, List<ACL> acls, ClusterStateContext context, boolean solo) throws Exception {
 
         this.stateStorage = StateStorage;
         this.solo = solo;
         this.acls = acls;
-
+        this.backend = backend;
         assignmentInfoCallback = new ConcurrentHashMap<>();
         assignmentInfoWithVersionCallback = new ConcurrentHashMap<>();
         assignmentVersionCallback = new ConcurrentHashMap<>();
         supervisorsCallback = new AtomicReference<>();
         backPressureCallback = new ConcurrentHashMap<>();
+        leaderInfoCallback = new AtomicReference<>();
         assignmentsCallback = new AtomicReference<>();
         stormBaseCallback = new ConcurrentHashMap<>();
         credentialsCallback = new ConcurrentHashMap<>();
@@ -106,6 +112,8 @@ public class StormClusterStateImpl implements IStormClusterState {
                         issueMapCallback(logConfigCallback, toks.get(1));
                     } else if (root.equals(ClusterUtils.BACKPRESSURE_ROOT) && size > 1) {
                         issueMapCallback(backPressureCallback, toks.get(1));
+                    } else if (root.equals(ClusterUtils.LEADERINFO_ROOT)) {
+                        issueCallback(leaderInfoCallback);
                     } else {
                         LOG.error("{} Unknown callback for subtree {}", new RuntimeException("Unknown callback for this path"), path);
                         Runtime.getRuntime().exit(30);
@@ -147,19 +155,57 @@ public class StormClusterStateImpl implements IStormClusterState {
 
     @Override
     public List<String> assignments(Runnable callback) {
+        //deprecated
         if (callback != null) {
             assignmentsCallback.set(callback);
         }
-        return stateStorage.get_children(ClusterUtils.ASSIGNMENTS_SUBTREE, callback != null);
+        return this.backend.assignments();
     }
 
     @Override
     public Assignment assignmentInfo(String stormId, Runnable callback) {
+        //deprecated
+        if (callback != null) {
+            assignmentInfoCallback.put(stormId, callback);
+        }
+        return this.backend.getAssignment(stormId);
+    }
+
+    @Override
+    public Assignment remoteAssignmentInfo(String stormId, Runnable callback) {
+        //deprecated
         if (callback != null) {
             assignmentInfoCallback.put(stormId, callback);
         }
         byte[] serialized = stateStorage.get_data(ClusterUtils.assignmentPath(stormId), callback != null);
         return ClusterUtils.maybeDeserialize(serialized, Assignment.class);
+    }
+
+    @Override
+    public Map<String, Assignment> assignmentsInfo() {
+        Map<String, Assignment> ret = new HashMap<>();
+
+        Map<String, Assignment> assignments = this.backend.assignmentsInfo();
+        for (Map.Entry<String, Assignment> entry : assignments.entrySet()) {
+            ret.put(entry.getKey(), entry.getValue());
+        }
+
+        return ret;
+    }
+
+    @Override
+    public void syncRemoteAssignments(Map<String, byte[]> remote) {
+        if (null != remote) {
+            this.backend.syncRemoteAssignments(remote);
+        } else {
+            Map<String, byte[]> tmp = new HashMap<>();
+            List<String> stormIDS = this.stateStorage.get_children(ClusterUtils.ASSIGNMENTS_SUBTREE, false);
+            for (String stormID : stormIDS) {
+                byte[] assignment = this.stateStorage.get_data(ClusterUtils.assignmentPath(stormID), false);
+                tmp.put(stormID, assignment);
+            }
+            this.backend.syncRemoteAssignments(tmp);
+        }
     }
 
     @Override
@@ -241,6 +287,25 @@ public class StormClusterStateImpl implements IStormClusterState {
             stormBaseCallback.put(stormId, callback);
         }
         return ClusterUtils.maybeDeserialize(stateStorage.get_data(ClusterUtils.stormPath(stormId), callback != null), StormBase.class);
+    }
+
+    @Override
+    public String stormId(String stormName) {
+        return this.backend.getStormId(stormName);
+    }
+
+    @Override
+    public void syncRemoteIds(Map<String, String> remote) {
+        if (null != remote) {
+            this.backend.syncRemoteIDS(remote);
+        }else {
+            Map<String, String> tmp = new HashMap<>();
+            List<String> activeStorms = activeStorms();
+            for (String stormID: activeStorms) {
+                tmp.put(stormID, stormBase(stormID, null).get_name());
+            }
+            this.backend.syncRemoteIDS(tmp);
+        }
     }
 
     @Override
@@ -390,6 +455,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
+    public NimbusInfo getLeader(Runnable callback) {
+        if (null != callback) {
+            this.leaderInfoCallback.set(callback);
+        }
+        return Utils.javaDeserialize(this.stateStorage.get_data(ClusterUtils.LEADERINFO_SUBTREE, callback != null), NimbusInfo.class);
+    }
+
+    @Override
     public void setTopologyLogConfig(String stormId, LogConfig logConfig) {
         stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), acls);
     }
@@ -515,6 +588,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     public void activateStorm(String stormId, StormBase stormBase) {
         String path = ClusterUtils.stormPath(stormId);
         stateStorage.set_data(path, Utils.serialize(stormBase), acls);
+        this.backend.keepStormId(stormBase.get_name(), stormId);
     }
 
     @Override
@@ -606,7 +680,9 @@ public class StormClusterStateImpl implements IStormClusterState {
 
     @Override
     public void setAssignment(String stormId, Assignment info) {
-        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), Utils.serialize(info), acls);
+        byte[] serAssignment = Utils.serialize(info);
+        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), serAssignment, acls);
+        this.backend.keepOrUpdateAssignment(stormId, info);
     }
 
     @Override
@@ -637,6 +713,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void removeStorm(String stormId) {
         stateStorage.delete_node(ClusterUtils.assignmentPath(stormId));
+        this.backend.clearStateForStorm(stormId);
         stateStorage.delete_node(ClusterUtils.credentialsPath(stormId));
         stateStorage.delete_node(ClusterUtils.logConfigPath(stormId));
         stateStorage.delete_node(ClusterUtils.profilerConfigPath(stormId));
@@ -746,6 +823,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         stateStorage.unregister(stateId);
         if (solo)
             stateStorage.close();
+        this.backend.dispose();
     }
 
     private List<String> tokenizePath(String path) {

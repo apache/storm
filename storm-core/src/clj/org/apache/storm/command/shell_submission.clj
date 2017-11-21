@@ -26,7 +26,7 @@
 (defn -main [^String tmpjarpath & args]
   (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
         ; since this is not a purpose to add to leader lock queue, passing nil as blob-store and topo cache is ok
-        zk-leader-elector (Zookeeper/zkLeaderElector conf nil nil)
+        zk-leader-elector (Zookeeper/zkLeaderElector conf nil nil nil nil)
         leader-nimbus (.getLeader zk-leader-elector)
         host (.getHost leader-nimbus)
         port (.getPort leader-nimbus)

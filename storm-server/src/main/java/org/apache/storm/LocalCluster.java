@@ -48,35 +48,9 @@ import org.apache.storm.daemon.supervisor.ReadClusterState;
 import org.apache.storm.daemon.supervisor.StandaloneSupervisor;
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.executor.LocalExecutor;
-import org.apache.storm.generated.AlreadyAliveException;
-import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.BeginDownloadResult;
-import org.apache.storm.generated.ClusterSummary;
-import org.apache.storm.generated.ComponentPageInfo;
-import org.apache.storm.generated.Credentials;
-import org.apache.storm.generated.GetInfoOptions;
-import org.apache.storm.generated.InvalidTopologyException;
-import org.apache.storm.generated.KeyAlreadyExistsException;
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.generated.KillOptions;
-import org.apache.storm.generated.ListBlobsResult;
-import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.*;
 import org.apache.storm.generated.Nimbus.Iface;
 import org.apache.storm.generated.Nimbus.Processor;
-import org.apache.storm.generated.NimbusSummary;
-import org.apache.storm.generated.NotAliveException;
-import org.apache.storm.generated.OwnerResourceSummary;
-import org.apache.storm.generated.ProfileAction;
-import org.apache.storm.generated.ProfileRequest;
-import org.apache.storm.generated.ReadableBlobMeta;
-import org.apache.storm.generated.RebalanceOptions;
-import org.apache.storm.generated.SettableBlobMeta;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.generated.SubmitOptions;
-import org.apache.storm.generated.SupervisorPageInfo;
-import org.apache.storm.generated.TopologyHistoryInfo;
-import org.apache.storm.generated.TopologyInfo;
-import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -795,6 +769,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         
         Supervisor s = new Supervisor(superConf, sharedContext, isuper);
         s.launch();
+        s.setLocalNimbus(this.nimbus);
+        this.nimbus.addSupervisor(s);
         supervisors.add(s);
         return s;
     }
@@ -1123,7 +1099,22 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         // TODO Auto-generated method stub
         throw new RuntimeException("NOT IMPLEMENTED YET");
     }
-    
+
+    @Override
+    public SupervisorAssignments getSupervisorAssignments(String node) throws AuthorizationException, TException {
+        return null;
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats) throws AuthorizationException, TException {
+
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat) throws AuthorizationException, TException {
+
+    }
+
     public static void main(final String [] args) throws Exception {
         if (args.length < 1) {
             throw new IllegalArgumentException("No class was specified to run");

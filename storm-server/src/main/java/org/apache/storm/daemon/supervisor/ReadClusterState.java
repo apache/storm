@@ -116,11 +116,9 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         try {
             Runnable syncCallback = new EventManagerPushCallback(this, syncSupEventManager);
             List<String> stormIds = stormClusterState.assignments(syncCallback);
-            Map<String, VersionedData<Assignment>> assignmentsSnapshot =
-                    getAssignmentsSnapshot(stormClusterState, stormIds, assignmentVersions.get(), syncCallback);
+            Map<String, Assignment> assignmentsSnapshot = getAssignmentsSnapshot(stormClusterState);
             
-            Map<Integer, LocalAssignment> allAssignments =
-                    readAssignments(assignmentsSnapshot);
+            Map<Integer, LocalAssignment> allAssignments = readAssignments(assignmentsSnapshot);
             if (allAssignments == null) {
                 //Something odd happened try again later
                 return;
@@ -175,26 +173,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
     }
     
-    protected Map<String, VersionedData<Assignment>> getAssignmentsSnapshot(IStormClusterState stormClusterState, List<String> topoIds,
-            Map<String, VersionedData<Assignment>> localAssignmentVersion, Runnable callback) throws Exception {
-        Map<String, VersionedData<Assignment>> updateAssignmentVersion = new HashMap<>();
-        for (String topoId : topoIds) {
-            Integer recordedVersion = -1;
-            Integer version = stormClusterState.assignmentVersion(topoId, callback);
-            VersionedData<Assignment> locAssignment = localAssignmentVersion.get(topoId);
-            if (locAssignment != null) {
-                recordedVersion = locAssignment.getVersion();
-            }
-            if (version == null) {
-                // ignore
-            } else if (version.equals(recordedVersion)) {
-                updateAssignmentVersion.put(topoId, locAssignment);
-            } else {
-                VersionedData<Assignment> assignmentVersion = stormClusterState.assignmentInfoWithVersion(topoId, callback);
-                updateAssignmentVersion.put(topoId, assignmentVersion);
-            }
-        }
-        return updateAssignmentVersion;
+    protected Map<String, Assignment> getAssignmentsSnapshot(IStormClusterState stormClusterState) throws Exception {
+        return stormClusterState.assignmentsInfo();
     }
     
     protected Map<String, List<ProfileRequest>> getProfileActions(IStormClusterState stormClusterState, List<String> stormIds) throws Exception {
@@ -206,12 +186,12 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return ret;
     }
     
-    protected Map<Integer, LocalAssignment> readAssignments(Map<String, VersionedData<Assignment>> assignmentsSnapshot) {
+    protected Map<Integer, LocalAssignment> readAssignments(Map<String, Assignment> assignmentsSnapshot) {
         try {
             Map<Integer, LocalAssignment> portLA = new HashMap<>();
-            for (Map.Entry<String, VersionedData<Assignment>> assignEntry : assignmentsSnapshot.entrySet()) {
+            for (Map.Entry<String, Assignment> assignEntry : assignmentsSnapshot.entrySet()) {
                 String topoId = assignEntry.getKey();
-                Assignment assignment = assignEntry.getValue().getData();
+                Assignment assignment = assignEntry.getValue();
 
                 Map<Integer, LocalAssignment> portTasks = readMyExecutors(topoId, assignmentId, assignment);
 

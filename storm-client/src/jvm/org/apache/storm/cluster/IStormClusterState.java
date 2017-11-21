@@ -41,6 +41,12 @@ public interface IStormClusterState {
 
     public Assignment assignmentInfo(String stormId, Runnable callback);
 
+    public Assignment remoteAssignmentInfo(String stormId, Runnable callback);
+
+    public Map<String, Assignment> assignmentsInfo();
+
+    public void syncRemoteAssignments(Map<String, byte[]> remote);
+
     public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
 
     public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
@@ -60,6 +66,10 @@ public interface IStormClusterState {
      * @return the StormBase or null if it is not alive.
      */
     public StormBase stormBase(String stormId, Runnable callback);
+
+    public String stormId(String stormName);
+
+    public void syncRemoteIds(Map<String, String> ids);
 
     public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
 
@@ -88,6 +98,8 @@ public interface IStormClusterState {
     public List<String> errorTopologies();
 
     public List<String> backpressureTopologies();
+
+    public NimbusInfo getLeader(Runnable callback);
 
     public void setTopologyLogConfig(String stormId, LogConfig logConfig);
 
@@ -166,23 +178,11 @@ public interface IStormClusterState {
      * @return the id of the topology or null if it is not alive.
      */
     default Optional<String> getTopoId(final String topologyName) {
-        String ret = null;
-        for (String topoId: activeStorms()) {
-            StormBase base = stormBase(topoId, null);
-            if(base != null && topologyName.equals(base.get_name())) {
-                ret = topoId;
-                break;
-            }
-        }
-        return Optional.ofNullable(ret);
+        return Optional.ofNullable(stormId(topologyName));
     }
     
     default Map<String, Assignment> topologyAssignments() {
-        Map<String, Assignment> ret = new HashMap<>();
-        for (String topoId: assignments(null)) {
-            ret.put(topoId, assignmentInfo(topoId, null));
-        }
-        return ret;
+        return assignmentsInfo();
     }
     
     default Map<String, StormBase> topologyBases() {

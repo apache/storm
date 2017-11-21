@@ -505,7 +505,7 @@ public class TopologyDetails {
 
         topologyComponentResourcesMap = normalizedResourceMap(topologyComponentResourcesMap);
 
-        LOG.info("Scheduling Executor: {} with resource requirement as {}",
+        LOG.debug("Scheduling Executor: {} with resource requirement as {}",
                 exec, topologyComponentResourcesMap);
         LOG.debug(
             "Scheduling Executor: {} {} with memory requirement as onHeap: {} - offHeap: {} "

@@ -20,6 +20,7 @@ package org.apache.storm.daemon.worker;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.UnknownHostException;
 import java.nio.charset.Charset;
 import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
@@ -50,25 +51,14 @@ import org.apache.storm.executor.Executor;
 import org.apache.storm.executor.ExecutorShutdown;
 import org.apache.storm.executor.IRunningExecutor;
 import org.apache.storm.executor.LocalExecutor;
-import org.apache.storm.generated.Credentials;
-import org.apache.storm.generated.ExecutorInfo;
-import org.apache.storm.generated.ExecutorStats;
-import org.apache.storm.generated.LSWorkerHeartbeat;
-import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.*;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
-import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.DisruptorBackpressureCallback;
-import org.apache.storm.utils.LocalState;
-import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.Time;
-import org.apache.storm.utils.WorkerBackpressureCallback;
-import org.apache.storm.utils.WorkerBackpressureThread;
+import org.apache.storm.utils.*;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -231,7 +221,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
                     stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, workerState::refreshThrottle);
-                    
+
                     int pollingSecs = ObjectReader.getInt(topologyConf.get(Config.TASK_BACKPRESSURE_POLL_SECS));
                     workerState.refreshBackpressureTimer.scheduleRecurring(0, pollingSecs, workerState::refreshThrottle);
                 }
@@ -298,12 +288,14 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void doHeartBeat() throws IOException {
         LocalState state = ConfigUtils.workerState(workerState.conf, workerState.workerId);
-        state.setWorkerHeartBeat(new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
-            workerState.executors.stream()
-                .map(executor -> new ExecutorInfo(executor.get(0).intValue(), executor.get(1).intValue()))
-                .collect(Collectors.toList()), workerState.port));
+        LSWorkerHeartbeat lsWorkerHeartbeat = new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
+                        workerState.executors.stream()
+                        .map(executor -> new ExecutorInfo(executor.get(0).intValue(), executor.get(1).intValue()))
+                        .collect(Collectors.toList()), workerState.port);
+        state.setWorkerHeartBeat(lsWorkerHeartbeat);
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
+        heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
     }
 
     public void doExecutorHeartbeats() {
@@ -382,6 +374,33 @@ public class Worker implements Shutdownable, DaemonCommon {
         workerState.stormClusterState.topologyLogConfig(topologyId, this::checkLogConfigChanged);
     }
 
+    /**
+     * Send a heartbeat to local supervisor first to check if supervisor is ok for heartbeating.
+     */
+    private void heartbeatToMasterIfLocalbeatFail(LSWorkerHeartbeat lsWorkerHeartbeat) {
+        if (ConfigUtils.isLocalMode(this.conf)) {
+            return;
+        }
+        //in distributed mode, send heartbeat directly to master if local supervisor goes down
+        SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
+                lsWorkerHeartbeat.get_executors(), lsWorkerHeartbeat.get_time_secs());
+        try{
+            SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname());
+            client.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
+            client.close();
+        } catch (Throwable tr1) {
+            //if any error/exception thrown, report directly to nimbus.
+            LOG.debug("Exception when send heartbeat to local supervisor", tr1.getMessage());
+            try{
+                NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf);
+                nimbusClient.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
+                nimbusClient.close();
+            } catch (Throwable tr2) {
+                //if any error/exception thrown, just ignore.
+                LOG.error("Exception when send heartbeat to master",  tr2.getMessage());
+            }
+        }
+    }
 
     /**
      * make a handler for the worker's send disruptor queue to

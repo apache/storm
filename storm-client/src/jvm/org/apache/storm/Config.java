@@ -992,6 +992,31 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_QUEUE_SIZE = "nimbus.queue.size";
 
     /**
+     * Nimbus assignments backend for storing local assignments. We will use it to store physical plan and runtime storm ids.
+     */
+    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.assignments.ILocalAssignmentsBackend.class)
+    public static final String NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS = "nimbus.local.assignments.backend.class";
+
+    /**
+     * This controls the number of working threads for distributing master assignments to supervisors.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREADS = "nimbus.assignments.service.threads";
+
+    /**
+     * This controls the number of working thread queue size of assignment service.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREAD_QUEUE_SIZE = "nimbus.assignments.service.thread.queue.size";
+
+    /**
+     * class controls heartbeats recovery strategy
+     */
+    @isString
+    public static final String NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS = "nimbus.worker.heartbeats.recovery.strategy.class";
+
+    /**
      * The number of threads that should be used by the nimbus thrift server.
      */
     @isInteger
@@ -1293,6 +1318,44 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
 
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Port used for supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_PORT = "supervisor.thrift.port";
+
+    @isString
+    /**
+     * The Supervisor invocations transport plug-in for Thrift client/server communication.
+     */
+    public static final String SUPERVISOR_THRIFT_TRANSPORT_PLUGIN = "supervisor.thrift.transport";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Supervisor thrift server queue size.
+     */
+    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * The number of threads that should be used by the supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_THREADS = "supervisor.thrift.threads";
+
+    @isNumber
+    @isPositiveNumber
+    public static final String SUPERVISOR_THRIFT_MAX_BUFFER_SIZE = "supervisor.thrift.max_buffer_size";
+
+    /**
+     * How long before a supervisor Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS = "supervisor.thrift.socket.timeout.ms";
+
     /**
      * A map of resources the Supervisor has e.g {"cpu.pcore.percent" : 200.0. "onheap.memory.mb": 256.0, "gpu.count" : 2.0 }
      */
@@ -1382,6 +1445,12 @@ public class Config extends HashMap<String, Object> {
      */
     @isBoolean
     public static final String SUPERVISOR_RUN_WORKER_AS_USER = "supervisor.run.worker.as.user";
+
+    /**
+     * max timeout for supervisor reported heartbeats when master gains leadership
+     */
+    @isInteger
+    public static final String SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS = "supervisor.worker.heartbeats.max.timeout.secs";
 
     /**
      * On some systems (windows for example) symlinks require special privileges that not everyone wants to

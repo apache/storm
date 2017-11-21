@@ -20,6 +20,8 @@ package org.apache.storm.daemon.supervisor;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.BindException;
+import java.net.ServerSocket;
 import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
@@ -30,6 +32,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
 import org.apache.storm.cluster.ClusterStateContext;
@@ -37,15 +40,19 @@ import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.DaemonCommon;
+import org.apache.storm.daemon.supervisor.timer.ReportWorkerHeartbeats;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHealthCheck;
 import org.apache.storm.daemon.supervisor.timer.SupervisorHeartbeat;
+import org.apache.storm.daemon.supervisor.timer.SynchronizeAssignments;
 import org.apache.storm.event.EventManager;
 import org.apache.storm.event.EventManagerImp;
-import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.*;
 import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
+import org.apache.storm.security.auth.ThriftConnectionType;
+import org.apache.storm.security.auth.ThriftServer;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Utils;
@@ -53,6 +60,8 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.VersionInfo;
+import org.apache.thrift.TException;
+import org.apache.thrift.TProcessor;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,10 +82,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     // used for reporting used ports when heartbeating
     private final AtomicReference<Map<Long, LocalAssignment>> currAssignment;
     private final StormTimer heartbeatTimer;
+    private final StormTimer workerHeartbeatTimer;
     private final StormTimer eventTimer;
     private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
+    private ThriftServer thriftServer;
+    //used for local cluster heartbeating
+    private Nimbus.Iface localNimbus;
     
     private Supervisor(ISupervisor iSupervisor) throws IOException {
         this(Utils.readStormConfig(), null, iSupervisor);
@@ -123,6 +136,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         this.heartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
 
+        this.workerHeartbeatTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
+
         this.eventTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
     }
     
@@ -154,6 +169,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         return stormClusterState;
     }
 
+    public ReadClusterState getReadClusterState() { return readState; }
+
     LocalState getLocalState() {
         return localState;
     }
@@ -177,6 +194,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     EventManager getEventManger() {
         return eventManager;
     }
+
+    Supervisor getSupervisor() { return this; }
+
+    public void setLocalNimbus(Nimbus.Iface nimbus) { this.localNimbus = nimbus; }
+
+    public Nimbus.Iface getLocalNimbus() { return this.localNimbus; }
     
     /**
      * Launch the supervisor
@@ -200,11 +223,15 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         if ((Boolean) conf.get(DaemonConfig.SUPERVISOR_ENABLE)) {
             // This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
             // to date even if callbacks don't all work exactly right
-            eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(readState, eventManager));
+            eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState), eventManager));
 
             // supervisor health check
             eventTimer.scheduleRecurring(300, 300, new SupervisorHealthCheck(this));
         }
+
+        ReportWorkerHeartbeats reportWorkerHeartbeats = new ReportWorkerHeartbeats(conf, this);
+        Integer workerHeartbeatFrequency = ObjectReader.getInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS));
+        workerHeartbeatTimer.scheduleRecurring(workerHeartbeatFrequency, workerHeartbeatFrequency, reportWorkerHeartbeats);
         LOG.info("Starting supervisor with id {} at host {}.", getId(), getHostName());
     }
 
@@ -219,6 +246,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
+            //must invoke after launch cause some service must be initialized
+            launchSupervisorThriftServer(conf);
             Utils.addShutdownHookWithForceKillIn1Sec(() -> {this.close();});
             registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
             StormMetricsRegistry.startMetricsReporters(conf);
@@ -226,6 +255,51 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             LOG.error("Failed to start supervisor\n", e);
             System.exit(1);
         }
+    }
+
+    private void launchSupervisorThriftServer(Map conf) throws IOException {
+        // validate port
+        try {
+            ServerSocket socket = new ServerSocket(ObjectReader.getInt(conf.get(Config.SUPERVISOR_THRIFT_PORT)));
+            socket.close();
+        } catch (BindException e) {
+            LOG.error("{} is not available. Check if another process is already listening on {}", conf.get(Config.SUPERVISOR_THRIFT_PORT), conf.get(Config.SUPERVISOR_THRIFT_PORT));
+            throw new RuntimeException(e);
+        }
+
+        TProcessor processor = new org.apache.storm.generated.Supervisor.Processor(new org.apache.storm.generated.Supervisor.Iface() {
+            @Override
+            public void sendSupervisorAssignments(SupervisorAssignments assignments) throws AuthorizationException, TException {
+                LOG.info("Got an assignments from master, will start to sync with assignments: {}", assignments);
+                SynchronizeAssignments syn = new SynchronizeAssignments(getSupervisor(), assignments, getReadClusterState());
+                getEventManger().add(syn);
+            }
+
+            @Override
+            public Assignment getLocalAssignmentForStorm(String id) throws NotAliveException, AuthorizationException, TException {
+                Assignment assignment = getStormClusterState().assignmentInfo(id, null);
+                if (null == assignment) {
+                    throw new NotAliveException("No local assignment assigned for storm: " + id + " for node: " + getHostName());
+                }
+                return assignment;
+            }
+
+            @Override
+            public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heartbeat) throws AuthorizationException, TException {
+                // do nothing now
+            }
+        });
+        this.thriftServer = new ThriftServer(conf, processor, ThriftConnectionType.SUPERVISOR);
+        this.thriftServer.serve();
+    }
+
+    /**
+     * Used for local cluster assignments distribution
+     * @param assignments
+     */
+    public void sendSupervisorAssignments(SupervisorAssignments assignments) {
+        SynchronizeAssignments syn = new SynchronizeAssignments(this, assignments, readState);
+        this.eventManager.add(syn);
     }
 
     private void registerWorkerNumGauge(String name, final Map<String, Object> conf) {
@@ -244,6 +318,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             LOG.info("Shutting down supervisor {}", getId());
             this.active = false;
             heartbeatTimer.close();
+            workerHeartbeatTimer.close();
             eventTimer.close();
             if (eventManager != null) {
                 eventManager.close();
@@ -253,6 +328,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             }
             asyncLocalizer.close();
             getStormClusterState().disconnect();
+            if(thriftServer != null) {
+                this.thriftServer.stop();
+            }
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);
         }
@@ -315,7 +393,10 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             return true;
         }
 
-        if (heartbeatTimer.isTimerWaiting() && eventTimer.isTimerWaiting() && eventManager.waiting()) {
+        if (heartbeatTimer.isTimerWaiting()
+                && workerHeartbeatTimer.isTimerWaiting()
+                && eventTimer.isTimerWaiting()
+                && eventManager.waiting()) {
             return true;
         }
         return false;
