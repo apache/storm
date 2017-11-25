@@ -333,7 +333,7 @@ public class TestResourceAwareScheduler {
             executorsOnSupervisor.add(entry.getKey());
         }
         for (Map.Entry<SupervisorDetails, List<ExecutorDetails>> entry : supervisorToExecutors.entrySet()) {
-            Double supervisorTotalCpu = entry.getKey().getTotalCPU();
+            Double supervisorTotalCpu = entry.getKey().getTotalCpu();
             Double supervisorTotalMemory = entry.getKey().getTotalMemory();
             Double supervisorUsedCpu = 0.0;
             Double supervisorUsedMemory = 0.0;
@@ -501,6 +501,10 @@ public class TestResourceAwareScheduler {
 
     @Test
     public void testHeterogeneousCluster() {
+        Map<String, Double> test = new HashMap<>();
+        test.put("gpu.count", 0.0);
+        new NormalizedResourceOffer(test);
+        LOG.info("\n\n\t\ttestHeterogeneousCluster");
         INimbus iNimbus = new INimbusTest();
         Map<String, Double> resourceMap1 = new HashMap<>(); // strong supervisor node
         resourceMap1.put(Config.SUPERVISOR_CPU_CAPACITY, 800.0);
@@ -509,10 +513,10 @@ public class TestResourceAwareScheduler {
         resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 200.0);
         resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1024.0);
 
-        resourceMap1 = ResourceUtils.normalizedResourceMap(resourceMap1);
-        resourceMap2 = ResourceUtils.normalizedResourceMap(resourceMap2);
+        resourceMap1 = NormalizedResources.normalizedResourceMap(resourceMap1);
+        resourceMap2 = NormalizedResources.normalizedResourceMap(resourceMap2);
 
-        Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
+        Map<String, SupervisorDetails> supMap = new HashMap<>();
         for (int i = 0; i < 2; i++) {
             List<Number> ports = new LinkedList<>();
             for (int j = 0; j < 4; j++) {
@@ -521,6 +525,7 @@ public class TestResourceAwareScheduler {
             SupervisorDetails sup = new SupervisorDetails("sup-" + i, "host-" + i, null, ports, i == 0 ? resourceMap1 : resourceMap2);
             supMap.put(sup.getId(), sup);
         }
+        LOG.info("SUPERVISORS = {}", supMap);
 
         // topo1 has one single huge task that can not be handled by the small-super
         TopologyBuilder builder1 = new TopologyBuilder();
@@ -569,6 +574,7 @@ public class TestResourceAwareScheduler {
 
         // Test1: Launch topo 1-3 together, it should be able to use up either mem or cpu resource due to exact division
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
+        LOG.info("\n\n\t\tScheduling topologies 1, 2 and 3");
         Topologies topologies = new Topologies(topology1, topology2, topology3);
         Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config1);
         rs.prepare(config1);
@@ -583,14 +589,17 @@ public class TestResourceAwareScheduler {
 
         final Double EPSILON = 0.0001;
         for (SupervisorDetails supervisor : supMap.values()) {
-            Double cpuAvailable = supervisor.getTotalCPU();
+            Double cpuAvailable = supervisor.getTotalCpu();
             Double memAvailable = supervisor.getTotalMemory();
             Double cpuUsed = superToCpu.get(supervisor);
             Double memUsed = superToMem.get(supervisor);
-            assertTrue((Math.abs(memAvailable - memUsed) < EPSILON) || (Math.abs(cpuAvailable - cpuUsed) < EPSILON));
+
+            assertTrue(supervisor.getId() + " MEM: "+ memAvailable + " == " + memUsed + " OR CPU: " + cpuAvailable + " == " + cpuUsed,
+                (Math.abs(memAvailable - memUsed) < EPSILON) || (Math.abs(cpuAvailable - cpuUsed) < EPSILON));
         }
         // end of Test1
 
+        LOG.warn("\n\n\t\tSwitching to topologies 1, 2 and 4");
         // Test2: Launch topo 1, 2 and 4, they together request a little more mem than available, so one of the 3 topos will not be scheduled
         topologies = new Topologies(topology1, topology2, topology4);
         cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config1);
@@ -598,17 +607,21 @@ public class TestResourceAwareScheduler {
         rs.schedule(topologies, cluster);
         int numTopologiesAssigned = 0;
         if (cluster.getStatusMap().get(topology1.getId()).equals("Running - Fully Scheduled by DefaultResourceAwareStrategy")) {
+            LOG.info("TOPO 1 scheduled");
             numTopologiesAssigned++;
         }
         if (cluster.getStatusMap().get(topology2.getId()).equals("Running - Fully Scheduled by DefaultResourceAwareStrategy")) {
+            LOG.info("TOPO 2 scheduled");
             numTopologiesAssigned++;
         }
         if (cluster.getStatusMap().get(topology4.getId()).equals("Running - Fully Scheduled by DefaultResourceAwareStrategy")) {
+            LOG.info("TOPO 3 scheduled");
             numTopologiesAssigned++;
         }
         assertEquals(2, numTopologiesAssigned);
         //end of Test2
 
+        LOG.info("\n\n\t\tScheduling just topo 5");
         //Test3: "Launch topo5 only, both mem and cpu should be exactly used up"
         topologies = new Topologies(topology5);
         cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, config1);
@@ -617,7 +630,7 @@ public class TestResourceAwareScheduler {
         superToCpu = getSupervisorToCpuUsage(cluster, topologies);
         superToMem = getSupervisorToMemoryUsage(cluster, topologies);
         for (SupervisorDetails supervisor : supMap.values()) {
-            Double cpuAvailable = supervisor.getTotalCPU();
+            Double cpuAvailable = supervisor.getTotalCpu();
             Double memAvailable = supervisor.getTotalMemory();
             Double cpuUsed = superToCpu.get(supervisor);
             Double memUsed = superToMem.get(supervisor);

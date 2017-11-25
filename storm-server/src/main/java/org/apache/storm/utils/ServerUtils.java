@@ -73,6 +73,7 @@ import org.apache.storm.generated.ReadableBlobMeta;
 import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.security.auth.SingleUserPrincipal;
 import org.apache.thrift.TException;
@@ -715,30 +716,33 @@ public class ServerUtils {
         return false;
     }
 
-    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+    public static int getEstimatedWorkerCountForRASTopo(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
         return (int) Math.ceil(getEstimatedTotalHeapMemoryRequiredByTopo(topoConf, topology) /
                 ObjectReader.getDouble(topoConf.get(Config.WORKER_HEAP_MEMORY_MB)));
     }
 
-    public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+    public static double getEstimatedTotalHeapMemoryRequiredByTopo(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
         Map<String, Integer> componentParallelism = getComponentParallelism(topoConf, topology);
         double totalMemoryRequired = 0.0;
 
-        for(Map.Entry<String, Map<String, Double>> entry: ResourceUtils.getBoltsResources(topology, topoConf).entrySet()) {
+        for (Map.Entry<String, NormalizedResourceRequest> entry: ResourceUtils.getBoltsResources(topology, topoConf).entrySet()) {
             int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
-            double memoryRequirement = entry.getValue().get(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
+            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
             totalMemoryRequired += memoryRequirement * parallelism;
         }
 
-        for(Map.Entry<String, Map<String, Double>> entry: ResourceUtils.getSpoutsResources(topology, topoConf).entrySet()) {
+        for (Map.Entry<String, NormalizedResourceRequest> entry: ResourceUtils.getSpoutsResources(topology, topoConf).entrySet()) {
             int parallelism = componentParallelism.getOrDefault(entry.getKey(), 1);
-            double memoryRequirement = entry.getValue().get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
+            double memoryRequirement = entry.getValue().getOnHeapMemoryMb();
             totalMemoryRequired += memoryRequirement * parallelism;
         }
         return totalMemoryRequired;
     }
 
-    public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology) throws InvalidTopologyException {
+    public static Map<String, Integer> getComponentParallelism(Map<String, Object> topoConf, StormTopology topology)
+        throws InvalidTopologyException {
         Map<String, Integer> ret = new HashMap<>();
         Map<String, Object> components = StormCommon.allComponents(topology);
         for (Map.Entry<String, Object> entry : components.entrySet()) {

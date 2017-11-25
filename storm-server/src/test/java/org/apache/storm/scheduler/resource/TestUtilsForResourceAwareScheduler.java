@@ -65,7 +65,7 @@ import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static org.apache.storm.scheduler.resource.ResourceUtils.normalizedResourceMap;
+import static org.apache.storm.scheduler.resource.NormalizedResources.normalizedResourceMap;
 
 public class TestUtilsForResourceAwareScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(TestUtilsForResourceAwareScheduler.class);

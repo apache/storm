@@ -26,7 +26,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.ExecutorDetails;
@@ -55,7 +54,6 @@ public class RAS_Node {
     private SupervisorDetails sup;
     private final Cluster cluster;
     private final Set<WorkerSlot> originallyFreeSlots;
-    private final Map<String, Double> totalResources;
 
     public RAS_Node(
         String nodeId,
@@ -87,12 +85,6 @@ public class RAS_Node {
         if (isAlive && sup != null) {
             hostname = sup.getHost();
             this.sup = sup;
-        }
-
-        if (isAlive) {
-            totalResources = getTotalResources();
-        } else {
-            totalResources = new HashMap<>();
         }
 
         HashSet<String> freeById = new HashSet<>(slots.keySet());
@@ -367,7 +359,7 @@ public class RAS_Node {
             ws,
             exec,
             td,
-            this.getTotalAvailableResources(),
+            getTotalAvailableResources(),
             td.getTopologyWorkerMaxHeapSize()
             );
     }
@@ -429,52 +421,33 @@ public class RAS_Node {
      *
      * @return the available memory for this node
      */
-    public Double getAvailableMemoryResources() {
-        Map<String, Double> allAvailableResources = getTotalAvailableResources();
-        return allAvailableResources.getOrDefault(
-                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
+    public double getAvailableMemoryResources() {
+        return getTotalAvailableResources().getTotalMemoryMb();
     }
 
     /**
      * Gets total resources for this node.
-     *
-     * @return Map<String, Double> of all resources
      */
-    public Map<String, Double> getTotalResources() {
+    public NormalizedResourceOffer getTotalResources() {
         if (sup != null) {
             return sup.getTotalResources();
         } else {
-            return new HashMap<>();
+            return new NormalizedResourceOffer();
         }
     }
 
     /**
      * Gets all available resources for this node.
      *
-     * @return Map<String, Double> of all resources
+     * @return All of the available resources.
      */
-    public Map<String, Double> getTotalAvailableResources() {
+    public NormalizedResourceOffer getTotalAvailableResources() {
         if (sup != null) {
-            Map<String, Double> totalResources = sup.getTotalResources();
-            Map<String, Double> scheduledResources = cluster.getAllScheduledResourcesForNode(sup.getId());
-            Map<String, Double> availableResources = new HashMap<>();
-            for (Entry resource : totalResources.entrySet()) {
-                if(resource.getKey() == Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME) {
-                    availableResources.put(resource.getKey().toString(),
-                            ObjectReader.getDouble(resource.getValue())
-                                    - (scheduledResources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0)
-                                    + scheduledResources.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0))
-                    );
-                    continue;
-                }
-                availableResources.put(resource.getKey().toString(),
-                        ObjectReader.getDouble(resource.getValue())
-                                - scheduledResources.getOrDefault(resource.getKey(), 0.0));
-
-            }
+            NormalizedResourceOffer availableResources = new NormalizedResourceOffer(sup.getTotalResources());
+            availableResources.remove(cluster.getAllScheduledResourcesForNode(sup.getId()));
             return availableResources;
         } else {
-            return new HashMap<>();
+            return new NormalizedResourceOffer();
         }
     }
 
@@ -483,7 +456,7 @@ public class RAS_Node {
      *
      * @return the total memory for this node
      */
-    public Double getTotalMemoryResources() {
+    public double getTotalMemoryResources() {
         if (sup != null) {
             return sup.getTotalMemory();
         } else {
@@ -497,7 +470,7 @@ public class RAS_Node {
      * @return the available cpu for this node
      */
     public double getAvailableCpuResources() {
-        return getTotalAvailableResources().getOrDefault(Constants.COMMON_CPU_RESOURCE_NAME, 0.0);
+        return getTotalAvailableResources().getTotalCpu();
     }
 
     /**
@@ -505,9 +478,9 @@ public class RAS_Node {
      *
      * @return the total cpu for this node
      */
-    public Double getTotalCpuResources() {
+    public double getTotalCpuResources() {
         if (sup != null) {
-            return sup.getTotalCPU();
+            return sup.getTotalCpu();
         } else {
             return 0.0;
         }

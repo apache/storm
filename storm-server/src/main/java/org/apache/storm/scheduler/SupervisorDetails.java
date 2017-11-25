@@ -22,36 +22,44 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-
 import org.apache.storm.Constants;
+import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SupervisorDetails {
     private static final Logger LOG = LoggerFactory.getLogger(SupervisorDetails.class);
 
-    String id;
+    private final String id;
     /**
      * hostname of this supervisor.
      */
-    String host;
-    Object meta;
+    private final String host;
+    private final Object meta;
     /**
      * meta data configured for this supervisor.
      */
-    Object schedulerMeta;
+    private final Object schedulerMeta;
     /**
      * all the ports of the supervisor.
      */
-    Set<Integer> allPorts;
+    private Set<Integer> allPorts;
     /**
      * Map containing a manifest of resources for the node the supervisor resides.
      */
-    private Map<String, Double> _total_resources;
+    private final NormalizedResourceOffer totalResources;
 
+    /**
+     * Create the details of a new supervisor.
+     * @param id the ID as reported by the supervisor.
+     * @param host the host the supervisor is on.
+     * @param meta meta data reported by the supervisor (should be a collection of the ports on the supervisor).
+     * @param schedulerMeta Not used and can probably be removed.
+     * @param allPorts all of the ports for the supervisor (a better version of meta)
+     * @param totalResources all of the resources for this supervisor.
+     */
     public SupervisorDetails(String id, String host, Object meta, Object schedulerMeta,
-                             Collection<? extends Number> allPorts, Map<String, Double> total_resources) {
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
 
         this.id = id;
         this.host = host;
@@ -62,16 +70,16 @@ public class SupervisorDetails {
         } else {
             this.allPorts = new HashSet<>();
         }
-        this._total_resources = total_resources;
-        LOG.debug("Creating a new supervisor ({}-{}) with resources: {}", this.host, this.id, total_resources);
+        this.totalResources = new NormalizedResourceOffer(totalResources);
+        LOG.debug("Creating a new supervisor ({}-{}) with resources: {}", this.host, this.id, totalResources);
     }
 
-    public SupervisorDetails(String id, Object meta){
+    public SupervisorDetails(String id, Object meta) {
         this(id, null, meta, null, null, null);
     }
 
-    public SupervisorDetails(String id, Object meta, Map<String, Double> total_resources) {
-        this(id, null, meta, null, null, total_resources);
+    public SupervisorDetails(String id, Object meta, Map<String, Double> totalResources) {
+        this(id, null, meta, null, null, totalResources);
     }
 
     public SupervisorDetails(String id, Object meta, Collection<? extends Number> allPorts) {
@@ -83,8 +91,8 @@ public class SupervisorDetails {
     }
 
     public SupervisorDetails(String id, String host, Object schedulerMeta,
-                             Collection<? extends Number> allPorts, Map<String, Double> total_resources) {
-        this(id, host, null, schedulerMeta, allPorts, total_resources);
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
+        this(id, host, null, schedulerMeta, allPorts, totalResources);
     }
     
     @Override
@@ -122,26 +130,24 @@ public class SupervisorDetails {
         return this.schedulerMeta;
     }
 
-    private Double getTotalResource(String type) {
-        return this._total_resources.get(type);
-    }
-
+    /**
+     * Get the total Memory on this supervisor in MB.
+     */
     public double getTotalMemory() {
-        Double totalMemory = getTotalResource(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME);
-        assert totalMemory != null;
-        return totalMemory;
-    }
-
-    public double getTotalCPU() {
-        Double totalCPU = getTotalResource(Constants.COMMON_CPU_RESOURCE_NAME);
-        assert totalCPU != null;
-        return totalCPU;
+        return totalResources.getTotalMemoryMb();
     }
 
     /**
-     * get all resources for this Supervisor.
+     * Get the total CPU on this supervisor in % CPU.
      */
-    public Map<String, Double> getTotalResources() {
-        return _total_resources;
+    public double getTotalCpu() {
+        return totalResources.getTotalCpu();
+    }
+
+    /**
+     * Get all resources for this Supervisor.
+     */
+    public NormalizedResourceOffer getTotalResources() {
+        return totalResources;
     }
 }

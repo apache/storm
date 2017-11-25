@@ -52,6 +52,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -148,6 +149,7 @@ import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
 import org.apache.storm.scheduler.blacklist.BlacklistScheduler;
 import org.apache.storm.scheduler.multitenant.MultitenantScheduler;
+import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.security.INimbusCredentialPlugin;
@@ -967,13 +969,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
     
-    private static Map<String, Double> setResourcesDefaultIfNotSet(Map<String, Map<String, Double>> compResourcesMap, String compId, Map<String, Object> topoConf) {
-        Map<String, Double> resourcesMap = compResourcesMap.get(compId);
-        if (resourcesMap == null) {
-            resourcesMap = new HashMap<>();
+    private static void setResourcesDefaultIfNotSet(Map<String, NormalizedResourceRequest> compResourcesMap, String compId,
+                                                    Map<String, Object> topoConf) {
+        NormalizedResourceRequest resources = compResourcesMap.get(compId);
+        if (resources == null) {
+            compResourcesMap.put(compId, new NormalizedResourceRequest(topoConf));
         }
-        ResourceUtils.checkInitialization(resourcesMap, compId, topoConf);
-        return resourcesMap;
     }
     
     private static void validatePortAvailable(Map<String, Object> conf) throws IOException {
@@ -2563,20 +2564,16 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static double getMaxExecutorMemoryUsageForTopo(
         StormTopology topology, Map<String, Object> topologyConf) {
         double largestMemoryOperator = 0.0;
-        for (Map<String, Double> entry :
+        for (NormalizedResourceRequest entry :
             ResourceUtils.getBoltsResources(topology, topologyConf).values()) {
-            double memoryRequirement =
-                entry.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
-                    + entry.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
+            double memoryRequirement = entry.getTotalMemoryMb();
             if (memoryRequirement > largestMemoryOperator) {
                 largestMemoryOperator = memoryRequirement;
             }
         }
-        for (Map<String, Double> entry :
+        for (NormalizedResourceRequest entry :
             ResourceUtils.getSpoutsResources(topology, topologyConf).values()) {
-            double memoryRequirement =
-                entry.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0)
-                    + entry.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
+            double memoryRequirement = entry.getTotalMemoryMb();
             if (memoryRequirement > largestMemoryOperator) {
                 largestMemoryOperator = memoryRequirement;
             }
@@ -3649,16 +3646,18 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 topoPageInfo.set_storm_version(topology.get_storm_version());
             }
             
-            Map<String, Map<String, Double>> spoutResources = ResourceUtils.getSpoutsResources(topology, topoConf);
+            Map<String, NormalizedResourceRequest> spoutResources = ResourceUtils.getSpoutsResources(topology, topoConf);
             for (Entry<String, ComponentAggregateStats> entry: topoPageInfo.get_id_to_spout_agg_stats().entrySet()) {
                 CommonAggregateStats commonStats = entry.getValue().get_common_stats();
-                commonStats.set_resources_map(setResourcesDefaultIfNotSet(spoutResources, entry.getKey(), topoConf));
+                setResourcesDefaultIfNotSet(spoutResources, entry.getKey(), topoConf);
+                commonStats.set_resources_map(spoutResources.get(entry.getKey()).toNormalizedMap());
             }
             
-            Map<String, Map<String, Double>> boltResources = ResourceUtils.getBoltsResources(topology, topoConf);
+            Map<String, NormalizedResourceRequest> boltResources = ResourceUtils.getBoltsResources(topology, topoConf);
             for (Entry<String, ComponentAggregateStats> entry: topoPageInfo.get_id_to_bolt_agg_stats().entrySet()) {
                 CommonAggregateStats commonStats = entry.getValue().get_common_stats();
-                commonStats.set_resources_map(setResourcesDefaultIfNotSet(boltResources, entry.getKey(), topoConf));
+                setResourcesDefaultIfNotSet(boltResources, entry.getKey(), topoConf);
+                commonStats.set_resources_map(boltResources.get(entry.getKey()).toNormalizedMap());
             }
             
             if (workerSummaries != null) {
@@ -3816,11 +3815,17 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             ComponentPageInfo compPageInfo = StatsUtil.aggCompExecsStats(exec2HostPort, info.taskToComponent, info.beats, window, 
                     includeSys, topoId, topology, componentId);
             if (compPageInfo.get_component_type() == ComponentType.SPOUT) {
-                compPageInfo.set_resources_map(setResourcesDefaultIfNotSet(
-                        ResourceUtils.getSpoutsResources(topology, topoConf), componentId, topoConf));
+                NormalizedResourceRequest spoutResources = ResourceUtils.getSpoutResources(topology, topoConf, componentId);
+                if (spoutResources == null) {
+                    spoutResources = new NormalizedResourceRequest(topoConf);
+                }
+                compPageInfo.set_resources_map(spoutResources.toNormalizedMap());
             } else { //bolt
-                compPageInfo.set_resources_map(setResourcesDefaultIfNotSet(
-                        ResourceUtils.getBoltsResources(topology, topoConf), componentId, topoConf));
+                NormalizedResourceRequest boltResources = ResourceUtils.getBoltResources(topology, topoConf, componentId);
+                if (boltResources == null) {
+                    boltResources = new NormalizedResourceRequest(topoConf);
+                }
+                compPageInfo.set_resources_map(boltResources.toNormalizedMap());
             }
             compPageInfo.set_topology_name(info.topoName);
             compPageInfo.set_errors(stormClusterState.errors(topoId, componentId));
