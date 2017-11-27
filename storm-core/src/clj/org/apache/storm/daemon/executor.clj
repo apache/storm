@@ -36,7 +36,7 @@
   (:import [org.apache.storm Config Constants])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
   (:import [org.apache.storm.metrics2 StormMetricRegistry])
-  (:import [com.codahale.metrics Meter])
+  (:import [com.codahale.metrics Meter Counter])
   (:import [org.apache.storm.grouping LoadAwareCustomStreamGrouping LoadAwareShuffleGrouping LoadMapping ShuffleGrouping])
   (:import [java.util.concurrent ConcurrentLinkedQueue])
   (:require [org.apache.storm [thrift :as thrift]
@@ -280,8 +280,8 @@
                                (log-message "Got interrupted excpetion shutting thread down...")
                                ((:suicide-fn <>))))
      :sampler (mk-stats-sampler storm-conf)
-     :failed-meter (StormMetricRegistry/meter "failed" worker-context component-id)
-     :acked-meter (StormMetricRegistry/meter "acked" worker-context component-id)
+     :failed-meter (StormMetricRegistry/counter "failed" worker-context component-id)
+     :acked-meter (StormMetricRegistry/counter "acked" worker-context component-id)
      :spout-throttling-metrics (if (= executor-type :spout)
                                 (builtin-metrics/make-spout-throttling-data)
                                 nil)
@@ -442,7 +442,7 @@
     ;;TODO: need to throttle these when there's lots of failures
     (when debug?
       (log-message "SPOUT Failing " id ": " tuple-info " REASON: " reason " MSG-ID: " msg-id))
-    (.mark failed-meter)
+    (.inc ^Counter failed-meter)
     (.fail spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutFail (SpoutFailInfo. msg-id task-id time-delta))
     (when time-delta
@@ -453,7 +453,7 @@
         task-id (:task-id task-data)
         acked-meter (:acked-meter executor-data)]
     (when debug? (log-message "SPOUT Acking message " id " " msg-id))
-    (.mark acked-meter)
+    (.inc ^Counter acked-meter)
     (.ack spout msg-id)
     (task/apply-hooks (:user-context task-data) .spoutAck (SpoutAckInfo. msg-id task-id time-delta))
     (when time-delta
@@ -823,7 +823,7 @@
                          (let [delta (tuple-time-delta! tuple)]
                            (when debug? 
                              (log-message "BOLT ack TASK: " task-id " TIME: " delta " TUPLE: " tuple))
-                           (.mark  ^Meter (:acked-meter (:executor-data task-data)))
+                           (.inc  ^Counter (:acked-meter (:executor-data task-data)))
                            (task/apply-hooks user-context .boltAck (BoltAckInfo. tuple task-id delta))
                            (when (<= 0 delta)
                              (stats/bolt-acked-tuple! executor-stats
@@ -839,7 +839,7 @@
                                debug? (= true (storm-conf TOPOLOGY-DEBUG))]
                            (when debug? 
                              (log-message "BOLT fail TASK: " task-id " TIME: " delta " TUPLE: " tuple))
-                           (.mark  ^Meter (:failed-meter (:executor-data task-data)))
+                           (.inc  ^Counter (:failed-meter (:executor-data task-data)))
                            (task/apply-hooks user-context .boltFail (BoltFailInfo. tuple task-id delta))
                            (when (<= 0 delta)
                              (stats/bolt-failed-tuple! executor-stats

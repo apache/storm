@@ -17,6 +17,7 @@
  */
 package org.apache.storm.metrics2;
 
+import com.codahale.metrics.Counter;
 import com.codahale.metrics.Meter;
 import com.codahale.metrics.MetricRegistry;
 import org.apache.storm.Config;
@@ -70,6 +71,11 @@ public class StormMetricRegistry {
     public static Meter meter(String name, WorkerTopologyContext context, String componentId){
         String metricName = metricName(name, context.getStormId(), componentId, context.getThisWorkerPort());
         return REGISTRY.meter(metricName);
+    }
+
+    public static Counter counter(String name, WorkerTopologyContext context, String componentId){
+        String metricName = metricName(name, context.getStormId(), componentId, context.getThisWorkerPort());
+        return REGISTRY.counter(metricName);
     }
 
     public static void start(Map<String, Object> stormConfig, DaemonType type){

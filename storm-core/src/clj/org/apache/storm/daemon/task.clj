@@ -28,7 +28,7 @@
   (:import [org.apache.storm.generated ShellComponent JavaObject])
   (:import [org.apache.storm.spout ShellSpout])
   (:import [java.util Collection List ArrayList])
-  (:import [com.codahale.metrics Meter])
+  (:import [com.codahale.metrics Meter Counter])
   (:require [org.apache.storm
              [thrift :as thrift]
              [stats :as stats]])
@@ -131,10 +131,10 @@
         user-context (:user-context task-data)
         executor-stats (:stats executor-data)
         debug? (= true (storm-conf TOPOLOGY-DEBUG))
-        ^Meter emitted-meter (StormMetricRegistry/meter "emitted" worker-context component-id)]
+        ^Counter emitted-meter (StormMetricRegistry/counter "emitted" worker-context component-id)]
         
     (fn ([^Integer out-task-id ^String stream ^List values]
-          (.mark emitted-meter)
+          (.inc ^Counter emitted-meter)
           (when debug?
             (log-message "Emitting direct: " out-task-id "; " component-id " " stream " " values))
           (let [target-component (.getComponentId worker-context out-task-id)
@@ -151,7 +151,7 @@
             (if out-task-id [out-task-id])
             ))
         ([^String stream ^List values]
-           (.mark emitted-meter)
+           (.inc ^Counter emitted-meter)
            (when debug?
              (log-message "Emitting: " component-id " " stream " " values))
            (let [out-tasks (ArrayList.)]
