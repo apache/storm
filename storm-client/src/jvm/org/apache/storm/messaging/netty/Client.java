@@ -82,6 +82,10 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     private final ClientBootstrap bootstrap;
     private final InetSocketAddress dstAddress;
     protected final String dstAddressPrefixedName;
+    //The actual name of the host we are trying to connect to so that
+    // when we remove ourselves from the connection cache there is no concern that
+    // the resolved host name is different.
+    private final String dstHost;
     private volatile Map<Integer, Double> serverLoad = null;
 
     /**
@@ -157,6 +161,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
 
         // Initiate connection to remote destination
         bootstrap = createClientBootstrap(factory, bufferSize, topoConf);
+        dstHost = host;
         dstAddress = new InetSocketAddress(host, port);
         dstAddressPrefixedName = prefixedName(dstAddress);
         launchChannelAliveThread();
@@ -426,7 +431,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     public void close() {
         if (!closing) {
             LOG.info("closing Netty Client {}", dstAddressPrefixedName);
-            context.removeClient(dstAddress.getHostName(),dstAddress.getPort());
+            context.removeClient(dstHost, dstAddress.getPort());
             // Set closing to true to prevent any further reconnection attempts.
             closing = true;
             waitForPendingMessagesToBeSent();
