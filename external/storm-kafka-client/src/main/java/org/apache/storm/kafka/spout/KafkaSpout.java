@@ -242,9 +242,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     }
                 }
 
-                if (waitingToEmit()) {
-                    emit();
-                }
+                emitIfWaitingNotEmitted();
             } else {
                 LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
             }
@@ -266,7 +264,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private Set<TopicPartition> poll() {
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
 
-        if (waitingToEmit()) {
+        if (isWaitingToEmit()) {
             LOG.debug("Not polling. Tuples waiting to be emitted.");
             return Collections.emptySet();
         }
@@ -297,7 +295,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         return pollablePartitions;
     }
 
-    private boolean waitingToEmit() {
+    private boolean isWaitingToEmit() {
         return waitingToEmit != null && waitingToEmit.hasNext();
     }
 
@@ -372,19 +370,23 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     // ======== emit  =========
-    private void emit() {
-        while (!emitTupleIfNotEmitted(waitingToEmit.next()) && waitingToEmit.hasNext()) {
+    private void emitIfWaitingNotEmitted() {
+        while (isWaitingToEmit()) {
+            final boolean emitted = emitOrRetryTuple(waitingToEmit.next());
             waitingToEmit.remove();
+            if (emitted) {
+                break;
+            }
         }
     }
 
     /**
-     * Creates a tuple from the kafka record and emits it if it was not yet emitted.
+     * Creates a tuple from the kafka record and emits it if it was never emitted or it is ready to be retried.
      *
      * @param record to be emitted
      * @return true if tuple was emitted. False if tuple has been acked or has been emitted and is pending ack or fail
      */
-    private boolean emitTupleIfNotEmitted(ConsumerRecord<K, V> record) {
+    private boolean emitOrRetryTuple(ConsumerRecord<K, V> record) {
         final TopicPartition tp = new TopicPartition(record.topic(), record.partition());
         final KafkaSpoutMessageId msgId = retryService.getMessageId(tp, record.offset());
 
