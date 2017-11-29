@@ -82,6 +82,7 @@ public class LogviewerLogSearchHandler {
     private final String daemonLogRoot;
     private final ResourceAuthorizer resourceAuthorizer;
     private final Integer logviewerPort;
+    private final String scheme;
 
     /**
      * Constructor.
@@ -97,8 +98,14 @@ public class LogviewerLogSearchHandler {
         this.logRoot = logRoot;
         this.daemonLogRoot = daemonLogRoot;
         this.resourceAuthorizer = resourceAuthorizer;
-
-        this.logviewerPort = ObjectReader.getInt(stormConf.get(DaemonConfig.LOGVIEWER_PORT));
+        Object httpsPort = stormConf.get(DaemonConfig.LOGVIEWER_HTTPS_PORT);
+        if (httpsPort == null) {
+            this.logviewerPort = ObjectReader.getInt(stormConf.get(DaemonConfig.LOGVIEWER_PORT));
+            this.scheme = "http";
+        } else {
+            this.logviewerPort = ObjectReader.getInt(httpsPort);
+            this.scheme = "https";
+        }
     }
 
     /**
@@ -662,7 +669,7 @@ public class LogviewerLogSearchHandler {
         parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
         parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
-        return UrlBuilder.build(String.format("http://%s:%d/api/v1/log", host, port), parameters);
+        return UrlBuilder.build(String.format(this.scheme + "://%s:%d/api/v1/log", host, port), parameters);
     }
 
     @VisibleForTesting
@@ -675,7 +682,7 @@ public class LogviewerLogSearchHandler {
         parameters.put("start", Math.max(0, offset - (LogviewerConstant.DEFAULT_BYTES_PER_PAGE / 2) - (needle.length / -2)));
         parameters.put("length", LogviewerConstant.DEFAULT_BYTES_PER_PAGE);
 
-        return UrlBuilder.build(String.format("http://%s:%d/api/v1/daemonlog", host, port), parameters);
+        return UrlBuilder.build(String.format(this.scheme + "://%s:%d/api/v1/daemonlog", host, port), parameters);
     }
 
     @VisibleForTesting

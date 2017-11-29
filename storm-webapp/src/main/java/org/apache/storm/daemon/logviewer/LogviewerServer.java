@@ -155,7 +155,7 @@ public class LogviewerServer implements AutoCloseable {
      */
     public static void main(String [] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();
-        Map<String, Object> conf = Utils.readStormConfig();
+        Map<String, Object> conf = ConfigUtils.readStormConfig();
 
         String logRoot = ConfigUtils.workerArtifactsRoot(conf);
         File logRootFile = new File(logRoot);
