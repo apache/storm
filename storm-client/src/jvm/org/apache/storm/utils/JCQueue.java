@@ -230,7 +230,6 @@ public final class JCQueue implements IStatefulObject {
 
     private final MpscArrayQueue<Object> recvQueue;
     private final SpscUnboundedArrayQueue<Object> overflowQ; // used by WorkerTransfer for stashing inbound msgs destined to bolts under BP
-    private final AtomicInteger overflowCount = new AtomicInteger(0); // ConcurrentLinkedQueue.size() is costly. So we maintain its size ourselves.
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow.
 
 
@@ -247,7 +246,6 @@ public final class JCQueue implements IStatefulObject {
     public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy) {
         this.queueName = queueName;
         this.overflowLimit = overflowLimit;
-
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new SpscUnboundedArrayQueue<>(size);
 
@@ -306,10 +304,9 @@ public final class JCQueue implements IStatefulObject {
         }
 
         int overflowDrainCount = 0;
-        int limit = overflowCount.get();
+        int limit = overflowQ.size();
         while ( exitCond.keepRunning()   &&   overflowDrainCount < limit ) { // 2nd condition prevents staying stuck with consuming overflow
             Object tuple = overflowQ.poll();
-            overflowCount.decrementAndGet();
             ++overflowDrainCount;
             consumer.accept(tuple);
         }
@@ -388,20 +385,19 @@ public final class JCQueue implements IStatefulObject {
      * returns false if overflowLimit has reached
      */
     public boolean tryPublishToOverflow(Object obj) {
-        if (overflowLimit>0 && overflowCount.get() >= overflowLimit) {
+        if (overflowLimit>0 && overflowQ.size() >= overflowLimit) {
             return false;
         }
         overflowQ.add(obj);
-        overflowCount.incrementAndGet();
         return true;
     }
 
     public boolean isEmptyOverflow() {
-        return overflowCount.get()==0; // likely more efficient than overflow.isEmpty()
+        return overflowQ.isEmpty();
     }
 
     public int getOverflowCount() {
-        return overflowCount.get();
+        return overflowQ.size();
     }
 
     public int getQueuedCount() {

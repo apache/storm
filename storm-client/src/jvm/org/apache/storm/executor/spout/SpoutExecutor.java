@@ -152,6 +152,7 @@ public class SpoutExecutor extends Executor {
             int i=0;
             final int recvqCheckSkipCount = getSpoutRecvqCheckSkipCount();
             int bpIdleCount = 0;
+            int rmspCount = 0;
             @Override
             public Long call() throws Exception {
                 int receiveCount = 0;
@@ -175,7 +176,6 @@ public class SpoutExecutor extends Executor {
 
                     if (!reachedMaxSpoutPending && tmpOverFlowIsEmpty) {
                         for (int j = 0; j < spouts.size(); j++) { // in critical path. don't use iterators.
-//                            LOG.info("Calling nextTuple");
                             spouts.get(j).nextTuple();
                         }
                         noEmits = (currCount == emittedCount.get());
@@ -185,14 +185,23 @@ public class SpoutExecutor extends Executor {
                             emptyEmitStreak.set(0);
                         }
                     }
+                    if (reachedMaxSpoutPending) {
+                        if(rmspCount==0)
+                            LOG.debug("Reached max spout pending");
+                        rmspCount++;
+                    } else {
+                        if (rmspCount>0)
+                            LOG.debug("Ended max spout pending stretch of {} iterations", rmspCount);
+                        rmspCount = 0;
+                    }
 
-                    if ( receiveCount>0 ) {
+                    if ( receiveCount>1 ) {
                         // continue without idling
                         return 0L;
                     }
                     if ( !tmpOverflow.isEmpty() ) { // then facing backpressure
                         long start = Time.currentTimeMillis();
-                        if (bpIdleCount ==0) { // check avoids multiple log msgs when in a idle loop
+                        if (bpIdleCount == 0) { // check avoids multiple log msgs when in a idle loop
                             LOG.debug("Experiencing Back Pressure from downstream components. Entering BackPressure Wait.");
                         }
                         bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
@@ -204,8 +213,11 @@ public class SpoutExecutor extends Executor {
                         emptyEmitStreak.increment();
                         long start = Time.currentTimeMillis();
                         spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
-                        spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
-                        LOG.debug("There were no emits. Entering Spout Wait: {}", componentId);
+                        if (reachedMaxSpoutPending) {
+                            spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
+                        } else {
+                            LOG.trace("Spout did not emit. Entering Spout Wait: component={}", componentId);
+                        }
                         return 0L;
                     }
                     return 0L;

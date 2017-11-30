@@ -116,17 +116,24 @@ public class ExecutorTransfer  {
         return localReceiveQueues.get(tuple.dest - indexingBase);
     }
 
-    // tries to add to localQueue, else adds to tmpOverflow. returns false if it cannot add to localQueue.
+    /** Adds tuple to localQueue (if overflow is empty). If localQueue is full adds to tmpOverflow instead.
+     *  tmpOverflow can be null.
+     *  Returns false if unable to add to localQueue.
+     */
     public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> tmpOverflow) {
         workerData.checkSerialize(serializer, tuple);
-        if (localQueue.tryPublish(tuple)) {
-            queuesToFlush.set(tuple.dest - indexingBase, localQueue);
-            return true;
+
+        if (tmpOverflow != null) {
+            if (tmpOverflow.isEmpty() && localQueue.tryPublish(tuple)) {
+                queuesToFlush.set(tuple.dest - indexingBase, localQueue);
+                return true;
+            } else {
+                tmpOverflow.add(tuple);
+                return false;
+            }
+        } else {
+          return localQueue.tryPublish(tuple);
         }
-        if (tmpOverflow!=null) {
-            tmpOverflow.add(tuple);
-        }
-        return false;
     }
 
 }

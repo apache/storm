@@ -107,11 +107,7 @@ class WorkerTransfer implements JCQueue.Consumer {
                 return true;
             }
         } else {
-            if(tmpOverflow!=null) {
-                LOG.info("tryTransferRemote(): Noticed Back Pressure for remote task {}.  LocalOverflowSz = ", tuple.dest, tmpOverflow.size()); // TODO: ROSHAN: change to debug log after stabilization
-            }  else {
-                LOG.info("tryTransferRemote(): Noticed Back Pressure for remote task {}.  LocalOverflowSz = ", tuple.dest); // TODO: ROSHAN: change to debug log after stabilization
-            }
+            LOG.debug("Noticed Back Pressure in remote task {}", tuple.dest);
             drainer.tell(workerState.cachedNodeToPortSocket.get().values());
         }
         if (tmpOverflow != null) {

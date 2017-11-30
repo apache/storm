@@ -21,11 +21,11 @@ package org.apache.storm.messaging.netty;
 import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.jboss.netty.buffer.ChannelBuffer;
-import org.jboss.netty.buffer.ChannelBufferOutputStream;
 import org.jboss.netty.buffer.ChannelBuffers;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.atomic.AtomicLong;
 
 // Instances of this type are sent from NettyWorker to upstream WorkerTransfer to indicate BackPressure situation
 public class BackPressureStatus implements java.io.Serializable {
@@ -34,20 +34,23 @@ public class BackPressureStatus implements java.io.Serializable {
     private static final int SIZE_OF_ID = 2; // size if IDENTIFIER
     private static final int SIZE_OF_INT = 4;
 
-    static int bpCount=0;
-    int id;
-    public Collection<Integer> bpTasks;    // task Ids experiencing BP. can be null
-    public Collection<Integer> nonBpTasks; // task Ids no longer experiencing BP. can be null
+    private static AtomicLong bpCount = new AtomicLong(0);
 
-    public BackPressureStatus(Collection<Integer> bpTasks, Collection<Integer> nonBpTasks) {
+    public final String workerId;
+    public final long id;                       // monotonically increasing id
+    public final Collection<Integer> bpTasks;    // task Ids experiencing BP. can be null
+    public final Collection<Integer> nonBpTasks; // task Ids no longer experiencing BP. can be null
+
+    public BackPressureStatus(String workerId, Collection<Integer> bpTasks, Collection<Integer> nonBpTasks) {
+        this.workerId = workerId;
+        id = bpCount.incrementAndGet();
         this.bpTasks = bpTasks;
         this.nonBpTasks = nonBpTasks;
-        id = ++bpCount;
     }
 
     @Override
     public String toString() {
-        return "{id=" + id + ", bpTasks=" + bpTasks + ", nonBpTasks=" + nonBpTasks + '}';
+        return "{worker=" + workerId + ", bpStatusId=" + id + ", bpTasks=" + bpTasks + ", nonBpTasks=" + nonBpTasks + '}';
     }
 
     /** Encoded as

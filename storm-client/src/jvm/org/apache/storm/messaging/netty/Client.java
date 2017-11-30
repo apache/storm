@@ -345,7 +345,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             int idleCounter = 0;
             while (!channel.isWritable()) {
                 if (idleCounter==0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.debug("Experiencing Back Pressure from Netty. Entering BackPressure Wait: Storm Client");
+                    LOG.info("Experiencing Back Pressure from Netty. Entering BackPressure Wait");
                 }
                 idleCounter = waitStrategy.idle(idleCounter);
             }
@@ -428,8 +428,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     public void tellState(long emitted) {  // ROSHAN - remove this .. after stabilization
-        int sent = messagesSent.get();
-        LOG.debug("BackPressure Status :  Emitted={}, Sent={}, Emitted-Sent={}",  emitted, sent, emitted-sent);
+        LOG.debug("BackPressure Status :  Emitted={}", emitted);
     }
 
     /**

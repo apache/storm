@@ -323,7 +323,7 @@ public class WorkerState {
         }
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
-        this.bpTracker = new BackPressureTracker(localTaskIds);
+        this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
     }
 
     public void refreshConnections() {
@@ -513,13 +513,10 @@ public class WorkerState {
         return workerTransfer.tryFlushRemotes();
     }
 
-    int recvTotal=0; // ROSHAN remove
     // Receives msgs from remote workers and feeds them to local executors. If any receiving local executor is under Back Pressure,
     // informs other workers about back pressure situation. Runs in the NettyWorker thread.
     private void transferLocalBatch(ArrayList<AddressedTuple> tupleBatch) {
-        boolean bpIgnored = false; // ROSHAN remove this
-        int ofCount = 0;           // ROSHAN remove this
-        recvTotal+=tupleBatch.size();
+        int lastOverflowCount = 0; // overflowQ size at the time the last BPStatus was sent
 
         for (int i = 0; i < tupleBatch.size(); i++) {
             AddressedTuple tuple = tupleBatch.get(i);
@@ -533,11 +530,19 @@ public class WorkerState {
             }
 
             // 2- BP detected (i.e MainQ is full). So try adding to overflow
+            int currOverflowCount = queue.getOverflowCount();
             if (bpTracker.recordBackpressure(tuple.dest, queue)) {
                 receiver.sendBackPressureStatus(bpTracker.getCurrStatus());
+                lastOverflowCount = currOverflowCount;
             } else {
-                bpIgnored = true;
-                ofCount = queue.getOverflowCount();
+
+                if (currOverflowCount - lastOverflowCount > 10000) {
+                    // resend BP status, in case prev notification was missed or reordered
+                    BackPressureStatus bpStatus = bpTracker.getCurrStatus();
+                    receiver.sendBackPressureStatus(bpStatus);
+                    lastOverflowCount = currOverflowCount;
+                    LOG.info("Resent BP Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
+                }
             }
             if (queue.tryPublishToOverflow(tuple)) {
                 //TODO: Roshan: updateOverflowMetrics()
@@ -546,17 +551,11 @@ public class WorkerState {
                 dropMessage(tuple, queue);
             }
         }
-
-        if (bpIgnored && ofCount>50000) { // TODO: Roshan: temporary debug stmt. Remove this
-            LOG.info("Receiving BackPressure status being ignored. Overflow={}, recvTotal={}", ofCount, recvTotal);
-        }
-
     }
 
     private void dropMessage(AddressedTuple tuple, JCQueue queue) {
         ++dropCount;
-//        LOG.warn("Dropping message as overflow threshold has reached for {}. OverflowCount = {}. Drop Count= {}, Dropped Message : {}",  queue.getName(), queue.getOverflowCount(), dropCount, tuple.toString() );
-        LOG.warn("Dropping message as overflow threshold has reached for {}. OverflowCount = {}. Recv = {}, Drop Count = {}",  queue.getName(), queue.getOverflowCount(), recvTotal, dropCount );
+        LOG.warn("Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Drop Count= {}, Dropped Message : {}",  queue.getName(), queue.getOverflowCount(), dropCount, tuple.toString() );
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {

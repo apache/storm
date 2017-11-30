@@ -45,7 +45,7 @@ public class ConstSpoutIdBoltNullBoltTopo {
 
     // Configs
     public static final String BOLT1_COUNT = "bolt1.count";
-    public static final String BOLT2_COUNT = "bolt2.c1ount";
+    public static final String BOLT2_COUNT = "bolt2.count";
     public static final String SPOUT_COUNT = "spout.count";
 
     public static StormTopology getTopology(Map<String, Object> conf) {

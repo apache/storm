@@ -277,10 +277,10 @@ topology.environment: null
 topology.transfer.buffer.size: 1000   # size of recv  queue for transfer worker thread
 topology.transfer.batch.size: 1       # can be no larger than half of `topology.transfer.buffer.size`
 
-topology.executor.receive.buffer.size: 1000  # size of recv queue for spouts & bolts. Will be internally rounded off to next power of 2 (if it is not already)
+topology.executor.receive.buffer.size: 32768  # size of recv queue for spouts & bolts. Will be internally rounded up to next power of 2 (if not already a power of 2)
 topology.producer.batch.size: 1              # can be no larger than half of `topology.executor.receive.buffer.size`
 
-topology.flush.tuple.freq.millis: 3  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
+topology.flush.tuple.freq.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
 
 topology.disable.loadaware.messaging: false   # load aware messaging can degrade throughput

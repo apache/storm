@@ -36,12 +36,14 @@ import static org.apache.storm.Constants.SYSTEM_TASK_ID;
 public class BackPressureTracker {
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
 
-    private Map<Integer, JCQueue> bpTasks = new ConcurrentHashMap<>(); // updates are more frequent than iteration
-    private Set<Integer> nonBpTasks = ConcurrentHashMap.newKeySet();
+    private final Map<Integer, JCQueue> bpTasks = new ConcurrentHashMap<>(); // updates are more frequent than iteration
+    private final Set<Integer> nonBpTasks = ConcurrentHashMap.newKeySet();
+    private final String workerId;
 
-    public BackPressureTracker(List<Integer> allLocalTasks) {
-        nonBpTasks.addAll(allLocalTasks);    // all tasks are considered to be not under BP initially
-        nonBpTasks.remove((int)SYSTEM_TASK_ID);   // not tracking system task
+    public BackPressureTracker(String workerId, List<Integer> allLocalTasks) {
+        this.workerId = workerId;
+        this.nonBpTasks.addAll(allLocalTasks);    // all tasks are considered to be not under BP initially
+        this.nonBpTasks.remove((int)SYSTEM_TASK_ID);   // not tracking system task
     }
 
     /* called by transferLocalBatch() on NettyWorker thread
@@ -76,6 +78,6 @@ public class BackPressureTracker {
     public BackPressureStatus getCurrStatus() {
         ArrayList<Integer> bpTasksIds = new ArrayList<>(bpTasks.keySet());
         ArrayList<Integer> nonBpTasksIds = new ArrayList<>(nonBpTasks);
-        return new BackPressureStatus(bpTasksIds, nonBpTasksIds);
+        return new BackPressureStatus(workerId, bpTasksIds, nonBpTasksIds);
     }
 }
