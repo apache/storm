@@ -174,6 +174,7 @@ public class SpoutExecutor extends Executor {
                     }
                     boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
 
+                    long emptyStretch = 0;
                     if (!reachedMaxSpoutPending && tmpOverFlowIsEmpty) {
                         for (int j = 0; j < spouts.size(); j++) { // in critical path. don't use iterators.
                             spouts.get(j).nextTuple();
@@ -182,6 +183,7 @@ public class SpoutExecutor extends Executor {
                         if (noEmits) {
                             emptyEmitStreak.increment();
                         } else {
+                            emptyStretch = emptyEmitStreak.get();
                             emptyEmitStreak.set(0);
                         }
                     }
@@ -216,7 +218,9 @@ public class SpoutExecutor extends Executor {
                         if (reachedMaxSpoutPending) {
                             spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
                         } else {
-                            LOG.trace("Spout did not emit. Entering Spout Wait: component={}", componentId);
+                            if (emptyStretch>0) {
+                                LOG.debug("Ending Spout Wait Stretch of {}", emptyStretch);
+                            }
                         }
                         return 0L;
                     }

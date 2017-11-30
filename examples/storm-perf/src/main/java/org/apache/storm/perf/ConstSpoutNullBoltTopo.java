@@ -93,7 +93,6 @@ public class ConstSpoutNullBoltTopo {
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 500);
         topoConf.put(Config.TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE, 50_000);
-        topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
 

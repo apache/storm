@@ -47,10 +47,13 @@ public class JCQueueTest {
                 private boolean head = true;
 
                 @Override
-                public void accept(Object obj) {
+                public void accept(Object event) {
+                    if (event == JCQueue.INTERRUPT) {
+                        throw new RuntimeException(new InterruptedException("ConsumerThd interrupted") );
+                    }
                     if (head) {
                         head = false;
-                        result.set(obj);
+                        result.set(event);
                     }
                 }
 

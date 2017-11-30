@@ -345,7 +345,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             int idleCounter = 0;
             while (!channel.isWritable()) {
                 if (idleCounter==0) { // check avoids multiple log msgs when in a idle loop
-                    LOG.info("Experiencing Back Pressure from Netty. Entering BackPressure Wait");
+                    LOG.debug("Experiencing Back Pressure from Netty. Entering BackPressure Wait");
                 }
                 idleCounter = waitStrategy.idle(idleCounter);
             }

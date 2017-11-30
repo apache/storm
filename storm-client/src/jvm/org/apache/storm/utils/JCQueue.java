@@ -261,9 +261,10 @@ public final class JCQueue implements IStatefulObject {
     }
 
 
-    public void haltWithInterrupt() {
-        tryPublishInternal(INTERRUPT);
+    public boolean haltWithInterrupt() {
+        boolean res = tryPublishInternal(INTERRUPT);
         metrics.close();
+        return res;
     }
 
 

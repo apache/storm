@@ -140,25 +140,29 @@ public class BoltExecutor extends Executor {
             public Long call() throws Exception {
                 boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
                 if (tmpOverFlowIsEmpty) {
+                    if (bpIdleCount!=0) {
+                        LOG.debug("Ending Back Pressure Wait stretch : {}", bpIdleCount);
+                    }
                     bpIdleCount = 0;
-//                    int szB4 = receiveQueue.size();
                     int consumeCount = receiveQueue.consume(BoltExecutor.this, tillOverflowOccurs);
-//                    LOG.info("ROSHAN -Invoked consume(), b4= {} , consumeCount={}, overflow={}", szB4, consumeCount, tmpOverflow.size());
                     if (consumeCount == 0) {
-//                        if (consumeIdleCounter==0) { // ROSHAN - uncomment
-//                            LOG.debug("Invoking consume wait strategy : {}", consumeIdleCounter);
-//                        }
+                        if (consumeIdleCounter==0) { // ROSHAN - uncomment
+                            LOG.debug("Invoking consume wait strategy");
+                        }
                         consumeIdleCounter = consumeWaitStrategy.idle(consumeIdleCounter);
                         if (Thread.interrupted()) {
                             throw new InterruptedException();
                         }
                     } else {
+                        if (consumeIdleCounter!=0) {
+                            LOG.debug("Ending consume wait stretch : {}", consumeIdleCounter);
+                        }
                         consumeIdleCounter = 0;
                     }
                 } else {
-//                    if (bpIdleCount == 0) { // check avoids multiple log msgs when spinning in a idle loop    // ROSHAN - uncomment
-//                        LOG.debug("Experiencing Back Pressure. Entering BackPressure Wait: {}. OverflowSz = {}", bpIdleCount, tmpOverflow.size() );
-//                    }
+                    if (bpIdleCount == 0) { // check avoids multiple log msgs when spinning in a idle loop    // ROSHAN - uncomment
+                        LOG.debug("Experiencing Back Pressure. Entering BackPressure Wait. OverflowSz = {}", tmpOverflow.size() );
+                    }
                     bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
                 }
 

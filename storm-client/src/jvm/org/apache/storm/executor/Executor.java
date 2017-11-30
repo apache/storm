@@ -119,7 +119,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final AddressedTuple flushTuple;
 
     protected final ErrorReportingMetrics errorReportingMetrics;
-    protected final ConcurrentLinkedQueue<AddressedTuple> tmpOverflow = new ConcurrentLinkedQueue<>();
+    protected final ConcurrentLinkedQueue<AddressedTuple> tmpOverflow = new ConcurrentLinkedQueue<>(); // TODO: ROSHAN: rename
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         this.workerData = workerData;
