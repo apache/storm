@@ -172,10 +172,10 @@ public class SpoutExecutor extends Executor {
                             spout.activate();
                         }
                     }
-                    boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
+                    boolean pendingEmitsIsEmpty = tryFlushPendingEmits();
 
                     long emptyStretch = 0;
-                    if (!reachedMaxSpoutPending && tmpOverFlowIsEmpty) {
+                    if (!reachedMaxSpoutPending && pendingEmitsIsEmpty) {
                         for (int j = 0; j < spouts.size(); j++) { // in critical path. don't use iterators.
                             spouts.get(j).nextTuple();
                         }
@@ -201,7 +201,7 @@ public class SpoutExecutor extends Executor {
                         // continue without idling
                         return 0L;
                     }
-                    if ( !tmpOverflow.isEmpty() ) { // then facing backpressure
+                    if ( !pendingEmits.isEmpty() ) { // then facing backpressure
                         long start = Time.currentTimeMillis();
                         if (bpIdleCount == 0) { // check avoids multiple log msgs when in a idle loop
                             LOG.debug("Experiencing Back Pressure from downstream components. Entering BackPressure Wait.");
@@ -240,11 +240,11 @@ public class SpoutExecutor extends Executor {
                 }
             }
 
-            // returns true if tmpOverflow is empty
-            private boolean tryFlushTmpOverflow() {
-                for (AddressedTuple t = tmpOverflow.peek(); t != null; t = tmpOverflow.peek()) {
+            // returns true if pendingEmits is empty
+            private boolean tryFlushPendingEmits() {
+                for (AddressedTuple t = pendingEmits.peek(); t != null; t = pendingEmits.peek()) {
                     if (executorTransfer.tryTransfer(t, null)) {
-                        tmpOverflow.poll();
+                        pendingEmits.poll();
                     } else { // to avoid reordering of emits, stop at first failure
                         return false;
                     }

@@ -39,11 +39,11 @@ public class LocalExecutor {
         Executor executor = Executor.mkExecutor(workerState, executorId, initialCredentials);
         executor.setLocalExecutorTransfer(new ExecutorTransfer(workerState, executor.getStormConf()) {
             @Override
-            public boolean tryTransfer(AddressedTuple tuple, Queue<AddressedTuple> tmpOverflow) {
+            public boolean tryTransfer(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
                 if (null != trackId) {
                     ((AtomicInteger) ((Map) RegisteredGlobalState.getState(trackId)).get("transferred")).incrementAndGet();
                 }
-                return super.tryTransfer(tuple, tmpOverflow);
+                return super.tryTransfer(tuple, pendingEmits);
             }
         });
         return executor;

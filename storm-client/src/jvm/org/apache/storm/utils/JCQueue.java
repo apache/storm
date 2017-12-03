@@ -23,7 +23,7 @@ import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpscArrayQueue;
-import org.jctools.queues.SpscUnboundedArrayQueue;
+import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -37,13 +37,13 @@ public final class JCQueue implements IStatefulObject {
 
     public static final Object INTERRUPT = new Object();
 
-    private ThroughputMeter emptyMeter = new ThroughputMeter("EmptyBatch");
-    private ExitCondition continueRunning = () -> true;
+    private final ThroughputMeter emptyMeter = new ThroughputMeter("EmptyBatch");
+    private final ExitCondition continueRunning = () -> true;
 
     private interface Inserter {
         // blocking call that can be interrupted using Thread.interrupt()
-        void add(Object obj) throws InterruptedException;
-        boolean tryAdd(Object obj);
+        void publish(Object obj) throws InterruptedException;
+        boolean tryPublish(Object obj);
 
         void flush() throws InterruptedException;
         boolean tryFlush();
@@ -59,7 +59,7 @@ public final class JCQueue implements IStatefulObject {
 
         /** Blocking call, that can be interrupted via Thread.interrupt */
         @Override
-        public void add(Object obj) throws InterruptedException {
+        public void publish(Object obj) throws InterruptedException {
             boolean inserted = q.tryPublishInternal(obj);
             int idleCount = 0;
             while (!inserted) {
@@ -79,7 +79,7 @@ public final class JCQueue implements IStatefulObject {
 
         /** Non-Blocking call. return value indicates success/failure */
         @Override
-        public boolean tryAdd(Object obj) {
+        public boolean tryPublish(Object obj) {
             boolean inserted = q.tryPublishInternal(obj);
             if (!inserted) {
                 q.metrics.notifyInsertFailure();
@@ -112,7 +112,7 @@ public final class JCQueue implements IStatefulObject {
 
         /** Blocking call - retires till element is successfully added */
         @Override
-        public void add(Object obj) throws InterruptedException {
+        public void publish(Object obj) throws InterruptedException {
             currentBatch.add(obj);
             if (currentBatch.size() >= batchSz) {
                 flush();
@@ -121,7 +121,7 @@ public final class JCQueue implements IStatefulObject {
 
         /** Non-Blocking call. return value indicates success/failure */
         @Override
-        public boolean tryAdd(Object obj) {
+        public boolean tryPublish(Object obj) {
             if (currentBatch.size() >= batchSz) {
                 if (!tryFlush()) {
                     return false;
@@ -214,7 +214,7 @@ public final class JCQueue implements IStatefulObject {
         }
 
         public void notifyArrivals(long counts) {
-            arrivalsTracker.notify(counts); // TODO: PERF: This is a perf bottleneck esp in when batchSz=1
+            arrivalsTracker.notify(counts);
         }
 
         public void notifyInsertFailure() {
@@ -229,7 +229,7 @@ public final class JCQueue implements IStatefulObject {
     }
 
     private final MpscArrayQueue<Object> recvQueue;
-    private final SpscUnboundedArrayQueue<Object> overflowQ; // used by WorkerTransfer for stashing inbound msgs destined to bolts under BP
+    private final MpscUnboundedArrayQueue<Object> overflowQ; // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow.
 
 
@@ -247,7 +247,7 @@ public final class JCQueue implements IStatefulObject {
         this.queueName = queueName;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
-        this.overflowQ = new SpscUnboundedArrayQueue<>(size);
+        this.overflowQ = new MpscUnboundedArrayQueue<>(size);
 
         this.metrics = new JCQueue.QueueMetrics();
 
@@ -306,7 +306,7 @@ public final class JCQueue implements IStatefulObject {
 
         int overflowDrainCount = 0;
         int limit = overflowQ.size();
-        while ( exitCond.keepRunning()   &&   overflowDrainCount < limit ) { // 2nd condition prevents staying stuck with consuming overflow
+        while (exitCond.keepRunning()  &&  (overflowDrainCount < limit)) { // 2nd cond prevents staying stuck with consuming overflow
             Object tuple = overflowQ.poll();
             ++overflowDrainCount;
             consumer.accept(tuple);
@@ -365,7 +365,7 @@ public final class JCQueue implements IStatefulObject {
      */
     public void publish(Object obj) throws InterruptedException {
         Inserter inserter = getInserter();
-        inserter.add(obj);
+        inserter.publish(obj);
     }
 
     /**
@@ -373,7 +373,7 @@ public final class JCQueue implements IStatefulObject {
      **/
     public boolean tryPublish(Object obj) {
         Inserter inserter = getInserter();
-        return inserter.tryAdd(obj);
+        return inserter.tryPublish(obj);
     }
 
     /** Non-blocking call. Bypasses any batching that may be enabled on the recvQueue. Intended for sending flush/metrics tuples */

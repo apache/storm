@@ -60,26 +60,26 @@ public class ExecutorTransfer  {
         this.queuesToFlush = new ArrayList<JCQueue>(Collections.nCopies(localReceiveQueues.size(), null) );
     }
 
-    // adds addressedTuple to destination Q if it is not full. else adds to tmpOverflow (if its not null)
-    public boolean tryTransfer(AddressedTuple addressedTuple, Queue<AddressedTuple> tmpOverflow) {
+    // adds addressedTuple to destination Q if it is not full. else adds to pendingEmits (if its not null)
+    public boolean tryTransfer(AddressedTuple addressedTuple, Queue<AddressedTuple> pendingEmits) {
         if (isDebug) {
             LOG.info("TRANSFERRING tuple {}", addressedTuple);
         }
 
         JCQueue localQueue = getLocalQueue(addressedTuple);
         if (localQueue!=null) {
-            return tryTransferLocal(addressedTuple, localQueue, tmpOverflow);
+            return tryTransferLocal(addressedTuple, localQueue, pendingEmits);
         }  else  {
             if (remotesBatchSz >= producerBatchSz) {
                 if ( !workerData.tryFlushRemotes() ) {
-                    if (tmpOverflow != null) {
-                        tmpOverflow.add(addressedTuple);
+                    if (pendingEmits != null) {
+                        pendingEmits.add(addressedTuple);
                     }
                     return false;
                 }
                 remotesBatchSz = 0;
             }
-            if (workerData.tryTransferRemote(addressedTuple, tmpOverflow)) {
+            if (workerData.tryTransferRemote(addressedTuple, pendingEmits)) {
                 ++remotesBatchSz;
                 if (remotesBatchSz >= producerBatchSz) {
                     workerData.tryFlushRemotes();
@@ -116,19 +116,19 @@ public class ExecutorTransfer  {
         return localReceiveQueues.get(tuple.dest - indexingBase);
     }
 
-    /** Adds tuple to localQueue (if overflow is empty). If localQueue is full adds to tmpOverflow instead.
-     *  tmpOverflow can be null.
+    /** Adds tuple to localQueue (if overflow is empty). If localQueue is full adds to pendingEmits instead.
+     *  pendingEmits can be null.
      *  Returns false if unable to add to localQueue.
      */
-    public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> tmpOverflow) {
+    public boolean tryTransferLocal(AddressedTuple tuple, JCQueue localQueue, Queue<AddressedTuple> pendingEmits) {
         workerData.checkSerialize(serializer, tuple);
 
-        if (tmpOverflow != null) {
-            if (tmpOverflow.isEmpty() && localQueue.tryPublish(tuple)) {
+        if (pendingEmits != null) {
+            if (pendingEmits.isEmpty() && localQueue.tryPublish(tuple)) {
                 queuesToFlush.set(tuple.dest - indexingBase, localQueue);
                 return true;
             } else {
-                tmpOverflow.add(tuple);
+                pendingEmits.add(tuple);
                 return false;
             }
         } else {

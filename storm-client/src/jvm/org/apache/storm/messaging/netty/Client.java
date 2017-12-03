@@ -427,10 +427,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         });
     }
 
-    public void tellState(long emitted) {  // ROSHAN - remove this .. after stabilization
-        LOG.debug("BackPressure Status :  Emitted={}", emitted);
-    }
-
     /**
      * Schedule a reconnect if we closed a non-null channel, and acquired the right to
      * provide a replacement by successfully setting a null to the channel field

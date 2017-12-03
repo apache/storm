@@ -23,12 +23,13 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Queue;
 import java.util.Random;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.storm.Config;
@@ -119,7 +120,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     private final AddressedTuple flushTuple;
 
     protected final ErrorReportingMetrics errorReportingMetrics;
-    protected final ConcurrentLinkedQueue<AddressedTuple> tmpOverflow = new ConcurrentLinkedQueue<>(); // TODO: ROSHAN: rename
+    protected final Queue<AddressedTuple> pendingEmits = new ArrayDeque<>(1024);
 
     protected Executor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
         this.workerData = workerData;
@@ -227,8 +228,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    public ConcurrentLinkedQueue<AddressedTuple> getTmpOverflow() {
-        return tmpOverflow;
+    public Queue<AddressedTuple> getPendingEmits() {
+        return pendingEmits;
     }
 
     /**
@@ -303,7 +304,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
                 }
                 if (!dataPoints.isEmpty()) {
                     task.sendUnanchored(Constants.METRICS_STREAM_ID,
-                            new Values(taskInfo, dataPoints), executorTransfer, tmpOverflow);
+                            new Values(taskInfo, dataPoints), executorTransfer, pendingEmits);
                     executorTransfer.flush();
                 }
             }

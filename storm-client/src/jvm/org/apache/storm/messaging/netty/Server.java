@@ -187,7 +187,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     // this method expected to be thread safe
     @Override
     synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus)  {
-        LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}, recvCount={}", bpStatus, receivedTotal.get());
+        LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}", bpStatus);
         allChannels.write(bpStatus);
     }
 
@@ -263,10 +263,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         addChannel(c);
     }
 
-    public AtomicLong receivedTotal= new AtomicLong(0); // ROSHAN - remove
     public void received(Object message, String remote, Channel channel)  throws InterruptedException {
         List<TaskMessage>msgs = (List<TaskMessage>)message;
-        receivedTotal.addAndGet( msgs.size() );
         enqueue(msgs, remote);
     }
 

@@ -500,9 +500,9 @@ public class WorkerState {
             this::transferLocalBatch));
     }
 
-    /* Not a Blocking call. If cannot emit, will add 'tuple' to tmpOverflow and return 'false'. 'tmpOverflow' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> tmpOverflow) {
-        return workerTransfer.tryTransferRemote(tuple, tmpOverflow);
+    /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
+        return workerTransfer.tryTransferRemote(tuple, pendingEmits);
     }
 
     public void flushRemotes() throws InterruptedException {

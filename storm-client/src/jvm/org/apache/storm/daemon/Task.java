@@ -197,13 +197,13 @@ public class Task {
     }
 
 
-    // Non Blocking call. If cannot emmit to destination immediately, such tuples will be added to `outFailedEmits` argument
-    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> tmpOverflow) {
+    // Non Blocking call. If cannot emmit to destination immediately, such tuples will be added to `pendingEmits` argument
+    public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);
         for (Integer t : tasks) {
             AddressedTuple addressedTuple = new AddressedTuple(t, tuple);
-            transfer.tryTransfer(addressedTuple, tmpOverflow);
+            transfer.tryTransfer(addressedTuple, pendingEmits);
         }
     }
 

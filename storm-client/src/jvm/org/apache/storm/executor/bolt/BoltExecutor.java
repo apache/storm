@@ -133,20 +133,20 @@ public class BoltExecutor extends Executor {
         init(idToTask, idToTaskBase);
 
         return new Callable<Long>() {
-            private ExitCondition tillOverflowOccurs = () -> tmpOverflow.isEmpty();
+            private ExitCondition tillNoPendingEmits = () -> pendingEmits.isEmpty();
             int bpIdleCount = 0;
             int consumeIdleCounter = 0;
             @Override
             public Long call() throws Exception {
-                boolean tmpOverFlowIsEmpty = tryFlushTmpOverflow();
-                if (tmpOverFlowIsEmpty) {
+                boolean pendingEmitsIsEmpty = tryFlushPendingEmits();
+                if (pendingEmitsIsEmpty) {
                     if (bpIdleCount!=0) {
                         LOG.debug("Ending Back Pressure Wait stretch : {}", bpIdleCount);
                     }
                     bpIdleCount = 0;
-                    int consumeCount = receiveQueue.consume(BoltExecutor.this, tillOverflowOccurs);
+                    int consumeCount = receiveQueue.consume(BoltExecutor.this, tillNoPendingEmits);
                     if (consumeCount == 0) {
-                        if (consumeIdleCounter==0) { // ROSHAN - uncomment
+                        if (consumeIdleCounter==0) {
                             LOG.debug("Invoking consume wait strategy");
                         }
                         consumeIdleCounter = consumeWaitStrategy.idle(consumeIdleCounter);
@@ -160,8 +160,8 @@ public class BoltExecutor extends Executor {
                         consumeIdleCounter = 0;
                     }
                 } else {
-                    if (bpIdleCount == 0) { // check avoids multiple log msgs when spinning in a idle loop    // ROSHAN - uncomment
-                        LOG.debug("Experiencing Back Pressure. Entering BackPressure Wait. OverflowSz = {}", tmpOverflow.size() );
+                    if (bpIdleCount == 0) { // check avoids multiple log msgs when spinning in a idle loop
+                        LOG.debug("Experiencing Back Pressure. Entering BackPressure Wait. PendingEmits = {}", pendingEmits.size() );
                     }
                     bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
                 }
@@ -169,13 +169,11 @@ public class BoltExecutor extends Executor {
                 return 0L;
             }
 
-            // returns true if tmpOverflow is empty
-            private boolean tryFlushTmpOverflow() {
-                int count = 0;
-                for (AddressedTuple t = tmpOverflow.peek(); t != null; t = tmpOverflow.peek()) {
-                    ++count;
+            // returns true if pendingEmits is empty
+            private boolean tryFlushPendingEmits() {
+                for (AddressedTuple t = pendingEmits.peek(); t != null; t = pendingEmits.peek()) {
                     if (executorTransfer.tryTransfer(t, null)) {
-                        tmpOverflow.poll();
+                        pendingEmits.poll();
                     } else { // to avoid reordering of emits, stop at first failure
                         return false;
                     }

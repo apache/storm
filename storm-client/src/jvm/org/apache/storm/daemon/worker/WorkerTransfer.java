@@ -100,18 +100,17 @@ class WorkerTransfer implements JCQueue.Consumer {
         drainer.clear();
     }
 
-    /* Not a Blocking call. If cannot emit, will add 'tuple' to tmpOverflow and return 'false'. 'tmpOverflow' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> tmpOverflow) {
+    /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
         if (!remoteBackPressureStatus[tuple.dest].get()) {
             if (transferQueue.tryPublish(tuple)) {
                 return true;
             }
         } else {
             LOG.debug("Noticed Back Pressure in remote task {}", tuple.dest);
-            drainer.tell(workerState.cachedNodeToPortSocket.get().values());
         }
-        if (tmpOverflow != null) {
-            tmpOverflow.add(tuple);
+        if (pendingEmits != null) {
+            pendingEmits.add(tuple);
         }
         return false;
     }

@@ -263,7 +263,7 @@ topology.backpressure.wait.progressive.step : 1              # controls progress
 topology.backpressure.wait.progressive.multiplier : 1000     # controls progression to deeper wait levels for WaitStrategyProgressive
 
 topology.backpressure.check.millis : 50   # how often to check if backpressure has relieved on executors under BP, for informing other workers to resume sending msgs to them. Must be > 0
-topology.executor.overflow.limit : 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting
+topology.executor.overflow.limit : 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting. Enabling this limit can degrade perf to some extent.
 
 topology.error.throttle.interval.secs: 10
 topology.max.error.report.per.interval: 5

@@ -112,10 +112,10 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
                 msgId = MessageId.makeUnanchored();
             }
             TupleImpl tupleExt = new TupleImpl(executor.getWorkerTopologyContext(), values, executor.getComponentId(), taskId, streamId, msgId);
-            xsfer.tryTransfer(new AddressedTuple(t, tupleExt), executor.getTmpOverflow() );
+            xsfer.tryTransfer(new AddressedTuple(t, tupleExt), executor.getPendingEmits());
         }
         if (isEventLoggers) {
-            task.sendToEventLogger(executor, values, executor.getComponentId(), null, random, executor.getTmpOverflow());
+            task.sendToEventLogger(executor, values, executor.getComponentId(), null, random, executor.getPendingEmits());
         }
         return outTasks;
     }
@@ -129,7 +129,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         for (Map.Entry<Long, Long> entry : anchorsToIds.entrySet()) {
             task.sendUnanchored(Acker.ACKER_ACK_STREAM_ID,
                     new Values(entry.getKey(), Utils.bitXor(entry.getValue(), ackValue)),
-                    executor.getExecutorTransfer(), executor.getTmpOverflow());
+                    executor.getExecutorTransfer(), executor.getPendingEmits());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
         if (isDebug) {
@@ -153,7 +153,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
             task.sendUnanchored(Acker.ACKER_FAIL_STREAM_ID,
-                    new Values(root), executor.getExecutorTransfer(), executor.getTmpOverflow());
+                    new Values(root), executor.getExecutorTransfer(), executor.getPendingEmits());
         }
         long delta = tupleTimeDelta((TupleImpl) input);
         if (isDebug) {
@@ -172,7 +172,7 @@ public class BoltOutputCollectorImpl implements IOutputCollector {
         Set<Long> roots = input.getMessageId().getAnchors();
         for (Long root : roots) {
             task.sendUnanchored(Acker.ACKER_RESET_TIMEOUT_STREAM_ID, new Values(root),
-                executor.getExecutorTransfer(), executor.getTmpOverflow());
+                executor.getExecutorTransfer(), executor.getPendingEmits());
         }
     }
 
