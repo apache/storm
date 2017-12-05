@@ -471,6 +471,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return ret;
     }
 
+    private static IScheduler wrapAsBlacklistScheduler(Map<String, Object> conf, IScheduler scheduler) {
+        BlacklistScheduler blacklistWrappedScheduler = new BlacklistScheduler(scheduler);
+        blacklistWrappedScheduler.prepare(conf);
+        return blacklistWrappedScheduler;
+    }
+
     private static IScheduler makeScheduler(Map<String, Object> conf, INimbus inimbus) {
         String schedClass = (String) conf.get(DaemonConfig.STORM_SCHEDULER);
         IScheduler scheduler = inimbus == null ? null : inimbus.getForcedScheduler();
@@ -483,9 +489,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             LOG.info("Using default scheduler");
             scheduler = new DefaultScheduler();
         }
-        BlacklistScheduler blacklistWrappedScheduler = new BlacklistScheduler(scheduler);
-        blacklistWrappedScheduler.prepare(conf);
-        return blacklistWrappedScheduler;
+        return scheduler;
     }
 
     /**
@@ -1041,6 +1045,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final ITopologyValidator validator;
     private final StormTimer timer;
     private final IScheduler scheduler;
+    private final IScheduler underlyingScheduler;
     private final ILeaderElector leaderElector;
     private final AtomicReference<Map<String, String>> idToSchedStatus;
     private final AtomicReference<Map<String, SupervisorResources>> nodeIdToResources;
@@ -1112,7 +1117,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             LOG.error("Error while processing event", e);
             Utils.exitProcess(20, "Error while processing event");
         });
-        this.scheduler = makeScheduler(conf, inimbus);
+        this.underlyingScheduler = makeScheduler(conf, inimbus);
+        this.scheduler = wrapAsBlacklistScheduler(conf, underlyingScheduler);
         if (leaderElector == null) {
             leaderElector = Zookeeper.zkLeaderElector(conf, blobStore, topoCache);
         }
@@ -4098,7 +4104,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 ownerResourceSummary.set_assigned_off_heap_memory(totalResourcesAggregate.getAssignedMemOffHeap());
 
                 if (clusterSchedulerConfig.containsKey(theOwner)) {
-                    if (scheduler instanceof ResourceAwareScheduler) {
+                    if (underlyingScheduler instanceof ResourceAwareScheduler) {
                         Map<String, Object> schedulerConfig = (Map) clusterSchedulerConfig.get(theOwner);
                         if (schedulerConfig != null) {
                             ownerResourceSummary.set_memory_guarantee((double)schedulerConfig.getOrDefault("memory", 0));
@@ -4108,7 +4114,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                             ownerResourceSummary.set_cpu_guarantee_remaining(ownerResourceSummary.get_cpu_guarantee()
                                     - ownerResourceSummary.get_cpu_usage());
                         }
-                    } else if (scheduler instanceof  MultitenantScheduler) {
+                    } else if (underlyingScheduler instanceof  MultitenantScheduler) {
                         ownerResourceSummary.set_isolated_node_guarantee((int) clusterSchedulerConfig.getOrDefault(theOwner, 0));
                     }
                 }
