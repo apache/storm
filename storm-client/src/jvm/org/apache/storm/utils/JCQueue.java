@@ -29,7 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 
 
 public final class JCQueue implements IStatefulObject {
@@ -178,6 +178,7 @@ public final class JCQueue implements IStatefulObject {
     public class QueueMetrics {
         private final RateTracker arrivalsTracker = new RateTracker(10000, 10);
         private final RateTracker insertFailuresTracker = new RateTracker(10000, 10);
+        private final AtomicLong droppedMessages = new AtomicLong(0);
 
         public long population() {
             return recvQueue.size();
@@ -209,7 +210,8 @@ public final class JCQueue implements IStatefulObject {
             state.put("arrival_rate_secs", arrivalRateInSecs);
             state.put("sojourn_time_ms", sojournTime); //element sojourn time in milliseconds
             state.put("insert_failures", insertFailuresTracker.reportRate());
-
+            state.put("dropped_messages", droppedMessages);
+            state.put("overflow", overflowQ.size());
             return state;
         }
 
@@ -219,6 +221,10 @@ public final class JCQueue implements IStatefulObject {
 
         public void notifyInsertFailure() {
             insertFailuresTracker.notify(1);
+        }
+
+        public void notifyDroppedMsg() {
+            droppedMessages.incrementAndGet();
         }
 
         public void close() {
@@ -391,6 +397,10 @@ public final class JCQueue implements IStatefulObject {
         }
         overflowQ.add(obj);
         return true;
+    }
+
+    public void recordMsgDrop() {
+        getMetrics().notifyDroppedMsg();
     }
 
     public boolean isEmptyOverflow() {

@@ -544,10 +544,7 @@ public class WorkerState {
                     LOG.info("Resent BP Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }
-            if (queue.tryPublishToOverflow(tuple)) {
-                //TODO: Roshan: updateOverflowMetrics()
-            } else {
-                //TODO: Roshan: updateDropMetrics()
+            if (!queue.tryPublishToOverflow(tuple)) {
                 dropMessage(tuple, queue);
             }
         }
@@ -555,7 +552,8 @@ public class WorkerState {
 
     private void dropMessage(AddressedTuple tuple, JCQueue queue) {
         ++dropCount;
-        LOG.warn("Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Drop Count= {}, Dropped Message : {}",  queue.getName(), queue.getOverflowCount(), dropCount, tuple.toString() );
+        queue.recordMsgDrop();
+        LOG.warn("Dropping message as overflow threshold has reached for Q = {}. OverflowCount = {}. Total Drop Count= {}, Dropped Message : {}",  queue.getName(), queue.getOverflowCount(), dropCount, tuple.toString() );
     }
 
     public void checkSerialize(KryoTupleSerializer serializer, AddressedTuple tuple) {
