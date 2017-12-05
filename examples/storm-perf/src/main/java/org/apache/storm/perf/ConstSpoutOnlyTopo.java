@@ -61,7 +61,6 @@ public class ConstSpoutOnlyTopo {
             topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         }
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 8);
-        topoConf.put(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS, 0);
         topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
         topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
         topoConf.putAll(Utils.readCommandLineOpts());

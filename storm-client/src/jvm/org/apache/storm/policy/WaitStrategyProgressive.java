@@ -25,36 +25,33 @@ import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 
 /**
- * A Simple Progressive Wait Strategy
+ * A Progressive Wait Strategy
  * <p> Has three levels of idling. Stays in each level for a configured number of iterations before entering the next level.
- * Level 1 - No idling. Returns immediately. Stays in this level for `step` number of iterations.
- * Level 2 - Calls LockSupport.parkNanos(1). Stays in this level for `step X multiplier` iterations
- * Level 3 - Calls Thread.sleep(). Stays in this level indefinitely.
+ * Level 1 - No idling. Returns immediately. Stays in this level for `level1Count` iterations.
+ * Level 2 - Calls LockSupport.parkNanos(1). Stays in this level for `level2Count` iterations
+ * Level 3 - Calls Thread.sleep(). Stays in this level until wait situation changes.
  *
  * <p>
  * The initial spin can be useful to prevent downstream bolt from repeatedly sleeping/parking when
  * the upstream component is a bit relatively slower. Allows downstream bolt can enter deeper wait states only
  * if the traffic to it appears to have reduced.
  * <p>
- * Provides control over how quickly to progress to the deeper wait level.
- * Larger the 'step' and 'multiplier', slower the progression.
- * Latency spike increases with every progression into the deeper wait level.
  */
 public class WaitStrategyProgressive implements IWaitStrategy {
-    private long sleepMillis;
-    private int step;
-    private int multiplier;
+    private int  level1Count;
+    private int  level2Count;
+    private long level3SleepMs;
 
     @Override
     public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
-        if (waitSituation == WAIT_SITUATION.CONSUME_WAIT) {
-            sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS));
-            step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP));
-            multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER));
+        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+            level1Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT));
+            level2Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT));
+            level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
         } else if (waitSituation == WAIT_SITUATION.BACK_PRESSURE_WAIT) {
-            sleepMillis = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MILLIS));
-            step = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_STEP));
-            multiplier = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MULTIPLIER));
+            level1Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT));
+            level2Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT));
+            level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
         } else {
             throw new IllegalArgumentException("Unknown wait situation : " + waitSituation);
         }
@@ -62,13 +59,13 @@ public class WaitStrategyProgressive implements IWaitStrategy {
 
     @Override
     public int idle(int idleCounter) throws InterruptedException {
-        if (idleCounter < step) {                     // level 1 - no waiting
+        if (idleCounter < level1Count) {                     // level 1 - no waiting
             ++idleCounter;
-        } else if (idleCounter < step * multiplier) { // level 2 - parkNanos(1L)
+        } else if (idleCounter < level1Count * level2Count) { // level 2 - parkNanos(1L)
             ++idleCounter;
             LockSupport.parkNanos(1L);
         } else {                                      // level 3 - longer idling with Thread.sleep()
-            Thread.sleep(sleepMillis);
+            Thread.sleep(level3SleepMs);
         }
         return idleCounter;
     }

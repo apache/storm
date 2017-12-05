@@ -596,7 +596,7 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber(includeZero = true)
     @NotNull
-    public static final String TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS="topology.flush.tuple.freq.millis";
+    public static final String TOPOLOGY_BATCH_FLUSH_INTERVAL_MILLIS ="topology.batch.flush.interval.millis";
 
 
     /**
@@ -755,27 +755,27 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_BOLT_WAIT_PARK_MICROSEC = "topology.bolt.wait.park.microsec";
 
     /**
+     * Configures number of iterations to spend in level 1 of WaitStrategyProgressive, before progressing to level 2
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT =  "topology.bolt.wait.progressive.level1.count";
+
+    /**
+     * Configures number of iterations to spend in level 2 of WaitStrategyProgressive, before progressing to level 3
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT =  "topology.bolt.wait.progressive.level2.count";
+
+    /**
      * Configures sleep time for WaitStrategyProgressive.
      */
     @NotNull
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MILLIS = "topology.bolt.wait.progressive.millis";
-
-    /**
-     * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
-     */
-    @NotNull
-    @isInteger
-    @isPositiveNumber
-    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_STEP =  "topology.bolt.wait.progressive.step";
-
-    /**
-     * Configures steps used to determine progression to the next level of wait (for WaitStrategyProgressive).
-     */
-    @NotNull
-    @isInteger
-    @isPositiveNumber
-    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_MULTIPLIER =  "topology.bolt.wait.progressive.multiplier";
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.bolt.wait.progressive.level3.sleep.millis";
 
 
     /**
@@ -800,7 +800,7 @@ public class Config extends HashMap<String, Object> {
      */
     @NotNull
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MILLIS = "topology.backpressure.wait.progressive.millis";
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.backpressure.wait.progressive.level3.sleep.millis";
 
     /**
      * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
@@ -808,7 +808,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_STEP =  "topology.backpressure.wait.progressive.step";
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT = "topology.backpressure.wait.progressive.level1.count";
 
     /**
      * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
@@ -816,7 +816,7 @@ public class Config extends HashMap<String, Object> {
     @NotNull
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_MULTIPLIER =  "topology.backpressure.wait.progressive.multiplier";
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT = "topology.backpressure.wait.progressive.level2.count";
 
 
     /**

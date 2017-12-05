@@ -60,8 +60,8 @@ public class BoltExecutor extends Executor {
 
     private final BooleanSupplier executeSampler;
     private final boolean isSystemBoltExecutor;
-    private final IWaitStrategy consumeWaitStrategy;
-    private final IWaitStrategy backPressureWaitStrategy;
+    private final IWaitStrategy consumeWaitStrategy;       // employed when no incoming data
+    private final IWaitStrategy backPressureWaitStrategy;  // employed when outbound path is congested
     private BoltOutputCollectorImpl outputCollector;
 
     public BoltExecutor(WorkerState workerData, List<Long> executorId, Map<String, String> credentials) {
@@ -69,21 +69,21 @@ public class BoltExecutor extends Executor {
         this.executeSampler = ConfigUtils.mkStatsSampler(topoConf);
         this.isSystemBoltExecutor =  (executorId == Constants.SYSTEM_EXECUTOR_ID );
         if (isSystemBoltExecutor) {
-            this.consumeWaitStrategy = makeSystemBoltConsumeWaitStrategy();
+            this.consumeWaitStrategy = makeSystemBoltWaitStrategy();
         } else {
             this.consumeWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BOLT_WAIT_STRATEGY));
-            this.consumeWaitStrategy.prepare(topoConf, WAIT_SITUATION.CONSUME_WAIT);
+            this.consumeWaitStrategy.prepare(topoConf, WAIT_SITUATION.BOLT_WAIT);
         }
         this.backPressureWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
         this.backPressureWaitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
 
     }
 
-    private static IWaitStrategy makeSystemBoltConsumeWaitStrategy() {
+    private static IWaitStrategy makeSystemBoltWaitStrategy() {
         WaitStrategyPark ws = new WaitStrategyPark();
         HashMap conf = new HashMap<String,Object>();
         conf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 5000);
-        ws.prepare(conf, WAIT_SITUATION.CONSUME_WAIT);
+        ws.prepare(conf, WAIT_SITUATION.BOLT_WAIT);
         return ws;
     }
 

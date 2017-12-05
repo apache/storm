@@ -234,7 +234,7 @@ topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
-topology.max.spout.pending: null
+topology.max.spout.pending: null    # ideally should be larger than topology.producer.batch.size. (esp. if topology.batch.flush.freq.millis=0)
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60
@@ -244,26 +244,31 @@ topology.worker.logwriter.childopts: "-Xmx64m"
 topology.tick.tuple.freq.secs: null
 topology.worker.shared.thread.pool.size: 4
 
-# Spout Wait Strategy
+# Spout Wait Strategy - employed when there is no data to produce
 topology.spout.wait.strategy: "org.apache.storm.spout.SleepSpoutWaitStrategy"
 topology.sleep.spout.wait.strategy.time.ms: 1
 
-# Bolt Wait Strategy - when there is no incoming data
+# Bolt Wait Strategy - employed when there is no data in its receive buffer to process
 topology.bolt.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"
-topology.bolt.wait.park.microsec : 100          # for org.apache.storm.policy.WaitStrategyPark
-topology.bolt.wait.progressive.millis : 1       # for org.apache.storm.policy.WaitStrategyProgressive
-topology.bolt.wait.progressive.step : 1               # controls progression to deeper wait levels for WaitStrategyProgressive
-topology.bolt.wait.progressive.multiplier : 1000      # controls progression to deeper wait levels for WaitStrategyProgressive
 
-# BackPressure Wait Strategy - for any producer when the downstream Q is full
-topology.backpressure.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"
-topology.backpressure.wait.park.microsec : 100          # for org.apache.storm.policy.WaitStrategyPark. Busy spin if set to 0.
-topology.backpressure.wait.progressive.millis : 1       # for org.apache.storm.policy.WaitStrategyProgressive
-topology.backpressure.wait.progressive.step : 1              # controls progression to deeper wait levels for WaitStrategyProgressive
-topology.backpressure.wait.progressive.multiplier : 1000     # controls progression to deeper wait levels for WaitStrategyProgressive
+topology.bolt.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
 
-topology.backpressure.check.millis : 50   # how often to check if backpressure has relieved on executors under BP, for informing other workers to resume sending msgs to them. Must be > 0
-topology.executor.overflow.limit : 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting. Enabling this limit can degrade perf to some extent.
+topology.bolt.wait.progressive.level1.count: 1          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.bolt.wait.progressive.level2.count: 1000       # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.bolt.wait.progressive.level3.sleep.millis: 1   # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
+
+# BackPressure Wait Strategy - for any producer (spout/bolt/transfer thread) when the downstream Q is full
+topology.backpressure.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
+
+topology.backpressure.wait.park.microsec: 100          #  park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+
+topology.backpressure.wait.progressive.level1.count: 1        # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.backpressure.wait.progressive.level2.count: 1000     # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.backpressure.wait.progressive.level3.sleep.millis: 1 # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
+
+
+topology.backpressure.check.millis: 50   # how often to check if backpressure has relieved on executors under BP, for informing other workers to resume sending msgs to them. Must be > 0
+topology.executor.overflow.limit: 0    # max items in overflowQ of any bolt/spout. When exceeded, worker will drop incoming messages (from the workers) destined to that overflowing spout/bolt. Set to 0 to disable overflow limiting. Enabling this may degrade perf slightly.
 
 topology.error.throttle.interval.secs: 10
 topology.max.error.report.per.interval: 5
@@ -278,9 +283,9 @@ topology.transfer.buffer.size: 1000   # size of recv  queue for transfer worker 
 topology.transfer.batch.size: 1       # can be no larger than half of `topology.transfer.buffer.size`
 
 topology.executor.receive.buffer.size: 32768  # size of recv queue for spouts & bolts. Will be internally rounded up to next power of 2 (if not already a power of 2)
-topology.producer.batch.size: 1              # can be no larger than half of `topology.executor.receive.buffer.size`
+topology.producer.batch.size: 1               # can be no larger than half of `topology.executor.receive.buffer.size`
 
-topology.flush.tuple.freq.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
+topology.batch.flush.interval.millis: 1  # Flush tuples are disabled if this is set to 0 or if (topology.producer.batch.size=1 and topology.transfer.batch.size=1).
 topology.spout.recvq.skips: 3  # Check recvQ once every N invocations of Spout's nextTuple() [when ACKs disabled]
 
 topology.disable.loadaware.messaging: false   # load aware messaging can degrade throughput

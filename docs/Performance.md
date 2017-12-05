@@ -89,13 +89,14 @@ select this wait strategy. This is a dynamic wait strategy that enters into prog
 It has 3 levels of idling and allows configuring how long to stay at each level :
 
   1. No Waiting - The first few times it will return immediately. This does not conserve any CPU. The number of times it remains in this state is configured using
-  `topology.bolt.wait.progressive.step` or `topology.backpressure.wait.progressive.step` depending which situation it is being used.
+  `topology.bolt.wait.progressive.level1.count` or `topology.backpressure.wait.progressive.level1.count` depending which situation it is being used.
 
   2. Park Nanos - In this state it disables the current thread for thread scheduling purposes, for 1 nano second using LockSupport.parkNanos(). This puts the CPU in a minimal
-  conservation state. It remains in this state for `topology.backpressure.wait.progressive.multiplier` x `topology.backpressure.wait.progressive.step` iterations.
+  conservation state. It remains in this state for `topology.bolt.wait.progressive.level2.count` or `topology.backpressure.wait.progressive.level2.count` iterations.
 
-  3. Thread.sleep() - In this state it calls Thread.sleep() with the value specified in `topology.backpressure.wait.progressive.millis` or in `topology.bolt.wait.progressive.millis`
-   based on the Wait situation it is used in. This is the most CPU conserving state and it remains in this level for the remaining iterations.
+  3. Thread.sleep() - In this state it calls Thread.sleep() with the value specified in `topology.backpressure.wait.progressive.level3.sleep.millis` or in
+  `topology.bolt.wait.progressive.level3.sleep.millis` based on the Wait situation it is used in. This is the most CPU conserving level it remains in this level for
+  the remaining iterations.
 
 
 - **ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to `org.apache.storm.policy.WaitStrategyPark` to use this.

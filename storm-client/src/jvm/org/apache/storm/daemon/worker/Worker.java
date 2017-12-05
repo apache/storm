@@ -268,7 +268,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private void setupFlushTupleTimer(final Map<String, Object> topologyConf, final List<IRunningExecutor> executors) {
         final Integer producerBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_PRODUCER_BATCH_SIZE));
         final Integer xferBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
-        final Long flushIntervalMicros = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_FLUSH_TUPLE_FREQ_MILLIS));
+        final Long flushIntervalMicros = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BATCH_FLUSH_INTERVAL_MILLIS));
         if ((producerBatchSize == 1 && xferBatchSize == 1) || flushIntervalMicros == 0) {
             LOG.info("Flush Tuple generation disabled. producerBatchSize={}, xferBatchSize={}, flushIntervalMicros={}", producerBatchSize, xferBatchSize, flushIntervalMicros);
             return;
