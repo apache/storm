@@ -68,7 +68,7 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
                     remoteBpStatus[bpTask].set(false);
                 }
             }
-            LOG.info("Received BackPressure status update : {}", status);
+            LOG.debug("Received BackPressure status update : {}", status);
         } else if (message instanceof List) {
             //This should be the metrics, and there should only be one of them
             List<TaskMessage> list = (List<TaskMessage>)message;

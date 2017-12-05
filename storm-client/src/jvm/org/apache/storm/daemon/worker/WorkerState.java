@@ -541,7 +541,7 @@ public class WorkerState {
                     BackPressureStatus bpStatus = bpTracker.getCurrStatus();
                     receiver.sendBackPressureStatus(bpStatus);
                     lastOverflowCount = currOverflowCount;
-                    LOG.info("Resent BP Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
+                    LOG.debug("Resent BackPressure Status. OverflowCount = {}, BP Status ID = {}. ", currOverflowCount, bpStatus.id);
                 }
             }
             if (!queue.tryPublishToOverflow(tuple)) {

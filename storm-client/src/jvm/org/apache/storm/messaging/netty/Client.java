@@ -42,6 +42,7 @@ import org.jboss.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.util.ArrayList;
@@ -326,26 +327,32 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
             dropMessages(msgs);
             return;
         }
-
-        while (msgs.hasNext()) {
-            TaskMessage message = msgs.next();
-            MessageBatch batch = batcher.add(message);
+        try {
+            while (msgs.hasNext()) {
+                TaskMessage message = msgs.next();
+                MessageBatch batch = batcher.add(message);
+                if (batch != null) {
+                    writeMessage(channel, batch);
+                }
+            }
+            MessageBatch batch = batcher.drain();
             if (batch != null) {
                 writeMessage(channel, batch);
             }
-        }
-        MessageBatch batch = batcher.drain();
-        if (batch != null) {
-            writeMessage(channel, batch);
+        } catch (IOException e) {
+            dropMessages(msgs);
         }
     }
 
-    private void writeMessage(Channel channel, MessageBatch batch) {
+    private void writeMessage(Channel channel, MessageBatch batch) throws IOException {
         try {
             int idleCounter = 0;
             while (!channel.isWritable()) {
                 if (idleCounter==0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure from Netty. Entering BackPressure Wait");
+                }
+                if (!channel.isConnected()) {
+                    throw new IOException("Connection disconnected");
                 }
                 idleCounter = waitStrategy.idle(idleCounter);
             }

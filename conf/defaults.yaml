@@ -234,7 +234,7 @@ topology.multilang.serializer: "org.apache.storm.multilang.JsonSerializer"
 topology.shellbolt.max.pending: 100
 topology.skip.missing.kryo.registrations: false
 topology.max.task.parallelism: null
-topology.max.spout.pending: null    # ideally should be larger than topology.producer.batch.size. (esp. if topology.batch.flush.freq.millis=0)
+topology.max.spout.pending: null    # ideally should be larger than topology.producer.batch.size. (esp. if topology.batch.flush.interval.millis=0)
 topology.state.synchronization.timeout.secs: 60
 topology.stats.sample.rate: 0.05
 topology.builtin.metrics.bucket.size.secs: 60

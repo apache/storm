@@ -79,6 +79,7 @@ public class BasicContainer extends Container {
     protected final long lowMemoryThresholdMB;
     protected final long mediumMemoryThresholdMb;
     protected final long mediumMemoryGracePeriodMs;
+    private static int port = 5006;  // TODO: Roshan: remove this after stabilization
 
     private class ProcessExitCallback implements ExitCodeCallback {
         private final String _logPrefix;
@@ -93,7 +94,7 @@ public class BasicContainer extends Container {
             _exitedEarly = true;
         }
     }
-    
+
     /**
      * Create a new BasicContainer
      * @param type the type of container being made.
@@ -110,7 +111,7 @@ public class BasicContainer extends Container {
             LocalState localState, String workerId) throws IOException {
         this(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, null, null, null);
     }
-    
+
     /**
      * Create a new BasicContainer
      * @param type the type of container being made.
@@ -122,7 +123,7 @@ public class BasicContainer extends Container {
      * @param localState the local state of the supervisor.  May be null if partial recovery
      * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
      * @param ops file system operations (mostly for testing) if null a new one is made
-     * @param topoConf the config of the topology (mostly for testing) if null 
+     * @param topoConf the config of the topology (mostly for testing) if null
      * and not a partial recovery the real conf is read.
      * @param profileCmd the command to use when profiling (used for testing)
      * @throws IOException on any error
@@ -130,7 +131,7 @@ public class BasicContainer extends Container {
      */
     BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
             LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
-            LocalState localState, String workerId, Map<String, Object> topoConf, 
+            LocalState localState, String workerId, Map<String, Object> topoConf,
             AdvancedFSOps ops, String profileCmd) throws IOException {
         super(type, conf, supervisorId, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
         assert(localState != null);
@@ -238,7 +239,7 @@ public class BasicContainer extends Container {
 
     /**
      * Run the given command for profiling
-     * 
+     *
      * @param command
      *            the command to run
      * @param env
@@ -368,7 +369,7 @@ public class BasicContainer extends Container {
     protected String getWildcardDir(File dir) {
         return dir.toString() + File.separator + "*";
     }
-    
+
     protected List<String> frameworkClasspath(SimpleVersion topoVersion) {
         File stormWorkerLibDir = new File(_stormHome, "lib-worker");
         String topoConfDir =
@@ -384,10 +385,10 @@ public class BasicContainer extends Container {
         pathElements.add(topoConfDir);
 
         NavigableMap<SimpleVersion, List<String>> classpaths = Utils.getConfiguredClasspathVersions(_conf, pathElements);
-        
+
         return Utils.getCompatibleVersion(classpaths, topoVersion, "classpath", pathElements);
     }
-    
+
     protected String getWorkerMain(SimpleVersion topoVersion) {
         String defaultWorkerGuess = "org.apache.storm.daemon.worker.Worker";
         if (topoVersion.getMajor() == 0) {
@@ -400,7 +401,7 @@ public class BasicContainer extends Container {
         NavigableMap<SimpleVersion,String> mains = Utils.getConfiguredWorkerMainVersions(_conf);
         return Utils.getCompatibleVersion(mains, topoVersion, "worker main class", defaultWorkerGuess);
     }
-    
+
     protected String getWorkerLogWriter(SimpleVersion topoVersion) {
         String defaultGuess = "org.apache.storm.LogWriter";
         if (topoVersion.getMajor() == 0) {
@@ -410,7 +411,7 @@ public class BasicContainer extends Container {
         NavigableMap<SimpleVersion,String> mains = Utils.getConfiguredWorkerLogWriterVersions(_conf);
         return Utils.getCompatibleVersion(mains, topoVersion, "worker log writer class", defaultGuess);
     }
-    
+
     @SuppressWarnings("unchecked")
     private List<String> asStringList(Object o) {
         if (o instanceof String) {
@@ -420,7 +421,7 @@ public class BasicContainer extends Container {
         }
         return Collections.EMPTY_LIST;
     }
-    
+
     /**
      * Compute the classpath for the worker process
      * @param stormJar the topology jar
@@ -454,7 +455,7 @@ public class BasicContainer extends Container {
         }
         return string;
     }
-    
+
     protected List<String> substituteChildopts(Object value) {
         return substituteChildopts(value, -1);
     }
@@ -486,7 +487,7 @@ public class BasicContainer extends Container {
 
     /**
      * Launch the worker process (non-blocking)
-     * 
+     *
      * @param command
      *            the command to run
      * @param env
@@ -519,13 +520,13 @@ public class BasicContainer extends Container {
         } else {
             log4jConfigurationDir = _stormHome + Utils.FILE_PATH_SEPARATOR + "log4j2";
         }
- 
+
         if (ServerUtils.IS_ON_WINDOWS && !log4jConfigurationDir.startsWith("file:")) {
             log4jConfigurationDir = "file:///" + log4jConfigurationDir;
         }
         return log4jConfigurationDir + Utils.FILE_PATH_SEPARATOR + "worker.xml";
     }
-    
+
     private static class TopologyMetaData {
         private boolean _dataCached = false;
         private List<String> _depLocs = null;
@@ -534,14 +535,14 @@ public class BasicContainer extends Container {
         private final String _topologyId;
         private final AdvancedFSOps _ops;
         private final String _stormRoot;
-        
+
         public TopologyMetaData(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, final String stormRoot) {
             _conf = conf;
             _topologyId = topologyId;
             _ops = ops;
             _stormRoot = stormRoot;
         }
-        
+
         public String toString() {
             List<String> data;
             String stormVersion;
@@ -551,7 +552,7 @@ public class BasicContainer extends Container {
             }
             return "META for " + _topologyId +" DEP_LOCS => " + data + " STORM_VERSION => " + stormVersion;
         }
-        
+
         private synchronized void readData() throws IOException {
             final StormTopology stormTopology = ConfigUtils.readSupervisorTopology(_conf, _topologyId, _ops);
             final List<String> dependencyLocations = new ArrayList<>();
@@ -570,7 +571,7 @@ public class BasicContainer extends Container {
             _stormVersion = stormTopology.get_storm_version();
             _dataCached = true;
         }
-        
+
         public synchronized List<String> getDepLocs() throws IOException {
             if (!_dataCached) {
                 readData();
@@ -588,7 +589,7 @@ public class BasicContainer extends Container {
 
     static class TopoMetaLRUCache {
         public final int _maxSize = 100; //We could make this configurable in the future...
-        
+
         @SuppressWarnings("serial")
         private LinkedHashMap<String, TopologyMetaData> _cache = new LinkedHashMap<String, TopologyMetaData>() {
             @Override
@@ -596,7 +597,7 @@ public class BasicContainer extends Container {
                 return (size() > _maxSize);
             }
         };
-        
+
         public synchronized TopologyMetaData get(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) {
             //Only go off of the topology id for now.
             TopologyMetaData dl = _cache.get(topologyId);
@@ -606,22 +607,22 @@ public class BasicContainer extends Container {
             }
             return dl;
         }
-        
+
         public synchronized void clear() {
             _cache.clear();
         }
     }
-    
+
     static final TopoMetaLRUCache TOPO_META_CACHE = new TopoMetaLRUCache();
-    
+
     public static List<String> getDependencyLocationsFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) throws IOException {
         return TOPO_META_CACHE.get(conf, topologyId, ops, stormRoot).getDepLocs();
     }
-    
+
     public static String getStormVersionFor(final Map<String, Object> conf, final String topologyId, final AdvancedFSOps ops, String stormRoot) throws IOException {
         return TOPO_META_CACHE.get(conf, topologyId, ops, stormRoot).getStormVersion();
     }
-    
+
     /**
      * Get parameters for the class path of the worker process.  Also used by the
      * log Writer
@@ -633,13 +634,13 @@ public class BasicContainer extends Container {
         final String stormJar = ConfigUtils.supervisorStormJarPath(stormRoot);
         final List<String> dependencyLocations = getDependencyLocationsFor(_conf, _topologyId, _ops, stormRoot);
         final String workerClassPath = getWorkerClassPath(stormJar, dependencyLocations, topoVersion);
-        
+
         List<String> classPathParams = new ArrayList<>();
         classPathParams.add("-cp");
         classPathParams.add(workerClassPath);
         return classPathParams;
     }
-    
+
     /**
      * Get a set of java properties that are common to both the log writer and the worker processes.
      * These are mostly system properties that are used by logging.
@@ -649,7 +650,7 @@ public class BasicContainer extends Container {
         final String workersArtifacts = ConfigUtils.workerArtifactsRoot(_conf);
         String stormLogDir = ConfigUtils.getLogDir();
         String log4jConfigurationFile = getWorkerLoggingConfigFile();
-        
+
         List<String> commonParams = new ArrayList<>();
         commonParams.add("-Dlogging.sensitivity=" + OR((String) _topoConf.get(Config.TOPOLOGY_LOGGING_SENSITIVITY), "S3"));
         commonParams.add("-Dlogfile.name=worker.log");
@@ -667,10 +668,10 @@ public class BasicContainer extends Container {
         }
         return commonParams;
     }
-    
+
     private int getMemOnHeap(WorkerResources resources) {
         int memOnheap = 0;
-        if (resources != null && resources.is_set_mem_on_heap() && 
+        if (resources != null && resources.is_set_mem_on_heap() &&
                 resources.get_mem_on_heap() > 0) {
             memOnheap = (int) Math.ceil(resources.get_mem_on_heap());
         } else {
@@ -679,7 +680,7 @@ public class BasicContainer extends Container {
         }
         return memOnheap;
     }
-    
+
     private List<String> getWorkerProfilerChildOpts(int memOnheap) {
         List<String> workerProfilerChildopts = new ArrayList<>();
         if (ObjectReader.getBoolean(_conf.get(DaemonConfig.WORKER_PROFILER_ENABLED), false)) {
@@ -687,7 +688,7 @@ public class BasicContainer extends Container {
         }
         return workerProfilerChildopts;
     }
-    
+
     protected String javaCmd(String cmd) {
         String ret = null;
         String javaHome = System.getenv().get("JAVA_HOME");
@@ -698,7 +699,7 @@ public class BasicContainer extends Container {
         }
         return ret;
     }
-    
+
     /**
      * Create the command to launch the worker process
      * @param memOnheap the on heap memory for the worker
@@ -718,10 +719,10 @@ public class BasicContainer extends Container {
             topoVersionString = (String)_conf.getOrDefault(Config.SUPERVISOR_WORKER_DEFAULT_VERSION, VersionInfo.getVersion());
         }
         final SimpleVersion topoVersion = new SimpleVersion(topoVersionString);
-        
+
         List<String> classPathParams = getClassPathParams(stormRoot, topoVersion);
         List<String> commonParams = getCommonParams();
-        
+
         List<String> commandList = new ArrayList<>();
         String logWriter = getWorkerLogWriter(topoVersion);
         if (logWriter != null) {
@@ -747,7 +748,16 @@ public class BasicContainer extends Container {
         commandList.add("-Dstorm.conf.file=" + topoConfFile);
         commandList.add("-Dstorm.options=" + stormOptions);
         commandList.add("-Djava.io.tmpdir=" + workerTmpDir);
-
+        if (_topoConf.get("attach.debugger") != null) { // TODO: Roshan: remove this after stabilization
+            commandList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=n,address=" + port++);
+            LOG.info("Worker Debugging enabled");
+        }
+        else if (_topoConf.get("attach.debugger.wait") != null) {
+            commandList.add("-agentlib:jdwp=transport=dt_socket,server=y,suspend=y,address=" + port++);
+            LOG.info("Worker Debugging enabled with wait");
+        } else {
+            LOG.info("Worker Debugging disabled");
+        }
         commandList.addAll(classPathParams);
         commandList.add(getWorkerMain(topoVersion));
         commandList.add(_topologyId);
