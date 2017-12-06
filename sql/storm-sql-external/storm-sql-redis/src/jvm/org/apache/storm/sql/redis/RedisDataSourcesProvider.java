@@ -35,7 +35,6 @@ import org.apache.storm.redis.trident.state.RedisClusterState;
 import org.apache.storm.redis.trident.state.RedisClusterStateUpdater;
 import org.apache.storm.redis.trident.state.RedisState;
 import org.apache.storm.redis.trident.state.RedisStateUpdater;
-import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
@@ -145,11 +144,6 @@ public class RedisDataSourcesProvider implements DataSourcesProvider {
     @Override
     public String scheme() {
         return "redis";
-    }
-
-    @Override
-    public DataSource construct(URI uri, String inputFormatClass, String outputFormatClass, List<FieldInfo> fields) {
-        throw new UnsupportedOperationException();
     }
 
     @Override

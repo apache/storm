@@ -19,9 +19,6 @@
  */
 package org.apache.storm.sql;
 
-import org.apache.storm.sql.runtime.ChannelContext;
-import org.apache.storm.sql.runtime.ChannelHandler;
-import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.ISqlTridentDataSource;
 import org.apache.storm.sql.runtime.SimpleSqlTridentConsumer;
 import org.apache.storm.task.IMetricsContext;
@@ -63,7 +60,6 @@ public class TestUtils {
     }
   }
 
-
   public static class TopN {
     public static PriorityQueue<Integer> init() {
       return new PriorityQueue<>();
@@ -86,107 +82,6 @@ public class TestUtils {
       List<Integer> res = new ArrayList<>(accumulator);
       Collections.reverse(res);
       return res;
-    }
-  }
-
-
-  public static class MockDataSource implements DataSource {
-    private final ArrayList<Values> RECORDS = new ArrayList<>();
-
-    public MockDataSource() {
-      for (int i = 0; i < 5; ++i) {
-        RECORDS.add(new Values(i, "x", null));
-      }
-    }
-
-    @Override
-    public void open(ChannelContext ctx) {
-      for (Values v : RECORDS) {
-        ctx.emit(v);
-      }
-      ctx.fireChannelInactive();
-    }
-  }
-
-  public static class MockGroupDataSource implements DataSource {
-    private final ArrayList<Values> RECORDS = new ArrayList<>();
-
-    public MockGroupDataSource() {
-      for (int i = 0; i < 10; ++i) {
-        RECORDS.add(new Values(i/3, i, (i+1)* 0.5, "x", i/2));
-      }
-    }
-
-    @Override
-    public void open(ChannelContext ctx) {
-      for (Values v : RECORDS) {
-        ctx.emit(v);
-      }
-      // force evaluation of the aggregate function on the last group
-      ctx.flush();
-      ctx.fireChannelInactive();
-    }
-  }
-
-  public static class MockEmpDataSource implements DataSource {
-    private final ArrayList<Values> RECORDS = new ArrayList<>();
-
-    public MockEmpDataSource() {
-      RECORDS.add(new Values(1, "emp1", 1));
-      RECORDS.add(new Values(2, "emp2", 1));
-      RECORDS.add(new Values(3, "emp3", 2));
-    }
-
-    @Override
-    public void open(ChannelContext ctx) {
-      for (Values v : RECORDS) {
-        ctx.emit(v);
-      }
-      ctx.flush();
-      ctx.fireChannelInactive();
-    }
-  }
-
-  public static class MockDeptDataSource implements DataSource {
-    private final ArrayList<Values> RECORDS = new ArrayList<>();
-
-    public MockDeptDataSource() {
-      RECORDS.add(new Values(1, "dept1"));
-      RECORDS.add(new Values(2, "dept2"));
-      RECORDS.add(new Values(3, "dept3"));
-    }
-
-    @Override
-    public void open(ChannelContext ctx) {
-      for (Values v : RECORDS) {
-        ctx.emit(v);
-      }
-      ctx.flush();
-      ctx.fireChannelInactive();
-    }
-  }
-
-  public static class MockNestedDataSource implements DataSource {
-    private final ArrayList<Values> RECORDS = new ArrayList<>();
-
-    public MockNestedDataSource() {
-      List<Integer> ints = Arrays.asList(100, 200, 300);
-      for (int i = 0; i < 5; ++i) {
-        Map<String, Integer> map = new HashMap<>();
-        map.put("b", i);
-        map.put("c", i*i);
-        Map<String, Map<String, Integer>> mm = new HashMap<>();
-        mm.put("a", map);
-        RECORDS.add(new Values(i, map, mm, ints));
-      }
-    }
-
-    @Override
-    public void open(ChannelContext ctx) {
-      for (Values v : RECORDS) {
-        ctx.emit(v);
-      }
-      ctx.fireChannelInactive();
     }
   }
 
@@ -241,6 +136,65 @@ public class TestUtils {
     @Override
     public void cleanup() {
       // NOOP
+    }
+  }
+
+  public static class MockSqlExprDataSource implements ISqlTridentDataSource {
+    @Override
+    public IBatchSpout getProducer() {
+      return new MockSqlExprDataSource.MockSpout();
+    }
+
+    @Override
+    public SqlTridentConsumer getConsumer() {
+      return new SimpleSqlTridentConsumer(new MockStateFactory(), new MockStateUpdater());
+    }
+
+    private static class MockSpout implements IBatchSpout {
+      private final ArrayList<Values> RECORDS = new ArrayList<>();
+      private final Fields OUTPUT_FIELDS = new Fields("ID", "NAME", "ADDR");
+
+      public MockSpout() {
+        for (int i = 0; i < 5; ++i) {
+          RECORDS.add(new Values(i, "x", null));
+        }
+      }
+
+      private boolean emitted = false;
+
+      @Override
+      public void open(Map<String, Object> conf, TopologyContext context) {
+      }
+
+      @Override
+      public void emitBatch(long batchId, TridentCollector collector) {
+        if (emitted) {
+          return;
+        }
+
+        for (Values r : RECORDS) {
+          collector.emit(r);
+        }
+        emitted = true;
+      }
+
+      @Override
+      public void ack(long batchId) {
+      }
+
+      @Override
+      public void close() {
+      }
+
+      @Override
+      public Map<String, Object> getComponentConfiguration() {
+        return null;
+      }
+
+      @Override
+      public Fields getOutputFields() {
+        return OUTPUT_FIELDS;
+      }
     }
   }
 
@@ -550,32 +504,6 @@ public class TestUtils {
     }
   }
 
-  public static class CollectDataChannelHandler implements ChannelHandler {
-    private final List<Values> values;
-
-    public CollectDataChannelHandler(List<Values> values) {
-      this.values = values;
-    }
-
-    @Override
-    public void dataReceived(ChannelContext ctx, Values data) {
-      values.add(data);
-    }
-
-    @Override
-    public void channelInactive(ChannelContext ctx) {}
-
-    @Override
-    public void exceptionCaught(Throwable cause) {
-      throw new RuntimeException(cause);
-    }
-
-    @Override
-    public void flush(ChannelContext ctx) {}
-
-    @Override
-    public void setSource(ChannelContext ctx, Object source) {}
-  }
 
   public static long monotonicNow() {
     final long NANOSECONDS_PER_MILLISECOND = 1000000;

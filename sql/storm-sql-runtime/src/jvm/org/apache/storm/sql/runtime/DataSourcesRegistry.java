@@ -47,25 +47,6 @@ public class DataSourcesRegistry {
     }
 
     /**
-     * Construct a data source.
-     * @param uri data source uri
-     * @param inputFormatClass input format class
-     * @param outputFormatClass output format class
-     * @param fields fields info list
-     * @return DataSource object
-     */
-    public static DataSource construct(
-            URI uri, String inputFormatClass, String outputFormatClass,
-            List<FieldInfo> fields) {
-        DataSourcesProvider provider = providers.get(uri.getScheme());
-        if (provider == null) {
-            return null;
-        }
-
-        return provider.construct(uri, inputFormatClass, outputFormatClass, fields);
-    }
-
-    /**
      * Construct a trident data source.
      * @param uri data source uri
      * @param inputFormatClass input format class
