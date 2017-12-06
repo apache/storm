@@ -35,6 +35,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
 
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.IConnection;
@@ -57,6 +58,11 @@ public class Context implements IContext {
         @Override
         public void registerRecv(IConnectionCallback cb) {
             _cb = cb;
+        }
+
+        @Override
+        public void registerNewConnectionResponse(Supplier<Object> cb) {
+            return;
         }
 
         @Override
@@ -138,7 +144,12 @@ public class Context implements IContext {
         public void registerRecv(IConnectionCallback cb) {
             throw new IllegalArgumentException("SHOULD NOT HAPPEN");
         }
-        
+
+        @Override
+        public void registerNewConnectionResponse(Supplier<Object> cb) {
+            throw new IllegalArgumentException("SHOULD NOT HAPPEN");
+        }
+
         private void flushPending(){
             IConnectionCallback serverCb = _server._cb;
             if (serverCb != null && !_pendingDueToUnregisteredServer.isEmpty()) {

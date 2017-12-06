@@ -23,7 +23,6 @@ import org.apache.storm.serialization.KryoValuesDeserializer;
 import java.net.ConnectException;
 import java.util.Map;
 import java.util.List;
-import java.io.IOException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.jboss.netty.channel.ChannelHandlerContext;

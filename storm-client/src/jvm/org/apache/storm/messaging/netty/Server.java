@@ -38,7 +38,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Supplier;
 
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
@@ -65,7 +65,8 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private volatile boolean closing = false;
     KryoValuesSerializer _ser;
     KryoValuesDeserializer deser;
-    private IConnectionCallback _cb = null; 
+    private IConnectionCallback _cb = null;
+    private Supplier<Object> newConnectionResponse;
     private final int boundPort;
     
     @SuppressWarnings("rawtypes")
@@ -145,12 +146,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         _cb = cb;
     }
 
-    /**
-     * register a newly created channel
-     * @param channel newly created channel
-     */
-    protected void addChannel(Channel channel) {
-        allChannels.add(channel);
+    @Override
+    public void registerNewConnectionResponse(Supplier<Object> newConnectionResponse) {
+        this.newConnectionResponse = newConnectionResponse;
     }
 
     /**
@@ -260,7 +258,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     /** Implementing IServer. **/
     public void channelConnected(Channel c) {
-        addChannel(c);
+        if (newConnectionResponse != null) {
+            c.write( newConnectionResponse.get() ); // not synchronized since it is not yet in channel grp, so pvt to this thread
+        }
+        allChannels.add(c);
     }
 
     public void received(Object message, String remote, Channel channel)  throws InterruptedException {

@@ -83,7 +83,7 @@ public class WorkerState {
     final Map<String, Object> conf;
     final IContext mqContext;
     private final WorkerTransfer workerTransfer;
-    private BackPressureTracker bpTracker;
+    private final BackPressureTracker bpTracker;
 
     public Map getConf() {
         return conf;
@@ -251,7 +251,7 @@ public class WorkerState {
     final StormTimer executorHeartbeatTimer = mkHaltingTimer("executor-heartbeat-timer");
     final StormTimer flushTupleTimer = mkHaltingTimer("flush-tuple-timer");
     final StormTimer userTimer = mkHaltingTimer("user-timer");
-    final StormTimer backPressureCheckTimer = mkHaltingTimer("refresh-backpressure-status-timer");
+    final StormTimer backPressureCheckTimer = mkHaltingTimer("backpressure-check-timer");
 
     // global variables only used internally in class
     private final Set<Integer> outboundTasks;
@@ -498,6 +498,13 @@ public class WorkerState {
         receiver.registerRecv(new DeserializingConnectionCallback(topologyConf,
             getWorkerTopologyContext(),
             this::transferLocalBatch));
+        // Send curr BackPressure status to new clients
+        receiver.registerNewConnectionResponse( ()-> {
+                BackPressureStatus bpStatus = bpTracker.getCurrStatus();
+                LOG.info("Sending BackPressure status to new client. BPStatus: {}", bpStatus);
+                return bpStatus;
+            }
+        );
     }
 
     /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */

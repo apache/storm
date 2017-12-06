@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Supplier;
 
 import static com.google.common.base.Preconditions.checkState;
 
@@ -282,6 +283,11 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     }
 
     @Override
+    public void registerNewConnectionResponse(Supplier<Object> cb) {
+        throw new UnsupportedOperationException("Client does not accept new connections");
+    }
+
+    @Override
     public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
         throw new RuntimeException("Client connection should not send load metrics");
     }
@@ -306,7 +312,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     public void send(Iterator<TaskMessage> msgs) {
         if (closing) {
             int numMessages = iteratorSize(msgs);
-            LOG.error("discarding {} messages because the Netty client to {} is being closed", numMessages,
+            LOG.error("Dropping {} messages because the Netty client to {} is being closed", numMessages,
                     dstAddressPrefixedName);
             return;
         }
