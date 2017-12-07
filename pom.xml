@@ -324,6 +324,7 @@
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
         <jaxb-version>2.3.0</jaxb-version>
+        <rocksdb-version>5.8.6</rocksdb-version>
 
         <!-- see intellij profile below... This fixes an annoyance with intellij -->
         <provided.scope>provided</provided.scope>
@@ -1047,6 +1048,11 @@
                 <groupId>javax.xml.bind</groupId>
                 <artifactId>jaxb-api</artifactId>
                 <version>${jaxb-version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.rocksdb</groupId>
+                <artifactId>rocksdbjni</artifactId>
+                <version>${rocksdb-version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -88,6 +88,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  StormTopology getUserTopology(string id)')
   print('  TopologyHistoryInfo getTopologyHistory(string user)')
   print('   getOwnerResourceSummaries(string owner)')
+  print('  void processWorkerMetrics(WorkerMetrics metrics)')
   print('')
   sys.exit(0)
 
@@ -419,6 +420,12 @@ elif cmd == 'getOwnerResourceSummaries':
     print('getOwnerResourceSummaries requires 1 args')
     sys.exit(1)
   pp.pprint(client.getOwnerResourceSummaries(args[0],))
+
+elif cmd == 'processWorkerMetrics':
+  if len(args) != 1:
+    print('processWorkerMetrics requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.processWorkerMetrics(eval(args[0]),))
 
 else:
   print('Unrecognized method %s' % cmd)

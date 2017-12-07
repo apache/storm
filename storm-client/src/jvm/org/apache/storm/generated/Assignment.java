@@ -966,15 +966,15 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           case 2: // NODE_HOST
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map666 = iprot.readMapBegin();
-                struct.node_host = new HashMap<String,String>(2*_map666.size);
-                String _key667;
-                String _val668;
-                for (int _i669 = 0; _i669 < _map666.size; ++_i669)
+                org.apache.thrift.protocol.TMap _map686 = iprot.readMapBegin();
+                struct.node_host = new HashMap<String,String>(2*_map686.size);
+                String _key687;
+                String _val688;
+                for (int _i689 = 0; _i689 < _map686.size; ++_i689)
                 {
-                  _key667 = iprot.readString();
-                  _val668 = iprot.readString();
-                  struct.node_host.put(_key667, _val668);
+                  _key687 = iprot.readString();
+                  _val688 = iprot.readString();
+                  struct.node_host.put(_key687, _val688);
                 }
                 iprot.readMapEnd();
               }
@@ -986,26 +986,26 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           case 3: // EXECUTOR_NODE_PORT
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map670 = iprot.readMapBegin();
-                struct.executor_node_port = new HashMap<List<Long>,NodeInfo>(2*_map670.size);
-                List<Long> _key671;
-                NodeInfo _val672;
-                for (int _i673 = 0; _i673 < _map670.size; ++_i673)
+                org.apache.thrift.protocol.TMap _map690 = iprot.readMapBegin();
+                struct.executor_node_port = new HashMap<List<Long>,NodeInfo>(2*_map690.size);
+                List<Long> _key691;
+                NodeInfo _val692;
+                for (int _i693 = 0; _i693 < _map690.size; ++_i693)
                 {
                   {
-                    org.apache.thrift.protocol.TList _list674 = iprot.readListBegin();
-                    _key671 = new ArrayList<Long>(_list674.size);
-                    long _elem675;
-                    for (int _i676 = 0; _i676 < _list674.size; ++_i676)
+                    org.apache.thrift.protocol.TList _list694 = iprot.readListBegin();
+                    _key691 = new ArrayList<Long>(_list694.size);
+                    long _elem695;
+                    for (int _i696 = 0; _i696 < _list694.size; ++_i696)
                     {
-                      _elem675 = iprot.readI64();
-                      _key671.add(_elem675);
+                      _elem695 = iprot.readI64();
+                      _key691.add(_elem695);
                     }
                     iprot.readListEnd();
                   }
-                  _val672 = new NodeInfo();
-                  _val672.read(iprot);
-                  struct.executor_node_port.put(_key671, _val672);
+                  _val692 = new NodeInfo();
+                  _val692.read(iprot);
+                  struct.executor_node_port.put(_key691, _val692);
                 }
                 iprot.readMapEnd();
               }
@@ -1017,25 +1017,25 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           case 4: // EXECUTOR_START_TIME_SECS
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map677 = iprot.readMapBegin();
-                struct.executor_start_time_secs = new HashMap<List<Long>,Long>(2*_map677.size);
-                List<Long> _key678;
-                long _val679;
-                for (int _i680 = 0; _i680 < _map677.size; ++_i680)
+                org.apache.thrift.protocol.TMap _map697 = iprot.readMapBegin();
+                struct.executor_start_time_secs = new HashMap<List<Long>,Long>(2*_map697.size);
+                List<Long> _key698;
+                long _val699;
+                for (int _i700 = 0; _i700 < _map697.size; ++_i700)
                 {
                   {
-                    org.apache.thrift.protocol.TList _list681 = iprot.readListBegin();
-                    _key678 = new ArrayList<Long>(_list681.size);
-                    long _elem682;
-                    for (int _i683 = 0; _i683 < _list681.size; ++_i683)
+                    org.apache.thrift.protocol.TList _list701 = iprot.readListBegin();
+                    _key698 = new ArrayList<Long>(_list701.size);
+                    long _elem702;
+                    for (int _i703 = 0; _i703 < _list701.size; ++_i703)
                     {
-                      _elem682 = iprot.readI64();
-                      _key678.add(_elem682);
+                      _elem702 = iprot.readI64();
+                      _key698.add(_elem702);
                     }
                     iprot.readListEnd();
                   }
-                  _val679 = iprot.readI64();
-                  struct.executor_start_time_secs.put(_key678, _val679);
+                  _val699 = iprot.readI64();
+                  struct.executor_start_time_secs.put(_key698, _val699);
                 }
                 iprot.readMapEnd();
               }
@@ -1047,17 +1047,17 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           case 5: // WORKER_RESOURCES
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map684 = iprot.readMapBegin();
-                struct.worker_resources = new HashMap<NodeInfo,WorkerResources>(2*_map684.size);
-                NodeInfo _key685;
-                WorkerResources _val686;
-                for (int _i687 = 0; _i687 < _map684.size; ++_i687)
+                org.apache.thrift.protocol.TMap _map704 = iprot.readMapBegin();
+                struct.worker_resources = new HashMap<NodeInfo,WorkerResources>(2*_map704.size);
+                NodeInfo _key705;
+                WorkerResources _val706;
+                for (int _i707 = 0; _i707 < _map704.size; ++_i707)
                 {
-                  _key685 = new NodeInfo();
-                  _key685.read(iprot);
-                  _val686 = new WorkerResources();
-                  _val686.read(iprot);
-                  struct.worker_resources.put(_key685, _val686);
+                  _key705 = new NodeInfo();
+                  _key705.read(iprot);
+                  _val706 = new WorkerResources();
+                  _val706.read(iprot);
+                  struct.worker_resources.put(_key705, _val706);
                 }
                 iprot.readMapEnd();
               }
@@ -1069,15 +1069,15 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           case 6: // TOTAL_SHARED_OFF_HEAP
             if (schemeField.type == org.apache.thrift.protocol.TType.MAP) {
               {
-                org.apache.thrift.protocol.TMap _map688 = iprot.readMapBegin();
-                struct.total_shared_off_heap = new HashMap<String,Double>(2*_map688.size);
-                String _key689;
-                double _val690;
-                for (int _i691 = 0; _i691 < _map688.size; ++_i691)
+                org.apache.thrift.protocol.TMap _map708 = iprot.readMapBegin();
+                struct.total_shared_off_heap = new HashMap<String,Double>(2*_map708.size);
+                String _key709;
+                double _val710;
+                for (int _i711 = 0; _i711 < _map708.size; ++_i711)
                 {
-                  _key689 = iprot.readString();
-                  _val690 = iprot.readDouble();
-                  struct.total_shared_off_heap.put(_key689, _val690);
+                  _key709 = iprot.readString();
+                  _val710 = iprot.readDouble();
+                  struct.total_shared_off_heap.put(_key709, _val710);
                 }
                 iprot.readMapEnd();
               }
@@ -1117,10 +1117,10 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           oprot.writeFieldBegin(NODE_HOST_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, struct.node_host.size()));
-            for (Map.Entry<String, String> _iter692 : struct.node_host.entrySet())
+            for (Map.Entry<String, String> _iter712 : struct.node_host.entrySet())
             {
-              oprot.writeString(_iter692.getKey());
-              oprot.writeString(_iter692.getValue());
+              oprot.writeString(_iter712.getKey());
+              oprot.writeString(_iter712.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1132,17 +1132,17 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           oprot.writeFieldBegin(EXECUTOR_NODE_PORT_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.STRUCT, struct.executor_node_port.size()));
-            for (Map.Entry<List<Long>, NodeInfo> _iter693 : struct.executor_node_port.entrySet())
+            for (Map.Entry<List<Long>, NodeInfo> _iter713 : struct.executor_node_port.entrySet())
             {
               {
-                oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, _iter693.getKey().size()));
-                for (long _iter694 : _iter693.getKey())
+                oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, _iter713.getKey().size()));
+                for (long _iter714 : _iter713.getKey())
                 {
-                  oprot.writeI64(_iter694);
+                  oprot.writeI64(_iter714);
                 }
                 oprot.writeListEnd();
               }
-              _iter693.getValue().write(oprot);
+              _iter713.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -1154,17 +1154,17 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           oprot.writeFieldBegin(EXECUTOR_START_TIME_SECS_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.I64, struct.executor_start_time_secs.size()));
-            for (Map.Entry<List<Long>, Long> _iter695 : struct.executor_start_time_secs.entrySet())
+            for (Map.Entry<List<Long>, Long> _iter715 : struct.executor_start_time_secs.entrySet())
             {
               {
-                oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, _iter695.getKey().size()));
-                for (long _iter696 : _iter695.getKey())
+                oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, _iter715.getKey().size()));
+                for (long _iter716 : _iter715.getKey())
                 {
-                  oprot.writeI64(_iter696);
+                  oprot.writeI64(_iter716);
                 }
                 oprot.writeListEnd();
               }
-              oprot.writeI64(_iter695.getValue());
+              oprot.writeI64(_iter715.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1176,10 +1176,10 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           oprot.writeFieldBegin(WORKER_RESOURCES_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, struct.worker_resources.size()));
-            for (Map.Entry<NodeInfo, WorkerResources> _iter697 : struct.worker_resources.entrySet())
+            for (Map.Entry<NodeInfo, WorkerResources> _iter717 : struct.worker_resources.entrySet())
             {
-              _iter697.getKey().write(oprot);
-              _iter697.getValue().write(oprot);
+              _iter717.getKey().write(oprot);
+              _iter717.getValue().write(oprot);
             }
             oprot.writeMapEnd();
           }
@@ -1191,10 +1191,10 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
           oprot.writeFieldBegin(TOTAL_SHARED_OFF_HEAP_FIELD_DESC);
           {
             oprot.writeMapBegin(new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, struct.total_shared_off_heap.size()));
-            for (Map.Entry<String, Double> _iter698 : struct.total_shared_off_heap.entrySet())
+            for (Map.Entry<String, Double> _iter718 : struct.total_shared_off_heap.entrySet())
             {
-              oprot.writeString(_iter698.getKey());
-              oprot.writeDouble(_iter698.getValue());
+              oprot.writeString(_iter718.getKey());
+              oprot.writeDouble(_iter718.getValue());
             }
             oprot.writeMapEnd();
           }
@@ -1249,62 +1249,62 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
       if (struct.is_set_node_host()) {
         {
           oprot.writeI32(struct.node_host.size());
-          for (Map.Entry<String, String> _iter699 : struct.node_host.entrySet())
+          for (Map.Entry<String, String> _iter719 : struct.node_host.entrySet())
           {
-            oprot.writeString(_iter699.getKey());
-            oprot.writeString(_iter699.getValue());
+            oprot.writeString(_iter719.getKey());
+            oprot.writeString(_iter719.getValue());
           }
         }
       }
       if (struct.is_set_executor_node_port()) {
         {
           oprot.writeI32(struct.executor_node_port.size());
-          for (Map.Entry<List<Long>, NodeInfo> _iter700 : struct.executor_node_port.entrySet())
+          for (Map.Entry<List<Long>, NodeInfo> _iter720 : struct.executor_node_port.entrySet())
           {
             {
-              oprot.writeI32(_iter700.getKey().size());
-              for (long _iter701 : _iter700.getKey())
+              oprot.writeI32(_iter720.getKey().size());
+              for (long _iter721 : _iter720.getKey())
               {
-                oprot.writeI64(_iter701);
+                oprot.writeI64(_iter721);
               }
             }
-            _iter700.getValue().write(oprot);
+            _iter720.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_executor_start_time_secs()) {
         {
           oprot.writeI32(struct.executor_start_time_secs.size());
-          for (Map.Entry<List<Long>, Long> _iter702 : struct.executor_start_time_secs.entrySet())
+          for (Map.Entry<List<Long>, Long> _iter722 : struct.executor_start_time_secs.entrySet())
           {
             {
-              oprot.writeI32(_iter702.getKey().size());
-              for (long _iter703 : _iter702.getKey())
+              oprot.writeI32(_iter722.getKey().size());
+              for (long _iter723 : _iter722.getKey())
               {
-                oprot.writeI64(_iter703);
+                oprot.writeI64(_iter723);
               }
             }
-            oprot.writeI64(_iter702.getValue());
+            oprot.writeI64(_iter722.getValue());
           }
         }
       }
       if (struct.is_set_worker_resources()) {
         {
           oprot.writeI32(struct.worker_resources.size());
-          for (Map.Entry<NodeInfo, WorkerResources> _iter704 : struct.worker_resources.entrySet())
+          for (Map.Entry<NodeInfo, WorkerResources> _iter724 : struct.worker_resources.entrySet())
           {
-            _iter704.getKey().write(oprot);
-            _iter704.getValue().write(oprot);
+            _iter724.getKey().write(oprot);
+            _iter724.getValue().write(oprot);
           }
         }
       }
       if (struct.is_set_total_shared_off_heap()) {
         {
           oprot.writeI32(struct.total_shared_off_heap.size());
-          for (Map.Entry<String, Double> _iter705 : struct.total_shared_off_heap.entrySet())
+          for (Map.Entry<String, Double> _iter725 : struct.total_shared_off_heap.entrySet())
           {
-            oprot.writeString(_iter705.getKey());
-            oprot.writeDouble(_iter705.getValue());
+            oprot.writeString(_iter725.getKey());
+            oprot.writeDouble(_iter725.getValue());
           }
         }
       }
@@ -1321,96 +1321,96 @@ public class Assignment implements org.apache.thrift.TBase<Assignment, Assignmen
       BitSet incoming = iprot.readBitSet(6);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TMap _map706 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
-          struct.node_host = new HashMap<String,String>(2*_map706.size);
-          String _key707;
-          String _val708;
-          for (int _i709 = 0; _i709 < _map706.size; ++_i709)
+          org.apache.thrift.protocol.TMap _map726 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.STRING, iprot.readI32());
+          struct.node_host = new HashMap<String,String>(2*_map726.size);
+          String _key727;
+          String _val728;
+          for (int _i729 = 0; _i729 < _map726.size; ++_i729)
           {
-            _key707 = iprot.readString();
-            _val708 = iprot.readString();
-            struct.node_host.put(_key707, _val708);
+            _key727 = iprot.readString();
+            _val728 = iprot.readString();
+            struct.node_host.put(_key727, _val728);
           }
         }
         struct.set_node_host_isSet(true);
       }
       if (incoming.get(1)) {
         {
-          org.apache.thrift.protocol.TMap _map710 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.executor_node_port = new HashMap<List<Long>,NodeInfo>(2*_map710.size);
-          List<Long> _key711;
-          NodeInfo _val712;
-          for (int _i713 = 0; _i713 < _map710.size; ++_i713)
+          org.apache.thrift.protocol.TMap _map730 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.executor_node_port = new HashMap<List<Long>,NodeInfo>(2*_map730.size);
+          List<Long> _key731;
+          NodeInfo _val732;
+          for (int _i733 = 0; _i733 < _map730.size; ++_i733)
           {
             {
-              org.apache.thrift.protocol.TList _list714 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-              _key711 = new ArrayList<Long>(_list714.size);
-              long _elem715;
-              for (int _i716 = 0; _i716 < _list714.size; ++_i716)
+              org.apache.thrift.protocol.TList _list734 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+              _key731 = new ArrayList<Long>(_list734.size);
+              long _elem735;
+              for (int _i736 = 0; _i736 < _list734.size; ++_i736)
               {
-                _elem715 = iprot.readI64();
-                _key711.add(_elem715);
+                _elem735 = iprot.readI64();
+                _key731.add(_elem735);
               }
             }
-            _val712 = new NodeInfo();
-            _val712.read(iprot);
-            struct.executor_node_port.put(_key711, _val712);
+            _val732 = new NodeInfo();
+            _val732.read(iprot);
+            struct.executor_node_port.put(_key731, _val732);
           }
         }
         struct.set_executor_node_port_isSet(true);
       }
       if (incoming.get(2)) {
         {
-          org.apache.thrift.protocol.TMap _map717 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.I64, iprot.readI32());
-          struct.executor_start_time_secs = new HashMap<List<Long>,Long>(2*_map717.size);
-          List<Long> _key718;
-          long _val719;
-          for (int _i720 = 0; _i720 < _map717.size; ++_i720)
+          org.apache.thrift.protocol.TMap _map737 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.LIST, org.apache.thrift.protocol.TType.I64, iprot.readI32());
+          struct.executor_start_time_secs = new HashMap<List<Long>,Long>(2*_map737.size);
+          List<Long> _key738;
+          long _val739;
+          for (int _i740 = 0; _i740 < _map737.size; ++_i740)
           {
             {
-              org.apache.thrift.protocol.TList _list721 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
-              _key718 = new ArrayList<Long>(_list721.size);
-              long _elem722;
-              for (int _i723 = 0; _i723 < _list721.size; ++_i723)
+              org.apache.thrift.protocol.TList _list741 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.I64, iprot.readI32());
+              _key738 = new ArrayList<Long>(_list741.size);
+              long _elem742;
+              for (int _i743 = 0; _i743 < _list741.size; ++_i743)
               {
-                _elem722 = iprot.readI64();
-                _key718.add(_elem722);
+                _elem742 = iprot.readI64();
+                _key738.add(_elem742);
               }
             }
-            _val719 = iprot.readI64();
-            struct.executor_start_time_secs.put(_key718, _val719);
+            _val739 = iprot.readI64();
+            struct.executor_start_time_secs.put(_key738, _val739);
           }
         }
         struct.set_executor_start_time_secs_isSet(true);
       }
       if (incoming.get(3)) {
         {
-          org.apache.thrift.protocol.TMap _map724 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.worker_resources = new HashMap<NodeInfo,WorkerResources>(2*_map724.size);
-          NodeInfo _key725;
-          WorkerResources _val726;
-          for (int _i727 = 0; _i727 < _map724.size; ++_i727)
+          org.apache.thrift.protocol.TMap _map744 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRUCT, org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.worker_resources = new HashMap<NodeInfo,WorkerResources>(2*_map744.size);
+          NodeInfo _key745;
+          WorkerResources _val746;
+          for (int _i747 = 0; _i747 < _map744.size; ++_i747)
           {
-            _key725 = new NodeInfo();
-            _key725.read(iprot);
-            _val726 = new WorkerResources();
-            _val726.read(iprot);
-            struct.worker_resources.put(_key725, _val726);
+            _key745 = new NodeInfo();
+            _key745.read(iprot);
+            _val746 = new WorkerResources();
+            _val746.read(iprot);
+            struct.worker_resources.put(_key745, _val746);
           }
         }
         struct.set_worker_resources_isSet(true);
       }
       if (incoming.get(4)) {
         {
-          org.apache.thrift.protocol.TMap _map728 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
-          struct.total_shared_off_heap = new HashMap<String,Double>(2*_map728.size);
-          String _key729;
-          double _val730;
-          for (int _i731 = 0; _i731 < _map728.size; ++_i731)
+          org.apache.thrift.protocol.TMap _map748 = new org.apache.thrift.protocol.TMap(org.apache.thrift.protocol.TType.STRING, org.apache.thrift.protocol.TType.DOUBLE, iprot.readI32());
+          struct.total_shared_off_heap = new HashMap<String,Double>(2*_map748.size);
+          String _key749;
+          double _val750;
+          for (int _i751 = 0; _i751 < _map748.size; ++_i751)
           {
-            _key729 = iprot.readString();
-            _val730 = iprot.readDouble();
-            struct.total_shared_off_heap.put(_key729, _val730);
+            _key749 = iprot.readString();
+            _val750 = iprot.readDouble();
+            struct.total_shared_off_heap.put(_key749, _val750);
           }
         }
         struct.set_total_shared_off_heap_isSet(true);

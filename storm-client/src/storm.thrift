@@ -748,6 +748,7 @@ service Nimbus {
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
   list<OwnerResourceSummary> getOwnerResourceSummaries (1: string owner) throws (1: AuthorizationException aze);
+  void processWorkerMetrics(1: WorkerMetrics metrics);
 }
 
 struct DRPCRequest {
@@ -836,3 +837,24 @@ exception HBAuthorizationException {
 exception HBExecutionException {
   1: required string msg;
 }
+
+struct WorkerMetric {
+  1: required string metricName;
+  2: required i64 timestamp;
+  3: required double metricValue;
+  4: required string componentId;
+  5: required string executorId;
+  6: required string streamId;
+}
+
+struct WorkerMetricList {
+  1: list<WorkerMetric> metrics;
+}
+
+struct WorkerMetrics {
+  1: required string topologyId;
+  2: required i32 port;
+  3: required string hostname;
+  4: required WorkerMetricList metricList;
+}
+
