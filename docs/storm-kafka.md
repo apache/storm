@@ -6,15 +6,15 @@ documentation: true
 
 Provides core Storm and Trident spout implementations for consuming data from Apache Kafka 0.8.x.
 
-##Spouts
+## Spouts
 We support both Trident and core Storm spouts. For both spout implementations, we use a BrokerHost interface that
 tracks Kafka broker host to partition mapping and kafkaConfig that controls some Kafka related parameters.
 
-###BrokerHosts
+### BrokerHosts
 In order to initialize your Kafka spout/emitter you need to construct an instance of the marker interface BrokerHosts.
 Currently, we support the following two implementations:
 
-####ZkHosts
+#### ZkHosts
 ZkHosts is what you should use if you want to dynamically track Kafka broker to partition mapping. This class uses
 Kafka's ZooKeeper entries to track brokerHost -> partition mapping. You can instantiate an object by calling
 
@@ -29,7 +29,7 @@ partition information is stored. By default this is /brokers which is what the d
 By default, the broker-partition mapping is refreshed every 60 seconds from ZooKeeper. If you want to change it, you
 should set host.refreshFreqSecs to your chosen value.
 
-####StaticHosts
+#### StaticHosts
 This is an alternative implementation where broker -> partition information is static. In order to construct an instance
 of this class, you need to first construct an instance of GlobalPartitionInformation.
 
@@ -44,7 +44,7 @@ partitionInfo.addPartition(2, brokerForPartition2);//mapping from partition 2 to
 StaticHosts hosts = new StaticHosts(partitionInfo);
 ```
 
-###KafkaConfig
+### KafkaConfig
 The second thing needed for constructing a kafkaSpout is an instance of KafkaConfig.
 
 ```java
@@ -110,7 +110,7 @@ public int metricsTimeBucketSizeInSecs = 60;
 ```
 
 Most of them are self explanatory except MultiScheme.
-###MultiScheme
+### MultiScheme
 MultiScheme is an interface that dictates how the ByteBuffer consumed from Kafka gets transformed into a storm tuple. It
 also controls the naming of your output field.
 
@@ -130,7 +130,7 @@ public Iterable<List<Object>> deserializeMessageWithMetadata(ByteBuffer message,
 
 This is useful for auditing/replaying messages from arbitrary points on a Kafka topic, saving the partition and offset of each message of a discrete stream instead of persisting the entire message.
 
-###Failed message retry
+### Failed message retry
 FailedMsgRetryManager is an interface which defines the retry strategy for a failed message. Default implementation is ExponentialBackoffMsgRetryManager which retries with exponential delays
 between consecutive retries. To use a custom implementation, set SpoutConfig.failedMsgRetryManagerClass to the full classname
 of implementation. Here is the interface 
@@ -273,14 +273,14 @@ module. If you want to use a higher version, storm-kafka-client module should be
 0.8.x broker. 
 
 
-##Writing to Kafka as part of your topology
+## Writing to Kafka as part of your topology
 You can create an instance of org.apache.storm.kafka.bolt.KafkaBolt and attach it as a component to your topology or if you
 are using trident you can use org.apache.storm.kafka.trident.TridentState, org.apache.storm.kafka.trident.TridentStateFactory and
 org.apache.storm.kafka.trident.TridentKafkaUpdater.
 
 You need to provide implementation of following 2 interfaces
 
-###TupleToKafkaMapper and TridentTupleToKafkaMapper
+### TupleToKafkaMapper and TridentTupleToKafkaMapper
 These interfaces have 2 methods defined:
 
 ```java
@@ -296,7 +296,7 @@ reasons. Alternatively you could also specify a different key and message field 
 In the TridentKafkaState you must specify what is the field name for key and message as there is no default constructor.
 These should be specified while constructing and instance of FieldNameBasedTupleToKafkaMapper.
 
-###KafkaTopicSelector and trident KafkaTopicSelector
+### KafkaTopicSelector and trident KafkaTopicSelector
 This interface has only one method
 
 ```java
@@ -316,7 +316,7 @@ Please make sure the default topic have created .
 You can provide all the produce properties in your Storm topology by calling `KafkaBolt.withProducerProperties()` and `TridentKafkaStateFactory.withProducerProperties()`. Please see  http://kafka.apache.org/documentation.html#newproducerconfigs
 Section "Important configuration properties for the producer" for more details.
 
-###Using wildcard kafka topic match
+### Using wildcard kafka topic match
 You can do a wildcard topic match by adding the following config
 
 ```java
@@ -327,7 +327,7 @@ config.put("kafka.topic.wildcard.match",true);
 After this you can specify a wildcard topic for matching e.g. clickstream.*.log.  This will match all streams matching clickstream.my.log, clickstream.cart.log etc
 
 
-###Putting it all together
+### Putting it all together
 
 For the bolt :
 
