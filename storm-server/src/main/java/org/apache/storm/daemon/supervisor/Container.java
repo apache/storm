@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
 
 import java.io.BufferedReader;
@@ -39,11 +40,16 @@ import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LocalAssignment;
 import org.apache.storm.generated.ProfileRequest;
+import org.apache.storm.generated.WorkerMetric;
+import org.apache.storm.generated.WorkerMetricList;
+import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
-import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -692,5 +698,34 @@ public abstract class Container implements Killable {
      */
     public String getWorkerId() {
         return _workerId;
+    }
+
+    /**
+     * Send worker metrics to Nimbus
+     */
+    void processMetrics() {
+        try {
+            String hostname = Utils.hostname();
+
+            // create metric for memory
+            String metricName = "UsedMemory";
+            long timestamp = System.currentTimeMillis();
+            double value = _usedMemory.get(_port).memory;
+            String componentId = "System";
+            String executorId = "-1";
+            String streamId = "None";
+            WorkerMetric workerMetric = new WorkerMetric(metricName, timestamp, value, componentId, executorId, streamId);
+
+            WorkerMetricList metricList = new WorkerMetricList();
+            metricList.add_to_metrics(workerMetric);
+            WorkerMetrics metrics = new WorkerMetrics(_topologyId, _port, hostname, metricList);
+
+            // TODO: collect further worker metrics
+
+            NimbusClient client = NimbusClient.getConfiguredClient(_conf);
+            client.getClient().processWorkerMetrics(metrics);
+        } catch (Exception e) {
+            LOG.error("Failed to process metrics", e);
+        }
     }
 }

@@ -22,14 +22,34 @@ import java.util.Map;
 
 public class LRUMap<A, B> extends LinkedHashMap<A, B> {
     private int _maxSize;
+    private CacheEvictionCallback evCb = null;
 
     public LRUMap(int maxSize) {
         super(maxSize + 1, 1.0f, true);
         _maxSize = maxSize;
     }
+
+    /**
+     * Creates an LRU map that will call back before data is removed from the map.
+     *
+     * @param maxSize   max capacity for the map
+     * @param evictionCallback   callback to be called before removing data
+     */
+    public LRUMap(int maxSize, CacheEvictionCallback evictionCallback) {
+        this(maxSize);
+        this.evCb = evictionCallback;
+    }
     
     @Override
     protected boolean removeEldestEntry(final Map.Entry<A, B> eldest) {
-        return size() > _maxSize;
+        boolean evict = size() > _maxSize;
+        if (evict && this.evCb != null) {
+            this.evCb.evictionCallback(eldest.getKey(), eldest.getValue());
+        }
+        return evict;
+    }
+
+    public interface CacheEvictionCallback<K, V> {
+        void evictionCallback(K key, V val);
     }
 }

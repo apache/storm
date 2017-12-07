@@ -52,7 +52,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.UnaryOperator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 import javax.security.auth.Subject;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
@@ -122,6 +121,8 @@ import org.apache.storm.generated.TopologyInitialStatus;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.generated.WorkerMetric;
+import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.generated.WorkerSummary;
 import org.apache.storm.logging.ThriftAccessLogger;
@@ -130,6 +131,10 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.metric.api.DataPoint;
 import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.apache.storm.metric.api.IClusterMetricsConsumer.ClusterInfo;
+import org.apache.storm.metricstore.AggLevel;
+import org.apache.storm.metricstore.Metric;
+import org.apache.storm.metricstore.MetricStore;
+import org.apache.storm.metricstore.MetricStoreConfig;
 import org.apache.storm.nimbus.DefaultTopologyValidator;
 import org.apache.storm.nimbus.ILeaderElector;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
@@ -227,6 +232,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private static final Meter getOwnerResourceSummariesCalls = StormMetricsRegistry.registerMeter(
             "nimbus:num-getOwnerResourceSummaries-calls");
     private static final Meter shutdownCalls = StormMetricsRegistry.registerMeter("nimbus:num-shutdown-calls");
+    private static final Meter metricFailures = StormMetricsRegistry.registerMeter("nimbus:metric-failures");
     // END Metrics
     
     private static final String STORM_VERSION = VersionInfo.getVersion();
@@ -333,7 +339,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         return Nimbus.make(base.get_prev_status());
     };
     
-    private static final Map<TopologyStatus, Map<TopologyActions, TopologyStateTransition>> TOPO_STATE_TRANSITIONS = 
+    private static final Map<TopologyStatus, Map<TopologyActions, TopologyStateTransition>> TOPO_STATE_TRANSITIONS =
             new ImmutableMap.Builder<TopologyStatus, Map<TopologyActions, TopologyStateTransition>>()
             .put(TopologyStatus.ACTIVE, new ImmutableMap.Builder<TopologyActions, TopologyStateTransition>()
                     .put(TopologyActions.INACTIVATE, INACTIVE_TRANSITION)
@@ -875,7 +881,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
     
-    private static StormTopology tryReadTopology(String topoId, TopoCache tc) throws NotAliveException, AuthorizationException, IOException {
+    private static StormTopology tryReadTopology(String topoId, TopoCache tc)
+            throws NotAliveException, AuthorizationException, IOException {
         try {
             return readStormTopologyAsNimbus(topoId, tc);
         } catch (KeyNotFoundException e) {
@@ -1018,6 +1025,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
     
     private final Map<String, Object> conf;
+    private MetricStore metricsStore;
     private final NavigableMap<SimpleVersion, List<String>> supervisorClasspaths;
     private final NimbusInfo nimbusHostPortInfo;
     private final INimbus inimbus;
@@ -1081,6 +1089,15 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             BlobStore blobStore, TopoCache topoCache, ILeaderElector leaderElector, IGroupMappingServiceProvider groupMapper)
         throws Exception {
         this.conf = conf;
+
+        this.metricsStore = null;
+        try {
+            this.metricsStore = MetricStoreConfig.configure(conf, metricFailures);
+        } catch (Exception e) {
+            metricFailures.mark();
+            LOG.error("Failed to initialize metric store", e);
+        }
+
         if (hostPortInfo == null) {
             hostPortInfo = NimbusInfo.fromConf(conf);
         }
@@ -2712,7 +2729,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             
             // lock protects against multiple topologies being submitted at once and
             // cleanup thread killing topology in b/w assignment and starting the topology
-            synchronized(submitLock) {
+            synchronized (submitLock) {
                 assertTopoActive(topoName, false);
                 //cred-update-lock is not needed here because creds are being added for the first time.
                 if (creds != null) {
@@ -3772,7 +3789,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     }
                     Map<WorkerSlot, WorkerResources> workerResources = getWorkerResourcesForTopology(topoId);
                     boolean isAllowed = userTopologies.contains(topoId);
-                    for (WorkerSummary workerSummary: StatsUtil.aggWorkerStats(topoId, topoName, taskToComp, beats, 
+                    for (WorkerSummary workerSummary: StatsUtil.aggWorkerStats(topoId, topoName, taskToComp, beats,
                             exec2NodePort, nodeToHost, workerResources, includeSys, isAllowed, sid)) {
                         pageInfo.add_to_worker_summaries(workerSummary);
                     }
@@ -3790,7 +3807,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     
     @Override
     public ComponentPageInfo getComponentPageInfo(String topoId, String componentId, String window,
-            boolean includeSys) throws NotAliveException, AuthorizationException, TException {
+                                                  boolean includeSys) throws NotAliveException, AuthorizationException, TException {
         try {
             getComponentPageInfoCalls.mark();
             CommonTopoInfo info = getCommonTopoInfo(topoId, "getComponentPageInfo");
@@ -3986,8 +4003,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         List<NimbusSummary> nimbuses = stormClusterState.nimbuses();
         NimbusInfo leader = leaderElector.getLeader();
         for (NimbusSummary nimbusSummary: nimbuses) {
-            if (leader.getHost().equals(nimbusSummary.get_host()) &&
-                    leader.getPort() == nimbusSummary.get_port()) {
+            if (leader.getHost().equals(nimbusSummary.get_host())
+                    && leader.getPort() == nimbusSummary.get_port()) {
                 nimbusSummary.set_uptime_secs(Time.deltaSecs(nimbusSummary.get_uptime_secs()));
                 nimbusSummary.set_isLeader(true);
                 return nimbusSummary;
@@ -4024,7 +4041,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             //else, add only this owner (the input paramter) to the map
             Map<String, List<StormBase>> ownerToBasesMap = new HashMap<>();
 
-            if (owner == null){
+            if (owner == null) {
                 // add all the owners to the map
                 for (StormBase base: topoIdToBases.values()) {
                     String baseOwner = base.get_owner();
@@ -4154,6 +4171,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             if (actionNotifier != null) {
                 actionNotifier.cleanup();
             }
+            if (metricsStore != null) {
+                metricsStore.shutdown();
+            }
             LOG.info("Shut down master");
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -4166,4 +4186,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public boolean isWaiting() {
         return timer.isTimerWaiting();
     }
+
+    @Override
+    public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
+        if (this.metricsStore == null) {
+            return;
+        }
+
+        for (WorkerMetric m : metrics.get_metricList().get_metrics()) {
+            Metric metric = new Metric(m.get_metricName(), m.get_timestamp(), metrics.get_topologyId(),
+                    m.get_metricValue(), m.get_componentId(), m.get_executorId(), metrics.get_hostname(),
+                    m.get_streamId(), metrics.get_port(), AggLevel.AGG_LEVEL_NONE);
+
+            try {
+                this.metricsStore.insert(metric);
+            } catch (Exception e) {
+                LOG.error("Failed to save metric", e);
+            }
+        }
+    }
+
 }

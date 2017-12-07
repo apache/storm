@@ -77,6 +77,7 @@ import org.apache.storm.generated.SupervisorPageInfo;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyPageInfo;
+import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.local.Context;
 import org.apache.storm.nimbus.ILeaderElector;
@@ -1123,7 +1124,12 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         // TODO Auto-generated method stub
         throw new RuntimeException("NOT IMPLEMENTED YET");
     }
-    
+
+    @Override
+    public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
+        getNimbus().processWorkerMetrics(metrics);
+    }
+
     public static void main(final String [] args) throws Exception {
         if (args.length < 1) {
             throw new IllegalArgumentException("No class was specified to run");
