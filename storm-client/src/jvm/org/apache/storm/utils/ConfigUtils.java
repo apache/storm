@@ -217,7 +217,6 @@ public class ConfigUtils {
     }
 
     public static String absoluteStormBlobStoreDir(Map<String, Object> conf) {
-        String stormHome = System.getProperty("storm.home");
         String blobStoreDir = (String) conf.get(Config.BLOBSTORE_DIR);
         if (blobStoreDir == null) {
             return ConfigUtils.absoluteStormLocalDir(conf);
@@ -225,6 +224,7 @@ public class ConfigUtils {
             if (new File(blobStoreDir).isAbsolute()) {
                 return blobStoreDir;
             } else {
+                String stormHome = System.getProperty("storm.home");
                 return (stormHome + FILE_SEPARATOR + blobStoreDir);
             }
         }
@@ -273,7 +273,7 @@ public class ConfigUtils {
     public static Map overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
-             conf.put("java.security.auth.login.config", loginConfFile);
+            conf.put("java.security.auth.login.config", loginConfFile);
         }
         return conf;
     }

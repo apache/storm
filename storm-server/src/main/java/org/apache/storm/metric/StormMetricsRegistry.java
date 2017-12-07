@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metric;
 
 import com.codahale.metrics.*;
@@ -51,6 +52,10 @@ public class StormMetricsRegistry {
             }
         };
         return register(name, gauge);
+    }
+
+    public static void registerProvidedGauge(final String name, Gauge gauge) {
+        register(name, gauge);
     }
 
     public static Histogram registerHistogram(String name, Reservoir reservoir) {

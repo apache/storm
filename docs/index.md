@@ -122,4 +122,5 @@ But small change will not affect the user experience. We will notify the user wh
 * [Defining a non-JVM language DSL for Storm](Defining-a-non-jvm-language-dsl-for-storm.html)
 * [Multilang protocol](Multilang-protocol.html) (how to provide support for another language)
 * [Implementation docs](Implementation-docs.html)
+* [Storm Metricstore](storm-metricstore.html)
 

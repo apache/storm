@@ -291,12 +291,22 @@ public class Utils {
      * runtime to avoid any zombie process in case cleanup function hangs.
      */
     public static void addShutdownHookWithForceKillIn1Sec (Runnable func) {
+        addShutdownHookWithDelayedForceKill(func, 1);
+    }
+
+    /**
+     * Adds the user supplied function as a shutdown hook for cleanup.
+     * Also adds a function that sleeps for numSecs and then halts the
+     * runtime to avoid any zombie process in case cleanup function hangs.
+     */
+    public static void addShutdownHookWithDelayedForceKill (Runnable func, int numSecs) {
         Runnable sleepKill = new Runnable() {
             @Override
             public void run() {
                 try {
-                    Time.sleepSecs(1);
-                    LOG.warn("Forceing Halt...");
+                    LOG.info("Halting after {} seconds", numSecs);
+                    Time.sleepSecs(numSecs);
+                    LOG.warn("Forcing Halt...");
                     Runtime.getRuntime().halt(20);
                 } catch (Exception e) {
                     LOG.warn("Exception in the ShutDownHook", e);

@@ -19,10 +19,10 @@
 package org.apache.storm;
 
 import static org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
@@ -33,6 +33,7 @@ import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplic
 import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
 
 import org.apache.storm.container.ResourceIsolationInterface;
+import org.apache.storm.metricstore.MetricStore;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
@@ -55,7 +56,7 @@ import java.util.Map;
 public class DaemonConfig implements Validated {
 
     /**
-     * We check with this interval that whether the Netty channel is writable and try to write pending messages
+     * We check with this interval that whether the Netty channel is writable and try to write pending messages.
      */
     @isInteger
     public static final String STORM_NETTY_FLUSH_CHECK_INTERVAL_MS = "storm.messaging.netty.flush.check.interval.ms";
@@ -164,7 +165,7 @@ public class DaemonConfig implements Validated {
 
     /**
      * The time to allow any given healthcheck script to run before it
-     * is marked failed due to timeout
+     * is marked failed due to timeout.
      */
     @isNumber
     public static final String STORM_HEALTH_CHECK_TIMEOUT_MS = "storm.health.check.timeout.ms";
@@ -809,7 +810,7 @@ public class DaemonConfig implements Validated {
      * Enables user-first classpath. See topology.classpath.beginning.
      */
     @isBoolean
-    public static final String STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED="storm.topology.classpath.beginning.enabled";
+    public static final String STORM_TOPOLOGY_CLASSPATH_BEGINNING_ENABLED = "storm.topology.classpath.beginning.enabled";
 
     /**
      * This value is passed to spawned JVMs (e.g., Nimbus, Supervisor, and Workers)
@@ -905,17 +906,17 @@ public class DaemonConfig implements Validated {
     public static final String NIMBUS_CODE_SYNC_FREQ_SECS = "nimbus.code.sync.freq.secs";
 
     /**
-     * The plugin to be used for resource isolation
+     * The plugin to be used for resource isolation.
      */
     @isImplementationOfClass(implementsClass = ResourceIsolationInterface.class)
     public static final String STORM_RESOURCE_ISOLATION_PLUGIN = "storm.resource.isolation.plugin";
 
     /**
-     * CGroup Setting below
+     * CGroup Setting below.
      */
 
     /**
-     * resources to to be controlled by cgroups
+     * resources to to be controlled by cgroups.
      */
     @isStringList
     public static final String STORM_CGROUP_RESOURCES = "storm.cgroup.resources";
@@ -1030,6 +1031,48 @@ public class DaemonConfig implements Validated {
     public static String STORM_SUPERVISOR_MEDIUM_MEMORY_GRACE_PERIOD_MS =
         "storm.supervisor.medium.memory.grace.period.ms";
 
+    /**
+     * Class implementing MetricStore.
+     */
+    @NotNull
+    @isImplementationOfClass(implementsClass = MetricStore.class)
+    public static final String STORM_METRIC_STORE_CLASS = "storm.metricstore.class";
+
+    /**
+     * RocksDB file location. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore
+     * implementation for the storm.metricstore.class.
+     */
+    @isString
+    public static final String STORM_ROCKSDB_LOCATION = "storm.metricstore.rocksdb.location";
+
+    /**
+     * RocksDB create if missing flag. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore
+     * implementation for the storm.metricstore.class.
+     */
+    @isBoolean
+    public static final String STORM_ROCKSDB_CREATE_IF_MISSING = "storm.metricstore.rocksdb.create_if_missing";
+
+    /**
+     * RocksDB metadata cache capacity. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore
+     * implementation for the storm.metricstore.class.
+     */
+    @isInteger
+    public static final String STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY = "storm.metricstore.rocksdb.metadata_string_cache_capacity";
+
+    /**
+     * RocksDB setting for length of metric retention. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore
+     * implementation for the storm.metricstore.class.
+     */
+    @isInteger
+    public static final String STORM_ROCKSDB_METRIC_RETENTION_HOURS = "storm.metricstore.rocksdb.retention_hours";
+
+    /**
+     * RocksDB setting for period of metric deletion thread. This setting is specific to the
+     * org.apache.storm.metricstore.rocksdb.RocksDbStore implementation for the storm.metricstore.class.
+     */
+    @isInteger
+    public static final String STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS = "storm.metricstore.rocksdb.deletion_period_hours";
+
     // VALIDATION ONLY CONFIGS
     // Some configs inside Config.java may reference classes we don't want to expose in storm-client, but we still want to validate
     // That they reference a valid class.  To allow this to happen we do part of the validation on the client side with annotations on
@@ -1051,7 +1094,7 @@ public class DaemonConfig implements Validated {
     }
 
     /**
-     * Get the cgroup resources from the conf
+     * Get the cgroup resources from the conf.
      *
      * @param conf the config to read
      * @return the resources.

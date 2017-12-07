@@ -936,6 +936,9 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             }
             dynamicState = dynamicState.withProfileActions(mod, modPending);
         }
+
+        dynamicState.container.processMetrics();
+
         Time.sleep(staticState.monitorFreqMs);
         return dynamicState;
     }

@@ -64,6 +64,10 @@
             <artifactId>auto-service</artifactId>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.rocksdb</groupId>
+            <artifactId>rocksdbjni</artifactId>
+        </dependency>
 
         <!-- test -->
         <dependency>
