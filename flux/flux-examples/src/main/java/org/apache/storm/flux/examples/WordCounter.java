@@ -15,7 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.flux.examples;
+
+import static org.apache.storm.utils.Utils.tuple;
+
+import java.util.Map;
 
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
@@ -26,14 +31,10 @@ import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-
-import static org.apache.storm.utils.Utils.tuple;
-
 /**
  * This bolt is used by the HBase example. It simply emits the first field
  * found in the incoming tuple as "word", with a "count" of `1`.
- *
+ * <p/>
  * In this case, the downstream HBase bolt handles the counting, so a value
  * of `1` will just increment the HBase counter by one.
  */

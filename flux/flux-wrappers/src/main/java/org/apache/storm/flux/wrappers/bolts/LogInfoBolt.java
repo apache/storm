@@ -34,7 +34,7 @@ public class LogInfoBolt extends BaseBasicBolt {
 
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
-       LOG.info("{}", tuple);
+        LOG.info("{}", tuple);
     }
 
     @Override
