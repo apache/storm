@@ -314,7 +314,6 @@ storm.cluster.metrics.consumer.publish.interval.secs: 60
 #        - "worker"
 #    report.period: 10
 #    report.period.units: "SECONDS"
-#
 #    filter:
 #        class: "org.apache.storm.metrics2.filters.RegexFilter"
 #        expression: ".*my_component.*emitted.*"

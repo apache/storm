@@ -25,7 +25,7 @@ public interface StormMetricsFilter extends MetricFilter {
 
     /**
      * Called after the filter is instantiated.
-     * @param config an arbitrary configuration map pulled from the yaml configuration.
+     * @param config A map of the properties from the 'filter' section of the reporter configuration.
      */
     void prepare(Map<String, Object> config);
 

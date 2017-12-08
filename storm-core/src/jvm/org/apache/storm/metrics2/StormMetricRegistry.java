@@ -83,7 +83,7 @@ public class StormMetricRegistry {
         try {
             hostName = Utils.localHostname();
         } catch (UnknownHostException e) {
-             LOG.warn("Unable to determine hostname while starting the metrics system. Hostname ill be reported" +
+             LOG.warn("Unable to determine hostname while starting the metrics system. Hostname will be reported" +
                      " as 'localhost'.");
         }
 

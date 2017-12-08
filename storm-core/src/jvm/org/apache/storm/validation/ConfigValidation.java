@@ -518,15 +518,16 @@ public class ConfigValidation {
                             (((String) string).equals("nimbus") ||
                                     ((String) string).equals("supervisor") ||
                                     ((String) string).equals("worker"))) {
-                        return;
+                        continue;
                     }
-                    throw new IllegalArgumentException("Field daemons must contain at least one of \"nimbus\", \"supervisor\", or \"worker\"");
+                    throw new IllegalArgumentException("Field 'daemons' must contain at least one of the following:" +
+                            " \"nimbus\", \"supervisor\", or \"worker\"");
                 }
 
             }
             if(((Map)o).containsKey("filter")){
                 Map filterMap = (Map)((Map)o).get("filter");
-                SimpleTypeValidator.validateField("filter", String.class, filterMap.get("class"));
+                SimpleTypeValidator.validateField("class", String.class, filterMap.get("class"));
             }
             SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
 

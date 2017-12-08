@@ -84,9 +84,6 @@ public class GangliaStormReporter extends ScheduledStormReporter {
         //defaults to seconds
         reportingPeriodUnit = getReportPeriodUnit(reporterConf);
 
-        // Not exposed:
-        // * withClock(Clock)
-
         String group = getMetricsTargetUDPGroup(reporterConf);
         Integer port = getMetricsTargetPort(reporterConf);
         String udpAddressingMode = getMetricsTargetUDPAddressingMode(reporterConf);

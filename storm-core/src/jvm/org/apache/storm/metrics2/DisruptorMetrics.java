@@ -20,14 +20,14 @@ package org.apache.storm.metrics2;
 import org.apache.storm.utils.DisruptorQueue;
 
 public class DisruptorMetrics {
-    private SimpleGauge<Long> capacity;
-    private SimpleGauge<Long> population;
-    private SimpleGauge<Long> writePosition;
-    private SimpleGauge<Long> readPosition;
-    private SimpleGauge<Double> arrivalRate;
-    private SimpleGauge<Double> sojournTime;
-    private SimpleGauge<Long> overflow;
-    private SimpleGauge<Float> pctFull;
+    private final SimpleGauge<Long> capacity;
+    private final SimpleGauge<Long> population;
+    private final SimpleGauge<Long> writePosition;
+    private final SimpleGauge<Long> readPosition;
+    private final SimpleGauge<Double> arrivalRate;
+    private final SimpleGauge<Double> sojournTime;
+    private final SimpleGauge<Long> overflow;
+    private final SimpleGauge<Float> pctFull;
 
 
     DisruptorMetrics(SimpleGauge<Long> capacity,
