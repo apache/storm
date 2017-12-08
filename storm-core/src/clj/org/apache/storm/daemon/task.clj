@@ -131,7 +131,7 @@
         user-context (:user-context task-data)
         executor-stats (:stats executor-data)
         debug? (= true (storm-conf TOPOLOGY-DEBUG))
-        ^Counter emitted-meter (StormMetricRegistry/counter "emitted" worker-context component-id)]
+        ^Counter emitted-counter (StormMetricRegistry/counter "emitted" worker-context component-id)]
         
     (fn ([^Integer out-task-id ^String stream ^List values]
           (when debug?
@@ -144,8 +144,7 @@
               (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
-              (.inc ^Counter emitted-meter)
-              (stats/emitted-tuple! executor-stats stream)
+              (stats/emitted-tuple! executor-stats emitted-counter stream)
               (if out-task-id
                 (stats/transferred-tuples! executor-stats stream 1)))
             (if out-task-id [out-task-id])
@@ -165,8 +164,7 @@
                    )))
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
-               (.inc ^Counter emitted-meter)
-               (stats/emitted-tuple! executor-stats stream)
+               (stats/emitted-tuple! executor-stats emitted-counter stream)
                (stats/transferred-tuples! executor-stats stream (count out-tasks)))
              out-tasks)))
     ))
