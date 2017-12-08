@@ -15,20 +15,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.flux.api;
-
-
-import org.apache.storm.generated.StormTopology;
 
 import java.util.Map;
 
+import org.apache.storm.generated.StormTopology;
+
 /**
  * Marker interface for objects that can produce `StormTopology` objects.
- *
+ * <p/>
  * If a `topology-source` class implements the `getTopology()` method, Flux will
  * call that method. Otherwise, it will introspect the given class and look for a
  * similar method that produces a `StormTopology` instance.
- *
+ * <p/>
  * Note that it is not strictly necessary for a class to implement this interface.
  * If a class defines a method with a similar signature, Flux should be able to find
  * and invoke it.

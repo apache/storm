@@ -35,6 +35,13 @@ components:
     constructorArgs:
       - "baz"
 
+  - id: "time1"
+    className: "java.time.Duration"
+    factory: "ofHours"
+    factoryArgs:
+      - 10
+
+
 # spout definitions
 spouts:
   - id: "spout-1"
@@ -70,8 +77,39 @@ bolts:
             - "foo"
             - "bar"
             - "baz"
+      - name: "withDuration"
+        args:
+          - ref: "time1"
+      - name: "withDurationArr"
+        args:
+          - reflist:
+            - "time1"
+            - "time1"
+      - name: "setTimeLenArr"
+        args:
+          - reflist: ["time1", "time2"]
 
+    properties:
+      - name: "timeLen"
+        ref: "time1"
 
+  - id: "bolt-2"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    parallelism: 1
+
+  - id: "bolt-3"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    factoryArgs:
+      - FOO
+    parallelism: 1
+
+  - id: "bolt-4"
+    className: "org.apache.storm.flux.test.TestBolt"
+    constructorArgs:
+      - 10
+    parallelism: 1
 #stream definitions
 # stream definitions define connections between spouts and bolts.
 # note that such connections can be cyclical
