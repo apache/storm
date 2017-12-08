@@ -15,52 +15,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.flux.wrappers.bolts;
 
-import org.apache.storm.task.ShellBolt;
-import org.apache.storm.topology.IRichBolt;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.tuple.Fields;
+package org.apache.storm.flux.wrappers.bolts;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.storm.task.ShellBolt;
+import org.apache.storm.topology.IRichBolt;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.tuple.Fields;
+
 /**
  * A generic `ShellBolt` implementation that allows you specify output fields
  * and even streams without having to subclass `ShellBolt` to do so.
  *
  */
-public class FluxShellBolt extends ShellBolt implements IRichBolt{
+public class FluxShellBolt extends ShellBolt implements IRichBolt {
     private Map<String, String[]> outputFields;
     private Map<String, Object> componentConfig;
     
     /**
-     * Create a ShellBolt with command line arguments
+     * Create a ShellBolt with command line arguments.
      * @param command Command line arguments for the bolt
      */
-    public FluxShellBolt(String[] command){
+    public FluxShellBolt(String[] command) {
         super(command);
         this.outputFields = new HashMap<String, String[]>();
     }
 
     /**
      * Create a ShellBolt with command line arguments and output fields
-     * 
      * Keep this constructor for backward compatibility.
      * 
      * @param command Command line arguments for the bolt
      * @param outputFields Names of fields the bolt will emit (if any).
      */
-    public FluxShellBolt(String[] command, String[] outputFields){
+    public FluxShellBolt(String[] command, String[] outputFields) {
         this(command);
         this.setDefaultStream(outputFields);
     }
 
     /**
      * Add configuration for this bolt. This method is called from YAML file:
-     *
+     * <p/>
      * ```
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
      * constructorArgs:
@@ -73,8 +73,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
      *   args: ["publisher.data_paths", "actions"]
      * ```
      *
-     * @param key
-     * @param value
+     * @param key config key
+     * @param value config value
      */
     public void addComponentConfig(String key, Object value) {
         if (this.componentConfig == null) {
@@ -85,7 +85,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
 
     /**
      * Add configuration for this bolt. This method is called from YAML file:
-     *
+     * <p/>
      * ```
      * className: "org.apache.storm.flux.wrappers.bolts.FluxShellBolt"
      * constructorArgs:
@@ -100,8 +100,8 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
      *   - ["actions"]
      * ```
      *
-     * @param key
-     * @param values
+     * @param key config key
+     * @param values config values
      */
     public void addComponentConfig(String key, List<Object> values) {
         if (this.componentConfig == null) {
@@ -112,7 +112,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
 
     /**
      * Set default stream outputFields, this method is called from YAML file:
-     * 
+     * <p/>
      * ```
      * bolts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
@@ -133,7 +133,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
 
     /**
      * Set custom *named* stream outputFields, this method is called from YAML file:
-     * 
+     * <p/>
      * ```
      * bolts:
      * - className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
@@ -160,7 +160,7 @@ public class FluxShellBolt extends ShellBolt implements IRichBolt{
             Map.Entry entryTuple = (Map.Entry)it.next();
             String key = (String)entryTuple.getKey();
             String[] value = (String[])entryTuple.getValue();
-            if(key.equals("default")) {
+            if (key.equals("default")) {
                 declarer.declare(new Fields(value));
             } else {
                 declarer.declareStream(key, new Fields(value));
