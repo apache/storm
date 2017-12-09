@@ -80,8 +80,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient KafkaTupleListener tupleListener;
     // timer == null if processing guarantee is none or at-most-once
     private transient Timer commitTimer;
-    // Flag indicating that the spout is still undergoing initialization process.
-    private transient boolean initialized;
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
     // Tuples that were successfully acked/emitted. These tuples will be committed periodically when the commit timer expires,
@@ -108,7 +106,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     @Override
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
-        initialized = false;
         this.context = context;
 
         // Spout internals
@@ -148,14 +145,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         
         @Override
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
-            initialized = false;
             previousAssignment = partitions;
 
             LOG.info("Partitions revoked. [consumer-group={}, consumer={}, topic-partitions={}]",
                 kafkaSpoutConfig.getConsumerGroupId(), kafkaConsumer, partitions);
 
             if (isAtLeastOnceProcessing()) {
-                commitOffsetsForAckedTuples();
+                commitOffsetsForAckedTuples(new HashSet<>(partitions));
             }
         }
 
@@ -192,12 +188,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             for (TopicPartition tp : newPartitions) {
                 final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
                 final long fetchOffset = doSeek(tp, committedOffset);
+                LOG.debug("Set consumer position to [{}] for topic-partition [{}], based on strategy [{}] and committed offset [{}]",
+                    fetchOffset, tp, firstPollOffsetStrategy, committedOffset);
                 // If this partition was previously assigned to this spout, leave the acked offsets as they were to resume where it left off
                 if (isAtLeastOnceProcessing() && !offsetManagers.containsKey(tp)) {
                     offsetManagers.put(tp, new OffsetManager(tp, fetchOffset));
                 }
             }
-            initialized = true;
             LOG.info("Initialization complete");
         }
 
@@ -229,14 +226,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-            if (initialized) {             
-             
                 if (refreshSubscriptionTimer.isExpiredResetOnTrue()) {
                     kafkaSpoutConfig.getSubscription().refreshAssignment();
                 }
 
                 if (shouldCommit()) {
-                    commitOffsetsForAckedTuples();
+                commitOffsetsForAckedTuples(kafkaConsumer.assignment());
                 }
 
                 PollablePartitionsInfo pollablePartitionsInfo = getPollablePartitionsInfo();
@@ -249,9 +244,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 }
 
                 emitIfWaitingNotEmitted();
-            } else {
-                LOG.debug("Spout not initialized. Not sending tuples until initialization completes");
-            }
         } catch (InterruptException e) {
             throwKafkaConsumerInterruptedException();
         }
@@ -266,7 +258,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private boolean shouldCommit() {
         return isAtLeastOnceProcessing() && commitTimer.isExpiredResetOnTrue();    // timer != null for non auto commit mode
     }
-
+    
     private PollablePartitionsInfo getPollablePartitionsInfo() {
         if (isWaitingToEmit()) {
             LOG.debug("Not polling. Tuples waiting to be emitted.");
@@ -377,9 +369,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // ======== emit  =========
     private void emitIfWaitingNotEmitted() {
         while (isWaitingToEmit()) {
-            final boolean emitted = emitOrRetryTuple(waitingToEmit.next());
+            final boolean emittedTuple = emitOrRetryTuple(waitingToEmit.next());
             waitingToEmit.remove();
-            if (emitted) {
+            if (emittedTuple) {
                 break;
             }
         }
@@ -400,7 +392,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } else if (emitted.contains(msgId)) {   // has been emitted and it is pending ack or fail
             LOG.trace("Tuple for record [{}] has already been emitted. Skipping", record);
         } else {
-            if (kafkaConsumer.committed(tp) != null && (kafkaConsumer.committed(tp).offset() >= kafkaConsumer.position(tp))) {
+            if (kafkaConsumer.committed(tp) != null && (kafkaConsumer.committed(tp).offset() > kafkaConsumer.position(tp))) {
                 throw new IllegalStateException("Attempting to emit a message that has already been committed.");
             }
 
@@ -447,10 +439,17 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         return tuple != null || kafkaSpoutConfig.isEmitNullTuples();
     }
 
-    private void commitOffsetsForAckedTuples() {
-        // Find offsets that are ready to be committed for every topic partition
+    private void commitOffsetsForAckedTuples(Set<TopicPartition> assignedPartitions) {
+        // Find offsets that are ready to be committed for every assigned topic partition
+        final Map<TopicPartition, OffsetManager> assignedOffsetManagers = new HashMap<>();
+        for (Entry<TopicPartition, OffsetManager> entry : offsetManagers.entrySet()) {
+            if (assignedPartitions.contains(entry.getKey())) {
+                assignedOffsetManagers.put(entry.getKey(), entry.getValue());
+            }
+        }
+
         final Map<TopicPartition, OffsetAndMetadata> nextCommitOffsets = new HashMap<>();
-        for (Map.Entry<TopicPartition, OffsetManager> tpOffset : offsetManagers.entrySet()) {
+        for (Map.Entry<TopicPartition, OffsetManager> tpOffset : assignedOffsetManagers.entrySet()) {
             final OffsetAndMetadata nextCommitOffset = tpOffset.getValue().findNextCommitOffset();
             if (nextCommitOffset != null) {
                 nextCommitOffsets.put(tpOffset.getKey(), nextCommitOffset);
@@ -482,8 +481,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     waitingToEmit = null;
                 }
                 
-                
-                final OffsetManager offsetManager = offsetManagers.get(tp);
+                final OffsetManager offsetManager = assignedOffsetManagers.get(tp);
                 offsetManager.commit(tpOffset.getValue());
                 LOG.debug("[{}] uncommitted offsets for partition [{}] after commit", offsetManager.getNumUncommittedOffsets(), tp);
             }
@@ -587,7 +585,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private void shutdown() {
         try {
             if (isAtLeastOnceProcessing()) {
-                commitOffsetsForAckedTuples();
+                commitOffsetsForAckedTuples(kafkaConsumer.assignment());
             }
         } finally {
             //remove resources
@@ -632,6 +630,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
     
     private static class PollablePartitionsInfo {
+
         private final Set<TopicPartition> pollablePartitions;
         //The subset of earliest retriable offsets that are on pollable partitions
         private final Map<TopicPartition, Long> pollableEarliestRetriableOffsets;
