@@ -50,9 +50,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.MockitoAnnotations;
 
-import static org.mockito.Matchers.anyList;
-
 import java.util.regex.Pattern;
+
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -97,19 +96,6 @@ public class SingleTopicKafkaSpoutTest {
     private void prepareSpout(int messageCount) throws Exception {
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitRule.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
         SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
-    }
-
-    /*
-     * Asserts that commitSync has been called once, 
-     * that there are only commits on one topic,
-     * and that the committed offset covers messageCount messages
-     */
-    private void verifyAllMessagesCommitted(long messageCount) {
-        verify(consumerSpy, times(1)).commitSync(commitCapture.capture());
-        Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
-        assertThat("Expected commits for only one topic partition", commits.entrySet().size(), is(1));
-        OffsetAndMetadata offset = commits.entrySet().iterator().next().getValue();
-        assertThat("Expected committed offset to cover all emitted messages", offset.offset(), is(messageCount));
     }
 
     @Test
@@ -200,7 +186,7 @@ public class SingleTopicKafkaSpoutTest {
             //Commit offsets
             spout.nextTuple();
 
-            verifyAllMessagesCommitted(messageCount);
+            SingleTopicKafkaUnitSetupHelper.verifyAllMessagesCommitted(consumerSpy, commitCapture, messageCount);
         }
     }
 
@@ -228,7 +214,7 @@ public class SingleTopicKafkaSpoutTest {
             //Commit offsets
             spout.nextTuple();
 
-            verifyAllMessagesCommitted(messageCount);
+            SingleTopicKafkaUnitSetupHelper.verifyAllMessagesCommitted(consumerSpy, commitCapture, messageCount);
         }
     }
 
@@ -269,7 +255,7 @@ public class SingleTopicKafkaSpoutTest {
             //Commit offsets
             spout.nextTuple();
 
-            verifyAllMessagesCommitted(messageCount);
+            SingleTopicKafkaUnitSetupHelper.verifyAllMessagesCommitted(consumerSpy, commitCapture, messageCount);
         }
     }
 
@@ -313,7 +299,7 @@ public class SingleTopicKafkaSpoutTest {
             //Commit offsets
             spout.nextTuple();
 
-            verifyAllMessagesCommitted(messageCount);
+            SingleTopicKafkaUnitSetupHelper.verifyAllMessagesCommitted(consumerSpy, commitCapture, messageCount);
         }
     }
 
