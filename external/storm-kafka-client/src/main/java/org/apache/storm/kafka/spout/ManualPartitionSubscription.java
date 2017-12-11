@@ -56,11 +56,11 @@ public class ManualPartitionSubscription extends Subscription {
         Collections.sort(allPartitions, TopicPartitionComparator.INSTANCE);
         Set<TopicPartition> newAssignment = new HashSet<>(partitioner.partition(allPartitions, context));
         if (!newAssignment.equals(currentAssignment)) {
-            consumer.assign(newAssignment);
             if (currentAssignment != null) {
                 listener.onPartitionsRevoked(currentAssignment);
             }
             currentAssignment = newAssignment;
+            consumer.assign(newAssignment);
             listener.onPartitionsAssigned(newAssignment);
         }
     }
