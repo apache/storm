@@ -7,6 +7,5 @@ The Apache Software Foundation (http://www.apache.org/).
 This product includes software developed by Yahoo! Inc. (www.yahoo.com)
 Copyright (c) 2012-2015 Yahoo! Inc.
 
-"This product includes Java Message Service v1.1 licensed under the Sun Java Message Service 1.1 License."
-http://www.oracle.com/technetwork/java/docs-136352.html – Documentation, Jar and Source
-http://download.oracle.com/otndocs/jcp/7542-jms-1.1-fr-doc-oth-JSpec/7542-jms-1.1-fr-doc-oth-JSpec-license.html — License
+This product includes JMS specifications (https://javaee.github.io/jms-spec/)
+which is distributed under the Common Development and Distribution License (https://javaee.github.io/jms-spec/LICENSE)
