@@ -110,7 +110,7 @@ public class NormalizedResourceRequest extends NormalizedResources {
     private double offHeap;
 
     /**
-     * Create a new normalized set of resources.  Note that memory is not covered here becasue it is not consistent in requests vs offers
+     * Create a new normalized set of resources.  Note that memory is not covered here because it is not consistent in requests vs offers
      * because of how on heap vs off heap is used.
      *
      * @param resources the resources to be normalized.
@@ -119,6 +119,7 @@ public class NormalizedResourceRequest extends NormalizedResources {
     private NormalizedResourceRequest(Map<String, ? extends Number> resources,
                                      Map<String, Object> topologyConf) {
         super(resources, getDefaultResources(topologyConf));
+        initializeMemory(getNormalizedResources());
     }
 
     public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf) {
@@ -131,6 +132,7 @@ public class NormalizedResourceRequest extends NormalizedResources {
 
     public NormalizedResourceRequest() {
         super(null, null);
+        initializeMemory(getNormalizedResources());
     }
 
     @Override
@@ -141,8 +143,7 @@ public class NormalizedResourceRequest extends NormalizedResources {
         return ret;
     }
 
-    @Override
-    protected void initializeMemory(Map<String, Double> normalizedResources) {
+    private void initializeMemory(Map<String, Double> normalizedResources) {
         onHeap = normalizedResources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
         offHeap = normalizedResources.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
     }
