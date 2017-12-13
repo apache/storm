@@ -468,7 +468,7 @@ public class Cluster implements ISchedulingState {
         double maxHeap) {
 
         NormalizedResourceRequest requestedResources = td.getTotalResources(exec);
-        if (!resourcesAvailable.couldHoldIgnoringMemory(requestedResources)) {
+        if (!resourcesAvailable.couldHoldIgnoringSharedMemory(requestedResources)) {
             return false;
         }
 

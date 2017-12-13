@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.generated.Bolt;
 import org.apache.storm.generated.ComponentCommon;
 import org.apache.storm.generated.SpoutSpec;
@@ -31,6 +32,8 @@ import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import static org.apache.storm.scheduler.resource.NormalizedResources.normalizedResourceMap;
 
 public class ResourceUtils {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceUtils.class);
@@ -92,7 +95,7 @@ public class ResourceUtils {
 
                 if (resourceUpdatesMap.containsKey(spoutName)) {
                     ComponentCommon spoutCommon = spoutSpec.get_common();
-                    Map<String, Double> resourcesUpdate = resourceUpdatesMap.get(spoutName);
+                    Map<String, Double> resourcesUpdate = normalizedResourceMap(resourceUpdatesMap.get(spoutName));
                     String newJsonConf = getJsonWithUpdatedResources(spoutCommon.get_json_conf(), resourcesUpdate);
                     spoutCommon.set_json_conf(newJsonConf);
                     componentsUpdated.put(spoutName, resourcesUpdate);
@@ -105,9 +108,9 @@ public class ResourceUtils {
                 Bolt boltObj = bolt.getValue();
                 String boltName = bolt.getKey();
 
-                if(resourceUpdatesMap.containsKey(boltName)) {
+                if (resourceUpdatesMap.containsKey(boltName)) {
                     ComponentCommon boltCommon = boltObj.get_common();
-                    Map<String, Double> resourcesUpdate = resourceUpdatesMap.get(boltName);
+                    Map<String, Double> resourcesUpdate = normalizedResourceMap(resourceUpdatesMap.get(boltName));
                     String newJsonConf = getJsonWithUpdatedResources(boltCommon.get_json_conf(), resourceUpdatesMap.get(boltName));
                     boltCommon.set_json_conf(newJsonConf);
                     componentsUpdated.put(boltName, resourcesUpdate);
@@ -124,24 +127,36 @@ public class ResourceUtils {
         LOG.info("Component resource updates ignored: {}", notUpdated);
     }
 
+    public static String getCorrespondingLegacyResourceName(String normalizedResourceName) {
+        for(Map.Entry<String, String> entry : NormalizedResources.RESOURCE_NAME_MAPPING.entrySet()) {
+            if (entry.getValue().equals(normalizedResourceName)) {
+                return entry.getKey();
+            }
+        }
+        return normalizedResourceName;
+    }
+
     public static String getJsonWithUpdatedResources(String jsonConf, Map<String, Double> resourceUpdates) {
         try {
             JSONParser parser = new JSONParser();
             Object obj = parser.parse(jsonConf);
             JSONObject jsonObject = (JSONObject) obj;
 
-            if (resourceUpdates.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB)) {
-                Double topoMemOnHeap = resourceUpdates.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-                jsonObject.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, topoMemOnHeap);
+            Map<String, Double> componentResourceMap =
+                    (Map<String, Double>) jsonObject.getOrDefault(
+                            Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<String, Double>()
+                    );
+
+            for (Map.Entry<String, Double> resourceUpdateEntry : resourceUpdates.entrySet()) {
+                if (NormalizedResources.RESOURCE_NAME_MAPPING.containsValue(resourceUpdateEntry.getKey())) {
+                    // if there will be legacy values they will be in the outer conf
+                    jsonObject.remove(getCorrespondingLegacyResourceName(resourceUpdateEntry.getKey()));
+                    componentResourceMap.remove(getCorrespondingLegacyResourceName(resourceUpdateEntry.getKey()));
+                }
+                componentResourceMap.put(resourceUpdateEntry.getKey(), resourceUpdateEntry.getValue());
             }
-            if (resourceUpdates.containsKey(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB)) {
-                Double topoMemOffHeap = resourceUpdates.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
-                jsonObject.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, topoMemOffHeap);
-            }
-            if (resourceUpdates.containsKey(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT)) {
-                Double topoCPU = resourceUpdates.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
-                jsonObject.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, topoCPU);
-            }
+            jsonObject.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, componentResourceMap);
+
             return jsonObject.toJSONString();
         } catch (ParseException ex) {
             throw new RuntimeException("Failed to parse component resources with json: " +  jsonConf);

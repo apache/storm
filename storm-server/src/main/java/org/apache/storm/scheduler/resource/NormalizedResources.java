@@ -18,8 +18,6 @@
 
 package org.apache.storm.scheduler.resource;
 
-import static org.apache.storm.Constants.*;
-
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.Collections;
@@ -44,11 +42,11 @@ public abstract class NormalizedResources {
 
     static {
         Map<String, String> tmp = new HashMap<>();
-        tmp.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, COMMON_CPU_RESOURCE_NAME);
-        tmp.put(Config.SUPERVISOR_CPU_CAPACITY, COMMON_CPU_RESOURCE_NAME);
-        tmp.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
-        tmp.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
-        tmp.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, COMMON_TOTAL_MEMORY_RESOURCE_NAME);
+        tmp.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, Constants.COMMON_CPU_RESOURCE_NAME);
+        tmp.put(Config.SUPERVISOR_CPU_CAPACITY, Constants.COMMON_CPU_RESOURCE_NAME);
+        tmp.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME);
+        tmp.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME);
+        tmp.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME);
         RESOURCE_NAME_MAPPING = Collections.unmodifiableMap(tmp);
     }
 
@@ -56,10 +54,10 @@ public abstract class NormalizedResources {
         //To avoid locking we will go through the map twice.  It should be small so it is probably not a big deal
         for (String key : normalizedResources.keySet()) {
             //We are going to skip over CPU and Memory, because they are captured elsewhere
-            if (!COMMON_CPU_RESOURCE_NAME.equals(key)
-                && !COMMON_TOTAL_MEMORY_RESOURCE_NAME.equals(key)
-                && !COMMON_OFFHEAP_MEMORY_RESOURCE_NAME.equals(key)
-                && !COMMON_ONHEAP_MEMORY_RESOURCE_NAME.equals(key)) {
+            if (!Constants.COMMON_CPU_RESOURCE_NAME.equals(key)
+                && !Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME.equals(key)
+                && !Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME.equals(key)
+                && !Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME.equals(key)) {
                 resourceNames.computeIfAbsent(key, (k) -> counter.getAndIncrement());
             }
         }
@@ -231,7 +229,7 @@ public abstract class NormalizedResources {
      * @param other the resources that we want to check if they would fit in this.
      * @return true if it might fit, else false if it could not possibly fit.
      */
-    public boolean couldHoldIgnoringMemory(NormalizedResources other) {
+    public boolean couldHoldIgnoringSharedMemory(NormalizedResources other) {
         if (this.cpu < other.getTotalCpu()) {
             return false;
         }
@@ -240,6 +238,10 @@ public abstract class NormalizedResources {
             if (getResourceAt(i) < other.getResourceAt(i)) {
                 return false;
             }
+        }
+
+        if (this.getTotalMemoryMb() < other.getTotalMemoryMb()) {
+            return false;
         }
         return true;
     }

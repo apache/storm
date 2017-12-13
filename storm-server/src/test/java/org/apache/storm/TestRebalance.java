@@ -75,7 +75,7 @@ public class TestRebalance {
 
             StormTopology stormTopology = builder.createTopology();
 
-            LOG.info("submitting topologies...");
+            LOG.info("submitting topologies....");
             String topoName = "topo1";
             cluster.submitTopology(topoName, new HashMap<>(), stormTopology);
 
@@ -87,6 +87,7 @@ public class TestRebalance {
             resources.put("spout-1", new HashMap<String, Double>());
             resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 120.0);
             resources.get("spout-1").put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 25.0);
+            resources.get("spout-1").put("gpu.count", 5.0);
 
             opts.set_topology_resources_overrides(resources);
             opts.set_wait_secs(0);
@@ -96,7 +97,7 @@ public class TestRebalance {
 
             opts.set_topology_conf_overrides(jsonObject.toJSONString());
 
-            LOG.info("rebalancing...");
+            LOG.info("rebalancing....");
             cluster.rebalance("topo1", opts);
 
             waitTopologyScheduled(topoName, cluster, 10);
@@ -113,8 +114,11 @@ public class TestRebalance {
 
             JSONObject readTopologyConf = (JSONObject) parser.parse(componentConfRaw);
 
-            assertEquals("Updated CPU correct", 25.0, (double) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT), 0.001);
-            assertEquals("Updated Memory correct", 120.0, (double) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB), 0.001);
+            Map<String, Double> componentResources = (Map<String, Double>) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
+
+            assertEquals("Updated CPU correct", 25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001);
+            assertEquals("Updated Memory correct", 120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001);
+            assertEquals("Updated Generic resource correct", 5.0, componentResources.get("gpu.count"), 0.001);
         }
     }
 
