@@ -27,7 +27,7 @@ language: java
 jdk:
   - oraclejdk8
 before_install:
-  - rvm use 2.1.5 --install
+  - rvm use 2.1.10 --install
   - nvm install 0.12.2
   - nvm use 0.12.2
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
