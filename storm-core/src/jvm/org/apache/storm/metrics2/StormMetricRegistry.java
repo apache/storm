@@ -68,20 +68,20 @@ public class StormMetricRegistry {
         );
     }
 
-    public static Meter meter(String name, WorkerTopologyContext context, String componentId){
-        String metricName = metricName(name, context.getStormId(), componentId, context.getThisWorkerPort());
+    public static Meter meter(String name, WorkerTopologyContext context, String componentId, String executorId, String streamId){
+        String metricName = metricName(name, context.getStormId(), componentId, streamId,executorId, context.getThisWorkerPort());
         return REGISTRY.meter(metricName);
     }
 
-    public static Counter counter(String name, WorkerTopologyContext context, String componentId){
-        String metricName = metricName(name, context.getStormId(), componentId, context.getThisWorkerPort());
+    public static Counter counter(String name, WorkerTopologyContext context, String componentId, String executorId, String streamId){
+        String metricName = metricName(name, context.getStormId(), componentId, streamId,executorId, context.getThisWorkerPort());
         return REGISTRY.counter(metricName);
     }
 
     public static void start(Map<String, Object> stormConfig, DaemonType type){
         String localHost = "localhost";
         try {
-            hostName = Utils.localHostname();
+            hostName = dotToUnderScore(Utils.localHostname());
         } catch (UnknownHostException e) {
              LOG.warn("Unable to determine hostname while starting the metrics system. Hostname will be reported" +
                      " as 'localhost'.");
@@ -130,9 +130,27 @@ public class StormMetricRegistry {
         }
     }
 
-    public static String metricName(String name, String stormId, String componentId, Integer workerPort){
-        return String.format("storm.worker.%s.%s.%s.%s-%s", stormId, hostName, componentId, workerPort, name);
+    public static String metricName(String name, String stormId, String componentId, String streamId, String executorId, Integer workerPort){
+        return String.format("storm.worker.%s.%s.%s.%s.%s.%s-%s",
+                stormId,
+                hostName,
+                dotToUnderScore(componentId),
+                dotToUnderScore(streamId),
+                dotToUnderScore(executorId),
+                workerPort,
+                name);
     }
 
+    public static String metricName(String name, String stormId, String componentId, Integer workerPort){
+        return String.format("storm.worker.%s.%s.%s.%s-%s",
+                stormId,
+                hostName,
+                dotToUnderScore(componentId),
+                workerPort,
+                name);
+    }
 
+    private static String dotToUnderScore(String str){
+        return str.replace('.', '_');
+    }
 }
