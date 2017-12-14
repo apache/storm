@@ -94,6 +94,9 @@ public class StormCommon {
     public static final String TOPOLOGY_METRICS_CONSUMER_EXPAND_MAP_TYPE = "expandMapType";
     public static final String TOPOLOGY_METRICS_CONSUMER_METRIC_NAME_SEPARATOR = "metricNameSeparator";
 
+    public static final String TOPOLOGY_EVENT_LOGGER_CLASS = "class";
+    public static final String TOPOLOGY_EVENT_LOGGER_ARGUMENTS = "arguments";
+
     @Deprecated
     public static String getStormId(final IStormClusterState stormClusterState, final String topologyName) {
         return stormClusterState.getTopoId(topologyName).get();

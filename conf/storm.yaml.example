@@ -74,3 +74,10 @@
 #       - endpoint: "metrics-collector.mycompany.org"
 #
 # storm.cluster.metrics.consumer.publish.interval.secs: 60
+
+# Event Logger
+# topology.event.logger.register:
+#   - class: "org.apache.storm.metric.FileBasedEventLogger"
+#   - class: "org.mycompany.MyEventLogger"
+#     arguments:
+#       endpoint: "event-logger.mycompany.org"

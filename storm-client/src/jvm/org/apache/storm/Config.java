@@ -17,6 +17,7 @@
  */
 package org.apache.storm;
 
+import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidation;
@@ -377,6 +378,18 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_ACKER_EXECUTORS = "topology.acker.executors";
+
+    /**
+     * A list of classes implementing IEventLogger (See storm.yaml.example for exact config format).
+     * Each listed class will be routed all the events sampled from emitting tuples.
+     * If there's no class provided to the option, default event logger will be initialized and used
+     * unless you disable event logger executor.
+     *
+     * Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering
+     * many implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
+     */
+    @isListEntryCustom(entryValidatorClasses={EventLoggerRegistryValidator.class})
+    public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
 
     /**
      * How many executors to spawn for event logger.
@@ -1786,6 +1799,32 @@ public class Config extends HashMap<String, Object> {
 
     public void registerSerialization(Class klass, Class<? extends Serializer> serializerClass) {
         registerSerialization(this, klass, serializerClass);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        registerEventLogger(this, klass, argument);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass) {
+        registerEventLogger(this, klass, null);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("class", klass.getCanonicalName());
+        m.put("arguments", argument);
+
+        List<Map<String, Object>> l = (List<Map<String, Object>>)conf.get(TOPOLOGY_EVENT_LOGGER_REGISTER);
+        if (l == null) {
+            l = new ArrayList<>();
+        }
+        l.add(m);
+
+        conf.put(TOPOLOGY_EVENT_LOGGER_REGISTER, l);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass) {
+        registerEventLogger(conf, klass, null);
     }
 
     public static void registerMetricsConsumer(Map<String, Object> conf, Class klass, Object argument, long parallelismHint) {

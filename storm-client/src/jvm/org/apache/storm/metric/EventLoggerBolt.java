@@ -15,17 +15,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metric;
 
+import static org.apache.storm.daemon.StormCommon.TOPOLOGY_EVENT_LOGGER_ARGUMENTS;
+import static org.apache.storm.daemon.StormCommon.TOPOLOGY_EVENT_LOGGER_CLASS;
+import static org.apache.storm.metric.IEventLogger.EventInfo;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.storm.Config;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import static org.apache.storm.metric.IEventLogger.EventInfo;
 
 public class EventLoggerBolt implements IBolt {
 
@@ -39,13 +46,19 @@ public class EventLoggerBolt implements IBolt {
     public static final String FIELD_COMPONENT_ID = "component-id";
     public static final String FIELD_MESSAGE_ID = "message-id";
 
-    private IEventLogger eventLogger;
+    private List<IEventLogger> eventLoggers;
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         LOG.info("EventLoggerBolt prepare called");
-        eventLogger = new FileBasedEventLogger();
-        eventLogger.prepare(topoConf, context);
+
+        eventLoggers = new ArrayList<>();
+        List<Map<String, Object>> registerInfo = (List<Map<String, Object>>) topoConf.get(Config.TOPOLOGY_EVENT_LOGGER_REGISTER);
+        if (registerInfo != null && !registerInfo.isEmpty()) {
+            initializeEventLoggers(topoConf, context, registerInfo);
+        } else {
+            initializeDefaultEventLogger(topoConf, context);
+        }
     }
 
     @Override
@@ -53,15 +66,42 @@ public class EventLoggerBolt implements IBolt {
         LOG.debug("** EventLoggerBolt got tuple from sourceComponent {}, with values {}", input.getSourceComponent(), input.getValues());
 
         Object msgId = input.getValueByField(FIELD_MESSAGE_ID);
-        EventInfo eventInfo = new EventInfo(input.getValueByField(FIELD_TS).toString(), input.getSourceComponent(),
-                                            String.valueOf(input.getSourceTask()), msgId == null ? "" : msgId.toString(),
-                                            input.getValueByField(FIELD_VALUES).toString());
+        EventInfo eventInfo = new EventInfo(input.getLongByField(FIELD_TS), input.getSourceComponent(),
+                                            input.getSourceTask(), msgId, (List<Object>) input.getValueByField(FIELD_VALUES));
 
-        eventLogger.log(eventInfo);
+        for (IEventLogger eventLogger : eventLoggers) {
+            eventLogger.log(eventInfo);
+        }
     }
 
     @Override
     public void cleanup() {
-        eventLogger.close();
+        for (IEventLogger eventLogger : eventLoggers) {
+            eventLogger.close();
+        }
+    }
+
+    private void initializeEventLoggers(Map<String, Object> topoConf, TopologyContext context, List<Map<String, Object>> registerInfo) {
+        for (Map<String, Object> info : registerInfo) {
+            String className = (String) info.get(TOPOLOGY_EVENT_LOGGER_CLASS);
+            Map<String, Object> arguments = (Map<String, Object>) info.get(TOPOLOGY_EVENT_LOGGER_ARGUMENTS);
+
+            IEventLogger eventLogger;
+            try {
+                eventLogger = (IEventLogger) Class.forName(className).newInstance();
+            } catch (Exception e) {
+                throw new RuntimeException("Could not instantiate a class listed in config under section "
+                        + Config.TOPOLOGY_EVENT_LOGGER_REGISTER + " with fully qualified name " + className, e);
+            }
+
+            eventLogger.prepare(topoConf, arguments, context);
+            eventLoggers.add(eventLogger);
+        }
+    }
+
+    private void initializeDefaultEventLogger(Map<String, Object> topoConf, TopologyContext context) {
+        FileBasedEventLogger eventLogger = new FileBasedEventLogger();
+        eventLogger.prepare(topoConf, null, context);
+        eventLoggers.add(eventLogger);
     }
 }
