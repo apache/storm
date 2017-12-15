@@ -37,7 +37,6 @@ import org.apache.storm.kafka.trident.mapper.TridentTupleToKafkaMapper;
 import org.apache.storm.kafka.trident.selector.DefaultTopicSelector;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.spout.SchemeAsMultiScheme;
-import org.apache.storm.sql.runtime.DataSource;
 import org.apache.storm.sql.runtime.DataSourcesProvider;
 import org.apache.storm.sql.runtime.FieldInfo;
 import org.apache.storm.sql.runtime.IOutputSerializer;
@@ -121,12 +120,6 @@ public class KafkaDataSourcesProvider implements DataSourcesProvider {
     @Override
     public String scheme() {
         return "kafka";
-    }
-
-    @Override
-    public DataSource construct(URI uri, String inputFormatClass, String outputFormatClass,
-                                List<FieldInfo> fields) {
-        throw new UnsupportedOperationException();
     }
 
     @Override
