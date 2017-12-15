@@ -42,8 +42,20 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
     public long retryDelayMaxMs = 60 * 1000;
     public int retryLimit = -1;
 
+    /**
+     * Create a SpoutConfig without setting client.id, which can make the source application ambiguous when tracing Kafka calls.
+     */
     public SpoutConfig(BrokerHosts hosts, String topic, String zkRoot, String id) {
         super(hosts, topic);
+        this.zkRoot = zkRoot;
+        this.id = id;
+    }
+
+    /**
+     * Create a SpoutConfig with a client.id value.
+     */
+    public SpoutConfig(BrokerHosts hosts, String topic, String clientId, String zkRoot, String id) {
+        super(hosts, topic, clientId);
         this.zkRoot = zkRoot;
         this.id = id;
     }

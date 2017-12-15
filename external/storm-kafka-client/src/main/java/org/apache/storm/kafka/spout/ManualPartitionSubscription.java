@@ -61,6 +61,7 @@ public class ManualPartitionSubscription extends Subscription {
                 listener.onPartitionsRevoked(currentAssignment);
             }
             currentAssignment = newAssignment;
+            consumer.assign(newAssignment);
             listener.onPartitionsAssigned(newAssignment);
         }
     }

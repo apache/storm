@@ -166,13 +166,22 @@ public class PartitionManager {
     }
 
     public Map getMetricsDataMap() {
+        String[] metricPrefixes = new String[] {
+            _partition.getId(),     // Correct metric prefix, see STORM-2775
+            _partition.toString()   // Old prefix, kept for backwards compatibility
+        };
+
         Map<String, Object> ret = new HashMap<>();
-        ret.put(_partition + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
-        ret.put(_partition + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
-        ret.put(_partition + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
-        ret.put(_partition + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
-        ret.put(_partition + "/lostMessageCount", _lostMessageCount.getValueAndReset());
-        ret.put(_partition + "/messageIneligibleForRetryCount", _messageIneligibleForRetryCount.getValueAndReset());
+
+        for (String metricPrefix : metricPrefixes) {
+            ret.put(metricPrefix + "/fetchAPILatencyMax", _fetchAPILatencyMax.getValueAndReset());
+            ret.put(metricPrefix + "/fetchAPILatencyMean", _fetchAPILatencyMean.getValueAndReset());
+            ret.put(metricPrefix + "/fetchAPICallCount", _fetchAPICallCount.getValueAndReset());
+            ret.put(metricPrefix + "/fetchAPIMessageCount", _fetchAPIMessageCount.getValueAndReset());
+            ret.put(metricPrefix + "/lostMessageCount", _lostMessageCount.getValueAndReset());
+            ret.put(metricPrefix + "/messageIneligibleForRetryCount", _messageIneligibleForRetryCount.getValueAndReset());
+        }
+
         return ret;
     }
 
@@ -252,6 +261,8 @@ public class PartitionManager {
                 if (null != omitted) {
                     _lostMessageCount.incrBy(omitted.size());
                 }
+
+                _pending.headMap(offset).clear();
 
                 LOG.warn("Removing the failed offsets for {} that are out of range: {}", _partition, omitted);
             }
@@ -356,7 +367,7 @@ public class PartitionManager {
         }
     }
 
-    private String committedPath() {
+    protected String committedPath() {
         return _spoutConfig.zkRoot + "/" + _spoutConfig.id + "/" + _partition.getId();
     }
 

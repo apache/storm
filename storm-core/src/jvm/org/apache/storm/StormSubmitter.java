@@ -77,21 +77,18 @@ public class StormSubmitter {
     @SuppressWarnings("unchecked")
     public static Map prepareZookeeperAuthentication(Map conf) {
         Map toRet = new HashMap();
-
+        String secretPayload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         // Is the topology ZooKeeper authentication configuration unset?
         if (! conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||
                 conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) == null ||
                 !  validateZKDigestPayload((String)
                     conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD))) {
-
-            String secretPayload = generateZookeeperDigestSecretPayload();
-            toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, secretPayload);
+            secretPayload = generateZookeeperDigestSecretPayload();
             LOG.info("Generated ZooKeeper secret payload for MD5-digest: " + secretPayload);
         }
-
+        toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD, secretPayload);
         // This should always be set to digest.
         toRet.put(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME, "digest");
-
         return toRet;
     }
 
@@ -321,7 +318,7 @@ public class StormSubmitter {
         try {
             String jar = submitJarAs(conf, System.getProperty("storm.jar"), progressListener, client);
             LOG.info("Submitting topology {} in distributed mode with conf {}", name, serConf);
-
+            Utils.addVersions(topology);
             if (opts != null) {
                 client.getClient().submitTopologyWithOpts(name, jar, serConf, topology, opts);
             } else {

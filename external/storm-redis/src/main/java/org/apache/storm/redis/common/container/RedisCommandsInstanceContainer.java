@@ -15,18 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-StormServer {
-       com.sun.security.auth.module.Krb5LoginModule required
-       useKeyTab=true
-       keyTab="/etc/nimbus_server.keytab"
-       storeKey=true
-       useTicketCache=false
-       principal="nimbus_server/carcloth.corp.yahoo.com@STORM.CORP.YAHOO.COM";
-};
-StormClient {
-       com.sun.security.auth.module.Krb5LoginModule required
-       doNotPrompt=true
-       useTicketCache=true
-       serviceName="nimbus_server";
-};
+package org.apache.storm.redis.common.container;
 
+import org.apache.storm.redis.common.commands.RedisCommands;
+
+import java.io.Closeable;
+
+/**
+ * Interfaces for containers which stores instances implementing RedisCommands.
+ */
+public interface RedisCommandsInstanceContainer extends Closeable {
+    /**
+     * Borrows instance from container.
+     * @return instance which implements RedisCommands
+     */
+    RedisCommands getInstance();
+
+    /**
+     * Returns instance to container.
+     * @param redisCommands borrowed instance
+     */
+    void returnInstance(RedisCommands redisCommands);
+}

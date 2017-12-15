@@ -71,7 +71,9 @@ public class RedisClusterState implements State {
         public State makeState(@SuppressWarnings("rawtypes") Map conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                     jedisClusterConfig.getTimeout(),
+                                                    jedisClusterConfig.getTimeout(),
                                                     jedisClusterConfig.getMaxRedirections(),
+                                                    jedisClusterConfig.getPassword(),
                                                     DEFAULT_POOL_CONFIG);
 
             return new RedisClusterState(jedisCluster);

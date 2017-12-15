@@ -17,6 +17,8 @@
  */
 package org.apache.storm.flux;
 
+import static org.hamcrest.CoreMatchers.is;
+
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.flux.model.ExecutionContext;
@@ -28,6 +30,8 @@ import org.junit.Test;
 import java.io.File;
 
 import static org.junit.Assert.*;
+
+import java.util.Collections;
 
 public class TCKTest {
     @Test
@@ -227,6 +231,10 @@ public class TCKTest {
         assertTrue(bolt.getFoo().equals("foo"));
         assertTrue(bolt.getBar().equals("bar"));
         assertTrue(bolt.getFooBar().equals("foobar"));
+
+        assertNotNull(context.getBolt("bolt-2"));
+        assertNotNull(context.getBolt("bolt-3"));
+        assertNotNull(context.getBolt("bolt-4"));
         assertArrayEquals(new TestBolt.TestClass[] {new TestBolt.TestClass("foo"), new TestBolt.TestClass("bar"), new TestBolt.TestClass("baz")}, bolt.getClasses());
     }
 
@@ -251,6 +259,11 @@ public class TCKTest {
         assertEquals("ENV variable not replaced.",
                 envPath,
                 context.getTopologyDef().getConfig().get("test.env.value"));
+        
+        //Test substitution where the target type is List
+        assertThat("List property is not replaced by the expected value",
+               Collections.singletonList("A string list"),
+               is(context.getTopologyDef().getConfig().get("list.property.target")));
 
     }
 }

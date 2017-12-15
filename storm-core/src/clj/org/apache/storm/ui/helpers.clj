@@ -29,14 +29,16 @@
            [org.eclipse.jetty.server.nio SelectChannelConnector]
            [org.eclipse.jetty.server.ssl SslSocketConnector]
            [org.eclipse.jetty.servlet ServletHolder FilterMapping]
-	   [org.eclipse.jetty.util.ssl SslContextFactory]
+           [org.eclipse.jetty.util.ssl SslContextFactory]
            [org.eclipse.jetty.server DispatcherType]
-           [org.eclipse.jetty.servlets CrossOriginFilter])
+           [org.eclipse.jetty.servlets CrossOriginFilter]
+           (org.eclipse.jetty.http HttpStatus))
   (:require [ring.util servlet]
             [ring.util.response :as response])
   (:require [compojure.route :as route]
             [compojure.handler :as handler])
-  (:require [metrics.meters :refer [defmeter mark!]]))
+  (:require [metrics.meters :refer [defmeter mark!]]
+            [ring.util.response :as resp]))
 
 (defmeter num-web-requests)
 
@@ -133,7 +135,8 @@
    "errorMessage" (str "User " user " is not authorized.")})
 
 (defn unauthorized-user-html [user]
-  [[:h2 "User '" (escape-html user) "' is not authorized."]])
+  (-> (resp/response (str "User '" (escape-html user) "' is not authorized."))
+      (resp/status 403)))
 
 (defn- mk-ssl-connector [port ks-path ks-password ks-type key-password
                          ts-path ts-password ts-type need-client-auth want-client-auth]
@@ -267,9 +270,9 @@
            (serialize-fn data))})
 
 (defn exception->json
-  [ex]
-  {"error" "Internal Server Error"
+  [ex status-code]
+  {"error" (str status-code " " (HttpStatus/getMessage status-code))
    "errorMessage"
-   (let [sw (java.io.StringWriter.)]
-     (.printStackTrace ex (java.io.PrintWriter. sw))
-     (.toString sw))})
+           (let [sw (java.io.StringWriter.)]
+             (.printStackTrace ex (java.io.PrintWriter. sw))
+             (.toString sw))})

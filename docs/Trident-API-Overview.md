@@ -484,7 +484,7 @@ public class Count implements CombinerAggregator<Long> {
 }
 ```
 
-The benefits of CombinerAggregators are seen when you use them with the aggregate method instead of partitionAggregate. In that case, Trident automatically optimizes the computation by doing partial aggregations before transferring tuples over the network.
+CombinerAggregators offer high efficiency when used with the aggregate method instead of partitionAggregate ([see below](#aggregation-operations)).
 
 A ReducerAggregator has the following interface:
 

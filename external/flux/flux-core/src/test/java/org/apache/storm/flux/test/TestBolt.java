@@ -20,12 +20,12 @@ package org.apache.storm.flux.test;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseBasicBolt;
+import org.apache.storm.topology.base.BaseWindowedBolt;
 import org.apache.storm.tuple.Tuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.Serializable;
-
 
 public class TestBolt extends BaseBasicBolt {
     private static final Logger LOG = LoggerFactory.getLogger(TestBolt.class);
@@ -85,6 +85,8 @@ public class TestBolt extends BaseBasicBolt {
 
     }
 
+    public TestBolt(Long l){}
+
     @Override
     public void execute(Tuple tuple, BasicOutputCollector basicOutputCollector) {
         LOG.info("{}", tuple);
@@ -114,6 +116,14 @@ public class TestBolt extends BaseBasicBolt {
         this.classes = classes;
     }
 
+    public void setTimeLen(BaseWindowedBolt.Duration x) { x.toString(); }
+    public void setTimeLenArr(BaseWindowedBolt.Duration[] x) { x.toString(); }
+
+    public void withDuration(BaseWindowedBolt.Duration x) { x.toString(); }
+
+    public void withDurationArr(BaseWindowedBolt.Duration[] x) { x.toString(); }
+
+
     public String getFoo(){
         return this.foo;
     }
@@ -127,5 +137,14 @@ public class TestBolt extends BaseBasicBolt {
 
     public TestClass[] getClasses() {
         return classes;
+    }
+
+    // Factory methods
+    public static TestBolt newInstance() {
+        return newInstance(TestEnum.FOO);
+    }
+
+    public static TestBolt newInstance(TestEnum te){
+        return new TestBolt(te);
     }
 }

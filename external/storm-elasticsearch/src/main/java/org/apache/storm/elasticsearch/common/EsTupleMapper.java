@@ -20,6 +20,7 @@ package org.apache.storm.elasticsearch.common;
 import org.apache.storm.tuple.ITuple;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * TupleMapper defines how to extract source, index, type, and id from tuple for ElasticSearch.
@@ -52,4 +53,12 @@ public interface EsTupleMapper extends Serializable {
      * @return id
      */
     String getId(ITuple tuple);
+
+    /**
+     * Extracts params from tuple if available.
+     * @param tuple source tuple
+     * @param defaultValue value to return if params are missing
+     * @return params
+     */
+    Map<String, String> getParams(ITuple tuple, Map<String, String> defaultValue);
 }

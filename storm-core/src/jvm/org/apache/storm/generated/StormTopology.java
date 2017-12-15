@@ -61,6 +61,8 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
   private static final org.apache.thrift.protocol.TField WORKER_HOOKS_FIELD_DESC = new org.apache.thrift.protocol.TField("worker_hooks", org.apache.thrift.protocol.TType.LIST, (short)4);
   private static final org.apache.thrift.protocol.TField DEPENDENCY_JARS_FIELD_DESC = new org.apache.thrift.protocol.TField("dependency_jars", org.apache.thrift.protocol.TType.LIST, (short)5);
   private static final org.apache.thrift.protocol.TField DEPENDENCY_ARTIFACTS_FIELD_DESC = new org.apache.thrift.protocol.TField("dependency_artifacts", org.apache.thrift.protocol.TType.LIST, (short)6);
+  private static final org.apache.thrift.protocol.TField STORM_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("storm_version", org.apache.thrift.protocol.TType.STRING, (short)7);
+  private static final org.apache.thrift.protocol.TField JDK_VERSION_FIELD_DESC = new org.apache.thrift.protocol.TField("jdk_version", org.apache.thrift.protocol.TType.STRING, (short)8);
 
   private static final Map<Class<? extends IScheme>, SchemeFactory> schemes = new HashMap<Class<? extends IScheme>, SchemeFactory>();
   static {
@@ -74,6 +76,8 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
   private List<ByteBuffer> worker_hooks; // optional
   private List<String> dependency_jars; // optional
   private List<String> dependency_artifacts; // optional
+  private String storm_version; // optional
+  private String jdk_version; // optional
 
   /** The set of fields this struct contains, along with convenience methods for finding and manipulating them. */
   public enum _Fields implements org.apache.thrift.TFieldIdEnum {
@@ -82,7 +86,9 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     STATE_SPOUTS((short)3, "state_spouts"),
     WORKER_HOOKS((short)4, "worker_hooks"),
     DEPENDENCY_JARS((short)5, "dependency_jars"),
-    DEPENDENCY_ARTIFACTS((short)6, "dependency_artifacts");
+    DEPENDENCY_ARTIFACTS((short)6, "dependency_artifacts"),
+    STORM_VERSION((short)7, "storm_version"),
+    JDK_VERSION((short)8, "jdk_version");
 
     private static final Map<String, _Fields> byName = new HashMap<String, _Fields>();
 
@@ -109,6 +115,10 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
           return DEPENDENCY_JARS;
         case 6: // DEPENDENCY_ARTIFACTS
           return DEPENDENCY_ARTIFACTS;
+        case 7: // STORM_VERSION
+          return STORM_VERSION;
+        case 8: // JDK_VERSION
+          return JDK_VERSION;
         default:
           return null;
       }
@@ -149,7 +159,7 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
   }
 
   // isset id assignments
-  private static final _Fields optionals[] = {_Fields.WORKER_HOOKS,_Fields.DEPENDENCY_JARS,_Fields.DEPENDENCY_ARTIFACTS};
+  private static final _Fields optionals[] = {_Fields.WORKER_HOOKS,_Fields.DEPENDENCY_JARS,_Fields.DEPENDENCY_ARTIFACTS,_Fields.STORM_VERSION,_Fields.JDK_VERSION};
   public static final Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> metaDataMap;
   static {
     Map<_Fields, org.apache.thrift.meta_data.FieldMetaData> tmpMap = new EnumMap<_Fields, org.apache.thrift.meta_data.FieldMetaData>(_Fields.class);
@@ -174,6 +184,10 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     tmpMap.put(_Fields.DEPENDENCY_ARTIFACTS, new org.apache.thrift.meta_data.FieldMetaData("dependency_artifacts", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
         new org.apache.thrift.meta_data.ListMetaData(org.apache.thrift.protocol.TType.LIST, 
             new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING))));
+    tmpMap.put(_Fields.STORM_VERSION, new org.apache.thrift.meta_data.FieldMetaData("storm_version", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
+    tmpMap.put(_Fields.JDK_VERSION, new org.apache.thrift.meta_data.FieldMetaData("jdk_version", org.apache.thrift.TFieldRequirementType.OPTIONAL, 
+        new org.apache.thrift.meta_data.FieldValueMetaData(org.apache.thrift.protocol.TType.STRING)));
     metaDataMap = Collections.unmodifiableMap(tmpMap);
     org.apache.thrift.meta_data.FieldMetaData.addStructMetaDataMap(StormTopology.class, metaDataMap);
   }
@@ -253,6 +267,12 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
       List<String> __this__dependency_artifacts = new ArrayList<String>(other.dependency_artifacts);
       this.dependency_artifacts = __this__dependency_artifacts;
     }
+    if (other.is_set_storm_version()) {
+      this.storm_version = other.storm_version;
+    }
+    if (other.is_set_jdk_version()) {
+      this.jdk_version = other.jdk_version;
+    }
   }
 
   public StormTopology deepCopy() {
@@ -267,6 +287,8 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     this.worker_hooks = null;
     this.dependency_jars = null;
     this.dependency_artifacts = null;
+    this.storm_version = null;
+    this.jdk_version = null;
   }
 
   public int get_spouts_size() {
@@ -485,6 +507,52 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     }
   }
 
+  public String get_storm_version() {
+    return this.storm_version;
+  }
+
+  public void set_storm_version(String storm_version) {
+    this.storm_version = storm_version;
+  }
+
+  public void unset_storm_version() {
+    this.storm_version = null;
+  }
+
+  /** Returns true if field storm_version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_storm_version() {
+    return this.storm_version != null;
+  }
+
+  public void set_storm_version_isSet(boolean value) {
+    if (!value) {
+      this.storm_version = null;
+    }
+  }
+
+  public String get_jdk_version() {
+    return this.jdk_version;
+  }
+
+  public void set_jdk_version(String jdk_version) {
+    this.jdk_version = jdk_version;
+  }
+
+  public void unset_jdk_version() {
+    this.jdk_version = null;
+  }
+
+  /** Returns true if field jdk_version is set (has been assigned a value) and false otherwise */
+  public boolean is_set_jdk_version() {
+    return this.jdk_version != null;
+  }
+
+  public void set_jdk_version_isSet(boolean value) {
+    if (!value) {
+      this.jdk_version = null;
+    }
+  }
+
   public void setFieldValue(_Fields field, Object value) {
     switch (field) {
     case SPOUTS:
@@ -535,6 +603,22 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
       }
       break;
 
+    case STORM_VERSION:
+      if (value == null) {
+        unset_storm_version();
+      } else {
+        set_storm_version((String)value);
+      }
+      break;
+
+    case JDK_VERSION:
+      if (value == null) {
+        unset_jdk_version();
+      } else {
+        set_jdk_version((String)value);
+      }
+      break;
+
     }
   }
 
@@ -557,6 +641,12 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
 
     case DEPENDENCY_ARTIFACTS:
       return get_dependency_artifacts();
+
+    case STORM_VERSION:
+      return get_storm_version();
+
+    case JDK_VERSION:
+      return get_jdk_version();
 
     }
     throw new IllegalStateException();
@@ -581,6 +671,10 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
       return is_set_dependency_jars();
     case DEPENDENCY_ARTIFACTS:
       return is_set_dependency_artifacts();
+    case STORM_VERSION:
+      return is_set_storm_version();
+    case JDK_VERSION:
+      return is_set_jdk_version();
     }
     throw new IllegalStateException();
   }
@@ -652,6 +746,24 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
         return false;
     }
 
+    boolean this_present_storm_version = true && this.is_set_storm_version();
+    boolean that_present_storm_version = true && that.is_set_storm_version();
+    if (this_present_storm_version || that_present_storm_version) {
+      if (!(this_present_storm_version && that_present_storm_version))
+        return false;
+      if (!this.storm_version.equals(that.storm_version))
+        return false;
+    }
+
+    boolean this_present_jdk_version = true && this.is_set_jdk_version();
+    boolean that_present_jdk_version = true && that.is_set_jdk_version();
+    if (this_present_jdk_version || that_present_jdk_version) {
+      if (!(this_present_jdk_version && that_present_jdk_version))
+        return false;
+      if (!this.jdk_version.equals(that.jdk_version))
+        return false;
+    }
+
     return true;
   }
 
@@ -688,6 +800,16 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     list.add(present_dependency_artifacts);
     if (present_dependency_artifacts)
       list.add(dependency_artifacts);
+
+    boolean present_storm_version = true && (is_set_storm_version());
+    list.add(present_storm_version);
+    if (present_storm_version)
+      list.add(storm_version);
+
+    boolean present_jdk_version = true && (is_set_jdk_version());
+    list.add(present_jdk_version);
+    if (present_jdk_version)
+      list.add(jdk_version);
 
     return list.hashCode();
   }
@@ -756,6 +878,26 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
     }
     if (is_set_dependency_artifacts()) {
       lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.dependency_artifacts, other.dependency_artifacts);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_storm_version()).compareTo(other.is_set_storm_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_storm_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.storm_version, other.storm_version);
+      if (lastComparison != 0) {
+        return lastComparison;
+      }
+    }
+    lastComparison = Boolean.valueOf(is_set_jdk_version()).compareTo(other.is_set_jdk_version());
+    if (lastComparison != 0) {
+      return lastComparison;
+    }
+    if (is_set_jdk_version()) {
+      lastComparison = org.apache.thrift.TBaseHelper.compareTo(this.jdk_version, other.jdk_version);
       if (lastComparison != 0) {
         return lastComparison;
       }
@@ -830,6 +972,26 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
         sb.append("null");
       } else {
         sb.append(this.dependency_artifacts);
+      }
+      first = false;
+    }
+    if (is_set_storm_version()) {
+      if (!first) sb.append(", ");
+      sb.append("storm_version:");
+      if (this.storm_version == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.storm_version);
+      }
+      first = false;
+    }
+    if (is_set_jdk_version()) {
+      if (!first) sb.append(", ");
+      sb.append("jdk_version:");
+      if (this.jdk_version == null) {
+        sb.append("null");
+      } else {
+        sb.append(this.jdk_version);
       }
       first = false;
     }
@@ -1005,6 +1167,22 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
               org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
             }
             break;
+          case 7: // STORM_VERSION
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.storm_version = iprot.readString();
+              struct.set_storm_version_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
+          case 8: // JDK_VERSION
+            if (schemeField.type == org.apache.thrift.protocol.TType.STRING) {
+              struct.jdk_version = iprot.readString();
+              struct.set_jdk_version_isSet(true);
+            } else { 
+              org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
+            }
+            break;
           default:
             org.apache.thrift.protocol.TProtocolUtil.skip(iprot, schemeField.type);
         }
@@ -1099,6 +1277,20 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
           oprot.writeFieldEnd();
         }
       }
+      if (struct.storm_version != null) {
+        if (struct.is_set_storm_version()) {
+          oprot.writeFieldBegin(STORM_VERSION_FIELD_DESC);
+          oprot.writeString(struct.storm_version);
+          oprot.writeFieldEnd();
+        }
+      }
+      if (struct.jdk_version != null) {
+        if (struct.is_set_jdk_version()) {
+          oprot.writeFieldBegin(JDK_VERSION_FIELD_DESC);
+          oprot.writeString(struct.jdk_version);
+          oprot.writeFieldEnd();
+        }
+      }
       oprot.writeFieldStop();
       oprot.writeStructEnd();
     }
@@ -1150,7 +1342,13 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
       if (struct.is_set_dependency_artifacts()) {
         optionals.set(2);
       }
-      oprot.writeBitSet(optionals, 3);
+      if (struct.is_set_storm_version()) {
+        optionals.set(3);
+      }
+      if (struct.is_set_jdk_version()) {
+        optionals.set(4);
+      }
+      oprot.writeBitSet(optionals, 5);
       if (struct.is_set_worker_hooks()) {
         {
           oprot.writeI32(struct.worker_hooks.size());
@@ -1177,6 +1375,12 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
             oprot.writeString(_iter76);
           }
         }
+      }
+      if (struct.is_set_storm_version()) {
+        oprot.writeString(struct.storm_version);
+      }
+      if (struct.is_set_jdk_version()) {
+        oprot.writeString(struct.jdk_version);
       }
     }
 
@@ -1225,7 +1429,7 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
         }
       }
       struct.set_state_spouts_isSet(true);
-      BitSet incoming = iprot.readBitSet(3);
+      BitSet incoming = iprot.readBitSet(5);
       if (incoming.get(0)) {
         {
           org.apache.thrift.protocol.TList _list89 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRING, iprot.readI32());
@@ -1264,6 +1468,14 @@ public class StormTopology implements org.apache.thrift.TBase<StormTopology, Sto
           }
         }
         struct.set_dependency_artifacts_isSet(true);
+      }
+      if (incoming.get(3)) {
+        struct.storm_version = iprot.readString();
+        struct.set_storm_version_isSet(true);
+      }
+      if (incoming.get(4)) {
+        struct.jdk_version = iprot.readString();
+        struct.set_jdk_version_isSet(true);
       }
     }
   }

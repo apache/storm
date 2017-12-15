@@ -352,15 +352,18 @@ public class DisruptorQueue implements IStatefulObject {
             long rp = readPos();
             long wp = writePos();
 
+            final long tuplePop = tuplePopulation.get();
+
             final double arrivalRateInSecs = _rateTracker.reportRate();
 
             //Assume the queue is stable, in which the arrival rate is equal to the consumption rate.
             // If this assumption does not hold, the calculation of sojourn time should also consider
             // departure rate according to Queuing Theory.
-            final double sojournTime = (wp - rp) / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
+            final double sojournTime = tuplePop / Math.max(arrivalRateInSecs, 0.00001) * 1000.0;
 
             state.put("capacity", capacity());
             state.put("population", wp - rp);
+            state.put("tuple_population", tuplePop);
             state.put("write_pos", wp);
             state.put("read_pos", rp);
             state.put("arrival_rate_secs", arrivalRateInSecs);
@@ -372,6 +375,11 @@ public class DisruptorQueue implements IStatefulObject {
 
         public void notifyArrivals(long counts) {
             _rateTracker.notify(counts);
+            tuplePopulation.getAndAdd(counts);
+        }
+
+        public void notifyDepartures(long counts) {
+            tuplePopulation.getAndAdd(-counts);
         }
 
         public void close() {
@@ -393,6 +401,7 @@ public class DisruptorQueue implements IStatefulObject {
     private int _lowWaterMark = 0;
     private boolean _enableBackpressure = false;
     private final AtomicLong _overflowCount = new AtomicLong(0);
+    private final AtomicLong tuplePopulation = new AtomicLong(0);
     private volatile boolean _throttleOn = false;
 
     public DisruptorQueue(String queueName, ProducerType type, int size, long readTimeout, int inputBatchSize, long flushInterval) {
@@ -469,6 +478,7 @@ public class DisruptorQueue implements IStatefulObject {
                 } else if (o == null) {
                     LOG.error("NULL found in {}:{}", this.getName(), cursor);
                 } else {
+                    _metrics.notifyDepartures(getTupleCount(o));
                     handler.onEvent(o, curr, curr == cursor);
                     if (_enableBackpressure && _cb != null && (_metrics.writePos() - curr + _overflowCount.get()) <= _lowWaterMark) {
                         try {
@@ -496,8 +506,25 @@ public class DisruptorQueue implements IStatefulObject {
         return Thread.currentThread().getId();
     }
 
+    private long getTupleCount(Object obj) {
+        //a published object could be an instance of either AddressedTuple, ArrayList<AddressedTuple>, or HashMap<Integer, ArrayList<TaskMessage>>.
+        long tupleCount;
+        if (obj instanceof ArrayList) {
+            tupleCount = ((ArrayList) obj).size();
+        } else if (obj instanceof HashMap) {
+            tupleCount = 0;
+            for (Object value:((HashMap) obj).values()) {
+                tupleCount += ((ArrayList) value).size();
+            }
+        } else {
+            tupleCount = 1;
+        }
+        return tupleCount;
+    }
+
     private void publishDirectSingle(Object obj, boolean block) throws InsufficientCapacityException {
         long at;
+        long numberOfTuples;
         if (block) {
             at = _buffer.next();
         } else {
@@ -506,7 +533,8 @@ public class DisruptorQueue implements IStatefulObject {
         AtomicReference<Object> m = _buffer.get(at);
         m.set(obj);
         _buffer.publish(at);
-        _metrics.notifyArrivals(1);
+        numberOfTuples = getTupleCount(obj);
+        _metrics.notifyArrivals(numberOfTuples);
     }
 
     private void publishDirect(ArrayList<Object> objs, boolean block) throws InsufficientCapacityException {
@@ -520,13 +548,15 @@ public class DisruptorQueue implements IStatefulObject {
             }
             long begin = end - (size - 1);
             long at = begin;
+            long numberOfTuples = 0;
             for (Object obj: objs) {
                 AtomicReference<Object> m = _buffer.get(at);
                 m.set(obj);
                 at++;
+                numberOfTuples += getTupleCount(obj);
             }
+            _metrics.notifyArrivals(numberOfTuples);
             _buffer.publish(begin, end);
-            _metrics.notifyArrivals(size);
         }
     }
 

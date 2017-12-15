@@ -199,8 +199,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         // validate
         validate(stormConf, windowLengthCount, windowLengthDuration,
                  slidingIntervalCount, slidingIntervalDuration);
-        evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration,
-                                                                 manager);
+        evictionPolicy = getEvictionPolicy(windowLengthCount, windowLengthDuration);
         triggerPolicy = getTriggerPolicy(slidingIntervalCount, slidingIntervalDuration,
                                                               manager, evictionPolicy);
         manager.setEvictionPolicy(evictionPolicy);
@@ -251,8 +250,7 @@ public class WindowedBoltExecutor implements IRichBolt {
         }
     }
 
-    private EvictionPolicy<Tuple> getEvictionPolicy(Count windowLengthCount, Duration windowLengthDuration,
-                                                    WindowManager<Tuple> manager) {
+    private EvictionPolicy<Tuple> getEvictionPolicy(Count windowLengthCount, Duration windowLengthDuration) {
         if (windowLengthCount != null) {
             if (isTupleTs()) {
                 return new WatermarkCountEvictionPolicy<>(windowLengthCount.value);
@@ -299,6 +297,9 @@ public class WindowedBoltExecutor implements IRichBolt {
 
     @Override
     public void cleanup() {
+        if (waterMarkEventGenerator != null) {
+            waterMarkEventGenerator.shutdown();
+        }
         windowManager.shutdown();
         bolt.cleanup();
     }

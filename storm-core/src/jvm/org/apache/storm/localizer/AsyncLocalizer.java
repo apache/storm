@@ -101,10 +101,12 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     private class DownloadBaseBlobsDistributed implements Callable<Void> {
         protected final String _topologyId;
         protected final File _stormRoot;
-        
-        public DownloadBaseBlobsDistributed(String topologyId) throws IOException {
+        protected final String owner;
+
+        public DownloadBaseBlobsDistributed(String topologyId, String owner) throws IOException {
             _topologyId = topologyId;
             _stormRoot = new File(ConfigUtils.supervisorStormDistRoot(_conf, _topologyId));
+            this.owner = owner;
         }
         
         protected void downloadBaseBlobs(File tmproot) throws Exception {
@@ -145,7 +147,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 try {
                     downloadBaseBlobs(tr);
                     _fsOps.moveDirectoryPreferAtomic(tr, _stormRoot);
-                    _fsOps.setupStormCodeDir(ConfigUtils.readSupervisorStormConf(_conf, _topologyId), _stormRoot);
+                    _fsOps.setupStormCodeDir(owner, _stormRoot);
                     deleteAll = false;
                 } finally {
                     if (deleteAll) {
@@ -164,8 +166,8 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     
     private class DownloadBaseBlobsLocal extends DownloadBaseBlobsDistributed {
 
-        public DownloadBaseBlobsLocal(String topologyId) throws IOException {
-            super(topologyId);
+        public DownloadBaseBlobsLocal(String topologyId, String owner) throws IOException {
+            super(topologyId, owner);
         }
         
         @Override
@@ -210,21 +212,22 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
     
     private class DownloadBlobs implements Callable<Void> {
         private final String _topologyId;
+        private final String topoOwner;
 
-        public DownloadBlobs(String topologyId) {
+        public DownloadBlobs(String topologyId, String topoOwner) {
             _topologyId = topologyId;
+            this.topoOwner = topoOwner;
         }
 
         @Override
         public Void call() throws Exception {
             try {
                 String stormroot = ConfigUtils.supervisorStormDistRoot(_conf, _topologyId);
-                Map<String, Object> stormConf = ConfigUtils.readSupervisorStormConf(_conf, _topologyId);
+                Map<String, Object> topoConf = ConfigUtils.readSupervisorStormConf(_conf, _topologyId);
 
                 @SuppressWarnings("unchecked")
-                Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) stormConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
-                String user = (String) stormConf.get(Config.TOPOLOGY_SUBMITTER_USER);
-                String topoName = (String) stormConf.get(Config.TOPOLOGY_NAME);
+                Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
+                String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
 
                 List<LocalResource> localResourceList = new ArrayList<>();
                 if (blobstoreMap != null) {
@@ -247,12 +250,12 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
                 }
 
                 if (!localResourceList.isEmpty()) {
-                    File userDir = _localizer.getLocalUserFileCacheDir(user);
+                    File userDir = _localizer.getLocalUserFileCacheDir(topoOwner);
                     if (!_fsOps.fileExists(userDir)) {
                         _fsOps.forceMkdir(userDir);
                     }
-                    List<LocalizedResource> localizedResources = _localizer.getBlobs(localResourceList, user, topoName, userDir);
-                    _fsOps.setupBlobPermissions(userDir, user);
+                    List<LocalizedResource> localizedResources = _localizer.getBlobs(localResourceList, topoOwner, topoName, userDir);
+                    _fsOps.setupBlobPermissions(userDir, topoOwner);
                     if (!_symlinksDisabled) {
                         for (LocalizedResource localizedResource : localizedResources) {
                             String keyName = localizedResource.getKey();
@@ -310,9 +313,9 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         if (localResource == null) {
             Callable<Void> c;
             if (_isLocalMode) {
-                c = new DownloadBaseBlobsLocal(topologyId);
+                c = new DownloadBaseBlobsLocal(topologyId, assignment.get_owner());
             } else {
-                c = new DownloadBaseBlobsDistributed(topologyId);
+                c = new DownloadBaseBlobsDistributed(topologyId, assignment.get_owner());
             }
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _basicPending.put(topologyId, localResource);
@@ -363,7 +366,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
         final String topologyId = assignment.get_topology_id();
         LocalDownloadedResource localResource = _blobPending.get(topologyId);
         if (localResource == null) {
-            Callable<Void> c = new DownloadBlobs(topologyId);
+            Callable<Void> c = new DownloadBlobs(topologyId, assignment.get_owner());
             localResource = new LocalDownloadedResource(_execService.submit(c));
             _blobPending.put(topologyId, localResource);
         }
@@ -386,7 +389,7 @@ public class AsyncLocalizer implements ILocalizer, Shutdownable {
             @SuppressWarnings("unchecked")
             Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) topoConf.get(Config.TOPOLOGY_BLOBSTORE_MAP);
             if (blobstoreMap != null) {
-                String user = (String) topoConf.get(Config.TOPOLOGY_SUBMITTER_USER);
+                String user = assignment.get_owner();
                 String topoName = (String) topoConf.get(Config.TOPOLOGY_NAME);
                 
                 for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
