@@ -125,8 +125,9 @@
     (.inc emitted-counter rate)))
 
 (defn transferred-tuples!
-  [stats stream amt]
+  [stats ^Counter transferred-counter stream amt]
   (let [^MultiCountStatAndMetric transferred (stats-transferred stats)]
+    (.inc transferred-counter amt)
     (.incBy transferred ^Object stream ^long (* (stats-rate stats) amt))))
 
 (defn bolt-execute-tuple!
