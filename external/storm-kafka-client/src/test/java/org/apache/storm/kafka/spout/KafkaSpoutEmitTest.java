@@ -26,10 +26,8 @@ import static org.mockito.Mockito.when;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -51,6 +49,7 @@ import org.junit.Before;
 import org.mockito.InOrder;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.eq;
 
 public class KafkaSpoutEmitTest {
 
@@ -143,41 +142,60 @@ public class KafkaSpoutEmitTest {
             Map<TopicPartition, List<ConsumerRecord<String, String>>> records = new HashMap<>();
             //This is cheating a bit since maxPollRecords would normally spread this across multiple polls
             records.put(partition, SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, 0, spoutConfig.getMaxUncommittedOffsets()));
-            records.put(partitionTwo, SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partitionTwo, 0, spoutConfig.getMaxUncommittedOffsets()));
+            records.put(partitionTwo, SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partitionTwo, 0, spoutConfig.getMaxUncommittedOffsets() + 1));
+            int numMessages = spoutConfig.getMaxUncommittedOffsets()*2 + 1;
 
             when(consumerMock.poll(anyLong()))
                 .thenReturn(new ConsumerRecords<>(records));
 
-            for (int i = 0; i < spoutConfig.getMaxUncommittedOffsets()*2; i++) {
+            for (int i = 0; i < numMessages; i++) {
                 spout.nextTuple();
             }
 
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
-            verify(collectorMock, times(spoutConfig.getMaxUncommittedOffsets()*2)).emit(anyString(), anyList(), messageIds.capture());
+            verify(collectorMock, times(numMessages)).emit(anyString(), anyList(), messageIds.capture());
             
-            //Now fail a tuple on partition 0 and verify that it is allowed to retry
-            //Partition 1 should be paused, since it is at the uncommitted offsets limit
-            KafkaSpoutMessageId failedMessageId = null;
+            //Now fail a tuple on partition one and verify that it is allowed to retry, because the failed tuple is below the maxUncommittedOffsets limit
+            KafkaSpoutMessageId failedMessageIdPartitionOne = null;
             for (KafkaSpoutMessageId msgId : messageIds.getAllValues()) {
                 if (msgId.partition() == partition.partition()) {
-                    failedMessageId = msgId;
+                    failedMessageIdPartitionOne = msgId;
                     break;
                 }
             }
             
-            spout.fail(failedMessageId);
+            spout.fail(failedMessageIdPartitionOne);
+            
+            //Also fail the last tuple from partition two. Since the failed tuple is beyond the maxUncommittedOffsets limit, it should not be retried until earlier messages are acked.
+            KafkaSpoutMessageId failedMessageIdPartitionTwo = null;
+            for (KafkaSpoutMessageId msgId: messageIds.getAllValues()) {
+                if (msgId.partition() == partitionTwo.partition()) {
+                    if (failedMessageIdPartitionTwo != null) {
+                        if (msgId.offset() >= failedMessageIdPartitionTwo.offset()) {
+                            failedMessageIdPartitionTwo = msgId;
+                        }
+                    } else {
+                        failedMessageIdPartitionTwo = msgId;
+                    }
+                }
+            }
+            
+            spout.fail(failedMessageIdPartitionTwo);
             
             reset(collectorMock);
             
             Time.advanceTime(50);
             when(consumerMock.poll(anyLong()))
-                .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition, SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, failedMessageId.offset(), 1))));
+                .thenReturn(new ConsumerRecords<>(Collections.singletonMap(partition, SpoutWithMockedConsumerSetupHelper.<String, String>createRecords(partition, failedMessageIdPartitionOne.offset(), 1))));
             
             spout.nextTuple();
             
             verify(collectorMock, times(1)).emit(anyString(), anyList(), anyObject());
             
             InOrder inOrder = inOrder(consumerMock);
+            inOrder.verify(consumerMock).seek(partition, failedMessageIdPartitionOne.offset());
+            //Should not seek on the paused partition
+            inOrder.verify(consumerMock, never()).seek(eq(partitionTwo), anyLong());
             inOrder.verify(consumerMock).pause(Collections.singleton(partitionTwo));
             inOrder.verify(consumerMock).poll(anyLong());
             inOrder.verify(consumerMock).resume(Collections.singleton(partitionTwo));
