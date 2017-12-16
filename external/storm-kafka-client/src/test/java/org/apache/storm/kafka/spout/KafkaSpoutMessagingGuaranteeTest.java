@@ -39,6 +39,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
+import org.apache.storm.kafka.spout.subscription.Subscription;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.Time;
@@ -64,7 +65,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAtMostOnceModeCommitsBeforeEmit() throws Exception {
         //At-most-once mode must commit tuples before they are emitted to the topology to ensure that a spout crash won't cause replays.
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE)
             .build();
         KafkaSpout<String, String> spout = SpoutWithMockedConsumerSetupHelper.setupSpout(spoutConfig, conf, contextMock, collectorMock, consumerMock, partition);
@@ -101,7 +102,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAtMostOnceModeDisregardsMaxUncommittedOffsets() throws Exception {
         //The maxUncommittedOffsets limit should not be enforced, since it is only meaningful in at-least-once mode
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE)
             .build();
         doTestModeDisregardsMaxUncommittedOffsets(spoutConfig);
@@ -110,7 +111,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAnyTimesModeDisregardsMaxUncommittedOffsets() throws Exception {
         //The maxUncommittedOffsets limit should not be enforced, since it is only meaningful in at-least-once mode
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.NONE)
             .build();
         doTestModeDisregardsMaxUncommittedOffsets(spoutConfig);
@@ -144,7 +145,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAtMostOnceModeCannotReplayTuples() throws Exception {
         //When tuple tracking is enabled, the spout must not replay tuples in at-most-once mode
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE)
             .setTupleTrackingEnforced(true)
             .build();
@@ -154,7 +155,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAnyTimesModeCannotReplayTuples() throws Exception {
         //When tuple tracking is enabled, the spout must not replay tuples in any-times mode
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.NONE)
             .setTupleTrackingEnforced(true)
             .build();
@@ -187,7 +188,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAtMostOnceModeDoesNotCommitAckedTuples() throws Exception {
         //When tuple tracking is enabled, the spout must not commit acked tuples in at-most-once mode because they were committed before being emitted
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE)
             .setTupleTrackingEnforced(true)
             .build();
@@ -197,7 +198,7 @@ public class KafkaSpoutMessagingGuaranteeTest {
     @Test
     public void testAnyTimesModeDoesNotCommitAckedTuples() throws Exception {
         //When tuple tracking is enabled, the spout must not commit acked tuples in any-times mode because committing is managed by the consumer
-        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(-1)
+        KafkaSpoutConfig<String, String> spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
             .setProcessingGuarantee(KafkaSpoutConfig.ProcessingGuarantee.NONE)
             .setTupleTrackingEnforced(true)
             .build();

@@ -32,7 +32,6 @@ public class ManualPartitionSubscription extends Subscription {
     private static final long serialVersionUID = 5633018073527583826L;
     private final ManualPartitioner partitioner;
     private final TopicFilter partitionFilter;
-    private transient Set<TopicPartition> currentAssignment = null;
     private transient KafkaConsumer<?, ?> consumer = null;
     private transient ConsumerRebalanceListener listener = null;
     private transient TopologyContext context = null;
@@ -55,11 +54,9 @@ public class ManualPartitionSubscription extends Subscription {
         List<TopicPartition> allPartitions = partitionFilter.getFilteredTopicPartitions(consumer);
         Collections.sort(allPartitions, TopicPartitionComparator.INSTANCE);
         Set<TopicPartition> newAssignment = new HashSet<>(partitioner.partition(allPartitions, context));
+        Set<TopicPartition> currentAssignment = consumer.assignment();
         if (!newAssignment.equals(currentAssignment)) {
-            if (currentAssignment != null) {
-                listener.onPartitionsRevoked(currentAssignment);
-            }
-            currentAssignment = newAssignment;
+            listener.onPartitionsRevoked(currentAssignment);
             consumer.assign(newAssignment);
             listener.onPartitionsAssigned(newAssignment);
         }
