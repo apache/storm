@@ -18,13 +18,17 @@
 package org.apache.storm.kafka;
 
 import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
+import kafka.admin.RackAwareMode$;
 import kafka.api.PartitionMetadata;
 import kafka.api.TopicMetadata;
 import kafka.common.ErrorMapping;
 import kafka.server.KafkaConfig;
 import kafka.server.KafkaServerStartable;
 import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
 import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -32,6 +36,7 @@ import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.TestingServer;
+import org.apache.kafka.common.requests.MetadataResponse;
 import scala.collection.JavaConversions;
 
 import java.io.File;
@@ -90,9 +95,9 @@ public class KafkaTestBroker {
     public void createTopic(String topicName, int numPartitions, Properties properties) {
         ZkClient zkClient = new ZkClient(getZookeeperConnectionString());
         zkClient.setZkSerializer(ZKStringSerializer$.MODULE$);
-
+        ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(getZookeeperConnectionString()), false);
         try {
-            AdminUtils.createTopic(zkClient, topicName, numPartitions, 1, properties);
+            AdminUtils.createTopic(zkUtils, topicName, numPartitions, 1, properties, RackAwareMode.Enforced$.MODULE$);
 
             ensureTopicCreated(zkClient, topicName);
         } finally {
@@ -111,9 +116,10 @@ public class KafkaTestBroker {
 
         while (!partitionsHaveLeaders && waitTime < maxWaitTime) {
             partitionsHaveLeaders = true;
-            TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkClient);
-            for (PartitionMetadata partitionMetadata : JavaConversions.seqAsJavaList(topicMetadata.partitionsMetadata())) {
-                if (partitionMetadata.leader().isEmpty() || partitionMetadata.errorCode() != ErrorMapping.NoError()) {
+            ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(getZookeeperConnectionString()), false);
+            MetadataResponse.TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
+            for (MetadataResponse.PartitionMetadata partitionMetadata : topicMetadata.partitionMetadata()) {
+                if (partitionMetadata.leader().isEmpty() || partitionMetadata.error().code() != ErrorMapping.NoError()) {
                     partitionsHaveLeaders = false;
                 }
             }
