@@ -17,6 +17,7 @@
  */
 package org.apache.storm.kafka.spout;
 
+import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.junit.Assert.assertEquals;
@@ -25,9 +26,12 @@ import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 import java.util.HashMap;
+import java.util.Map;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.ByteArrayDeserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
+import org.hamcrest.CoreMatchers;
 import org.junit.Test;
 
 public class KafkaSpoutConfigTest {
@@ -120,5 +124,103 @@ public class KafkaSpoutConfigTest {
         
         assertThat("When setting enable auto commit explicitly to false the spout should use the 'at-least-once' processing guarantee",
             conf.getProcessingGuarantee(), is(KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE));
+    }
+    
+    @Test
+    public void testCanGetKeyDeserializerWhenUsingDefaultBuilder() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .build();
+        
+        assertThat("When using the default builder methods, the key deserializer should default to StringDeserializer",
+            conf.getKeyDeserializer(), instanceOf(StringDeserializer.class));
+    }
+    
+    @Test
+    public void testCanGetValueDeserializerWhenUsingDefaultBuilder() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .build();
+        
+        assertThat("When using the default builder methods, the value deserializer should default to StringDeserializer",
+            conf.getValueDeserializer(), instanceOf(StringDeserializer.class));
+    }
+    
+    @Test
+    public void testCanOverrideDeprecatedDeserializerClassWithKafkaProps() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setKey(StringDeserializer.class)
+            .setValue(StringDeserializer.class)
+            .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .build();
+        
+        assertThat("The last set key deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
+        assertThat("The last set value deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
+    }
+    
+    private static class SerializableStringDeserializer implements SerializableDeserializer {
+
+        private final StringDeserializer delegate = new StringDeserializer();
+
+        @Override
+        public void configure(Map configs, boolean isKey) {
+            delegate.configure(configs, isKey);
+        }
+
+        @Override
+        public Object deserialize(String topic, byte[] data) {
+            return delegate.deserialize(topic, data);
+        }
+
+        @Override
+        public void close() {
+            delegate.close();
+        }
+    }
+    
+    @Test
+    public void testCanOverrideDeprecatedDeserializerInstanceWithKafkaProps() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setKey(new SerializableStringDeserializer())
+            .setValue(new SerializableStringDeserializer())
+            .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .build();
+        
+        assertThat("The last set key deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
+        assertThat("The last set value deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
+    }
+    
+    @Test
+    public void testCanOverrideKafkaPropsWithDeprecatedDeserializerSetter() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setKey(new SerializableStringDeserializer())
+            .setValue(new SerializableStringDeserializer())
+            .build();
+        
+        assertThat("The last set key deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(SerializableStringDeserializer.class));
+        assertThat("The last set value deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(SerializableStringDeserializer.class));
+    }
+    
+    @Test
+    public void testCanMixOldAndNewDeserializerSetter() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+            .setProp(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setKey(new SerializableStringDeserializer())
+            .setProp(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, ByteArrayDeserializer.class)
+            .setValue(new SerializableStringDeserializer())
+            .build();
+        
+        assertThat("The last set key deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
+        assertThat("The last set value deserializer should be used, regardless of how it is set",
+            conf.getKafkaProps().get(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(SerializableStringDeserializer.class));
     }
 }
