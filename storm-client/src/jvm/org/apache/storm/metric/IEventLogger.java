@@ -20,6 +20,7 @@ package org.apache.storm.metric;
 import org.apache.storm.task.TopologyContext;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -31,18 +32,39 @@ public interface IEventLogger {
     /**
      * A wrapper for the fields that we would log.
      */
-    public static class EventInfo {
-        String ts;
-        String component;
-        String task;
-        String messageId;
-        String values;
-        EventInfo(String ts, String component, String task, String messageId, String values) {
+    class EventInfo {
+        private long ts;
+        private String component;
+        private int task;
+        private Object messageId;
+        private List<Object> values;
+
+        public EventInfo(long ts, String component, int task, Object messageId, List<Object> values) {
             this.ts = ts;
             this.component = component;
             this.task = task;
             this.messageId = messageId;
             this.values = values;
+        }
+
+        public long getTs() {
+            return ts;
+        }
+
+        public String getComponent() {
+            return component;
+        }
+
+        public int getTask() {
+            return task;
+        }
+
+        public Object getMessageId() {
+            return messageId;
+        }
+
+        public List<Object> getValues() {
+            return values;
         }
 
         /**
@@ -52,11 +74,12 @@ public interface IEventLogger {
          */
         @Override
         public String toString() {
-            return new Date(Long.parseLong(ts)).toString() + "," + component + "," + task + "," + messageId + "," + values;
+            return new Date(ts).toString() + "," + component + "," + String.valueOf(task) + ","
+                    + (messageId == null ? "" : messageId.toString()) + "," + values.toString();
         }
     }
 
-    void prepare(Map<String, Object> topoConf, TopologyContext context);
+    void prepare(Map<String, Object> conf, Map<String, Object> arguments, TopologyContext context);
 
     /**
      * This method would be invoked when the {@link EventLoggerBolt} receives a tuple from the spouts or bolts that has

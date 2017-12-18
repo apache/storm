@@ -501,6 +501,26 @@ public class ConfigValidation {
         }
     }
 
+    public static class EventLoggerRegistryValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if(o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if(!((Map<?, ?>) o).containsKey("class") ) {
+                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            }
+
+            SimpleTypeValidator.validateField(name, String.class, ((Map<?, ?>) o).get("class"));
+
+            if(((Map<?, ?>) o).containsKey("arguments") ) {
+                SimpleTypeValidator.validateField(name, Map.class, ((Map<?, ?>) o).get("arguments"));
+            }
+        }
+    }
+
     public static class MapOfStringToMapOfStringToObjectValidator extends Validator {
       @Override
       public  void validateField(String name, Object o) {
