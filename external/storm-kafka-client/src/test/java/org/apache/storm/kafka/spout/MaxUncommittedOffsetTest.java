@@ -34,6 +34,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.storm.kafka.KafkaUnitRule;
 import org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration;
@@ -72,6 +73,8 @@ public class MaxUncommittedOffsetTest {
         .build();
     private KafkaSpout<String, String> spout;
 
+
+
     @Before
     public void setUp() {
         //This is because the tests are checking that a hard cap of maxUncommittedOffsets + maxPollRecords - 1 uncommitted offsets exists
@@ -81,7 +84,7 @@ public class MaxUncommittedOffsetTest {
         //The spout must be able to reemit all retriable tuples, even if the maxPollRecords is set to a low value compared to maxUncommittedOffsets.
         assertThat("Current tests require maxPollRecords < maxUncommittedOffsets", maxPollRecords, lessThanOrEqualTo(maxUncommittedOffsets));
         MockitoAnnotations.initMocks(this);
-        this.spout = new KafkaSpout<>(spoutConfig);
+        spout = new KafkaSpout<>(spoutConfig);
     }
 
     private void prepareSpout(int msgCount) throws Exception {
@@ -119,6 +122,7 @@ public class MaxUncommittedOffsetTest {
                 spout.ack(messageId);
             }
             Time.advanceTime(commitOffsetPeriodMs + KafkaSpout.TIMER_DELAY_MS);
+
             spout.nextTuple();
 
             //Now check that the spout will emit another maxUncommittedOffsets messages
@@ -286,5 +290,4 @@ public class MaxUncommittedOffsetTest {
             assertThat("Expected the emitted messages to be retries of the failed tuples from the first batch, plus the first failed tuple from the second batch", thirdRunOffsets, everyItem(either(isIn(firstRunOffsets)).or(is(secondRunMessageIds.getAllValues().get(0).offset()))));
         }
     }
-
 }
