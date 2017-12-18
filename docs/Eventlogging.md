@@ -68,7 +68,8 @@ Eventlogging works by sending the events (tuples) from each component to an inte
 
 
 ## Extending eventlogging
-Storm provides an `IEventLogger` interface which is used by the event logger bolt to log the events. The default implementation for this is a FileBasedEventLogger which logs the events to an events.log file ( `logs/workers-artifacts/<topology-id>/<worker-port>/events.log`). Alternate implementations of the `IEventLogger` interface can be added to extend the event logging functionality (say build a search index or log the events in a database etc)
+
+Storm provides an `IEventLogger` interface which is used by the event logger bolt to log the events.
 
 ```java
 /**
@@ -79,7 +80,7 @@ public interface IEventLogger {
     /**
     * Invoked during eventlogger bolt prepare.
     */
-    void prepare(Map stormConf, TopologyContext context);
+    void prepare(Map stormConf, Map<String, Object> arguments, TopologyContext context);
 
     /**
      * Invoked when the {@link EventLoggerBolt} receives a tuple from the spouts or bolts that has event logging enabled.
@@ -94,3 +95,31 @@ public interface IEventLogger {
     void close();
 }
 ```
+
+The default implementation for this is a FileBasedEventLogger which logs the events to an events.log file ( `logs/workers-artifacts/<topology-id>/<worker-port>/events.log`).
+Alternate implementations of the `IEventLogger` interface can be added to extend the event logging functionality (say build a search index or log the events in a database etc)
+
+If you just want to use FileBasedEventLogger but with changing the log format, you can simply implement your own by extending FileBasedEventLogger and override `buildLogMessage(EventInfo)` to provide log line explicitly.
+
+To register event logger to your topology, add to your topology's configuration like:
+
+```java
+conf.registerEventLogger(org.apache.storm.metric.FileBasedEventLogger.class);
+```
+
+You can refer [Config#registerEventLogger](javadocs/org/apache/storm/Config.html#registerEventLogger-java.lang.Class-) and overloaded methods from javadoc.
+
+Otherwise edit the storm.yaml config file:
+
+```yaml
+topology.event.logger.register:
+  - class: "org.apache.storm.metric.FileBasedEventLogger"
+  - class: "org.mycompany.MyEventLogger"
+    arguments:
+      endpoint: "event-logger.mycompany.org"
+```
+
+When you implement your own event logger, `arguments` is passed to Map<String, Object> when [IEventLogger#prepare](javadocs/org/apache/storm/metric/IEventLogger.html#prepare-java.util.Map-java.lang.Map-org.apache.storm.task.TopologyContext-) is called.
+
+Please keep in mind that EventLoggerBolt is just a kind of Bolt, so whole throughput of the topology will go down when registered event loggers cannot keep up handling incoming events, so you may want to take care of the Bolt like normal Bolt.
+One of idea to avoid this is making your implementation of IEventLogger as `non-blocking` fashion.
