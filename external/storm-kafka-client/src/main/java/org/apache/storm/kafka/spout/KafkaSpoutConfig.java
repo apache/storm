@@ -110,26 +110,30 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     }
 
     /**
-     * The offset used by the Kafka spout in the first poll to Kafka broker. The choice of this parameter will affect the number of consumer
-     * records returned in the first poll. By default this parameter is set to UNCOMMITTED_EARLIEST. <br/><br/>
-     * The allowed values are EARLIEST, LATEST, UNCOMMITTED_EARLIEST, UNCOMMITTED_LATEST. <br/>
+     * Defines how the {@link KafkaSpout} seeks the offset to be used in the first poll to Kafka upon topology deployment.
+     * By default this parameter is set to UNCOMMITTED_EARLIEST. If the strategy is set to:
+     * <br/>
      * <ul>
-     * <li>EARLIEST means that the kafka spout polls records starting in the first offset of the partition, regardless of previous
-     * commits</li>
-     * <li>LATEST means that the kafka spout polls records with offsets greater than the last offset in the partition, regardless of
-     * previous commits</li>
-     * <li>UNCOMMITTED_EARLIEST means that the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed, it behaves as EARLIEST.</li>
-     * <li>UNCOMMITTED_LATEST means that the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed, it behaves as LATEST.</li>
+     * <li>EARLIEST - the kafka spout polls records starting in the first offset of the partition, regardless
+     * of previous commits. This setting only takes effect on topology deployment.</li>
+     * <li>LATEST - the kafka spout polls records with offsets greater than the last offset in the partition,
+     * regardless of previous commits. This setting only takes effect on topology deployment.</li>
+     * <li>UNCOMMITTED_EARLIEST - the kafka spout polls records from the last committed offset, if any. If no offset has been
+     * committed it behaves as EARLIEST.</li>
+     * <li>UNCOMMITTED_LATEST - the kafka spout polls records from the last committed offset, if any. If no offset has been
+     * committed it behaves as LATEST.</li>
      * </ul>
-     *
      */
-    public static enum FirstPollOffsetStrategy {
+    public enum FirstPollOffsetStrategy {
         EARLIEST,
         LATEST,
         UNCOMMITTED_EARLIEST,
-        UNCOMMITTED_LATEST
+        UNCOMMITTED_LATEST;
+
+        @Override
+        public String toString() {
+            return "FirstPollOffsetStrategy{" + super.toString() + "}";
+        }
     }
 
     /**
