@@ -18,10 +18,12 @@
 
 package org.apache.storm.solr.schema.builder;
 
-import org.apache.storm.solr.schema.Schema;
-
+import java.io.IOException;
 import java.io.Serializable;
 
+import org.apache.storm.solr.schema.Schema;
+
 public interface SchemaBuilder extends Serializable {
+    void buildSchema() throws IOException;
     Schema getSchema();
 }

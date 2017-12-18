@@ -18,14 +18,14 @@
 
 package org.apache.storm.solr.mapper;
 
-import org.apache.storm.tuple.ITuple;
-import org.apache.storm.tuple.Tuple;
-import org.apache.solr.client.solrj.SolrRequest;
-
 import java.io.Serializable;
 import java.util.List;
 
+import org.apache.solr.client.solrj.SolrRequest;
+import org.apache.storm.tuple.ITuple;
+
 public interface SolrMapper extends Serializable {
+    default void configure() {}
     String getCollection();
     SolrRequest toSolrRequest(ITuple tuple) throws SolrMapperException;
     SolrRequest toSolrRequest(List<? extends ITuple> tuples) throws SolrMapperException;

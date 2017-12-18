@@ -97,6 +97,29 @@ field separates each value with the token % instead of the default | . To use th
                 .setMultiValueFieldToken("%").build();
 ```
 
+##Working with Kerberized Solr
+If your topology is going to interact with kerberized Solr, your bolts/states need to be authenticated by Solr Server. We can enable
+authentication by distributing keytabs for solr user on all worker hosts. We can configure the solr bolt to use keytabs by setting
+SolrConfig.enableKerberos config property.
+
+On worker hosts the bolt/trident-state code will use the keytab file with principal provided in the jaas config to authenticate with
+Solr. You need to specify a Kerberos principal for the client and a corresponding keytab in the JAAS client configuration file.
+Also make sure the provided principal is configured with required permissions to access solr collections.
+
+Here’s an example JAAS config:
+
+`SolrJClient {
+  com.sun.security.auth.module.Krb5LoginModule required
+  useKeyTab=true
+  keyTab="/keytabs/solr.keytab"
+  storeKey=true
+  useTicketCache=true
+  debug=true
+  principal="solrclient@EXAMPLE.COM";
+};
+`
+
+
 # Build And Run Bundled Examples  
 To be able to run the examples you must first build the java code in the package `storm-solr`, 
 and then generate an uber jar with all the dependencies.
@@ -171,7 +194,7 @@ Querying  Solr for these patterns, you will see the values that have been indexe
 
 curl -X GET -H "Content-type:application/json" -H "Accept:application/json" http://localhost:8983/solr/gettingstarted_shard1_replica2/select?q=*id_fields_test_val*&wt=json&indent=true
 
-curl -X GET -H "Content-type: application/json" -H "Accept: application/json" http://localhost:8983/solr/gettingstarted_shard1_replica2/select?q=*id_fields_test_val*&wt=json&indent=true
+curl -X GET -H "Content-type:application/json" -H "Accept:application/json" http://localhost:8983/solr/gettingstarted_shard1_replica2/select?q=*json_test_val*&wt=json&indent=true
 
 You can also see the results by opening the Apache Solr UI and pasting the `id` pattern in the `q` textbox in the queries page
 

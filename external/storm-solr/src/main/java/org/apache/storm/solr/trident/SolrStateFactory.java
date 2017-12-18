@@ -18,13 +18,13 @@
 
 package org.apache.storm.solr.trident;
 
-import org.apache.storm.task.IMetricsContext;
+import java.util.Map;
+
 import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrMapper;
+import org.apache.storm.task.IMetricsContext;
 import org.apache.storm.trident.state.State;
 import org.apache.storm.trident.state.StateFactory;
-
-import java.util.Map;
 
 public class SolrStateFactory implements StateFactory {
     private final SolrConfig solrConfig;

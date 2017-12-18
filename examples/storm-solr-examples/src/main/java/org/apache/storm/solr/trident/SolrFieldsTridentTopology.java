@@ -19,6 +19,7 @@
 package org.apache.storm.solr.trident;
 
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.solr.spout.SolrFieldsSpout;
 import org.apache.storm.solr.topology.SolrFieldsTopology;
@@ -38,7 +39,8 @@ public class SolrFieldsTridentTopology extends SolrFieldsTopology {
         final TridentTopology tridentTopology = new TridentTopology();
         final SolrFieldsSpout spout = new SolrFieldsSpout();
         final Stream stream = tridentTopology.newStream("SolrFieldsSpout", spout);
-        final StateFactory solrStateFactory = new SolrStateFactory(getSolrConfig(), getSolrMapper());
+        SolrConfig solrConfig = getSolrConfig();
+        final StateFactory solrStateFactory = new SolrStateFactory(solrConfig, getSolrMapper(solrConfig));
         stream.partitionPersist(solrStateFactory, spout.getOutputFields(),  new SolrUpdater(), new Fields());
         return tridentTopology.build();
     }
