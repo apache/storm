@@ -582,14 +582,24 @@ public class ConfigValidation {
                 return;
             }
             SimpleTypeValidator.validateField(name, String.class, o);
+            String className = (String) o;
             try {
-                Class<?> objectClass = Class.forName((String) o);
+                Class<?> objectClass = Class.forName(className);
                 if (!this.classImplements.isAssignableFrom(objectClass)) {
                     throw new IllegalArgumentException("Field " + name + " with value " + o
                             + " does not implement " + this.classImplements.getName());
                 }
             } catch (ClassNotFoundException e) {
-                throw new RuntimeException(e);
+                //To support topologies of older version to run, we might have to loose the constraints so that
+                //the configs of older version can pass the validation.
+                if (className.startsWith("backtype.storm")) {
+                    LOG.error("ClassNotFoundException: {}", className);
+                    LOG.warn("Replace backtype.storm with org.apache.storm and try to validate again");
+                    LOG.warn("We loosen some constraints here to support topologies of older version running on the current version");
+                    validateField(name, className.replace("backtype.storm", "org.apache.storm"));
+                } else {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
