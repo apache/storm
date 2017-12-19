@@ -354,6 +354,18 @@ Spout.prototype = Object.create(Storm.prototype);
 Spout.prototype.constructor = Spout;
 
 /**
+ * This method will be called when a spout has been activated out of a deactivated mode.
+ * @param done Call this method when finished and ready to receive tuples.
+ */
+Spout.prototype.activate = function(done) {};
+
+/**
+ * This method will be called when a spout has been deactivated.
+ * @param done Call this method when finished.
+ */
+Spout.prototype.deactivate = function(done) {};
+
+/**
  * This method will be called when an ack is received for preciously sent tuple. One may implement it.
  * @param id The id of the tuple.
  * @param done Call this method when finished and ready to receive more tuples.
@@ -378,6 +390,14 @@ Spout.prototype.handleNewCommand = function(command) {
     var self = this;
     var callback = function() {
         self.sync();
+    }
+
+    if (command['command'] === 'activate') {
+        this.activate(callback);
+    }
+
+    if (command['command'] === 'deactivate') {
+        this.deactivate(callback);
     }
 
     if (command['command'] === 'next') {
