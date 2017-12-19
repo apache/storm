@@ -137,6 +137,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 }
             }
             HashSet<Integer> allPorts = new HashSet<>(assignedPorts);
+            iSuper.assigned(allPorts);
             allPorts.addAll(slots.keySet());
             
             Map<Integer, Set<TopoProfileAction>> filtered = new HashMap<>();

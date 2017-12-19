@@ -211,7 +211,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     /**
      * start distribute supervisor
      */
-    private void launchDaemon() {
+    public void launchDaemon() {
         LOG.info("Starting supervisor for storm version '{}'.", VersionInfo.getVersion());
         try {
             Map<String, Object> conf = getConf();
