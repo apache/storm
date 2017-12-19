@@ -17,6 +17,7 @@
  */
 package org.apache.storm;
 
+import java.util.Arrays;
 import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
@@ -353,6 +354,34 @@ public class Config extends HashMap<String, Object> {
     // an error will be thrown by nimbus on topology submission and not by the client prior to submitting
     // the topology.
     public static final String TOPOLOGY_SCHEDULER_STRATEGY = "topology.scheduler.strategy";
+
+    /**
+     * Declare scheduling constraints for a topology used by the constraint solver strategy.
+     * A List of pairs (also a list) of components that cannot coexist in the same worker.
+     */
+    @CustomValidator(validatorClass = ListOfListOfStringValidator.class)
+    public static final String TOPOLOGY_RAS_CONSTRAINTS = "topology.ras.constraints";
+
+    /**
+     * Array of components that scheduler should try to place on separate hosts when using the constraint solver strategy or the
+     * multi-tenant scheduler.
+     */
+    @isStringList
+    public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
+
+    /**
+     * The maximum number of states that will be searched looking for a solution in the constraint solver strategy.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH = "topology.ras.constraint.max.state.search";
+
+    /**
+     * The maximum number of seconds to spend scheduling a topology using the constraint solver.  Null means no limit.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String TOPOLOGY_RAS_CONSTRAINT_MAX_TIME_SECS = "topology.ras.constraint.max.time.secs";
 
     /**
      * A list of host names that this topology would prefer to be scheduled on (no guarantee is given though).
@@ -776,12 +805,6 @@ public class Config extends HashMap<String, Object> {
      */
     @isString
     public static final String TOPOLOGY_SUBMITTER_USER = "topology.submitter.user";
-
-    /**
-     * Array of components that scheduler should try to place on separate hosts.
-     */
-    @isStringList
-    public static final String TOPOLOGY_SPREAD_COMPONENTS = "topology.spread.components";
 
     /**
      * A list of IAutoCredentials that the topology should load and use.
@@ -1938,8 +1961,8 @@ public class Config extends HashMap<String, Object> {
     }
 
     /**
-     * set the max heap size allow per worker for this topology
-     * @param size
+     * Set the max heap size allow per worker for this topology.
+     * @param size the maximum heap size for a worker.
      */
     public void setTopologyWorkerMaxHeapSize(Number size) {
         if(size != null) {
@@ -1948,7 +1971,34 @@ public class Config extends HashMap<String, Object> {
     }
 
     /**
-     * set the priority for a topology
+     * Declares executors of component1 cannot be on the same worker as executors of component2.
+     * This function is additive.
+     * Thus a user can setTopologyComponentWorkerConstraints("A", "B")
+     * and then setTopologyComponentWorkerConstraints("B", "C")
+     * Which means executors form component A cannot be on the same worker with executors of component B
+     * and executors of Component B cannot be on workers with executors of component C
+     * @param component1 a component that should not coexist with component2
+     * @param component2 a component that should not coexist with component1
+     */
+    public void setTopologyComponentWorkerConstraints(String component1, String component2) {
+        if (component1 != null && component2 != null) {
+            List<String> constraintPair = Arrays.asList(component1, component2);
+            List<List<String>> constraints = (List<List<String>>)computeIfAbsent(Config.TOPOLOGY_RAS_CONSTRAINTS,
+                (k) -> new ArrayList<>(1));
+            constraints.add(constraintPair);
+        }
+    }
+
+    /**
+     * Sets the maximum number of states that will be searched in the constraint solver strategy.
+     * @param numStates maximum number of stats to search.
+     */
+    public void setTopologyConstraintsMaxStateSearch(int numStates) {
+        this.put(Config.TOPOLOGY_RAS_CONSTRAINT_MAX_STATE_SEARCH, numStates);
+    }
+
+    /**
+     * Set the priority for a topology.
      * @param priority
      */
     public void setTopologyPriority(int priority) {

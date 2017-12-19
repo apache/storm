@@ -34,6 +34,7 @@ import org.apache.storm.daemon.nimbus.TopologyResources;
 import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.networktopography.DNSToSwitchMapping;
+import org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping;
 import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
 import org.apache.storm.utils.ConfigUtils;
@@ -160,21 +161,21 @@ public class Cluster implements ISchedulingState {
         if (networkTopography == null || networkTopography.isEmpty()) {
             //Initialize the network topography
             String clazz = (String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN);
-            if (clazz != null && !clazz.isEmpty()) {
-                DNSToSwitchMapping topographyMapper =
-                    (DNSToSwitchMapping) ReflectionUtils.newInstance(clazz);
+            if (clazz == null || clazz.isEmpty()) {
+                clazz = DefaultRackDNSToSwitchMapping.class.getName();
+            }
+            DNSToSwitchMapping topographyMapper = ReflectionUtils.newInstance(clazz);
 
-                Map<String, String> resolvedSuperVisors = topographyMapper.resolve(supervisorHostNames);
-                for (Map.Entry<String, String> entry : resolvedSuperVisors.entrySet()) {
-                    String hostName = entry.getKey();
-                    String rack = entry.getValue();
-                    List<String> nodesForRack = this.networkTopography.get(rack);
-                    if (nodesForRack == null) {
-                        nodesForRack = new ArrayList<String>();
-                        this.networkTopography.put(rack, nodesForRack);
-                    }
-                    nodesForRack.add(hostName);
+            Map<String, String> resolvedSuperVisors = topographyMapper.resolve(supervisorHostNames);
+            for (Map.Entry<String, String> entry : resolvedSuperVisors.entrySet()) {
+                String hostName = entry.getKey();
+                String rack = entry.getValue();
+                List<String> nodesForRack = this.networkTopography.get(rack);
+                if (nodesForRack == null) {
+                    nodesForRack = new ArrayList<>();
+                    this.networkTopography.put(rack, nodesForRack);
                 }
+                nodesForRack.add(hostName);
             }
         } else {
             this.networkTopography.putAll(networkTopography);
