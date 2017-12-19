@@ -199,11 +199,16 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.apache.avro</groupId>
+            <artifactId>avro</artifactId>
+            <version>1.7.4</version>
+        </dependency>
+        <dependency>
             <groupId>io.confluent</groupId>
-            <artifactId>kafka-avro-serializer</artifactId>
+            <artifactId>kafka-schema-registry-client</artifactId>
             <version>1.0</version>
             <exclusions>
-	    	<exclusion>
+                <exclusion>
                     <groupId>log4j</groupId>
                     <artifactId>log4j</artifactId>
                 </exclusion>
