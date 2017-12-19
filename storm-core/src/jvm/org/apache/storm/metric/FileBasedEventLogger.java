@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metric;
 
 import org.apache.commons.lang.StringUtils;
@@ -64,7 +65,7 @@ public class FileBasedEventLogger implements IEventLogger {
             @Override
             public void run() {
                 try {
-                    if(dirty) {
+                    if (dirty) {
                         eventLogWriter.flush();
                         dirty = false;
                     }
@@ -101,7 +102,7 @@ public class FileBasedEventLogger implements IEventLogger {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> stormConf, Map<String, Object> arguments, TopologyContext context) {
         String workersArtifactDir; // workers artifact directory
         String stormId = context.getStormId();
         int port = context.getThisWorkerPort();
@@ -129,13 +130,17 @@ public class FileBasedEventLogger implements IEventLogger {
     public void log(EventInfo event) {
         try {
             //TODO: file rotation
-            eventLogWriter.write(event.toString());
+            eventLogWriter.write(buildLogMessage(event));
             eventLogWriter.newLine();
             dirty = true;
         } catch (IOException ex) {
             LOG.error("Error logging event {}", event, ex);
             throw new RuntimeException(ex);
         }
+    }
+
+    protected String buildLogMessage(EventInfo event) {
+        return event.toString();
     }
 
     @Override
