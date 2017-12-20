@@ -45,6 +45,7 @@ public class KafkaSpoutConfigTest {
         expected.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         expected.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         assertEquals(expected, conf.getKafkaProps());
+        assertEquals(KafkaSpoutConfig.DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS, conf.getMetricsTimeBucketSizeInSecs());
     }
 
     @Test
@@ -74,5 +75,14 @@ public class KafkaSpoutConfigTest {
         
         assertThat("Should allow users to pick a different auto offset reset policy than the one recommended for the at-least-once processing guarantee",
             conf.getKafkaProps().get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG), is("none"));
+    }
+
+    @Test
+    public void testMetricsTimeBucketSizeInSecs() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+             .setMetricsTimeBucketSizeInSecs(100)
+            .build();
+
+        assertEquals(100, conf.getMetricsTimeBucketSizeInSecs());
     }
 }
