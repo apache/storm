@@ -24,7 +24,9 @@ import org.apache.storm.metric.api.rpc.IShellMetric;
 import org.apache.storm.multilang.ShellMsg;
 import org.apache.storm.multilang.SpoutMsg;
 import org.apache.storm.task.TopologyContext;
+import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.ShellProcess;
+import org.apache.storm.utils.ShellUtils;
 
 import java.util.Arrays;
 import java.util.Map;
@@ -50,6 +52,7 @@ public class ShellSpout implements ISpout {
     private SpoutOutputCollector _collector;
     private String[] _command;
     private Map<String, String> env = new HashMap<>();
+    private ShellLogHandler _logHandler;
     private ShellProcess _process;
     private volatile boolean _running = true;
     private volatile RuntimeException _exception;
@@ -111,6 +114,9 @@ public class ShellSpout implements ISpout {
         Number subpid = _process.launch(stormConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
 
+        _logHandler =  ShellUtils.getLogHandler(stormConf);
+        _logHandler.setUpContext(ShellSpout.class, _process, _context);
+
         heartBeatExecutorService = MoreExecutors.getExitingScheduledExecutorService(new ScheduledThreadPoolExecutor(1));
     }
 
@@ -145,7 +151,6 @@ public class ShellSpout implements ISpout {
         querySubprocess();
     }
 
-    
     private void handleMetrics(ShellMsg shellMsg) {
         //get metric name
         String name = shellMsg.getMetricName();
@@ -191,7 +196,7 @@ public class ShellSpout implements ISpout {
                 if (command.equals("sync")) {
                     return;
                 } else if (command.equals("log")) {
-                    handleLog(shellMsg);
+                    _logHandler.log(shellMsg);
                 } else if (command.equals("error")) {
                     handleError(shellMsg.getMsg());
                 } else if (command.equals("emit")) {
@@ -218,34 +223,6 @@ public class ShellSpout implements ISpout {
             throw new RuntimeException(processInfo, e);
         } finally {
             completedWaitingSubprocess();
-        }
-    }
-
-
-    private void handleLog(ShellMsg shellMsg) {
-        String msg = shellMsg.getMsg();
-        msg = "ShellLog " + _process.getProcessInfoString() + " " + msg;
-        ShellMsg.ShellLogLevel logLevel = shellMsg.getLogLevel();
-
-        switch (logLevel) {
-            case TRACE:
-                LOG.trace(msg);
-                break;
-            case DEBUG:
-                LOG.debug(msg);
-                break;
-            case INFO:
-                LOG.info(msg);
-                break;
-            case WARN:
-                LOG.warn(msg);
-                break;
-            case ERROR:
-                LOG.error(msg);
-                break;
-            default:
-                LOG.info(msg);
-                break;
         }
     }
 
