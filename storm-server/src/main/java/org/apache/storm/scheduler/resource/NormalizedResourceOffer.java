@@ -34,27 +34,23 @@ public class NormalizedResourceOffer extends NormalizedResources {
     private double totalMemory;
 
     /**
-     * Create a new normalized set of resources.  Note that memory is not covered here becasue it is not consistent in requests vs offers
+     * Create a new normalized set of resources.  Note that memory is not covered here because it is not consistent in requests vs offers
      * because of how on heap vs off heap is used.
      *
      * @param resources the resources to be normalized.
      */
     public NormalizedResourceOffer(Map<String, ? extends Number> resources) {
         super(resources, null);
+        totalMemory = getNormalizedResources().getOrDefault(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
     }
 
     public NormalizedResourceOffer() {
-        super(null, null);
+        this((Map<String, ? extends Number>)null);
     }
 
     public NormalizedResourceOffer(NormalizedResourceOffer other) {
         super(other);
         this.totalMemory = other.totalMemory;
-    }
-
-    @Override
-    protected void initializeMemory(Map<String, Double> normalizedResources) {
-        totalMemory = normalizedResources.getOrDefault(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
     }
 
     @Override

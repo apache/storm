@@ -196,10 +196,10 @@ public class BlobStoreUtils {
                 // Catching and logging KeyNotFoundException because, if
                 // there is a subsequent update and delete, the non-leader
                 // nimbodes might throw an exception.
-                LOG.info("KeyNotFoundException {}", knf);
+                LOG.info("KeyNotFoundException", knf);
             } catch (Exception exp) {
                 // Logging an exception while client is connecting
-                LOG.error("Exception {}", exp);
+                LOG.error("Exception", exp);
             }
         }
 
