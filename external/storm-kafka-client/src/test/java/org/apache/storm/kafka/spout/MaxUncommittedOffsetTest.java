@@ -47,6 +47,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.MockitoAnnotations;
 
 import static org.apache.storm.kafka.spout.builders.SingleTopicKafkaSpoutConfiguration.createKafkaSpoutConfigBuilder;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.never;
 
 public class MaxUncommittedOffsetTest {
 
@@ -179,6 +181,53 @@ public class MaxUncommittedOffsetTest {
         reached if the tuple at the maxUncommittedOffsets limit is the earliest retriable tuple,
         or if the spout is 1 tuple below the limit, and receives a full maxPollRecords tuples in the poll.
          */
+
+        try (Time.SimulatedTime simulatedTime = new Time.SimulatedTime()) {
+            //First check that maxUncommittedOffsets is respected when emitting from scratch
+            ArgumentCaptor<KafkaSpoutMessageId> messageIds = emitMaxUncommittedOffsetsMessagesAndCheckNoMoreAreEmitted(numMessages);
+            reset(collector);
+
+            //Fail only the last tuple
+            List<KafkaSpoutMessageId> messageIdList = messageIds.getAllValues();
+            KafkaSpoutMessageId failedMessageId = messageIdList.get(messageIdList.size() - 1);
+            spout.fail(failedMessageId);
+
+            //Offset 0 to maxUncommittedOffsets - 2 are pending, maxUncommittedOffsets - 1 is failed but not retriable
+            //The spout should not emit any more tuples.
+            spout.nextTuple();
+            verify(collector, never()).emit(
+                anyString(),
+                anyList(),
+                any(KafkaSpoutMessageId.class));
+
+            //Allow the failed record to retry
+            Time.advanceTimeSecs(initialRetryDelaySecs);
+            for (int i = 0; i < maxPollRecords; i++) {
+                spout.nextTuple();
+            }
+            ArgumentCaptor<KafkaSpoutMessageId> secondRunMessageIds = ArgumentCaptor.forClass(KafkaSpoutMessageId.class);
+            verify(collector, times(maxPollRecords)).emit(
+                anyString(),
+                anyList(),
+                secondRunMessageIds.capture());
+            reset(collector);
+            assertThat(secondRunMessageIds.getAllValues().get(0), is(failedMessageId));
+            
+            //There should now be maxUncommittedOffsets + maxPollRecords emitted in all.
+            //Fail the last emitted tuple and verify that the spout won't retry it because it's above the emit limit.
+            spout.fail(secondRunMessageIds.getAllValues().get(secondRunMessageIds.getAllValues().size() - 1));
+            Time.advanceTimeSecs(initialRetryDelaySecs);
+            spout.nextTuple();
+            verify(collector, never()).emit(anyString(), anyList(), any(KafkaSpoutMessageId.class));
+        }
+    }
+
+    @Test
+    public void testNextTupleWillAllowRetryForTuplesBelowEmitLimit() throws Exception {
+        /*
+        For each partition the spout is allowed to retry all tuples between the committed offset, and maxUncommittedOffsets ahead.
+        It must retry tuples within that limit, even if more tuples were emitted.
+         */
         try (Time.SimulatedTime simulatedTime = new Time.SimulatedTime()) {
             //First check that maxUncommittedOffsets is respected when emitting from scratch
             ArgumentCaptor<KafkaSpoutMessageId> messageIds = emitMaxUncommittedOffsetsMessagesAndCheckNoMoreAreEmitted(numMessages);
@@ -186,9 +235,9 @@ public class MaxUncommittedOffsetTest {
 
             failAllExceptTheFirstMessageThenCommit(messageIds);
 
-            //Offset 0 is acked, 1 to maxUncommittedOffsets - 1 are failed but not retriable
+            //Offset 0 is committed, 1 to maxUncommittedOffsets - 1 are failed but not retriable
             //The spout should now emit another maxPollRecords messages
-            //This is allowed because the acked message brings the numUncommittedOffsets below the cap
+            //This is allowed because the committed message brings the numUncommittedOffsets below the cap
             for (int i = 0; i < maxUncommittedOffsets; i++) {
                 spout.nextTuple();
             }

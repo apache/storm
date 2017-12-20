@@ -15,15 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.flux.model;
 
-import org.apache.storm.Config;
-import org.apache.storm.task.IBolt;
-import org.apache.storm.topology.IRichSpout;
+package org.apache.storm.flux.model;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.storm.Config;
+import org.apache.storm.task.IBolt;
+import org.apache.storm.topology.IRichSpout;
 
 /**
  * Container for all the objects required to instantiate a topology.
@@ -45,32 +46,32 @@ public class ExecutionContext {
     private List<IBolt> bolts;
     private Map<String, Object> boltMap = new HashMap<String, Object>();
 
-    public ExecutionContext(TopologyDef topologyDef, Config config){
+    public ExecutionContext(TopologyDef topologyDef, Config config) {
         this.topologyDef = topologyDef;
         this.config = config;
     }
 
-    public TopologyDef getTopologyDef(){
+    public TopologyDef getTopologyDef() {
         return this.topologyDef;
     }
 
-    public void addSpout(String id, IRichSpout spout){
+    public void addSpout(String id, IRichSpout spout) {
         this.spoutMap.put(id, spout);
     }
 
-    public void addBolt(String id, Object bolt){
+    public void addBolt(String id, Object bolt) {
         this.boltMap.put(id, bolt);
     }
 
-    public Object getBolt(String id){
+    public Object getBolt(String id) {
         return this.boltMap.get(id);
     }
 
-    public void addComponent(String id, Object value){
+    public void addComponent(String id, Object value) {
         this.componentMap.put(id, value);
     }
 
-    public Object getComponent(String id){
+    public Object getComponent(String id) {
         return this.componentMap.get(id);
     }
 

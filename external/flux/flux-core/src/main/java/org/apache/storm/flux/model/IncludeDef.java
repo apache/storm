@@ -15,11 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.flux.model;
 
 /**
  * Represents an include. Includes can be either a file or a classpath resource.
- *
+ *<p/>
  * If an include is marked as `override=true` then existing properties will be replaced.
  *
  */

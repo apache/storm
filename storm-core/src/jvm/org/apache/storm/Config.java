@@ -20,6 +20,7 @@ package org.apache.storm;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
+import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidationAnnotations.*;
@@ -327,7 +328,6 @@ public class Config extends HashMap<String, Object> {
      * to false, then Storm will use a pure-Java messaging system. The purpose
      * of this flag is to make it easy to run Storm in local mode by eliminating
      * the need for native dependencies, which can be difficult to install.
-     *
      * Defaults to false.
      */
     @isBoolean
@@ -1707,6 +1707,18 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ACKER_EXECUTORS = "topology.acker.executors";
 
     /**
+     * A list of classes implementing IEventLogger (See storm.yaml.example for exact config format).
+     * Each listed class will be routed all the events sampled from emitting tuples.
+     * If there's no class provided to the option, default event logger will be initialized and used
+     * unless you disable event logger executor.
+     *
+     * Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering
+     * many implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
+     */
+    @isListEntryCustom(entryValidatorClasses={EventLoggerRegistryValidator.class})
+    public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
+
+    /**
      * How many executors to spawn for event logger.
      *
      * <p>By not setting this variable or setting it as null, Storm will set the number of eventlogger executors
@@ -2363,6 +2375,32 @@ public class Config extends HashMap<String, Object> {
 
     public void registerSerialization(Class klass, Class<? extends Serializer> serializerClass) {
         registerSerialization(this, klass, serializerClass);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        registerEventLogger(this, klass, argument);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass) {
+        registerEventLogger(this, klass, null);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("class", klass.getCanonicalName());
+        m.put("arguments", argument);
+
+        List<Map<String, Object>> l = (List<Map<String, Object>>)conf.get(TOPOLOGY_EVENT_LOGGER_REGISTER);
+        if (l == null) {
+            l = new ArrayList<>();
+        }
+        l.add(m);
+
+        conf.put(TOPOLOGY_EVENT_LOGGER_REGISTER, l);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass) {
+        registerEventLogger(conf, klass, null);
     }
 
     public static void registerMetricsConsumer(Map conf, Class klass, Object argument, long parallelismHint) {
