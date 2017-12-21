@@ -33,7 +33,6 @@ import org.apache.storm.scheduler.SupervisorDetails;
 import org.apache.storm.scheduler.Topologies;
 import org.apache.storm.scheduler.TopologyDetails;
 import org.apache.storm.scheduler.WorkerSlot;
-import org.apache.storm.scheduler.resource.NormalizedResources;
 import org.apache.storm.scheduler.resource.RAS_Node;
 import org.apache.storm.scheduler.resource.ResourceAwareScheduler;
 import org.apache.storm.scheduler.resource.SchedulingResult;
@@ -43,6 +42,7 @@ import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,7 +67,6 @@ public class TestDefaultResourceAwareStrategy {
 
     private static int currentTime = 1450418597;
 
-
     private static class TestDNSToSwitchMapping implements DNSToSwitchMapping {
         private final Map<String, String> result;
 
@@ -88,12 +87,14 @@ public class TestDefaultResourceAwareStrategy {
         }
     };
 
+    @Rule
+    public NormalizedResourcesRule nrRule = new NormalizedResourcesRule();
+
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
      */
     @Test
     public void testDefaultResourceAwareStrategySharedMemory() {
-        NormalizedResources.resetResourceNames();
         int spoutParallelism = 2;
         int boltParallelism = 2;
         int numBolts = 3;
@@ -167,7 +168,6 @@ public class TestDefaultResourceAwareStrategy {
      */
     @Test
     public void testDefaultResourceAwareStrategy() {
-        NormalizedResources.resetResourceNames();
         int spoutParallelism = 1;
         int boltParallelism = 2;
         TopologyBuilder builder = new TopologyBuilder();
@@ -225,7 +225,6 @@ public class TestDefaultResourceAwareStrategy {
      */
     @Test
     public void testMultipleRacks() {
-        NormalizedResources.resetResourceNames();
         final Map<String, SupervisorDetails> supMap = new HashMap<>();
         final Map<String, SupervisorDetails> supMapRack0 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
@@ -336,7 +335,6 @@ public class TestDefaultResourceAwareStrategy {
      */
     @Test
     public void testMultipleRacksWithFavoritism() {
-        NormalizedResources.resetResourceNames();
         final Map<String, SupervisorDetails> supMap = new HashMap<>();
         final Map<String, SupervisorDetails> supMapRack0 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
