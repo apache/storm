@@ -20,6 +20,7 @@ package org.apache.storm.scheduler.resource;
 
 import static org.apache.storm.Constants.*;
 
+import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -78,6 +79,17 @@ public abstract class NormalizedResources {
     private static final AtomicInteger counter = new AtomicInteger(0);
     private double cpu;
     private double[] otherResources;
+
+    /**
+     * This is for testing only.  It allows a test to reset the mapping of resource names in the array.
+     * We reset the mapping because some algorithms sadly have different behavior if a resource exists
+     * or not.
+     */
+    @VisibleForTesting
+    public static void resetResourceNames() {
+        resourceNames.clear();
+        counter.set(0);
+    }
 
     public NormalizedResources(NormalizedResources other) {
         cpu = other.cpu;
