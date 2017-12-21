@@ -16,9 +16,12 @@
 
 package org.apache.storm.kafka.spout;
 
+import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
 import static org.mockito.Matchers.anyList;
 import static org.mockito.Matchers.anyLong;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mockingDetails;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -32,20 +35,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.mockito.ArgumentCaptor;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class SpoutWithMockedConsumerSetupHelper {
 
     /**
-     * Creates, opens and activates a KafkaSpout using a mocked consumer.
+     * Creates, opens and activates a KafkaSpout using a mocked consumer. The subscription should be a mock object, since this method skips
+     * the subscription and instead just configures the mocked consumer to act as if the specified partitions are assigned to it.
      *
      * @param <K> The Kafka key type
      * @param <V> The Kafka value type
@@ -59,9 +65,24 @@ public class SpoutWithMockedConsumerSetupHelper {
      */
     public static <K, V> KafkaSpout<K, V> setupSpout(KafkaSpoutConfig<K, V> spoutConfig, Map<String, Object> topoConf,
         TopologyContext contextMock, SpoutOutputCollector collectorMock, final KafkaConsumer<K, V> consumerMock, TopicPartition... assignedPartitions) {
-        Set<TopicPartition> assignedPartitionsSet = new HashSet<>(Arrays.asList(assignedPartitions));
-        
-        stubAssignment(contextMock, consumerMock, assignedPartitionsSet);
+        Subscription subscriptionMock = spoutConfig.getSubscription();
+        if (!mockingDetails(subscriptionMock).isMock()) {
+            throw new IllegalStateException("Use a mocked subscription when using this method, it helps avoid complex stubbing");
+        }
+
+        final Set<TopicPartition> assignedPartitionsSet = new HashSet<>(Arrays.asList(assignedPartitions));
+
+        when(consumerMock.assignment()).thenReturn(assignedPartitionsSet);
+        doAnswer(new Answer() {
+            @Override
+            public Object answer(InvocationOnMock invocation) throws Throwable {
+                ConsumerRebalanceListener listener = (ConsumerRebalanceListener) invocation.getArguments()[1];
+                listener.onPartitionsAssigned(assignedPartitionsSet);
+                return null;
+            }
+
+        }).when(subscriptionMock).subscribe(any(KafkaConsumer.class), any(ConsumerRebalanceListener.class), any(TopologyContext.class));
+
         KafkaConsumerFactory<K, V> consumerFactory = new KafkaConsumerFactory<K, V>() {
             @Override
             public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
@@ -69,42 +90,11 @@ public class SpoutWithMockedConsumerSetupHelper {
             }
         };
         KafkaSpout<K, V> spout = new KafkaSpout<>(spoutConfig, consumerFactory);
-        
+
         spout.open(topoConf, contextMock, collectorMock);
         spout.activate();
 
-        verify(consumerMock).assign(assignedPartitionsSet);
-
         return spout;
-    }
-    
-    /**
-     * Sets up the mocked context and consumer to appear to have the given partition assignment.
-     * 
-     * @param <K> The Kafka key type
-     * @param <V> The Kafka value type
-     * @param contextMock The mocked topology context
-     * @param consumerMock The mocked consumer
-     * @param assignedPartitions The partitions to assign to the consumer
-     */
-    public static <K, V> void stubAssignment(TopologyContext contextMock, KafkaConsumer<K, V> consumerMock, Set<TopicPartition> assignedPartitions) {
-        Map<String, List<PartitionInfo>> partitionInfos = new HashMap<>();
-        for (TopicPartition tp : assignedPartitions) {
-            PartitionInfo info = new PartitionInfo(tp.topic(), tp.partition(), null, null, null);
-            List<PartitionInfo> infos = partitionInfos.get(tp.topic());
-            if (infos == null) {
-                infos = new ArrayList<>();
-                partitionInfos.put(tp.topic(), infos);
-            }
-            infos.add(info);
-        }
-        for (String topic : partitionInfos.keySet()) {
-            when(consumerMock.partitionsFor(topic)).thenReturn(partitionInfos.get(topic));
-        }
-        when(contextMock.getComponentTasks(anyString())).thenReturn(Collections.singletonList(0));
-        when(contextMock.getThisTaskIndex()).thenReturn(0);
-
-        when(consumerMock.assignment()).thenReturn(assignedPartitions);
     }
 
     /**
@@ -127,6 +117,7 @@ public class SpoutWithMockedConsumerSetupHelper {
 
     /**
      * Creates messages for the input offsets, emits the messages by calling nextTuple once per offset and returns the captured message ids
+     *
      * @param <K> The Kafka key type
      * @param <V> The Kafka value type
      * @param spout The spout
@@ -143,6 +134,7 @@ public class SpoutWithMockedConsumerSetupHelper {
 
     /**
      * Creates messages for the input offsets, emits the messages by calling nextTuple once per offset and returns the captured message ids
+     *
      * @param <K> The Kafka key type
      * @param <V> The Kafka value type
      * @param spout The spout

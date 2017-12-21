@@ -66,6 +66,8 @@ public class ManualPartitionSubscriptionTest {
         
         reset(consumerMock, listenerMock);
         
+        when(consumerMock.assignment()).thenReturn(new HashSet<>(onePartition));
+        
         //Update to set the second assignment
         subscription.refreshAssignment();
         
