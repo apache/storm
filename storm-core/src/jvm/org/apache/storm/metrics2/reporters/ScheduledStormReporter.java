@@ -81,7 +81,7 @@ public abstract class ScheduledStormReporter implements StormReporter{
                     filter = (StormMetricsFilter) Metrics2Utils.instantiate(clazz);
                     filter.prepare(filterConf);
                 } catch (Exception e) {
-                    LOG.warn("Unable to instantiate StormMetricsFilter class: {}", clazz);
+                    throw new RuntimeException("Unable to instantiate StormMetricsFilter class: " + clazz);
                 }
             }
         }

@@ -437,12 +437,17 @@ public class DisruptorQueue implements IStatefulObject {
 
         _flusher = new Flusher(Math.max(flushInterval, 1), _queueName);
         _flusher.start();
-        METRICS_TIMER.schedule(new TimerTask(){
-            @Override
-            public void run() {
-                _disruptorMetrics.set(_metrics);
-            }
-        }, 15000, 15000);
+        try {
+            METRICS_TIMER.schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    _disruptorMetrics.set(_metrics);
+                }
+            }, 15000, 15000);
+        } catch (IllegalStateException e){
+            // Ignore. IllegalStateException is thrown by Timer.schedule() if the timer
+            // has been cancelled. (This happens in unit tests)
+        }
     }
 
     public String getName() {
@@ -458,6 +463,7 @@ public class DisruptorQueue implements IStatefulObject {
             publishDirect(new ArrayList<Object>(Arrays.asList(INTERRUPT)), true);
             _flusher.close();
             _metrics.close();
+            METRICS_TIMER.cancel();
         } catch (InsufficientCapacityException e) {
             //This should be impossible
             throw new RuntimeException(e);

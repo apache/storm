@@ -494,6 +494,12 @@ public class ConfigValidation {
     }
 
     public static class MetricReportersValidator extends Validator {
+        private static final String NIMBUS = "nimbus";
+        private static final String SUPERVISOR = "supervisor";
+        private static final String WORKER = "worker";
+        private static final String CLASS = "class";
+        private static final String FILTER = "filter";
+        private static final String DAEMONS = "daemons";
 
         @Override
         public void validateField(String name, Object o) {
@@ -501,23 +507,23 @@ public class ConfigValidation {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if(!((Map) o).containsKey("class") ) {
+            if(!((Map) o).containsKey(CLASS) ) {
                 throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
             }
-            if(!((Map) o).containsKey("daemons") ) {
+            if(!((Map) o).containsKey(DAEMONS) ) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: daemons");
             } else {
                 // daemons can only be 'nimbus', 'supervisor', or 'worker'
-                Object list = ((Map)o).get("daemons");
-                if(list == null || !(list instanceof List)){
+                Object list = ((Map)o).get(DAEMONS);
+                if(!(list instanceof List)){
                     throw new IllegalArgumentException("Field 'daemons' must be a non-null list.");
                 }
                 List daemonList = (List)list;
                 for(Object string : daemonList){
                     if (string instanceof String &&
-                            (((String) string).equals("nimbus") ||
-                                    ((String) string).equals("supervisor") ||
-                                    ((String) string).equals("worker"))) {
+                            (string.equals(NIMBUS) ||
+                                    string.equals(SUPERVISOR) ||
+                                    string.equals(WORKER))) {
                         continue;
                     }
                     throw new IllegalArgumentException("Field 'daemons' must contain at least one of the following:" +
@@ -525,11 +531,11 @@ public class ConfigValidation {
                 }
 
             }
-            if(((Map)o).containsKey("filter")){
-                Map filterMap = (Map)((Map)o).get("filter");
-                SimpleTypeValidator.validateField("class", String.class, filterMap.get("class"));
+            if(((Map)o).containsKey(FILTER)){
+                Map filterMap = (Map)((Map)o).get(FILTER);
+                SimpleTypeValidator.validateField(CLASS, String.class, filterMap.get(CLASS));
             }
-            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get("class"));
+            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get(CLASS));
 
         }
     }
