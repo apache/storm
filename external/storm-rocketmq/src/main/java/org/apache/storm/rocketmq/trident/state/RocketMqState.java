@@ -19,14 +19,15 @@
 package org.apache.storm.rocketmq.trident.state;
 
 import java.io.Serializable;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.client.producer.DefaultMQProducer;
-import org.apache.rocketmq.client.producer.MQProducer;
 import org.apache.rocketmq.common.message.Message;
 import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.common.mapper.TupleToMessageMapper;
@@ -43,7 +44,7 @@ public class RocketMqState implements State {
     private static final Logger LOG = LoggerFactory.getLogger(RocketMqState.class);
 
     private Options options;
-    private MQProducer producer;
+    private DefaultMQProducer producer;
 
     protected RocketMqState(Map map, Options options) {
         this.options = options;
@@ -72,9 +73,12 @@ public class RocketMqState implements State {
 
     protected void prepare() {
         Validate.notEmpty(options.properties, "Producer properties can not be empty");
+        Validate.notNull(options.selector, "TopicSelector can not be null");
+        Validate.notNull(options.mapper, "TupleToMessageMapper can not be null");
 
         producer = new DefaultMQProducer();
-        RocketMqConfig.buildProducerConfigs(options.properties, (DefaultMQProducer)producer);
+        producer.setInstanceName(UUID.randomUUID().toString());
+        RocketMqConfig.buildProducerConfigs(options.properties, producer);
 
         try {
             producer.start();
@@ -99,23 +103,28 @@ public class RocketMqState implements State {
      * @param collector trident collector
      */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
-        try {
-            for (TridentTuple tuple : tuples) {
-                String topic = options.selector.getTopic(tuple);
-                String tag = options.selector.getTag(tuple);
-                String key = options.mapper.getKeyFromTuple(tuple);
-                byte[] value = options.mapper.getValueFromTuple(tuple);
+        List<Message> messages = new LinkedList<>();
 
-                if (topic == null) {
-                    LOG.warn("skipping Message with Key = " + key + ", topic selector returned null.");
-                    continue;
-                }
+        for (TridentTuple tuple : tuples) {
+            String topic = options.selector.getTopic(tuple);
+            String tag = options.selector.getTag(tuple);
+            String key = options.mapper.getKeyFromTuple(tuple);
+            byte[] value = options.mapper.getValueFromTuple(tuple);
 
-                Message msg = new Message(topic,tag, key, value);
-                this.producer.send(msg);
+            if (topic == null) {
+                LOG.warn("skipping Message with Key = " + key + ", topic selector returned null.");
+                continue;
             }
+
+            Message msg = new Message(topic, tag, key, value);
+            messages.add(msg);
+        }
+
+        try {
+            this.producer.send(messages);
         } catch (Exception e) {
-            LOG.warn("Batch write failed but some requests might have succeeded. Triggering replay.", e);
+            LOG.warn("Batch write failed. Triggering replay.", e);
+            collector.reportError(e);
             throw new FailedException(e);
         }
     }

@@ -15,16 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.spout;
 
-import org.apache.storm.tuple.Fields;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.List;
+package org.apache.storm.rocketmq.common.selector;
 
+import org.apache.storm.tuple.Tuple;
+import org.junit.Before;
+import org.junit.Test;
 
-public interface Scheme extends Serializable {
-    List<Object> deserialize(ByteBuffer ser);
+import static org.junit.Assert.*;
 
-    Fields getOutputFields();
+public class DefaultTopicSelectorTest {
+
+    @Test
+    public void getTopic() throws Exception {
+        DefaultTopicSelector topicSelector = new DefaultTopicSelector("tpc", "tg");
+        Tuple tuple = null;
+        assertEquals("tpc", topicSelector.getTopic(tuple));
+        assertEquals("tg", topicSelector.getTag(tuple));
+
+        topicSelector = new DefaultTopicSelector("tpc2");
+        assertEquals("tpc2", topicSelector.getTopic(tuple));
+        assertEquals("", topicSelector.getTag(tuple));
+    }
+
 }

@@ -15,16 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.spout;
 
-import org.apache.storm.tuple.Fields;
-import java.io.Serializable;
-import java.nio.ByteBuffer;
-import java.util.List;
+package org.apache.storm.rocketmq.common.mapper;
 
+import org.apache.storm.rocketmq.TestUtils;
+import org.apache.storm.tuple.Tuple;
+import org.junit.Test;
 
-public interface Scheme extends Serializable {
-    List<Object> deserialize(ByteBuffer ser);
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
 
-    Fields getOutputFields();
+public class FieldNameBasedTupleToMessageMapperTest {
+    @Test
+    public void withMessageBodySerializer() throws Exception {
+        FieldNameBasedTupleToMessageMapper messageMapper = new FieldNameBasedTupleToMessageMapper("f1", "f2");
+        Tuple tuple = TestUtils.generateTestTuple("f1", "f2", "v1", "v2");
+        assertEquals("v1", messageMapper.getKeyFromTuple(tuple));
+        assertArrayEquals("v2".getBytes(), messageMapper.getValueFromTuple(tuple));
+    }
 }

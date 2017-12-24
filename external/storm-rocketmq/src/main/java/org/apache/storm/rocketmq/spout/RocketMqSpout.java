@@ -1,4 +1,4 @@
-/**
+/*
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -19,17 +19,19 @@
 package org.apache.storm.rocketmq.spout;
 
 import static org.apache.storm.rocketmq.RocketMqUtils.getBoolean;
-import static org.apache.storm.rocketmq.RocketMqUtils.getInteger;
+import static org.apache.storm.rocketmq.RocketMqUtils.getLong;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingQueue;
 
 import org.apache.commons.lang.Validate;
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
-import org.apache.rocketmq.client.consumer.MQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyStatus;
 import org.apache.rocketmq.client.consumer.listener.ConsumeOrderlyContext;
@@ -39,18 +41,16 @@ import org.apache.rocketmq.client.consumer.listener.MessageListenerOrderly;
 import org.apache.rocketmq.client.exception.MQClientException;
 import org.apache.rocketmq.common.message.MessageExt;
 import org.apache.storm.Config;
-import org.apache.storm.rocketmq.ConsumerMessage;
-import org.apache.storm.rocketmq.DefaultMessageRetryManager;
-import org.apache.storm.rocketmq.MessageRetryManager;
+import org.apache.storm.rocketmq.ConsumerBatchMessage;
 import org.apache.storm.rocketmq.RocketMqConfig;
 import org.apache.storm.rocketmq.RocketMqUtils;
-import org.apache.storm.rocketmq.SpoutConfig;
 import org.apache.storm.spout.Scheme;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.utils.ObjectReader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * RocketMqSpout uses MQPushConsumer as the default implementation.
@@ -59,15 +59,17 @@ import org.apache.storm.utils.ObjectReader;
  */
 public class RocketMqSpout implements IRichSpout {
     // TODO add metrics
+    private static final long serialVersionUID = 1L;
+    private static final Logger LOG = LoggerFactory.getLogger(RocketMqSpout.class);
 
-    private static MQPushConsumer consumer;
+    private DefaultMQPushConsumer consumer;
     private SpoutOutputCollector collector;
-    private BlockingQueue<ConsumerMessage> queue;
-    private BlockingQueue<ConsumerMessage> pending;
+    private BlockingQueue<ConsumerBatchMessage<List<Object>>> queue;
+    private Map<String,ConsumerBatchMessage<List<Object>>> cache;
 
     private Properties properties;
-    private MessageRetryManager messageRetryManager;
     private Scheme scheme;
+    private long batchProcessTimeout;
 
     /**
      * RocketMqSpout Constructor.
@@ -81,27 +83,9 @@ public class RocketMqSpout implements IRichSpout {
 
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
-        // Since RocketMQ Consumer is thread-safe, RocketMQSpout uses a single
-        // consumer instance across threads to improve the performance.
-        synchronized (RocketMqSpout.class) {
-            if (consumer == null) {
-                buildAndStartConsumer();
-            }
-        }
-
-        int queueSize = getInteger(properties, SpoutConfig.QUEUE_SIZE, ObjectReader.getInt(conf.get(Config.TOPOLOGY_MAX_SPOUT_PENDING)));
-        queue = new LinkedBlockingQueue<>(queueSize);
-        pending = new LinkedBlockingQueue<>(queueSize);
-        int maxRetry = getInteger(properties, SpoutConfig.MESSAGES_MAX_RETRY, SpoutConfig.DEFAULT_MESSAGES_MAX_RETRY);
-        int ttl = getInteger(properties, SpoutConfig.MESSAGES_TTL, SpoutConfig.DEFAULT_MESSAGES_TTL);
-
-        this.messageRetryManager = new DefaultMessageRetryManager(queue, maxRetry, ttl);
-        this.collector = collector;
-    }
-
-    protected void buildAndStartConsumer() {
         consumer = new DefaultMQPushConsumer();
-        RocketMqConfig.buildConsumerConfigs(properties, (DefaultMQPushConsumer)consumer);
+        consumer.setInstanceName(String.valueOf(context.getThisTaskId()));
+        RocketMqConfig.buildConsumerConfigs(properties, consumer);
 
         boolean ordered = getBoolean(properties, RocketMqConfig.CONSUMER_MESSAGES_ORDERLY, false);
         if (ordered) {
@@ -133,8 +117,16 @@ public class RocketMqSpout implements IRichSpout {
         try {
             consumer.start();
         } catch (MQClientException e) {
+            LOG.error("Failed to start RocketMQ consumer.", e);
             throw new RuntimeException(e);
         }
+
+        long defaultBatchProcessTimeout = (long)conf.getOrDefault(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS, 30) * 1000 + 10000;
+        batchProcessTimeout = getLong(properties, RocketMqConfig.CONSUMER_BATCH_PROCESS_TIMEOUT, defaultBatchProcessTimeout);
+
+        queue = new LinkedBlockingQueue<>();
+        cache = new ConcurrentHashMap<>();
+        this.collector = collector;
     }
 
     /**
@@ -147,48 +139,60 @@ public class RocketMqSpout implements IRichSpout {
             return true;
         }
 
-        boolean notFull = true;
+        List<List<Object>> list = new ArrayList<>(msgs.size());
         for (MessageExt msg : msgs) {
-            ConsumerMessage message = new ConsumerMessage(msg);
-            // returning true upon success and false if this queue is full.
-            if (!queue.offer(message)) {
-                notFull = false;
-                pending.offer(message);
+            List<Object> data = RocketMqUtils.generateTuples(msg, scheme);
+            if (data != null) {
+                list.add(data);
             }
         }
-        return notFull;
+        ConsumerBatchMessage<List<Object>> batchMessage = new ConsumerBatchMessage<>(list);
+        try {
+            queue.put(batchMessage);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+
+        boolean isCompleted;
+        try {
+            isCompleted = batchMessage.waitFinish(batchProcessTimeout);
+        } catch (InterruptedException e) {
+            LOG.error("Interrupted when waiting messages to be finished.", e);
+            throw new RuntimeException(e);
+        }
+
+        boolean isSuccess = batchMessage.isSuccess();
+
+        return isCompleted && isSuccess;
     }
 
     @Override
     public void nextTuple() {
-        ConsumerMessage message;
-        if (!pending.isEmpty()) {
-            message = pending.poll();
-        } else {
-            message = queue.poll();
-        }
-
-        if (message == null) {
-            return;
-        }
-
-        messageRetryManager.mark(message);
-        List<Object> tup = RocketMqUtils.generateTuples(message.getData(), scheme);
-        if (tup != null) {
-            collector.emit(tup, message.getId());
+        ConsumerBatchMessage<List<Object>> batchMessage = queue.poll();
+        if (batchMessage != null) {
+            List<List<Object>> list = batchMessage.getData();
+            for (List<Object> data : list) {
+                String messageId = UUID.randomUUID().toString();
+                cache.put(messageId, batchMessage);
+                collector.emit(data, messageId);
+            }
         }
     }
 
     @Override
     public void ack(Object msgId) {
-        String id = msgId.toString();
-        messageRetryManager.ack(id);
+        ConsumerBatchMessage batchMessage = cache.get(msgId);
+        batchMessage.ack();
+        cache.remove(msgId);
+        LOG.debug("Message acked {}", batchMessage);
     }
 
     @Override
     public void fail(Object msgId) {
-        String id = msgId.toString();
-        messageRetryManager.fail(id);
+        ConsumerBatchMessage batchMessage = cache.get(msgId);
+        batchMessage.fail();
+        cache.remove(msgId);
+        LOG.debug("Message failed {}", batchMessage);
     }
 
     @Override
@@ -203,21 +207,22 @@ public class RocketMqSpout implements IRichSpout {
 
     @Override
     public void close() {
-        synchronized (RocketMqSpout.class) {
-            if (consumer != null) {
-                consumer.shutdown();
-                consumer = null;
-            }
+        if (consumer != null) {
+            consumer.shutdown();
         }
     }
 
     @Override
     public void activate() {
-        consumer.resume();
+        if (consumer != null) {
+            consumer.resume();
+        }
     }
 
     @Override
     public void deactivate() {
-        consumer.suspend();
+        if (consumer != null) {
+            consumer.suspend();
+        }
     }
 }

@@ -26,7 +26,7 @@ public class DefaultMessageBodySerializer implements MessageBodySerializer {
      * Currently, we just convert string to bytes using UTF-8 charset.
      * Note: in this way, object.toString() method is invoked.
      * @param body RocketMQ Message body
-     * @return serialized byte[]
+     * @return serialized byte array
      */
     @Override
     public byte[] serialize(Object body) {

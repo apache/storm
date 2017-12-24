@@ -18,34 +18,19 @@
 
 package org.apache.storm.rocketmq;
 
-/**
- * Interface for messages retry manager.
- */
-public interface MessageRetryManager {
-    /**
-     * Remove from the cache. Message with the id is successful.
-     * @param id message id
-     */
-    void ack(String id);
+import org.junit.Test;
 
-    /**
-     * Remove from the cache. Message with the id is failed.
-     * Invoke retry logics if necessary.
-     * @param id message id
-     */
-    void fail(String id);
+import static org.junit.Assert.*;
 
-    /**
-     * Mark message in the cache.
-     * @param message message
-     */
-    void mark(ConsumerMessage message);
+public class DefaultMessageBodySerializerTest {
+    @Test
+    public void serialize() throws Exception {
+        DefaultMessageBodySerializer messageBodySerializer = new DefaultMessageBodySerializer();
+        String body = "this is message body data";
+        assertArrayEquals(body.getBytes(), messageBodySerializer.serialize(body));
 
-    /**
-     * Whether the message need retry.
-     * @param message ConsumerMessage
-     * @return true if need retry, otherwise false
-     */
-    boolean needRetry(ConsumerMessage message);
+        body = null;
+        assertArrayEquals(null, messageBodySerializer.serialize(body));
+    }
 
 }
