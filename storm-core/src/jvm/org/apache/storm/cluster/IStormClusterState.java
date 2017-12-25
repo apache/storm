@@ -33,6 +33,10 @@ public interface IStormClusterState {
 
     public void syncRemoteAssignments(Map<String, byte[]> remote);
 
+    public boolean isAssignmentsBackendSynchronized();
+
+    public void setAssignmentsBackendSynchronized();
+
     public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
 
     public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;

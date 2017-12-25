@@ -258,7 +258,9 @@
     (syncRemoteAssignments [this remote]
       (.sync-remote-assignments! cluster-state remote))
     (syncRemoteIds [this remote]
-      (.sync-remote-ids! cluster-state remote))))
+      (.sync-remote-ids! cluster-state remote))
+    (setAssignmentsBackendSynchronized [this]
+      (.set-assignments-backend-synchronized! cluster-state))))
 
 (defn zk-leader-elector
   "Zookeeper Implementation of ILeaderElector."

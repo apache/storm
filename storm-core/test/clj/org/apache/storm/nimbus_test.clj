@@ -124,8 +124,11 @@
         curr-beat (.get-worker-heartbeat state storm-id node port)
         stats (:executor-stats curr-beat)]
     (.worker-heartbeat! state storm-id node port
-      {:storm-id storm-id :time-secs (current-time-secs) :uptime 10 :executor-stats (merge stats {executor (stats/render-stats! (stats/mk-bolt-stats 20))})}
-      )))
+      {:storm-id storm-id
+       :time-secs (current-time-secs)
+       :uptime 10
+       :executor-stats (merge stats {executor (stats/render-stats! (stats/mk-bolt-stats 20))})})
+    (.sendSupervisorWorkerHeartbeat (:nimbus cluster) (stats/thriftify-rpc-worker-hb storm-id executor))))
 
 (defn slot-assignments [cluster storm-id]
   (let [state (:storm-cluster-state cluster)
@@ -634,12 +637,12 @@
 
       (advance-cluster-time cluster 11)
       (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
-      (is (= ass2 (executor-assignment cluster storm-id executor-id2)))
+      (is (not= ass2 (executor-assignment cluster storm-id executor-id2)))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
       (check-consistency cluster "test")
 
       (advance-cluster-time cluster 31)
-      (is (= ass1 (executor-assignment cluster storm-id executor-id1)))
+      (is (not= ass1 (executor-assignment cluster storm-id executor-id1)))
       (is (= ass2 (executor-assignment cluster storm-id executor-id2)))  ; tests launch timeout
       (check-consistency cluster "test")
 
@@ -664,7 +667,7 @@
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
       (is (not-nil? ass1))
       (is (not-nil? ass2))
-      (is (= active-supervisor (first (executor-assignment cluster storm-id executor-id2))))
+      (is (not= active-supervisor (first (executor-assignment cluster storm-id executor-id2))))
       (is (not= active-supervisor (first (executor-assignment cluster storm-id executor-id1))))
       (check-consistency cluster "test")
 
@@ -674,8 +677,8 @@
       (advance-cluster-time cluster 90)
       (bind ass1 (executor-assignment cluster storm-id executor-id1))
       (bind ass2 (executor-assignment cluster storm-id executor-id2))
-      (is (not-nil? ass1))
-      (is (not-nil? ass2))
+      (is (nil? ass1))
+      (is (nil? ass2))
       (check-consistency cluster "test" :assigned? false)
 
       (add-supervisor cluster)
@@ -733,7 +736,7 @@
       (do-executor-heartbeat cluster storm-id executor-id1)
 
       (check-consistency cluster "test")
-      (is (= 2 (storm-num-workers state "test")))
+      (is (= 1 (storm-num-workers state "test")))
       )))
 
 (defn check-executor-distribution [slot-executors distribution]
@@ -908,9 +911,9 @@
                                                       node->ports (apply merge-with (fn [a b] (distinct (concat a b))) (for [[node port] node+ports] {node [port]}))]]
                                                 {id node->ports}))
          _ (log-message "id->node->ports: " id->node->ports)
-         all-nodes (apply merge-with (fn [a b] 
+         all-nodes (apply merge-with (fn [a b]
                                         (let [ret (concat a b)]
-                                              (log-message "Can we combine " (pr-str a) " and " (pr-str b) " without collisions? " (apply distinct? ret) " => " (pr-str ret)) 
+                                              (log-message "Can we combine " (pr-str a) " and " (pr-str b) " without collisions? " (apply distinct? ret) " => " (pr-str ret))
                                               (is (apply distinct? ret))
                                               (distinct ret)))
                           (.values id->node->ports))]
@@ -1090,7 +1093,7 @@
               (submit-local-topology nimbus "t1" {} topology)
               ;; Instead of sleeping until topology is scheduled, rebalance topology so mk-assignments is called.
               (.rebalance nimbus "t1" (doto (RebalanceOptions.) (.set_wait_secs 0)))
-              (wait-for-status nimbus "t1" "ACTIVE") 
+              (wait-for-status nimbus "t1" "ACTIVE")
               (.deactivate nimbus "t1")
               (.activate nimbus "t1")
               (.rebalance nimbus "t1" (RebalanceOptions.))
@@ -1116,10 +1119,10 @@
               (is (thrown? RuntimeException
                     (.rebalance non-leader-nimbus "t1" (RebalanceOptions.))))
               (.shutdown non-leader-nimbus)
-              ;;(.disconnect non-leader-cluster-state)
+              (.disconnect non-leader-cluster-state)
               ))
           (.shutdown nimbus)
-          ;;(.disconnect cluster-state)
+          (.disconnect cluster-state)
           )))))
 
 (deftest test-nimbus-iface-submitTopologyWithOpts-checks-authorization
@@ -1231,7 +1234,7 @@
                                                   [2 2] ["super2" "host1"]}}
                 topo-assignment {expected-name assignment}
                 check-auth-state (atom [])
-                mock-check-authorization (fn [nimbus storm-name storm-conf operation] 
+                mock-check-authorization (fn [nimbus storm-name storm-conf operation]
                                            (swap! check-auth-state conj {:nimbus nimbus
                                                                          :storm-name storm-name
                                                                          :storm-conf storm-conf
@@ -1247,7 +1250,7 @@
               ;; not called yet
               (verify-call-times-for nimbus/check-authorization! 0)
               (.getSupervisorPageInfo nimbus "super1" nil true)
- 
+
               ;; afterwards, it should get called twice
               (verify-call-times-for nimbus/check-authorization! 2)
               (let [first-call (nth @check-auth-state 0)
@@ -1255,7 +1258,7 @@
                  (is (= expected-name (:storm-name first-call)))
                  (is (= expected-conf (:storm-conf first-call)))
                  (is (= "getTopology" (:operation first-call)))
- 
+
                  (is (= expected-name (:storm-name second-call)))
                  (is (= expected-conf (:storm-conf second-call)))
                  (is (= "getSupervisorPageInfo" (:operation second-call)))))))))))
@@ -1478,7 +1481,7 @@
       (submit-local-topology nimbus "t1" {TOPOLOGY-WORKERS 1} topology)
       (.debug nimbus "t1" "" true 100))))
 
-;; if the user sends an empty log config, nimbus will say that all 
+;; if the user sends an empty log config, nimbus will say that all
 ;; log configs it contains are LogLevelAction/UNCHANGED
 (deftest empty-save-config-results-in-all-unchanged-actions
   (with-local-cluster [cluster]
@@ -1535,11 +1538,11 @@
 (defn teardown-topo-errors [id])
 (defn teardown-backpressure-dirs [id])
 
-(defn mock-cluster-state 
-  ([] 
+(defn mock-cluster-state
+  ([]
     (mock-cluster-state nil nil))
   ([active-topos inactive-topos]
-    (mock-cluster-state active-topos inactive-topos inactive-topos inactive-topos)) 
+    (mock-cluster-state active-topos inactive-topos inactive-topos inactive-topos))
   ([active-topos hb-topos error-topos bp-topos]
     (reify cluster/StormClusterState
       (teardown-heartbeats! [this id] (teardown-heartbeats id))
@@ -1553,7 +1556,7 @@
 (deftest cleanup-storm-ids-returns-inactive-topos
   (let [mock-state (mock-cluster-state (list "topo1") (list "topo1" "topo2" "topo3"))]
     (stubbing [nimbus/is-leader true
-               nimbus/code-ids {}] 
+               nimbus/code-ids {}]
     (is (= (nimbus/cleanup-storm-ids mock-state nil) #{"topo2" "topo3"})))))
 
 (deftest cleanup-storm-ids-performs-union-of-storm-ids-with-active-znodes
@@ -1563,8 +1566,8 @@
         bp-topos (list "bp1" "bp2" "bp3")
         mock-state (mock-cluster-state active-topos hb-topos error-topos bp-topos)]
     (stubbing [nimbus/is-leader true
-               nimbus/code-ids {}] 
-    (is (= (nimbus/cleanup-storm-ids mock-state nil) 
+               nimbus/code-ids {}]
+    (is (= (nimbus/cleanup-storm-ids mock-state nil)
            #{"hb2" "hb3" "e1" "e3" "bp1" "bp2"})))))
 
 (deftest cleanup-storm-ids-returns-empty-set-when-all-topos-are-active
@@ -1574,8 +1577,8 @@
         bp-topos (list "bp1" "bp2" "bp3")
         mock-state (mock-cluster-state active-topos hb-topos error-topos bp-topos)]
     (stubbing [nimbus/is-leader true
-               nimbus/code-ids {}] 
-    (is (= (nimbus/cleanup-storm-ids mock-state nil) 
+               nimbus/code-ids {}]
+    (is (= (nimbus/cleanup-storm-ids mock-state nil)
            #{})))))
 
 (deftest do-cleanup-removes-inactive-znodes
@@ -1585,7 +1588,7 @@
         mock-blob-store {}
         conf {}
         nimbus {:conf conf
-                :submit-lock mock-blob-store 
+                :submit-lock mock-blob-store
                 :blob-store {}
                 :storm-cluster-state mock-state
                 :heartbeats-cache hb-cache}]
@@ -1594,8 +1597,8 @@
                nimbus/blob-rm-topology-keys nil
                nimbus/cleanup-storm-ids inactive-topos]
       (mocking
-        [teardown-heartbeats 
-         teardown-topo-errors 
+        [teardown-heartbeats
+         teardown-topo-errors
          teardown-backpressure-dirs
          nimbus/force-delete-topo-dist-dir
          nimbus/blob-rm-topology-keys
@@ -1637,7 +1640,7 @@
         mock-blob-store {}
         conf {}
         nimbus {:conf conf
-                :submit-lock mock-blob-store 
+                :submit-lock mock-blob-store
                 :blob-store {}
                 :storm-cluster-state mock-state
                 :heartbeats-cache hb-cache}]
@@ -1646,11 +1649,11 @@
                nimbus/blob-rm-topology-keys nil
                nimbus/cleanup-storm-ids inactive-topos]
       (mocking
-        [teardown-heartbeats 
-         teardown-topo-errors 
+        [teardown-heartbeats
+         teardown-topo-errors
          teardown-backpressure-dirs
          nimbus/force-delete-topo-dist-dir
-         nimbus/blob-rm-topology-keys] 
+         nimbus/blob-rm-topology-keys]
 
         (nimbus/do-cleanup nimbus)
 
@@ -1676,11 +1679,11 @@
       (let [topos1 (nimbus/user-and-supervisor-topos nil nil nil assignments "super1")
             topos2 (nimbus/user-and-supervisor-topos nil nil nil assignments "super2")]
         (is (= (list "topo1") (:supervisor-topologies topos1)))
-        (is (= #{"topo1"} (:user-topologies topos1))) 
+        (is (= #{"topo1"} (:user-topologies topos1)))
         (is (= (list "topo1" "topo2") (:supervisor-topologies topos2)))
         (is (= #{"topo1" "topo2"} (:user-topologies topos2)))))))
 
-(defn- mock-check-auth 
+(defn- mock-check-auth
   [nimbus conf blob-store op topo-name]
   (= topo-name "authorized"))
 
@@ -1689,7 +1692,7 @@
                                           [2 2] ["super2" "host2"]}}
         assignment2 {:executor->node+port {[1 1] ["super1" "host1"],
                                            [2 2] ["super2" "host2"]}}
-        assignments {"topo1" assignment, "authorized" assignment2}] 
+        assignments {"topo1" assignment, "authorized" assignment2}]
     (stubbing [nimbus/is-authorized? mock-check-auth]
       (let [topos (nimbus/user-and-supervisor-topos nil nil nil assignments "super1")]
         (is (= (list "topo1" "authorized") (:supervisor-topologies topos)))

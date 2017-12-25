@@ -43,7 +43,13 @@ import org.apache.storm.daemon.DaemonCommon;
 import org.apache.storm.daemon.supervisor.timer.*;
 import org.apache.storm.event.EventManager;
 import org.apache.storm.event.EventManagerImp;
-import org.apache.storm.generated.*;
+import org.apache.storm.generated.Assignment;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.LocalAssignment;
+import org.apache.storm.generated.Nimbus;
+import org.apache.storm.generated.NotAliveException;
+import org.apache.storm.generated.SupervisorAssignments;
+import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.localizer.AsyncLocalizer;
 import org.apache.storm.localizer.ILocalizer;
 import org.apache.storm.localizer.Localizer;
@@ -52,7 +58,11 @@ import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.ThriftServer;
-import org.apache.storm.utils.*;
+import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
+import org.apache.storm.utils.VersionInfo;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.zookeeper.data.ACL;
@@ -213,7 +223,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
 
     /**
-     * Launch the supervisor
+     * Launch the supervisor.
      */
     public void launch() throws Exception {
         LOG.info("Starting Supervisor with conf {}", conf);
@@ -266,12 +276,12 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         ReportWorkerHeartbeats reportWorkerHeartbeats = new ReportWorkerHeartbeats(conf, this);
         Integer workerHeartbeatFrequency = Utils.getInt(conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS));
-        workerHeartbeatTimer.scheduleRecurring(workerHeartbeatFrequency, workerHeartbeatFrequency, reportWorkerHeartbeats);
+        workerHeartbeatTimer.scheduleRecurring(0, workerHeartbeatFrequency, reportWorkerHeartbeats);
         LOG.info("Starting supervisor with id {} at host {}.", getId(), getHostName());
     }
 
     /**
-     * start distribute supervisor
+     * start distribute supervisor.
      */
     private void launchDaemon() {
         LOG.info("Starting supervisor for storm version '{}'.", VersionInfo.getVersion());
@@ -334,10 +344,15 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     }
 
     /**
-     * Used for local cluster assignments distribution
-     * @param assignments
+     * Used for local cluster assignments distribution.
+     * @param assignments {@link SupervisorAssignments}
      */
     public void sendSupervisorAssignments(SupervisorAssignments assignments) {
+        //for local test
+        if (Time.isSimulating() && !(Boolean) conf.get(Config.SUPERVISOR_ENABLE)) {
+            return;
+        }
+
         SynchronizeAssignments syn = new SynchronizeAssignments(this, assignments, readState);
         this.eventManager.add(syn);
     }
@@ -434,16 +449,16 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             return true;
         }
 
-        if (heartbeatTimer.isTimerWaiting() && eventTimer.isTimerWaiting() && eventManager.waiting()) {
-            return true;
-        }
-        return false;
+        return heartbeatTimer.isTimerWaiting()
+                && workerHeartbeatTimer.isTimerWaiting()
+                && eventTimer.isTimerWaiting()
+                && eventManager.waiting();
     }
 
     /**
-     * supervisor daemon enter entrance
+     * supervisor daemon enter entrance.
      *
-     * @param args
+     * @param args runtime args
      */
     public static void main(String[] args) throws Exception {
         Utils.setupDefaultUncaughtExceptionHandler();

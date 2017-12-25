@@ -55,6 +55,8 @@
   (remote-assignment-info [this storm-id])
   (assignments-info [this])
   (sync-remote-assignments! [this remote])
+  (set-assignments-backend-synchronized! [this])
+  (is-assignments-backend-synchronized [this])
   (assignment-info-with-version [this storm-id callback])
   (assignment-version [this storm-id callback])
   ;returns key information under /storm/blobstore/key
@@ -331,6 +333,14 @@
                 tid-assignment (into {} (for [tid assigned-topology-ids]
                                          {tid (.get_data cluster-state (assignment-path tid) false)}))]
             (.syncRemoteAssignments assignments-backend tid-assignment)))
+
+      (set-assignments-backend-synchronized!
+        [this]
+        (.setSynchronized assignments-backend))
+
+      (is-assignments-backend-synchronized
+        [this]
+        (.isSynchronized assignments-backend))
 
       (assignment-info-with-version
         [this storm-id callback]
@@ -626,10 +636,10 @@
       (sync-remote-ids!
         [this remote]
         (if (not-nil? remote)
-          (.syncRemoteIDS assignments-backend remote)
+          (.syncRemoteIds assignments-backend remote)
           (let [active-storms (.get_children cluster-state STORMS-SUBTREE false)
                 tid-names (into {} (for [tid active-storms] {tid (:storm-name (storm-base this tid nil))}))]
-            (.syncRemoteIDS assignments-backend tid-names))))
+            (.syncRemoteIds assignments-backend tid-names))))
 
       (remove-blobstore-key!
         [this blob-key]

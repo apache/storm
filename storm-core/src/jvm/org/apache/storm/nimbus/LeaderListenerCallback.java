@@ -44,7 +44,7 @@ import java.io.IOException;
 import java.util.*;
 
 /**
- * A callback function when nimbus gains leadership
+ * A callback function when nimbus gains leadership.
  */
 public class LeaderListenerCallback {
     private static final Logger LOG = LoggerFactory.getLogger(LeaderListenerCallback.class);
@@ -72,16 +72,13 @@ public class LeaderListenerCallback {
     }
 
     public void invoke() {
-        //in local mode, only one leader exist
-        if (ConfigUtils.isLocalMode(conf)) {
-            return;
-        }
         //set up nimbus-info to zk
         setUpNimbusInfo(acls);
         //sync zk assignments/id-info to local
         LOG.info("Sync remote assignments and id-info to local");
         clusterState.syncRemoteAssignments(null);
         clusterState.syncRemoteIds(null);
+        clusterState.setAssignmentsBackendSynchronized();
 
         Set<String> activeTopologyIds = new TreeSet<>(Zookeeper.getChildren(zk, conf.get(Config.STORM_ZOOKEEPER_ROOT) + ClusterUtils.STORMS_SUBTREE, false));
 

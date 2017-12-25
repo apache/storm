@@ -15,21 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.assignments;
 
-import org.apache.storm.generated.Assignment;
+package org.apache.storm.assignments;
 
 import java.util.List;
 import java.util.Map;
+
+import org.apache.storm.generated.Assignment;
 
 /**
  * Interface for storing local assignments.
  */
 public interface ILocalAssignmentsBackend {
+    /**
+     * Decide if the assignments is synchronized from remote state-store.
+     */
+    boolean isSynchronized();
 
     /**
-     * initial function for creating backend.
-     * @param conf
+     * Mark this backend as synchronized when sync work is done.
+     */
+    void setSynchronized();
+
+    /**
+     * Initial function for creating backend.
+     * @param conf config
      */
     void prepare(Map conf);
 
@@ -41,62 +51,62 @@ public interface ILocalAssignmentsBackend {
     void keepOrUpdateAssignment(String stormID, Assignment assignment);
 
     /**
-     * Get assignment as byte[] for a storm
-     * @param stormID storm runtime id
-     * @return
+     * Get assignment as {@link Assignment} for a storm.
+     * @param stormId storm runtime id
+     * @return assignment
      */
-    Assignment getAssignment(String stormID);
+    Assignment getAssignment(String stormId);
 
-    void removeAssignment(String stormID);
+    void removeAssignment(String stormId);
 
     /**
-     * List all the storm runtime ids of local assignments
+     * List all the storm runtime ids of local assignments.
      * @return a list of storm ids
      */
     List<String> assignments();
 
     /**
-     * Get all the local assignments of local state
+     * Get all the local assignments of local state.
      * @return mapping of storm-id -> assignment
      */
     Map<String, Assignment> assignmentsInfo();
 
     /**
-     * Sync remote assignments to local, if remote is null, we will sync it from zk
-     * @param remote specific remote assignments, if is null, it will sync from zookeeper[only used for nimbus]
+     * Sync remote assignments to local, if remote is null, we will sync it from zk.
+     * @param remote specific remote assignments, if it is null, it will sync from zookeeper[only used for nimbus]
      */
     void syncRemoteAssignments(Map<String, byte[]> remote);
 
     /**
-     * Keep a mapping storm-name -> storm-id to local state
-     * @param stormName
-     * @param stormID storm runtime id
+     * Keep a mapping storm-name -> storm-id to local state.
+     * @param stormName storm name
+     * @param stormId storm runtime id
      */
-    void keepStormId(String stormName, String stormID);
+    void keepStormId(String stormName, String stormId);
 
     /**
-     * Get storm runtime id from local
+     * Get storm runtime id from local.
      * @param stormName name of a storm
-     * @return
+     * @return runtime storm id
      */
     String getStormId(String stormName);
 
     /**
-     * sync remote storm ids to local, will just used for nimbus.
-     * @param remote
+     * Sync remote storm ids to local, will just used for nimbus.
+     * @param remote remote ids from state store
      */
-    void syncRemoteIDS(Map<String, String> remote);
+    void syncRemoteIds(Map<String, String> remote);
 
     void deleteStormId(String stormName);
 
     /**
-     * clear all the state for a storm
-     * @param stormID
+     * Clear all the state for a storm.
+     * @param stormId storm id
      */
-    void clearStateForStorm(String stormID);
+    void clearStateForStorm(String stormId);
 
     /**
-     * function to release resource
+     * Function to release resource.
      */
     void dispose();
 

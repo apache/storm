@@ -26,20 +26,20 @@ import java.util.Set;
 public interface IWorkerHeartbeatsRecoveryStrategy {
 
     /**
-     * Function to prepare the strategy
-     * @param conf
+     * Function to prepare the strategy.
+     * @param conf config
      */
     void prepare(Map conf);
 
     /**
-     * Function to decide if the heartbeats is ready
+     * Function to decide if the heartbeats is ready.
      * @param nodeIds all the node ids from current physical plan[assignments], read from {@code ClusterState}
      * @return true if all node worker heartbeats reported
      */
     boolean isReady(Set<String> nodeIds);
 
     /**
-     * report the node id to this strategy to help to decide {@code isReady}
+     * report the node id to this strategy to help to decide {@code isReady}.
      * @param nodeId the node id from reported SupervisorWorkerHeartbeats
      */
     void reportNodeId(String nodeId);

@@ -29,14 +29,18 @@ import java.util.Map;
 public class WorkerHeartbeatsRecoveryStrategyFactory {
 
     public static IWorkerHeartbeatsRecoveryStrategy getStrategy(Map conf) {
+        IWorkerHeartbeatsRecoveryStrategy strategy;
+
         if (conf.get(Config.NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS) != null) {
             Object targetObj = Utils.newInstance((String) conf.get(Config.NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS));
-            Preconditions.checkState(targetObj instanceof IWorkerHeartbeatsRecoveryStrategy, "{} must implements IWorkerHeartbeatsRecoveryStrategy", Config.NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS);
-            ((IWorkerHeartbeatsRecoveryStrategy) targetObj).prepare(conf);
-            return (IWorkerHeartbeatsRecoveryStrategy) targetObj;
+            Preconditions.checkState(targetObj instanceof IWorkerHeartbeatsRecoveryStrategy,
+                    "{} must implements IWorkerHeartbeatsRecoveryStrategy",
+                    Config.NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS);
+            strategy = (IWorkerHeartbeatsRecoveryStrategy) targetObj;
+        } else {
+            strategy = new TimeOutWorkerHeartbeatsRecoveryStrategy();
         }
 
-        IWorkerHeartbeatsRecoveryStrategy strategy = new TimeOutWorkerHeartbeatsRecoveryStrategy();
         strategy.prepare(conf);
         return strategy;
     }

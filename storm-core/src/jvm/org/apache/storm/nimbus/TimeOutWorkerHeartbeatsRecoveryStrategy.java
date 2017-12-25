@@ -30,7 +30,8 @@ import java.util.Set;
  * Wait for a node to report worker heartbeats until a configured timeout. For cases below we have strategies:
  * <p>
  * 1: When nimbus gains leader ship, it will decide if the heartbeats are ready based on the reported node ids,
- * supervisors/nodes will take care of the worker heartbeats recovery, a reported node id means all the workers heartbeats on the node are reported.
+ * supervisors/nodes will take care of the worker heartbeats recovery, a reported node id means all the workers
+ * heartbeats on the node are reported.
  * <p>
  * 2: If several supervisor also crush and will never recover[or all crush for some unknown reason],
  * workers will report their heartbeats directly to master, so it has not any effect.
@@ -42,28 +43,28 @@ public class TimeOutWorkerHeartbeatsRecoveryStrategy implements IWorkerHeartbeat
 
     private long startTimeSecs;
 
-    private Set<String> reportedIDs;
+    private Set<String> reportedIds;
 
     @Override
     public void prepare(Map conf) {
         NODE_MAX_TIMEOUT_SECS = Utils.getInt(conf.get(Config.SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS), 600);
         this.startTimeSecs = System.currentTimeMillis() / 1000L;
-        this.reportedIDs = new HashSet<>();
+        this.reportedIds = new HashSet<>();
     }
 
     @Override
     public boolean isReady(Set<String> nodeIds) {
-        if (isMaxTimeOut()) {
+        if (exceedsMaxTimeOut()) {
             HashSet<String> tmp = new HashSet<>();
             for(String nodeID : nodeIds) {
-                if (!this.reportedIDs.contains(nodeID))
+                if (!this.reportedIds.contains(nodeID))
                 tmp.add(nodeID);
             }
             LOG.warn("Failed to recover heartbeats for nodes: {} with timeout {}s", tmp, NODE_MAX_TIMEOUT_SECS);
             return true;
         }
         for (String nodeID : nodeIds) {
-            if (this.reportedIDs.contains(nodeID)) {
+            if (this.reportedIds.contains(nodeID)) {
                 continue;
             } else {
                 return false;
@@ -76,10 +77,10 @@ public class TimeOutWorkerHeartbeatsRecoveryStrategy implements IWorkerHeartbeat
 
     @Override
     public void reportNodeId(String nodeId) {
-        this.reportedIDs.add(nodeId);
+        this.reportedIds.add(nodeId);
     }
 
-    private boolean isMaxTimeOut() {
+    private boolean exceedsMaxTimeOut() {
         return (System.currentTimeMillis() / 1000L - this.startTimeSecs) > NODE_MAX_TIMEOUT_SECS;
     }
 

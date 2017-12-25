@@ -43,11 +43,11 @@
   (:import [org.apache.storm.utils TimeCacheMap TimeCacheMap$ExpiredCallback Utils TupleUtils ThriftTopologyUtils
             BufferFileInputStream BufferInputStream])
   (:import [org.apache.storm.generated NotAliveException AlreadyAliveException StormTopology ErrorInfo
-                                       ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
-                                       KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
-                                       ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
-                                       BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
-                                       ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType SupervisorAssignments SupervisorWorkerHeartbeats SupervisorWorkerHeartbeat])
+            ExecutorInfo InvalidTopologyException Nimbus$Iface Nimbus$Processor SubmitOptions TopologyInitialStatus
+            KillOptions RebalanceOptions ClusterSummary SupervisorSummary TopologySummary TopologyInfo TopologyHistoryInfo
+            ExecutorSummary AuthorizationException GetInfoOptions NumErrorsChoice SettableBlobMeta ReadableBlobMeta
+            BeginDownloadResult ListBlobsResult ComponentPageInfo TopologyPageInfo LogConfig LogLevel LogLevelAction
+            ProfileRequest ProfileAction NodeInfo SupervisorPageInfo WorkerSummary WorkerResources ComponentType SupervisorAssignments SupervisorWorkerHeartbeats SupervisorWorkerHeartbeat])
   (:import [org.apache.storm.daemon Shutdownable])
   (:import [org.apache.storm.cluster ClusterStateContext DaemonType])
   (:import [org.apache.storm.assignments AssignmentDistributionService])
@@ -61,7 +61,7 @@
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
   (:import [org.apache.zookeeper data.ACL ZooDefs$Ids ZooDefs$Perms])
-  (:import [org.apache.storm.utils VersionInfo Time SupervisorClient ISupervisorsAware IStormClusterStateProvider]
+  (:import [org.apache.storm.utils VersionInfo Time ISupervisorsAware IStormClusterStateProvider]
            (org.apache.storm.metric ClusterMetricsConsumerExecutor)
            (org.apache.storm.metric.api IClusterMetricsConsumer$ClusterInfo DataPoint IClusterMetricsConsumer$SupervisorInfo)
            (org.apache.storm Config)
@@ -589,7 +589,7 @@
                         new-sb)
                       storm-base)
         topology (read-storm-topology-as-nimbus storm-id blob-store)
-        executor->component (->> (compute-executor->component nimbus storm-id)
+        executor->component (->> (compute-executor->component nimbus storm-id topology-conf topology)
                                  (map-key (fn [[start-task end-task]]
                                             (ExecutorDetails. (int start-task) (int end-task)))))]
     (TopologyDetails. storm-id
@@ -621,6 +621,33 @@
        :nimbus-time nimbus-time
        :executor-reported-time reported-time
        }))
+
+(defn update-heartbeat-cache [cache executor-beats all-executors timeout]
+  (let [cache (select-keys cache all-executors)]
+    ;; if no executor beats, refresh is-timed-out of the cache which is done by master
+    ;; else refresh nimbus-time and executor-reported-time by heartbeats reporting
+    (if (nil? executor-beats)
+      (into {} (for [[executor beat] cache]
+                 [executor (assoc beat :is-timed-out (>= (time-delta (:nimbus-time beat)) timeout))]))
+      (into {} (for [executor all-executors :let [curr (cache executor)]]
+                 [executor (update-executor-cache curr (get executor-beats executor) timeout)])))))
+
+(defn update-heartbeats! [nimbus storm-id all-executors existing-assignment]
+  (log-debug "Updating heartbeats for " storm-id " " (pr-str all-executors))
+  (let [old-cache (@(:heartbeats-cache nimbus) storm-id)
+        ;; nil old-cache means that worker never reported any heartbeats.
+        _ (if (nil? old-cache) (swap! (:heartbeats-cache nimbus) assoc storm-id {}))
+        new-cache (update-heartbeat-cache (@(:heartbeats-cache nimbus) storm-id)
+                                  nil
+                                  all-executors
+                                  ((:conf nimbus) NIMBUS-TASK-TIMEOUT-SECS))]
+    (swap! (:heartbeats-cache nimbus) assoc storm-id new-cache)))
+
+(defn- update-all-heartbeats! [nimbus existing-assignments topology->executors]
+  "update all the heartbeats for all the topologies's executors"
+  (doseq [[tid assignment] existing-assignments
+          :let [all-executors (topology->executors tid)]]
+    (update-heartbeats! nimbus tid all-executors assignment)))
 
 (defn- update-cached-heartbeats-from-worker[nimbus ^SupervisorWorkerHeartbeat worker-hb]
   (let [hb (converter/clojurify-supervisor-worker-hb worker-hb)
@@ -677,14 +704,9 @@
 (defn- to-executor-id [task-ids]
   [(first task-ids) (last task-ids)])
 
-(defn- compute-executors [nimbus storm-id]
-  (let [conf (:conf nimbus)
-        blob-store (:blob-store nimbus)
-        storm-base (.storm-base (:storm-cluster-state nimbus) storm-id nil)
-        component->executors (:component->executors storm-base)
-        storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
-        topology (read-storm-topology-as-nimbus storm-id blob-store)
-        task->component (storm-task-info topology storm-conf)]
+(defn- compute-executors [nimbus storm-id storm-conf topology]
+  (let [storm-base (.storm-base (:storm-cluster-state nimbus) storm-id nil)
+        component->executors (:component->executors storm-base)]
     (if (nil? component->executors)
       []
       (->> (storm-task-info topology storm-conf)
@@ -696,12 +718,8 @@
            (map to-executor-id)
            ))))
 
-(defn- compute-executor->component [nimbus storm-id]
-  (let [conf (:conf nimbus)
-        blob-store (:blob-store nimbus)
-        executors (compute-executors nimbus storm-id)
-        topology (read-storm-topology-as-nimbus storm-id blob-store)
-        storm-conf (read-storm-conf-as-nimbus storm-id blob-store)
+(defn- compute-executor->component [nimbus storm-id storm-conf topology]
+  (let [executors (compute-executors nimbus storm-id storm-conf topology)
         task->component (storm-task-info topology storm-conf)
         executor->component (into {} (for [executor executors
                                            :let [start-task (first executor)
@@ -712,7 +730,11 @@
 (defn- compute-topology->executors [nimbus storm-ids]
   "compute a topology-id -> executors map"
   (into {} (for [tid storm-ids]
-             {tid (set (compute-executors nimbus tid))})))
+             (let [blob-store (:blob-store nimbus)
+                   storm-conf (read-storm-conf-as-nimbus tid blob-store)
+                   topology (read-storm-topology-as-nimbus tid blob-store)]
+               {tid (set (compute-executors nimbus tid storm-conf topology))}
+               ))))
 
 (defn- compute-topology->alive-executors [nimbus existing-assignments topologies topology->executors scratch-topology-id]
   "compute a topology-id -> alive executors map"
@@ -865,8 +887,9 @@
 ;; public so it can be mocked out
 (defn compute-new-scheduler-assignments [nimbus existing-assignments topologies scratch-topology-id]
   (let [conf (:conf nimbus)
-        storm-cluster-state (:storm-cluster-state nimbus)
         topology->executors (compute-topology->executors nimbus (keys existing-assignments))
+
+        _ (update-all-heartbeats! nimbus existing-assignments topology->executors)
 
         topology->alive-executors (compute-topology->alive-executors nimbus
                                                                      existing-assignments
@@ -1040,11 +1063,16 @@
   (assoc assignment
          :owner (.getTopologySubmitter td)))
 
+(defn- is-assignments-ready [nimbus]
+  (.is-assignments-backend-synchronized (:storm-cluster-state nimbus)))
+
 (defn- is-ready-for-mk-assignments [nimbus]
   (if (is-leader nimbus :throw-exception false)
     (if (is-heartbeats-recovered nimbus)
-      true
-      (log-message "waiting for worker heartbeats recovery, skipping assignments"))
+      (if (is-assignments-ready nimbus)
+        true
+        (log-warn "waiting for assignments sync ready, skipping assignments"))
+      (log-warn "waiting for worker heartbeats recovery, skipping assignments"))
     (log-message "not a leader, skipping assignments")))
 
 ;; get existing assignment (just the executor->node+port map) -> default to {}

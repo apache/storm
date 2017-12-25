@@ -133,14 +133,14 @@ public class StormClusterStateImpl implements IStormClusterState {
         });
 
         String[] pathlist = {ClusterUtils.ASSIGNMENTS_SUBTREE,
-                ClusterUtils.STORMS_SUBTREE,
-                ClusterUtils.SUPERVISORS_SUBTREE,
-                ClusterUtils.WORKERBEATS_SUBTREE,
-                ClusterUtils.ERRORS_SUBTREE,
-                ClusterUtils.BLOBSTORE_SUBTREE,
-                ClusterUtils.NIMBUSES_SUBTREE,
-                ClusterUtils.LOGCONFIG_SUBTREE,
-                ClusterUtils.BACKPRESSURE_SUBTREE};
+                             ClusterUtils.STORMS_SUBTREE,
+                             ClusterUtils.SUPERVISORS_SUBTREE,
+                             ClusterUtils.WORKERBEATS_SUBTREE,
+                             ClusterUtils.ERRORS_SUBTREE,
+                             ClusterUtils.BLOBSTORE_SUBTREE,
+                             ClusterUtils.NIMBUSES_SUBTREE,
+                             ClusterUtils.LOGCONFIG_SUBTREE,
+                             ClusterUtils.BACKPRESSURE_SUBTREE};
         for (String path : pathlist) {
             this.stateStorage.mkdirs(path, acls);
         }
@@ -195,6 +195,16 @@ public class StormClusterStateImpl implements IStormClusterState {
             }
             this.backend.syncRemoteAssignments(tmp);
         }
+    }
+
+    @Override
+    public boolean isAssignmentsBackendSynchronized() {
+        return this.backend.isSynchronized();
+    }
+
+    @Override
+    public void setAssignmentsBackendSynchronized() {
+        this.backend.setSynchronized();
     }
 
     @Override
@@ -282,14 +292,14 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void syncRemoteIds(Map<String, String> remote) {
         if (null != remote) {
-            this.backend.syncRemoteIDS(remote);
+            this.backend.syncRemoteIds(remote);
         }else {
             Map<String, String> tmp = new HashMap<>();
             List<String> activeStorms = activeStorms();
             for (String stormID: activeStorms) {
                 tmp.put(stormID, stormBase(stormID, null).get_name());
             }
-            this.backend.syncRemoteIDS(tmp);
+            this.backend.syncRemoteIds(tmp);
         }
     }
 

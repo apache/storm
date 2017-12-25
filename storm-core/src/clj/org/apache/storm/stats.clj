@@ -16,17 +16,18 @@
 
 (ns org.apache.storm.stats
   (:import [org.apache.storm.generated Nimbus Nimbus$Processor Nimbus$Iface StormTopology ShellComponent
-            NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
-            ClusterSummary TopologyInfo TopologySummary ExecutorInfo ExecutorSummary ExecutorStats
-            ExecutorSpecificStats SpoutStats BoltStats ErrorInfo
-            SupervisorSummary CommonAggregateStats ComponentAggregateStats
-            ComponentPageInfo ComponentType BoltAggregateStats
-            ExecutorAggregateStats WorkerSummary SpecificAggregateStats
-            SpoutAggregateStats TopologyPageInfo TopologyStats
-            WorkerResources])
-  (:import [org.apache.storm.utils Utils])
+                                       NotAliveException AlreadyAliveException InvalidTopologyException GlobalStreamId
+                                       ClusterSummary TopologyInfo TopologySummary ExecutorInfo ExecutorSummary ExecutorStats
+                                       ExecutorSpecificStats SpoutStats BoltStats ErrorInfo
+                                       SupervisorSummary CommonAggregateStats ComponentAggregateStats
+                                       ComponentPageInfo ComponentType BoltAggregateStats
+                                       ExecutorAggregateStats WorkerSummary SpecificAggregateStats
+                                       SpoutAggregateStats TopologyPageInfo TopologyStats
+                                       WorkerResources SupervisorWorkerHeartbeat])
+  (:import [org.apache.storm.utils Utils Time])
   (:import [org.apache.storm.scheduler WorkerSlot])
-  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
+  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric]
+           (java.util Collections))
   (:use [org.apache.storm log util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
 
@@ -973,6 +974,13 @@
           (and complete-latency (.set_complete_latency_ms sas complete-latency))
           sas)))
     s))
+
+(defn thriftify-rpc-worker-hb
+  [storm-id executor]
+  (doto (SupervisorWorkerHeartbeat.)
+    (.set_storm_id storm-id)
+    (.set_executors (Collections/singletonList (ExecutorInfo. (first executor) (second executor))))
+    (.set_time_secs (Time/currentTimeSecs))))
 
 (defn thriftify-topo-page-data
   [topology-id data]
