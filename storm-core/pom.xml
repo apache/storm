@@ -31,6 +31,7 @@
 
     <properties>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
+        <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
         <worker-launcher.additional_cflags></worker-launcher.additional_cflags>
         <argLine></argLine>
     </properties>
@@ -661,64 +662,74 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>1.6.0</version>
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
                                 <goals><goal>exec</goal></goals>
+                                <configuration>
+                                    <executable>sh</executable>
+                                    <arguments>
+                                        <argument>-c</argument>
+                                        <argument>mkdir -p ${project.build.directory}/; cp -rufv ${basedir}/src/native/ ${project.build.directory}/</argument>
+                                    </arguments>
+                                </configuration>
                             </execution>
-                        </executions>
-                        <configuration>
-                            <executable>sh</executable>
-                            <arguments>
-                                <argument>-c</argument>
-                                <argument>mkdir -p ${project.build.directory}/; cp -rufv ${basedir}/src/native/ ${project.build.directory}/</argument>
-                            </arguments>
-                        </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>make-maven-plugin</artifactId>
-                        <version>1.0-beta-1</version>
-                        <executions>
                             <execution>
                                 <id>compile</id>
                                 <phase>compile</phase>
                                 <goals>
-                                    <goal>autoreconf</goal>
-                                    <goal>configure</goal>
-                                    <goal>make-install</goal>
+                                    <goal>exec</goal>
                                 </goals>
+                                <configuration>
+                                    <executable>sh</executable>
+                                    <arguments>
+                                        <argument>compile-worker-launcher.sh</argument>
+                                    </arguments>
+                                    <workingDirectory>${worker-launcher.build.dir}</workingDirectory>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>test</id>
                                 <phase>test</phase>
                                 <goals>
-                                    <goal>test</goal>
+                                    <goal>exec</goal>
                                 </goals>
+                                <configuration>
+                                    <executable>make</executable>
+                                    <arguments>
+                                        <argument>check</argument>
+                                    </arguments>
+                                    <workingDirectory>${worker-launcher.build.dir}</workingDirectory>
+                                </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <!-- autoreconf settings -->
-                            <workDir>${project.build.directory}/native/worker-launcher</workDir>
-                            <arguments>
-                                <argument>-i</argument>
-                            </arguments>
-
-                            <!-- configure settings -->
-                            <configureEnvironment>
-                                <property>
-                                    <name>CFLAGS</name>
-                                    <value>-DEXEC_CONF_DIR=${worker-launcher.conf.dir} ${worker-launcher.additional_cflags}</value>
-                                </property>
-                            </configureEnvironment>
-                            <configureWorkDir>${project.build.directory}/native/worker-launcher</configureWorkDir>
-                            <prefix>/usr/local</prefix>
-
-                            <!-- configure & make settings -->
-                            <destDir>${project.build.directory}/native/target</destDir>
-
-                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.0.2</version>
+                        <executions>
+                            <execution>
+                                <id>copy-build-scripts</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/resources</directory>
+                                            <includes>
+                                                <include>compile-worker-launcher.sh</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${worker-launcher.build.dir}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>
