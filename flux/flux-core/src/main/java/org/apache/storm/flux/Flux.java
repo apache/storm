@@ -23,6 +23,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Properties;
 
 import org.apache.commons.cli.BasicParser;
 import org.apache.commons.cli.CommandLine;
@@ -145,17 +146,17 @@ public class Flux {
             filterProps = cmd.getOptionValue(OPTION_FILTER);
         }
 
-
+        Properties properties = null;
         boolean envFilter = cmd.hasOption(OPTION_ENV_FILTER);
         if (cmd.hasOption(OPTION_RESOURCE)) {
             printf("Parsing classpath resource: %s", filePath);
-            topologyDef = FluxParser.parseResource(filePath, dumpYaml, true, filterProps, envFilter);
+            properties = FluxParser.parseProperties(filterProps, true);
+            topologyDef = FluxParser.parseResource(filePath, dumpYaml, true, properties, envFilter);
         } else {
-            printf("Parsing file: %s",
-                    new File(filePath).getAbsolutePath());
-            topologyDef = FluxParser.parseFile(filePath, dumpYaml, true, filterProps, envFilter);
+            printf("Parsing file: %s", new File(filePath).getAbsolutePath());
+            properties = FluxParser.parseProperties(filterProps, false);
+            topologyDef = FluxParser.parseFile(filePath, dumpYaml, true, properties, envFilter);
         }
-
 
         String topologyName = topologyDef.getName();
         // merge contents of `config` into topology config
