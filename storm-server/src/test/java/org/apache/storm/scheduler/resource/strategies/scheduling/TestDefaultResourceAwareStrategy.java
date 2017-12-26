@@ -18,6 +18,7 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import java.util.Collections;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.WorkerResources;
@@ -41,6 +42,7 @@ import org.apache.storm.topology.SharedOffHeapWithinWorker;
 import org.apache.storm.topology.SharedOnHeap;
 import org.apache.storm.topology.TopologyBuilder;
 import org.junit.Assert;
+import org.junit.Rule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -64,6 +66,29 @@ public class TestDefaultResourceAwareStrategy {
     private static final Logger LOG = LoggerFactory.getLogger(TestDefaultResourceAwareStrategy.class);
 
     private static int currentTime = 1450418597;
+
+    private static class TestDNSToSwitchMapping implements DNSToSwitchMapping {
+        private final Map<String, String> result;
+
+        public TestDNSToSwitchMapping(Map<String, SupervisorDetails> ... racks) {
+            Map<String, String> ret = new HashMap<>();
+            for (int rackNum = 0; rackNum < racks.length; rackNum++) {
+                String rack = "rack-" + rackNum;
+                for (SupervisorDetails sup : racks[rackNum].values()) {
+                    ret.put(sup.getHost(), rack);
+                }
+            }
+            result = Collections.unmodifiableMap(ret);
+        }
+
+        @Override
+        public Map<String, String> resolve(List<String> names) {
+            return result;
+        }
+    };
+
+    @Rule
+    public NormalizedResourcesRule nrRule = new NormalizedResourcesRule();
 
     /**
      * test if the scheduling logic for the DefaultResourceAwareStrategy is correct
@@ -200,54 +225,33 @@ public class TestDefaultResourceAwareStrategy {
      */
     @Test
     public void testMultipleRacks() {
-
         final Map<String, SupervisorDetails> supMap = new HashMap<>();
-        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 0, 400, 8000);
+        final Map<String, SupervisorDetails> supMapRack0 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
-        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 10, 200, 4000);
+        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 10, 200, 4000);
 
         //generate some supervisors that are depleted of one resource
-        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 20, 0, 8000);
+        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 20, 0, 8000);
 
         //generate some that has alot of memory but little of cpu
-        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
+        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
 
         //generate some that has alot of cpu but little of memory
-        final Map<String, SupervisorDetails> supMapRack5 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
+        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
 
+        supMap.putAll(supMapRack0);
         supMap.putAll(supMapRack1);
         supMap.putAll(supMapRack2);
         supMap.putAll(supMapRack3);
         supMap.putAll(supMapRack4);
-        supMap.putAll(supMapRack5);
 
         Config config = createClusterConfig(100, 500, 500, null);
         config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
         INimbus iNimbus = new INimbusTest();
 
         //create test DNSToSwitchMapping plugin
-        DNSToSwitchMapping TestNetworkTopographyPlugin = new DNSToSwitchMapping() {
-            @Override
-            public Map<String, String> resolve(List<String> names) {
-                Map<String, String> ret = new HashMap<>();
-                for (SupervisorDetails sup : supMapRack1.values()) {
-                    ret.put(sup.getHost(), "rack-0");
-                }
-                for (SupervisorDetails sup : supMapRack2.values()) {
-                    ret.put(sup.getHost(), "rack-1");
-                }
-                for (SupervisorDetails sup : supMapRack3.values()) {
-                    ret.put(sup.getHost(), "rack-2");
-                }
-                for (SupervisorDetails sup : supMapRack4.values()) {
-                    ret.put(sup.getHost(), "rack-3");
-                }
-                for (SupervisorDetails sup : supMapRack5.values()) {
-                    ret.put(sup.getHost(), "rack-4");
-                }
-                return ret;
-            }
-        };
+        DNSToSwitchMapping TestNetworkTopographyPlugin =
+            new TestDNSToSwitchMapping(supMapRack0, supMapRack1, supMapRack2, supMapRack3, supMapRack4);
 
         //generate topologies
         TopologyDetails topo1 = genTopology("topo-1", config, 8, 0, 2, 0, currentTime - 2, 10, "user");
@@ -331,53 +335,33 @@ public class TestDefaultResourceAwareStrategy {
      */
     @Test
     public void testMultipleRacksWithFavoritism() {
-        final Map<String, SupervisorDetails> supMap = new HashMap<String, SupervisorDetails>();
-        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 0, 400, 8000);
+        final Map<String, SupervisorDetails> supMap = new HashMap<>();
+        final Map<String, SupervisorDetails> supMapRack0 = genSupervisors(10, 4, 0, 400, 8000);
         //generate another rack of supervisors with less resources
-        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 10, 200, 4000);
+        final Map<String, SupervisorDetails> supMapRack1 = genSupervisors(10, 4, 10, 200, 4000);
 
         //generate some supervisors that are depleted of one resource
-        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 20, 0, 8000);
+        final Map<String, SupervisorDetails> supMapRack2 = genSupervisors(10, 4, 20, 0, 8000);
 
         //generate some that has alot of memory but little of cpu
-        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
+        final Map<String, SupervisorDetails> supMapRack3 = genSupervisors(10, 4, 30, 10, 8000 * 2 + 4000);
 
         //generate some that has alot of cpu but little of memory
-        final Map<String, SupervisorDetails> supMapRack5 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
+        final Map<String, SupervisorDetails> supMapRack4 = genSupervisors(10, 4, 40, 400 + 200 + 10, 1000);
 
+        supMap.putAll(supMapRack0);
         supMap.putAll(supMapRack1);
         supMap.putAll(supMapRack2);
         supMap.putAll(supMapRack3);
         supMap.putAll(supMapRack4);
-        supMap.putAll(supMapRack5);
 
         Config config = createClusterConfig(100, 500, 500, null);
         config.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
         INimbus iNimbus = new INimbusTest();
 
         //create test DNSToSwitchMapping plugin
-        DNSToSwitchMapping TestNetworkTopographyPlugin = new DNSToSwitchMapping() {
-            @Override
-            public Map<String, String> resolve(List<String> names) {
-                Map<String, String> ret = new HashMap<>();
-                for (SupervisorDetails sup : supMapRack1.values()) {
-                    ret.put(sup.getHost(), "rack-0");
-                }
-                for (SupervisorDetails sup : supMapRack2.values()) {
-                    ret.put(sup.getHost(), "rack-1");
-                }
-                for (SupervisorDetails sup : supMapRack3.values()) {
-                    ret.put(sup.getHost(), "rack-2");
-                }
-                for (SupervisorDetails sup : supMapRack4.values()) {
-                    ret.put(sup.getHost(), "rack-3");
-                }
-                for (SupervisorDetails sup : supMapRack5.values()) {
-                    ret.put(sup.getHost(), "rack-4");
-                }
-                return ret;
-            }
-        };
+        DNSToSwitchMapping TestNetworkTopographyPlugin =
+            new TestDNSToSwitchMapping(supMapRack0, supMapRack1, supMapRack2, supMapRack3, supMapRack4);
 
         Config t1Conf = new Config();
         t1Conf.putAll(config);
