@@ -30,7 +30,7 @@ public class KafkaSpoutMessageId implements Serializable {
      * true if the record was emitted using a form of collector.emit(...). false
      * when skipping null tuples as configured by the user in KafkaSpoutConfig
      */
-    private boolean emitted;   
+    private boolean emitted;
 
     public KafkaSpoutMessageId(ConsumerRecord<?, ?> consumerRecord) {
         this(consumerRecord, true);
@@ -88,27 +88,14 @@ public class KafkaSpoutMessageId implements Serializable {
         this.emitted = emitted;
     }
 
-    /**
-     * Gets metadata for this message which may be committed to Kafka.
-     * @param currThread The calling thread
-     * @return The metadata
-     */
-    public String getMetadata(Thread currThread) {
-        return "{"
-                + "topic-partition=" + topicPart
-                + ", offset=" + offset
-                + ", numFails=" + numFails
-                + ", thread='" + currThread.getName() + "'"
-                + '}';
-    }
-
     @Override
     public String toString() {
         return "{"
-                + "topic-partition=" + topicPart
-                + ", offset=" + offset
-                + ", numFails=" + numFails
-                + '}';
+            + "topic-partition=" + topicPart
+            + ", offset=" + offset
+            + ", numFails=" + numFails
+            + ", emitted=" + emitted
+            + '}';
     }
 
     @Override

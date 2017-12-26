@@ -58,10 +58,6 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 
-import java.util.HashSet;
-import java.util.Set;
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-
 public class KafkaSpoutRebalanceTest {
 
     @Captor
