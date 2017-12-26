@@ -45,7 +45,7 @@ public class SingleTopicKafkaUnitSetupHelper {
      */
     public static void populateTopicData(KafkaUnit kafkaUnit, String topicName, int msgCount) throws Exception {
         kafkaUnit.createTopic(topicName);
-
+        
         for (int i = 0; i < msgCount; i++) {
             ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
                 topicName, Integer.toString(i),
@@ -53,7 +53,7 @@ public class SingleTopicKafkaUnitSetupHelper {
             kafkaUnit.sendMessage(producerRecord);
         }
     }
-    
+
     /*
      * Asserts that commitSync has been called once, 
      * that there are only commits on one topic,

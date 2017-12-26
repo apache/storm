@@ -29,12 +29,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -100,7 +100,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     // Always empty if processing guarantee is none or at-most-once
     private transient Set<KafkaSpoutMessageId> emitted;
     // Records that have been polled and are queued to be emitted in the nextTuple() call. One record is emitted per nextTuple()
-    private transient Iterator<ConsumerRecord<K, V>> waitingToEmit;
+    private transient Map<TopicPartition, List<ConsumerRecord<K, V>>> waitingToEmit;
     // Triggers when a subscription should be refreshed
     private transient Timer refreshSubscriptionTimer;
     private transient TopologyContext context;
@@ -140,7 +140,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         offsetManagers = new HashMap<>();
         emitted = new HashSet<>();
-        waitingToEmit = Collections.emptyListIterator();
+        waitingToEmit = new HashMap<>();
         setCommitMetadata(context);
 
         tupleListener.open(conf, context);
@@ -153,7 +153,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             commitMetadata = JSON_MAPPER.writeValueAsString(new CommitMetadata(
                 context.getStormId(), context.getThisTaskId(), Thread.currentThread().getName()));
         } catch (JsonProcessingException e) {
-            LOG.error("Failed to create Kafka commit metadata due to JSON serialization error",e);
+            LOG.error("Failed to create Kafka commit metadata due to JSON serialization error", e);
             throw new RuntimeException(e);
         }
     }
@@ -166,7 +166,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private class KafkaSpoutConsumerRebalanceListener implements ConsumerRebalanceListener {
 
         private Collection<TopicPartition> previousAssignment = new HashSet<>();
-        
+
         @Override
         public void onPartitionsRevoked(Collection<TopicPartition> partitions) {
             previousAssignment = partitions;
@@ -206,6 +206,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     }
                 }
             }
+            waitingToEmit.keySet().retainAll(partitions);
 
             Set<TopicPartition> newPartitions = new HashSet<>(partitions);
             newPartitions.removeAll(previousAssignment);
@@ -260,8 +261,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     /**
-     * Checks If {@link OffsetAndMetadata} was committed by a {@link KafkaSpout} instance in this topology.
-     * This info is used to decide if {@link FirstPollOffsetStrategy} should be applied
+     * Checks if {@link OffsetAndMetadata} was committed by a {@link KafkaSpout} instance in this topology. This info is used to decide if
+     * {@link FirstPollOffsetStrategy} should be applied
      *
      * @param tp topic-partition
      * @param committedOffset {@link OffsetAndMetadata} info committed to Kafka
@@ -279,7 +280,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.warn("Failed to deserialize [{}]. Error likely occurred because the last commit "
                 + "for this topic-partition was done using an earlier version of Storm. "
                 + "Defaulting to behavior compatible with earlier version", committedOffset);
-            LOG.trace("",e);
+            LOG.trace("", e);
             return false;
         }
     }
@@ -326,12 +327,12 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             LOG.debug("Not polling. Tuples waiting to be emitted.");
             return new PollablePartitionsInfo(Collections.<TopicPartition>emptySet(), Collections.<TopicPartition, Long>emptyMap());
         }
-        
+
         Set<TopicPartition> assignment = kafkaConsumer.assignment();
         if (!isAtLeastOnceProcessing()) {
             return new PollablePartitionsInfo(assignment, Collections.<TopicPartition, Long>emptyMap());
         }
-        
+
         Map<TopicPartition, Long> earliestRetriableOffsets = retryService.earliestRetriableOffsets();
         Set<TopicPartition> pollablePartitions = new HashSet<>();
         final int maxUncommittedOffsets = kafkaSpoutConfig.getMaxUncommittedOffsets();
@@ -357,15 +358,18 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     }
 
     private boolean isWaitingToEmit() {
-        return waitingToEmit != null && waitingToEmit.hasNext();
+        for (List<ConsumerRecord<K, V>> value : waitingToEmit.values()) {
+            if (!value.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private void setWaitingToEmit(ConsumerRecords<K, V> consumerRecords) {
-        List<ConsumerRecord<K, V>> waitingToEmitList = new LinkedList<>();
         for (TopicPartition tp : consumerRecords.partitions()) {
-            waitingToEmitList.addAll(consumerRecords.records(tp));
+            waitingToEmit.put(tp, new ArrayList<>(consumerRecords.records(tp)));
         }
-        waitingToEmit = waitingToEmitList.iterator();
     }
 
     // ======== poll =========
@@ -430,12 +434,17 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
     // ======== emit  =========
     private void emitIfWaitingNotEmitted() {
-        while (isWaitingToEmit()) {
-            final boolean emittedTuple = emitOrRetryTuple(waitingToEmit.next());
-            waitingToEmit.remove();
-            if (emittedTuple) {
-                break;
+        Iterator<List<ConsumerRecord<K, V>>> waitingToEmitIter = waitingToEmit.values().iterator();
+        outerLoop:
+        while (waitingToEmitIter.hasNext()) {
+            List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmitIter.next();
+            while (!waitingToEmitForTp.isEmpty()) {
+                final boolean emittedTuple = emitOrRetryTuple(waitingToEmitForTp.remove(0));
+                if (emittedTuple) {
+                    break outerLoop;
+                }
             }
+            waitingToEmitIter.remove();
         }
     }
 
@@ -456,7 +465,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } else {
             final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
             if (committedOffset != null && isOffsetCommittedByThisTopology(tp, committedOffset)
-                && committedOffset.offset() > kafkaConsumer.position(tp)) {
+                && committedOffset.offset() > record.offset()) {
                 // Ensures that after a topology with this id is started, the consumer fetch
                 // position never falls behind the committed offset (STORM-2844)
                 throw new IllegalStateException("Attempting to emit a message that has already been committed.");
@@ -538,15 +547,25 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                      * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed,
                      * lots of (more than max.poll.records) later messages were acked, and the failed message then gets acked. 
                      * The consumer may only be part way through "catching up" to where it was when it went back to retry the failed tuple. 
-                     * Skip the consumer forward to the committed offset drop the current waiting to emit list,
+                     * Skip the consumer forward to the committed offset and drop the current waiting to emit list,
                      * since it'll likely contain committed offsets.
                      */
                     LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
                         position, committedOffset);
                     kafkaConsumer.seek(tp, committedOffset);
-                    waitingToEmit = null;
+                    List<ConsumerRecord<K, V>> waitingToEmitForTp = waitingToEmit.get(tp);
+                    if (waitingToEmitForTp != null) {
+                        //Discard the pending records that are already committed
+                        List<ConsumerRecord<K, V>> filteredRecords = new ArrayList<>();
+                        for (ConsumerRecord<K, V> record : waitingToEmitForTp) {
+                            if (record.offset() >= committedOffset) {
+                                filteredRecords.add(record);
+                            }
+                        }
+                        waitingToEmit.put(tp, filteredRecords);
+                    }
                 }
-                
+
                 final OffsetManager offsetManager = assignedOffsetManagers.get(tp);
                 offsetManager.commit(tpOffset.getValue());
                 LOG.debug("[{}] uncommitted offsets for partition [{}] after commit", offsetManager.getNumUncommittedOffsets(), tp);
@@ -694,13 +713,13 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private String getTopicsString() {
         return kafkaSpoutConfig.getSubscription().getTopicsString();
     }
-    
+
     private static class PollablePartitionsInfo {
 
         private final Set<TopicPartition> pollablePartitions;
         //The subset of earliest retriable offsets that are on pollable partitions
         private final Map<TopicPartition, Long> pollableEarliestRetriableOffsets;
-        
+
         public PollablePartitionsInfo(Set<TopicPartition> pollablePartitions, Map<TopicPartition, Long> earliestRetriableOffsets) {
             this.pollablePartitions = pollablePartitions;
             this.pollableEarliestRetriableOffsets = new HashMap<>();
@@ -710,7 +729,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 }
             }
         }
-        
+
         public boolean shouldPoll() {
             return !this.pollablePartitions.isEmpty();
         }
