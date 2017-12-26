@@ -23,11 +23,13 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -86,7 +88,7 @@ public class KafkaSpoutEmitTest {
     }
 
     @Test
-    public void testNextTupleEmitsFailedMessagesEvenWhenMaxUncommittedOffsetsIsExceeded() {
+    public void testNextTupleEmitsFailedMessagesEvenWhenMaxUncommittedOffsetsIsExceeded() throws IOException {
         //The spout must reemit failed messages waiting for retry even if it is not allowed to poll for new messages due to maxUncommittedOffsets being exceeded
 
         //Emit maxUncommittedOffsets messages, and fail all of them. Then ensure that the spout will retry them when the retry backoff has passed
@@ -165,7 +167,7 @@ public class KafkaSpoutEmitTest {
             }
             
             spout.fail(failedMessageIdPartitionOne);
-            
+
             //Also fail the last tuple from partition two. Since the failed tuple is beyond the maxUncommittedOffsets limit, it should not be retried until earlier messages are acked.
             KafkaSpoutMessageId failedMessageIdPartitionTwo = null;
             for (KafkaSpoutMessageId msgId: messageIds.getAllValues()) {
@@ -179,7 +181,7 @@ public class KafkaSpoutEmitTest {
                     }
                 }
             }
-            
+
             spout.fail(failedMessageIdPartitionTwo);
             
             reset(collectorMock);
