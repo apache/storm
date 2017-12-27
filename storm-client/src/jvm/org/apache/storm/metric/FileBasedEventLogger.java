@@ -29,8 +29,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.utils.ConfigUtils;
 import org.slf4j.Logger;
@@ -43,6 +45,7 @@ public class FileBasedEventLogger implements IEventLogger {
 
     private Path eventLogPath;
     private BufferedWriter eventLogWriter;
+    private ScheduledExecutorService flushScheduler;
     private volatile boolean dirty = false;
 
     private void initLogWriter(Path logFilePath) {
@@ -59,8 +62,13 @@ public class FileBasedEventLogger implements IEventLogger {
 
 
     private void setUpFlushTask() {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        Runnable task = new Runnable() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("event-logger-flush-%d")
+                .setDaemon(true)
+                .build();
+
+        flushScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try {
@@ -75,7 +83,7 @@ public class FileBasedEventLogger implements IEventLogger {
             }
         };
 
-        scheduler.scheduleAtFixedRate(task, FLUSH_INTERVAL_MILLIS, FLUSH_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+        flushScheduler.scheduleAtFixedRate(runnable, FLUSH_INTERVAL_MILLIS, FLUSH_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
 
@@ -120,8 +128,27 @@ public class FileBasedEventLogger implements IEventLogger {
     public void close() {
         try {
             eventLogWriter.close();
+
         } catch (IOException ex) {
             LOG.error("Error closing event log.", ex);
+        }
+
+        closeFlushScheduler();
+    }
+
+    private void closeFlushScheduler() {
+        if (flushScheduler != null) {
+            flushScheduler.shutdown();
+            try {
+                if (!flushScheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    flushScheduler.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                // (Re-)Cancel if current thread also interrupted
+                flushScheduler.shutdownNow();
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }
