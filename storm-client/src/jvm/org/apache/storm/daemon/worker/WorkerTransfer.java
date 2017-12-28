@@ -21,7 +21,7 @@ package org.apache.storm.daemon.worker;
 import org.apache.storm.Config;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.policy.IWaitStrategy;
-import org.apache.storm.serialization.KryoTupleSerializer;
+import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.ObjectReader;
@@ -42,7 +42,6 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     private final TransferDrainer drainer;
     private WorkerState workerState;
-    private final KryoTupleSerializer serializer;
     private IWaitStrategy backPressureWaitStrategy;
 
     JCQueue transferQueue; // [remoteTaskId] -> JCQueue. Some entries maybe null (if no emits to those tasksIds from this worker)
@@ -50,7 +49,6 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     public WorkerTransfer(WorkerState workerState, Map<String, Object> topologyConf, int maxTaskIdInTopo) {
         this.workerState = workerState;
-        this.serializer = new KryoTupleSerializer(topologyConf, workerState.getWorkerTopologyContext());
         this.backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         this.drainer = new TransferDrainer();
         this.remoteBackPressureStatus = new AtomicBoolean[maxTaskIdInTopo+1];
@@ -83,8 +81,7 @@ class WorkerTransfer implements JCQueue.Consumer {
 
     @Override
     public void accept(Object tuple) {
-        AddressedTuple addressedTuple = (AddressedTuple) tuple;
-        TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
+        TaskMessage tm = (TaskMessage) tuple;
         drainer.add(tm);
     }
 
@@ -101,16 +98,17 @@ class WorkerTransfer implements JCQueue.Consumer {
     }
 
     /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
-        if (!remoteBackPressureStatus[tuple.dest].get()) {
-            if (transferQueue.tryPublish(tuple)) {
+    public boolean tryTransferRemote(AddressedTuple addressedTuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
+        if (!remoteBackPressureStatus[addressedTuple.dest].get()) {
+            TaskMessage tm = new TaskMessage(addressedTuple.getDest(), serializer.serialize(addressedTuple.getTuple()));
+            if (transferQueue.tryPublish(tm)) {
                 return true;
             }
         } else {
-            LOG.debug("Noticed Back Pressure in remote task {}", tuple.dest);
+            LOG.debug("Noticed Back Pressure in remote task {}", addressedTuple.dest);
         }
         if (pendingEmits != null) {
-            pendingEmits.add(tuple);
+            pendingEmits.add(addressedTuple);
         }
         return false;
     }

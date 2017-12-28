@@ -47,6 +47,7 @@ import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TransportFactory;
+import org.apache.storm.serialization.ITupleSerializer;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
@@ -508,8 +509,8 @@ public class WorkerState {
     }
 
     /* Not a Blocking call. If cannot emit, will add 'tuple' to pendingEmits and return 'false'. 'pendingEmits' can be null */
-    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits) {
-        return workerTransfer.tryTransferRemote(tuple, pendingEmits);
+    public boolean tryTransferRemote(AddressedTuple tuple, Queue<AddressedTuple> pendingEmits, ITupleSerializer serializer) {
+        return workerTransfer.tryTransferRemote(tuple, pendingEmits, serializer);
     }
 
     public void flushRemotes() throws InterruptedException {

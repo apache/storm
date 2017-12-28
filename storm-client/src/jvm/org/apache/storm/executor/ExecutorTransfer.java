@@ -32,6 +32,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Queue;
 
+// Every executor has an instance of this class
 public class ExecutorTransfer  {
     private static final Logger LOG = LoggerFactory.getLogger(ExecutorTransfer.class);
 
@@ -79,7 +80,7 @@ public class ExecutorTransfer  {
                 }
                 remotesBatchSz = 0;
             }
-            if (workerData.tryTransferRemote(addressedTuple, pendingEmits)) {
+            if (workerData.tryTransferRemote(addressedTuple, pendingEmits, serializer)) {
                 ++remotesBatchSz;
                 if (remotesBatchSz >= producerBatchSz) {
                     workerData.tryFlushRemotes();
