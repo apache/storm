@@ -18,7 +18,10 @@ package org.apache.storm.kafka.spout.internal;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.nullValue;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.mock;
 
 import java.util.NoSuchElementException;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -29,6 +32,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 public class OffsetManagerTest {
+    private static final String COMMIT_METADATA = "{\"topologyId\":\"tp1\",\"taskId\":3,\"threadName\":\"Thread-20\"}";
 
     @Rule
     public ExpectedException expect = ExpectedException.none();
@@ -55,12 +59,12 @@ public class OffsetManagerTest {
         manager.addToAckMsgs(getMessageId(initialFetchOffset + 2));
         manager.addToAckMsgs(getMessageId(initialFetchOffset + 6));
         
-        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset().offset(), is(initialFetchOffset + 3));
+        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset(COMMIT_METADATA).offset(), is(initialFetchOffset + 3));
         
         manager.addToAckMsgs(getMessageId(initialFetchOffset + 5));
         
-        assertThat("The offset manager should skip past the gap in acked messages, since the messages were not emitted", 
-            manager.findNextCommitOffset().offset(), is(initialFetchOffset + 7));
+        assertThat("The offset manager should skip past the gap in acked messages, since the messages were not emitted",
+            manager.findNextCommitOffset(COMMIT_METADATA), is(new OffsetAndMetadata(initialFetchOffset + 7, COMMIT_METADATA)));
     }
     
     @Test
@@ -70,17 +74,17 @@ public class OffsetManagerTest {
         manager.addToEmitMsgs(initialFetchOffset + 6);
         manager.addToAckMsgs(getMessageId(initialFetchOffset + 6));
         
-        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset(), is(nullValue()));
+        assertThat("The offset manager should not skip past offset 5 which is still pending", manager.findNextCommitOffset(COMMIT_METADATA), is(nullValue()));
         
         manager.addToAckMsgs(getMessageId(initialFetchOffset + 5));
         
         assertThat("The offset manager should skip past the gap in acked messages, since the messages were not emitted", 
-            manager.findNextCommitOffset().offset(), is(initialFetchOffset + 7));
+            manager.findNextCommitOffset(COMMIT_METADATA), is(new OffsetAndMetadata(initialFetchOffset + 7, COMMIT_METADATA)));
     }
 
     @Test
     public void testFindNextCommittedOffsetWithNoAcks() {
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("There shouldn't be a next commit offset when nothing has been acked", nextCommitOffset, is(nullValue()));
     }
 
@@ -91,7 +95,7 @@ public class OffsetManagerTest {
          * lastProcessedMessageOffset + 1. "
          */
         emitAndAckMessage(getMessageId(initialFetchOffset));
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("The next commit offset should be one past the processed message offset", nextCommitOffset.offset(), is(initialFetchOffset + 1));
     }
 
@@ -99,7 +103,7 @@ public class OffsetManagerTest {
     public void testFindNextCommitOffsetWithMultipleOutOfOrderAcks() {
         emitAndAckMessage(getMessageId(initialFetchOffset + 1));
         emitAndAckMessage(getMessageId(initialFetchOffset));
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("The next commit offset should be one past the processed message offset", nextCommitOffset.offset(), is(initialFetchOffset + 2));
     }
 
@@ -108,7 +112,7 @@ public class OffsetManagerTest {
         emitAndAckMessage(getMessageId(initialFetchOffset + 2));
         manager.addToEmitMsgs(initialFetchOffset + 1);
         emitAndAckMessage(getMessageId(initialFetchOffset));
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("The next commit offset should cover the sequential acked offsets", nextCommitOffset.offset(), is(initialFetchOffset + 1));
     }
 
@@ -122,7 +126,7 @@ public class OffsetManagerTest {
          */
         emitAndAckMessage(getMessageId(initialFetchOffset + 2));
         emitAndAckMessage(getMessageId(initialFetchOffset));
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("The next commit offset should cover all the acked offsets, since the offset in the gap hasn't been emitted and doesn't exist",
             nextCommitOffset.offset(), is(initialFetchOffset + 3));
     }
@@ -131,7 +135,7 @@ public class OffsetManagerTest {
     public void testFindNextCommitOffsetWithUnackedOffsetGap() {
         manager.addToEmitMsgs(initialFetchOffset + 1);
         emitAndAckMessage(getMessageId(initialFetchOffset));
-        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = manager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("The next commit offset should cover the contiguously acked offsets", nextCommitOffset.offset(), is(initialFetchOffset + 1));
     }
     
@@ -139,7 +143,7 @@ public class OffsetManagerTest {
     public void testFindNextCommitOffsetWhenTooLowOffsetIsAcked() {
         OffsetManager startAtHighOffsetManager = new OffsetManager(testTp, 10);
         emitAndAckMessage(getMessageId(0));
-        OffsetAndMetadata nextCommitOffset = startAtHighOffsetManager.findNextCommitOffset();
+        OffsetAndMetadata nextCommitOffset = startAtHighOffsetManager.findNextCommitOffset(COMMIT_METADATA);
         assertThat("Acking an offset earlier than the committed offset should have no effect", nextCommitOffset, is(nullValue()));
     }
     
@@ -181,7 +185,12 @@ public class OffsetManagerTest {
         
         expect.expect(NoSuchElementException.class);
         manager.getNthUncommittedOffsetAfterCommittedOffset(5);
-        
     }
 
+    @Test
+    public void testCommittedFlagSetOnCommit() throws Exception {
+        assertFalse(manager.hasCommitted());
+        manager.commit(mock(OffsetAndMetadata.class));
+        assertTrue(manager.hasCommitted());
+    }
 }

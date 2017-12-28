@@ -23,10 +23,12 @@ import org.apache.storm.trident.operation.TridentCollector;
 import org.apache.storm.trident.state.BaseStateUpdater;
 import org.apache.storm.trident.tuple.TridentTuple;
 
-public class TridentKafkaStateUpdater extends BaseStateUpdater<TridentKafkaState> {
+public class TridentKafkaStateUpdater<K, V> extends BaseStateUpdater<TridentKafkaState<K, V>> {
+
+    private static final long serialVersionUID = 3352659585225274402L;
 
     @Override
-    public void updateState(TridentKafkaState state, List<TridentTuple> tuples, TridentCollector collector) {
+    public void updateState(TridentKafkaState<K, V> state, List<TridentTuple> tuples, TridentCollector collector) {
         state.updateState(tuples, collector);
     }
 }
