@@ -38,6 +38,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         _kryoInput = new Input(1);
     }        
 
+    @Override
     public TupleImpl deserialize(byte[] ser) {
         try {
             _kryoInput.setBuffer(ser);

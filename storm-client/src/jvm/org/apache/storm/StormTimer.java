@@ -212,7 +212,7 @@ public class StormTimer implements AutoCloseable {
 
     /**
      * Schedule a function to run recurrently
-     * @param delayMs the number of seconds to delay before running the function
+     * @param delayMs the number of millis to delay before running the function
      * @param recurMs the time between each invocation
      * @param func the function to run
      */

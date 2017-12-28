@@ -143,7 +143,6 @@ public class Task {
 
         ArrayList<Integer> outTasks = new ArrayList<>();
 
-        // TODO: PERF: expensive hashtable lookup in critical path
         ArrayList<LoadAwareCustomStreamGrouping> groupers = streamToGroupers.get(stream);
         if (null != groupers)  {
             for (int i=0; i<groupers.size(); ++i) {
@@ -152,7 +151,7 @@ public class Task {
                     throw new IllegalArgumentException("Cannot do regular emit to direct stream");
                 }
                 List<Integer> compTasks = grouper.chooseTasks(taskId, values, loadMapping);
-                outTasks.addAll(compTasks);   // TODO: PERF: this is a perf hit
+                outTasks.addAll(compTasks);
             }
         } else {
             throw new IllegalArgumentException("Unknown stream ID: " + stream);
@@ -197,7 +196,7 @@ public class Task {
     }
 
 
-    // Non Blocking call. If cannot emmit to destination immediately, such tuples will be added to `pendingEmits` argument
+    // Non Blocking call. If cannot emit to destination immediately, such tuples will be added to `pendingEmits` argument
     public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
         Tuple tuple = getTuple(stream, values);
         List<Integer> tasks = getOutgoingTasks(stream, values);

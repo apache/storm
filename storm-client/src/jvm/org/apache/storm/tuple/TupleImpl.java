@@ -58,16 +58,6 @@ public class TupleImpl implements Tuple {
         this.id = id;
         this.context = context;
         this.srcComponent = srcComponent;
-
-
-//// Perf Note: Disabling these checks as they are a throughput bottleneck
-//        Fields schema = context.getComponentOutputFields(srcComponent, streamId);
-//        if(values.size()!=schema.size()) {
-//            throw new IllegalArgumentException(
-//                    "Tuple created with wrong number of fields. " +
-//                    "Expected " + schema.size() + " fields but got " +
-//                    values.size() + " fields");
-//        }
     }
 
     public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId) {

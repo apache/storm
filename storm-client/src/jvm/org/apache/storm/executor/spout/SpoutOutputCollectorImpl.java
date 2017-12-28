@@ -36,6 +36,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+// Methods are not thread safe. Each thread expected to have a separate instance, or else synchronize externally
 public class SpoutOutputCollectorImpl implements ISpoutOutputCollector {
     private static final Logger LOG = LoggerFactory.getLogger(SpoutOutputCollectorImpl.class);
     private final SpoutExecutor executor;

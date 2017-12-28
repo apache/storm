@@ -42,8 +42,8 @@ public class ExecutorTransfer  {
     private final int producerBatchSz;
     private int remotesBatchSz = 0;
     private int indexingBase = 0;
-    private ArrayList<JCQueue> localReceiveQueues; // [taksid-indexingBase] => queue : List of all recvQs local to this worker
-    private ArrayList<JCQueue> queuesToFlush; // [taksid-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
+    private ArrayList<JCQueue> localReceiveQueues; // [taskId-indexingBase] => queue : List of all recvQs local to this worker
+    private ArrayList<JCQueue> queuesToFlush; // [taskId-indexingBase] => queue, some entries can be null. : outbound Qs for this executor instance
 
 
     public ExecutorTransfer(WorkerState workerData, Map<String, Object> topoConf) {

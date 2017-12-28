@@ -68,8 +68,6 @@ public class BackPressureTracker {
                 nonBpTasks.add(entry.getKey());
                 itr.remove();
                 changed = true;
-            } else {
-//                LOG.info("Task = {}, OverflowCount = {}, Q = {}", entry.getKey(), entry.getValue().getOverflowCount(), entry.getValue().getQueuedCount() );
             }
         }
         return changed;
