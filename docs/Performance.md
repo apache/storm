@@ -106,7 +106,11 @@ invocation of LockSupport.parkNanos and this mode can be used to achieve busy po
 
 
 ## Max.spout.pending
-The back pressure mechanism no longer requires `topology.max.spout.pending`. It is recommend to set this to null (default).
+The setting `topology.max.spout.pending` limits the number of un-ACKed tuples at the spout level. Once a spout reaches this limit, the spout's nextTuple()
+method will not be called until some ACKs are received for the outstanding emits. This setting does not have any affect if ACKing is disabled. It
+is a spout throttles mechanism which can impact throughput and latency. Setting it to null disables it for storm-core topologies. Impact on throughput
+is dependent on the topology and its concurrency (workers/executors), so experimentation is necessary to determine optimal setting. Latency and memory consumption
+is expected to typically increase with higher and higher values for this.
 
 
 ## 4. Sampling Rate

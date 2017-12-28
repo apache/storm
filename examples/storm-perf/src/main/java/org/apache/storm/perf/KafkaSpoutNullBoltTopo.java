@@ -18,6 +18,9 @@
 
 package org.apache.storm.perf;
 
+import java.util.Map;
+import java.util.UUID;
+
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.kafka.BrokerHosts;
@@ -28,19 +31,14 @@ import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.perf.bolt.DevNullBolt;
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
-
-import java.util.Map;
-import java.util.UUID;
-
+import org.apache.storm.utils.Utils;
 
 /***
  * This topo helps measure speed of reading from Kafka
  *   Spout Reads from Kafka.
  *   Bolt acks and discards tuples
  */
-
 public class KafkaSpoutNullBoltTopo {
 
     // configs - topo parallelism
@@ -61,7 +59,7 @@ public class KafkaSpoutNullBoltTopo {
     public static final String BOLT_ID = "devNullBolt";
 
 
-    public static StormTopology getTopology(Map<String, Object> config) {
+    static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int boltNum = getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
@@ -84,7 +82,7 @@ public class KafkaSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-                .localOrShuffleGrouping(SPOUT_ID);
+            .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
@@ -103,7 +101,7 @@ public class KafkaSpoutNullBoltTopo {
      * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming
      */
     public static void main(String[] args) throws Exception {
-        if (args.length !=2) {
+        if (args.length != 2) {
             System.err.println("args: runDurationSec confFile");
             return;
         }

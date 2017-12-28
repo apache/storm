@@ -19,6 +19,10 @@
 package org.apache.storm.perf;
 
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.utils.Helper;
@@ -36,16 +40,53 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.LoggerFactory;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-
 public class LowThroughputTopo {
     private static final String SPOUT_ID = "ThrottledSpout";
     private static final String BOLT_ID = "LatencyPrintBolt";
     private static final Integer SPOUT_COUNT = 1;
     private static final Integer BOLT_COUNT = 1;
     private static final String SLEEP_MS = "sleep";
+
+    static StormTopology getTopology(Map<String, Object> conf) {
+
+        Long sleepMs = ObjectReader.getLong(conf.get(SLEEP_MS));
+        // 1 -  Setup Spout   --------
+        ThrottledSpout spout = new ThrottledSpout(sleepMs).withOutputFields(ThrottledSpout.DEFAULT_FIELD_NAME);
+
+        // 2 -  Setup DevNull Bolt   --------
+        LatencyPrintBolt bolt = new LatencyPrintBolt();
+
+
+        // 3 - Setup Topology  --------
+        TopologyBuilder builder = new TopologyBuilder();
+
+        builder.setSpout(SPOUT_ID, spout, Helper.getInt(conf, SPOUT_COUNT, 1));
+        BoltDeclarer bd = builder.setBolt(BOLT_ID, bolt, Helper.getInt(conf, BOLT_COUNT, 1));
+
+        bd.localOrShuffleGrouping(SPOUT_ID);
+//        bd.shuffleGrouping(SPOUT_ID);
+        return builder.createTopology();
+    }
+
+    public static void main(String[] args) throws Exception {
+        int runTime = -1;
+        Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
+        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 1);
+        if (args.length > 0) {
+            long sleepMs = Integer.parseInt(args[0]);
+            topoConf.put(SLEEP_MS, sleepMs);
+        }
+        if (args.length > 1) {
+            runTime = Integer.parseInt(args[1]);
+        }
+        if (args.length > 2) {
+            System.err.println("args: spoutSleepMs [runDurationSec] ");
+            return;
+        }
+        topoConf.putAll(Utils.readCommandLineOpts());
+        //  Submit topology to storm cluster
+        Helper.runOnClusterAndPrintMetrics(runTime, "LowThroughputTopo", topoConf, getTopology(topoConf));
+    }
 
     private static class ThrottledSpout extends BaseRichSpout {
 
@@ -76,7 +117,7 @@ public class LowThroughputTopo {
         @Override
         public void nextTuple() {
             Long now = System.currentTimeMillis();
-            List<Object> tuple = Collections.singletonList( now );
+            List<Object> tuple = Collections.singletonList(now);
             collector.emit(tuple, now);
             Utils.sleep(sleepTimeMs);
         }
@@ -88,8 +129,8 @@ public class LowThroughputTopo {
     }
 
     private static class LatencyPrintBolt extends BaseRichBolt {
-        private OutputCollector collector;
         private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(LatencyPrintBolt.class);
+        private OutputCollector collector;
 
         @Override
         public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
@@ -101,7 +142,7 @@ public class LowThroughputTopo {
             Long now = System.currentTimeMillis();
             Long then = (Long) tuple.getValues().get(0);
             LOG.warn("Latency {} ", now - then);
-            System.err.println( now - then );
+            System.err.println(now - then);
             collector.ack(tuple);
         }
 
@@ -109,48 +150,5 @@ public class LowThroughputTopo {
         public void declareOutputFields(OutputFieldsDeclarer declarer) {
 
         }
-    }
-
-
-    public static StormTopology getTopology(Map<String, Object> conf) {
-
-        Long sleepMs = ObjectReader.getLong(conf.get(SLEEP_MS));
-        // 1 -  Setup Spout   --------
-        ThrottledSpout spout = new ThrottledSpout(sleepMs).withOutputFields(ThrottledSpout.DEFAULT_FIELD_NAME);
-
-        // 2 -  Setup DevNull Bolt   --------
-        LatencyPrintBolt bolt = new LatencyPrintBolt();
-
-
-        // 3 - Setup Topology  --------
-        TopologyBuilder builder = new TopologyBuilder();
-
-        builder.setSpout(SPOUT_ID, spout,  Helper.getInt(conf, SPOUT_COUNT, 1) );
-        BoltDeclarer bd = builder.setBolt(BOLT_ID, bolt, Helper.getInt(conf, BOLT_COUNT, 1));
-
-        bd.localOrShuffleGrouping(SPOUT_ID);
-//        bd.shuffleGrouping(SPOUT_ID);
-        return builder.createTopology();
-    }
-
-
-    public static void main(String[] args) throws Exception {
-        int runTime = -1;
-        Map<String, Object> topoConf = Utils.findAndReadConfigFile(args[1]);
-        topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 1);
-        if (args.length > 0) {
-            long sleepMs = Integer.parseInt(args[0]);
-            topoConf.put(SLEEP_MS, sleepMs);
-        }
-        if (args.length > 1) {
-            runTime = Integer.parseInt(args[1]);
-        }
-        if (args.length > 2) {
-            System.err.println("args: spoutSleepMs [runDurationSec] ");
-            return;
-        }
-        topoConf.putAll(Utils.readCommandLineOpts());
-        //  Submit topology to storm cluster
-        Helper.runOnClusterAndPrintMetrics(runTime, "LowThroughputTopo", topoConf, getTopology(topoConf));
     }
 }

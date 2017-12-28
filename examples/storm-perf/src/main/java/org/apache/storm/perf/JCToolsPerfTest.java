@@ -16,16 +16,17 @@
  * limitations under the License
  */
 
-package org.apache.storm.utils;
-
-import org.jctools.queues.MpscArrayQueue;
+package org.apache.storm.perf;
 
 import java.util.concurrent.locks.LockSupport;
+
+import org.apache.storm.utils.MutableLong;
+import org.jctools.queues.MpscArrayQueue;
 
 public class JCToolsPerfTest {
     public static void main(String[] args) throws Exception {
 //        oneProducer1Consumer();
-        twoProducer1Consumer();
+//        twoProducer1Consumer();
 //        threeProducer1Consumer();
 //        oneProducer2Consumers();
 //        producerFwdConsumer();
@@ -38,8 +39,9 @@ public class JCToolsPerfTest {
 //
 //        runAllThds(ackingProducer, acker);
 
-        while(true)
+        while (true) {
             Thread.sleep(1000);
+        }
 
     }
 
@@ -78,7 +80,7 @@ public class JCToolsPerfTest {
         MpscArrayQueue<Object> q1 = new MpscArrayQueue<Object>(50_000);
         MpscArrayQueue<Object> q2 = new MpscArrayQueue<Object>(50_000);
 
-        final Prod2 prod1 = new Prod2(q1,q2);
+        final Prod2 prod1 = new Prod2(q1, q2);
         final Cons cons1 = new Cons(q1);
         final Cons cons2 = new Cons(q2);
 
@@ -107,7 +109,7 @@ public class JCToolsPerfTest {
                 }
 
                 for (MyThd thread : threads) {
-                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(), thread.count, thread.throughput() );
+                    System.err.printf("%s : %d,  Throughput: %,d \n", thread.getName(), thread.count, thread.throughput());
                 }
             } catch (InterruptedException e) {
                 return;
@@ -119,9 +121,8 @@ public class JCToolsPerfTest {
 }
 
 
-
-abstract class MyThd extends Thread  {
-    public long count=0;
+abstract class MyThd extends Thread {
+    public long count = 0;
     public long runTime = 0;
     public boolean halt = false;
 
@@ -132,7 +133,10 @@ abstract class MyThd extends Thread  {
     public long throughput() {
         return getCount() / (runTime / 1000);
     }
-    public long getCount() { return  count; }
+
+    public long getCount() {
+        return count;
+    }
 }
 
 class Prod extends MyThd {
@@ -146,12 +150,13 @@ class Prod extends MyThd {
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-//        while (!Thread.interrupted()) {
+
         while (!halt) {
             ++count;
             while (!q.offer(count)) {
-                if (Thread.interrupted())
+                if (Thread.interrupted()) {
                     return;
+                }
             }
         }
         runTime = System.currentTimeMillis() - start;
@@ -160,7 +165,7 @@ class Prod extends MyThd {
 }
 
 // writes to two queues
-class Prod2 extends MyThd{
+class Prod2 extends MyThd {
     private final MpscArrayQueue<Object> q1;
     private final MpscArrayQueue<Object> q2;
 
@@ -173,7 +178,7 @@ class Prod2 extends MyThd{
     @Override
     public void run() {
         long start = System.currentTimeMillis();
-//        while (!Thread.interrupted()) {
+
         while (!halt) {
             q1.offer(++count);
             q2.offer(count);
@@ -183,13 +188,34 @@ class Prod2 extends MyThd{
 }
 
 
-
 class Cons extends MyThd {
-    private final MpscArrayQueue<Object> q;
     public final MutableLong counter = new MutableLong(0);
+    private final MpscArrayQueue<Object> q;
+
     public Cons(MpscArrayQueue<Object> q) {
         super("Consumer");
         this.q = q;
+    }
+
+    @Override
+    public void run() {
+        Handler handler = new Handler();
+        long start = System.currentTimeMillis();
+
+        while (!halt) {
+            int x = q.drain(handler);
+            if (x == 0) {
+                LockSupport.parkNanos(1);
+            } else {
+                counter.increment();
+            }
+        }
+        runTime = System.currentTimeMillis() - start;
+    }
+
+    @Override
+    public long getCount() {
+        return counter.get();
     }
 
     private class Handler implements org.jctools.queues.MessagePassingQueue.Consumer<Object> {
@@ -198,24 +224,4 @@ class Cons extends MyThd {
             counter.increment();
         }
     }
-
-    @Override
-    public void run() {
-        Handler handler = new Handler();
-        long start = System.currentTimeMillis();
-//        while(!Thread.interrupted()) {
-        while (!halt) {
-//            Object x = q.poll();
-            int x = q.drain(handler);
-//            if(x==null)
-            if(x==0)
-                LockSupport.parkNanos(1);
-            else
-                counter.increment();
-        }
-        runTime = System.currentTimeMillis() - start;
-    }
-
-    @Override
-    public long getCount() { return  counter.get(); }
 }

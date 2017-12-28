@@ -18,11 +18,11 @@
 
 package org.apache.storm.perf;
 
+import java.util.concurrent.locks.LockSupport;
+
 import org.apache.storm.policy.WaitStrategyPark;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.MutableLong;
-
-import java.util.concurrent.locks.LockSupport;
 
 public class JCQueuePerfTest {
     // Usage: Let it and then explicitly terminate.
@@ -292,24 +292,12 @@ class Acker extends MyThread {
 }
 
 class Consumer extends MyThread {
-    private final JCQueue q;
     public final MutableLong counter = new MutableLong(0);
+    private final JCQueue q;
 
     public Consumer(JCQueue q) {
         super("Consumer");
         this.q = q;
-    }
-
-    private class Handler implements JCQueue.Consumer {
-        @Override
-        public void accept(Object event) {
-            counter.increment();
-        }
-
-        @Override
-        public void flush() {
-            // no-op
-        }
     }
 
     @Override
@@ -329,35 +317,30 @@ class Consumer extends MyThread {
     public long getCount() {
         return counter.get();
     }
-}
-
-
-class Forwarder extends MyThread {
-    private final JCQueue inq;
-    private final JCQueue outq;
-    public final MutableLong counter = new MutableLong(0);
-
-    public Forwarder(JCQueue inq, JCQueue outq) {
-        super("Forwarder");
-        this.inq = inq;
-        this.outq = outq;
-    }
 
     private class Handler implements JCQueue.Consumer {
         @Override
         public void accept(Object event) {
-            try {
-                outq.publish(event);
-                counter.increment();
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
+            counter.increment();
         }
 
         @Override
         public void flush() {
             // no-op
         }
+    }
+}
+
+
+class Forwarder extends MyThread {
+    public final MutableLong counter = new MutableLong(0);
+    private final JCQueue inq;
+    private final JCQueue outq;
+
+    public Forwarder(JCQueue inq, JCQueue outq) {
+        super("Forwarder");
+        this.inq = inq;
+        this.outq = outq;
     }
 
     @Override
@@ -376,5 +359,22 @@ class Forwarder extends MyThread {
     @Override
     public long getCount() {
         return counter.get();
+    }
+
+    private class Handler implements JCQueue.Consumer {
+        @Override
+        public void accept(Object event) {
+            try {
+                outq.publish(event);
+                counter.increment();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        @Override
+        public void flush() {
+            // no-op
+        }
     }
 }

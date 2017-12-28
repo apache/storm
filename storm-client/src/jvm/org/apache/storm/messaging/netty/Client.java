@@ -354,7 +354,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         try {
             int idleCounter = 0;
             while (!channel.isWritable()) {
-                if (idleCounter==0) { // check avoids multiple log msgs when in a idle loop
+                if (idleCounter == 0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure from Netty. Entering BackPressure Wait");
                 }
                 if (!channel.isConnected()) {
@@ -395,6 +395,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         // We consume the iterator by traversing and thus "emptying" it.
         int msgCount = iteratorSize(msgs);
         messagesLost.getAndAdd(msgCount);
+        LOG.info("Dropping {} messages", msgCount);
     }
 
     private int iteratorSize(Iterator<TaskMessage> msgs) {

@@ -30,7 +30,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
 /***
- * This topo helps measure the messaging peak throughput between a spout and a bolt.
+ *  This topo helps measure the messaging peak throughput between a spout and a bolt.
  *  Spout generates a stream of a fixed string.
  *  Bolt will simply ack and discard the tuple received
  */
@@ -50,7 +50,7 @@ public class ConstSpoutNullBoltTopo {
     public static final String SHUFFLE_GROUPING = "shuffle";
     public static final String DEFAULT_GROUPING = LOCAL_GROPING;
 
-    public static StormTopology getTopology(Map<String, Object> conf) {
+    static StormTopology getTopology(Map<String, Object> conf) {
 
         // 1 -  Setup Spout   --------
         ConstSpout spout = new ConstSpout("some data").withOutputFields("str");
@@ -71,10 +71,11 @@ public class ConstSpoutNullBoltTopo {
         System.err.printf("====> Using : numSpouts = %d , numBolts = %d\n", numSpouts, numBolts);
 
         String groupingType = Helper.getStr(conf, GROUPING);
-        if(groupingType==null || groupingType.equalsIgnoreCase(DEFAULT_GROUPING) )
+        if (groupingType == null || groupingType.equalsIgnoreCase(DEFAULT_GROUPING)) {
             bd.localOrShuffleGrouping(SPOUT_ID);
-        else if(groupingType.equalsIgnoreCase(SHUFFLE_GROUPING) )
+        } else if (groupingType.equalsIgnoreCase(SHUFFLE_GROUPING)) {
             bd.shuffleGrouping(SPOUT_ID);
+        }
         return builder.createTopology();
     }
 

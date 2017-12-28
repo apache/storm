@@ -18,6 +18,8 @@
 
 package org.apache.storm.perf;
 
+import java.util.Map;
+
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.spout.HdfsSpout;
@@ -27,8 +29,6 @@ import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 
-import java.util.Map;
-
 /***
  * This topo helps measure speed of reading from Hdfs.
  *  Spout Reads from Hdfs.
@@ -37,25 +37,21 @@ import java.util.Map;
 
 
 public class HdfsSpoutNullBoltTopo {
+    public static final int DEFAULT_SPOUT_NUM = 1;
+    public static final int DEFAULT_BOLT_NUM = 1;
     // names
     static final String TOPOLOGY_NAME = "HdfsSpoutNullBoltTopo";
     static final String SPOUT_ID = "hdfsSpout";
     static final String BOLT_ID = "devNullBolt";
-
     // configs
     static final String SPOUT_NUM = "spout.count";
     static final String BOLT_NUM = "bolt.count";
-
-    static final String HDFS_URI    = "hdfs.uri";
-    static final String SOURCE_DIR  = "hdfs.source.dir";
+    static final String HDFS_URI = "hdfs.uri";
+    static final String SOURCE_DIR = "hdfs.source.dir";
     static final String ARCHIVE_DIR = "hdfs.archive.dir";
-    static final String BAD_DIR     = "hdfs.bad.dir";
+    static final String BAD_DIR = "hdfs.bad.dir";
 
-    public static final int DEFAULT_SPOUT_NUM = 1;
-    public static final int DEFAULT_BOLT_NUM = 1;
-
-
-    public static StormTopology getTopology(Map<String, Object> config) {
+    static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int boltNum = Helper.getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
@@ -68,12 +64,12 @@ public class HdfsSpoutNullBoltTopo {
 
         // 1 -  Setup Hdfs Spout   --------
         HdfsSpout spout = new HdfsSpout()
-                .setReaderType(fileFormat)
-                .setHdfsUri(hdfsUri)
-                .setSourceDir(sourceDir)
-                .setArchiveDir(archiveDir)
-                .setBadFilesDir(badDir)
-                .withOutputFields(TextFileReader.defaultFields);
+            .setReaderType(fileFormat)
+            .setHdfsUri(hdfsUri)
+            .setSourceDir(sourceDir)
+            .setArchiveDir(archiveDir)
+            .setBadFilesDir(badDir)
+            .withOutputFields(TextFileReader.defaultFields);
 
         // 2 -   DevNull Bolt   --------
         DevNullBolt bolt = new DevNullBolt();
@@ -82,7 +78,7 @@ public class HdfsSpoutNullBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-                .localOrShuffleGrouping(SPOUT_ID);
+            .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
@@ -93,9 +89,9 @@ public class HdfsSpoutNullBoltTopo {
             return;
         }
 
-        Integer durationSec = Integer.parseInt(args[0]);
+        final Integer durationSec = Integer.parseInt(args[0]);
         Config topoConf = new Config();
-        topoConf.putAll( Utils.findAndReadConfigFile(args[1]) );
+        topoConf.putAll(Utils.findAndReadConfigFile(args[1]));
         topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
         topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);

@@ -18,6 +18,13 @@
 
 package org.apache.storm.perf.spout;
 
+import java.io.BufferedReader;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.ArrayList;
+import java.util.Map;
+
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -26,13 +33,6 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ThroughputMeter;
-
-import java.io.BufferedReader;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.util.ArrayList;
-import java.util.Map;
 
 public class WordGenSpout extends BaseRichSpout {
     public static final String FIELDS = "word";
@@ -55,7 +55,7 @@ public class WordGenSpout extends BaseRichSpout {
     public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
         Integer ackers = Helper.getInt(conf, "topology.acker.executors", 0);
-        if ( ackers.equals(0) ) {
+        if (ackers.equals(0)) {
             this.ackEnabled = false;
         }
         // for tests, reader will not be null
@@ -65,7 +65,7 @@ public class WordGenSpout extends BaseRichSpout {
 
     @Override
     public void nextTuple() {
-        index = (index<words.size()-1) ? index+1 : 0;
+        index = (index < words.size()-1) ? index+1 : 0;
         String word = words.get(index);
         if (ackEnabled) {
             collector.emit(new Values(word), count);
@@ -91,7 +91,7 @@ public class WordGenSpout extends BaseRichSpout {
             try {
                 String line;
                 while ((line = reader.readLine()) != null) {
-                    for(String word : line.split("\\s+"))
+                    for (String word : line.split("\\s+"))
                         lines.add(word);
                 }
             } catch (IOException e) {

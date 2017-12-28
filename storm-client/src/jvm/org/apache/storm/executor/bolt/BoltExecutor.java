@@ -42,10 +42,10 @@ import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
+import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.JCQueue.ExitCondition;
 import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,13 +140,13 @@ public class BoltExecutor extends Executor {
             public Long call() throws Exception {
                 boolean pendingEmitsIsEmpty = tryFlushPendingEmits();
                 if (pendingEmitsIsEmpty) {
-                    if (bpIdleCount!=0) {
+                    if (bpIdleCount != 0) {
                         LOG.debug("Ending Back Pressure Wait stretch : {}", bpIdleCount);
                     }
                     bpIdleCount = 0;
                     int consumeCount = receiveQueue.consume(BoltExecutor.this, tillNoPendingEmits);
                     if (consumeCount == 0) {
-                        if (consumeIdleCounter==0) {
+                        if (consumeIdleCounter == 0) {
                             LOG.debug("Invoking consume wait strategy");
                         }
                         consumeIdleCounter = consumeWaitStrategy.idle(consumeIdleCounter);
@@ -154,7 +154,7 @@ public class BoltExecutor extends Executor {
                             throw new InterruptedException();
                         }
                     } else {
-                        if (consumeIdleCounter!=0) {
+                        if (consumeIdleCounter != 0) {
                             LOG.debug("Ending consume wait stretch : {}", consumeIdleCounter);
                         }
                         consumeIdleCounter = 0;

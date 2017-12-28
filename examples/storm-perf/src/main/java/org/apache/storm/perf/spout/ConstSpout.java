@@ -18,6 +18,8 @@
 
 package org.apache.storm.perf.spout;
 
+import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -26,16 +28,13 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ObjectReader;
 
-import java.util.ArrayList;
-import java.util.Map;
-
 public class ConstSpout extends BaseRichSpout {
 
     private static final String DEFAUT_FIELD_NAME = "str";
     private String value;
     private String fieldName = DEFAUT_FIELD_NAME;
     private SpoutOutputCollector collector = null;
-    private int count=0;
+    private int count = 0;
     private Long sleep = 0L;
     private int ackCount = 0;
 
@@ -65,7 +64,7 @@ public class ConstSpout extends BaseRichSpout {
         tuple.add(value);
         collector.emit(tuple, count++);
         try {
-            if(sleep>0) {
+            if (sleep > 0) {
                 Thread.sleep(sleep);
             }
         } catch (InterruptedException e) {

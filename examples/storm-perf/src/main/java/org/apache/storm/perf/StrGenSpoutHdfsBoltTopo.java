@@ -47,11 +47,11 @@ public class StrGenSpoutHdfsBoltTopo {
 
     // configs - topo parallelism
     public static final String SPOUT_NUM = "spout.count";
-    public static final String BOLT_NUM =  "bolt.count";
+    public static final String BOLT_NUM = "bolt.count";
 
     // configs - hdfs bolt
-    public static final String HDFS_URI   = "hdfs.uri";
-    public static final String HDFS_PATH  = "hdfs.dir";
+    public static final String HDFS_URI = "hdfs.uri";
+    public static final String HDFS_PATH = "hdfs.dir";
     public static final String HDFS_BATCH = "hdfs.batch";
 
     public static final int DEFAULT_SPOUT_NUM = 1;
@@ -64,7 +64,7 @@ public class StrGenSpoutHdfsBoltTopo {
     public static final String BOLT_ID = "hdfsBolt";
 
 
-    public static StormTopology getTopology(Map<String, Object> topoConf) {
+    static StormTopology getTopology(Map<String, Object> topoConf) {
         final int hdfsBatch = Helper.getInt(topoConf, HDFS_BATCH, DEFAULT_HDFS_BATCH);
 
         // 1 -  Setup StringGen Spout   --------
@@ -80,15 +80,15 @@ public class StrGenSpoutHdfsBoltTopo {
         final int boltNum = Helper.getInt(topoConf, BOLT_NUM, DEFAULT_BOLT_NUM);
 
         // Use default, Storm-generated file names
-        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(Helper.getStr(topoConf, HDFS_PATH) );
+        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(Helper.getStr(topoConf, HDFS_PATH));
 
         // Instantiate the HdfsBolt
         HdfsBolt bolt = new HdfsBolt()
-                .withFsUrl(Hdfs_url)
-                .withFileNameFormat(fileNameFormat)
-                .withRecordFormat(format)
-                .withRotationPolicy(rotationPolicy)
-                .withSyncPolicy(syncPolicy);
+            .withFsUrl(Hdfs_url)
+            .withFileNameFormat(fileNameFormat)
+            .withRecordFormat(format)
+            .withRotationPolicy(rotationPolicy)
+            .withSyncPolicy(syncPolicy);
 
 
         // 3 - Setup Topology  --------
@@ -96,13 +96,15 @@ public class StrGenSpoutHdfsBoltTopo {
         TopologyBuilder builder = new TopologyBuilder();
         builder.setSpout(SPOUT_ID, spout, spoutNum);
         builder.setBolt(BOLT_ID, bolt, boltNum)
-                .localOrShuffleGrouping(SPOUT_ID);
+            .localOrShuffleGrouping(SPOUT_ID);
 
         return builder.createTopology();
     }
 
 
-    /** Spout generates random strings and HDFS bolt writes them to a text file */
+    /**
+     * Spout generates random strings and HDFS bolt writes them to a text file
+     */
     public static void main(String[] args) throws Exception {
         String confFile = "conf/HdfsSpoutTopo.yaml";
         int runTime = -1; //Run until Ctrl-C
@@ -147,13 +149,13 @@ public class StrGenSpoutHdfsBoltTopo {
          * @param delimiter
          * @return
          */
-        public LineWriter withLineDelimiter(String delimiter){
+        public LineWriter withLineDelimiter(String delimiter) {
             this.lineDelimiter = delimiter;
             return this;
         }
 
         public byte[] format(Tuple tuple) {
-            return (tuple.getValueByField(fieldName).toString() +  this.lineDelimiter).getBytes();
+            return (tuple.getValueByField(fieldName).toString() + this.lineDelimiter).getBytes();
         }
     }
 

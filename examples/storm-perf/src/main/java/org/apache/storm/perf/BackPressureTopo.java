@@ -18,6 +18,7 @@
 
 package org.apache.storm.perf;
 
+import java.util.Map;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.perf.spout.ConstSpout;
@@ -33,7 +34,6 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Utils;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
 
 public class BackPressureTopo {
 
@@ -43,37 +43,7 @@ public class BackPressureTopo {
     private static final Integer BOLT_COUNT = 1;
     private static final String SLEEP_MS = "sleep";
 
-    private static class ThrottledBolt extends BaseRichBolt {
-        private OutputCollector collector;
-        private long sleepMs;
-        private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(ThrottledBolt.class);
-
-        public ThrottledBolt(Long sleepMs) {
-            this.sleepMs = sleepMs;
-        }
-
-        @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
-            this.collector = collector;
-        }
-
-        @Override
-        public void execute(Tuple tuple) {
-            collector.ack(tuple);
-            LOG.debug("Sleeping");
-            try {
-                Thread.sleep(sleepMs);
-            } catch (InterruptedException e) {
-            }
-        }
-
-        @Override
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
-        }
-    }
-
-
-    public static StormTopology getTopology(Map<String, Object> conf) {
+    static StormTopology getTopology(Map<String, Object> conf) {
 
         Long sleepMs = ObjectReader.getLong(conf.get(SLEEP_MS));
         // 1 -  Setup Spout   --------
@@ -93,12 +63,11 @@ public class BackPressureTopo {
         return builder.createTopology();
     }
 
-
     public static void main(String[] args) throws Exception {
         int runTime = -1;
         Config topoConf = new Config();
         topoConf.put(Config.TOPOLOGY_SPOUT_RECVQ_SKIPS, 1);
-        topoConf.putAll( Utils.readCommandLineOpts() );
+        topoConf.putAll(Utils.readCommandLineOpts());
         if (args.length > 0) {
             long sleepMs = Integer.parseInt(args[0]);
             topoConf.put(SLEEP_MS, sleepMs);
@@ -112,5 +81,35 @@ public class BackPressureTopo {
         }
         //  Submit topology to storm cluster
         Helper.runOnClusterAndPrintMetrics(runTime, "BackPressureTopo", topoConf, getTopology(topoConf));
+    }
+
+    private static class ThrottledBolt extends BaseRichBolt {
+        private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(ThrottledBolt.class);
+        private OutputCollector collector;
+        private long sleepMs;
+
+        public ThrottledBolt(Long sleepMs) {
+            this.sleepMs = sleepMs;
+        }
+
+        @Override
+        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+            this.collector = collector;
+        }
+
+        @Override
+        public void execute(Tuple tuple) {
+            collector.ack(tuple);
+            LOG.debug("Sleeping");
+            try {
+                Thread.sleep(sleepMs);
+            } catch (InterruptedException e) {
+                //.. ignore
+            }
+        }
+
+        @Override
+        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        }
     }
 }

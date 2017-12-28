@@ -85,7 +85,8 @@ public class Helper {
         });
     }
 
-    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology) throws Exception {
+    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology)
+             throws Exception {
         // submit topology
         StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
         setupShutdownHook(topoName); // handle Ctrl-C

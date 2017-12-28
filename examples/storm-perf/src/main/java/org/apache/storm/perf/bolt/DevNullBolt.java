@@ -18,25 +18,23 @@
 
 package org.apache.storm.perf.bolt;
 
+import java.util.Map;
+import java.util.concurrent.locks.LockSupport;
+
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichBolt;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ObjectReader;
-import org.apache.storm.utils.ThroughputMeter;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.concurrent.locks.LockSupport;
 
 
 public class DevNullBolt extends BaseRichBolt {
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
     private OutputCollector collector;
     private Long sleepNanos;
     private int eCount = 0;
-
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(DevNullBolt.class);
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {

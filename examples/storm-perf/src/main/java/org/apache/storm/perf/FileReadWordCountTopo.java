@@ -15,8 +15,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License
 */
-package org.apache.storm.perf;
 
+package org.apache.storm.perf;
 
 import java.util.Map;
 
@@ -36,15 +36,15 @@ import org.apache.storm.utils.Utils;
  */
 
 public class FileReadWordCountTopo {
-    public static final String SPOUT_ID =   "spout";
-    public static final String COUNT_ID =   "counter";
-    public static final String SPLIT_ID =   "splitter";
+    public static final String SPOUT_ID = "spout";
+    public static final String COUNT_ID = "counter";
+    public static final String SPLIT_ID = "splitter";
     public static final String TOPOLOGY_NAME = "FileReadWordCountTopo";
 
     // Config settings
-    public static final String SPOUT_NUM =  "spout.count";
-    public static final String SPLIT_NUM =  "splitter.count";
-    public static final String COUNT_NUM =  "counter.count";
+    public static final String SPOUT_NUM = "spout.count";
+    public static final String SPLIT_NUM = "splitter.count";
+    public static final String COUNT_NUM = "counter.count";
     public static final String INPUT_FILE = "input.file";
 
     public static final int DEFAULT_SPOUT_NUM = 1;
@@ -52,7 +52,7 @@ public class FileReadWordCountTopo {
     public static final int DEFAULT_COUNT_BOLT_NUM = 2;
 
 
-    public static StormTopology getTopology(Map<String, Object> config) {
+    static StormTopology getTopology(Map<String, Object> config) {
 
         final int spoutNum = Helper.getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
         final int spBoltNum = Helper.getInt(config, SPLIT_NUM, DEFAULT_SPLIT_BOLT_NUM);
