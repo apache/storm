@@ -79,7 +79,7 @@ public class KafkaSpoutTopologyDeployActivateDeactivateTest extends KafkaSpoutAb
         // Restart topology with the same topology id, which mimics the behavior of partition reassignment
         setUp();
         // Initialize spout using the same populated data (i.e same kafkaUnitRule)
-        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
+        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collectorMock);
 
         nextTuple_verifyEmitted_ack_resetCollector(1);
 
@@ -104,7 +104,7 @@ public class KafkaSpoutTopologyDeployActivateDeactivateTest extends KafkaSpoutAb
         setUp();
         when(topologyContext.getStormId()).thenReturn("topology-2");
         // Initialize spout using the same populated data (i.e same kafkaUnitRule)
-        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
+        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collectorMock);
 
         //Emit all messages and check that they are emitted. Ack the messages too
         for (int i = 0; i < messageCount; i++) {
