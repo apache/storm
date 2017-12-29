@@ -438,9 +438,7 @@ public class StormClusterStateImpl implements IStormClusterState {
         String path = ClusterUtils.backpressurePath(stormId, node, port);
         boolean existed = stateStorage.node_exists(path, false);
         if (existed) {
-            if (timestamp <= 0) {
-                stateStorage.delete_node(path);
-            } else {
+            if (timestamp > 0) {
                 byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
                 stateStorage.set_data(path, data, acls);
             }
