@@ -53,7 +53,7 @@ public abstract class KafkaSpoutAbstractTest {
 
     final TopologyContext topologyContext = mock(TopologyContext.class);
     final Map<String, Object> conf = new HashMap<>();
-    final SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
+    final SpoutOutputCollector collectorMock = mock(SpoutOutputCollector.class);
     final long commitOffsetPeriodMs;
 
     KafkaConsumer<String, String> consumerSpy;
@@ -109,7 +109,7 @@ public abstract class KafkaSpoutAbstractTest {
 
     void prepareSpout(int messageCount) throws Exception {
         SingleTopicKafkaUnitSetupHelper.populateTopicData(kafkaUnitRule.getKafkaUnit(), SingleTopicKafkaSpoutConfiguration.TOPIC, messageCount);
-        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collector);
+        SingleTopicKafkaUnitSetupHelper.initializeSpout(spout, conf, topologyContext, collectorMock);
     }
 
     /**
@@ -131,7 +131,7 @@ public abstract class KafkaSpoutAbstractTest {
 
         spout.ack(messageId.getValue());
 
-        reset(collector);
+        reset(collectorMock);
 
         return messageId;
     }
@@ -140,7 +140,7 @@ public abstract class KafkaSpoutAbstractTest {
     ArgumentCaptor<Object> verifyMessageEmitted(int offset) {
         final ArgumentCaptor<Object> messageId = ArgumentCaptor.forClass(Object.class);
 
-        verify(collector).emit(
+        verify(collectorMock).emit(
             eq(SingleTopicKafkaSpoutConfiguration.STREAM),
             eq(new Values(SingleTopicKafkaSpoutConfiguration.TOPIC,
                 Integer.toString(offset),
