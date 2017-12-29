@@ -61,6 +61,7 @@
 (def SYSTEM-TICK-STREAM-ID Constants/SYSTEM_TICK_STREAM_ID)
 (def METRICS-AGGREGATE-STREAM-ID Constants/METRICS_AGGREGATE_STREAM_ID)
 (def METRICS-STREAM-ID Constants/METRICS_STREAM_ID)
+(def METRICS-STARTUP-STREAM-ID Constants/METRICS_STARTUP_STREAM_ID)
 (def METRICS-TICK-STREAM-ID Constants/METRICS_TICK_STREAM_ID)
 (def CREDENTIALS-CHANGED-STREAM-ID Constants/CREDENTIALS_CHANGED_STREAM_ID)
 
@@ -339,6 +340,7 @@
                           {}
                           (SystemBolt.)
                           {SYSTEM-TICK-STREAM-ID (thrift/output-fields ["rate_secs"])
+                           METRICS-STARTUP-STREAM-ID (thrift/direct-output-fields ["interval" "tasks"])
                            METRICS-STREAM-ID (thrift/direct-output-fields ["task-info" "data-points"])
                            METRICS-TICK-STREAM-ID (thrift/output-fields ["interval"])
                            METRICS-AGGREGATE-STREAM-ID (thrift/output-fields ["task-info" "data-points"])

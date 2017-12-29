@@ -42,11 +42,13 @@ import java.lang.management.MemoryUsage;
 import java.lang.management.RuntimeMXBean;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
+import java.util.Set;
 
 // There is one task inside one executor for each worker of the topology.
 // TaskID is always -1, therefore you can only send-unanchored tuples to co-located SystemBolt.
@@ -60,6 +62,7 @@ public class SystemBolt implements IBolt {
     private DataPointExpander expander;
     private boolean aggregateMode;
     private Map<Integer, Map<Integer, TaskInfoToDataPointsPair>> intervalToTaskToMetricTupleMap;
+    private Map<Integer, Set<Integer>> intervalToTasks;
 
     private static class TaskInfoToDataPointsPair extends ImmutablePair<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> {
         public TaskInfoToDataPointsPair(IMetricsConsumer.TaskInfo left, Collection<IMetricsConsumer.DataPoint> right) {
@@ -145,6 +148,7 @@ public class SystemBolt implements IBolt {
         _prepareWasCalled = true;
 
         intervalToTaskToMetricTupleMap = new HashMap<>();
+        intervalToTasks = new HashMap<>();
 
         int bucketSize = RT.intCast(stormConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS));
 
@@ -216,6 +220,33 @@ public class SystemBolt implements IBolt {
 
     @Override
     public void execute(Tuple input) {
+        switch (input.getSourceStreamId()) {
+        case Constants.METRICS_STARTUP_STREAM_ID:
+            handleMetricStartupTuple(input);
+            break;
+        case Constants.METRICS_STREAM_ID:
+            handleMetricTuple(input);
+            break;
+        default:
+            LOG.warn("Tuple received from unexpected stream: {} / tuple: {}", input.getSourceStreamId(), input);
+        }
+    }
+
+    private void handleMetricStartupTuple(Tuple input) {
+        Integer interval = input.getInteger(0);
+        Set<Integer> tasks = (Set<Integer>) input.getValue(1);
+        LOG.debug("Adding tasks {} to interval {}", tasks, interval);
+
+        Set<Integer> registeredTasks = intervalToTasks.get(interval);
+        if (registeredTasks == null) {
+            registeredTasks = new HashSet<>();
+            intervalToTasks.put(interval, registeredTasks);
+        }
+        registeredTasks.addAll(tasks);
+        LOG.debug("Current tasks: {} for interval {}", registeredTasks, interval);
+    }
+
+    private void handleMetricTuple(Tuple input) {
         IMetricsConsumer.TaskInfo taskInfo = (IMetricsConsumer.TaskInfo) input.getValue(0);
         Collection<IMetricsConsumer.DataPoint> dataPoints = (Collection) input.getValue(1);
         Collection<IMetricsConsumer.DataPoint> expandedDataPoints = expander.expandDataPoints(dataPoints);
@@ -226,7 +257,8 @@ public class SystemBolt implements IBolt {
             LOG.debug("Emitting metric tuple (no aggregation) - taskInfoEntry: {} / aggregated data points: {}",
                 taskInfo, expandedDataPoints);
 
-            collector.emit(Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfo, expandedDataPoints));
+            collector.emit(
+                Constants.METRICS_AGGREGATE_STREAM_ID, new Values(taskInfo, expandedDataPoints));
         }
     }
 
@@ -237,16 +269,22 @@ public class SystemBolt implements IBolt {
             intervalToTaskToMetricTupleMap.put(taskInfo.updateIntervalSecs, taskToMetricTupleMap);
         }
 
-        LOG.debug("Putting data points for task id: {} / timestamp: {}", taskInfo.srcTaskId, taskInfo.timestamp);
+        LOG.debug("Putting data points for task id: {} / interval: {} / timestamp: {}",
+            taskInfo.srcTaskId, taskInfo.updateIntervalSecs, taskInfo.timestamp);
 
         taskToMetricTupleMap.put(taskInfo.srcTaskId, new TaskInfoToDataPointsPair(taskInfo, expandedDataPoints));
 
         int currentTimeSec = Time.currentTimeSecs();
         removeOldPendingMetricTuples(taskToMetricTupleMap, currentTimeSec);
 
+        Set<Integer> tasksRegisteredMetricsByInterval = getTasksRegisteredMetricsByInterval(taskInfo.updateIntervalSecs);
+
+        LOG.debug("Current status of aggregation - all tasks for interval: {} / current: {}",
+            tasksRegisteredMetricsByInterval, taskToMetricTupleMap.keySet());
+
         // since we're removing old metric tuples, this means we're OK to aggregate here
-        if (isOKtoAggregateMetricsTuples(taskToMetricTupleMap)) {
-            LOG.debug("Data points received from all tasks, aggregating and sending");
+        if (isOKtoAggregateMetricsTuples(tasksRegisteredMetricsByInterval, taskToMetricTupleMap)) {
+            LOG.debug("Data points received from all tasks for interval, aggregating and sending.");
 
             Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> taskInfoToMetricTupleMap = convertMetricsTupleMapKeyedByTaskInfo(taskToMetricTupleMap, currentTimeSec);
 
@@ -266,9 +304,16 @@ public class SystemBolt implements IBolt {
             // clear out already aggregated metrics
             taskToMetricTupleMap.clear();
         } else {
-            LOG.debug("Waiting more tasks metric to aggregate - all tasks: {} / current: {}",
-                context.getThisWorkerTasks(), taskToMetricTupleMap.keySet());
+            LOG.debug("Waiting more tasks metric to aggregate.");
         }
+    }
+
+    private Set<Integer> getTasksRegisteredMetricsByInterval(int updateIntervalSecs) {
+        if (intervalToTasks.containsKey(updateIntervalSecs)) {
+            return intervalToTasks.get(updateIntervalSecs);
+        }
+
+        return Collections.emptySet();
     }
 
     private void removeOldPendingMetricTuples(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap, int currentTimeSec) {
@@ -288,8 +333,9 @@ public class SystemBolt implements IBolt {
         }
     }
 
-    private boolean isOKtoAggregateMetricsTuples(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap) {
-        return taskToMetricTupleMap.size() == context.getThisWorkerTasks().size();
+    private boolean isOKtoAggregateMetricsTuples(Set<Integer> tasksRegisteredMetricsByInterval, Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap) {
+        return taskToMetricTupleMap.size() == tasksRegisteredMetricsByInterval.size() &&
+            taskToMetricTupleMap.keySet().equals(tasksRegisteredMetricsByInterval);
     }
 
     private Map<IMetricsConsumer.TaskInfo, Collection<IMetricsConsumer.DataPoint>> convertMetricsTupleMapKeyedByTaskInfo(Map<Integer, TaskInfoToDataPointsPair> taskToMetricTupleMap, int currentTimeSec) {

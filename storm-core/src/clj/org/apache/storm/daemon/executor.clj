@@ -18,7 +18,7 @@
   (:import [org.apache.storm.generated Grouping]
            [java.io Serializable])
   (:use [org.apache.storm util config log timer stats])
-  (:import [java.util List Random HashMap ArrayList LinkedList Map])
+  (:import [java.util List Random HashMap ArrayList LinkedList Map HashSet])
   (:import [org.apache.storm ICredentialsListener])
   (:import [org.apache.storm.hooks ITaskHook])
   (:import [org.apache.storm.tuple AddressedTuple Tuple Fields TupleImpl MessageId])
@@ -311,9 +311,13 @@
       :kill-fn (:report-error-and-die executor-data))))
 
 (defn setup-metrics! [executor-data]
-  (let [{:keys [storm-conf receive-queue worker-context interval->task->metric-registry]} executor-data
-        distinct-time-bucket-intervals (keys interval->task->metric-registry)]
+  (let [{:keys [storm-conf receive-queue worker-context interval->task->metric-registry ^WorkerTopologyContext worker-context worker]} executor-data
+        distinct-time-bucket-intervals (keys interval->task->metric-registry)
+        system-bolt-receive-queue ((:executor-receive-queue-map worker) [Constants/SYSTEM_TASK_ID Constants/SYSTEM_TASK_ID])]
     (doseq [interval distinct-time-bucket-intervals]
+      (let [tasks (keys (get interval->task->metric-registry interval))]
+        (let [val-startup [(AddressedTuple. Constants/SYSTEM_TASK_ID (TupleImpl. worker-context [interval (HashSet. tasks)] Constants/SYSTEM_TASK_ID Constants/METRICS_STARTUP_STREAM_ID))]]
+          (disruptor/publish system-bolt-receive-queue val-startup)))
       (schedule-recurring 
        (:user-timer (:worker executor-data)) 
        interval
