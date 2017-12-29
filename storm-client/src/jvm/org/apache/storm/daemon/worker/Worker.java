@@ -227,7 +227,7 @@ public class Worker implements Shutdownable, DaemonCommon {
                     .setLowWaterMark(ObjectReader.getDouble(topologyConf.get(Config.BACKPRESSURE_DISRUPTOR_LOW_WATERMARK)));
 
                 WorkerBackpressureCallback backpressureCallback = mkBackpressureHandler(topologyConf);
-                backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, workerState, backpressureCallback);
+                backpressureThread = new WorkerBackpressureThread(workerState.backpressureTrigger, backpressureCallback);
                 if ((Boolean) topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE)) {
                     backpressureThread.start();
                     stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, workerState::refreshThrottle);
@@ -408,7 +408,7 @@ public class Worker implements Shutdownable, DaemonCommon {
         final List<IRunningExecutor> executors = executorsAtom.get();
         final long updateFreqMs = ObjectReader.getInt(topologyConf.get(Config.BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS)) * 1000;
         return new WorkerBackpressureCallback() {
-            @Override public void onEvent(Object obj) {
+            @Override public void onEvent() {
                 if (null != executors) {
                     String topologyId = workerState.topologyId;
                     String assignmentId = workerState.assignmentId;
@@ -418,8 +418,9 @@ public class Worker implements Shutdownable, DaemonCommon {
                     long currTimestamp = System.currentTimeMillis();
                     long currBackpressureTimestamp = 0;
                     // the backpressure flag is true if at least one of the disruptor queues has throttle-on
-                    boolean backpressureFlag = workerState.transferQueue.getThrottleOn() || (executors.stream()
-                            .map(IRunningExecutor::getBackPressureFlag).reduce((op1, op2) -> (op1 || op2)).get());
+                    boolean backpressureFlag = workerState.transferQueue.getThrottleOn() ||
+                        (executors.stream()
+                            .anyMatch(IRunningExecutor::getBackPressureFlag));
 
                     if (backpressureFlag) {
                         // update the backpressure timestamp every updateFreqMs ms

@@ -21,17 +21,15 @@ package org.apache.storm.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WorkerBackpressureThread extends Thread {
+public final class WorkerBackpressureThread extends Thread {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerBackpressureThread.class);
     private final Object trigger;
-    private final Object workerData;
     private final WorkerBackpressureCallback callback;
     private volatile boolean running = true;
 
-    public WorkerBackpressureThread(Object trigger, Object workerData, WorkerBackpressureCallback callback) {
+    public WorkerBackpressureThread(Object trigger, WorkerBackpressureCallback callback) {
         this.trigger = trigger;
-        this.workerData = workerData;
         this.callback = callback;
         this.setName("WorkerBackpressureThread");
         this.setDaemon(true);
@@ -60,21 +58,22 @@ public class WorkerBackpressureThread extends Thread {
                 synchronized (trigger) {
                     trigger.wait(100);
                 }
-                callback.onEvent(workerData); // check all executors and update zk backpressure throttle for the worker if needed
+                callback.onEvent(); // check all executors and update zk backpressure throttle for the worker if needed
             } catch (InterruptedException interEx) {
                 // ignored, we are shutting down.
             }
         }
     }
-}
 
-class BackpressureUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(BackpressureUncaughtExceptionHandler.class);
+    private static class BackpressureUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        // note that exception that happens during connecting to ZK has been ignored in the callback implementation
-        LOG.error("Received error or exception in WorkerBackpressureThread.. terminating the worker...", e);
-        Runtime.getRuntime().exit(1);
+        private static final Logger LOG = LoggerFactory.getLogger(BackpressureUncaughtExceptionHandler.class);
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            // note that exception that happens during connecting to ZK has been ignored in the callback implementation
+            LOG.error("Received error or exception in WorkerBackpressureThread.. terminating the worker...", e);
+            Runtime.getRuntime().exit(1);
+        }
     }
 }
