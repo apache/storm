@@ -434,11 +434,11 @@ public class StormClusterStateImpl implements IStormClusterState {
      */
     @Override
     public void workerBackpressure(String stormId, String node, Long port, long timestamp) {
-        String path = ClusterUtils.backpressurePath(stormId, node, port);
-        boolean existed = stateStorage.node_exists(path, false);
         if (timestamp <= 0) {
             return;
         }
+        String path = ClusterUtils.backpressurePath(stormId, node, port);
+        boolean existed = stateStorage.node_exists(path, false);
         byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
         if (existed) {
             stateStorage.set_data(path, data, acls);
