@@ -21,7 +21,7 @@ package org.apache.storm.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WorkerBackpressureThread extends Thread {
+public final class WorkerBackpressureThread extends Thread {
 
     private static final Logger LOG = LoggerFactory.getLogger(WorkerBackpressureThread.class);
     private Object trigger;
@@ -66,14 +66,16 @@ public class WorkerBackpressureThread extends Thread {
             }
         }
     }
-}
+   
+    private static class BackpressureUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
 
-class BackpressureUncaughtExceptionHandler implements Thread.UncaughtExceptionHandler {
-    private static final Logger LOG = LoggerFactory.getLogger(BackpressureUncaughtExceptionHandler.class);
-    @Override
-    public void uncaughtException(Thread t, Throwable e) {
-        // note that exception that happens during connecting to ZK has been ignored in the callback implementation
-        LOG.error("Received error or exception in WorkerBackpressureThread.. terminating the worker...", e);
-        Runtime.getRuntime().exit(1);
+        private static final Logger LOG = LoggerFactory.getLogger(BackpressureUncaughtExceptionHandler.class);
+
+        @Override
+        public void uncaughtException(Thread t, Throwable e) {
+            // note that exception that happens during connecting to ZK has been ignored in the callback implementation
+            LOG.error("Received error or exception in WorkerBackpressureThread.. terminating the worker...", e);
+            Runtime.getRuntime().exit(1);
+        }
     }
 }
