@@ -22,15 +22,15 @@ env:
 
 dist: trusty
 sudo: required
-group: deprecated-2017Q4
 
 language: java
 jdk:
   - oraclejdk8
 before_install:
-  - rvm use 2.1.5 --install
-  - nvm install 0.12.2
-  - nvm use 0.12.2
+  - rvm reload
+  - rvm use 2.4.2 --install
+  - nvm install 8.9.3
+  - nvm use 8.9.3
 install: /bin/bash ./dev-tools/travis/travis-install.sh `pwd`
 script:
   - /bin/bash ./dev-tools/travis/travis-script.sh `pwd` $MODULES
