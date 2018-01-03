@@ -143,16 +143,18 @@ $(document).ready(function() {
     var url = "/api/v1/topology/"+topologyId+"/component/"+componentId+"?sys="+sys;
     if(window) url += "&window="+window;
 
-    $.extend( $.fn.dataTable.defaults, {
-      stateSave: true,
-      stateSaveCallback: function (oSettings, oData) {
-        sessionStorage.setItem( oSettings.sTableId.concat(tableStateKey), JSON.stringify(oData) );
-      },
-      stateLoadCallback: function (oSettings) {
-        return JSON.parse( sessionStorage.getItem(oSettings.sTableId.concat(tableStateKey)) );
-      },
-      lengthMenu: [[20,40,60,100,-1], [20, 40, 60, 100, "All"]],
-      pageLength: 20
+    $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
+        $.extend( $.fn.dataTable.defaults, {
+          stateSave: true,
+          stateSaveCallback: function (oSettings, oData) {
+            sessionStorage.setItem( oSettings.sTableId.concat(tableStateKey), JSON.stringify(oData) );
+          },
+          stateLoadCallback: function (oSettings) {
+            return JSON.parse( sessionStorage.getItem(oSettings.sTableId.concat(tableStateKey)) );
+          },
+          lengthMenu: [[20,40,60,100,-1], [20, 40, 60, 100, "All"]],
+          pageLength: response["ui.pagination"]
+        });
     });
 
     renderToggleSys($("#toggle-switch"));

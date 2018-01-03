@@ -106,93 +106,93 @@ $(document).ajaxStart(function(){
     $.blockUI({ message: '<img src="images/spinner.gif" /> <h3>Loading summary...</h3>'});
 });
 $(document).ready(function() {
-    $.extend( $.fn.dataTable.defaults, {
-      stateSave: true,
-      lengthMenu: [[20,40,60,100,-1], [20, 40, 60, 100, "All"]],
-      pageLength: 20
-    });
-
-    $.ajaxSetup({
-        "error":function(jqXHR,textStatus,response) {
-            var errorJson = jQuery.parseJSON(jqXHR.responseText);
-            getStatic("/templates/json-error-template.html", function(template) {
-                $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
-            });
-        }
-    });
-    var uiUser = $("#ui-user");
-    var clusterSummary = $("#cluster-summary");
-    var clusterResources = $("#cluster-resources");
-    var nimbusSummary = $("#nimbus-summary");
-    var ownerSummary = $("#owner-summary");
-    var topologySummary = $("#topology-summary");
-    var supervisorSummary = $("#supervisor-summary");
-    var config = $("#nimbus-configuration");
-
-    getStatic("/templates/index-page-template.html", function(indexTemplate) {
-        $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
-            getStatic("/templates/user-template.html", function(template) {
-                uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
-                $('#ui-user [data-toggle="tooltip"]').tooltip()
-            });
-
-            clusterSummary.append(Mustache.render($(indexTemplate).filter("#cluster-summary-template").html(),response));
-            $('#cluster-summary [data-toggle="tooltip"]').tooltip();
-
-            clusterResources.append(Mustache.render($(indexTemplate).filter("#cluster-resources-template").html(),response));
-            $('#cluster-resources [data-toggle="tooltip"]').tooltip();
-
-            var displayResource = response["schedulerDisplayResource"];
-            $('#cluster-resources [data-toggle="tooltip"]').tooltip();
-            if (!displayResource){
-                $('#cluster-resources-header').hide();
-                $('#cluster-resources').hide();
-            };
+    $.getJSON("/api/v1/cluster/configuration",function(responseClusterConfig,status,jqXHR) {
+        $.extend( $.fn.dataTable.defaults, {
+          stateSave: true,
+          lengthMenu: [[20,40,60,100,-1], [20, 40, 60, 100, "All"]],
+          pageLength: responseClusterConfig["ui.pagination"]
         });
 
-        $.getJSON("/api/v1/nimbus/summary",function(response,status,jqXHR) {
-            nimbusSummary.append(Mustache.render($(indexTemplate).filter("#nimbus-summary-template").html(),response));
-            //host, port, isLeader, version, uptime
-            dtAutoPage("#nimbus-summary-table", {
-              columnDefs: [
-                {type: "num", targets: [1]},
-                {type: "time-str", targets: [4]}
-              ]
+        $.ajaxSetup({
+            "error":function(jqXHR,textStatus,response) {
+                var errorJson = jQuery.parseJSON(jqXHR.responseText);
+                getStatic("/templates/json-error-template.html", function(template) {
+                    $("#json-response-error").append(Mustache.render($(template).filter("#json-error-template").html(),errorJson));
+                });
+            }
+        });
+        var uiUser = $("#ui-user");
+        var clusterSummary = $("#cluster-summary");
+        var clusterResources = $("#cluster-resources");
+        var nimbusSummary = $("#nimbus-summary");
+        var ownerSummary = $("#owner-summary");
+        var topologySummary = $("#topology-summary");
+        var supervisorSummary = $("#supervisor-summary");
+        var config = $("#nimbus-configuration");
+
+        getStatic("/templates/index-page-template.html", function(indexTemplate) {
+            $.getJSON("/api/v1/cluster/summary",function(response,status,jqXHR) {
+                getStatic("/templates/user-template.html", function(template) {
+                    uiUser.append(Mustache.render($(template).filter("#user-template").html(),response));
+                    $('#ui-user [data-toggle="tooltip"]').tooltip()
+                });
+
+                clusterSummary.append(Mustache.render($(indexTemplate).filter("#cluster-summary-template").html(),response));
+                $('#cluster-summary [data-toggle="tooltip"]').tooltip();
+
+                clusterResources.append(Mustache.render($(indexTemplate).filter("#cluster-resources-template").html(),response));
+                $('#cluster-resources [data-toggle="tooltip"]').tooltip();
+
+                var displayResource = response["schedulerDisplayResource"];
+                $('#cluster-resources [data-toggle="tooltip"]').tooltip();
+                if (!displayResource){
+                    $('#cluster-resources-header').hide();
+                    $('#cluster-resources').hide();
+                };
             });
-            $('#nimbus-summary [data-toggle="tooltip"]').tooltip();
-        });
 
-        $.getJSON("/api/v1/owner-resources", function(response, status, jqXHR) {
-            ownerSummary.append(Mustache.render($(indexTemplate).filter("#owner-summary-template").html(), response));
-            makeOwnerSummaryTable(response, '#owner-summary-table', '#owner-summary');
-        });
-
-        $.getJSON("/api/v1/topology/summary",function(response,status,jqXHR) {
-            topologySummary.append(Mustache.render($(indexTemplate).filter("#topology-summary-template").html(),response));
-            //name, owner, status, uptime, num workers, num executors, num tasks, replication count, assigned total mem, assigned total cpu, scheduler info
-            dtAutoPage("#topology-summary-table", {
-              columnDefs: [
-                {type: "num", targets: [4, 5, 6, 7, 8, 9]},
-                {type: "time-str", targets: [3]}
-              ]
+            $.getJSON("/api/v1/nimbus/summary",function(response,status,jqXHR) {
+                nimbusSummary.append(Mustache.render($(indexTemplate).filter("#nimbus-summary-template").html(),response));
+                //host, port, isLeader, version, uptime
+                dtAutoPage("#nimbus-summary-table", {
+                  columnDefs: [
+                    {type: "num", targets: [1]},
+                    {type: "time-str", targets: [4]}
+                  ]
+                });
+                $('#nimbus-summary [data-toggle="tooltip"]').tooltip();
             });
-            $('#topology-summary [data-toggle="tooltip"]').tooltip();
-        });
 
-        $.getJSON("/api/v1/supervisor/summary",function(response,status,jqXHR) {
-            supervisorSummary.append(Mustache.render($(indexTemplate).filter("#supervisor-summary-template").html(),response));
-            //id, host, uptime, slots, used slots
-            dtAutoPage("#supervisor-summary-table", {
-              columnDefs: [
-                {type: "num", targets: [3, 4]},
-                {type: "time-str", targets: [2]}
-              ]
+            $.getJSON("/api/v1/owner-resources", function(response, status, jqXHR) {
+                ownerSummary.append(Mustache.render($(indexTemplate).filter("#owner-summary-template").html(), response));
+                makeOwnerSummaryTable(response, '#owner-summary-table', '#owner-summary');
             });
-            $('#supervisor-summary [data-toggle="tooltip"]').tooltip();
-        });
 
-        $.getJSON("/api/v1/cluster/configuration",function(response,status,jqXHR) {
-          var formattedResponse = formatConfigData(response);
+            $.getJSON("/api/v1/topology/summary",function(response,status,jqXHR) {
+                topologySummary.append(Mustache.render($(indexTemplate).filter("#topology-summary-template").html(),response));
+                //name, owner, status, uptime, num workers, num executors, num tasks, replication count, assigned total mem, assigned total cpu, scheduler info
+                dtAutoPage("#topology-summary-table", {
+                  columnDefs: [
+                    {type: "num", targets: [4, 5, 6, 7, 8, 9]},
+                    {type: "time-str", targets: [3]}
+                  ]
+                });
+                $('#topology-summary [data-toggle="tooltip"]').tooltip();
+            });
+
+            $.getJSON("/api/v1/supervisor/summary",function(response,status,jqXHR) {
+                supervisorSummary.append(Mustache.render($(indexTemplate).filter("#supervisor-summary-template").html(),response));
+                //id, host, uptime, slots, used slots
+                dtAutoPage("#supervisor-summary-table", {
+                  columnDefs: [
+                    {type: "num", targets: [3, 4]},
+                    {type: "time-str", targets: [2]}
+                  ]
+                });
+                $('#supervisor-summary [data-toggle="tooltip"]').tooltip();
+            });
+
+          var formattedResponse = formatConfigData(responseClusterConfig);
           config.append(Mustache.render($(indexTemplate).filter("#configuration-template").html(),formattedResponse));
           $('#nimbus-configuration-table td').jsonFormatter();
           //key, value

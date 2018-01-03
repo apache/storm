@@ -308,6 +308,13 @@ public class DaemonConfig implements Validated {
     public static final String UI_CENTRAL_LOGGING_URL = "ui.central.logging.url";
 
     /**
+     * Storm UI drop-down pagination value. Set ui.pagination to be a positive integer
+     * or -1 (displays all entries). Valid values: -1, 10, 20, 25 etc.
+     */
+    @isInteger
+    public static final String UI_PAGINATION = "ui.pagination";
+
+    /**
      * HTTP UI port for log viewer.
      */
     @isInteger
