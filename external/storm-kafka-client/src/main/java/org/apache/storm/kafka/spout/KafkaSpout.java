@@ -39,6 +39,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import org.apache.commons.lang.Validate;
@@ -56,6 +57,7 @@ import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.internal.OffsetManager;
 import org.apache.storm.kafka.spout.internal.Timer;
+import org.apache.storm.kafka.spout.metrics.KafkaOffsetMetric;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -104,6 +106,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient TopologyContext context;
     // Metadata information to commit to Kafka. It is unique per spout per topology.
     private transient String commitMetadata;
+    private transient KafkaOffsetMetric kafkaOffsetMetric;
 
     public KafkaSpout(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this(kafkaSpoutConfig, new KafkaConsumerFactoryDefault<>());
@@ -142,8 +145,27 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         setCommitMetadata(context);
 
         tupleListener.open(conf, context);
+        if (canRegisterMetrics()) {
+            registerMetric();
+        }
 
         LOG.info("Kafka Spout opened with the following configuration: {}", kafkaSpoutConfig);
+    }
+
+    private void registerMetric() {
+        LOG.info("Registering Spout Metrics");
+        kafkaOffsetMetric = new KafkaOffsetMetric(() -> offsetManagers, () -> kafkaConsumer);
+        context.registerMetric("kafkaOffset", kafkaOffsetMetric, kafkaSpoutConfig.getMetricsTimeBucketSizeInSecs());
+    }
+
+    private boolean canRegisterMetrics() {
+        try {
+            KafkaConsumer.class.getDeclaredMethod("beginningOffsets", Collection.class);
+        } catch (NoSuchMethodException e) {
+            LOG.warn("Minimum required kafka-clients library version to enable metrics is 0.10.1.0. Disabling spout metrics.");
+            return false;
+        }
+        return true;
     }
 
     private void setCommitMetadata(TopologyContext context) {
@@ -706,5 +728,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         public boolean shouldPoll() {
             return !this.pollablePartitions.isEmpty();
         }
+    }
+
+    @VisibleForTesting
+    KafkaOffsetMetric getKafkaOffsetMetric() {
+        return  kafkaOffsetMetric;
     }
 }
