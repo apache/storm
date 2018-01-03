@@ -46,6 +46,7 @@ public class OffsetManager {
     private long committedOffset;
     // True if this OffsetManager has made at least one commit to Kafka
     private boolean committed;
+    private long latestEmittedOffset;
 
     /**
      * Creates a new OffsetManager.
@@ -63,7 +64,8 @@ public class OffsetManager {
     }
 
     public void addToEmitMsgs(long offset) {
-        this.emittedOffsets.add(offset);                  // O(Log N)
+        this.emittedOffsets.add(offset);  // O(Log N)
+        this.latestEmittedOffset = Math.max(latestEmittedOffset, offset);
     }
     
     public int getNumUncommittedOffsets() {
@@ -215,6 +217,14 @@ public class OffsetManager {
         return emittedOffsets.contains(offset);
     }
 
+    public long getLatestEmittedOffset() {
+        return latestEmittedOffset;
+    }
+
+    public long getCommittedOffset() {
+        return committedOffset;
+    }
+
     @Override
     public final String toString() {
         return "OffsetManager{"
@@ -222,6 +232,7 @@ public class OffsetManager {
             + ", committedOffset=" + committedOffset
             + ", emittedOffsets=" + emittedOffsets
             + ", ackedMsgs=" + ackedMsgs
+            + ", latestEmittedOffset=" + latestEmittedOffset
             + '}';
     }
 
