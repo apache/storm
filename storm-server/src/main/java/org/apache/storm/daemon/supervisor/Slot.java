@@ -987,7 +987,18 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         Container container = null;
         if (currentAssignment != null) { 
             try {
-                container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+                // For now we do not make a transaction when removing a topology assignment from local, an overdue
+                // assignment may be left on local disk.
+                // So we should check if the local disk assignment is valid when initializing:
+                // if topology files does not exist, the worker[possibly alive] will be reassigned if it is timed-out;
+                // if topology files exist but the topology id is invalid, just let Supervisor make a sync;
+                // if topology files exist and topology files is valid, recover the container.
+                if (ClientSupervisorUtils.doRequiredTopoFilesExist(conf, currentAssignment.get_topology_id())) {
+                    container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+                } else {
+                    // Make the assignment null to let slot clean up the disk assignment.
+                    currentAssignment = null;
+                }
             } catch (ContainerRecoveryException e) {
                 //We could not recover container will be null.
             }
