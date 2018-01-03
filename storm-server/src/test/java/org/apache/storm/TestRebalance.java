@@ -41,6 +41,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class TestRebalance {
 
@@ -62,6 +63,9 @@ public class TestRebalance {
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 10.0);
         conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100.0);
         conf.put(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB, Double.MAX_VALUE);
+        Map<String, Double> resourcesMap = new HashMap();
+        resourcesMap.put("gpu.count", 5.0);
+        conf.put(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, resourcesMap);
 
         try (ILocalCluster cluster = new LocalCluster.Builder().withDaemonConf(conf).build()) {
 
@@ -102,12 +106,21 @@ public class TestRebalance {
 
             waitTopologyScheduled(topoName, cluster, 10);
 
-            String confRaw = cluster.getTopologyConf(topoNameToId(topoName, cluster));
-
+            boolean topologyUpdated = false;
             JSONParser parser = new JSONParser();
 
-            JSONObject readConf = (JSONObject) parser.parse(confRaw);
-            assertEquals("updated conf correct", 768.0, (double) readConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB), 0.001);
+            for (int i = 0; i < 5; i++) {
+                Utils.sleep(SLEEP_TIME_BETWEEN_RETRY);
+
+                String confRaw = cluster.getTopologyConf(topoNameToId(topoName, cluster));
+
+
+                JSONObject readConf = (JSONObject) parser.parse(confRaw);
+                if (768.0 == (double) readConf.get(Config.TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB)) {
+                    topologyUpdated = true;
+                    break;
+                }
+            }
 
             StormTopology readStormTopology = cluster.getTopology(topoNameToId(topoName, cluster));
             String componentConfRaw = readStormTopology.get_spouts().get("spout-1").get_common().get_json_conf();
@@ -115,7 +128,7 @@ public class TestRebalance {
             JSONObject readTopologyConf = (JSONObject) parser.parse(componentConfRaw);
 
             Map<String, Double> componentResources = (Map<String, Double>) readTopologyConf.get(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP);
-
+            assertTrue("Topology has been updated", topologyUpdated);
             assertEquals("Updated CPU correct", 25.0, componentResources.get(Constants.COMMON_CPU_RESOURCE_NAME), 0.001);
             assertEquals("Updated Memory correct", 120.0, componentResources.get(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME), 0.001);
             assertEquals("Updated Generic resource correct", 5.0, componentResources.get("gpu.count"), 0.001);
