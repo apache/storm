@@ -184,7 +184,7 @@ public class TridentKafkaEmitter {
                         break;
                     }
                     if (offset > nextOffset) {
-                        throw new RuntimeException("Error when re-emitting batch. overshot the end offset");
+                        //throw new RuntimeException("Error when re-emitting batch. overshot the end offset");
                     }
                     emit(collector, msg.message(), partition, msg.offset(), attempt);
                     offset = msg.nextOffset();
