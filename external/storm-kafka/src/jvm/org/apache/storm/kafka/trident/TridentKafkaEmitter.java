@@ -158,13 +158,8 @@ public class TridentKafkaEmitter {
         return msgs;
     }
 
-    /**re-emit the batch described by the meta data provided.
-     *
-     *
-     * @param attempt
-     * @param collector
-     * @param partition
-     * @param meta
+    /**
+     * re-emit the batch described by the meta data provided
      */
     private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map meta) {
         LOG.info("re-emitting batch, attempt " + attempt);
@@ -173,19 +168,15 @@ public class TridentKafkaEmitter {
             SimpleConsumer consumer = _connections.register(partition);
             long offset = (Long) meta.get("offset");
             long nextOffset = (Long) meta.get("nextOffset");
-            
             ByteBufferMessageSet msgs = null;
             try {
                 msgs = fetchMessages(consumer, partition, offset);
             } catch (TopicOffsetOutOfRangeException e) {
-                long newOffset = KafkaUtils.getOffset(consumer, partition.topic, 
-                                                      partition.partition, kafka.api.OffsetRequest.EarliestTime());
-                LOG.warn("OffsetOutOfRange: Updating offset from offset = "
-                         + offset + " to offset = " + newOffset);
+                long newOffset = KafkaUtils.getOffset(consumer, partition.topic, partition.partition, kafka.api.OffsetRequest.EarliestTime());
+                LOG.warn("OffsetOutOfRange: Updating offset from offset = " + offset + " to offset = " + newOffset);
                 offset = newOffset;
                 msgs = KafkaUtils.fetchMessages(_config, consumer, partition, offset);
             }
-
             if (msgs != null) {
                 for (MessageAndOffset msg : msgs) {
                     if (offset == nextOffset) {
