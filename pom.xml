@@ -1033,6 +1033,8 @@
                             <include>${java.unit.test.include}</include>
                         </includes>
                         <argLine>-Xmx1536m</argLine>
+                        <forkCount>1.0C</forkCount>
+                        <reuseForks>true</reuseForks>
                     </configuration>
                 </plugin>
                 <plugin>
