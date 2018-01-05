@@ -111,6 +111,8 @@
                             <value>org.apache.storm.st.meta.TestngListener</value>
                         </property>
                     </properties>
+                    <reuseForks>true</reuseForks>
+                    <forkCount>1</forkCount>
                     <systemPropertyVariables>
                         <regression.downloadWorkerLogs>${regression.downloadWorkerLogs}</regression.downloadWorkerLogs>
                     </systemPropertyVariables>
