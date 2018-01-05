@@ -163,9 +163,17 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public enum ProcessingGuarantee {
         AT_LEAST_ONCE,
         AT_MOST_ONCE,
-        NONE,
+        NONE;
     }
-
+    
+    public boolean isAtLeastOnceProcessing() {
+        return this.getProcessingGuarantee() == KafkaSpoutConfig.ProcessingGuarantee.AT_LEAST_ONCE;
+    }
+    
+    public boolean isAtMostOnceProcessing() {
+        return this.getProcessingGuarantee() == KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE;
+    }
+    
     public static class Builder<K, V> {
 
         private final Map<String, Object> kafkaProps;
