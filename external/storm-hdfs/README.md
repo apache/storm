@@ -1,8 +1,8 @@
 # Storm HDFS
 
 Storm components for interacting with HDFS file systems
- - HDFS Bolt 
- - HDFS Spout
+ - [HDFS Bolt](#hdfs-bolt)
+ - [HDFS Spout](#hdfs-spout)
 
 ---
 
