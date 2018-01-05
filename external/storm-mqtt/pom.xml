@@ -86,7 +86,6 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <configuration>
-                    <forkMode>perTest</forkMode>
                     <enableAssertions>false</enableAssertions>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <excludedGroups>${java.unit.test.exclude}</excludedGroups>
@@ -101,7 +100,6 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <version>${maven-surefire.version}</version>
                 <configuration>
-                    <forkMode>perTest</forkMode>
                     <enableAssertions>false</enableAssertions>
                     <redirectTestOutputToFile>true</redirectTestOutputToFile>
                     <includes>
