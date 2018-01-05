@@ -18,6 +18,7 @@
 
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourcesRule;
 import java.util.Collections;
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;

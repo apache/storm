@@ -37,14 +37,13 @@ import org.apache.storm.networktopography.DNSToSwitchMapping;
 import org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping;
 import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
 import org.apache.storm.scheduler.resource.NormalizedResourceRequest;
+import org.apache.storm.scheduler.resource.NormalizedResources;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import static org.apache.storm.scheduler.resource.NormalizedResources.normalizedResourceMap;
 
 public class Cluster implements ISchedulingState {
     private static final Logger LOG = LoggerFactory.getLogger(Cluster.class);
@@ -440,7 +439,7 @@ public class Cluster implements ISchedulingState {
                     Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, shared.get_on_heap()
             );
         }
-        sharedTotalResources = normalizedResourceMap(sharedTotalResources);
+        sharedTotalResources = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(sharedTotalResources);
         WorkerResources ret = new WorkerResources();
         ret.set_resources(totalResources.toNormalizedMap());
         ret.set_shared_resources(sharedTotalResources);

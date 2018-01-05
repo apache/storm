@@ -18,68 +18,97 @@
 
 package org.apache.storm.scheduler.resource;
 
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.apache.storm.Constants;
-import org.apache.storm.generated.WorkerResources;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * An offer of resources that has been normalized.
+ * An offer of resources with normalized resource names.
  */
-public class NormalizedResourceOffer extends NormalizedResources {
+public class NormalizedResourceOffer implements NormalizedResourcesWithMemory {
+
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResourceOffer.class);
-    private double totalMemory;
+    private final NormalizedResources normalizedResources;
+    private double totalMemoryMb;
 
     /**
-     * Create a new normalized set of resources.  Note that memory is not covered here because it is not consistent in requests vs offers
-     * because of how on heap vs off heap is used.
+     * Create a new normalized resource offer.
      *
      * @param resources the resources to be normalized.
      */
     public NormalizedResourceOffer(Map<String, ? extends Number> resources) {
-        super(resources, null);
-        totalMemory = getNormalizedResources().getOrDefault(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
+        Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources);
+        totalMemoryMb = normalizedResourceMap.getOrDefault(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, 0.0);
+        this.normalizedResources = new NormalizedResources(normalizedResourceMap);
     }
 
     public NormalizedResourceOffer() {
-        this((Map<String, ? extends Number>)null);
+        this((Map<String, ? extends Number>) null);
     }
 
     public NormalizedResourceOffer(NormalizedResourceOffer other) {
-        super(other);
-        this.totalMemory = other.totalMemory;
+        this.totalMemoryMb = other.totalMemoryMb;
+        this.normalizedResources = new NormalizedResources(other.normalizedResources);
     }
 
     @Override
     public double getTotalMemoryMb() {
-        return totalMemory;
+        return totalMemoryMb;
     }
 
-    @Override
-    public String toString() {
-        return super.toString() + " MEM: " + totalMemory;
-    }
-
-    @Override
-    public Map<String,Double> toNormalizedMap() {
-        Map<String, Double> ret = super.toNormalizedMap();
-        ret.put(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemory);
+    public Map<String, Double> toNormalizedMap() {
+        Map<String, Double> ret = normalizedResources.toNormalizedMap();
+        ret.put(Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb);
         return ret;
     }
 
-    @Override
-    public void add(NormalizedResources other) {
-        super.add(other);
-        totalMemory += other.getTotalMemoryMb();
+    public void add(NormalizedResourcesWithMemory other) {
+        normalizedResources.add(other.getNormalizedResources());
+        totalMemoryMb += other.getTotalMemoryMb();
+    }
+
+    public void remove(NormalizedResourcesWithMemory other) {
+        normalizedResources.remove(other.getNormalizedResources());
+        totalMemoryMb -= other.getTotalMemoryMb();
+        if (totalMemoryMb < 0.0) {
+            normalizedResources.throwBecauseResourceBecameNegative(
+                Constants.COMMON_TOTAL_MEMORY_RESOURCE_NAME, totalMemoryMb, other.getTotalMemoryMb());
+        };
+    }
+
+    /**
+     * @see NormalizedResources#calculateAveragePercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources,
+     * double, double).
+     */
+    public double calculateAveragePercentageUsedBy(NormalizedResourceOffer used) {
+        return normalizedResources.calculateAveragePercentageUsedBy(
+            used.getNormalizedResources(), getTotalMemoryMb(), used.getTotalMemoryMb());
+    }
+
+    /**
+     * @see NormalizedResources#calculateMinPercentageUsedBy(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
+     * double)
+     */
+    public double calculateMinPercentageUsedBy(NormalizedResourceOffer used) {
+        return normalizedResources.calculateMinPercentageUsedBy(used.getNormalizedResources(), getTotalMemoryMb(), used.getTotalMemoryMb());
+    }
+
+    /**
+     * @see NormalizedResources#couldHoldIgnoringSharedMemory(org.apache.storm.scheduler.resource.normalization.NormalizedResources, double,
+     * double).
+     */
+    public boolean couldHoldIgnoringSharedMemory(NormalizedResourcesWithMemory other) {
+        return normalizedResources.couldHoldIgnoringSharedMemory(
+            other.getNormalizedResources(), getTotalMemoryMb(), other.getTotalMemoryMb());
+    }
+
+    public double getTotalCpu() {
+        return normalizedResources.getTotalCpu();
     }
 
     @Override
-    public void remove(NormalizedResources other) {
-        super.remove(other);
-        totalMemory -= other.getTotalMemoryMb();
-        assert totalMemory >= 0.0;
+    public NormalizedResources getNormalizedResources() {
+        return normalizedResources;
     }
 }

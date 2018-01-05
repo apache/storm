@@ -501,9 +501,6 @@ public class TestResourceAwareScheduler {
     }
 
     public void testHeterogeneousCluster(Config topologyConf, String strategyName) {
-        Map<String, Double> test = new HashMap<>();
-        test.put("gpu.count", 0.0);
-        new NormalizedResourceOffer(test);
         LOG.info("\n\n\t\ttestHeterogeneousCluster");
         INimbus iNimbus = new INimbusTest();
         Map<String, Double> resourceMap1 = new HashMap<>(); // strong supervisor node
@@ -513,8 +510,8 @@ public class TestResourceAwareScheduler {
         resourceMap2.put(Config.SUPERVISOR_CPU_CAPACITY, 200.0);
         resourceMap2.put(Config.SUPERVISOR_MEMORY_CAPACITY_MB, 1024.0);
 
-        resourceMap1 = NormalizedResources.normalizedResourceMap(resourceMap1);
-        resourceMap2 = NormalizedResources.normalizedResourceMap(resourceMap2);
+        resourceMap1 = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resourceMap1);
+        resourceMap2 = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resourceMap2);
 
         Map<String, SupervisorDetails> supMap = new HashMap<>();
         for (int i = 0; i < 2; i++) {
