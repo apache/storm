@@ -31,7 +31,6 @@ import org.apache.kafka.clients.consumer.KafkaConsumer;
 
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.Config;
@@ -68,6 +67,9 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     public static final KafkaTupleListener DEFAULT_TUPLE_LISTENER = new EmptyKafkaTupleListener();
 
+    public static final int DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS = 60;
+
+
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
     private final Subscription subscription;
@@ -88,6 +90,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     private final Class<? extends Deserializer<V>> valueDesClazz;
     private final ProcessingGuarantee processingGuarantee;
     private final boolean tupleTrackingEnforced;
+    private final int metricsTimeBucketSizeInSecs;
 
     /**
      * Creates a new KafkaSpoutConfig using a Builder.
@@ -113,6 +116,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         this.valueDesClazz = builder.valueDesClazz;
         this.processingGuarantee = builder.processingGuarantee;
         this.tupleTrackingEnforced = builder.tupleTrackingEnforced;
+        this.metricsTimeBucketSizeInSecs = builder.metricsTimeBucketSizeInSecs;
     }
 
     /**
@@ -187,6 +191,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private boolean emitNullTuples = false;
         private ProcessingGuarantee processingGuarantee = DEFAULT_PROCESSING_GUARANTEE;
         private boolean tupleTrackingEnforced = false;
+        private int metricsTimeBucketSizeInSecs = DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS;
 
         public Builder(String bootstrapServers, String... topics) {
             this(bootstrapServers, (SerializableDeserializer) null, (SerializableDeserializer) null, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
@@ -671,6 +676,15 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             return this;
         }
 
+        /**
+         * The time period that metrics data in bucketed into.
+         * @param metricsTimeBucketSizeInSecs time in seconds
+         */
+        public Builder<K, V> setMetricsTimeBucketSizeInSecs(int metricsTimeBucketSizeInSecs) {
+            this.metricsTimeBucketSizeInSecs = metricsTimeBucketSizeInSecs;
+            return this;
+        }
+
         public KafkaSpoutConfig<K, V> build() {
             return new KafkaSpoutConfig<>(this);
         }
@@ -857,6 +871,10 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return emitNullTuples;
     }
 
+    public int getMetricsTimeBucketSizeInSecs() {
+        return metricsTimeBucketSizeInSecs;
+    }
+
     @Override
     public String toString() {
         return "KafkaSpoutConfig{"
@@ -871,6 +889,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             + ", translator=" + translator
             + ", retryService=" + retryService
             + ", tupleListener=" + tupleListener
+            + ", processingGuarantee=" + processingGuarantee
+            + ", metricsTimeBucketSizeInSecs=" + metricsTimeBucketSizeInSecs
             + '}';
     }
 }
