@@ -16,7 +16,6 @@
 
 package org.apache.storm.scheduler.resource.normalization;
 
-import org.apache.storm.scheduler.resource.NormalizedResources;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;

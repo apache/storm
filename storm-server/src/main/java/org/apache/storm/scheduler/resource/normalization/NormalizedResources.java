@@ -16,12 +16,11 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource;
+package org.apache.storm.scheduler.resource.normalization;
 
 import com.google.common.annotations.VisibleForTesting;
 import java.util.Arrays;
 import java.util.Map;
-import org.apache.commons.lang.Validate;
 import org.apache.storm.Constants;
 import org.apache.storm.generated.WorkerResources;
 import org.slf4j.Logger;
@@ -68,7 +67,6 @@ public class NormalizedResources {
      * offers because of how on heap vs off heap is used.
      *
      * @param normalizedResources the normalized resource map
-     * @param getTotalMemoryMb Supplier of total memory in MB.
      */
     public NormalizedResources(Map<String, Double> normalizedResources) {
         cpu = normalizedResources.getOrDefault(Constants.COMMON_CPU_RESOURCE_NAME, 0.0);
@@ -116,6 +114,12 @@ public class NormalizedResources {
         add(RESOURCE_MAP_ARRAY_BRIDGE.translateToResourceArray(workerNormalizedResources));
     }
 
+    /**
+     * Throw an IllegalArgumentException because a resource became negative during remove.
+     * @param resourceName The name of the resource that became negative
+     * @param currentValue The current value of the resource
+     * @param subtractedValue The value that was subtracted to make the resource negative
+     */
     public void throwBecauseResourceBecameNegative(String resourceName, double currentValue, double subtractedValue) {
         throw new IllegalArgumentException(String.format("Resource amounts should never be negative."
             + " Resource '%s' with current value '%f' became negative because '%f' was removed.",

@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource;
+package org.apache.storm.scheduler.resource.normalization;
 
 import java.util.Map;
 import org.apache.storm.Constants;

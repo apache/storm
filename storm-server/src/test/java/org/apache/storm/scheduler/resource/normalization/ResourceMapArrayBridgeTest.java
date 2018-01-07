@@ -16,8 +16,6 @@
 
 package org.apache.storm.scheduler.resource.normalization;
 
-import org.apache.storm.scheduler.resource.ResourceMapArrayBridge;
-import org.apache.storm.scheduler.resource.NormalizedResources;
 
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;

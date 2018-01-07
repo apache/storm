@@ -18,6 +18,7 @@
 
 package org.apache.storm.scheduler.resource;
 
+import org.apache.storm.scheduler.resource.normalization.NormalizedResources;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;

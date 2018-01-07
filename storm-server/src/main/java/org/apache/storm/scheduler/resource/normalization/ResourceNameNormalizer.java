@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource;
+package org.apache.storm.scheduler.resource.normalization;
 
 import java.util.Collections;
 import java.util.HashMap;
@@ -30,6 +30,9 @@ public class ResourceNameNormalizer {
 
     private final Map<String, String> resourceNameMapping;
 
+    /**
+     * Creates a new resource name normalizer.
+     */
     public ResourceNameNormalizer() {
         Map<String, String> tmp = new HashMap<>();
         tmp.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, Constants.COMMON_CPU_RESOURCE_NAME);
