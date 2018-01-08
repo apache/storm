@@ -18,10 +18,15 @@
  */
 package org.apache.storm.nimbus;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.UUID;
 import org.apache.storm.Config;
 import org.apache.storm.ILocalCluster;
 import org.apache.storm.ISubmitterHook;
-import org.apache.storm.Testing;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.testing.TestGlobalCount;
@@ -32,13 +37,6 @@ import org.apache.storm.utils.Utils;
 import org.junit.Assert;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
-
 /**
  * Tests local cluster with nimbus and a plugin for {@link Config#STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN}.
  */
@@ -46,28 +44,28 @@ public class LocalNimbusTest {
 
     @Test
     public void testSubmitTopologyToLocalNimbus() throws Exception {
+        int port = Utils.getAvailablePort();
+        try (ILocalCluster localCluster = new LocalCluster.Builder()
+            .withNimbusDaemon(true)
+            .withDaemonConf(Config.NIMBUS_THRIFT_PORT, port)
+            .build()) {
+            Config topoConf = new Config();
+            topoConf.putAll(Utils.readDefaultConfig());
+            topoConf.setDebug(true);
+            topoConf.put("storm.cluster.mode", "local"); // default is aways "distributed" but here local cluster is being used.
+            topoConf.put(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN, InmemoryTopologySubmitterHook.class.getName());
+            topoConf.put(Config.NIMBUS_THRIFT_PORT, port);
 
-        HashMap<String,Object> localClusterConf = new HashMap<>();
-        localClusterConf.put("nimbus-daemon", true);
-        ILocalCluster localCluster = Testing.getLocalCluster(localClusterConf);
+            List<TopologyDetails> topologyNames = new ArrayList<>();
+            for (int i = 0; i < 4; i++) {
+                final String topologyName = "word-count-" + UUID.randomUUID().toString();
+                final StormTopology stormTopology = createTestTopology();
+                topologyNames.add(new TopologyDetails(topologyName, stormTopology));
+                localCluster.submitTopology(topologyName, topoConf, stormTopology);
+            }
 
-        Config topoConf = new Config();
-        topoConf.putAll(Utils.readDefaultConfig());
-        topoConf.setDebug(true);
-        topoConf.put("storm.cluster.mode", "local"); // default is aways "distributed" but here local cluster is being used.
-        topoConf.put(Config.STORM_TOPOLOGY_SUBMISSION_NOTIFIER_PLUGIN, InmemoryTopologySubmitterHook.class.getName());
-
-        List<TopologyDetails> topologyNames =new ArrayList<>();
-        for (int i=0; i<4; i++) {
-            final String topologyName = "word-count-"+ UUID.randomUUID().toString();
-            final StormTopology stormTopology = createTestTopology();
-            topologyNames.add(new TopologyDetails(topologyName, stormTopology));
-            localCluster.submitTopology(topologyName, topoConf, stormTopology);
+            Assert.assertEquals(InmemoryTopologySubmitterHook.submittedTopologies, topologyNames);
         }
-
-        Assert.assertEquals(InmemoryTopologySubmitterHook.submittedTopologies, topologyNames);
-
-        localCluster.shutdown();
     }
 
     public static StormTopology createTestTopology() {

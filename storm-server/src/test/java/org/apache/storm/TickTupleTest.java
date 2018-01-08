@@ -48,7 +48,7 @@ public class TickTupleTest {
 
     @Test
     public void testTickTupleWorksWithSystemBolt() throws Exception {
-        try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().withNimbusDaemon(true).build()){
+        try (ILocalCluster cluster = new LocalCluster.Builder().withSimulatedTime().build()){
             StormTopology topology = createNoOpTopology();
             Config topoConf = new Config();
             topoConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS, 1);
