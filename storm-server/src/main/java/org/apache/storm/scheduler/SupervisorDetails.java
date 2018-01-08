@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import org.apache.storm.Constants;
-import org.apache.storm.scheduler.resource.NormalizedResourceOffer;
+import org.apache.storm.scheduler.resource.normalization.NormalizedResourceOffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

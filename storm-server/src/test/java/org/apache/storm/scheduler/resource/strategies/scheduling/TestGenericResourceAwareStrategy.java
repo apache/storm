@@ -100,7 +100,7 @@ public class TestGenericResourceAwareStrategy {
 
         Topologies topologies = new Topologies(topo);
 
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 
@@ -188,7 +188,7 @@ public class TestGenericResourceAwareStrategy {
                 genExecsAndComps(stormToplogy), currentTime, "user");
 
         Topologies topologies = new Topologies(topo);
-        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<String, SchedulerAssignmentImpl>(), topologies, conf);
+        Cluster cluster = new Cluster(iNimbus, supMap, new HashMap<>(), topologies, conf);
 
         ResourceAwareScheduler rs = new ResourceAwareScheduler();
 

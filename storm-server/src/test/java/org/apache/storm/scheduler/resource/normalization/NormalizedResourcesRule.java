@@ -16,9 +16,8 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource.strategies.scheduling;
+package org.apache.storm.scheduler.resource.normalization;
 
-import org.apache.storm.scheduler.resource.NormalizedResources;
 import org.junit.rules.TestRule;
 import org.junit.runner.Description;
 import org.junit.runners.model.Statement;

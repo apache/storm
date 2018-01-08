@@ -16,14 +16,10 @@
  * limitations under the License.
  */
 
-package org.apache.storm.scheduler.resource;
+package org.apache.storm.scheduler.resource.normalization;
 
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.generated.ComponentCommon;
@@ -36,14 +32,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * A request that has been normalized.
+ * A resource request with normalized resource names.
  */
-public class NormalizedResourceRequest extends NormalizedResources {
+public class NormalizedResourceRequest implements NormalizedResourcesWithMemory {
+
     private static final Logger LOG = LoggerFactory.getLogger(NormalizedResourceRequest.class);
 
     private static void putIfMissing(Map<String, Double> dest, String destKey, Map<String, Object> src, String srcKey) {
         if (!dest.containsKey(destKey)) {
-            Number value = (Number)src.get(srcKey);
+            Number value = (Number) src.get(srcKey);
             if (value != null) {
                 dest.put(destKey, value.doubleValue());
             }
@@ -51,7 +48,7 @@ public class NormalizedResourceRequest extends NormalizedResources {
     }
 
     private static Map<String, Double> getDefaultResources(Map<String, Object> topoConf) {
-        Map<String, Double> ret = normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
+        Map<String, Double> ret = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap((Map<String, Number>) topoConf.getOrDefault(
             Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, new HashMap<>()));
         putIfMissing(ret, Constants.COMMON_CPU_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
         putIfMissing(ret, Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, topoConf, Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
@@ -96,7 +93,6 @@ public class NormalizedResourceRequest extends NormalizedResources {
                             stringNumberEntry.getKey(), stringNumberEntry.getValue().doubleValue());
                     }
 
-
                 }
             }
         } catch (ParseException e) {
@@ -106,45 +102,36 @@ public class NormalizedResourceRequest extends NormalizedResources {
         return topologyResources;
     }
 
+    private final NormalizedResources normalizedResources;
     private double onHeap;
     private double offHeap;
 
-    /**
-     * Create a new normalized set of resources.  Note that memory is not covered here becasue it is not consistent in requests vs offers
-     * because of how on heap vs off heap is used.
-     *
-     * @param resources the resources to be normalized.
-     * @param topologyConf the config for the topology
-     */
     private NormalizedResourceRequest(Map<String, ? extends Number> resources,
-                                     Map<String, Object> topologyConf) {
-        super(resources, getDefaultResources(topologyConf));
+        Map<String, Double> defaultResources) {
+        Map<String, Double> normalizedResourceMap = NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(defaultResources);
+        normalizedResourceMap.putAll(NormalizedResources.RESOURCE_NAME_NORMALIZER.normalizedResourceMap(resources));
+        onHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
+        offHeap = normalizedResourceMap.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
+        normalizedResources = new NormalizedResources(normalizedResourceMap);
     }
 
     public NormalizedResourceRequest(ComponentCommon component, Map<String, Object> topoConf) {
-        this(parseResources(component.get_json_conf()), topoConf);
+        this(parseResources(component.get_json_conf()), getDefaultResources(topoConf));
     }
 
     public NormalizedResourceRequest(Map<String, Object> topoConf) {
-        this((Map<String, ? extends Number>) null, topoConf);
+        this((Map<String, ? extends Number>) null, getDefaultResources(topoConf));
     }
 
     public NormalizedResourceRequest() {
-        super(null, null);
+        this((Map<String, ? extends Number>) null, null);
     }
 
-    @Override
-    public Map<String,Double> toNormalizedMap() {
-        Map<String, Double> ret = super.toNormalizedMap();
+    public Map<String, Double> toNormalizedMap() {
+        Map<String, Double> ret = this.normalizedResources.toNormalizedMap();
         ret.put(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, offHeap);
         ret.put(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, onHeap);
         return ret;
-    }
-
-    @Override
-    protected void initializeMemory(Map<String, Double> normalizedResources) {
-        onHeap = normalizedResources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        offHeap = normalizedResources.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
     }
 
     public double getOnHeapMemoryMb() {
@@ -165,17 +152,17 @@ public class NormalizedResourceRequest extends NormalizedResources {
 
     /**
      * Add the resources in other to this.
+     *
      * @param other the other Request to add to this.
      */
     public void add(NormalizedResourceRequest other) {
-        super.add(other);
+        this.normalizedResources.add(other.normalizedResources);
         onHeap += other.onHeap;
         offHeap += other.offHeap;
     }
 
-    @Override
     public void add(WorkerResources value) {
-        super.add(value);
+        this.normalizedResources.add(value);
         //The resources are already normalized
         Map<String, Double> resources = value.get_resources();
         onHeap += resources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
@@ -184,11 +171,20 @@ public class NormalizedResourceRequest extends NormalizedResources {
 
     @Override
     public double getTotalMemoryMb() {
-        return getOnHeapMemoryMb() + getOffHeapMemoryMb();
+        return onHeap + offHeap;
     }
 
     @Override
     public String toString() {
         return super.toString() + " onHeap: " + onHeap + " offHeap: " + offHeap;
+    }
+
+    public double getTotalCpu() {
+        return this.normalizedResources.getTotalCpu();
+    }
+
+    @Override
+    public NormalizedResources getNormalizedResources() {
+        return this.normalizedResources;
     }
 }

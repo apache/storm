@@ -20,20 +20,14 @@ package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.TreeSet;
-
 import org.apache.storm.Config;
 import org.apache.storm.scheduler.Cluster;
 import org.apache.storm.scheduler.Component;
 import org.apache.storm.scheduler.ExecutorDetails;
 import org.apache.storm.scheduler.TopologyDetails;
-
-import org.apache.storm.scheduler.resource.ResourceUtils;
 import org.apache.storm.scheduler.resource.SchedulingResult;
 import org.apache.storm.scheduler.resource.SchedulingStatus;
 import org.slf4j.Logger;
@@ -41,7 +35,7 @@ import org.slf4j.LoggerFactory;
 
 public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy implements IStrategy {
 
-    private static final Logger LOG = LoggerFactory.getLogger(BaseResourceAwareStrategy.class);
+    private static final Logger LOG = LoggerFactory.getLogger(DefaultResourceAwareStrategy.class);
 
     @Override
     public SchedulingResult schedule(Cluster cluster, TopologyDetails td) {
@@ -125,10 +119,15 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
     protected TreeSet<ObjectResources> sortObjectResources(
             final AllResources allResources, ExecutorDetails exec, TopologyDetails topologyDetails,
             final ExistingScheduleFunc existingScheduleFunc) {
-
+        
         for (ObjectResources objectResources : allResources.objectResources) {
             objectResources.effectiveResources =
                 allResources.availableResourcesOverall.calculateMinPercentageUsedBy(objectResources.availableResources);
+            if (LOG.isTraceEnabled()) {
+                LOG.trace("Effective resources for {} is {}, and numExistingSchedule is {}",
+                    objectResources.id, objectResources.effectiveResources,
+                    existingScheduleFunc.getNumExistingSchedule(objectResources.id));
+            }
         }
 
         TreeSet<ObjectResources> sortedObjectResources =
