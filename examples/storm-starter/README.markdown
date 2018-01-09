@@ -22,9 +22,9 @@ Table of Contents
 First, you need `java` and `git` installed and in your user's `PATH`.  Also, two of the examples in storm-starter
 require Python and Ruby.
 
-Next, make sure you have the storm-starter code available on your machine.  Git/GitHub beginners may want to use the
+Next, make sure you have the storm-starter code available on your machine. If you have already downloaded storm from http://storm.apache.org/downloads.html then you will find the storm-starter code under your `apache-storm-<version>/examples/` directory. Alternatively, Git/GitHub beginners may want to use the
 following command to download the latest storm-starter code and change to the new directory that contains the downloaded
-code.
+code, but make sure you have the same version of `storm` running.
 
     $ git clone git://github.com/apache/storm.git && cd storm/examples/storm-starter
 
