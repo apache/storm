@@ -23,6 +23,7 @@ import com.codahale.metrics.MetricRegistry;
 import org.apache.storm.Config;
 import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.metrics2.reporters.StormReporter;
+import org.apache.storm.task.TopologyContext;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -46,12 +47,11 @@ public class StormMetricRegistry {
     private static String hostName = null;
 
     public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, String componentId, Integer port){
-        SimpleGauge<T> gauge = new SimpleGauge<>(initialValue);
         String metricName = metricName(name, topologyId, componentId, port);
         if(REGISTRY.getGauges().containsKey(metricName)){
             return (SimpleGauge)REGISTRY.getGauges().get(metricName);
         } else {
-            return REGISTRY.register(metricName, gauge);
+            return REGISTRY.register(metricName, new SimpleGauge<>(initialValue));
         }
     }
 
@@ -79,7 +79,6 @@ public class StormMetricRegistry {
     }
 
     public static void start(Map<String, Object> stormConfig, DaemonType type){
-        String localHost = "localhost";
         try {
             hostName = dotToUnderScore(Utils.localHostname());
         } catch (UnknownHostException e) {
@@ -110,11 +109,7 @@ public class StormMetricRegistry {
         String clazz = (String)reporterConfig.get("class");
         StormReporter reporter = null;
         LOG.info("Attempting to instantiate reporter class: {}", clazz);
-        try{
-            reporter = (StormReporter)Metrics2Utils.instantiate(clazz);
-        } catch(Exception e){
-            LOG.warn("Unable to instantiate metrics reporter class: {}. Will skip this reporter.", clazz, e);
-        }
+        reporter = Utils.newInstance(clazz);
         if(reporter != null){
             reporter.prepare(REGISTRY, stormConfig, reporterConfig);
             reporter.start();
@@ -147,6 +142,15 @@ public class StormMetricRegistry {
                 hostName,
                 dotToUnderScore(componentId),
                 workerPort,
+                name);
+    }
+
+    public static String metricName(String name, TopologyContext context){
+        return String.format("storm.topology.%s.%s.%s.%s.%s-%s",
+                context.getStormId(),
+                hostName,
+                dotToUnderScore(context.getThisComponentId()),
+                context.getThisWorkerPort(),
                 name);
     }
 

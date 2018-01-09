@@ -410,6 +410,6 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
     private String metricName(String name){
-        return String.format("storm.topology.%s.%s.%s-%s", getStormId(), getThisComponentId(), getThisWorkerPort(), name);
+        return StormMetricRegistry.metricName(name, this);
     }
 }
