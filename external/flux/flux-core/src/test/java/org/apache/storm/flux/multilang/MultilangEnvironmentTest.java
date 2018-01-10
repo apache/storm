@@ -31,8 +31,8 @@ import static org.junit.Assert.assertEquals;
 /**
  * Sanity checks to make sure we can at least invoke the shells used.
  */
-public class MultilangEnvirontmentTest {
-    private static final Logger LOG = LoggerFactory.getLogger(MultilangEnvirontmentTest.class);
+public class MultilangEnvironmentTest {
+    private static final Logger LOG = LoggerFactory.getLogger(MultilangEnvironmentTest.class);
 
     @Test
     public void testInvokePython() throws Exception {
