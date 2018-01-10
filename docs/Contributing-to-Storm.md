@@ -6,7 +6,7 @@ documentation: true
 
 ### Getting started with contributing
 
-Some of the issues on the [issue tracker](https://issues.apache.org/jira/browse/STORM) are marked with the "Newbie" label. If you're interesting in contributing to Storm but don't know where to begin, these are good issues to start with. These issues are a great way to get your feet wet with learning the codebase because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
+Some of the issues on the [issue tracker](https://issues.apache.org/jira/browse/STORM) are marked with the ["Newbie"](https://issues.apache.org/jira/browse/STORM-2891?jql=project%20%3D%20STORM%20AND%20status%20%3D%20Open%20AND%20labels%20in%20(newbie%2C%20%22newbie%2B%2B%22)) label. If you're interested in contributing to Storm but don't know where to begin, these are good issues to start with. These issues are a great way to get your feet wet with learning the codebase because they require learning about only an isolated portion of the codebase and are a relatively small amount of work.
 
 ### Learning the codebase
 
