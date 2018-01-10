@@ -143,9 +143,9 @@
               (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
-              (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id (pr-str (:executor-id executor-data)) stream) stream)
+              (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id task-id stream) stream)
               (if out-task-id
-                (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id (pr-str (:executor-id executor-data)) stream) stream 1)))
+                (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id task-id stream) stream 1)))
             (if out-task-id [out-task-id])
             ))
         ([^String stream ^List values]
@@ -163,8 +163,8 @@
                    )))
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
-               (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id (pr-str (:executor-id executor-data)) stream) stream)
-               (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id (pr-str (:executor-id executor-data)) stream) stream (count out-tasks)))
+               (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id task-id stream) stream)
+               (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id task-id stream) stream (count out-tasks)))
              out-tasks)))
     ))
 

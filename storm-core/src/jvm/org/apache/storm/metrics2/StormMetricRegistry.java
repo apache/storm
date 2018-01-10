@@ -68,13 +68,13 @@ public class StormMetricRegistry {
         );
     }
 
-    public static Meter meter(String name, WorkerTopologyContext context, String componentId, String executorId, String streamId){
-        String metricName = metricName(name, context.getStormId(), componentId, streamId,executorId, context.getThisWorkerPort());
+    public static Meter meter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId){
+        String metricName = metricName(name, context.getStormId(), componentId, streamId,taskId, context.getThisWorkerPort());
         return REGISTRY.meter(metricName);
     }
 
-    public static Counter counter(String name, WorkerTopologyContext context, String componentId, String executorId, String streamId){
-        String metricName = metricName(name, context.getStormId(), componentId, streamId,executorId, context.getThisWorkerPort());
+    public static Counter counter(String name, WorkerTopologyContext context, String componentId, Integer taskId, String streamId){
+        String metricName = metricName(name, context.getStormId(), componentId, streamId,taskId, context.getThisWorkerPort());
         return REGISTRY.counter(metricName);
     }
 
@@ -124,7 +124,7 @@ public class StormMetricRegistry {
         }
     }
 
-    public static String metricName(String name, String stormId, String componentId, String streamId, String executorId, Integer workerPort){
+    public static String metricName(String name, String stormId, String componentId, String streamId, Integer taskId, Integer workerPort){
         StringBuilder sb = new StringBuilder("storm.worker.");
         sb.append(stormId);
         sb.append(".");
@@ -134,7 +134,7 @@ public class StormMetricRegistry {
         sb.append(".");
         sb.append(dotToUnderScore(streamId));
         sb.append(".");
-        sb.append(dotToUnderScore(executorId));
+        sb.append(taskId);
         sb.append(".");
         sb.append(workerPort);
         sb.append("-");
