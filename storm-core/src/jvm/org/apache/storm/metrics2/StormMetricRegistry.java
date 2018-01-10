@@ -118,7 +118,6 @@ public class StormMetricRegistry {
 
     }
 
-
     public static void stop(){
         for(StormReporter sr : REPORTERS){
             sr.stop();
@@ -126,32 +125,49 @@ public class StormMetricRegistry {
     }
 
     public static String metricName(String name, String stormId, String componentId, String streamId, String executorId, Integer workerPort){
-        return String.format("storm.worker.%s.%s.%s.%s.%s.%s-%s",
-                stormId,
-                hostName,
-                dotToUnderScore(componentId),
-                dotToUnderScore(streamId),
-                dotToUnderScore(executorId),
-                workerPort,
-                name);
+        StringBuilder sb = new StringBuilder("storm.worker.");
+        sb.append(stormId);
+        sb.append(".");
+        sb.append(hostName);
+        sb.append(".");
+        sb.append(dotToUnderScore(componentId));
+        sb.append(".");
+        sb.append(dotToUnderScore(streamId));
+        sb.append(".");
+        sb.append(dotToUnderScore(executorId));
+        sb.append(".");
+        sb.append(workerPort);
+        sb.append("-");
+        sb.append(name);
+        return sb.toString();
     }
 
-    public static String metricName(String name, String stormId, String componentId, Integer workerPort){
-        return String.format("storm.worker.%s.%s.%s.%s-%s",
-                stormId,
-                hostName,
-                dotToUnderScore(componentId),
-                workerPort,
-                name);
+    public static String metricName(String name, String stormId, String componentId, Integer workerPort) {
+        StringBuilder sb = new StringBuilder("storm.worker.");
+        sb.append(stormId);
+        sb.append(".");
+        sb.append(hostName);
+        sb.append(".");
+        sb.append(dotToUnderScore(componentId));
+        sb.append(".");
+        sb.append(workerPort);
+        sb.append("-");
+        sb.append(name);
+        return sb.toString();
     }
 
     public static String metricName(String name, TopologyContext context){
-        return String.format("storm.topology.%s.%s.%s.%s.%s-%s",
-                context.getStormId(),
-                hostName,
-                dotToUnderScore(context.getThisComponentId()),
-                context.getThisWorkerPort(),
-                name);
+        StringBuilder sb = new StringBuilder("storm.topology.");
+        sb.append(context.getStormId());
+        sb.append(".");
+        sb.append(hostName);
+        sb.append(".");
+        sb.append(dotToUnderScore(context.getThisComponentId()));
+        sb.append(".");
+        sb.append(context.getThisWorkerPort());
+        sb.append("-");
+        sb.append(name);
+        return sb.toString();
     }
 
     private static String dotToUnderScore(String str){
