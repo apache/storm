@@ -22,7 +22,7 @@
 name: "${topology.name}"
 
 # Components
-# Components are analagous to Spring beans. They are meant to be used as constructor,
+# Components are analogous to Spring beans. They are meant to be used as constructor,
 # property(setter), and builder arguments.
 #components:
 #  - id: "myComponent"
@@ -41,8 +41,8 @@ name: "${topology.name}"
 #
 config:
   topology.workers: 1
-  # test environent variable substitution
-  test.env.value: ${ENV-PATH}
+  # test environment variable substitution
+  test.env.value: "${ENV-PATH}"
   # test variable substitution for list type
   list.property.target: ${a.list.property}
 
