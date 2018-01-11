@@ -143,9 +143,9 @@
               (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
-              (stats/emitted-tuple! executor-stats (.getEmitted ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream)
+              (stats/emitted-tuple! executor-stats (.getEmitted ^TaskMetrics (:task-metrics task-data) stream) stream)
               (if out-task-id
-                (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream 1)))
+                (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (:task-metrics task-data) stream) stream 1)))
             (if out-task-id [out-task-id])
             ))
         ([^String stream ^List values]
@@ -163,8 +163,8 @@
                    )))
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
-               (stats/emitted-tuple! executor-stats (.getEmitted ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream)
-               (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream (count out-tasks)))
+               (stats/emitted-tuple! executor-stats (.getEmitted ^TaskMetrics (:task-metrics task-data) stream) stream)
+               (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (:task-metrics task-data) stream) stream (count out-tasks)))
              out-tasks)))
     ))
 
@@ -175,6 +175,7 @@
     :system-context (system-topology-context (:worker executor-data) executor-data task-id)
     :user-context (user-topology-context (:worker executor-data) executor-data task-id)
     :builtin-metrics (builtin-metrics/make-data (:type executor-data) (:stats executor-data))
+    :task-metrics (TaskMetrics. (:worker-context executor-data) (:component-id executor-data) task-id)
     :tasks-fn (mk-tasks-fn <>)
     :object (get-task-object (.getRawTopology ^TopologyContext (:system-context <>)) (:component-id executor-data))))
 

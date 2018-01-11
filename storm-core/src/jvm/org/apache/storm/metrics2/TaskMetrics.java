@@ -78,12 +78,4 @@ public class TaskMetrics {
         }
         return c;
     }
-
-    public static Map<Integer, TaskMetrics> taskMetricsMap(Integer startTaskId, Integer endTaskId, WorkerTopologyContext context, String componentId){
-        Map<Integer, TaskMetrics> retval = new HashMap<>();
-        for (int i = startTaskId; i < endTaskId + 1; i++) {
-            retval.put(i, new TaskMetrics(context, componentId, i));
-        }
-        return retval;
-    }
 }
