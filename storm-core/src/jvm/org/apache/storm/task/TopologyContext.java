@@ -313,6 +313,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * You must call this during `IBolt.prepare()` or `ISpout.open()`.
      * @return The IMetric argument unchanged.
      */
+    @Deprecated
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if((Boolean) _openOrPrepareWasCalled.deref()) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
@@ -359,6 +360,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      *         cause the same metric name can register twice.
      *         So we just return the first metric we meet.
      */
+    @Deprecated
     public IMetric getRegisteredMetricByName(String name) {
         IMetric metric = null;
 
@@ -379,12 +381,14 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * Convenience method for registering ReducedMetric.
      */
+    @Deprecated
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
     /*
      * Convenience method for registering CombinedMetric.
      */
+    @Deprecated
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
     }
