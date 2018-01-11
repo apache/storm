@@ -78,6 +78,11 @@ public class StormMetricRegistry {
         return REGISTRY.counter(metricName);
     }
 
+    public static Counter counter(String name, String topologyId, String componentId, Integer taskId, Integer workerPort, String streamId){
+        String metricName = metricName(name, topologyId, componentId, streamId,taskId, workerPort);
+        return REGISTRY.counter(metricName);
+    }
+
     public static void start(Map<String, Object> stormConfig, DaemonType type){
         try {
             hostName = dotToUnderScore(Utils.localHostname());

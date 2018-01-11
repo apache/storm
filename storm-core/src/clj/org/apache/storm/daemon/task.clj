@@ -23,11 +23,11 @@
   (:import [org.apache.storm.hooks.info SpoutAckInfo SpoutFailInfo
             EmitInfo BoltFailInfo BoltAckInfo])
   (:import [org.apache.storm.task TopologyContext ShellBolt WorkerTopologyContext])
-  (:import [org.apache.storm.metrics2 StormMetricRegistry])
+  (:import [org.apache.storm.metrics2 StormMetricRegistry TaskMetrics])
   (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm.generated ShellComponent JavaObject])
   (:import [org.apache.storm.spout ShellSpout])
-  (:import [java.util Collection List ArrayList])
+  (:import [java.util Collection List ArrayList Map])
   (:import [com.codahale.metrics Meter Counter])
   (:require [org.apache.storm
              [thrift :as thrift]
@@ -143,9 +143,9 @@
               (throw (IllegalArgumentException. "Cannot emitDirect to a task expecting a regular grouping")))                          
             (apply-hooks user-context .emit (EmitInfo. values stream task-id [out-task-id]))
             (when (emit-sampler)
-              (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id task-id stream) stream)
+              (stats/emitted-tuple! executor-stats (.getEmitted ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream)
               (if out-task-id
-                (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id task-id stream) stream 1)))
+                (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream 1)))
             (if out-task-id [out-task-id])
             ))
         ([^String stream ^List values]
@@ -163,8 +163,8 @@
                    )))
              (apply-hooks user-context .emit (EmitInfo. values stream task-id out-tasks))
              (when (emit-sampler)
-               (stats/emitted-tuple! executor-stats (StormMetricRegistry/counter "emitted" worker-context component-id task-id stream) stream)
-               (stats/transferred-tuples! executor-stats (StormMetricRegistry/counter "transferred" worker-context component-id task-id stream) stream (count out-tasks)))
+               (stats/emitted-tuple! executor-stats (.getEmitted (.get ^Map (:task-metrics executor-data) task-id) stream) stream)
+               (stats/transferred-tuples! executor-stats (.getTransferred ^TaskMetrics (.get ^Map (:task-metrics executor-data) task-id) stream) stream (count out-tasks)))
              out-tasks)))
     ))
 
