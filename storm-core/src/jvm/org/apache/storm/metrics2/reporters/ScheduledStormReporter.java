@@ -18,7 +18,6 @@
 package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.ScheduledReporter;
-import org.apache.storm.metrics2.Metrics2Utils;
 import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
@@ -77,12 +76,8 @@ public abstract class ScheduledStormReporter implements StormReporter{
         if(filterConf != null) {
             String clazz = (String) filterConf.get("class");
             if (clazz != null) {
-                try {
-                    filter = (StormMetricsFilter) Metrics2Utils.instantiate(clazz);
-                    filter.prepare(filterConf);
-                } catch (Exception e) {
-                    throw new RuntimeException("Unable to instantiate StormMetricsFilter class: " + clazz);
-                }
+                filter = Utils.newInstance(clazz);
+                filter.prepare(filterConf);
             }
         }
         return filter;
