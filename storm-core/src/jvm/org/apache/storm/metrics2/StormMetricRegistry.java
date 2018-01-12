@@ -162,12 +162,16 @@ public class StormMetricRegistry {
     }
 
     public static String metricName(String name, TopologyContext context){
+
+
         StringBuilder sb = new StringBuilder("storm.topology.");
         sb.append(context.getStormId());
         sb.append(".");
         sb.append(hostName);
         sb.append(".");
         sb.append(dotToUnderScore(context.getThisComponentId()));
+        sb.append(".");
+        sb.append(context.getThisTaskId());
         sb.append(".");
         sb.append(context.getThisWorkerPort());
         sb.append("-");
