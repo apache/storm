@@ -146,8 +146,8 @@ public abstract class Executor implements Callable, EventHandler<Object> {
 
         this.suicideFn = workerData.getSuicideCallback();
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(), Utils.getWorkerACL(topoConf),
-                    new ClusterStateContext(DaemonType.WORKER));
+            this.stormClusterState = ClusterUtils.mkStormClusterState(workerData.getStateStorage(),
+                new ClusterStateContext(DaemonType.WORKER, topoConf));
         } catch (Exception e) {
             throw Utils.wrapInRuntime(e);
         }

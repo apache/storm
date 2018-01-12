@@ -858,4 +858,43 @@ exception HBExecutionException {
   1: required string msg;
 }
 
+# WorkerTokens are used as credentials that allow a Worker to authenticate with DRPC, Nimbus, or other storm processes that we add in here.
+enum WorkerTokenServiceType {
+    NIMBUS,
+    DRPC
+}
 
+#This is information that we want to be sure users do not modify in any way...
+struct WorkerTokenInfo {
+    # The user/owner of the topology.  So we can authorize based off of a user
+    1: required string userName;
+    # The topology id that this token is a part of.  So we can find the right sceret key, and so we can
+    #  authorize based off of a topology if needed.
+    2: required string topologyId;
+    # What version of the secret key to use.  If it is too old or we cannot find it, then the token will not be valid.
+    3: required i64 secretVersion;
+    # Unix time stamp in millis when this expires
+    4: required i64 expirationTimeMillis;
+}
+
+#This is what we give to worker so they can authenticate with built in daemons
+struct WorkerToken {
+    # What service is this for?
+    1: required WorkerTokenServiceType serviceType;
+    # A serialized version of a WorkerTokenInfo.  We double encode it so the bits don't change between a serialzie/deserialize cycle.
+    2: required binary info;
+    # how to prove that info is correct and unmodified when it gets back to us.
+    3: required binary signature;
+}
+
+#This is the private information that we can use to verify a WorkerToken is still valid
+# The topology id and version number are stored outside of this as the key to look it up.
+struct PrivateWorkerKey {
+    #This is the key itself.  An algorithm selection may be added in the future, but for now there is only
+    # one so don't worry about it.
+    1: required binary key;
+    # Extra sanity check that the user is correct.
+    2: required string userName;
+    # Unix time stamp in millis when this, and any corresponding tokens, expire
+    3: required i64 expirationTimeMillis;
+}

@@ -76,6 +76,18 @@ public class ObjectReader {
         throw new IllegalArgumentException("Don't know how to convert " + o + " to int");
     }
 
+    public static Long getLong(Object o, Long defaultValue) {
+        if (null == o) {
+            return defaultValue;
+        }
+        if (o instanceof Number) {
+            return ((Number)o).longValue();
+        } else if (o instanceof String) {
+            return Long.valueOf((String) o);
+        }
+        throw new IllegalArgumentException("Don't know how to convert " + o + " to a long");
+    }
+
     public static Double getDouble(Object o) {
         Double result = getDouble(o, null);
         if (null == result) {

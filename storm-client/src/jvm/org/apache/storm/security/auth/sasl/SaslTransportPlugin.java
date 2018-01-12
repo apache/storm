@@ -15,24 +15,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.security.auth;
+
+package org.apache.storm.security.auth.sasl;
 
 import java.io.IOException;
 import java.net.Socket;
 import java.security.Principal;
 import java.util.Map;
+import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.SynchronousQueue;
 import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.TimeUnit;
-
 import javax.security.auth.Subject;
 import javax.security.auth.login.Configuration;
 import javax.security.sasl.SaslServer;
-
-import org.apache.storm.utils.ExtendedThreadPoolExecutor;
+import org.apache.storm.security.auth.ITransportPlugin;
+import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.security.auth.ThriftConnectionType;
 import org.apache.storm.security.auth.kerberos.NoOpTTrasport;
+import org.apache.storm.utils.ExtendedThreadPoolExecutor;
 import org.apache.thrift.TException;
 import org.apache.thrift.TProcessor;
 import org.apache.thrift.protocol.TBinaryProtocol;
@@ -51,21 +53,21 @@ import org.apache.thrift.transport.TTransportFactory;
  */
 public abstract class SaslTransportPlugin implements ITransportPlugin {
     protected ThriftConnectionType type;
-    protected Map<String, Object> topoConf;
-    protected Configuration login_conf;
+    protected Map<String, Object> conf;
+    protected Configuration loginConf;
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> conf, Configuration loginConf) {
         this.type = type;
-        this.topoConf = topoConf;
-        this.login_conf = login_conf;
+        this.conf = conf;
+        this.loginConf = loginConf;
     }
 
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
-        int configuredPort = type.getPort(topoConf);
-        Integer socketTimeout = type.getSocketTimeOut(topoConf);
+        int configuredPort = type.getPort(conf);
+        Integer socketTimeout = type.getSocketTimeOut(conf);
         TTransportFactory serverTransportFactory = getServerTransportFactory();
         TServerSocket serverTransport = null;
         if (socketTimeout != null) {
@@ -74,17 +76,17 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
             serverTransport = new TServerSocket(configuredPort);
         }
         this.port = serverTransport.getServerSocket().getLocalPort();
-        int numWorkerThreads = type.getNumThreads(topoConf);
-        Integer queueSize = type.getQueueSize(topoConf);
+        int numWorkerThreads = type.getNumThreads(conf);
+        Integer queueSize = type.getQueueSize(conf);
 
-        TThreadPoolServer.Args server_args = new TThreadPoolServer.Args(serverTransport).
-                processor(new TUGIWrapProcessor(processor)).
-                minWorkerThreads(numWorkerThreads).
-                maxWorkerThreads(numWorkerThreads).
-                protocolFactory(new TBinaryProtocol.Factory(false, true));
+        TThreadPoolServer.Args serverArgs = new TThreadPoolServer.Args(serverTransport)
+            .processor(new TUGIWrapProcessor(processor))
+            .minWorkerThreads(numWorkerThreads)
+            .maxWorkerThreads(numWorkerThreads)
+            .protocolFactory(new TBinaryProtocol.Factory(false, true));
 
         if (serverTransportFactory != null) {
-            server_args.transportFactory(serverTransportFactory);
+            serverArgs.transportFactory(serverTransportFactory);
         }
         BlockingQueue workQueue = new SynchronousQueue();
         if (queueSize != null) {
@@ -92,14 +94,14 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
         }
         ThreadPoolExecutor executorService = new ExtendedThreadPoolExecutor(numWorkerThreads, numWorkerThreads,
             60, TimeUnit.SECONDS, workQueue);
-        server_args.executorService(executorService);
-        return new TThreadPoolServer(server_args);
+        serverArgs.executorService(executorService);
+        return new TThreadPoolServer(serverArgs);
     }
 
     /**
-     * All subclass must implement this method
+     * Create the transport factory needed for serving.  All subclass must implement this method.
      * @return server transport factory
-     * @throws IOException
+     * @throws IOException on any error.
      */
     protected abstract TTransportFactory getServerTransportFactory() throws IOException;
     
@@ -112,9 +114,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
     /**
      * Processor that pulls the SaslServer object out of the transport, and
      * assumes the remote user's UGI before calling through to the original
-     * processor.
-     *
-     * This is used on the server side to set the UGI for each specific call.
+     * processor. This is used on the server side to set the UGI for each specific call.
      */
     private static class TUGIWrapProcessor implements TProcessor {
         final TProcessor wrapped;
@@ -125,27 +125,27 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
 
         public boolean process(final TProtocol inProt, final TProtocol outProt) throws TException {
             //populating request context
-            ReqContext req_context = ReqContext.context();
+            ReqContext reqContext = ReqContext.context();
 
             TTransport trans = inProt.getTransport();
             //Sasl transport
             TSaslServerTransport saslTrans = (TSaslServerTransport)trans;
 
-            if(trans instanceof NoOpTTrasport) {
+            if (trans instanceof NoOpTTrasport) {
                 return false;
             }
 
             //remote address
             TSocket tsocket = (TSocket)saslTrans.getUnderlyingTransport();
             Socket socket = tsocket.getSocket();
-            req_context.setRemoteAddress(socket.getInetAddress());
+            reqContext.setRemoteAddress(socket.getInetAddress());
 
             //remote subject
             SaslServer saslServer = saslTrans.getSaslServer();
             String authId = saslServer.getAuthorizationID();
             Subject remoteUser = new Subject();
             remoteUser.getPrincipals().add(new User(authId));
-            req_context.setSubject(remoteUser);
+            reqContext.setSubject(remoteUser);
 
             //invoke service handler
             return wrapped.process(inProt, outProt);

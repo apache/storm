@@ -40,13 +40,13 @@
 
 (defn mk-state
   ([zk-port] (let [conf (mk-config zk-port)]
-               (ClusterUtils/mkStateStorage conf conf nil (ClusterStateContext.))))
+               (ClusterUtils/mkStateStorage conf conf (ClusterStateContext.))))
   ([zk-port cb]
     (let [ret (mk-state zk-port)]
       (.register ret cb)
       ret)))
 
-(defn mk-storm-state [zk-port] (ClusterUtils/mkStormClusterState (mk-config zk-port) nil (ClusterStateContext.)))
+(defn mk-storm-state [zk-port] (ClusterUtils/mkStormClusterState (mk-config zk-port) (ClusterStateContext.)))
 
 (defn barr
   [& vals]
@@ -354,12 +354,12 @@
       ;; No need for when clauses because we just want to return nil
       (with-open [_ (MockedClientZookeeper. zk-mock)]
         (. (Mockito/when (.mkClientImpl zk-mock (Mockito/anyMap) (Mockito/any) (Mockito/any) (Mockito/anyString) (Mockito/any) (Mockito/any))) (thenReturn curator-frameworke))
-        (ClusterUtils/mkStateStorage {} nil nil (ClusterStateContext.))
+        (ClusterUtils/mkStateStorage {} nil (ClusterStateContext.))
         (.mkdirsImpl (Mockito/verify zk-mock (Mockito/times 1)) (Mockito/any) (Mockito/anyString) (Mockito/eq nil))))
     (let [distributed-state-storage (reify IStateStorage
                                       (register [this callback] nil)
                                       (mkdirs [this path acls] nil))
           cluster-utils (Mockito/mock ClusterUtils)]
       (with-open [mocked-cluster (MockedCluster. cluster-utils)]
-        (. (Mockito/when (.mkStateStorageImpl cluster-utils (Mockito/any) (Mockito/any) (Mockito/eq nil) (Mockito/any))) (thenReturn distributed-state-storage))
-        (ClusterUtils/mkStormClusterState {} nil (ClusterStateContext.))))))
+        (. (Mockito/when (.mkStateStorageImpl cluster-utils (Mockito/any) (Mockito/any) (Mockito/any))) (thenReturn distributed-state-storage))
+        (ClusterUtils/mkStormClusterState {} (ClusterStateContext.))))))

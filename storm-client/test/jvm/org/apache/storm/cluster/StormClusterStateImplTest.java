@@ -15,26 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.cluster;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.HashMap;
+import org.apache.storm.callback.ZKStateChangedCallback;
+import org.apache.zookeeper.KeeperException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-
-import org.mockito.Mockito;
 import org.mockito.Matchers;
-
+import org.mockito.Mockito;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.zookeeper.KeeperException;
-
-import org.apache.storm.callback.ZKStateChangedCallback;
-import org.apache.storm.cluster.ClusterStateContext;
 
 public class StormClusterStateImplTest {
 
@@ -57,7 +49,7 @@ public class StormClusterStateImplTest {
     public void init() throws Exception {
         storage = Mockito.mock(IStateStorage.class);
         context = new ClusterStateContext();
-        state = new StormClusterStateImpl(storage, null /*acls*/, context, false /*solo*/);
+        state = new StormClusterStateImpl(storage, context, false /*solo*/);
     }
 
 

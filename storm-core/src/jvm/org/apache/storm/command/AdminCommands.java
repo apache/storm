@@ -15,15 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.command;
 
-import java.util.ArrayList;
+import com.google.common.collect.Sets;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.KeyFilter;
 import org.apache.storm.blobstore.LocalFsBlobStore;
@@ -35,12 +35,8 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.ZooDefs;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.collect.Sets;
 
 public class AdminCommands {
 
@@ -49,7 +45,7 @@ public class AdminCommands {
     private static IStormClusterState stormClusterState;
     private static Map<String, Object> conf;
 
-    public static void main(String [] args) throws Exception {
+    public static void main(String [] args) {
 
         if (args.length == 0) {
             throw new IllegalArgumentException("Missing command. Supported command is remove_corrupt_topologies");
@@ -71,24 +67,12 @@ public class AdminCommands {
     private static void initialize() {
         conf = Utils.readStormConfig();
         nimbusBlobStore = ServerUtils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
-        List<ACL> acls = null;
-        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
-            acls = adminZkAcls();
-        }
         try {
-            stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.NIMBUS));
+            stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.NIMBUS, conf));
         } catch (Exception e) {
             LOG.error("admin can't create stormClusterState");
             new RuntimeException(e);
         }
-    }
-
-    // we might think of moving this method in Utils class
-    private static List<ACL> adminZkAcls() {
-        final List<ACL> acls = new ArrayList<>();
-        acls.add(ZooDefs.Ids.CREATOR_ALL_ACL.get(0));
-        acls.add(new ACL((ZooDefs.Perms.READ ^ ZooDefs.Perms.CREATE), ZooDefs.Ids.ANYONE_ID_UNSAFE));
-        return acls;
     }
 
     private static Set<String> getKeyListFromId( String corruptId) {

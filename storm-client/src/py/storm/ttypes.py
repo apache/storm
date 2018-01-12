@@ -241,6 +241,20 @@ class HBServerMessageType:
     "NOT_AUTHORIZED": 18,
   }
 
+class WorkerTokenServiceType:
+  NIMBUS = 0
+  DRPC = 1
+
+  _VALUES_TO_NAMES = {
+    0: "NIMBUS",
+    1: "DRPC",
+  }
+
+  _NAMES_TO_VALUES = {
+    "NIMBUS": 0,
+    "DRPC": 1,
+  }
+
 
 class JavaObjectArg:
   """
@@ -12898,6 +12912,312 @@ class HBExecutionException(TException):
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.msg)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class WorkerTokenInfo:
+  """
+  Attributes:
+   - userName
+   - topologyId
+   - secretVersion
+   - expirationTimeMillis
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'userName', None, None, ), # 1
+    (2, TType.STRING, 'topologyId', None, None, ), # 2
+    (3, TType.I64, 'secretVersion', None, None, ), # 3
+    (4, TType.I64, 'expirationTimeMillis', None, None, ), # 4
+  )
+
+  def __init__(self, userName=None, topologyId=None, secretVersion=None, expirationTimeMillis=None,):
+    self.userName = userName
+    self.topologyId = topologyId
+    self.secretVersion = secretVersion
+    self.expirationTimeMillis = expirationTimeMillis
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.userName = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.topologyId = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.I64:
+          self.secretVersion = iprot.readI64()
+        else:
+          iprot.skip(ftype)
+      elif fid == 4:
+        if ftype == TType.I64:
+          self.expirationTimeMillis = iprot.readI64()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('WorkerTokenInfo')
+    if self.userName is not None:
+      oprot.writeFieldBegin('userName', TType.STRING, 1)
+      oprot.writeString(self.userName.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.topologyId is not None:
+      oprot.writeFieldBegin('topologyId', TType.STRING, 2)
+      oprot.writeString(self.topologyId.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.secretVersion is not None:
+      oprot.writeFieldBegin('secretVersion', TType.I64, 3)
+      oprot.writeI64(self.secretVersion)
+      oprot.writeFieldEnd()
+    if self.expirationTimeMillis is not None:
+      oprot.writeFieldBegin('expirationTimeMillis', TType.I64, 4)
+      oprot.writeI64(self.expirationTimeMillis)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.userName is None:
+      raise TProtocol.TProtocolException(message='Required field userName is unset!')
+    if self.topologyId is None:
+      raise TProtocol.TProtocolException(message='Required field topologyId is unset!')
+    if self.secretVersion is None:
+      raise TProtocol.TProtocolException(message='Required field secretVersion is unset!')
+    if self.expirationTimeMillis is None:
+      raise TProtocol.TProtocolException(message='Required field expirationTimeMillis is unset!')
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.userName)
+    value = (value * 31) ^ hash(self.topologyId)
+    value = (value * 31) ^ hash(self.secretVersion)
+    value = (value * 31) ^ hash(self.expirationTimeMillis)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class WorkerToken:
+  """
+  Attributes:
+   - serviceType
+   - info
+   - signature
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.I32, 'serviceType', None, None, ), # 1
+    (2, TType.STRING, 'info', None, None, ), # 2
+    (3, TType.STRING, 'signature', None, None, ), # 3
+  )
+
+  def __init__(self, serviceType=None, info=None, signature=None,):
+    self.serviceType = serviceType
+    self.info = info
+    self.signature = signature
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.I32:
+          self.serviceType = iprot.readI32()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.info = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.STRING:
+          self.signature = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('WorkerToken')
+    if self.serviceType is not None:
+      oprot.writeFieldBegin('serviceType', TType.I32, 1)
+      oprot.writeI32(self.serviceType)
+      oprot.writeFieldEnd()
+    if self.info is not None:
+      oprot.writeFieldBegin('info', TType.STRING, 2)
+      oprot.writeString(self.info)
+      oprot.writeFieldEnd()
+    if self.signature is not None:
+      oprot.writeFieldBegin('signature', TType.STRING, 3)
+      oprot.writeString(self.signature)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.serviceType is None:
+      raise TProtocol.TProtocolException(message='Required field serviceType is unset!')
+    if self.info is None:
+      raise TProtocol.TProtocolException(message='Required field info is unset!')
+    if self.signature is None:
+      raise TProtocol.TProtocolException(message='Required field signature is unset!')
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.serviceType)
+    value = (value * 31) ^ hash(self.info)
+    value = (value * 31) ^ hash(self.signature)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class PrivateWorkerKey:
+  """
+  Attributes:
+   - key
+   - userName
+   - expirationTimeMillis
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'key', None, None, ), # 1
+    (2, TType.STRING, 'userName', None, None, ), # 2
+    (3, TType.I64, 'expirationTimeMillis', None, None, ), # 3
+  )
+
+  def __init__(self, key=None, userName=None, expirationTimeMillis=None,):
+    self.key = key
+    self.userName = userName
+    self.expirationTimeMillis = expirationTimeMillis
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.key = iprot.readString()
+        else:
+          iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRING:
+          self.userName = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      elif fid == 3:
+        if ftype == TType.I64:
+          self.expirationTimeMillis = iprot.readI64()
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('PrivateWorkerKey')
+    if self.key is not None:
+      oprot.writeFieldBegin('key', TType.STRING, 1)
+      oprot.writeString(self.key)
+      oprot.writeFieldEnd()
+    if self.userName is not None:
+      oprot.writeFieldBegin('userName', TType.STRING, 2)
+      oprot.writeString(self.userName.encode('utf-8'))
+      oprot.writeFieldEnd()
+    if self.expirationTimeMillis is not None:
+      oprot.writeFieldBegin('expirationTimeMillis', TType.I64, 3)
+      oprot.writeI64(self.expirationTimeMillis)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    if self.key is None:
+      raise TProtocol.TProtocolException(message='Required field key is unset!')
+    if self.userName is None:
+      raise TProtocol.TProtocolException(message='Required field userName is unset!')
+    if self.expirationTimeMillis is None:
+      raise TProtocol.TProtocolException(message='Required field expirationTimeMillis is unset!')
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.key)
+    value = (value * 31) ^ hash(self.userName)
+    value = (value * 31) ^ hash(self.expirationTimeMillis)
     return value
 
   def __repr__(self):

@@ -22,6 +22,7 @@ import org.apache.storm.generated.ClusterWorkerHeartbeat;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.ProfileAction;
+import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
@@ -55,6 +56,7 @@ public class ClusterUtils {
     public static final String CREDENTIALS_ROOT = "credentials";
     public static final String LOGCONFIG_ROOT = "logconfigs";
     public static final String PROFILERCONFIG_ROOT = "profilerconfigs";
+    public static final String SECRET_KEYS_ROOT = "secretkeys";
 
     public static final String ASSIGNMENTS_SUBTREE = ZK_SEPERATOR + ASSIGNMENTS_ROOT;
     public static final String STORMS_SUBTREE = ZK_SEPERATOR + STORMS_ROOT;
@@ -68,6 +70,7 @@ public class ClusterUtils {
     public static final String CREDENTIALS_SUBTREE = ZK_SEPERATOR + CREDENTIALS_ROOT;
     public static final String LOGCONFIG_SUBTREE = ZK_SEPERATOR + LOGCONFIG_ROOT;
     public static final String PROFILERCONFIG_SUBTREE = ZK_SEPERATOR + PROFILERCONFIG_ROOT;
+    public static final String SECRET_KEYS_SUBTREE = ZK_SEPERATOR + SECRET_KEYS_ROOT;
 
     // A singleton instance allows us to mock delegated static methods in our
     // tests by subclassing.
@@ -174,6 +177,11 @@ public class ClusterUtils {
         return CREDENTIALS_SUBTREE + ZK_SEPERATOR + stormId;
     }
 
+    /**
+     * Get the path to the log config for a topology.
+     * @param stormId the topology id.
+     * @return the path to the config.
+     */
     public static String logConfigPath(String stormId) {
         return LOGCONFIG_SUBTREE + ZK_SEPERATOR + stormId;
     }
@@ -184,6 +192,36 @@ public class ClusterUtils {
 
     public static String profilerConfigPath(String stormId, String host, Long port, ProfileAction requestType) {
         return profilerConfigPath(stormId) + ZK_SEPERATOR + host + "_" + port + "_" + requestType;
+    }
+
+    /**
+     * Get the base path where secret keys are stored for a given service.
+     * @param type the service we are interested in.
+     * @return the path to that service root.
+     */
+    public static String secretKeysPath(WorkerTokenServiceType type) {
+        return SECRET_KEYS_SUBTREE + ZK_SEPERATOR + type.name();
+    }
+
+    /**
+     * Get the path to secret keys for a specific topology
+     * @param type the service the secret is for.
+     * @param topologyId the topology the secret is for.
+     * @return the path to the list of secret keys.
+     */
+    public static String secretKeysPath(WorkerTokenServiceType type, String topologyId) {
+        return secretKeysPath(type) + ZK_SEPERATOR + topologyId;
+    }
+
+    /**
+     * Get the path to a specific secret key.
+     * @param type the service the secret is for.
+     * @param topologyId the topology the secret is for.
+     * @param version the version the secret is for.
+     * @return the path to the secret.
+     */
+    public static String secretKeysPath(WorkerTokenServiceType type, String topologyId, long version) {
+        return secretKeysPath(type, topologyId) + ZK_SEPERATOR + version;
     }
 
     public static <T> T maybeDeserialize(byte[] serialized, Class<T> clazz) {
@@ -214,16 +252,16 @@ public class ClusterUtils {
         return executorWhb;
     }
 
-    public IStormClusterState mkStormClusterStateImpl(Object stateStorage, List<ACL> acls, ClusterStateContext context) throws Exception {
+    public IStormClusterState mkStormClusterStateImpl(Object stateStorage, ClusterStateContext context) throws Exception {
         if (stateStorage instanceof IStateStorage) {
-            return new StormClusterStateImpl((IStateStorage) stateStorage, acls, context, false);
+            return new StormClusterStateImpl((IStateStorage) stateStorage, context, false);
         } else {
-            IStateStorage Storage = _instance.mkStateStorageImpl((Map) stateStorage, (Map) stateStorage, acls, context);
-            return new StormClusterStateImpl(Storage, acls, context, true);
+            IStateStorage Storage = _instance.mkStateStorageImpl((Map) stateStorage, (Map) stateStorage, context);
+            return new StormClusterStateImpl(Storage, context, true);
         }
     }
 
-    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
+    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map auth_conf, ClusterStateContext context) throws Exception {
         String className = null;
         IStateStorage stateStorage = null;
         if (config.get(Config.STORM_CLUSTER_STATE_STORE) != null) {
@@ -233,16 +271,16 @@ public class ClusterUtils {
         }
         Class clazz = Class.forName(className);
         StateStorageFactory storageFactory = (StateStorageFactory) clazz.newInstance();
-        stateStorage = storageFactory.mkStore(config, auth_conf, acls, context);
+        stateStorage = storageFactory.mkStore(config, auth_conf, context);
         return stateStorage;
     }
 
-    public static IStateStorage mkStateStorage(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context) throws Exception {
-        return _instance.mkStateStorageImpl(config, auth_conf, acls, context);
+    public static IStateStorage mkStateStorage(Map<String, Object> config, Map auth_conf, ClusterStateContext context) throws Exception {
+        return _instance.mkStateStorageImpl(config, auth_conf, context);
     }
 
-    public static IStormClusterState mkStormClusterState(Object StateStorage, List<ACL> acls, ClusterStateContext context) throws Exception {
-        return _instance.mkStormClusterStateImpl(StateStorage, acls, context);
+    public static IStormClusterState mkStormClusterState(Object StateStorage, ClusterStateContext context) throws Exception {
+        return _instance.mkStormClusterStateImpl(StateStorage, context);
     }
 
     public static String stringifyError(Throwable error) {
