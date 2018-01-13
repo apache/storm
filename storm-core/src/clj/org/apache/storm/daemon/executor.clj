@@ -234,7 +234,7 @@
                                   (storm-conf TOPOLOGY-EXECUTOR-SEND-BUFFER-SIZE)
                                   (storm-conf TOPOLOGY-DISRUPTOR-WAIT-TIMEOUT-MILLIS)
                                   (.getStormId worker-context)
-                                  component-id
+                                  (first task-ids) component-id
                                   (.getThisWorkerPort worker-context)
                                   :producer-type :multi-threaded
                                   :batch-size (storm-conf TOPOLOGY-DISRUPTOR-BATCH-SIZE)

@@ -46,8 +46,8 @@ public class StormMetricRegistry {
 
     private static String hostName = null;
 
-    public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, String componentId, Integer port){
-        String metricName = metricName(name, topologyId, componentId, port);
+    public static <T> SimpleGauge<T>  gauge(T initialValue, String name, String topologyId, String componentId, Integer taskId, Integer port){
+        String metricName = metricName(name, topologyId, componentId, taskId, port);
         if(REGISTRY.getGauges().containsKey(metricName)){
             return (SimpleGauge)REGISTRY.getGauges().get(metricName);
         } else {
@@ -55,16 +55,16 @@ public class StormMetricRegistry {
         }
     }
 
-    public static DisruptorMetrics disruptorMetrics(String name, String topologyId, String componentId, Integer port){
+    public static DisruptorMetrics disruptorMetrics(String name, String topologyId, String componentId, Integer taskId, Integer port){
         return new DisruptorMetrics(
-                StormMetricRegistry.gauge(0L, name + "-capacity", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0L, name + "-population", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0L, name + "-write-position", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0L, name + "-read-position", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0.0, name + "-arrival-rate", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0.0, name + "-sojourn-time-ms", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0L, name + "-overflow", topologyId, componentId, port),
-                StormMetricRegistry.gauge(0.0F, name + "-percent-full", topologyId, componentId, port)
+                StormMetricRegistry.gauge(0L, name + "-capacity", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0L, name + "-population", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0L, name + "-write-position", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0L, name + "-read-position", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0.0, name + "-arrival-rate", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0.0, name + "-sojourn-time-ms", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0L, name + "-overflow", topologyId, componentId, taskId, port),
+                StormMetricRegistry.gauge(0.0F, name + "-percent-full", topologyId, componentId, taskId, port)
         );
     }
 
@@ -147,13 +147,15 @@ public class StormMetricRegistry {
         return sb.toString();
     }
 
-    public static String metricName(String name, String stormId, String componentId, Integer workerPort) {
+    public static String metricName(String name, String stormId, String componentId, Integer taskId, Integer workerPort) {
         StringBuilder sb = new StringBuilder("storm.worker.");
         sb.append(stormId);
         sb.append(".");
         sb.append(hostName);
         sb.append(".");
         sb.append(dotToUnderScore(componentId));
+        sb.append(".");
+        sb.append(taskId);
         sb.append(".");
         sb.append(workerPort);
         sb.append("-");
