@@ -20,7 +20,9 @@ package org.apache.storm.solr.mapper;
 
 import static org.apache.storm.solr.schema.SolrFieldTypeFinder.FieldTypeWrapper;
 
-import org.apache.storm.tuple.ITuple;
+import java.util.LinkedList;
+import java.util.List;
+
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
@@ -28,13 +30,11 @@ import org.apache.solr.client.solrj.request.UpdateRequest;
 import org.apache.solr.common.SolrInputDocument;
 import org.apache.storm.solr.schema.FieldType;
 import org.apache.storm.solr.schema.Schema;
-import org.apache.storm.solr.schema.builder.SchemaBuilder;
 import org.apache.storm.solr.schema.SolrFieldTypeFinder;
+import org.apache.storm.solr.schema.builder.SchemaBuilder;
+import org.apache.storm.tuple.ITuple;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.LinkedList;
-import java.util.List;
 
 public class SolrFieldsMapper implements SolrMapper {
     private static final Logger log = LoggerFactory.getLogger(SolrFieldsMapper.class);
@@ -68,8 +68,7 @@ public class SolrFieldsMapper implements SolrMapper {
 
         //TODO Handle the case where there may be no schema
         private void setTypeFinder(SchemaBuilder schemaBuilder) {
-            Schema schema = schemaBuilder.getSchema();
-            typeFinder = new SolrFieldTypeFinder(schema);
+            typeFinder = new SolrFieldTypeFinder(schemaBuilder);
         }
 
          // Sets {@link SolrFieldsMapper} to use the default Solr collection if there is one defined
@@ -100,6 +99,11 @@ public class SolrFieldsMapper implements SolrMapper {
         this.multiValueFieldToken = builder.multiValueFieldToken;
         log.debug("Created {} with the following configuration: [{}] "
                 + this.getClass().getSimpleName(), this.toString());
+    }
+
+    @Override
+    public void configure()  {
+        typeFinder.initialize();
     }
 
     @Override

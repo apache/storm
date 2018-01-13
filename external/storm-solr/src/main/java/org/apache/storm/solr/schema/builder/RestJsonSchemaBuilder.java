@@ -18,20 +18,22 @@
 
 package org.apache.storm.solr.schema.builder;
 
+import java.io.IOException;
+import java.net.URL;
+import java.util.Scanner;
+
 import com.google.gson.Gson;
 import org.apache.storm.solr.schema.Schema;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.net.URL;
-import java.util.Scanner;
-
 /**
  * Class that builds the {@link Schema} object from the JSON representation of the schema as returned by the
  * URL of the form http://localhost:8983/solr/gettingstarted/schema/ . This particular URL returns the schema
  * in JSON format for the gettingstarted example running locally.
+ * @deprecated Use RestJsonSchemaBuilder2 instead, as this doesn't support Kerberos authentication
  */
+@Deprecated
 public class RestJsonSchemaBuilder implements SchemaBuilder {
     private static final Logger logger = LoggerFactory.getLogger(RestJsonSchemaBuilder.class);
     private Schema schema;
@@ -60,6 +62,10 @@ public class RestJsonSchemaBuilder implements SchemaBuilder {
         Gson gson = new Gson();
         Schema.SchemaWrapper schemaWrapper = gson.fromJson(result, Schema.SchemaWrapper.class);
         this.schema = schemaWrapper.getSchema();
+    }
+
+    @Override
+    public void buildSchema() throws IOException {
     }
 
     @Override
