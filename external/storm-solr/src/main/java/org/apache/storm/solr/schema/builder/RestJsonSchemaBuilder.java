@@ -31,6 +31,7 @@ import java.util.Scanner;
  * Class that builds the {@link Schema} object from the JSON representation of the schema as returned by the
  * URL of the form http://localhost:8983/solr/gettingstarted/schema/ . This particular URL returns the schema
  * in JSON format for the gettingstarted example running locally.
+ * This doesn't work in kerberos mode. Please check new versions for kerberos support
  */
 public class RestJsonSchemaBuilder implements SchemaBuilder {
     private static final Logger logger = LoggerFactory.getLogger(RestJsonSchemaBuilder.class);
