@@ -31,6 +31,7 @@ import org.slf4j.LoggerFactory;
 import javax.xml.bind.DatatypeConverter;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -121,7 +122,8 @@ public abstract class AbstractHadoopNimbusPluginAutoCreds
 
     protected List<String> getConfigKeys(Map conf) {
         String configKeyString = getConfigKeyString();
-        return (List<String>) conf.get(configKeyString);
+        List<String> configKeys = (List<String>) conf.get(configKeyString);
+        return configKeys != null ? configKeys : Collections.emptyList();
     }
 
 }
