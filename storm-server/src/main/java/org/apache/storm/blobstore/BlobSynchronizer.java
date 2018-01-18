@@ -58,6 +58,10 @@ public class BlobSynchronizer {
         this.blobStoreKeySet = blobStoreKeySet;
     }
 
+    public void setZkClient(CuratorFramework zkClient) {
+        this.zkClient = zkClient;
+    }
+
     public Set<String> getBlobStoreKeySet() {
         Set<String> keySet = new HashSet<String>();
         keySet.addAll(blobStoreKeySet);
@@ -73,7 +77,6 @@ public class BlobSynchronizer {
     public synchronized void syncBlobs() {
         try {
             LOG.debug("Sync blobs - blobstore keys {}, zookeeper keys {}",getBlobStoreKeySet(), getZookeeperKeySet());
-            zkClient = BlobStoreUtils.createZKClient(conf);
             deleteKeySetFromBlobStoreNotOnZookeeper(getBlobStoreKeySet(), getZookeeperKeySet());
             updateKeySetForBlobStore(getBlobStoreKeySet());
             Set<String> keySetToDownload = getKeySetToDownload(getBlobStoreKeySet(), getZookeeperKeySet());
@@ -89,9 +92,6 @@ public class BlobSynchronizer {
                 } catch (KeyNotFoundException e) {
                     LOG.debug("Detected deletion for the key {} while downloading - skipping download", key);
                 }
-            }
-            if (zkClient !=null) {
-                zkClient.close();
             }
         } catch(InterruptedException | ClosedByInterruptException exp) {
             LOG.error("Interrupt Exception {}", exp);

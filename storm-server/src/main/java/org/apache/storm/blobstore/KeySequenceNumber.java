@@ -206,10 +206,6 @@ public class KeySequenceNumber {
             // in other case, just set this to 0 to trigger re-sync later
             LOG.error("Exception {}", e);
             return INITIAL_SEQUENCE_NUMBER - 1;
-        } finally {
-            if (zkClient != null) {
-                zkClient.close();
-            }
         }
     }
 

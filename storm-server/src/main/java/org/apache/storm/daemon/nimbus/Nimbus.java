@@ -1267,30 +1267,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String confKey = ConfigUtils.masterStormConfKey(topoId);
         NimbusInfo hostPortInfo = nimbusHostPortInfo;
 
-        CuratorFramework zkClient = null;
-
-        if (store instanceof LocalFsBlobStore) {
-            zkClient = BlobStoreUtils.createZKClient(conf);
-        }
-
         if (tmpJarLocation != null) {
             //in local mode there is no jar
             try (FileInputStream fin = new FileInputStream(tmpJarLocation)) {
                 store.createBlob(jarKey, fin, new SettableBlobMeta(BlobStoreAclHandler.DEFAULT), subject);
             }
-            if (store instanceof LocalFsBlobStore) {
-                clusterState.setupBlobstore(jarKey, hostPortInfo, getVersionForKey(jarKey, hostPortInfo, zkClient));
-            }
         }
 
         topoCache.addTopoConf(topoId, subject, topoConf);
-        if (store instanceof LocalFsBlobStore) {
-            clusterState.setupBlobstore(confKey, hostPortInfo, getVersionForKey(confKey, hostPortInfo, zkClient));
-        }
-
         topoCache.addTopology(topoId, subject, topology);
-        if (store instanceof LocalFsBlobStore) {
-            clusterState.setupBlobstore(codeKey, hostPortInfo, getVersionForKey(codeKey, hostPortInfo, zkClient));
+
+        try (CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf)) {
+            if (store instanceof LocalFsBlobStore) {
+                if (tmpJarLocation != null) {
+                    clusterState.setupBlobstore(jarKey, hostPortInfo, getVersionForKey(jarKey, hostPortInfo, zkClient));
+                }
+                clusterState.setupBlobstore(confKey, hostPortInfo, getVersionForKey(confKey, hostPortInfo, zkClient));
+                clusterState.setupBlobstore(codeKey, hostPortInfo, getVersionForKey(codeKey, hostPortInfo, zkClient));
+            }
         }
     }
 
@@ -2161,13 +2155,14 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             store.deleteBlob(toDelete, NIMBUS_SUBJECT);
         }
         LOG.debug("Creating list of key entries for blobstore inside zookeeper {} local {}", activeKeys, activeLocalKeys);
-        CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
-        for (String key: activeLocalKeys) {
-            try {
-                state.setupBlobstore(key, nimbusInfo, getVersionForKey(key, nimbusInfo, zkClient));
-            } catch (KeyNotFoundException e) {
-                // invalid key, remove it from blobstore
-                store.deleteBlob(key, NIMBUS_SUBJECT);
+        try (CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf)) {
+            for (String key: activeLocalKeys) {
+                try {
+                    state.setupBlobstore(key, nimbusInfo, getVersionForKey(key, nimbusInfo, zkClient));
+                } catch (KeyNotFoundException e) {
+                    // invalid key, remove it from blobstore
+                    store.deleteBlob(key, NIMBUS_SUBJECT);
+                }
             }
         }
     }
@@ -2272,10 +2267,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }));
                 LOG.debug("blob-sync blob-store-keys {} zookeeper-keys {}", allKeys, zkKeys);
                 BlobSynchronizer sync = new BlobSynchronizer(store, conf);
-                sync.setNimbusInfo(nimbusInfo);
-                sync.setBlobStoreKeySet(allKeys);
-                sync.setZookeeperKeySet(zkKeys);
-                sync.syncBlobs();
+                try (CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf)) {
+                    sync.setZkClient(zkClient);
+                    sync.setNimbusInfo(nimbusInfo);
+                    sync.setBlobStoreKeySet(allKeys);
+                    sync.setZookeeperKeySet(zkKeys);
+                    sync.syncBlobs();
+                }
             } //else not leader (NOOP)
         } //else local (NOOP)
     }
@@ -3361,8 +3359,9 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             BlobStore store = blobStore;
             NimbusInfo ni = nimbusHostPortInfo;
             if (store instanceof LocalFsBlobStore) {
-                CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
-                state.setupBlobstore(key, ni, getVersionForKey(key, ni, zkClient));
+                try (CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf)) {
+                    state.setupBlobstore(key, ni, getVersionForKey(key, ni, zkClient));
+                }
             }
             LOG.debug("Created state in zookeeper {} {} {}", state, store, ni);
         } catch (Exception e) {
