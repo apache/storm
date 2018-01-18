@@ -131,9 +131,8 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public synchronized int getKeySequenceNumber(Map<String, Object> conf) throws KeyNotFoundException {
+    public synchronized int getKeySequenceNumber(CuratorFramework zkClient) throws KeyNotFoundException {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
-        CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
         try {
             // Key has not been created yet and it is the first time it is being created
             if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
