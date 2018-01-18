@@ -39,6 +39,7 @@ import java.io.ObjectInputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -249,10 +250,12 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     private List<String> loadConfigKeys(Map conf) {
         List<String> keys;
-        String configKeyString = getConfigKeyString();
-        if ((keys = (List<String>) conf.get(configKeyString)) != null) {
+        if ((keys = (List<String>) conf.get(getConfigKeyString())) != null) {
             configKeys.addAll(keys);
+        } else {
+            keys = Collections.emptyList();
         }
+
         return keys;
     }
 
