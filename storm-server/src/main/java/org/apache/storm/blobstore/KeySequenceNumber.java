@@ -18,19 +18,18 @@
 
 package org.apache.storm.blobstore;
 
+import java.nio.ByteBuffer;
+import java.util.TreeSet;
+import java.util.List;
+
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.util.TreeSet;
-import java.util.Map;
-import java.util.List;
 
 /**
  * Class hands over the key sequence number which implies the number of updates made to a blob.

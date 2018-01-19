@@ -17,16 +17,16 @@
  */
 package org.apache.storm.blobstore;
 
-import org.apache.storm.generated.KeyNotFoundException;
-import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.curator.framework.CuratorFramework;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.nio.channels.ClosedByInterruptException;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.curator.framework.CuratorFramework;
+import org.apache.storm.generated.KeyNotFoundException;
+import org.apache.storm.nimbus.NimbusInfo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Is called periodically and updates the nimbus with blobs based on the state stored inside the zookeeper
