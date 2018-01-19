@@ -113,10 +113,14 @@ public abstract class AbstractHadoopAutoCreds implements IAutoCredentials, Crede
                     if (allTokens != null) {
                         for (Token<? extends TokenIdentifier> token : allTokens) {
                             try {
+                                if (token == null) {
+                                    LOG.debug("Ignoring null token");
+                                    continue;
+                                }
+
                                 LOG.debug("Current user: {}", UserGroupInformation.getCurrentUser());
-                                LOG.debug("Token from credential: {} / {}", token.toString(),
-                                        token.decodeIdentifier().getUser());
-                                
+                                LOG.debug("Token from Credentials : {}", token);
+
                                 UserGroupInformation.getCurrentUser().addToken(token);
                                 LOG.info("Added delegation tokens to UGI.");
                             } catch (IOException e) {
