@@ -1029,7 +1029,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final AtomicLong submittedCount;
     //Cached CuratorFramework, mainly used for BlobStore.
     private CuratorFramework zkClient;
-    private final Object zkClientCreateLock = new Object();
     private final IStormClusterState stormClusterState;
     private final Object submitLock = new Object();
     private final Object schedLock = new Object();
