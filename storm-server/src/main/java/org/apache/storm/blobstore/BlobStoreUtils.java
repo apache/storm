@@ -17,7 +17,6 @@
  */
 package org.apache.storm.blobstore;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -55,7 +54,6 @@ public class BlobStoreUtils {
         ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
         CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port, (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo);
         zkClient.start();
-
         return zkClient;
     }
 
@@ -270,5 +268,4 @@ public class BlobStoreUtils {
             throw new RuntimeException(exp);
         }
     }
-
 }
