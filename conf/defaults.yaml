@@ -194,11 +194,7 @@ backpressure.disruptor.low.watermark: 0.4
 backpressure.znode.timeout.secs: 30
 backpressure.znode.update.freq.secs: 15
 
-zmq.threads: 1
-zmq.linger.millis: 5000
-zmq.hwm: 0
-
-
+# Used by workers to communicate
 storm.messaging.netty.server_worker_threads: 1
 storm.messaging.netty.client_worker_threads: 1
 storm.messaging.netty.buffer_size: 5242880 #5MB buffer
@@ -330,4 +326,5 @@ worker.metrics:
     "CGroupCpu": "org.apache.storm.metric.cgroup.CGroupCpu"
     "CGroupCpuGuarantee": "org.apache.storm.metric.cgroup.CGroupCpuGuarantee"
 
+# The number of buckets for running statistics
 num.stat.buckets: 20
