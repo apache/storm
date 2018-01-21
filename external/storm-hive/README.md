@@ -128,8 +128,8 @@ nimbus.autocredential.plugins.classes : ["org.apache.storm.hive.security.AutoHiv
 nimbus.credential.renewers.classes : ["org.apache.storm.hive.security.AutoHive", "org.apache.storm.hdfs.security.AutoHDFS"]
 nimbus.credential.renewers.freq.secs : 82800 (23 hours)
 
-hive.keytab.file: "/path/to/keytab/on/nimbus" (This is the keytab of hive super user that can impersonate other users.)
-hive.kerberos.principal: "superuser@EXAMPLE.com"
+hive.keytab.file: "/path/to/keytab/on/nimbus" (Keytab of The Hive metastore thrift server service principal. This is used to impersonate other users.)
+hive.kerberos.principal: "hive-metastore/_HOST@EXAMPLE.com" (The service principal for the metastore thrift server.)
 hive.metastore.uris: "thrift://server:9083"
 
 //hdfs configs
