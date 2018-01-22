@@ -18,19 +18,19 @@
 
 package org.apache.storm.blobstore;
 
+import java.nio.ByteBuffer;
+import java.util.TreeSet;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.nimbus.NimbusInfo;
-import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.nio.ByteBuffer;
-import java.util.TreeSet;
-import java.util.Map;
-import java.util.List;
 
 /**
  * Class hands over the key sequence number which implies the number of updates made to a blob.
@@ -119,7 +119,6 @@ import java.util.List;
  */
 public class KeySequenceNumber {
     private static final Logger LOG = LoggerFactory.getLogger(KeySequenceNumber.class);
-    private final String BLOBSTORE_SUBTREE="/blobstore";
     private final String BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE="/blobstoremaxkeysequencenumber";
     private final String key;
     private final NimbusInfo nimbusInfo;
@@ -131,12 +130,11 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public synchronized int getKeySequenceNumber(Map<String, Object> conf) throws KeyNotFoundException {
+    public synchronized int getKeySequenceNumber(CuratorFramework zkClient) throws KeyNotFoundException {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
-        CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
         try {
             // Key has not been created yet and it is the first time it is being created
-            if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
+            if (zkClient.checkExists().forPath(BlobStoreUtils.getBlobStoreSubtree() + "/" + key) == null) {
                 zkClient.create().creatingParentsIfNeeded().withMode(CreateMode.PERSISTENT)
                         .withACL(ZooDefs.Ids.OPEN_ACL_UNSAFE).forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key);
                 zkClient.setData().forPath(BLOBSTORE_MAX_KEY_SEQUENCE_SUBTREE + "/" + key,
@@ -147,7 +145,7 @@ public class KeySequenceNumber {
             // When all nimbodes go down and one or few of them come up
             // Unfortunately there might not be an exact way to know which one contains the most updated blob,
             // if all go down which is unlikely. Hence there might be a need to update the blob if all go down.
-            List<String> stateInfoList = zkClient.getChildren().forPath(BLOBSTORE_SUBTREE + "/" + key);
+            List<String> stateInfoList = zkClient.getChildren().forPath(BlobStoreUtils.getBlobStoreSubtree() + "/" + key);
             LOG.debug("stateInfoList-size {} stateInfoList-data {}", stateInfoList.size(), stateInfoList);
             if (stateInfoList.isEmpty()) {
                 return getMaxSequenceNumber(zkClient);
@@ -207,10 +205,6 @@ public class KeySequenceNumber {
             // in other case, just set this to 0 to trigger re-sync later
             LOG.error("Exception {}", e);
             return INITIAL_SEQUENCE_NUMBER - 1;
-        } finally {
-            if (zkClient != null) {
-                zkClient.close();
-            }
         }
     }
 

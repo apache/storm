@@ -1311,7 +1311,7 @@
   (with-open [zk (InProcessZookeeper. )]
     (with-open [tmp-nimbus-dir (TmpPath.)
                 _ (MockedZookeeper. (proxy [Zookeeper] []
-                      (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
+                      (zkLeaderElectorImpl [conf zk blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus-dir (.getPath tmp-nimbus-dir)]
         (letlocals
           (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -1328,7 +1328,7 @@
                            {}))
 
           (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                          (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. false))))]
+                          (zkLeaderElectorImpl [conf zk blob-store tc] (MockLeaderElector. false))))]
 
             (letlocals
               (bind non-leader-cluster-state (ClusterUtils/mkStormClusterState conf nil (ClusterStateContext.)))
@@ -1635,7 +1635,7 @@
                   _ (UtilsInstaller. fake-utils)
                   - (StormCommonInstaller. fake-common)
                   zk-le (MockedZookeeper. (proxy [Zookeeper] []
-                          (zkLeaderElectorImpl [conf blob-store tc] nil)))
+                          (zkLeaderElectorImpl [conf zk blob-store tc] nil)))
                   mocked-cluster (MockedCluster. cluster-utils)]
           (mk-nimbus auth-conf fake-inimbus)
           (.mkStormClusterStateImpl (Mockito/verify cluster-utils (Mockito/times 1)) (Mockito/any) (Mockito/eq expected-acls) (Mockito/any))
@@ -1706,7 +1706,7 @@
   (with-open [zk (InProcessZookeeper. )]
     (with-open [tmp-nimbus-dir (TmpPath.)
                 _ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf zk blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus-dir (.getPath tmp-nimbus-dir)]
         (letlocals
           (bind conf (merge (clojurify-structure (ConfigUtils/readStormConfig))
@@ -1899,7 +1899,7 @@
         mock-blob-store (Mockito/mock BlobStore)
         conf {NIMBUS-MONITOR-FREQ-SECS 10}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf zk blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (HashSet. inactive-topos))
@@ -1944,7 +1944,7 @@
         mock-blob-store (Mockito/mock BlobStore)
         conf {NIMBUS-MONITOR-FREQ-SECS 10}]
     (with-open [_ (MockedZookeeper. (proxy [Zookeeper] []
-                    (zkLeaderElectorImpl [conf blob-store tc] (MockLeaderElector. ))))]
+                    (zkLeaderElectorImpl [conf zk blob-store tc] (MockLeaderElector. ))))]
       (let [nimbus (Mockito/spy (Nimbus. conf nil mock-state nil mock-blob-store nil nil))]
         (.set (.getHeartbeatsCache nimbus) hb-cache)
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (set inactive-topos))

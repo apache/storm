@@ -14,19 +14,25 @@
 ;; See the License for the specific language governing permissions and
 ;; limitations under the License.
 (ns org.apache.storm.command.shell-submission
-  (:import [org.apache.storm StormSubmitter]
+  (:import [org.apache.storm Config StormSubmitter]
            [org.apache.storm.utils ServerUtils]
            [org.apache.storm.zookeeper Zookeeper])
   (:use [org.apache.storm util config log])
   (:require [clojure.string :as str])
-  (:import [org.apache.storm.utils ConfigUtils])
+  (:import [org.apache.storm.callback DefaultWatcherCallBack]
+           [org.apache.storm.utils ConfigUtils]
+           [org.apache.storm.zookeeper Zookeeper ClientZookeeper])
   (:gen-class))
 
 
 (defn -main [^String tmpjarpath & args]
   (let [conf (clojurify-structure (ConfigUtils/readStormConfig))
+        servers (.get conf Config/STORM_ZOOKEEPER_SERVERS)
+        port (.get conf Config/STORM_ZOOKEEPER_PORT)
+        root (.get conf Config/STORM_ZOOKEEPER_ROOT)
+        zk (ClientZookeeper/mkClient conf servers port root (DefaultWatcherCallBack.) conf)
         ; since this is not a purpose to add to leader lock queue, passing nil as blob-store and topo cache is ok
-        zk-leader-elector (Zookeeper/zkLeaderElector conf nil nil)
+        zk-leader-elector (Zookeeper/zkLeaderElector conf zk nil nil)
         leader-nimbus (.getLeader zk-leader-elector)
         host (.getHost leader-nimbus)
         port (.getPort leader-nimbus)
