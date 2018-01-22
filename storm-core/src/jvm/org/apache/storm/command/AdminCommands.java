@@ -24,12 +24,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.storm.Config;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.KeyFilter;
 import org.apache.storm.blobstore.LocalFsBlobStore;
-import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
@@ -38,7 +35,6 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
-import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
@@ -75,8 +71,6 @@ public class AdminCommands {
     private static void initialize() {
         conf = Utils.readStormConfig();
         nimbusBlobStore = ServerUtils.getNimbusBlobStore (conf, NimbusInfo.fromConf(conf));
-        List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
-        Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         List<ACL> acls = null;
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             acls = adminZkAcls();
@@ -87,7 +81,6 @@ public class AdminCommands {
             LOG.error("admin can't create stormClusterState");
             new RuntimeException(e);
         }
-        CuratorFramework zk = ClientZookeeper.mkClient(conf, servers, port, "", new DefaultWatcherCallBack(),conf);
     }
 
     // we might think of moving this method in Utils class
