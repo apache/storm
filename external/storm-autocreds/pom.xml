@@ -42,6 +42,18 @@
                     <groupId>org.slf4j</groupId>
                     <artifactId>log4j-over-slf4j</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-client</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-recipes</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>curator-framework</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -174,6 +186,10 @@
                 <exclusion>
                     <groupId>org.apache.curator</groupId>
                     <artifactId>curator-recipes</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.curator</groupId>
+                    <artifactId>apache-curator</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
