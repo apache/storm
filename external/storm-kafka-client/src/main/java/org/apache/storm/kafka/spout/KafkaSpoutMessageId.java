@@ -44,6 +44,12 @@ public class KafkaSpoutMessageId implements Serializable {
         this(topicPart, offset, true);
     }
 
+    /**
+     * Creates a new KafkaSpoutMessageId.
+     * @param topicPart The topic partition this message belongs to
+     * @param offset The offset of this message
+     * @param emitted True iff this message is not being skipped as a null tuple
+     */
     public KafkaSpoutMessageId(TopicPartition topicPart, long offset, boolean emitted) {
         this.topicPart = topicPart;
         this.offset = offset;
@@ -82,22 +88,14 @@ public class KafkaSpoutMessageId implements Serializable {
         this.emitted = emitted;
     }
 
-    public String getMetadata(Thread currThread) {
-        return "{" +
-                "topic-partition=" + topicPart +
-                ", offset=" + offset +
-                ", numFails=" + numFails +
-                ", thread='" + currThread.getName() + "'" +
-                '}';
-    }
-
     @Override
     public String toString() {
-        return "{" +
-                "topic-partition=" + topicPart +
-                ", offset=" + offset +
-                ", numFails=" + numFails +
-                '}';
+        return "{"
+            + "topic-partition=" + topicPart
+            + ", offset=" + offset
+            + ", numFails=" + numFails
+            + ", emitted=" + emitted
+            + '}';
     }
 
     @Override

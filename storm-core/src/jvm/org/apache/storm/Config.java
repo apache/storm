@@ -1607,6 +1607,14 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DEBUG = "topology.debug";
 
     /**
+     * The fully qualified name of a {@link ShellLogHandler} to handle output
+     * from non-JVM processes e.g. "com.mycompany.CustomShellLogHandler". If
+     * not provided, org.apache.storm.utils.DefaultLogHandler will be used.
+     */
+    @isString
+    public static final String TOPOLOGY_MULTILANG_LOG_HANDLER = "topology.multilang.log.handler";
+
+    /**
      * The serializer for communication between shell components and non-JVM
      * processes
      */

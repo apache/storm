@@ -18,33 +18,32 @@
 
 package org.apache.storm.utils;
 
-import java.util.concurrent.atomic.AtomicLong;
-import org.junit.Assert;
+import static org.hamcrest.CoreMatchers.is;
+import static org.junit.Assert.assertThat;
+
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import org.junit.Test;
-import junit.framework.TestCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class WorkerBackpressureThreadTest extends TestCase {
+public class WorkerBackpressureThreadTest {
     private static final Logger LOG = LoggerFactory.getLogger(WorkerBackpressureThreadTest.class);
 
     @Test
     public void testNormalEvent() throws Exception {
         Object trigger = new Object();
-        AtomicLong workerData = new AtomicLong(0);
+        CountDownLatch latch = new CountDownLatch(1);
         WorkerBackpressureCallback callback = new WorkerBackpressureCallback() {
             @Override
             public void onEvent(Object obj) {
-                ((AtomicLong) obj).getAndDecrement();
+                ((CountDownLatch) obj).countDown();
             }
         };
-        WorkerBackpressureThread workerBackpressureThread = new WorkerBackpressureThread(trigger, workerData, callback);
+        WorkerBackpressureThread workerBackpressureThread = new WorkerBackpressureThread(trigger, latch, callback);
         workerBackpressureThread.start();
         WorkerBackpressureThread.notifyBackpressureChecker(trigger);
-        long start = System.currentTimeMillis();
-        while (workerData.get() == 0) {
-            assertTrue("Timeout", (System.currentTimeMillis() - start) < 1000);
-            Thread.sleep(100);
-        }
+        //The callback should be called when the trigger is notified
+        assertThat(latch.await(1, TimeUnit.SECONDS), is(true));
     }
 }

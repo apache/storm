@@ -18,6 +18,8 @@
 
 package org.apache.storm.solr.trident;
 
+import org.apache.solr.client.solrj.impl.HttpClientUtil;
+import org.apache.solr.client.solrj.impl.Krb5HttpClientConfigurer;
 import org.apache.storm.topology.FailedException;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
@@ -44,6 +46,8 @@ public class SolrState implements State {
     }
 
     protected void prepare() {
+        if (solrConfig.isKerberosEnabled())
+            HttpClientUtil.setConfigurer(new Krb5HttpClientConfigurer());
         solrClient = new CloudSolrClient(solrConfig.getZkHostString());
     }
 

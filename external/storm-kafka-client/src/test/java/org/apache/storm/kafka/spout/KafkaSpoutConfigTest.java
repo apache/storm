@@ -49,6 +49,7 @@ public class KafkaSpoutConfigTest {
         expected.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         expected.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
         assertEquals(expected, conf.getKafkaProps());
+        assertEquals(KafkaSpoutConfig.DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS, conf.getMetricsTimeBucketSizeInSecs());
     }
 
     @Test
@@ -222,5 +223,14 @@ public class KafkaSpoutConfigTest {
             conf.getKafkaProps().get(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(ByteArrayDeserializer.class));
         assertThat("The last set value deserializer should be used, regardless of how it is set",
             conf.getKafkaProps().get(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG), CoreMatchers.<Object>equalTo(SerializableStringDeserializer.class));
+    }
+
+    @Test
+    public void testMetricsTimeBucketSizeInSecs() {
+        KafkaSpoutConfig<String, String> conf = KafkaSpoutConfig.builder("localhost:1234", "topic")
+             .setMetricsTimeBucketSizeInSecs(100)
+            .build();
+
+        assertEquals(100, conf.getMetricsTimeBucketSizeInSecs());
     }
 }

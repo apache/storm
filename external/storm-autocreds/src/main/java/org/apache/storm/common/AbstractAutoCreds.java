@@ -39,6 +39,7 @@ import java.io.ObjectInputStream;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -214,9 +215,14 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
                     if (allTokens != null) {
                         for (Token<? extends TokenIdentifier> token : allTokens) {
                             try {
+
+                                if (token == null) {
+                                    LOG.debug("Ignoring null token");
+                                    continue;
+                                }
+
                                 LOG.debug("Current user: {}", UserGroupInformation.getCurrentUser());
-                                LOG.debug("Token from credential: {} / {}", token.toString(),
-                                        token.decodeIdentifier().getUser());
+                                LOG.debug("Token from Credentials : {}", token);
 
                                 UserGroupInformation.getCurrentUser().addToken(token);
                                 LOG.info("Added delegation tokens to UGI.");
@@ -249,10 +255,12 @@ public abstract class AbstractAutoCreds implements IAutoCredentials, ICredential
 
     private List<String> loadConfigKeys(Map conf) {
         List<String> keys;
-        String configKeyString = getConfigKeyString();
-        if ((keys = (List<String>) conf.get(configKeyString)) != null) {
+        if ((keys = (List<String>) conf.get(getConfigKeyString())) != null) {
             configKeys.addAll(keys);
+        } else {
+            keys = Collections.emptyList();
         }
+
         return keys;
     }
 

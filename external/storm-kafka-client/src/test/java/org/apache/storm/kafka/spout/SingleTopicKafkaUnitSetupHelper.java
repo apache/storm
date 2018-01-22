@@ -16,15 +16,23 @@
 
 package org.apache.storm.kafka.spout;
 
+import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Matchers.anyString;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnit;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
+import org.mockito.ArgumentCaptor;
 
 public class SingleTopicKafkaUnitSetupHelper {
 
@@ -37,13 +45,27 @@ public class SingleTopicKafkaUnitSetupHelper {
      */
     public static void populateTopicData(KafkaUnit kafkaUnit, String topicName, int msgCount) throws Exception {
         kafkaUnit.createTopic(topicName);
-
+        
         for (int i = 0; i < msgCount; i++) {
             ProducerRecord<String, String> producerRecord = new ProducerRecord<>(
                 topicName, Integer.toString(i),
                 Integer.toString(i));
             kafkaUnit.sendMessage(producerRecord);
         }
+    }
+
+    /*
+     * Asserts that commitSync has been called once, 
+     * that there are only commits on one topic,
+     * and that the committed offset covers messageCount messages
+     */
+    public static <K, V> void verifyAllMessagesCommitted(KafkaConsumer<K, V> consumerSpy,
+        ArgumentCaptor<Map<TopicPartition, OffsetAndMetadata>> commitCapture, long messageCount) {
+        verify(consumerSpy, times(1)).commitSync(commitCapture.capture());
+        Map<TopicPartition, OffsetAndMetadata> commits = commitCapture.getValue();
+        assertThat("Expected commits for only one topic partition", commits.entrySet().size(), is(1));
+        OffsetAndMetadata offset = commits.entrySet().iterator().next().getValue();
+        assertThat("Expected committed offset to cover all emitted messages", offset.offset(), is(messageCount));
     }
 
     /**
