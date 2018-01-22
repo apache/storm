@@ -28,6 +28,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.storm.Config;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -464,4 +465,20 @@ abstract public class ShellUtils {
         }
     }
 
+    public static ShellLogHandler getLogHandler(Map<String, Object> topoConf) {
+        if (topoConf == null) {
+            throw new IllegalArgumentException("Config is required");
+        }
+
+        String logHandlerClassName = null;
+        if (topoConf.containsKey(Config.TOPOLOGY_MULTILANG_LOG_HANDLER)) {
+            try {
+                logHandlerClassName = topoConf.get(Config.TOPOLOGY_MULTILANG_LOG_HANDLER).toString();
+                return (ShellLogHandler) Class.forName(logHandlerClassName).newInstance();
+            } catch (ClassCastException | InstantiationException | IllegalAccessException | ClassNotFoundException e) {
+                throw new RuntimeException("Error loading ShellLogHandler " + logHandlerClassName, e);
+            }
+        }
+        return new DefaultShellLogHandler();
+    }
 }

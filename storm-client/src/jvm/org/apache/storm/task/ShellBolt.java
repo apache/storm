@@ -24,12 +24,14 @@ import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.rpc.IShellMetric;
 import org.apache.storm.multilang.BoltMsg;
 import org.apache.storm.multilang.ShellMsg;
-import org.apache.storm.topology.ReportedFailedException;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ShellBoltMessageQueue;
+import org.apache.storm.utils.ShellLogHandler;
 import org.apache.storm.utils.ShellProcess;
+import org.apache.storm.utils.ShellUtils;
+
 import com.google.common.util.concurrent.MoreExecutors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -78,6 +80,7 @@ public class ShellBolt implements IBolt {
 
     private String[] _command;
     private Map<String, String> env = new HashMap<>();
+    private ShellLogHandler _logHandler;
     private ShellProcess _process;
     private volatile boolean _running = true;
     private volatile Throwable _exception;
@@ -153,6 +156,9 @@ public class ShellBolt implements IBolt {
         //subprocesses must send their pid first thing
         Number subpid = _process.launch(topoConf, context, changeDirectory);
         LOG.info("Launched subprocess with pid " + subpid);
+
+        _logHandler =  ShellUtils.getLogHandler(topoConf);
+        _logHandler.setUpContext(ShellBolt.class, _process, _context);
 
         // reader
         _readerThread = new Thread(new BoltReaderRunnable());
@@ -246,34 +252,6 @@ public class ShellBolt implements IBolt {
         } else {
             _collector.emitDirect((int) shellMsg.getTask(),
                     shellMsg.getStream(), anchors, shellMsg.getTuple());
-        }
-    }
-
-    private void handleLog(ShellMsg shellMsg) {
-        String msg = shellMsg.getMsg();
-        msg = "ShellLog " + _process.getProcessInfoString() + " " + msg;
-        ShellMsg.ShellLogLevel logLevel = shellMsg.getLogLevel();
-
-        switch (logLevel) {
-            case TRACE:
-                LOG.trace(msg);
-                break;
-            case DEBUG:
-                LOG.debug(msg);
-                break;
-            case INFO:
-                LOG.info(msg);
-                break;
-            case WARN:
-                LOG.warn(msg);
-                break;
-            case ERROR:
-                LOG.error(msg);
-                _collector.reportError(new ReportedFailedException(msg));
-                break;
-            default:
-                LOG.info(msg);
-                break;
         }
     }
 
@@ -374,7 +352,7 @@ public class ShellBolt implements IBolt {
                             handleError(shellMsg.getMsg());
                             break;
                         case "log":
-                            handleLog(shellMsg);
+                            _logHandler.log(shellMsg);
                             break;
                         case "emit":
                             handleEmit(shellMsg);
