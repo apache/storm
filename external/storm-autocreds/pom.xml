@@ -214,12 +214,12 @@
         </dependency>
     </dependencies>
     <build>
-    <plugins>
-       <plugin>
-          <groupId>org.codehaus.mojo</groupId>
-          <artifactId>appassembler-maven-plugin</artifactId>
-          <version>1.9</version>
-          <executions>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>appassembler-maven-plugin</artifactId>
+                <version>1.9</version>
+                <executions>
                     <execution>
                         <id>create-repo</id>
                         <goals>
@@ -230,8 +230,8 @@
                             <repositoryLayout>flat</repositoryLayout>
                         </configuration>
                     </execution>
-          </executions>
-        </plugin>
-    </plugins>
-   </build>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
 </project>

@@ -140,6 +140,9 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
 
+    @isListEntryCustom(entryValidatorClasses={MetricReportersValidator.class})
+    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * A list of daemon metrics  reporter plugin class names.
      * These plugins must implement {@link org.apache.storm.daemon.metrics.reporters.PreparableReporter} interface.
@@ -1602,6 +1605,14 @@ public class Config extends HashMap<String, Object> {
      */
     @isBoolean
     public static final String TOPOLOGY_DEBUG = "topology.debug";
+
+    /**
+     * The fully qualified name of a {@link ShellLogHandler} to handle output
+     * from non-JVM processes e.g. "com.mycompany.CustomShellLogHandler". If
+     * not provided, org.apache.storm.utils.DefaultLogHandler will be used.
+     */
+    @isString
+    public static final String TOPOLOGY_MULTILANG_LOG_HANDLER = "topology.multilang.log.handler";
 
     /**
      * The serializer for communication between shell components and non-JVM

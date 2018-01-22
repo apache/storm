@@ -17,6 +17,7 @@
  */
 package org.apache.storm.task;
 
+import com.codahale.metrics.*;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
@@ -26,6 +27,7 @@ import org.apache.storm.metric.api.IReducer;
 import org.apache.storm.metric.api.ICombiner;
 import org.apache.storm.metric.api.ReducedMetric;
 import org.apache.storm.metric.api.CombinedMetric;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.state.ISubscribedState;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
@@ -311,6 +313,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * You must call this during `IBolt.prepare()` or `ISpout.open()`.
      * @return The IMetric argument unchanged.
      */
+    @Deprecated
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if((Boolean) _openOrPrepareWasCalled.deref()) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
@@ -357,6 +360,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      *         cause the same metric name can register twice.
      *         So we just return the first metric we meet.
      */
+    @Deprecated
     public IMetric getRegisteredMetricByName(String name) {
         IMetric metric = null;
 
@@ -377,13 +381,39 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * Convenience method for registering ReducedMetric.
      */
+    @Deprecated
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
     /*
      * Convenience method for registering CombinedMetric.
      */
+    @Deprecated
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+    }
+
+    public Timer registerTimer(String name){
+        return StormMetricRegistry.registry().timer(metricName(name));
+    }
+
+    public Histogram registerHistogram(String name){
+        return StormMetricRegistry.registry().histogram(metricName(name));
+    }
+
+    public Meter registerMeter(String name){
+        return StormMetricRegistry.registry().meter(metricName(name));
+    }
+
+    public Counter registerCounter(String name){
+        return StormMetricRegistry.registry().counter(metricName(name));
+    }
+
+    public Gauge registerGauge(String name, Gauge gauge){
+        return StormMetricRegistry.registry().register(metricName(name), gauge);
+    }
+
+    private String metricName(String name){
+        return StormMetricRegistry.metricName(name, this);
     }
 }
