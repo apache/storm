@@ -511,10 +511,10 @@
               existed (.node_exists cluster-state path false)]
           (if existed
             (if-not (<= timestamp 0)
-              (let [bytes (.. (ByteBuffer/allocate (Long/BYTES)) (putLong timestamp) (array))]
+              (let [bytes (.. (ByteBuffer/allocate (/ (Long/SIZE) 8)) (putLong timestamp) (array))]
                 (.set_data cluster-state path bytes acls)))
             (when timestamp
-              (let [bytes (.. (ByteBuffer/allocate (Long/BYTES)) (putLong timestamp) (array))]
+              (let [bytes (.. (ByteBuffer/allocate (/ (Long/SIZE) 8)) (putLong timestamp) (array))]
                 (.set_ephemeral_node cluster-state path bytes acls)))))) ;; create the znode since worker is congested
     
       (topology-backpressure
