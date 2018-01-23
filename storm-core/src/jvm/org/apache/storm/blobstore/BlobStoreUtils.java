@@ -51,6 +51,10 @@ public class BlobStoreUtils {
     private static final String BLOB_DEPENDENCIES_PREFIX = "dep-";
     private static final Logger LOG = LoggerFactory.getLogger(BlobStoreUtils.class);
 
+    public static String getBlobStoreSubtree() {
+        return BLOBSTORE_SUBTREE;
+    }
+
     public static CuratorFramework createZKClient(Map conf) {
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
@@ -285,6 +289,4 @@ public class BlobStoreUtils {
         }
         return fileName;
     }
-
-
 }
