@@ -33,6 +33,7 @@ import java.security.PrivilegedExceptionAction;
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    public static final String TOKEN_KIND_HBASE_AUTH_TOKEN = "HBASE_AUTH_TOKEN";
 
     private Utils(){}
 
@@ -47,14 +48,28 @@ public class Utils {
             ugi = UserGroupInformation.getCurrentUser();
 
             LOG.debug("UGI for current USER : {}", ugi.getUserName());
+            boolean foundHBaseAuthToken = false;
             for (Token<? extends TokenIdentifier> token : ugi.getTokens()) {
                 LOG.debug("Token in UGI (delegation token): {} / {}", token.toString(),
                         token.decodeIdentifier().getUser());
 
-                // use UGI from token
-                ugi = token.decodeIdentifier().getUser();
-                ugi.addToken(token);
+                // token.getKind() = Text, Text is annotated by @Stringable
+                // which ensures toString() implementation
+                if (token.getKind().toString().equals(TOKEN_KIND_HBASE_AUTH_TOKEN)) {
+                    // use UGI from token
+                    LOG.debug("Found HBASE_AUTH_TOKEN - using the token to replace current user.");
+
+                    ugi = token.decodeIdentifier().getUser();
+                    ugi.addToken(token);
+
+                    foundHBaseAuthToken = true;
+                }
             }
+
+            if (!foundHBaseAuthToken) {
+                LOG.warn("Can't find HBase auth token in delegation tokens.");
+            }
+
         }
 
         return ugi.doAs(new PrivilegedExceptionAction<HTable>() {
