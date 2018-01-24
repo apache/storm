@@ -2301,6 +2301,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 sync.setNimbusInfo(nimbusInfo);
                 sync.setBlobStoreKeySet(allKeys);
                 sync.setZookeeperKeySet(zkKeys);
+                sync.setZkClient(zkClient);
                 sync.syncBlobs();
             } //else not leader (NOOP)
         } //else local (NOOP)
