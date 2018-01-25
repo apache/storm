@@ -92,6 +92,7 @@ ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 ui.http.x-frame-options: DENY
+ui.pagination: 20
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
