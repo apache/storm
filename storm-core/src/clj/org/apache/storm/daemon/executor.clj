@@ -366,13 +366,15 @@
               (and (= false (storm-conf TOPOLOGY-ENABLE-MESSAGE-TIMEOUTS))
                    (= :spout (:type executor-data))))
         (log-message "Timeouts disabled for executor " comp-id ":" (:executor-id executor-data))
-        (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. context [tick-time-secs] Constants/SYSTEM_TASK_ID Constants/SYSTEM_TICK_STREAM_ID))]]
-          (schedule-recurring
-            (:user-timer worker)
-            tick-time-secs
-            tick-time-secs
-            (fn []
-                (disruptor/publish receive-queue val))))))))
+        (schedule-recurring
+          (:user-timer worker)
+          tick-time-secs
+          tick-time-secs
+          (fn []
+            ;; We should create a new tick tuple for each recurrence instead of sharing object
+            ;; More detail on https://issues.apache.org/jira/browse/STORM-2912
+            (let [val [(AddressedTuple. AddressedTuple/BROADCAST_DEST (TupleImpl. context [tick-time-secs] Constants/SYSTEM_TASK_ID Constants/SYSTEM_TICK_STREAM_ID))]]
+              (disruptor/publish receive-queue val))))))))
 
 (defn mk-executor [worker executor-id initial-credentials]
   (let [executor-data (mk-executor-data worker executor-id)
