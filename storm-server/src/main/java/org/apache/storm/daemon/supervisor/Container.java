@@ -50,6 +50,7 @@ import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.ServerUtils;
 import org.apache.storm.utils.Utils;
+import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -709,7 +710,7 @@ public abstract class Container implements Killable {
     /**
      * Send worker metrics to Nimbus.
      */
-    void processMetrics() {
+    void processMetrics(OnlyLatestExecutor<Integer> exec) {
         try {
             if (_usedMemory.get(_port) != null) {
                 // Make sure we don't process too frequently.
@@ -725,20 +726,23 @@ public abstract class Container implements Killable {
                 long timestamp = System.currentTimeMillis();
                 double value = _usedMemory.get(_port).memory;
                 WorkerMetricPoint workerMetric = new WorkerMetricPoint(MEMORY_USED_METRIC, timestamp, value, SYSTEM_COMPONENT_ID,
-                        INVALID_EXECUTOR_ID, INVALID_STREAM_ID);
+                    INVALID_EXECUTOR_ID, INVALID_STREAM_ID);
 
                 WorkerMetricList metricList = new WorkerMetricList();
                 metricList.add_to_metrics(workerMetric);
                 WorkerMetrics metrics = new WorkerMetrics(_topologyId, _port, hostname, metricList);
 
-                try (NimbusClient client = NimbusClient.getConfiguredClient(_conf)) {
-                    client.getClient().processWorkerMetrics(metrics);
-                }
-
-                this.lastMetricProcessTime = currentTimeMsec;
+                exec.execute(_port, () -> {
+                    try (NimbusClient client = NimbusClient.getConfiguredClient(_conf)) {
+                        client.getClient().processWorkerMetrics(metrics);
+                    } catch (Exception e) {
+                        LOG.error("Failed to process metrics", e);
+                    }
+                });
             }
         } catch (Exception e) {
             LOG.error("Failed to process metrics", e);
+        } finally {
             this.lastMetricProcessTime = System.currentTimeMillis();
         }
     }
