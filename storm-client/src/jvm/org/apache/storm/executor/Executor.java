@@ -387,11 +387,15 @@ public abstract class Executor implements Callable, EventHandler<Object> {
                 LOG.info("Timeouts disabled for executor {}:{}", componentId, executorId);
             } else {
                 StormTimer timerTask = workerData.getUserTimer();
-                TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
-                    (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
-                final List<AddressedTuple> tickTuple =
-                    Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
-                timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, () -> receiveQueue.publish(tickTuple));
+                timerTask.scheduleRecurring(tickTimeSecs, tickTimeSecs, () -> {
+                    // We should create a new tick tuple for each recurrence instead of sharing object
+                    // More detail on https://issues.apache.org/jira/browse/STORM-2912
+                    TupleImpl tuple = new TupleImpl(workerTopologyContext, new Values(tickTimeSecs),
+                            (int) Constants.SYSTEM_TASK_ID, Constants.SYSTEM_TICK_STREAM_ID);
+                    final List<AddressedTuple> tickTuple =
+                            Lists.newArrayList(new AddressedTuple(AddressedTuple.BROADCAST_DEST, tuple));
+                    receiveQueue.publish(tickTuple);
+                });
             }
         }
     }
