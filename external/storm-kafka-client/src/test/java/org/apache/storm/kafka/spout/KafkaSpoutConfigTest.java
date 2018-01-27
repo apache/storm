@@ -238,12 +238,4 @@ public class KafkaSpoutConfigTest {
 
         assertEquals(100, conf.getMetricsTimeBucketSizeInSecs());
     }
-    
-    @Test
-    public void testThrowsIfEnableAutoCommitIsSet() {
-        expectedException.expect(IllegalStateException.class);
-        KafkaSpoutConfig.builder("localhost:1234", "topic")
-            .setProp(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true)
-            .build();
-    }
 }
