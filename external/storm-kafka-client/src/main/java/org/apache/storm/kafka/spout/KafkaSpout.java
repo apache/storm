@@ -54,6 +54,7 @@ import org.apache.kafka.common.errors.InterruptException;
 import org.apache.kafka.common.errors.RetriableException;
 
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig.ProcessingGuarantee;
 import org.apache.storm.kafka.spout.internal.CommitMetadata;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
 import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
@@ -91,7 +92,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     private transient KafkaSpoutRetryService retryService;
     // Handles tuple events (emit, ack etc.)
     private transient KafkaTupleListener tupleListener;
-    // timer == null if processing guarantee is none or at-most-once
+    // timer == null only if the processing guarantee is at-most-once
     private transient Timer commitTimer;
     // Initialization is only complete after the first call to  KafkaSpoutConsumerRebalanceListener.onPartitionsAssigned()
 
@@ -135,8 +136,8 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
         tupleListener = kafkaSpoutConfig.getTupleListener();
 
-        if (isAtLeastOnceProcessing()) {
-            // Only used if the spout should commit an offset to Kafka only after the corresponding tuple has been acked.
+        if (kafkaSpoutConfig.getProcessingGuarantee() != KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE) {
+            // In at-most-once mode the offsets are committed after every poll, and not periodically as controlled by the timer
             commitTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getOffsetsCommitPeriodMs(), TimeUnit.MILLISECONDS);
         }
         refreshSubscriptionTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS);
@@ -321,24 +322,28 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
     @Override
     public void nextTuple() {
         try {
-                if (refreshSubscriptionTimer.isExpiredResetOnTrue()) {
-                    kafkaSpoutConfig.getSubscription().refreshAssignment();
-                }
+            if (refreshSubscriptionTimer.isExpiredResetOnTrue()) {
+                kafkaSpoutConfig.getSubscription().refreshAssignment();
+            }
 
-                if (shouldCommit()) {
+            if (commitTimer != null && commitTimer.isExpiredResetOnTrue()) {
+                if (isAtLeastOnceProcessing()) {
                 commitOffsetsForAckedTuples(kafkaConsumer.assignment());
+                } else if (kafkaSpoutConfig.getProcessingGuarantee() == ProcessingGuarantee.NO_GUARANTEE) {
+                    commitFetchedOffsetsAsync(kafkaConsumer.assignment());
                 }
+            }
 
-                PollablePartitionsInfo pollablePartitionsInfo = getPollablePartitionsInfo();
-                if (pollablePartitionsInfo.shouldPoll()) {
-                    try {
-                        setWaitingToEmit(pollKafkaBroker(pollablePartitionsInfo));
-                    } catch (RetriableException e) {
-                        LOG.error("Failed to poll from kafka.", e);
-                    }
+            PollablePartitionsInfo pollablePartitionsInfo = getPollablePartitionsInfo();
+            if (pollablePartitionsInfo.shouldPoll()) {
+                try {
+                    setWaitingToEmit(pollKafkaBroker(pollablePartitionsInfo));
+                } catch (RetriableException e) {
+                    LOG.error("Failed to poll from kafka.", e);
                 }
+            }
 
-                emitIfWaitingNotEmitted();
+            emitIfWaitingNotEmitted();
         } catch (InterruptException e) {
             throwKafkaConsumerInterruptedException();
         }
@@ -348,10 +353,6 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         //Kafka throws their own type of exception when interrupted.
         //Throw a new Java InterruptedException to ensure Storm can recognize the exception as a reaction to an interrupt.
         throw new RuntimeException(new InterruptedException("Kafka consumer was interrupted"));
-    }
-
-    private boolean shouldCommit() {
-        return isAtLeastOnceProcessing() && commitTimer.isExpiredResetOnTrue();    // timer != null for non auto commit mode
     }
 
     private PollablePartitionsInfo getPollablePartitionsInfo() {
@@ -546,6 +547,15 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         return tuple != null || kafkaSpoutConfig.isEmitNullTuples();
     }
 
+    private void commitFetchedOffsetsAsync(Set<TopicPartition> assignedPartitions) {
+        Map<TopicPartition, OffsetAndMetadata> offsetsToCommit = new HashMap<>();
+        for (TopicPartition tp : assignedPartitions) {
+            offsetsToCommit.put(tp, new OffsetAndMetadata(kafkaConsumer.position(tp)));
+        }
+        kafkaConsumer.commitAsync(offsetsToCommit, null);
+        LOG.debug("Committed offsets {} to Kafka", offsetsToCommit);
+    }
+    
     private void commitOffsetsForAckedTuples(Set<TopicPartition> assignedPartitions) {
         // Find offsets that are ready to be committed for every assigned topic partition
         final Map<TopicPartition, OffsetManager> assignedOffsetManagers = new HashMap<>();
@@ -576,11 +586,10 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 long committedOffset = tpOffset.getValue().offset();
                 if (position < committedOffset) {
                     /*
-                     * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed,
-                     * lots of (more than max.poll.records) later messages were acked, and the failed message then gets acked. 
-                     * The consumer may only be part way through "catching up" to where it was when it went back to retry the failed tuple. 
-                     * Skip the consumer forward to the committed offset and drop the current waiting to emit list,
-                     * since it'll likely contain committed offsets.
+                     * The position is behind the committed offset. This can happen in some cases, e.g. if a message failed, lots of (more
+                     * than max.poll.records) later messages were acked, and the failed message then gets acked. The consumer may only be
+                     * part way through "catching up" to where it was when it went back to retry the failed tuple. Skip the consumer forward
+                     * to the committed offset and drop the current waiting to emit list, since it'll likely contain committed offsets.
                      */
                     LOG.debug("Consumer fell behind committed offset. Catching up. Position was [{}], skipping to [{}]",
                         position, committedOffset);
