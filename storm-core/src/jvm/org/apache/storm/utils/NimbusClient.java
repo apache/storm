@@ -17,20 +17,21 @@
  */
 package org.apache.storm.utils;
 
+import com.google.common.collect.Lists;
+import java.security.Principal;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
 import org.apache.storm.Config;
 import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.security.auth.ThriftClient;
 import org.apache.storm.security.auth.ThriftConnectionType;
-import com.google.common.collect.Lists;
 import org.apache.thrift.transport.TTransportException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.security.Principal;
-import java.util.List;
-import java.util.Map;
 
 public class NimbusClient extends ThriftClient {
     private Nimbus.Client _client;
@@ -67,7 +68,7 @@ public class NimbusClient extends ThriftClient {
         }
 
         List<String> seeds;
-        if(conf.containsKey(Config.NIMBUS_HOST)) {
+        if (conf.containsKey(Config.NIMBUS_HOST) && StringUtils.isNotBlank(conf.get(Config.NIMBUS_HOST).toString())) {
             LOG.warn("Using deprecated config {} for backward compatibility. Please update your storm.yaml so it only has config {}",
                      Config.NIMBUS_HOST, Config.NIMBUS_SEEDS);
             seeds = Lists.newArrayList(conf.get(Config.NIMBUS_HOST).toString());
