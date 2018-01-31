@@ -21,12 +21,15 @@ package org.apache.storm.daemon.supervisor;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This allows you to submit a Runnable with a key.  If the previous submission for that key has not yet run,
  * it will be replaced with the latest one.
  */
 public class OnlyLatestExecutor<K> {
+    private static final Logger LOG = LoggerFactory.getLogger(OnlyLatestExecutor.class);
     private final Executor exec;
     private final ConcurrentMap<K, Runnable> latest;
 
@@ -47,9 +50,11 @@ public class OnlyLatestExecutor<K> {
             exec.execute(() -> {
                 Runnable run = latest.remove(key);
                 if (run != null) {
-                    run.run();;
+                    run.run();
                 }
             });
-        }
+        } else {
+            LOG.debug("Replacing runnable for {} - {}", key, r);
+	}
     }
 }
