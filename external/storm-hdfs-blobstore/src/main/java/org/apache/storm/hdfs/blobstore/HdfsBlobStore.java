@@ -18,16 +18,6 @@
 
 package org.apache.storm.hdfs.blobstore;
 
-import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import javax.security.auth.Subject;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.security.UserGroupInformation;
@@ -47,9 +37,18 @@ import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
-import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
-import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+import javax.security.auth.Subject;
+import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import static org.apache.storm.blobstore.BlobStoreAclHandler.*;
 
 /**
  * Provides a HDFS file system backed blob store implementation.

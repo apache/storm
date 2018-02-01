@@ -351,6 +351,7 @@
         <module>external/storm-autocreds</module>
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
+        <module>external/storm-hdfs-blobstore</module>
         <module>external/storm-hbase</module>
         <module>external/storm-hive</module>
         <module>external/storm-jdbc</module>
