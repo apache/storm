@@ -18,7 +18,8 @@
   (:import [org.apache.zookeeper.data Stat ACL Id]
            [org.apache.storm.generated SupervisorInfo Assignment StormBase ClusterWorkerHeartbeat ErrorInfo Credentials NimbusSummary
             LogConfig ProfileAction ProfileRequest NodeInfo]
-           [java.io Serializable])
+           [java.io Serializable]
+           [java.nio ByteBuffer])
   (:import [org.apache.zookeeper KeeperException KeeperException$NoNodeException ZooDefs ZooDefs$Ids ZooDefs$Perms])
   (:import [org.apache.curator.framework CuratorFramework])
   (:import [org.apache.storm.utils Utils])
@@ -80,7 +81,7 @@
   (remove-worker-heartbeat! [this storm-id node port])
   (supervisor-heartbeat! [this supervisor-id info])
   (worker-backpressure! [this storm-id node port info])
-  (topology-backpressure [this storm-id callback])
+  (topology-backpressure [this storm-id timeout-ms callback])
   (setup-backpressure! [this storm-id])
   (remove-backpressure! [this storm-id])
   (remove-worker-backpressure! [this storm-id node port])
@@ -172,6 +173,10 @@
   [storm-id node port]
   (str (backpressure-storm-root storm-id) "/" node "-" port))
 
+(defn backpressure-full-path
+  [storm-id short-path]
+  (str (backpressure-storm-root storm-id) "/" short-path))
+
 (defn error-storm-root
   [storm-id]
   (str ERRORS-SUBTREE "/" storm-id))
@@ -241,6 +246,20 @@
                       :uptime (:uptime worker-hb)
                       :stats (get executor-stats t)}})))
          (into {}))))
+
+
+(defn max-timestamp
+  "Reduces the timestamps (e.g. those set by worker-backpressure!)
+  to the most recent timestamp"
+  [cluster-state storm-id paths]
+  (reduce (fn [acc path]
+            (let [data (.get_data cluster-state (backpressure-full-path storm-id path) false)
+                  timestamp (if data
+                              (.. (ByteBuffer/wrap data) (getLong))
+                              0)]
+              (Math/max acc timestamp)))
+          0
+          paths))
 
 ;; Watches should be used for optimization. When ZK is reconnecting, they're not guaranteed to be called.
 (defnk mk-storm-cluster-state
@@ -483,27 +502,37 @@
             (log-warn-error e "Could not teardown heartbeats for " storm-id))))
 
       (worker-backpressure!
-        [this storm-id node port on?]
-        "if znode exists and to be not on?, delete; if exists and on?, do nothing;
-        if not exists and to be on?, create; if not exists and not on?, do nothing"
+        [this storm-id node port timestamp]
+        "If znode exists and timestamp is non-positive, ignore;
+         if exists and timestamp is larger than 0, update the timestamp;
+         if not exists and timestamp is larger than 0, create the znode and set the timestamp;
+         if not exists and timestamp is non-positive, do nothing."
         (let [path (backpressure-path storm-id node port)
               existed (.node_exists cluster-state path false)]
           (if existed
-            (if (not on?)
-              (.delete_node cluster-state path))   ;; delete the znode since the worker is not congested
-            (if on?
-              (.set_ephemeral_node cluster-state path nil acls))))) ;; create the znode since worker is congested
+            (if-not (<= timestamp 0)
+              (let [bytes (.. (ByteBuffer/allocate (/ (Long/SIZE) 8)) (putLong timestamp) (array))]
+                (.set_data cluster-state path bytes acls)))
+            (when timestamp
+              (let [bytes (.. (ByteBuffer/allocate (/ (Long/SIZE) 8)) (putLong timestamp) (array))]
+                (.set_ephemeral_node cluster-state path bytes acls)))))) ;; create the znode since worker is congested
     
       (topology-backpressure
-        [this storm-id callback]
+        [this storm-id timeout-ms callback]
         "if the backpresure/storm-id dir is not empty, this topology has throttle-on, otherwise throttle-off.
+         But if the backpresure/storm-id dir is not empty and has not been updated for more than timeoutMs, we treat it as throttle-off.
+         This will prevent the spouts from getting stuck indefinitely if something wrong happens.
          The backpressure/storm-id dir may not exist if nimbus has shutdown the topology"
         (when callback
           (swap! backpressure-callback assoc storm-id callback))
         (let [path (backpressure-storm-root storm-id)
               children (if (.node_exists cluster-state path false)
-                         (.get_children cluster-state path (not-nil? callback))) ]
-              (> (count children) 0)))
+                         (.get_children cluster-state path (not-nil? callback)))
+              most-recent-backpressure (max-timestamp cluster-state storm-id children)
+              current-time (System/currentTimeMillis)
+              ret (> timeout-ms (- current-time most-recent-backpressure))]
+          (log-debug "topology backpressure is " (if ret "on" "off"))
+          ret))
       
       (setup-backpressure!
         [this storm-id]
@@ -511,14 +540,20 @@
 
       (remove-backpressure!
         [this storm-id]
-        (.delete_node cluster-state (backpressure-storm-root storm-id)))
+        (try-cause
+          (.delete_node cluster-state (backpressure-storm-root storm-id))
+          (catch KeeperException e
+            (log-warn-error e "Could not teardown backpressure for " storm-id))))
 
       (remove-worker-backpressure!
         [this storm-id node port]
         (let [path (backpressure-path storm-id node port)
               existed (.node_exists cluster-state path false)]
           (if existed
-            (.delete_node cluster-state (backpressure-path storm-id node port)))))
+            (try-cause
+              (.delete_node cluster-state (backpressure-path storm-id node port))
+              (catch KeeperException e
+                (log-warn-error e "Could not teardown backpressure for " storm-id))))))
     
       (teardown-topology-errors!
         [this storm-id]
