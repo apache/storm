@@ -27,6 +27,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.commons.io.FileUtils;
@@ -74,6 +76,10 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final AtomicReference<Map<Long, LocalAssignment>> currAssignment;
     private final StormTimer heartbeatTimer;
     private final StormTimer eventTimer;
+    //Right now this is only used for sending metrics to nimbus,
+    // but we may want to combine it with the heartbeatTimer at some point
+    // to really make this work well.
+    private final ExecutorService heartbeatExecutor;
     private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
@@ -89,6 +95,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.upTime = Utils.makeUptimeComputer();
         this.stormVersion = VersionInfo.getVersion();
         this.sharedContext = sharedContext;
+        this.heartbeatExecutor = Executors.newFixedThreadPool(1);
         
         iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf));
         
@@ -125,7 +132,14 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
 
         this.eventTimer = new StormTimer(null, new DefaultUncaughtExceptionHandler());
     }
-    
+
+    /**
+     * Get the executor service that is supposed to be used for heart-beats.
+     */
+    public ExecutorService getHeartbeatExecutor() {
+        return heartbeatExecutor;
+    }
+
     public String getId() {
         return supervisorId;
     }

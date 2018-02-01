@@ -65,7 +65,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final String host;
     private final LocalState localState;
     private final AtomicReference<Map<Long, LocalAssignment>> cachedAssignments;
-    
+    private final OnlyLatestExecutor<Integer> metricsExec;
+
     public ReadClusterState(Supervisor supervisor) throws Exception {
         this.superConf = supervisor.getConf();
         this.stormClusterState = supervisor.getStormClusterState();
@@ -77,6 +78,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         this.host = supervisor.getHostName();
         this.localState = supervisor.getLocalState();
         this.cachedAssignments = supervisor.getCurrAssignment();
+        this.metricsExec = new OnlyLatestExecutor<>(supervisor.getHeartbeatExecutor());
         
         this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisor.getSharedContext());
         
@@ -108,7 +110,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
     private Slot mkSlot(int port) throws Exception {
         return new Slot(localizer, superConf, launcher, host, port,
-                localState, stormClusterState, iSuper, cachedAssignments);
+                localState, stormClusterState, iSuper, cachedAssignments, metricsExec);
     }
     
     @Override
