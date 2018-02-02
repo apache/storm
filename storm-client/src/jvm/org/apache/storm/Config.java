@@ -73,7 +73,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT = "topology.localityaware.higher.bound.percent";
+    public static final String TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND = "topology.localityaware.higher.bound";
 
     /**
      * This signifies the load congestion among target tasks in scope. Currently it's only used in LoadAwareShuffleGrouping.
@@ -82,7 +82,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT = "topology.localityaware.lower.bound.percent";
+    public static final String TOPOLOGY_LOCALITYAWARE_LOWER_BOUND = "topology.localityaware.lower.bound";
 
     /**
      * Try to serialize all tuples, even for local transfers.  This should only be used

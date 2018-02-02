@@ -65,8 +65,8 @@ public class LoadAwareShuffleGroupingTest {
     private WorkerTopologyContext mockContext(List<Integer> availableTaskIds) {
         Map<String, Object> conf = new HashMap<>();
         conf.put(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN, "org.apache.storm.networktopography.DefaultRackDNSToSwitchMapping");
-        conf.put(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT, 0.8);
-        conf.put(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT, 0.2);
+        conf.put(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND, 0.8);
+        conf.put(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND, 0.2);
 
         WorkerTopologyContext context = mock(WorkerTopologyContext.class);
         when(context.getConf()).thenReturn(conf);

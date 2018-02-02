@@ -258,8 +258,8 @@ topology.disruptor.batch.size: 100
 topology.disruptor.batch.timeout.millis: 1
 topology.disable.loadaware.messaging: false
 topology.state.checkpoint.interval.ms: 1000
-topology.localityaware.higher.bound.percent: 0.8
-topology.localityaware.lower.bound.percent: 0.2
+topology.localityaware.higher.bound: 0.8
+topology.localityaware.lower.bound: 0.2
 topology.serialized.message.size.metrics: false
 
 # Configs for Resource Aware Scheduler
