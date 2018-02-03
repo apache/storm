@@ -20,14 +20,15 @@ Topologies that measure I/O with external systems are designed to run in cluster
 
 ## Topologies List
 
-1. **ConstSpoutOnlyTopo:** Helps measure how fast spout can emit. This topology has a spout and is not connected to any bolts. Supports in-proc and cluster mode.
-2. **ConstSpoutNullBoltTopo:** Helps measure how fast spout can send data to a bolt. Spout emits a stream of constant values to a DevNull bolt which discards the incoming tuples. Supports in-proc and cluster mode.
-3. **ConstSpoutIdBoltNullBoltTopo:** Helps measure speed of messaging between spouts and bolts. Spout emits a stream of constant values to an ID bolt which clones the tuple and emits it downstream to a DevNull bolt. Supports in-proc and cluster mode.
-4. **FileReadWordCount:** Measures speed of word counting. The spout loads a file into memory and emits these lines in an infinite loop. Supports in-proc and cluster mode.
-5. **HdfsSpoutNullBolt:** Measures speed at which HdfsSpout can read from HDFS. Supports cluster mode only.
+1. **ConstSpoutOnlyTopo:** Helps measure how fast spout can emit. This topology has a spout and is not connected to any bolts. Supports cluster mode only.
+2. **ConstSpoutNullBoltTopo:** Helps measure how fast spout can send data to a bolt. Spout emits a stream of constant values to a DevNull bolt which discards the incoming tuples. Supports cluster mode only.
+3. **ConstSpoutIdBoltNullBoltTopo:** Helps measure speed of messaging between spouts and bolts. Spout emits a stream of constant values to an ID bolt which clones the tuple and emits it downstream to a DevNull bolt. Supports cluster mode only.
+4. **FileReadWordCountTopo:** Measures speed of word counting. The spout loads a file into memory and emits these lines in an infinite loop. Supports cluster mode only.
+5. **HdfsSpoutNullBoltTopo:** Measures speed at which HdfsSpout can read from HDFS. Supports cluster mode only.
 6. **StrGenSpoutHdfsBoltTopo:** Measures speed at which HdfsBolt can write to HDFS. Supports cluster mode only.
-7. **KafkaSpoutNullBolt:** Measures speed at which KafkaSpout can read from Kafka. Supports cluster mode only.
-8. **KafkaHdfsTopo:** Measures how fast Storm can read from Kafka and write to HDFS.
+7. **KafkaSpoutNullBoltTopo:** Measures speed at which the storm-kafka KafkaSpout can read from Kafka. Supports cluster mode only.
+8. **KafkaHdfsTopo:** Measures how fast Storm can read from Kafka and write to HDFS, using the storm-kafka spout. Supports cluster mode only
+9. **KafkaClientSpoutNullBoltTopo:** Measures the speed at which the storm-kafka-client KafkaSpout can read from Kafka. Supports cluster mode only.
 
 
 ## How to run ?
