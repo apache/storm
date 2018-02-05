@@ -43,15 +43,18 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     // Declare some KafkaSpoutConfig references for convenience
     private Fields fields;
 
+    /**
+     * Create a KafkaConsumer manager for the trident spout.
+     * @param kafkaSpoutConfig The consumer config
+     */
     public KafkaTridentSpoutManager(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.fields = getFields();
-        LOG.debug("Created {}", this);
+        LOG.debug("Created {}", this.toString());
     }
 
     KafkaConsumer<K,V> createAndSubscribeKafkaConsumer(TopologyContext context) {
-        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps(),
-                kafkaSpoutConfig.getKeyDeserializer(), kafkaSpoutConfig.getValueDeserializer());
+        kafkaConsumer = new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
 
         kafkaSpoutConfig.getSubscription().subscribe(kafkaConsumer, new KafkaSpoutConsumerRebalanceListener(), context);
         return kafkaConsumer;
@@ -65,7 +68,7 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
         return KafkaTridentSpoutTopicPartitionRegistry.INSTANCE.getTopicPartitions();
     }
 
-    Fields getFields() {
+    final Fields getFields() {
         if (fields == null) {
             RecordTranslator<K, V> translator = kafkaSpoutConfig.getTranslator();
             Fields fs = null;
@@ -89,7 +92,7 @@ public class KafkaTridentSpoutManager<K, V> implements Serializable {
     }
 
     @Override
-    public String toString() {
+    public final String toString() {
         return super.toString() +
                 "{kafkaConsumer=" + kafkaConsumer +
                 ", kafkaSpoutConfig=" + kafkaSpoutConfig +
