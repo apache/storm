@@ -474,7 +474,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                  * error, rather than seeking to the latest (Kafka's default). This type of error will typically happen when the consumer
                  * requests an offset that was deleted.
                  */
-                LOG.info("Setting consumer property '{}' to 'earliest' to ensure at-least-once processing",
+                LOG.info("Setting Kafka consumer property '{}' to 'earliest' to ensure at-least-once processing",
                     ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
                 builder.kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
             } else if (!autoOffsetResetPolicy.equals("earliest") && !autoOffsetResetPolicy.equals("none")) {
@@ -488,7 +488,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
                     + " Some messages may be processed more than once.");
             }
         }
-        LOG.info("Setting consumer property '{}' to 'false', because the spout does not support auto-commit",
+        LOG.info("Setting Kafka consumer property '{}' to 'false', because the spout does not support auto-commit",
             ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
         builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     }
