@@ -18,26 +18,25 @@
 
 package org.apache.storm.security.auth.kerberos;
 
-import org.apache.storm.security.auth.IAutoCredentials;
-import org.apache.storm.security.auth.ICredentialsRenewer;
-import org.apache.storm.security.auth.AuthUtils;
-
+import java.lang.reflect.Method;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.lang.reflect.Method;
-import java.lang.reflect.Constructor;
-import java.security.Principal;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.Iterator;
 
-import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.LoginContext;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.RefreshFailedException;
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.login.Configuration;
+import javax.security.auth.login.LoginContext;
 import javax.xml.bind.DatatypeConverter;
+
+import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.security.auth.AuthUtils;
+import org.apache.storm.security.auth.IAutoCredentials;
+import org.apache.storm.security.auth.ICredentialsRenewer;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -45,11 +44,12 @@ import org.slf4j.LoggerFactory;
 /**
  * Automatically take a user's TGT, and push it, and renew it in Nimbus.
  */
-public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
+public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetric {
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
     private static final float TICKET_RENEW_WINDOW = 0.80f;
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
     private Map<String, Object> conf;
+    private Map<String, String> credentials;
 
     public void prepare(Map<String, Object> conf) {
         this.conf = conf;
@@ -57,7 +57,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     private static KerberosTicket getTGT(Subject subject) {
         Set<KerberosTicket> tickets = subject.getPrivateCredentials(KerberosTicket.class);
-        for(KerberosTicket ticket: tickets) {
+        for (KerberosTicket ticket: tickets) {
             KerberosPrincipal server = ticket.getServer();
             if (server.getName().equals("krbtgt/" + server.getRealm() + "@" + server.getRealm())) {
                 return ticket;
@@ -68,6 +68,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     @Override
     public void populateCredentials(Map<String, String> credentials) {
+        this.credentials = credentials;
         //Log the user in and get the TGT
         try {
             Configuration login_conf = AuthUtils.GetConfiguration(conf);
@@ -83,7 +84,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
                 if (tgt == null) { //error
                     throw new RuntimeException("Fail to verify user principal with section \""
-                            +AuthUtils.LOGIN_CONTEXT_CLIENT+"\" in login configuration file "+ login_conf);
+                            + AuthUtils.LOGIN_CONTEXT_CLIENT + "\" in login configuration file " + login_conf);
                 }
 
                 if (!tgt.isForwardable()) {
@@ -94,7 +95,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                     throw new RuntimeException("The TGT found is not renewable");
                 }
 
-                LOG.info("Pushing TGT for "+tgt.getClient()+" to topology.");
+                LOG.info("Pushing TGT for " + tgt.getClient() + " to topology.");
                 saveTGT(tgt, credentials);
             } finally {
                 lc.logout();
@@ -124,11 +125,13 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     @Override
     public void updateSubject(Subject subject, Map<String, String> credentials) {
+        this.credentials = credentials;
         populateSubjectWithTGT(subject, credentials);
     }
 
     @Override
     public void populateSubject(Subject subject, Map<String, String> credentials) {
+        this.credentials = credentials;
         populateSubjectWithTGT(subject, credentials);
         loginHadoopUser(subject);
     }
@@ -146,7 +149,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     public static void clearCredentials(Subject subject, KerberosTicket tgt) {
         Set<Object> creds = subject.getPrivateCredentials();
-        synchronized(creds) {
+        synchronized (creds) {
             Iterator<Object> iterator = creds.iterator();
             while (iterator.hasNext()) {
                 Object o = iterator.next();
@@ -160,7 +163,7 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                     }
                 }
             }
-            if(tgt != null) {
+            if (tgt != null) {
                 creds.add(tgt);
             }
         }
@@ -182,16 +185,17 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         try {
             Method isSecEnabled = ugi.getMethod("isSecurityEnabled");
             if (!((Boolean)isSecEnabled.invoke(null))) {
-                LOG.warn("Hadoop is on the classpath but not configured for " +
-                  "security, if you want security you need to be sure that " +
-                  "hadoop.security.authentication=kerberos in core-site.xml " +
-                  "in your jar");
+                LOG.warn("Hadoop is on the classpath but not configured for "
+                        + "security, if you want security you need to be sure that "
+                        + "hadoop.security.authentication=kerberos in core-site.xml "
+                        + "in your jar");
                 return;
             }
             Method login = ugi.getMethod("loginUserFromSubject", Subject.class);
             login.invoke(null, subject);
         } catch (Exception e) {
-            LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop may not be compatible.", e);
+            LOG.warn("Something went wrong while trying to initialize Hadoop through reflection. This version of hadoop "
+                    + "may not be compatible.", e);
         }
     }
 
@@ -203,13 +207,14 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
 
     @Override
     public void renew(Map<String,String> credentials, Map<String, Object> topologyConf, String topologyOwnerPrincipal) {
+        this.credentials = credentials;
         KerberosTicket tgt = getTGT(credentials);
         if (tgt != null) {
             long refreshTime = getRefreshTime(tgt);
             long now = System.currentTimeMillis();
             if (now >= refreshTime) {
                 try {
-                    LOG.info("Renewing TGT for "+tgt.getClient());
+                    LOG.info("Renewing TGT for " + tgt.getClient());
                     tgt.refresh();
                     saveTGT(tgt, credentials);
                 } catch (RefreshFailedException e) {
@@ -217,6 +222,25 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
                 }
             }
         }
+    }
+
+    private Long getMsecsUntilExpiration() {
+        KerberosTicket tgt = getTGT(this.credentials);
+        if (tgt == null) {
+            return null;
+        }
+        long end = tgt.getEndTime().getTime();
+        return end - System.currentTimeMillis();
+    }
+
+    @Override
+    public Object getValueAndReset() {
+        return this.getMsecsUntilExpiration();
+    }
+
+    @Override
+    public String getMetricName() {
+        return "TGT-TimeToExpiryMsecs";
     }
 
     public static void main(String[] args) throws Exception {
@@ -228,6 +252,8 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer {
         at.populateCredentials(creds);
         Subject s = new Subject();
         at.populateSubject(s, creds);
-        LOG.info("Got a Subject "+s);
+        LOG.info("Got a Subject " + s);
     }
+
+
 }
