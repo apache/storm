@@ -735,6 +735,13 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_CENTRAL_LOGGING_URL = "ui.central.logging.url";
 
     /**
+     * Storm UI drop-down pagination value. Set ui.pagination to be a positive integer
+     * or -1 (displays all entries). Valid values: -1, 10, 20, 25 etc.
+     */
+    @isInteger
+    public static final String UI_PAGINATION = "ui.pagination";
+
+    /**
      * HTTP UI port for log viewer
      */
     @isInteger
@@ -1562,6 +1569,23 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     public static final String BACKPRESSURE_DISRUPTOR_LOW_WATERMARK="backpressure.disruptor.low.watermark";
+
+    /**
+     * How long until the backpressure znode is invalid.
+     * It's measured by the data (timestamp) of the znode, not the ctime (creation time) or mtime (modification time), etc.
+     * This must be larger than BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String BACKPRESSURE_ZNODE_TIMEOUT_SECS = "backpressure.znode.timeout.secs";
+
+    /**
+     * How often will the data (timestamp) of backpressure znode be updated.
+     * But if the worker backpressure status (on/off) changes, the znode will be updated anyway.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS = "backpressure.znode.update.freq.secs";
 
     /**
      * A list of classes implementing IClusterMetricsConsumer (See storm.yaml.example for exact config format).

@@ -58,18 +58,24 @@ public class Utils {
                 // which ensures toString() implementation
                 if (token.getKind().toString().equals(TOKEN_KIND_HBASE_AUTH_TOKEN)) {
                     // use UGI from token
-                    LOG.debug("Found HBASE_AUTH_TOKEN - using the token to replace current user.");
+                    if (!foundHBaseAuthToken) {
+                        LOG.debug("Found HBASE_AUTH_TOKEN - using the token to replace current user.");
 
-                    ugi = token.decodeIdentifier().getUser();
-                    ugi.addToken(token);
+                        ugi = token.decodeIdentifier().getUser();
+                        ugi.addToken(token);
 
-                    foundHBaseAuthToken = true;
+                        foundHBaseAuthToken = true;
+                    } else {
+                        LOG.warn("Found multiple HBASE_AUTH_TOKEN - will use already found token. " +
+                                "Please enable DEBUG log level to track delegation tokens.");
+                    }
                 }
             }
 
             if (!foundHBaseAuthToken) {
                 LOG.warn("Can't find HBase auth token in delegation tokens.");
             }
+
         }
 
         HBaseSecurityUtil.spawnReLoginThread(ugi);

@@ -252,10 +252,8 @@
 
 (defn zk-leader-elector
   "Zookeeper Implementation of ILeaderElector."
-  [conf blob-store]
-  (let [servers (conf STORM-ZOOKEEPER-SERVERS)
-        zk (mk-client conf (conf STORM-ZOOKEEPER-SERVERS) (conf STORM-ZOOKEEPER-PORT) :auth-conf conf)
-        leader-lock-path (str (conf STORM-ZOOKEEPER-ROOT) "/leader-lock")
+  [conf zk blob-store]
+  (let [leader-lock-path "/leader-lock"
         id (.toHostPortString (NimbusInfo/fromConf conf))
         leader-latch (atom (LeaderLatch. zk leader-lock-path id))
         leader-latch-listener (atom (Zookeeper/leaderLatchListenerImpl conf zk blob-store @leader-latch))
@@ -302,5 +300,5 @@
             participants)))
 
       (^void close[this]
-        (log-message "closing zookeeper connection of leader elector.")
-        (.close zk)))))
+        ;;Do nothing now.
+        ))))

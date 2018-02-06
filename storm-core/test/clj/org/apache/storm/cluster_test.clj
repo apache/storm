@@ -319,3 +319,18 @@
       (mk-storm-cluster-state {})
       (verify-call-times-for mk-distributed-cluster-state 1)
       (verify-first-call-args-for-indices mk-distributed-cluster-state [4] nil))))
+
+(deftest test-cluster-state-backpressure
+         (testing "Test that we can get topology backpressure."
+                  (stubbing [zk/mkdirs nil
+                             zk/mk-client (reify CuratorFramework (^void close [this] nil))
+                             mk-distributed-cluster-state (reify ClusterState
+                                                                 (get_data [this path watch?] (byte-array 10))
+                                                                 (register [this callback] nil)
+                                                                 (mkdirs [this path acls] nil)
+                                                                 (node_exists [this path watch?]
+                                                                              (log-message "Running node_exists.") true)
+                                                                 (get_children [this path watch?] '("/foo/bar")))]
+                            (let [cluster-state (mk-storm-cluster-state {})]
+                                 (.get_data (mk-distributed-cluster-state) "/foo/bar" false)
+                                 (topology-backpressure cluster-state "" 30 nil)))))

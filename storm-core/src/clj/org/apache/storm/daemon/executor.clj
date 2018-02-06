@@ -355,7 +355,7 @@
      (let [val [(AddressedTuple. Constants/SYSTEM_TASK_ID (TupleImpl. worker-context [task-info data-points] Constants/SYSTEM_TASK_ID Constants/METRICS_STREAM_ID))]]
        (disruptor/publish system-bolt-receive-queue val))))
 
-(defn setup-ticks! [worker executor-data]
+(defn setup-ticks! [executor-data]
   (let [storm-conf (:storm-conf executor-data)
         comp-id (:component-id executor-data)
         tick-time-secs (storm-conf TOPOLOGY-TICK-TUPLE-FREQ-SECS)
@@ -367,7 +367,7 @@
                    (= :spout (:type executor-data))))
         (log-message "Timeouts disabled for executor " comp-id ":" (:executor-id executor-data))
         (schedule-recurring
-          (:user-timer worker)
+          (:user-timer (:worker executor-data))
           tick-time-secs
           tick-time-secs
           (fn []
@@ -395,14 +395,13 @@
               (.setLowWaterMark ((:storm-conf executor-data) BACKPRESSURE-DISRUPTOR-LOW-WATERMARK))
               (.setEnableBackpressure ((:storm-conf executor-data) TOPOLOGY-BACKPRESSURE-ENABLE)))
 
-        ;; starting the batch-transfer->worker ensures that anything publishing to that queue 
+        ;; starting the batch-transfer->worker ensures that anything publishing to that queue
         ;; doesn't block (because it's a single threaded queue and the caching/consumer started
         ;; trick isn't thread-safe)
         system-threads [(start-batch-transfer->worker-handler! worker executor-data)]
         handlers (with-error-reaction report-error-and-die
                    (mk-threads executor-data task-datas initial-credentials))
-        threads (concat handlers system-threads)]    
-    (setup-ticks! worker executor-data)
+        threads (concat handlers system-threads)]
 
     (log-message "Finished loading executor " component-id ":" (pr-str executor-id))
     ;; TODO: add method here to get rendered stats... have worker call that when heartbeating
@@ -633,6 +632,7 @@
                       )))))
         (reset! open-or-prepare-was-called? true) 
         (log-message "Opened spout " component-id ":" (keys task-datas))
+        (setup-ticks! executor-data)
         (setup-metrics! executor-data)
         
         (fn []
@@ -859,6 +859,7 @@
                          )))))
         (reset! open-or-prepare-was-called? true)        
         (log-message "Prepared bolt " component-id ":" (keys task-datas))
+        (setup-ticks! executor-data)
         (setup-metrics! executor-data)
 
         (let [receive-queue (:receive-queue executor-data)

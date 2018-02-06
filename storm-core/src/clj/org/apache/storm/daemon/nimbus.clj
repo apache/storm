@@ -133,6 +133,13 @@
     scheduler
     ))
 
+(defn mk-zk-client [conf]
+  (let [zk-servers (conf STORM-ZOOKEEPER-SERVERS)
+        zk-port (conf STORM-ZOOKEEPER-PORT)
+        zk-root (conf STORM-ZOOKEEPER-ROOT)]
+    (if (and zk-servers zk-port)
+      (mk-client conf zk-servers zk-port :root zk-root :auth-conf conf))))
+
 (defmulti blob-sync cluster-mode)
 
 (defnk is-leader [nimbus :throw-exception true]
@@ -183,7 +190,8 @@
 
 (defn nimbus-data [conf inimbus]
   (let [forced-scheduler (.getForcedScheduler inimbus)
-        blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))]
+        blob-store (Utils/getNimbusBlobStore conf (NimbusInfo/fromConf conf))
+        zk-client (mk-zk-client conf)]
     {:conf conf
      :nimbus-host-port-info (NimbusInfo/fromConf conf)
      :inimbus inimbus
@@ -213,7 +221,8 @@
                                  (exit-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (zk-leader-elector conf blob-store)
+     :zk-client zk-client
+     :leader-elector (zk-leader-elector conf zk-client blob-store)
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
@@ -452,9 +461,9 @@
               supervisor-ids))
        )))
 
-(defn- get-version-for-key [key nimbus-host-port-info conf]
+(defn- get-version-for-key [key nimbus-host-port-info zk-client]
   (let [version (KeySequenceNumber. key nimbus-host-port-info)]
-    (.getKeySequenceNumber version conf)))
+    (.getKeySequenceNumber version zk-client)))
 
 (defn get-key-seq-from-blob-store [blob-store]
   (let [key-iter (.listKeys blob-store)]
@@ -464,6 +473,7 @@
   (let [subject (get-subject)
         storm-cluster-state (:storm-cluster-state nimbus)
         blob-store (:blob-store nimbus)
+        zk-client (:zk-client nimbus)
         jar-key (master-stormjar-key storm-id)
         code-key (master-stormcode-key storm-id)
         conf-key (master-stormconf-key storm-id)
@@ -471,13 +481,13 @@
     (when tmp-jar-location ;;in local mode there is no jar
       (.createBlob blob-store jar-key (FileInputStream. tmp-jar-location) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
       (if (instance? LocalFsBlobStore blob-store)
-        (.setup-blobstore! storm-cluster-state jar-key nimbus-host-port-info (get-version-for-key jar-key nimbus-host-port-info conf))))
+        (.setup-blobstore! storm-cluster-state jar-key nimbus-host-port-info (get-version-for-key jar-key nimbus-host-port-info zk-client))))
     (.createBlob blob-store conf-key (Utils/toCompressedJsonConf storm-conf) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
     (if (instance? LocalFsBlobStore blob-store)
-      (.setup-blobstore! storm-cluster-state conf-key nimbus-host-port-info (get-version-for-key conf-key nimbus-host-port-info conf)))
+      (.setup-blobstore! storm-cluster-state conf-key nimbus-host-port-info (get-version-for-key conf-key nimbus-host-port-info zk-client)))
     (.createBlob blob-store code-key (Utils/serialize topology) (SettableBlobMeta. BlobStoreAclHandler/DEFAULT) subject)
     (if (instance? LocalFsBlobStore blob-store)
-      (.setup-blobstore! storm-cluster-state code-key nimbus-host-port-info (get-version-for-key code-key nimbus-host-port-info conf)))))
+      (.setup-blobstore! storm-cluster-state code-key nimbus-host-port-info (get-version-for-key code-key nimbus-host-port-info zk-client)))))
 
 (defn- read-storm-topology [storm-id blob-store]
   (Utils/deserialize
@@ -1115,7 +1125,7 @@
 
 (defn try-read-storm-conf [conf storm-id blob-store]
   (try-cause
-    (read-storm-conf-as-nimbus conf storm-id blob-store)
+    (read-storm-conf-as-nimbus storm-id blob-store)
     (catch KeyNotFoundException e
        (throw (NotAliveException. (str storm-id))))))
 
@@ -1307,6 +1317,7 @@
   "Sets up blobstore state for all current keys."
   (let [storm-cluster-state (:storm-cluster-state nimbus)
         blob-store (:blob-store nimbus)
+        zk-client (:zk-client nimbus)
         local-set-of-keys (set (get-key-seq-from-blob-store blob-store))
         all-keys (set (.active-keys storm-cluster-state))
         locally-available-active-keys (set/intersection local-set-of-keys all-keys)
@@ -1319,7 +1330,7 @@
     (log-debug "Creating list of key entries for blobstore inside zookeeper" all-keys "local" locally-available-active-keys)
     (doseq [key locally-available-active-keys]
       (try
-        (.setup-blobstore! storm-cluster-state key (:nimbus-host-port-info nimbus) (get-version-for-key key nimbus-host-port-info conf))
+        (.setup-blobstore! storm-cluster-state key (:nimbus-host-port-info nimbus) (get-version-for-key key nimbus-host-port-info zk-client))
         (catch KeyNotFoundException _
           ; invalid key, remove it from blobstore
           (.deleteBlob blob-store key nimbus-subject))))))
@@ -1473,6 +1484,7 @@
 (defmethod blob-sync :distributed [conf nimbus]
   (if (not (is-leader nimbus :throw-exception false))
     (let [storm-cluster-state (:storm-cluster-state nimbus)
+          zk-client (:zk-client nimbus)
           nimbus-host-port-info (:nimbus-host-port-info nimbus)
           blob-store-key-set (set (get-key-seq-from-blob-store (:blob-store nimbus)))
           zk-key-set (set (.blobstore storm-cluster-state (fn [] (blob-sync conf nimbus))))]
@@ -1481,7 +1493,8 @@
                           (BlobSynchronizer. (:blob-store nimbus) conf)
                           (.setNimbusInfo nimbus-host-port-info)
                           (.setBlobStoreKeySet blob-store-key-set)
-                          (.setZookeeperKeySet zk-key-set))]
+                          (.setZookeeperKeySet zk-key-set)
+                          (.setZkClient zk-client))]
         (.syncBlobs sync-blobs)))))
 
 (defmethod blob-sync :local [conf nimbus]
@@ -2096,10 +2109,11 @@
     (^void createStateInZookeeper [this ^String blob-key]
       (let [storm-cluster-state (:storm-cluster-state nimbus)
             blob-store (:blob-store nimbus)
+            zk-client (:zk-client nimbus)
             nimbus-host-port-info (:nimbus-host-port-info nimbus)
             conf (:conf nimbus)]
         (if (instance? LocalFsBlobStore blob-store)
-          (.setup-blobstore! storm-cluster-state blob-key nimbus-host-port-info (get-version-for-key blob-key nimbus-host-port-info conf)))
+          (.setup-blobstore! storm-cluster-state blob-key nimbus-host-port-info (get-version-for-key blob-key nimbus-host-port-info zk-client)))
         (log-debug "Created state in zookeeper" storm-cluster-state blob-store nimbus-host-port-info)))
 
     (^void uploadBlobChunk [this ^String session ^ByteBuffer blob-chunk]

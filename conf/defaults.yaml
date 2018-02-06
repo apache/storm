@@ -92,6 +92,7 @@ ui.users: null
 ui.header.buffer.bytes: 4096
 ui.http.creds.plugin: org.apache.storm.security.auth.DefaultHttpCredentialsPlugin
 ui.http.x-frame-options: DENY
+ui.pagination: 20
 
 logviewer.port: 8000
 logviewer.childopts: "-Xmx128m"
@@ -194,6 +195,8 @@ task.backpressure.poll.secs: 30
 topology.backpressure.enable: false
 backpressure.disruptor.high.watermark: 0.9
 backpressure.disruptor.low.watermark: 0.4
+backpressure.znode.timeout.secs: 30
+backpressure.znode.update.freq.secs: 15
 
 zmq.threads: 1
 zmq.linger.millis: 5000
