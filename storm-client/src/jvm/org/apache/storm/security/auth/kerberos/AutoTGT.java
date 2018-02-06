@@ -33,18 +33,21 @@ import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginContext;
 import javax.xml.bind.DatatypeConverter;
 
+import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.security.auth.ICredentialsRenewer;
 
+import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * Automatically take a user's TGT, and push it, and renew it in Nimbus.
  */
-public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetric {
+public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetric, IMetricsRegistrant {
     private static final Logger LOG = LoggerFactory.getLogger(AutoTGT.class);
     private static final float TICKET_RENEW_WINDOW = 0.80f;
     protected static final AtomicReference<KerberosTicket> kerbTicket = new AtomicReference<>();
@@ -238,11 +241,6 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetric {
         return this.getMsecsUntilExpiration();
     }
 
-    @Override
-    public String getMetricName() {
-        return "TGT-TimeToExpiryMsecs";
-    }
-
     public static void main(String[] args) throws Exception {
         AutoTGT at = new AutoTGT();
         Map<String, Object> conf = new java.util.HashMap();
@@ -256,4 +254,9 @@ public class AutoTGT implements IAutoCredentials, ICredentialsRenewer, IMetric {
     }
 
 
+    @Override
+    public void registerMetrics(TopologyContext topoContext, Map<String, Object> topoConf) {
+        int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
+        topoContext.registerMetric("TGT-TimeToExpiryMsecs", this, bucketSize);
+    }
 }

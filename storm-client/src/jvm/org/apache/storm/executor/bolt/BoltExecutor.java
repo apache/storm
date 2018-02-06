@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Task;
@@ -31,7 +30,7 @@ import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
-import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IBolt;
@@ -86,11 +85,10 @@ public class BoltExecutor extends Executor {
 
                 // add any autocredential expiry metrics from the worker
                 if (workerData.getAutoCredentials() != null) {
-                    int bucketSize = ((Number) topoConf.get(Config.TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS)).intValue();
                     for (IAutoCredentials autoCredential : workerData.getAutoCredentials()) {
-                        if (autoCredential instanceof IMetric) {
-                            IMetric metric = (IMetric)autoCredential;
-                            userContext.registerMetric(metric.getMetricName(), metric, bucketSize);
+                        if (autoCredential instanceof IMetricsRegistrant) {
+                            IMetricsRegistrant registrant = (IMetricsRegistrant)autoCredential;
+                            registrant.registerMetrics(userContext, topoConf);
                         }
                     }
                 }
