@@ -15,26 +15,34 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package org.apache.storm.kafka.spout.test;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.tuple.Values;
+package org.apache.storm.kafka.spout.trident;
 
-import java.util.List;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.trident.spout.IPartitionedTridentSpout;
+import org.apache.storm.tuple.Fields;
 
-public class TopicTest2TupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
-    /**
-     * @param topics list of topics that use this implementation to build tuples
-     */
-    public TopicTest2TupleBuilder(String... topics) {
-        super(topics);
+import java.util.Map;
+
+// TODO
+public class KafkaTridentSpoutTransactional implements IPartitionedTridentSpout {
+    @Override
+    public Coordinator getCoordinator(Map conf, TopologyContext context) {
+        return null;
     }
 
     @Override
-    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-        return new Values(consumerRecord.topic(),
-                consumerRecord.partition(),
-                consumerRecord.offset());
+    public Emitter getEmitter(Map conf, TopologyContext context) {
+        return null;
+    }
+
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
+
+    @Override
+    public Fields getOutputFields() {
+        return null;
     }
 }

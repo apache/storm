@@ -15,18 +15,14 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-
 package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-
 import java.io.Serializable;
-import java.util.List;
 
 /**
- * {@link KafkaSpoutTuplesBuilder} wraps all the logic that builds tuples from {@link ConsumerRecord}s.
- * The logic is provided by the user by implementing the appropriate number of {@link KafkaSpoutTupleBuilder} instances
+ * A simple interface to allow compatibility with non java 8
+ * code bases 
  */
-public interface KafkaSpoutTuplesBuilder<K,V> extends Serializable {
-    List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord);
+public interface Func<V, R> extends Serializable {
+    R apply(V record);
 }

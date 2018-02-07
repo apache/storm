@@ -13,16 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.storm.kafka.spout.internal;
+package org.apache.storm.kafka.spout;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.storm.kafka.spout.KafkaSpoutConfig;
+import java.io.Serializable;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+import org.apache.kafka.common.serialization.Deserializer;
 
-public class KafkaConsumerFactoryDefault<K, V> implements KafkaConsumerFactory<K, V> {
-
-    @Override
-    public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        return new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
-    }
-    
+/**
+ * @param <T> The type this deserializer deserializes to.
+ * @deprecated Avoid using this class. Use {@link KafkaSpoutConfig.Builder#setProp(java.lang.String, java.lang.Object) } with
+ * {@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} and {@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} instead
+ */
+@Deprecated
+public interface SerializableDeserializer<T> extends Deserializer<T>, Serializable {
 }
