@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
-    private int CAPACITY;
+    private int capacity;
     private static final int MAX_WEIGHT = 100;
     private static class IndexAndWeights {
         final int index;
@@ -85,7 +85,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         sourceNodeInfo = new NodeInfo(context.getThisWorkerHost(), Sets.newHashSet((long) context.getThisWorkerPort()));
         taskToNodePort = context.getTaskToNodePort();
         this.targetTasks = targetTasks;
-        CAPACITY = targetTasks.size() == 1 ? 1 : targetTasks.size() * MAX_WEIGHT;
+        capacity = targetTasks.size() == 1 ? 1 : targetTasks.size() * MAX_WEIGHT;
         conf = context.getConf();
         dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
@@ -102,11 +102,11 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         }
 
         // can't leave choices to be empty, so initiate it similar as ShuffleGrouping
-        choices = new int[CAPACITY];
+        choices = new int[capacity];
 
         current = new AtomicInteger(0);
         // allocate another array to be switched
-        prepareChoices = new int[CAPACITY];
+        prepareChoices = new int[capacity];
         updateRing(null);
     }
 
@@ -115,9 +115,9 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         int rightNow;
         while (true) {
             rightNow = current.incrementAndGet();
-            if (rightNow < CAPACITY) {
+            if (rightNow < capacity) {
                 return rets[choices[rightNow]];
-            } else if (rightNow == CAPACITY) {
+            } else if (rightNow == capacity) {
                 current.set(0);
                 return rets[choices[0]];
             }
@@ -223,8 +223,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (weightSum > 0) {
             for (int target: targetsInScope) {
                 IndexAndWeights indexAndWeights = orig.get(target);
-                int count = (int) ((indexAndWeights.weight / (double) weightSum) * CAPACITY);
-                for (int i = 0; i < count && currentIdx < CAPACITY; i++) {
+                int count = (int) ((indexAndWeights.weight / (double) weightSum) * capacity);
+                for (int i = 0; i < count && currentIdx < capacity; i++) {
                     prepareChoices[currentIdx] = indexAndWeights.index;
                     currentIdx++;
                 }
@@ -232,7 +232,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
 
             if (currentIdx > 0) {
                 //in case we didn't fill in enough
-                for (; currentIdx < CAPACITY; currentIdx++) {
+                for (; currentIdx < capacity; currentIdx++) {
                     prepareChoices[currentIdx] = prepareChoices[random.nextInt(currentIdx)];
                 }
             }
@@ -240,7 +240,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (currentIdx == 0) {
             //This really should be impossible, because we go off of the min load, and inc anything within 5% of it.
             // But just to be sure it is never an issue, especially with float rounding etc.
-            for (;currentIdx < CAPACITY; currentIdx++) {
+            for (;currentIdx < capacity; currentIdx++) {
                 prepareChoices[currentIdx] = currentIdx % rets.length;
             }
         }
@@ -328,7 +328,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     }
 
     //only for test
-    public int getCAPACITY() {
-        return CAPACITY;
+    public int getCapacity() {
+        return capacity;
     }
 }

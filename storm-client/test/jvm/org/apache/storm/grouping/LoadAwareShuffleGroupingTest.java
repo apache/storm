@@ -101,10 +101,10 @@ public class LoadAwareShuffleGroupingTest {
             double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
             double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
             assertEquals("i = " + i,
-                expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCAPACITY(),
+                expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCapacity(),
                 0.01);
             assertEquals("i = " + i,
-                expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCAPACITY(),
+                expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCapacity(),
                 0.01);
         }
 
@@ -121,9 +121,9 @@ public class LoadAwareShuffleGroupingTest {
             LOG.info("contByType = {}", countByType);
             double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
             double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
-            assertEquals(expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCAPACITY(),
+            assertEquals(expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCapacity(),
                 0.01);
-            assertEquals(expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCAPACITY(),
+            assertEquals(expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCapacity(),
                 0.01);
         }
     }
