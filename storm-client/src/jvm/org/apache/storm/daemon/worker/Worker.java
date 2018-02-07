@@ -18,6 +18,9 @@
 
 package org.apache.storm.daemon.worker;
 
+import com.google.common.base.Preconditions;
+import com.lmax.disruptor.EventHandler;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -62,19 +65,16 @@ import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.DisruptorBackpressureCallback;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WorkerBackpressureCallback;
 import org.apache.storm.utils.WorkerBackpressureThread;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.google.common.base.Preconditions;
-import com.lmax.disruptor.EventHandler;
 
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
@@ -105,7 +105,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     /**
      * TODO: should worker even take the topologyId as input? this should be
      * deducible from cluster state (by searching through assignments)
-     * what about if there's inconsistency in assignments? -> but nimbus should guarantee this consistency
+     * what about if there's inconsistency in assignments? -> but nimbus should guarantee this consistency.
      *
      * @param conf         - Storm configuration
      * @param context      -
@@ -159,7 +159,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             @Override public Object run() throws Exception {
                 workerState =
                     new WorkerState(conf, context, topologyId, assignmentId, port, workerId, topologyConf, stateStorage,
-                        stormClusterState);
+                        stormClusterState, autoCreds);
 
                 // Heartbeat here so that worker process dies if this fails
                 // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -328,7 +328,8 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public Map<String, Long> getCurrentBlobVersions() throws IOException {
         Map<String, Long> results = new HashMap<>();
-        Map<String, Map<String, Object>> blobstoreMap = (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
+        Map<String, Map<String, Object>> blobstoreMap =
+                (Map<String, Map<String, Object>>) workerState.getTopologyConf().get(Config.TOPOLOGY_BLOBSTORE_MAP);
         if (blobstoreMap != null) {
             String stormRoot = ConfigUtils.supervisorStormDistRoot(workerState.getTopologyConf(), workerState.getTopologyId());
             for (Map.Entry<String, Map<String, Object>> entry : blobstoreMap.entrySet()) {
@@ -368,7 +369,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public void checkThrottleChanged() {
-        boolean throttleOn = workerState.stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, this::checkThrottleChanged);
+        boolean throttleOn =
+                workerState.stormClusterState.topologyBackpressure(topologyId, backpressureZnodeTimeoutMs, this::checkThrottleChanged);
         workerState.throttleOn.set(throttleOn);
     }
 
@@ -385,7 +387,7 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     /**
      * make a handler for the worker's send disruptor queue to
-     * check highWaterMark and lowWaterMark for backpressure
+     * check highWaterMark and lowWaterMark for backpressure.
      */
     private DisruptorBackpressureCallback mkDisruptorBackpressureHandler(WorkerState workerState) {
         return new DisruptorBackpressureCallback() {
@@ -402,7 +404,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     /**
-     * make a handler that checks and updates worker's backpressure flag
+     * make a handler that checks and updates worker's backpressure flag.
      */
     private WorkerBackpressureCallback mkBackpressureHandler(Map<String, Object> topologyConf) {
         final List<IRunningExecutor> executors = executorsAtom.get();
@@ -432,7 +434,8 @@ public class Worker implements Shutdownable, DaemonCommon {
 
                     if (currBackpressureTimestamp != prevBackpressureTimestamp) {
                         try {
-                            LOG.debug("worker backpressure timestamp changing from {} to {}", prevBackpressureTimestamp, currBackpressureTimestamp);
+                            LOG.debug("worker backpressure timestamp changing from {} to {}",
+                                    prevBackpressureTimestamp, currBackpressureTimestamp);
                             stormClusterState.workerBackpressure(topologyId, assignmentId, (long) port, currBackpressureTimestamp);
                             // doing the local reset after the zk update succeeds is very important to avoid a bad state upon zk exception
                             workerState.backpressure.set(currBackpressureTimestamp);

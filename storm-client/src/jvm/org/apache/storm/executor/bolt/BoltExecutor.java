@@ -15,10 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.executor.bolt;
 
 import com.google.common.collect.ImmutableMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.Callable;
+
 import org.apache.storm.Constants;
 import org.apache.storm.ICredentialsListener;
 import org.apache.storm.daemon.Task;
@@ -26,6 +30,8 @@ import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
+import org.apache.storm.metric.api.IMetricsRegistrant;
+import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.IOutputCollector;
@@ -33,14 +39,13 @@ import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.DisruptorQueue;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.concurrent.Callable;
+
 
 public class BoltExecutor extends Executor {
 
@@ -77,6 +82,16 @@ public class BoltExecutor extends Executor {
                 Map cachedNodePortToSocket = (Map) workerData.getCachedNodeToPortSocket().get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
+
+                // add any autocredential expiry metrics from the worker
+                if (workerData.getAutoCredentials() != null) {
+                    for (IAutoCredentials autoCredential : workerData.getAutoCredentials()) {
+                        if (autoCredential instanceof IMetricsRegistrant) {
+                            IMetricsRegistrant registrant = (IMetricsRegistrant)autoCredential;
+                            registrant.registerMetrics(userContext, topoConf);
+                        }
+                    }
+                }
             } else {
                 Map<String, DisruptorQueue> map = ImmutableMap.of("sendqueue", sendQueue, "receive", receiveQueue);
                 BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
