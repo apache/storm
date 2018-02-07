@@ -44,7 +44,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, Serializable {
-    static final int CAPACITY = 1000;
+    private int CAPACITY;
     private static final int MAX_WEIGHT = 100;
     private static class IndexAndWeights {
         final int index;
@@ -85,6 +85,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         sourceNodeInfo = new NodeInfo(context.getThisWorkerHost(), Sets.newHashSet((long) context.getThisWorkerPort()));
         taskToNodePort = context.getTaskToNodePort();
         this.targetTasks = targetTasks;
+        CAPACITY = targetTasks.size() == 1 ? 1 : targetTasks.size() * MAX_WEIGHT;
         conf = context.getConf();
         dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
@@ -163,7 +164,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         if (targetInScope.isEmpty()) {
             Scope upScope = Scope.upgrade(currentScope);
             if (upScope == currentScope) {
-                throw new RuntimeException("This executor has no target tasks.");
+                throw new RuntimeException("The current scope " + currentScope + " has no target tasks.");
             }
             currentScope = upScope;
             return transition(load);
@@ -229,11 +230,14 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
                 }
             }
 
-            //in case we didn't fill in enough
-            for (; currentIdx < CAPACITY; currentIdx++) {
-                prepareChoices[currentIdx] = prepareChoices[random.nextInt(currentIdx)];
+            if (currentIdx > 0) {
+                //in case we didn't fill in enough
+                for (; currentIdx < CAPACITY; currentIdx++) {
+                    prepareChoices[currentIdx] = prepareChoices[random.nextInt(currentIdx)];
+                }
             }
-        } else {
+        }
+        if (currentIdx == 0) {
             //This really should be impossible, because we go off of the min load, and inc anything within 5% of it.
             // But just to be sure it is never an issue, especially with float rounding etc.
             for (;currentIdx < CAPACITY; currentIdx++) {
@@ -321,5 +325,10 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
                     return EVERYTHING;
             }
         }
+    }
+
+    //only for test
+    public int getCAPACITY() {
+        return CAPACITY;
     }
 }
