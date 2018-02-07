@@ -1035,7 +1035,9 @@ public class DaemonConfig implements Validated {
      * Class implementing MetricStore.
      */
     @NotNull
-    @isImplementationOfClass(implementsClass = MetricStore.class)
+    @isString
+    // Validating class implementation could fail on non-Nimbus Daemons.  Nimbus will catch the class not found on startup
+    // and log an error message, so just validating this as a String for now.
     public static final String STORM_METRIC_STORE_CLASS = "storm.metricstore.class";
 
     /**
