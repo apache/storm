@@ -244,14 +244,18 @@
           <mainClass>${storm.topology}</mainClass>
         </configuration>
       </plugin>
+
+        <!--
         <plugin>
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-checkstyle-plugin</artifactId>
+            -->
             <!--Note - the version would be inherited-->
-            <configuration>
+      <!--      <configuration>
                 <maxAllowedViolations>1538</maxAllowedViolations>
             </configuration>
         </plugin>
+      -->
     </plugins>
   </build>
 </project>
