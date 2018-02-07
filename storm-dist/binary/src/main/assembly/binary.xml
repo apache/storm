@@ -313,7 +313,7 @@
             <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
             <outputDirectory>toollib</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include>storm-kafka-monitor-${project.version}.jar</include>
             </includes>
         </fileSet>
     </fileSets>
