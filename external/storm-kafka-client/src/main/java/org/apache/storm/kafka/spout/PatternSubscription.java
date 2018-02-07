@@ -26,8 +26,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Subscribe to all topics that match a given pattern
+ * Subscribe to all topics that match a given pattern.
+ * @deprecated Please use {@link ManualPartitionSubscription} with {@link PatternTopicFilter} instead
  */
+@Deprecated
 public class PatternSubscription extends Subscription {
     private static final Logger LOG = LoggerFactory.getLogger(PatternSubscription.class);
     private static final long serialVersionUID = 3438543305215813839L;

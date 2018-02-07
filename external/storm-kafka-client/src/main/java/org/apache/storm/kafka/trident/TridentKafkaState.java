@@ -37,21 +37,20 @@ import java.util.Properties;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
-public class TridentKafkaState implements State {
+public class TridentKafkaState<K, V> implements State {
     private static final Logger LOG = LoggerFactory.getLogger(TridentKafkaState.class);
 
-    private KafkaProducer producer;
-    private OutputCollector collector;
+    private KafkaProducer<K, V> producer;
 
-    private TridentTupleToKafkaMapper mapper;
+    private TridentTupleToKafkaMapper<K, V> mapper;
     private KafkaTopicSelector topicSelector;
 
-    public TridentKafkaState withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper mapper) {
+    public TridentKafkaState<K, V> withTridentTupleToKafkaMapper(TridentTupleToKafkaMapper<K, V> mapper) {
         this.mapper = mapper;
         return this;
     }
 
-    public TridentKafkaState withKafkaTopicSelector(KafkaTopicSelector selector) {
+    public TridentKafkaState<K, V> withKafkaTopicSelector(KafkaTopicSelector selector) {
         this.topicSelector = selector;
         return this;
     }
@@ -66,36 +65,45 @@ public class TridentKafkaState implements State {
         LOG.debug("commit is Noop.");
     }
 
+    /**
+     * Prepare this State.
+     * @param options The KafkaProducer config.
+     */
     public void prepare(Properties options) {
         Objects.requireNonNull(mapper, "mapper can not be null");
         Objects.requireNonNull(topicSelector, "topicSelector can not be null");
-        producer = new KafkaProducer(options);
+        producer = new KafkaProducer<>(options);
     }
 
+    /**
+     * Write the given tuples to Kafka.
+     * @param tuples The tuples to write.
+     * @param collector The Trident collector.
+     */
     public void updateState(List<TridentTuple> tuples, TridentCollector collector) {
         String topic = null;
         try {
             long startTime = System.currentTimeMillis();
-	     int numberOfRecords = tuples.size();
-	     List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
+            int numberOfRecords = tuples.size();
+            List<Future<RecordMetadata>> futures = new ArrayList<>(numberOfRecords);
             for (TridentTuple tuple : tuples) {
                 topic = topicSelector.getTopic(tuple);
-                Object messageFromTuple = mapper.getMessageFromTuple(tuple);
-		 Object keyFromTuple = mapper.getKeyFromTuple(tuple);
-				
+                V messageFromTuple = mapper.getMessageFromTuple(tuple);
+                K keyFromTuple = mapper.getKeyFromTuple(tuple);
+
                 if (topic != null) {
-                   if (messageFromTuple != null) {
-		      Future<RecordMetadata> result = producer.send(new ProducerRecord(topic,keyFromTuple, messageFromTuple));
-		      futures.add(result);
-		   } else {
-		      LOG.warn("skipping Message with Key "+ keyFromTuple +" as message was null");
-		   }
-			
+                    if (messageFromTuple != null) {
+                        Future<RecordMetadata> result = producer.send(new ProducerRecord<>(topic, keyFromTuple, messageFromTuple));
+                        futures.add(result);
+                    } else {
+                        LOG.warn("skipping Message with Key {} as message was null", keyFromTuple);
+                    }
+
                 } else {
-                      LOG.warn("skipping key = " + keyFromTuple + ", topic selector returned null.");
+                    LOG.warn("skipping key = {}, topic selector returned null.", keyFromTuple);
                 }
             }
-            
+
             int emittedRecords = futures.size();
             List<ExecutionException> exceptions = new ArrayList<>(emittedRecords);
             for (Future<RecordMetadata> future : futures) {
@@ -106,20 +114,21 @@ public class TridentKafkaState implements State {
                 }
             }
 
-            if (exceptions.size() > 0){
-		StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages " + tuples + " from topic = " + topic 
-				+ " because of the following exceptions:" + System.lineSeparator());
-				
-		for (ExecutionException exception : exceptions) {
-			errorMsg = errorMsg.append(exception.getMessage()).append(System.lineSeparator()); ;
-		}
-		String message = errorMsg.toString();
-		LOG.error(message);
-		throw new FailedException(message);
-	    }
-	    long latestTime = System.currentTimeMillis();
-	    LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime-startTime, topic);
-			
+            if (exceptions.size() > 0) {
+                StringBuilder errorMsg = new StringBuilder("Could not retrieve result for messages ");
+                errorMsg.append(tuples).append(" from topic = ").append(topic)
+                        .append(" because of the following exceptions:").append(System.lineSeparator());
+
+                for (ExecutionException exception : exceptions) {
+                    errorMsg = errorMsg.append(exception.getMessage()).append(System.lineSeparator());
+                }
+                String message = errorMsg.toString();
+                LOG.error(message);
+                throw new FailedException(message);
+            }
+            long latestTime = System.currentTimeMillis();
+            LOG.info("Emitted record {} sucessfully in {} ms to topic {} ", emittedRecords, latestTime - startTime, topic);
+
         } catch (Exception ex) {
             String errorMsg = "Could not send messages " + tuples + " to topic = " + topic;
             LOG.warn(errorMsg, ex);

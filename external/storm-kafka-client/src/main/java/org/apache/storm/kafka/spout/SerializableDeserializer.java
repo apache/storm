@@ -16,10 +16,14 @@
 package org.apache.storm.kafka.spout;
 
 import java.io.Serializable;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.Deserializer;
 
 /**
  * @param <T> The type this deserializer deserializes to.
+ * @deprecated Avoid using this class. Use {@link KafkaSpoutConfig.Builder#setProp(java.lang.String, java.lang.Object) } with
+ * {@link ConsumerConfig#KEY_DESERIALIZER_CLASS_CONFIG} and {@link ConsumerConfig#VALUE_DESERIALIZER_CLASS_CONFIG} instead
  */
-public interface SerializableDeserializer<T> extends Deserializer<T>, Serializable { 
+@Deprecated
+public interface SerializableDeserializer<T> extends Deserializer<T>, Serializable {
 }
