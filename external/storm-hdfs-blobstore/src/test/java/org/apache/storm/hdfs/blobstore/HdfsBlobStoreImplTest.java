@@ -18,29 +18,27 @@
  */
 package org.apache.storm.hdfs.blobstore;
 
-import org.apache.storm.blobstore.BlobStoreFile;
-import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.commons.io.IOUtils;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.storm.blobstore.BlobStoreFile;
+import org.apache.storm.generated.SettableBlobMeta;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.ClassRule;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
-import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 
 import static org.junit.Assert.*;
-
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
-import org.junit.ClassRule;
 
 public class HdfsBlobStoreImplTest {
 

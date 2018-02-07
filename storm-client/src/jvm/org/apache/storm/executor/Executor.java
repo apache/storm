@@ -251,7 +251,6 @@ public abstract class Executor implements Callable, EventHandler<Object> {
         String handlerName = componentId + "-executor" + executorId;
         Utils.SmartThread handlers =
                 Utils.asyncLoop(this, false, reportErrorDie, Thread.NORM_PRIORITY, true, true, handlerName);
-        setupTicks(StatsUtil.SPOUT.equals(type));
 
         LOG.info("Finished loading executor " + componentId + ":" + executorId);
         return new ExecutorShutdown(this, Lists.newArrayList(systemThreads, handlers), idToTask, receiveQueue, sendQueue);

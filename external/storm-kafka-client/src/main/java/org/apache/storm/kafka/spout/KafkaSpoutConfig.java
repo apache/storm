@@ -31,6 +31,7 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.Config;
+import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.subscription.ManualPartitionSubscription;
 import org.apache.storm.kafka.spout.subscription.NamedTopicFilter;
@@ -96,7 +97,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
      * @param builder The Builder to construct the KafkaSpoutConfig from
      */
     public KafkaSpoutConfig(Builder<K, V> builder) {
-        setAutoCommitMode(builder);
+        setKafkaPropsForProcessingGuarantee(builder);
         this.kafkaProps = builder.kafkaProps;
         this.subscription = builder.subscription;
         this.translator = builder.translator;
@@ -115,23 +116,26 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     /**
      * Defines how the {@link KafkaSpout} seeks the offset to be used in the first poll to Kafka upon topology deployment.
-     * By default this parameter is set to UNCOMMITTED_EARLIEST. If the strategy is set to:
-     * <br/>
-     * <ul>
-     * <li>EARLIEST - the kafka spout polls records starting in the first offset of the partition, regardless
-     * of previous commits. This setting only takes effect on topology deployment.</li>
-     * <li>LATEST - the kafka spout polls records with offsets greater than the last offset in the partition,
-     * regardless of previous commits. This setting only takes effect on topology deployment.</li>
-     * <li>UNCOMMITTED_EARLIEST - the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed it behaves as EARLIEST.</li>
-     * <li>UNCOMMITTED_LATEST - the kafka spout polls records from the last committed offset, if any. If no offset has been
-     * committed it behaves as LATEST.</li>
-     * </ul>
+     * By default this parameter is set to UNCOMMITTED_EARLIEST. 
      */
     public enum FirstPollOffsetStrategy {
+        /**
+         * The kafka spout polls records starting in the first offset of the partition, regardless of previous commits. This setting only
+         * takes effect on topology deployment
+         */
         EARLIEST,
+        /**
+         * The kafka spout polls records with offsets greater than the last offset in the partition, regardless of previous commits. This
+         * setting only takes effect on topology deployment
+         */
         LATEST,
+        /**
+         * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as EARLIEST
+         */
         UNCOMMITTED_EARLIEST,
+        /**
+         * The kafka spout polls records from the last committed offset, if any. If no offset has been committed it behaves as LATEST
+         */
         UNCOMMITTED_LATEST;
 
         @Override
@@ -142,28 +146,30 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     /**
      * This enum controls when the tuple with the {@link ConsumerRecord} for an offset is marked as processed,
-     * i.e. when the offset is committed to Kafka. For AT_LEAST_ONCE and AT_MOST_ONCE the spout controls when
-     * the commit happens. When the guarantee is NONE Kafka controls when the commit happens.
-     *
-     * <ul>
-     * <li>AT_LEAST_ONCE - an offset is ready to commit only after the corresponding tuple has been processed (at-least-once)
-     * and acked. If a tuple fails or times-out it will be re-emitted. A tuple can be processed more than once if for instance
-     * the ack gets lost.</li>
-     * <br/>
-     * <li>AT_MOST_ONCE - every offset will be committed to Kafka right after being polled but before being emitted
-     * to the downstream components of the topology. It guarantees that the offset is processed at-most-once because it
-     * won't retry tuples that fail or timeout after the commit to Kafka has been done.</li>
-     * <br/>
-     * <li>NONE - the polled offsets are committed to Kafka periodically as controlled by the Kafka properties
-     * "enable.auto.commit" and "auto.commit.interval.ms". Because the spout does not control when the commit happens
-     * it cannot give any message processing guarantees, i.e. a message may be processed 0, 1 or more times.
-     * This option requires "enable.auto.commit=true". If "enable.auto.commit=false" an exception will be thrown.</li>
-     * </ul>
+     * i.e. when the offset can be committed to Kafka. The default value is AT_LEAST_ONCE.
+     * The commit interval is controlled by {@link KafkaSpoutConfig#getOffsetsCommitPeriodMs() }, if the mode commits on an interval.
+     * NO_GUARANTEE may be removed in a later release without warning, we're still evaluating whether it makes sense to keep.
      */
+    @InterfaceStability.Unstable
     public enum ProcessingGuarantee {
+        /**
+         * An offset is ready to commit only after the corresponding tuple has been processed and acked (at least once). If a tuple fails or
+         * times out it will be re-emitted, as controlled by the {@link KafkaSpoutRetryService}. Commits synchronously on the defined
+         * interval.
+         */
         AT_LEAST_ONCE,
+        /**
+         * Every offset will be synchronously committed to Kafka right after being polled but before being emitted to the downstream
+         * components of the topology. The commit interval is ignored. This mode guarantees that the offset is processed at most once by
+         * ensuring the spout won't retry tuples that fail or time out after the commit to Kafka has been done
+         */
         AT_MOST_ONCE,
-        NONE,
+        /**
+         * The polled offsets are ready to commit immediately after being polled. The offsets are committed periodically, i.e. a message may
+         * be processed 0, 1 or more times. This behavior is similar to setting enable.auto.commit=true in the consumer, but allows the
+         * spout to control when commits occur. Commits asynchronously on the defined interval.
+         */
+        NO_GUARANTEE,
     }
 
     public static class Builder<K, V> {
@@ -213,7 +219,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         /**
-         * Set a {@link KafkaConsumer} property.
+         * Set a {@link KafkaConsumer} property. 
          */
         public Builder<K, V> setProp(String key, Object value) {
             kafkaProps.put(key, value);
@@ -221,7 +227,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         /**
-         * Set multiple {@link KafkaConsumer} properties.
+         * Set multiple {@link KafkaConsumer} properties. 
          */
         public Builder<K, V> setProp(Map<String, Object> props) {
             kafkaProps.putAll(props);
@@ -229,7 +235,7 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         /**
-         * Set multiple {@link KafkaConsumer} properties.
+         * Set multiple {@link KafkaConsumer} properties. 
          */
         public Builder<K, V> setProp(Properties props) {
             props.forEach((key, value) -> {
@@ -256,7 +262,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         /**
          * Specifies the period, in milliseconds, the offset commit task is periodically called. Default is 15s.
          *
-         * <p>This setting only has an effect if the configured {@link ProcessingGuarantee} is {@link ProcessingGuarantee#AT_LEAST_ONCE}.
+         * <p>This setting only has an effect if the configured {@link ProcessingGuarantee} is {@link ProcessingGuarantee#AT_LEAST_ONCE} or
+         * {@link ProcessingGuarantee#NO_GUARANTEE}.
          *
          * @param offsetCommitPeriodMs time in ms
          */
@@ -453,37 +460,37 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return builder;
     }
 
-    private static void setAutoCommitMode(Builder<?, ?> builder) {
+    private static void setKafkaPropsForProcessingGuarantee(Builder<?, ?> builder) {
         if (builder.kafkaProps.containsKey(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG)) {
-            throw new IllegalArgumentException("Do not set " + ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG + " manually."
-                + " Instead use KafkaSpoutConfig.Builder.setProcessingGuarantee");
+            throw new IllegalStateException("The KafkaConsumer " + ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG
+                + " setting is not supported. You can configure similar behavior through KafkaSpoutConfig.Builder.setProcessingGuarantee");
         }
-        if (builder.processingGuarantee == ProcessingGuarantee.NONE) {
-            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, true);
-        } else {
-            String autoOffsetResetPolicy = (String)builder.kafkaProps.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
-            if (builder.processingGuarantee == ProcessingGuarantee.AT_LEAST_ONCE) {
-                if (autoOffsetResetPolicy == null) {
-                    /*
-                    If the user wants to explicitly set an auto offset reset policy, we should respect it, but when the spout is configured
-                    for at-least-once processing we should default to seeking to the earliest offset in case there's an offset out of range
-                    error, rather than seeking to the latest (Kafka's default). This type of error will typically happen when the consumer 
-                    requests an offset that was deleted.
-                     */
-                    builder.kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-                } else if (!autoOffsetResetPolicy.equals("earliest") && !autoOffsetResetPolicy.equals("none")) {
-                    LOG.warn("Cannot guarantee at-least-once processing with auto.offset.reset.policy other than 'earliest' or 'none'."
-                        + " Some messages may be skipped.");
-                }
-            } else if (builder.processingGuarantee == ProcessingGuarantee.AT_MOST_ONCE) {
-                if (autoOffsetResetPolicy != null
-                    && (!autoOffsetResetPolicy.equals("latest") && !autoOffsetResetPolicy.equals("none"))) {
-                    LOG.warn("Cannot guarantee at-most-once processing with auto.offset.reset.policy other than 'latest' or 'none'."
-                        + " Some messages may be processed more than once.");
-                }
+        String autoOffsetResetPolicy = (String) builder.kafkaProps.get(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+        if (builder.processingGuarantee == ProcessingGuarantee.AT_LEAST_ONCE) {
+            if (autoOffsetResetPolicy == null) {
+                /*
+                 * If the user wants to explicitly set an auto offset reset policy, we should respect it, but when the spout is configured
+                 * for at-least-once processing we should default to seeking to the earliest offset in case there's an offset out of range
+                 * error, rather than seeking to the latest (Kafka's default). This type of error will typically happen when the consumer
+                 * requests an offset that was deleted.
+                 */
+                LOG.info("Setting Kafka consumer property '{}' to 'earliest' to ensure at-least-once processing",
+                    ConsumerConfig.AUTO_OFFSET_RESET_CONFIG);
+                builder.kafkaProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
+            } else if (!autoOffsetResetPolicy.equals("earliest") && !autoOffsetResetPolicy.equals("none")) {
+                LOG.warn("Cannot guarantee at-least-once processing with auto.offset.reset.policy other than 'earliest' or 'none'."
+                    + " Some messages may be skipped.");
             }
-            builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
+        } else if (builder.processingGuarantee == ProcessingGuarantee.AT_MOST_ONCE) {
+            if (autoOffsetResetPolicy != null
+                && (!autoOffsetResetPolicy.equals("latest") && !autoOffsetResetPolicy.equals("none"))) {
+                LOG.warn("Cannot guarantee at-most-once processing with auto.offset.reset.policy other than 'latest' or 'none'."
+                    + " Some messages may be processed more than once.");
+            }
         }
+        LOG.info("Setting Kafka consumer property '{}' to 'false', because the spout does not support auto-commit",
+            ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG);
+        builder.kafkaProps.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
     }
 
     /**

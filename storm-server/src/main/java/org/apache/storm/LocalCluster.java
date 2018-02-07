@@ -368,6 +368,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     private final String trackId;
     private final StormCommonInstaller commonInstaller;
     private final SimulatedTime time;
+    private final NimbusClient.LocalOverride nimbusOverride;
     
     /**
      * Create a default LocalCluster.
@@ -475,6 +476,13 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
                 }
             } catch (Exception e) {
                 //Ignore any exceptions we might be doing a test for authentication 
+            }
+            if (thriftServer == null) {
+                //We don't want to override the client if there is a thrift server up and running, or we would not test any
+                // Of the actual thrift code
+                this.nimbusOverride = new NimbusClient.LocalOverride(this);
+            } else {
+                this.nimbusOverride = null;
             }
             success = true;
         } finally {
@@ -658,6 +666,9 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
 
     @Override
     public synchronized void close() throws Exception {
+        if (nimbusOverride != null) {
+            nimbusOverride.close();
+        }
         if (nimbus != null) {
             nimbus.shutdown();
         }
@@ -1098,6 +1109,7 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     
     /**
      * Run c with a local mode cluster overriding the NimbusClient and DRPCClient calls.
+     * NOTE local mode override happens by default now unless netty is turned on for the local cluster.
      * @param c the callable to run in this mode
      * @param ttlSec the number of seconds to let the cluster run after c has completed
      * @return the result of calling C
@@ -1106,7 +1118,6 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     public static <T> T withLocalModeOverride(Callable<T> c, long ttlSec) throws Exception {
         LOG.info("\n\n\t\tSTARTING LOCAL MODE CLUSTER\n\n");
         try (LocalCluster local = new LocalCluster();
-                NimbusClient.LocalOverride nimbusOverride = new NimbusClient.LocalOverride(local);
                 LocalDRPC drpc = new LocalDRPC();
                 DRPCClient.LocalOverride drpcOverride = new DRPCClient.LocalOverride(drpc)) {
 

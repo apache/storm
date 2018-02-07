@@ -17,7 +17,6 @@
  */
 package org.apache.storm.daemon.supervisor;
 
-import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.*;
@@ -150,7 +149,7 @@ public class SlotTest {
             ContainerLauncher containerLauncher = mock(ContainerLauncher.class);
             ISupervisor iSuper = mock(ISupervisor.class);
             StaticState staticState = new StaticState(localizer, 1000, 1000, 1000, 1000,
-                    containerLauncher, "localhost", 8080, iSuper, state, cb);
+                    containerLauncher, "localhost", 8080, iSuper, state, cb, null);
             DynamicState dynamicState = new DynamicState(null, null, null);
             DynamicState nextState = Slot.handleEmpty(dynamicState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
@@ -182,7 +181,7 @@ public class SlotTest {
             
             ISupervisor iSuper = mock(ISupervisor.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
-                    containerLauncher, "localhost", port, iSuper, state, cb);
+                    containerLauncher, "localhost", port, iSuper, state, cb, null);
             DynamicState dynamicState = new DynamicState(null, null, null)
                     .withNewAssignment(newAssignment);
 
@@ -251,7 +250,7 @@ public class SlotTest {
             ISupervisor iSuper = mock(ISupervisor.class);
             LocalState state = mock(LocalState.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
-                    containerLauncher, "localhost", port, iSuper, state, cb);
+                    containerLauncher, "localhost", port, iSuper, state, cb, null);
             DynamicState dynamicState = new DynamicState(assignment, container, assignment);
             
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
@@ -312,7 +311,7 @@ public class SlotTest {
             
             ISupervisor iSuper = mock(ISupervisor.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
-                    containerLauncher, "localhost", port, iSuper, state, cb);
+                    containerLauncher, "localhost", port, iSuper, state, cb, null);
             DynamicState dynamicState = new DynamicState(cAssignment, cContainer, nAssignment);
             
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
@@ -393,7 +392,7 @@ public class SlotTest {
             ISupervisor iSuper = mock(ISupervisor.class);
             LocalState state = mock(LocalState.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
-                    containerLauncher, "localhost", port, iSuper, state, cb);
+                    containerLauncher, "localhost", port, iSuper, state, cb, null);
             DynamicState dynamicState = new DynamicState(cAssignment, cContainer, null);
             
             DynamicState nextState = Slot.stateMachineStep(dynamicState, staticState);
@@ -454,7 +453,7 @@ public class SlotTest {
             ISupervisor iSuper = mock(ISupervisor.class);
             LocalState state = mock(LocalState.class);
             StaticState staticState = new StaticState(localizer, 5000, 120000, 1000, 1000,
-                    containerLauncher, "localhost", port, iSuper, state, cb);
+                    containerLauncher, "localhost", port, iSuper, state, cb, null);
             Set<TopoProfileAction> profileActions = new HashSet<>();
             ProfileRequest request = new ProfileRequest();
             request.set_action(ProfileAction.JPROFILE_STOP);
@@ -532,7 +531,7 @@ public class SlotTest {
             ISupervisor iSuper = mock(ISupervisor.class);
             long heartbeatTimeoutMs = 5000;
             StaticState staticState = new StaticState(localizer, heartbeatTimeoutMs, 120_000, 1000, 1000,
-                containerLauncher, "localhost", port, iSuper, state, cb);
+                containerLauncher, "localhost", port, iSuper, state, cb, null);
 
             Set<Slot.BlobChanging> changing = new HashSet<>();
             LocallyCachedBlob stormJar = mock(LocallyCachedBlob.class);
