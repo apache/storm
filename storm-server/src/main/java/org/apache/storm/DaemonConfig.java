@@ -33,7 +33,6 @@ import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplic
 import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
 
 import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.metricstore.MetricStore;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
@@ -1039,6 +1038,13 @@ public class DaemonConfig implements Validated {
     // Validating class implementation could fail on non-Nimbus Daemons.  Nimbus will catch the class not found on startup
     // and log an error message, so just validating this as a String for now.
     public static final String STORM_METRIC_STORE_CLASS = "storm.metricstore.class";
+
+    /**
+     * Class implementing WorkerMetricsProcessor.
+     */
+    @NotNull
+    @isString
+    public static final String STORM_METRIC_PROCESSOR_CLASS = "storm.metricprocessor.class";
 
     /**
      * RocksDB file location. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore

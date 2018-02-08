@@ -41,5 +41,23 @@ public class MetricStoreConfig {
             throw new MetricException("Failed to create metric store", t);
         }
     }
+
+    /**
+     * Configures metric processor to use the class specified in the conf.
+     * @param conf Storm config map
+     * @return WorkerMetricsProcessor prepared processor
+     * @throws MetricException  on misconfiguration
+     */
+    public static WorkerMetricsProcessor configureMetricProcessor(Map conf) throws MetricException {
+
+        try {
+            String processorClass = (String)conf.get(DaemonConfig.STORM_METRIC_PROCESSOR_CLASS);
+            WorkerMetricsProcessor processor = (WorkerMetricsProcessor) (Class.forName(processorClass)).newInstance();
+            processor.prepare(conf);
+            return processor;
+        } catch (Throwable t) {
+            throw new MetricException("Failed to create metric processor", t);
+        }
+    }
 }
 
