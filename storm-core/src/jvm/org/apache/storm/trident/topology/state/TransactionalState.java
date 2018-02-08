@@ -40,6 +40,10 @@ import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+/**
+ * Class that contains the logic to extract the transactional state info from zookeeper. All transactional state
+ * is kept in zookeeper. This class only contains references to Curator, which is used to get all info from zookeeper.
+ */
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
     CuratorFramework _curator;

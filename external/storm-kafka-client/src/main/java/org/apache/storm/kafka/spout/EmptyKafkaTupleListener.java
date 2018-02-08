@@ -16,20 +16,38 @@
  *   limitations under the License.
  */
 
+
 package org.apache.storm.kafka.spout;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-
-import java.io.Serializable;
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
-/**
- * Represents the {@link KafkaSpoutStream} associated with each topic or topic pattern (wildcard), and provides
- * a public API to declare output streams and emmit tuples, on the appropriate stream, for all the topics specified.
- */
-public interface KafkaSpoutStreams extends Serializable {
-    void declareOutputFields(OutputFieldsDeclarer declarer);
+import org.apache.kafka.common.TopicPartition;
+import org.apache.storm.task.TopologyContext;
 
-    void emit(SpoutOutputCollector collector, List<Object> tuple, KafkaSpoutMessageId messageId);
+public final class EmptyKafkaTupleListener implements KafkaTupleListener {
+
+    @Override
+    public void open(Map<String, Object> conf, TopologyContext context) { }
+
+    @Override
+    public void onEmit(List<Object> tuple, KafkaSpoutMessageId msgId) { }
+
+    @Override
+    public void onAck(KafkaSpoutMessageId msgId) { }
+
+    @Override
+    public void onPartitionsReassigned(Collection<TopicPartition> topicPartitions) { }
+
+    @Override
+    public void onRetry(KafkaSpoutMessageId msgId) { }
+
+    @Override
+    public void onMaxRetryReached(KafkaSpoutMessageId msgId) { }
+
+    @Override
+    public String toString() {
+        return "EmptyKafkaTupleListener";
+    }
 }

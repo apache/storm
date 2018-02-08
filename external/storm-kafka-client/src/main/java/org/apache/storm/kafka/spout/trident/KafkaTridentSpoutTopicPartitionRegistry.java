@@ -15,26 +15,34 @@
  *   See the License for the specific language governing permissions and
  *   limitations under the License.
  */
-package org.apache.storm.kafka.spout.builders;
 
-import org.apache.kafka.clients.consumer.ConsumerRecord;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.tuple.Values;
+package org.apache.storm.kafka.spout.trident;
 
-import java.util.List;
+import org.apache.kafka.common.TopicPartition;
 
-public class TopicKeyValueTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
-    /**
-     * @param topics list of topics that use this implementation to build tuples
-     */
-    public TopicKeyValueTupleBuilder(String... topics) {
-        super(topics);
+import java.util.Collection;
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+
+public enum KafkaTridentSpoutTopicPartitionRegistry {
+    INSTANCE;
+
+    private Set<TopicPartition> topicPartitions;
+
+    KafkaTridentSpoutTopicPartitionRegistry() {
+        this.topicPartitions = new LinkedHashSet<>();
     }
 
-    @Override
-    public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-        return new Values(consumerRecord.topic(),
-                consumerRecord.key(),
-                consumerRecord.value());
+    public Set<TopicPartition> getTopicPartitions() {
+        return Collections.unmodifiableSet(topicPartitions);
+    }
+
+    public void addAll(Collection<? extends TopicPartition> topicPartitions) {
+        this.topicPartitions.addAll(topicPartitions);
+    }
+
+    public void removeAll(Collection<? extends TopicPartition> topicPartitions) {
+        this.topicPartitions.removeAll(topicPartitions);
     }
 }
