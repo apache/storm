@@ -424,10 +424,9 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     /**
-     * If znode exists and timestamp is non-positive, delete;
-     * if exists and timestamp is larger than 0, update the timestamp;
-     * if not exists and timestamp is larger than 0, create the znode and set the timestamp;
-     * if not exists and timestamp is non-positive, do nothing.
+     * If timestamp is non-positive, ignore;
+     * if znode exists, update the timestamp;
+     * if not exists, create the znode and set the timestamp;
      * @param stormId The topology Id
      * @param node The node id
      * @param port The port number
@@ -435,20 +434,16 @@ public class StormClusterStateImpl implements IStormClusterState {
      */
     @Override
     public void workerBackpressure(String stormId, String node, Long port, long timestamp) {
+        if (timestamp <= 0) {
+            return;
+        }
         String path = ClusterUtils.backpressurePath(stormId, node, port);
         boolean existed = stateStorage.node_exists(path, false);
+        byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
         if (existed) {
-            if (timestamp <= 0) {
-                stateStorage.delete_node(path);
-            } else {
-                byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
-                stateStorage.set_data(path, data, acls);
-            }
+            stateStorage.set_data(path, data, acls);
         } else {
-            if (timestamp > 0) {
-                byte[] data = ByteBuffer.allocate(Long.BYTES).putLong(timestamp).array();
-                stateStorage.set_ephemeral_node(path, data, acls);
-            }
+            stateStorage.set_ephemeral_node(path, data, acls);
         }
     }
 
