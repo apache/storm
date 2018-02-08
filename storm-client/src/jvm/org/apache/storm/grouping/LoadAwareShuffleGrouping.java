@@ -85,7 +85,7 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         sourceNodeInfo = new NodeInfo(context.getThisWorkerHost(), Sets.newHashSet((long) context.getThisWorkerPort()));
         taskToNodePort = context.getTaskToNodePort();
         this.targetTasks = targetTasks;
-        capacity = targetTasks.size() == 1 ? 1 : targetTasks.size() * MAX_WEIGHT;
+        capacity = targetTasks.size() == 1 ? 1 : Math.max(1000, targetTasks.size() * 5);
         conf = context.getConf();
         dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
