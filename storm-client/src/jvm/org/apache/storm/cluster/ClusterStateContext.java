@@ -18,24 +18,40 @@
 
 package org.apache.storm.cluster;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.apache.storm.generated.WorkerTokenServiceType;
+import org.apache.zookeeper.data.ACL;
+
 /**
  * This class is intended to provide runtime-context to StateStorageFactory
  * implementors, giving information such as what daemon is creating it.
  */
 public class ClusterStateContext {
-    
+
+    private final Map<String, Object> conf;
     private DaemonType daemonType;
 
     public ClusterStateContext() {
         daemonType = DaemonType.UNKNOWN;
+        conf = new HashMap<>();
     }
     
-    public ClusterStateContext(DaemonType daemonType) {
+    public ClusterStateContext(DaemonType daemonType, Map<String, Object> conf) {
         this.daemonType = daemonType;
+        this.conf = conf;
     }
     
     public DaemonType getDaemonType() {
         return daemonType;
     }
-    
+
+    public List<ACL> getDefaultZkAcls() {
+        return daemonType.getDefaultZkAcls(conf);
+    }
+
+    public List<ACL> getZkSecretAcls(WorkerTokenServiceType type) {
+        return daemonType.getZkSecretAcls(type, conf);
+    }
 }

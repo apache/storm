@@ -58,10 +58,10 @@ public class SimpleTransportPlugin implements ITransportPlugin {
     private int port;
 
     @Override
-    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
+    public void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf) {
         this.type = type;
         this.topoConf = topoConf;
-        this.login_conf = login_conf;
+        this.login_conf = loginConf;
     }
 
     @Override

@@ -1075,6 +1075,12 @@ public class DaemonConfig implements Validated {
     @isInteger
     public static final String STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS = "storm.metricstore.rocksdb.deletion_period_hours";
 
+    /**
+     * The number of hours a worker token is valid for.  This also sets how frequently worker tokens will be renewed.
+     */
+    @isPositiveNumber
+    public static String STORM_WORKER_TOKEN_LIFE_TIME_HOURS = "storm.worker.token.life.time.hours";
+
     // VALIDATION ONLY CONFIGS
     // Some configs inside Config.java may reference classes we don't want to expose in storm-client, but we still want to validate
     // That they reference a valid class.  To allow this to happen we do part of the validation on the client side with annotations on

@@ -92,7 +92,7 @@ public class ThriftClient implements AutoCloseable {
             Configuration login_conf = AuthUtils.GetConfiguration(_conf);
 
             //construct a transport plugin
-            ITransportPlugin transportPlugin = AuthUtils.GetTransportPlugin(_type, _conf, login_conf);
+            ITransportPlugin transportPlugin = AuthUtils.getTransportPlugin(_type, _conf, login_conf);
 
             //TODO get this from type instead of hardcoding to Nimbus.
             //establish client-server transport via plugin

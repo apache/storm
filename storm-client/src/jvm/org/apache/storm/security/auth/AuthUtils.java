@@ -15,35 +15,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.security.auth;
 
-import javax.security.auth.kerberos.KerberosTicket;
-import org.apache.storm.Config;
-import javax.security.auth.login.Configuration;
-import javax.security.auth.login.AppConfigurationEntry;
-import javax.security.auth.Subject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.security.URIParameter;
-import java.security.MessageDigest;
-
-import org.apache.commons.codec.binary.Hex;
-import org.apache.commons.lang.StringUtils;
-import org.apache.storm.security.INimbusCredentialPlugin;
-import org.apache.storm.utils.ReflectionUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.URI;
+import java.security.MessageDigest;
+import java.security.URIParameter;
 import java.util.Collection;
-import java.util.Set;
 import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.login.AppConfigurationEntry;
+import javax.security.auth.login.Configuration;
+import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.StringUtils;
+import org.apache.storm.Config;
+import org.apache.storm.generated.WorkerToken;
+import org.apache.storm.generated.WorkerTokenInfo;
+import org.apache.storm.generated.WorkerTokenServiceType;
+import org.apache.storm.security.INimbusCredentialPlugin;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.Utils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class AuthUtils {
     private static final Logger LOG = LoggerFactory.getLogger(AuthUtils.class);
@@ -265,6 +270,128 @@ public class AuthUtils {
     }
 
     /**
+     * Get the key used to store a WorkerToken in the credentials map
+     * @param type the type of service to get.
+     * @return the key as a String.
+     */
+    public static String workerTokenCredentialsKey(WorkerTokenServiceType type) {
+        return "STORM_WORKER_TOKEN_" + type.name();
+    }
+
+    /**
+     * Read a WorkerToken out of credentials for the given type.
+     * @param credentials the credentials map.
+     * @param type the type of service we are looking for.
+     * @return the deserialized WorkerToken or null if none could be found.
+     */
+    public static WorkerToken readWorkerToken(Map<String,String> credentials, WorkerTokenServiceType type) {
+        WorkerToken ret = null;
+        String key = workerTokenCredentialsKey(type);
+        String tokenStr = credentials.get(key);
+        if (tokenStr != null) {
+            ret = Utils.deserializeFromString(tokenStr, WorkerToken.class);
+        }
+        return ret;
+    }
+
+    /**
+     * Store a worker token in some credentials. It can be pulled back out by calling readWorkerToken.
+     * @param credentials the credentials map.
+     * @param token the token you want to store.
+     */
+    public static void setWorkerToken(Map<String,String> credentials, WorkerToken token) {
+        String key = workerTokenCredentialsKey(token.get_serviceType());
+        credentials.put(key, Utils.serializeToString(token));
+    }
+
+    /**
+     * Find a worker token in a given subject with a given token type.
+     * @param subject what to look in.
+     * @param type the type of token to look for.
+     * @return the token or null.
+     */
+    public static WorkerToken findWorkerToken(Subject subject, final WorkerTokenServiceType type) {
+        Set<WorkerToken> creds = subject.getPrivateCredentials(WorkerToken.class);
+        synchronized(creds) {
+            return creds.stream()
+                .filter((wt) ->
+                    wt.get_serviceType() == type)
+                .findAny().orElse(null);
+        }
+    }
+
+    private static boolean willWorkerTokensBeStoredSecurely(Map<String, Object> conf) {
+        boolean overrideZkAuth = ObjectReader.getBoolean(conf.get("TESTING.ONLY.ENABLE.INSECURE.WORKER.TOKENS"), false);
+        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
+            return true;
+        } else if (overrideZkAuth) {
+            LOG.error("\n\n\t\tYOU HAVE ENABLED INSECURE WORKER TOKENS.  IF THIS IS NOT A UNIT TEST PLEASE STOP NOW!!!\n\n");
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Check if worker tokens should be enabled on the server side or not.
+     * @param server a Thrift server to know if the transport support tokens or not.  No need to create a token if the transport does not
+     * support it.
+     * @param conf the daemon configuration to be sure the tokens are secure.
+     * @return true if we can enable them, else false.
+     */
+    public static boolean areWorkerTokensEnabledServer(ThriftServer server, Map<String, Object> conf) {
+        return server.supportsWorkerTokens() && willWorkerTokensBeStoredSecurely(conf);
+    }
+
+    /**
+     * Check if worker tokens should be enabled on the server side or not (for a given server).
+     * @param connectionType the type of server this is for.
+     * @param conf the daemon configuration to be sure the tokens are secure.
+     * @return true if we can enable them, else false.
+     */
+    public static boolean areWorkerTokensEnabledServer(ThriftConnectionType connectionType, Map<String, Object> conf) {
+        return connectionType.getWtType() != null && willWorkerTokensBeStoredSecurely(conf);
+    }
+
+    /**
+     * Turn a WorkerTokenInfo in a byte array.
+     * @param wti what to serialize.
+     * @return the resulting byte array.
+     */
+    public static byte[] serializeWorkerTokenInfo(WorkerTokenInfo wti) {
+        return Utils.serialize(wti);
+    }
+
+    /**
+     * Get and deserialize the WorkerTokenInfo in the worker token.
+     * @param wt the token.
+     * @return the deserialized info.
+     */
+    public static WorkerTokenInfo getWorkerTokenInfo(WorkerToken wt) {
+        return Utils.deserialize(wt.get_info(), WorkerTokenInfo.class);
+    }
+
+    //Support for worker tokens Similar to an IAutoCredentials implementation
+    private static Subject insertWorkerTokens(Subject subject, Map<String,String> credentials) {
+        if (credentials == null) {
+            return subject;
+        }
+        for (WorkerTokenServiceType type : WorkerTokenServiceType.values()) {
+            WorkerToken token = readWorkerToken(credentials, type);
+            if (token != null) {
+                Set<Object> creds = subject.getPrivateCredentials();
+                synchronized (creds) {
+                    WorkerToken previous = findWorkerToken(subject, type);
+                    creds.add(token);
+                    if (previous != null) {
+                        creds.remove(previous);
+                    }
+                }
+            }
+        }
+        return subject;
+    }
+
+    /**
      * Populate a subject from credentials using the IAutoCredentials.
      * @param subject the subject to populate or null if a new Subject should be created.
      * @param autos the IAutoCredentials to call to populate the subject.
@@ -279,7 +406,7 @@ public class AuthUtils {
             for (IAutoCredentials autoCred : autos) {
                 autoCred.populateSubject(subject, credentials);
             }
-            return subject;
+            return insertWorkerTokens(subject, credentials);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -303,12 +430,13 @@ public class AuthUtils {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        insertWorkerTokens(subject, credentials);
     }
 
     /**
      * Construct a transport plugin per storm configuration
      */
-    public static ITransportPlugin GetTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
+    public static ITransportPlugin getTransportPlugin(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf) {
         try {
             String transport_plugin_klassName = type.getTransportPlugin(topoConf);
             ITransportPlugin transportPlugin = ReflectionUtils.newInstance(transport_plugin_klassName);

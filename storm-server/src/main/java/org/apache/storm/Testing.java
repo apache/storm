@@ -104,7 +104,7 @@ public class Testing {
     /**
      * Continue to execute body repeatedly until condition is true or TEST_TIMEOUT_MS has
      * passed
-     * @param the number of ms to wait before timing out.
+     * @param timeoutMs the number of ms to wait before timing out.
      * @param condition what we are waiting for
      * @param body what to run in the loop
      * @throws AssertionError if teh loop timed out.
@@ -112,9 +112,11 @@ public class Testing {
     public static void whileTimeout(long timeoutMs, Condition condition, Runnable body) {
         long endTime = System.currentTimeMillis() + timeoutMs;
         LOG.debug("Looping until {}", condition);
+        int count = 0;
         while (condition.exec()) {
+            count++;
             if (System.currentTimeMillis() > endTime) {
-                LOG.info("Condition {} not met in {} ms", condition, timeoutMs);
+                LOG.info("Condition {} not met in {} ms after calling {} times", condition, timeoutMs, count);
                 LOG.info(Utils.threadDump());
                 throw new AssertionError("Test timed out (" + timeoutMs + "ms) " + condition);
             }

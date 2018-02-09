@@ -91,6 +91,17 @@ public class ReqContext {
     }
 
     /**
+     * Copy Constructor.
+     */
+    @VisibleForTesting
+    public ReqContext(ReqContext other) {
+        _subject = other._subject;
+        _remoteAddr = other._remoteAddr;
+        _reqID = other._reqID;
+        realPrincipal = other.realPrincipal;
+    }
+
+    /**
      * client address
      */
     public void setRemoteAddress(InetAddress addr) {

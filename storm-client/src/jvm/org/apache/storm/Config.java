@@ -1147,6 +1147,14 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_SUPERACL = "storm.zookeeper.superACL";
 
     /**
+     * The ACL of the drpc user in zookeeper so the drpc servers can verify worker tokens.
+     *
+     * Should be in the form 'scheme:acl' just like STORM_ZOOKEEPER_SUPERACL.
+     */
+    @isString
+    public static final String STORM_ZOOKEEPER_DRPC_ACL = "storm.zookeeper.drpcACL";
+
+    /**
      * The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it.
      */
     @isString

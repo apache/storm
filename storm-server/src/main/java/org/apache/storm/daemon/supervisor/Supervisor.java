@@ -24,13 +24,11 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.StormTimer;
@@ -49,13 +47,12 @@ import org.apache.storm.messaging.IContext;
 import org.apache.storm.metric.StormMetricsRegistry;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.ServerConfigUtils;
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.ServerConfigUtils;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.VersionInfo;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -98,14 +95,9 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.heartbeatExecutor = Executors.newFixedThreadPool(1);
         
         iSupervisor.prepare(conf, ServerConfigUtils.supervisorIsupervisorDir(conf));
-        
-        List<ACL> acls = null;
-        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
-            acls = SupervisorUtils.supervisorZkAcls();
-        }
 
         try {
-            this.stormClusterState = ClusterUtils.mkStormClusterState(conf, acls, new ClusterStateContext(DaemonType.SUPERVISOR));
+            this.stormClusterState = ClusterUtils.mkStormClusterState(conf, new ClusterStateContext(DaemonType.SUPERVISOR, conf));
         } catch (Exception e) {
             LOG.error("supervisor can't create stormClusterState");
             throw Utils.wrapInRuntime(e);
@@ -193,7 +185,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     }
     
     /**
-     * Launch the supervisor
+     * Launch the supervisor.
      */
     public void launch() throws Exception {
         LOG.info("Starting Supervisor with conf {}", conf);
@@ -223,7 +215,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     }
 
     /**
-     * start distribute supervisor
+     * start distribute supervisor.
      */
     public void launchDaemon() {
         LOG.info("Starting supervisor for storm version '{}'.", VersionInfo.getVersion());
@@ -233,7 +225,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
                 throw new IllegalArgumentException("Cannot start server in local mode!");
             }
             launch();
-            Utils.addShutdownHookWithForceKillIn1Sec(() -> {this.close();});
+            Utils.addShutdownHookWithForceKillIn1Sec(this::close);
             registerWorkerNumGauge("supervisor:num-slots-used-gauge", conf);
             StormMetricsRegistry.startMetricsReporters(conf);
         } catch (Exception e) {
@@ -295,7 +287,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             try {
                 k.forceKill();
                 long start = Time.currentTimeMillis();
-                while(!k.areAllProcessesDead()) {
+                while (!k.areAllProcessesDead()) {
                     if ((Time.currentTimeMillis() - start) > 10_000) {
                         throw new RuntimeException("Giving up on killing " + k 
                                 + " after " + (Time.currentTimeMillis() - start) + " ms");

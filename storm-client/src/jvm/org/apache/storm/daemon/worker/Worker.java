@@ -72,7 +72,6 @@ import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.WorkerBackpressureCallback;
 import org.apache.storm.utils.WorkerBackpressureThread;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,11 +140,10 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
         final Map<String, Object> topologyConf =
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
-        List<ACL> acls = Utils.getWorkerACL(topologyConf);
-        IStateStorage stateStorage =
-            ClusterUtils.mkStateStorage(conf, topologyConf, acls, new ClusterStateContext(DaemonType.WORKER));
-        IStormClusterState stormClusterState =
-            ClusterUtils.mkStormClusterState(stateStorage, acls, new ClusterStateContext());
+        ClusterStateContext csContext = new ClusterStateContext(DaemonType.WORKER, topologyConf);
+        IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
+        IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, csContext);
+
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
         if (initialCredentials != null) {

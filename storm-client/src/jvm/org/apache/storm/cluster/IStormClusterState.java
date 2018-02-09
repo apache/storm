@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.cluster;
 
 import java.security.NoSuchAlgorithmException;
@@ -22,7 +23,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-
+import java.util.Set;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.ClusterWorkerHeartbeat;
 import org.apache.storm.generated.Credentials;
@@ -31,9 +32,11 @@ import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.NimbusSummary;
 import org.apache.storm.generated.NodeInfo;
+import org.apache.storm.generated.PrivateWorkerKey;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.StormBase;
 import org.apache.storm.generated.SupervisorInfo;
+import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
 
 public interface IStormClusterState {
@@ -140,9 +143,65 @@ public interface IStormClusterState {
     public Credentials credentials(String stormId, Runnable callback);
 
     public void disconnect();
-    
+
     /**
-     * @return All of the supervisors with the ID as the key
+     * Get a private key used to validate a token is correct.
+     * This is expected to be called from a privileged daemon, and the ACLs should be set up to only
+     * allow nimbus and these privileged daemons access to these private keys.
+     * @param type the type of service the key is for.
+     * @param topologyId the topology id the key is for.
+     * @param keyVersion the version of the key this is for.
+     * @return the private key or null if it could not be found.
+     */
+    PrivateWorkerKey getPrivateWorkerKey(WorkerTokenServiceType type, String topologyId, long keyVersion);
+
+    /**
+     * Store a new version of a private key.
+     * This is expected to only ever be called from nimbus.  All ACLs however need to be setup to allow
+     * the given services access to the stored information.
+     * @param type the type of service this key is for.
+     * @param topologyId the topology this key is for
+     * @param keyVersion the version of the key this is for.
+     * @param key the key to store.
+     */
+    void addPrivateWorkerKey(WorkerTokenServiceType type, String topologyId, long keyVersion, PrivateWorkerKey key);
+
+    /**
+     * Get the next key version number that should be used for this topology id.
+     * This is expected to only ever be called from nimbus, but it is acceptable if the ACLs are setup
+     * so that it can work from a privileged daemon for the given service.
+     * @param type the type of service this is for.
+     * @param topologyId the topology id this is for.
+     * @return the next version number.  It should be 0 for a new topology id/service combination.
+     */
+    long getNextPrivateWorkerKeyVersion(WorkerTokenServiceType type, String topologyId);
+
+    /**
+     * Remove all keys for the given topology that have expired. The number of keys should be small enough
+     * that doing an exhaustive scan of them all is acceptable as there is no guarantee that expiration time
+     * and version number are related.  This should be for all service types.
+     * This is expected to only ever be called from nimbus and some ACLs may be setup so being called from other
+     * daemons will cause it to fail.
+     * @param topologyId the id of the topology to scan.
+     */
+    void removeExpiredPrivateWorkerKeys(String topologyId);
+
+    /**
+     * Remove all of the worker keys for a given topology.  Used to clean up after a topology finishes.
+     * This is expected to only ever be called from nimbus and ideally should only ever work from nimbus.
+     * @param topologyId the topology to clean up after.
+     */
+    void removeAllPrivateWorkerKeys(String topologyId);
+
+    /**
+     * Get a list of all topologyIds that currently have private worker keys stored, of any kind.
+     * This is expected to only ever be called from nimbus.
+     * @return the list of topology ids with any kind of private worker key stored.
+     */
+    Set<String> idsOfTopologiesWithPrivateWorkerKeys();
+
+    /**
+     * Get all of the supervisors with the ID as the key.
      */
     default Map<String, SupervisorInfo> allSupervisorInfo() {
         return allSupervisorInfo(null);
@@ -169,7 +228,7 @@ public interface IStormClusterState {
         String ret = null;
         for (String topoId: activeStorms()) {
             StormBase base = stormBase(topoId, null);
-            if(base != null && topologyName.equals(base.get_name())) {
+            if (base != null && topologyName.equals(base.get_name())) {
                 ret = topoId;
                 break;
             }

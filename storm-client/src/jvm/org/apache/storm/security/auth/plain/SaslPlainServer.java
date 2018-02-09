@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.security.auth.plain;
 
 import javax.security.auth.callback.Callback;
@@ -29,6 +30,7 @@ import javax.security.sasl.SaslServerFactory;
 import java.security.Provider;
 import java.util.Map;
 
+@Deprecated
 public class SaslPlainServer implements SaslServer {
   @SuppressWarnings("serial")
   public static class SecurityProvider extends Provider {
