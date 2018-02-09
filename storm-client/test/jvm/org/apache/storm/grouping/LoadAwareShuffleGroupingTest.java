@@ -138,9 +138,16 @@ public class LoadAwareShuffleGroupingTest {
     }
 
     @Test
-    public void testLoadAwareShuffleGroupingWithEvenLoad() {
-        // just pick arbitrary number
-        final int numTasks = 7;
+    public void testLoadAwareShuffleGroupingWithEvenLoadWithManyTargets() {
+        testLoadAwareShuffleGroupingWithEvenLoad(1000);
+    }
+
+    @Test
+    public void testLoadAwareShuffleGroupingWithEvenLoadWithLessTargets() {
+        testLoadAwareShuffleGroupingWithEvenLoad(7);
+    }
+
+    private void testLoadAwareShuffleGroupingWithEvenLoad(int numTasks) {
         final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
 
         // Define our taskIds and loads
@@ -166,8 +173,16 @@ public class LoadAwareShuffleGroupingTest {
     }
 
     @Test
-    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded() throws InterruptedException, ExecutionException {
-        final int numTasks = 7;
+    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreadedWithManyTargets() throws ExecutionException, InterruptedException {
+        testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(1000);
+    }
+
+    @Test
+    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreadedWithLessTargets() throws ExecutionException, InterruptedException {
+        testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(7);
+    }
+
+    private void testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(int numTasks) throws InterruptedException, ExecutionException {
 
         final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
 
