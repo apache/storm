@@ -101,10 +101,10 @@ public class LoadAwareShuffleGroupingTest {
             double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
             double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
             assertEquals("i = " + i,
-                expectedOnePercentage, countByType.getOrDefault(1, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCapacity(),
                 0.01);
             assertEquals("i = " + i,
-                expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+                expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCapacity(),
                 0.01);
         }
 
@@ -121,9 +121,9 @@ public class LoadAwareShuffleGroupingTest {
             LOG.info("contByType = {}", countByType);
             double expectedOnePercentage = expectedOneWeight / (expectedOneWeight + expectedTwoWeight);
             double expectedTwoPercentage = expectedTwoWeight / (expectedOneWeight + expectedTwoWeight);
-            assertEquals(expectedOnePercentage, countByType.getOrDefault(1, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+            assertEquals(expectedOnePercentage, countByType.getOrDefault(1, 0.0) / grouping.getCapacity(),
                 0.01);
-            assertEquals(expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / LoadAwareShuffleGrouping.CAPACITY,
+            assertEquals(expectedTwoPercentage, countByType.getOrDefault(2, 0.0) / grouping.getCapacity(),
                 0.01);
         }
     }
@@ -138,9 +138,16 @@ public class LoadAwareShuffleGroupingTest {
     }
 
     @Test
-    public void testLoadAwareShuffleGroupingWithEvenLoad() {
-        // just pick arbitrary number
-        final int numTasks = 7;
+    public void testLoadAwareShuffleGroupingWithEvenLoadWithManyTargets() {
+        testLoadAwareShuffleGroupingWithEvenLoad(1000);
+    }
+
+    @Test
+    public void testLoadAwareShuffleGroupingWithEvenLoadWithLessTargets() {
+        testLoadAwareShuffleGroupingWithEvenLoad(7);
+    }
+
+    private void testLoadAwareShuffleGroupingWithEvenLoad(int numTasks) {
         final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
 
         // Define our taskIds and loads
@@ -166,8 +173,16 @@ public class LoadAwareShuffleGroupingTest {
     }
 
     @Test
-    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded() throws InterruptedException, ExecutionException {
-        final int numTasks = 7;
+    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreadedWithManyTargets() throws ExecutionException, InterruptedException {
+        testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(1000);
+    }
+
+    @Test
+    public void testLoadAwareShuffleGroupingWithEvenLoadMultiThreadedWithLessTargets() throws ExecutionException, InterruptedException {
+        testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(7);
+    }
+
+    private void testLoadAwareShuffleGroupingWithEvenLoadMultiThreaded(int numTasks) throws InterruptedException, ExecutionException {
 
         final LoadAwareShuffleGrouping grouper = new LoadAwareShuffleGrouping();
 
