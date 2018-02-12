@@ -25,7 +25,7 @@ import org.apache.storm.DaemonConfig;
 public class MetricStoreConfig {
 
     /**
-     * Configures metrics store to use the class specified in the conf.
+     * Configures metrics store (running on Nimbus) to use the class specified in the conf.
      * @param conf Storm config map
      * @return MetricStore prepared store
      * @throws MetricException  on misconfiguration
@@ -37,14 +37,14 @@ public class MetricStoreConfig {
             MetricStore store = (MetricStore) (Class.forName(storeClass)).newInstance();
             store.prepare(conf);
             return store;
-        } catch (Throwable t) {
-            throw new MetricException("Failed to create metric store", t);
+        } catch (Exception e) {
+            throw new MetricException("Failed to create metric store", e);
         }
     }
 
     /**
-     * Configures metric processor to use the class specified in the conf.
-     * @param conf Storm config map
+     * Configures metric processor (running on supervisor) to use the class specified in the conf.
+     * @param conf  the supervisor config
      * @return WorkerMetricsProcessor prepared processor
      * @throws MetricException  on misconfiguration
      */
@@ -55,8 +55,8 @@ public class MetricStoreConfig {
             WorkerMetricsProcessor processor = (WorkerMetricsProcessor) (Class.forName(processorClass)).newInstance();
             processor.prepare(conf);
             return processor;
-        } catch (Throwable t) {
-            throw new MetricException("Failed to create metric processor", t);
+        } catch (Exception e) {
+            throw new MetricException("Failed to create metric processor", e);
         }
     }
 }

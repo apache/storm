@@ -24,8 +24,8 @@ import org.apache.storm.generated.WorkerMetrics;
 public interface WorkerMetricsProcessor {
 
     /**
-     * Process insertion of worker metrics.
-     * @param conf Storm config map
+     * Process insertion of worker metrics.  The implementation should be thread-safe.
+     * @param conf the supervisor config
      * @param metrics  the metrics to process
      * @throws MetricException  on error
      */

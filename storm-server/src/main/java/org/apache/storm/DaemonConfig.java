@@ -1031,7 +1031,7 @@ public class DaemonConfig implements Validated {
         "storm.supervisor.medium.memory.grace.period.ms";
 
     /**
-     * Class implementing MetricStore.
+     * Class implementing MetricStore.  Runs on Nimbus.
      */
     @NotNull
     @isString
@@ -1040,7 +1040,7 @@ public class DaemonConfig implements Validated {
     public static final String STORM_METRIC_STORE_CLASS = "storm.metricstore.class";
 
     /**
-     * Class implementing WorkerMetricsProcessor.
+     * Class implementing WorkerMetricsProcessor.  Runs on Supervisors.
      */
     @NotNull
     @isString
