@@ -296,6 +296,7 @@ storm.daemon.metrics.reporter.plugins:
      - "org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter"
 
 storm.metricstore.class: "org.apache.storm.metricstore.rocksdb.RocksDbStore"
+storm.metricprocessor.class: "org.apache.storm.metricstore.NimbusMetricProcessor"
 storm.metricstore.rocksdb.location: "storm_rocks"
 storm.metricstore.rocksdb.create_if_missing: true
 storm.metricstore.rocksdb.metadata_string_cache_capacity: 4000

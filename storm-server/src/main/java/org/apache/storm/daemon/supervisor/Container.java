@@ -44,6 +44,8 @@ import org.apache.storm.generated.WorkerMetricPoint;
 import org.apache.storm.generated.WorkerMetricList;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.metricstore.MetricException;
+import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.NimbusClient;
@@ -710,7 +712,7 @@ public abstract class Container implements Killable {
     /**
      * Send worker metrics to Nimbus.
      */
-    void processMetrics(OnlyLatestExecutor<Integer> exec) {
+    void processMetrics(OnlyLatestExecutor<Integer> exec, WorkerMetricsProcessor processor) {
         try {
             if (_usedMemory.get(_port) != null) {
                 // Make sure we don't process too frequently.
@@ -733,9 +735,9 @@ public abstract class Container implements Killable {
                 WorkerMetrics metrics = new WorkerMetrics(_topologyId, _port, hostname, metricList);
 
                 exec.execute(_port, () -> {
-                    try (NimbusClient client = NimbusClient.getConfiguredClient(_conf)) {
-                        client.getClient().processWorkerMetrics(metrics);
-                    } catch (Exception e) {
+                    try {
+                        processor.processWorkerMetrics(_conf, metrics);
+                    } catch (MetricException e) {
                         LOG.error("Failed to process metrics", e);
                     }
                 });
