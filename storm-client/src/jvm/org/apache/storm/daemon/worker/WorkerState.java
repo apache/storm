@@ -20,6 +20,24 @@ package org.apache.storm.daemon.worker;
 
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Sets;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.StormTimer;
@@ -47,32 +65,20 @@ import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.messaging.TransportFactory;
+import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.serialization.KryoTupleSerializer;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.DisruptorQueue;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.TransferDrainer;
+import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class WorkerState {
 
@@ -145,7 +151,9 @@ public class WorkerState {
         return componentToSortedTasks;
     }
 
-    public Map<String, Long> getBlobToLastKnownVersion() {return blobToLastKnownVersion;}
+    public Map<String, Long> getBlobToLastKnownVersion() {
+        return blobToLastKnownVersion;
+    }
 
     public AtomicReference<Map<NodeInfo, IConnection>> getCachedNodeToPortSocket() {
         return cachedNodeToPortSocket;
@@ -265,12 +273,15 @@ public class WorkerState {
     private final AtomicLong nextUpdate = new AtomicLong(0);
     private final boolean trySerializeLocal;
     private final TransferDrainer drainer;
+    private final Collection<IAutoCredentials> autoCredentials;
 
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
     public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-        Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState)
+                       Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState,
+                       Collection<IAutoCredentials> autoCredentials)
         throws IOException, InvalidTopologyException {
+        this.autoCredentials = autoCredentials;
         this.executors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.transferQueue = new DisruptorQueue("worker-transfer-queue",
             ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BUFFER_SIZE)),
@@ -307,7 +318,8 @@ public class WorkerState {
         this.componentToStreamToFields = new HashMap<>();
         for (String c : ThriftTopologyUtils.getComponentIds(systemTopology)) {
             Map<String, Fields> streamToFields = new HashMap<>();
-            for (Map.Entry<String, StreamInfo> stream : ThriftTopologyUtils.getComponentCommon(systemTopology, c).get_streams().entrySet()) {
+            for (Map.Entry<String, StreamInfo> stream :
+                    ThriftTopologyUtils.getComponentCommon(systemTopology, c).get_streams().entrySet()) {
                 streamToFields.put(stream.getKey(), new Fields(stream.getValue().get_output_fields()));
             }
             componentToStreamToFields.put(c, streamToFields);
@@ -477,7 +489,7 @@ public class WorkerState {
 
     /**
      * we will wait all connections to be ready and then activate the spout/bolt
-     * when the worker bootup
+     * when the worker bootup.
      */
     public void activateWorkerWhenAllConnectionsReady() {
         int delaySecs = 0;
@@ -629,6 +641,10 @@ public class WorkerState {
     public static boolean isConnectionReady(IConnection connection) {
         return !(connection instanceof ConnectionWithStatus)
             || ((ConnectionWithStatus) connection).status() == ConnectionWithStatus.Status.Ready;
+    }
+
+    public Collection<IAutoCredentials> getAutoCredentials() {
+        return this.autoCredentials;
     }
 
     private List<List<Long>> readWorkerExecutors(IStormClusterState stormClusterState, String topologyId, String assignmentId,

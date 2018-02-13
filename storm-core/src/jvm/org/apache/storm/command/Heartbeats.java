@@ -43,7 +43,7 @@ public class Heartbeats {
         String path = args[1];
 
         Map<String, Object> conf = Utils.readStormConfig();
-        IStateStorage cluster = ClusterUtils.mkStateStorage(conf, conf, null, new ClusterStateContext());
+        IStateStorage cluster = ClusterUtils.mkStateStorage(conf, conf, new ClusterStateContext());
 
         LOG.info("Command: [{}]", command);
 

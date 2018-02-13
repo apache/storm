@@ -15,14 +15,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.cluster;
 
-import java.util.List;
 import java.util.Map;
-
-import org.apache.zookeeper.data.ACL;
 
 public interface StateStorageFactory {
 
-    IStateStorage mkStore(Map<String, Object> config, Map auth_conf, List<ACL> acls, ClusterStateContext context);
+    IStateStorage mkStore(Map<String, Object> config, Map auth_conf, ClusterStateContext context);
 }

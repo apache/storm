@@ -15,14 +15,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metric.api;
 
 /**
- * Produces metrics
+ * Produces metrics.
  */
 public interface IMetric {
     /**
-     * @return an object that will be sent sent to {@link IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo, java.util.Collection)}.
+     * @return an object that will be sent sent to {@link
+     * IMetricsConsumer#handleDataPoints(org.apache.storm.metric.api.IMetricsConsumer.TaskInfo, java.util.Collection)}.
      * If null is returned nothing will be sent.
      * If this value can be reset, like with a counter, a side effect of calling this should be that the value is reset.
      */

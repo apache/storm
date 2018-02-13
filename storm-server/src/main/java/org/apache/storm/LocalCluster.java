@@ -35,6 +35,7 @@ import java.util.function.UnaryOperator;
 import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.IStateStorage;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.daemon.Acker;
@@ -436,10 +437,10 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
             this.daemonConf = new HashMap<>(conf);
         
             this.portCounter = new AtomicInteger(builder.supervisorSlotPortMin);
-            ClusterStateContext cs = new ClusterStateContext();
-            this.state = ClusterUtils.mkStateStorage(this.daemonConf, null, null, cs);
+            ClusterStateContext cs = new ClusterStateContext(DaemonType.NIMBUS, daemonConf);
+            this.state = ClusterUtils.mkStateStorage(this.daemonConf, null, cs);
             if (builder.clusterState == null) {
-                clusterState = ClusterUtils.mkStormClusterState(this.daemonConf, null, cs);
+                clusterState = ClusterUtils.mkStormClusterState(this.daemonConf, cs);
             } else {
                 this.clusterState = builder.clusterState;
             }

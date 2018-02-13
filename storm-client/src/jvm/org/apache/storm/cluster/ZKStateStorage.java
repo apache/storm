@@ -73,7 +73,7 @@ public class ZKStateStorage implements IStateStorage {
         }
     }
 
-    public ZKStateStorage(Map<String, Object> conf, Map authConf, List<ACL> acls, ClusterStateContext context) throws Exception {
+    public ZKStateStorage(Map<String, Object> conf, Map authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
         if (context.getDaemonType().equals(DaemonType.NIMBUS))
@@ -82,7 +82,7 @@ public class ZKStateStorage implements IStateStorage {
         // just mkdir STORM_ZOOKEEPER_ROOT dir
         CuratorFramework zkTemp = mkZk();
         String rootPath = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
-        ClientZookeeper.mkdirs(zkTemp, rootPath, acls);
+        ClientZookeeper.mkdirs(zkTemp, rootPath, context.getDefaultZkAcls());
         zkTemp.close();
 
         active = new AtomicBoolean(true);

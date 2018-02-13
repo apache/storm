@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.security.auth;
 
+import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.Config;
 
@@ -27,47 +29,53 @@ import java.util.Map;
  */
 public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
-         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS),
+         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS,
+        WorkerTokenServiceType.NIMBUS),
+    //A DRPC token only works for the invocations transport, not for the basic thrift transport.
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
-         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null),
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null),
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC),
     LOCAL_FAKE;
 
-    private final String _transConf;
-    private final String _portConf;
-    private final String _qConf;
-    private final String _threadsConf;
-    private final String _buffConf;
-    private final String _socketTimeoutConf;
-    private final boolean _isFake;
+    private final String transConf;
+    private final String portConf;
+    private final String qConf;
+    private final String threadsConf;
+    private final String buffConf;
+    private final String socketTimeoutConf;
+    private final boolean isFake;
+    private final WorkerTokenServiceType wtType;
 
     ThriftConnectionType() {
-        this(null, null, null, null, null, null, true);
+        this(null, null, null, null, null, null, true, null);
     }
     
     ThriftConnectionType(String transConf, String portConf, String qConf,
-            String threadsConf, String buffConf, String socketTimeoutConf) {
-        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false);
+                         String threadsConf, String buffConf, String socketTimeoutConf,
+                         WorkerTokenServiceType wtType) {
+        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false, wtType);
     }
     
     ThriftConnectionType(String transConf, String portConf, String qConf,
-                         String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake) {
-        _transConf = transConf;
-        _portConf = portConf;
-        _qConf = qConf;
-        _threadsConf = threadsConf;
-        _buffConf = buffConf;
-        _socketTimeoutConf = socketTimeoutConf;
-        _isFake = isFake;
+                         String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
+                         WorkerTokenServiceType wtType) {
+        this.transConf = transConf;
+        this.portConf = portConf;
+        this.qConf = qConf;
+        this.threadsConf = threadsConf;
+        this.buffConf = buffConf;
+        this.socketTimeoutConf = socketTimeoutConf;
+        this.isFake = isFake;
+        this.wtType = wtType;
     }
 
     public boolean isFake() {
-        return _isFake;
+        return isFake;
     }
     
     public String getTransportPlugin(Map<String, Object> conf) {
-        String ret = (String)conf.get(_transConf);
+        String ret = (String)conf.get(transConf);
         if (ret == null) {
             ret = (String)conf.get(Config.STORM_THRIFT_TRANSPORT_PLUGIN);
         }
@@ -75,37 +83,44 @@ public enum ThriftConnectionType {
     }
 
     public int getPort(Map<String, Object> conf) {
-        if (_isFake) {
+        if (isFake) {
             return -1;
         }
-        return ObjectReader.getInt(conf.get(_portConf));
+        return ObjectReader.getInt(conf.get(portConf));
     }
 
     public Integer getQueueSize(Map<String, Object> conf) {
-        if (_qConf == null) {
+        if (qConf == null) {
             return null;
         }
-        return (Integer)conf.get(_qConf);
+        return (Integer)conf.get(qConf);
     }
 
     public int getNumThreads(Map<String, Object> conf) {
-        if (_isFake) {
+        if (isFake) {
             return 1;
         }
-        return ObjectReader.getInt(conf.get(_threadsConf));
+        return ObjectReader.getInt(conf.get(threadsConf));
     }
 
     public int getMaxBufferSize(Map<String, Object> conf) {
-        if (_isFake) {
+        if (isFake) {
             return 1;
         }
-        return ObjectReader.getInt(conf.get(_buffConf));
+        return ObjectReader.getInt(conf.get(buffConf));
     }
 
     public Integer getSocketTimeOut(Map<String, Object> conf) {
-        if (_socketTimeoutConf == null) {
+        if (socketTimeoutConf == null) {
             return null;
         }
-        return ObjectReader.getInt(conf.get(_socketTimeoutConf));
+        return ObjectReader.getInt(conf.get(socketTimeoutConf));
+    }
+
+    /**
+     * Get the corresponding worker token type for this thrift connection.
+     */
+    public WorkerTokenServiceType getWtType() {
+        return wtType;
     }
 }

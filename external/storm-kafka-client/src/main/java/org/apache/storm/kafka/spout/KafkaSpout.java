@@ -233,7 +233,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
 
             if (committedOffset != null) {
                 // offset was previously committed for this consumer group and topic-partition, either by this or another topology.
-                if (commitMetadataManager.isOffsetCommittedByThisTopology(newTp, committedOffset, Collections.unmodifiableMap(offsetManagers))) {
+                if (commitMetadataManager.isOffsetCommittedByThisTopology(newTp,
+                    committedOffset,
+                    Collections.unmodifiableMap(offsetManagers))) {
                     // Another KafkaSpout instance (of this topology) already committed, therefore FirstPollOffsetStrategy does not apply.
                     kafkaConsumer.seek(newTp, committedOffset.offset());
                 } else {
@@ -440,7 +442,9 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
             if (isAtLeastOnceProcessing()
                 && committedOffset != null 
                 && committedOffset.offset() > record.offset()
-                && commitMetadataManager.isOffsetCommittedByThisTopology(tp, committedOffset, Collections.unmodifiableMap(offsetManagers))) {
+                && commitMetadataManager.isOffsetCommittedByThisTopology(tp,
+                committedOffset,
+                Collections.unmodifiableMap(offsetManagers))) {
                 // Ensures that after a topology with this id is started, the consumer fetch
                 // position never falls behind the committed offset (STORM-2844)
                 throw new IllegalStateException("Attempting to emit a message that has already been committed."

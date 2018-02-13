@@ -35,9 +35,9 @@ public interface ITransportPlugin {
      * Invoked once immediately after construction
      * @param type the type of connection this will process.
      * @param topoConf Storm configuration 
-     * @param login_conf login configuration
+     * @param loginConf login configuration
      */
-    void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration login_conf);
+    void prepare(ThriftConnectionType type, Map<String, Object> topoConf, Configuration loginConf);
     
     /**
      * Create a server associated with a given port, service handler, and purpose
@@ -59,4 +59,12 @@ public interface ITransportPlugin {
      * @return The port this transport is using. This is not known until {@link #getServer(org.apache.thrift.TProcessor)} has been called.
      */
     public int getPort();
+
+    /**
+     * Check if worker tokens are supported by this transport.
+     * @return true if they are else false.
+     */
+    default boolean areWorkerTokensSupported() {
+        return false;
+    }
 }

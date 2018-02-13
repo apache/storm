@@ -15,7 +15,6 @@
 ;; limitations under the License.
 (ns org.apache.storm.security.auth.nimbus-auth-test
   (:use [clojure test])
-  (:require [org.apache.storm.security.auth [auth-test :refer [nimbus-timeout]]])
   (:import [java.nio ByteBuffer])
   (:import [java.util Optional])
   (:import [org.apache.storm LocalCluster$Builder DaemonConfig Config])
@@ -32,6 +31,10 @@
   (:use [org.apache.storm util config daemon-config log])
   (:require [conjure.core])
   (:use [conjure core]))
+
+;; 3 seconds in milliseconds
+;; This is plenty of time for a thrift client to respond.
+(def nimbus-timeout (Integer. (* 3 1000)))
 
 (defn to-conf [nimbus-port login-cfg aznClass transportPluginClass]
   (let [conf {NIMBUS-AUTHORIZER aznClass

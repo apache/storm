@@ -42,6 +42,7 @@ import java.nio.ByteBuffer;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Enumeration;
@@ -81,6 +82,7 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
+import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
@@ -524,6 +526,14 @@ public class Utils {
         return ret.toString();
     }
 
+    public static Id parseZkId(String id, String configName) {
+        String[] split = id.split(":", 2);
+        if (split.length != 2) {
+            throw new IllegalArgumentException(configName + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
+        }
+        return new Id(split[0], split[1]);
+    }
+
     public static List<ACL> getWorkerACL(Map<String, Object> conf) {
         //This is a work around to an issue with ZK where a sasl super user is not super unless there is an open SASL ACL so we are trying to give the correct perms
         if (!isZkAuthenticationConfiguredTopology(conf)) {
@@ -533,12 +543,8 @@ public class Utils {
         if (stormZKUser == null) {
             throw new IllegalArgumentException("Authentication is enabled but " + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
         }
-        String[] split = stormZKUser.split(":", 2);
-        if (split.length != 2) {
-            throw new IllegalArgumentException(Config.STORM_ZOOKEEPER_SUPERACL + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
-        }
-        ArrayList<ACL> ret = new ArrayList<ACL>(ZooDefs.Ids.CREATOR_ALL_ACL);
-        ret.add(new ACL(ZooDefs.Perms.ALL, new Id(split[0], split[1])));
+        ArrayList<ACL> ret = new ArrayList<>(ZooDefs.Ids.CREATOR_ALL_ACL);
+        ret.add(new ACL(ZooDefs.Perms.ALL, parseZkId(stormZKUser, Config.STORM_ZOOKEEPER_SUPERACL)));
         return ret;
     }
 
@@ -691,6 +697,27 @@ public class Utils {
 
     public static <T> T deserialize(byte[] serialized, Class<T> clazz) {
         return serializationDelegate.deserialize(serialized, clazz);
+    }
+
+    /**
+     * Serialize an object using the configured serialization and then base64 encode it into a string.
+     * @param obj the object to encode
+     * @return a string with the encoded object in it.
+     */
+    public static String serializeToString(Object obj) {
+        return Base64.getEncoder().encodeToString(serializationDelegate.serialize(obj));
+    }
+
+    /**
+     * Deserialize an object stored in a string. The String is assumed to be a base64 encoded string
+     * containing the bytes to actually deserialize.
+     * @param str the encoded string.
+     * @param clazz the thrift class we are expecting.
+     * @param <T> The type of clazz
+     * @return the decoded object
+     */
+    public static <T> T deserializeFromString(String str, Class<T> clazz) {
+        return deserialize(Base64.getDecoder().decode(str), clazz);
     }
 
     public static byte[] toByteArray(ByteBuffer buffer) {
