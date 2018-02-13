@@ -28,12 +28,18 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.CellBuilder;
+import org.apache.hadoop.hbase.CellBuilderFactory;
+import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Get;
 import org.apache.hadoop.hbase.client.HTable;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.storm.hbase.common.Utils;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
@@ -77,7 +83,8 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
     private Options<T> options;
     private Serializer<T> serializer;
-    private HTable table;
+    private Table table;
+    private Connection connection;
 
     /**
      * Constructor.
@@ -107,7 +114,8 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, hbConfig);
-            this.table = Utils.getTable(provider, hbConfig, options.tableName);
+            this.connection = ConnectionFactory.createConnection(hbConfig, provider.getCurrent());
+            this.table = Utils.getTable(this.connection, provider, hbConfig, options.tableName);
         } catch (Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }
@@ -245,6 +253,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
     @Override
     public void multiPut(List<List<Object>> keys, List<T> values) {
         List<Put> puts = new ArrayList<Put>(keys.size());
+        CellBuilder builder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
         for (int i = 0; i < keys.size(); i++) {
             byte[] hbaseKey = this.options.mapMapper.rowKey(keys.get(i));
             String qualifier = this.options.mapMapper.qualifier(keys.get(i));
@@ -252,9 +261,13 @@ public class HBaseMapState<T> implements IBackingMap<T> {
                     new Object[]{this.partitionNum, new String(hbaseKey), new String(this.serializer.serialize(values.get(i)))});
             Put put = new Put(hbaseKey);
             T val = values.get(i);
-            put.add(this.options.columnFamily.getBytes(),
-                    qualifier.getBytes(),
-                    this.serializer.serialize(val));
+            try {
+                put.add(builder.setFamily(this.options.columnFamily.getBytes())
+                        .setQualifier(qualifier.getBytes())
+                        .setValue(this.serializer.serialize(val)).build());
+            } catch (IOException e) {
+                throw new FailedException("IOException while writing to HBase", e);
+            }
 
             puts.add(put);
         }
@@ -263,7 +276,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
         } catch (InterruptedIOException e) {
             throw new FailedException("Interrupted while writing to HBase", e);
         } catch (RetriesExhaustedWithDetailsException e) {
-            throw new FailedException("Retries exhaused while writing to HBase", e);
+            throw new FailedException("Retries exhausted while writing to HBase", e);
         } catch (IOException e) {
             throw new FailedException("IOException while writing to HBase", e);
         }

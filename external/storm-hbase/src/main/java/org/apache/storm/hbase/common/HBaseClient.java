@@ -26,7 +26,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellBuilder;
+import org.apache.hadoop.hbase.CellBuilderFactory;
+import org.apache.hadoop.hbase.CellBuilderType;
 import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Get;
@@ -37,6 +43,7 @@ import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.hadoop.hbase.client.Scan;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
 import org.apache.storm.hbase.security.HBaseSecurityUtil;
@@ -49,12 +56,14 @@ import org.slf4j.LoggerFactory;
 public class HBaseClient implements Closeable {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseClient.class);
 
-    private HTable table;
+    private Table table;
+    private Connection connection;
 
     public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
-            this.table = Utils.getTable(provider, configuration, tableName);
+            this.connection = ConnectionFactory.createConnection(configuration, provider.getCurrent());
+            this.table = Utils.getTable(this.connection, provider, configuration, tableName);
         } catch (Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }
@@ -64,22 +73,34 @@ public class HBaseClient implements Closeable {
         List<Mutation> mutations = Lists.newArrayList();
 
         if (cols.hasColumns()) {
+            CellBuilder builder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
+
             Put put = new Put(rowKey);
             put.setDurability(durability);
             for (ColumnList.Column col : cols.getColumns()) {
-                if (col.getTs() > 0) {
-                    put.add(
-                            col.getFamily(),
-                            col.getQualifier(),
-                            col.getTs(),
-                            col.getValue()
-                    );
-                } else {
-                    put.add(
-                            col.getFamily(),
-                            col.getQualifier(),
-                            col.getValue()
-                    );
+                try {
+                    if (col.getTs() > 0) {
+                        put.add(
+                                builder.setFamily(col.getFamily())
+                                        .setQualifier(col.getQualifier())
+                                        .setTimestamp(col.getTs())
+                                        .setValue(col.getValue())
+                                        .setType(Cell.Type.Put)
+                                        .setRow(rowKey)
+                                        .build()
+                        );
+                    } else {
+                        put.add(
+                                builder.setFamily(col.getFamily())
+                                        .setQualifier(col.getQualifier())
+                                        .setType(Cell.Type.Put)
+                                        .setValue(col.getValue())
+                                        .setRow(rowKey)
+                                        .build()
+                        );
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException("HBase Put failed", e);
                 }
             }
             mutations.add(put);
