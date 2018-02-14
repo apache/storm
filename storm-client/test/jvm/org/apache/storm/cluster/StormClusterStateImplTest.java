@@ -38,8 +38,7 @@ public class StormClusterStateImplTest {
                                         ClusterUtils.ERRORS_SUBTREE, 
                                         ClusterUtils.BLOBSTORE_SUBTREE, 
                                         ClusterUtils.NIMBUSES_SUBTREE, 
-                                        ClusterUtils.LOGCONFIG_SUBTREE,
-                                        ClusterUtils.BACKPRESSURE_SUBTREE };
+                                        ClusterUtils.LOGCONFIG_SUBTREE};
 
     private IStateStorage storage;
     private ClusterStateContext context;
@@ -63,46 +62,6 @@ public class StormClusterStateImplTest {
         for (String path : pathlist) {
             Mockito.verify(storage).mkdirs(path, null);
         }
-    }
-
-    @Test
-    public void removeBackpressureDoesNotThrowTest() {
-        // setup to throw
-        Mockito.doThrow(new RuntimeException(new KeeperException.NoNodeException("foo")))
-               .when(storage)
-               .delete_node(Matchers.anyString());
-        try {
-            state.removeBackpressure("bogus-topo-id");
-            // teardown backpressure should have caught the exception
-            Mockito.verify(storage)
-                   .delete_node(ClusterUtils.backpressureStormRoot("bogus-topo-id"));
-        } catch (Exception e) {
-            Assert.fail("Exception thrown when it shouldn't have: " + e);
-        }
-    }
-
-    @Test
-    public void removeWorkerBackpressureDoesntAttemptForNonExistentZNodeTest() {
-        // setup to throw
-        Mockito.when(storage.node_exists(Matchers.anyString(), Matchers.anyBoolean()))
-               .thenReturn(false);
-
-        state.removeWorkerBackpressure("bogus-topo-id", "bogus-host", new Long(1234));
-
-        Mockito.verify(storage, Mockito.never())
-               .delete_node(Matchers.anyString());
-    }
-
-    @Test
-    public void removeWorkerBackpressureCleansForExistingZNodeTest() {
-        // setup to throw
-        Mockito.when(storage.node_exists(Matchers.anyString(), Matchers.anyBoolean()))
-               .thenReturn(true);
-
-        state.removeWorkerBackpressure("bogus-topo-id", "bogus-host", new Long(1234));
-
-        Mockito.verify(storage)
-               .delete_node(ClusterUtils.backpressurePath("bogus-topo-id", "bogus-host", new Long(1234)));
     }
 }
 

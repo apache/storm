@@ -21,25 +21,12 @@ import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.api.StateMetric;
-import org.apache.storm.stats.BoltExecutorStats;
-import org.apache.storm.stats.CommonStats;
-import org.apache.storm.stats.SpoutExecutorStats;
-import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.task.TopologyContext;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class BuiltinMetricsUtil {
-    public static BuiltinMetrics mkData(String type, CommonStats stats) {
-        if (StatsUtil.SPOUT.equals(type)) {
-            return new BuiltinSpoutMetrics((SpoutExecutorStats) stats);
-        } else if (StatsUtil.BOLT.equals(type)) {
-            return new BuiltinBoltMetrics((BoltExecutorStats) stats);
-        }
-        throw new RuntimeException("Invalid component type!");
-    }
-
     public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf, TopologyContext context) {
         if (server instanceof IStatefulObject) {
             registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), topoConf, context);

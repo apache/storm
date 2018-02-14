@@ -125,7 +125,7 @@ public class DefaultStateSerializer<T> implements Serializer<T> {
         public TupleImpl read(Kryo kryo, Input input, Class<TupleImpl> type) {
             int length = input.readInt();
             byte[] bytes = input.readBytes(length);
-            return (TupleImpl) tupleDeserializer.deserialize(bytes);
+            return tupleDeserializer.deserialize(bytes);
         }
     }
 }

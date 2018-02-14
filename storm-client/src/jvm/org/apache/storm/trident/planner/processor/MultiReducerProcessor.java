@@ -79,7 +79,11 @@ public class MultiReducerProcessor implements TridentProcessor {
         int i = _streamToIndex.get(streamId);
         _reducer.execute(processorContext.state[_context.getStateIndex()], i, _projectionFactories[i].create(tuple), _collector);
     }
-    
+
+    @Override
+    public void flush() {
+        _collector.flush();
+    }
     @Override
     public void finishBatch(ProcessorContext processorContext) {
         _collector.setContext(processorContext);

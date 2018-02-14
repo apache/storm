@@ -33,7 +33,8 @@ public class BoltExecuteInfo {
     }
 
     public void applyOn(TopologyContext topologyContext) {
-        for (ITaskHook hook : topologyContext.getHooks()) {
+        for (int i = 0; i < topologyContext.getHooks().size(); i++) { // perf critical loop. dont use iterators
+            ITaskHook hook = topologyContext.getHooks().get(i);
             hook.boltExecute(this);
         }
     }

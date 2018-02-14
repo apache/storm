@@ -464,7 +464,7 @@ public class TestHiveBolt {
                     return new Fields("id", "msg","city","state");
                 }
             };
-        return new TupleImpl(topologyContext, new Values(id, msg,city,state), 1, "");
+        return new TupleImpl(topologyContext, new Values(id, msg,city,state), topologyContext.getComponentId(1), 1, "");
     }
 
 }

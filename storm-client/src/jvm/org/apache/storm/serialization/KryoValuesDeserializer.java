@@ -38,12 +38,12 @@ public class KryoValuesDeserializer {
    	return delegate.getDelegate();
     }
     
-    public List<Object> deserialize(byte[] ser) throws IOException {
+    public List<Object> deserialize(byte[] ser) {
         _kryoInput.setBuffer(ser);
         return deserializeFrom(_kryoInput);
     }
     
-    public Object deserializeObject(byte[] ser) throws IOException {
+    public Object deserializeObject(byte[] ser)  {
         _kryoInput.setBuffer(ser);
         return _kryo.readClassAndObject(_kryoInput);
     }

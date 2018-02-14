@@ -20,86 +20,103 @@ package org.apache.storm.utils;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.lmax.disruptor.EventHandler;
-import com.lmax.disruptor.dsl.ProducerType;
+import org.apache.storm.policy.IWaitStrategy;
+import org.apache.storm.policy.WaitStrategyPark;
 import org.junit.Assert;
 import org.junit.Test;
-import junit.framework.TestCase;
 
-public class DisruptorQueueTest extends TestCase {
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
+public class JCQueueTest {
 
     private final static int TIMEOUT = 5000; // MS
     private final static int PRODUCER_NUM = 4;
+    IWaitStrategy waitStrategy = new WaitStrategyPark(100);
 
-    @Test
+    @Test(timeout=10000)
     public void testFirstMessageFirst() throws InterruptedException {
-      for (int i = 0; i < 100; i++) {
-        DisruptorQueue queue = createQueue("firstMessageOrder", 16);
+        for (int i = 0; i < 100; i++) {
+            JCQueue queue = createQueue("firstMessageOrder", 16);
 
-        queue.publish("FIRST");
+            queue.publish("FIRST");
 
-        Runnable producer = new IncProducer(queue, i+100);
+            Runnable producer = new IncProducer(queue, i+100);
 
-        final AtomicReference<Object> result = new AtomicReference<>();
-        Runnable consumer = new Consumer(queue, new EventHandler<Object>() {
-            private boolean head = true;
+            final AtomicReference<Object> result = new AtomicReference<>();
+            Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
+                private boolean head = true;
 
-            @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
-                if (head) {
-                    head = false;
-                    result.set(obj);
+                @Override
+                public void accept(Object event) {
+                    if (event == JCQueue.INTERRUPT) {
+                        throw new RuntimeException(new InterruptedException("ConsumerThd interrupted") );
+                    }
+                    if (head) {
+                        head = false;
+                        result.set(event);
+                    }
                 }
-            }
-        });
 
-        run(producer, consumer, queue);
-        Assert.assertEquals("We expect to receive first published message first, but received " + result.get(),
-                "FIRST", result.get());
-      }
+                @Override
+                public void flush() {
+                    return;
+                }
+            });
+
+            run(producer, consumer, queue);
+            Assert.assertEquals("We expect to receive first published message first, but received " + result.get(),
+                    "FIRST", result.get());
+        }
     }
-   
-    @Test 
+
+    @Test(timeout=10000)
     public void testInOrder() throws InterruptedException {
         final AtomicBoolean allInOrder = new AtomicBoolean(true);
 
-        DisruptorQueue queue = createQueue("consumerHang", 1024);
+        JCQueue queue = createQueue("consumerHang", 1024);
         Runnable producer = new IncProducer(queue, 1024*1024);
-        Runnable consumer = new Consumer(queue, new EventHandler<Object>() {
+        Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
             long _expected = 0;
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
-                if (_expected != ((Number)obj).longValue()) {
+            public void accept(Object obj) {
+                if (_expected != ((Number) obj).longValue()) {
                     allInOrder.set(false);
-                    System.out.println("Expected "+_expected+" but got "+obj);
+                    System.out.println("Expected " + _expected + " but got " + obj);
                 }
                 _expected++;
             }
-        });
 
+            @Override
+            public void flush() {
+                return;
+            }
+        } ) ;
         run(producer, consumer, queue, 1000, 1);
         Assert.assertTrue("Messages delivered out of order",
                 allInOrder.get());
     }
 
-    @Test 
+    @Test(timeout=10000)
     public void testInOrderBatch() throws InterruptedException {
         final AtomicBoolean allInOrder = new AtomicBoolean(true);
 
-        DisruptorQueue queue = createQueue("consumerHang", 10, 1024);
+        JCQueue queue = createQueue("consumerHang", 10, 1024);
         Runnable producer = new IncProducer(queue, 1024*1024);
-        Runnable consumer = new Consumer(queue, new EventHandler<Object>() {
+        Runnable consumer = new ConsumerThd(queue, new JCQueue.Consumer() {
             long _expected = 0;
             @Override
-            public void onEvent(Object obj, long sequence, boolean endOfBatch)
-                    throws Exception {
+            public void accept(Object obj) {
                 if (_expected != ((Number)obj).longValue()) {
                     allInOrder.set(false);
                     System.out.println("Expected "+_expected+" but got "+obj);
                 }
                 _expected++;
+            }
+
+            @Override
+            public void flush() {
+                return;
             }
         });
 
@@ -109,12 +126,12 @@ public class DisruptorQueueTest extends TestCase {
     }
 
 
-    private void run(Runnable producer, Runnable consumer, DisruptorQueue queue)
+    private void run(Runnable producer, Runnable consumer, JCQueue queue)
             throws InterruptedException {
-        run(producer, consumer, queue, 10, PRODUCER_NUM);
+        run(producer, consumer, queue, 20, PRODUCER_NUM);
     }
 
-    private void run(Runnable producer, Runnable consumer, DisruptorQueue queue, int sleepMs, int producerNum)
+    private void run(Runnable producer, Runnable consumer, JCQueue queue, int sleepMs, int producerNum)
             throws InterruptedException {
 
         Thread[] producerThreads = new Thread[producerNum];
@@ -122,45 +139,50 @@ public class DisruptorQueueTest extends TestCase {
             producerThreads[i] = new Thread(producer);
             producerThreads[i].start();
         }
-        
+
         Thread consumerThread = new Thread(consumer);
         consumerThread.start();
         Thread.sleep(sleepMs);
         for (int i = 0; i < producerNum; i++) {
             producerThreads[i].interrupt();
         }
-        
         for (int i = 0; i < producerNum; i++) {
             producerThreads[i].join(TIMEOUT);
             assertFalse("producer "+i+" is still alive", producerThreads[i].isAlive());
         }
-        queue.haltWithInterrupt();
+
+        Thread.sleep(sleepMs);
+        assertTrue("Unable to send halt interrupt", queue.haltWithInterrupt());
         consumerThread.join(TIMEOUT);
         assertFalse("consumer is still alive", consumerThread.isAlive());
     }
 
     private static class IncProducer implements Runnable {
-        private DisruptorQueue queue;
+        private JCQueue queue;
         private long _max;
 
-        IncProducer(DisruptorQueue queue, long max) {
+        IncProducer(JCQueue queue, long max) {
             this.queue = queue;
             this._max = max;
         }
 
         @Override
         public void run() {
-            for (long i = 0; i < _max && !(Thread.currentThread().isInterrupted()); i++) {
-                queue.publish(i);
+            try {
+                for (long i = 0; i < _max && !(Thread.currentThread().isInterrupted()); i++) {
+                    queue.publish(i);
+                }
+            } catch (InterruptedException e) {
+                return;
             }
         }
     }
 
-    private static class Consumer implements Runnable {
-        private EventHandler handler;
-        private DisruptorQueue queue;
+    private static class ConsumerThd implements Runnable {
+        private JCQueue.Consumer handler;
+        private JCQueue queue;
 
-        Consumer(DisruptorQueue queue, EventHandler handler) {
+        ConsumerThd(JCQueue queue, JCQueue.Consumer handler) {
             this.handler = handler;
             this.queue = queue;
         }
@@ -169,7 +191,7 @@ public class DisruptorQueueTest extends TestCase {
         public void run() {
             try {
                 while(true) {
-                    queue.consumeBatchWhenAvailable(handler);
+                    queue.consume(handler);
                 }
             } catch(RuntimeException e) {
                 //break
@@ -177,11 +199,11 @@ public class DisruptorQueueTest extends TestCase {
         }
     }
 
-    private static DisruptorQueue createQueue(String name, int queueSize) {
-        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, 1, 1L);
+    private JCQueue createQueue(String name, int queueSize) {
+        return new JCQueue(name, queueSize, 0, 1, waitStrategy);
     }
 
-    private static DisruptorQueue createQueue(String name, int batchSize, int queueSize) {
-        return new DisruptorQueue(name, ProducerType.MULTI, queueSize, 0L, batchSize, 1L);
+    private JCQueue createQueue(String name, int batchSize, int queueSize) {
+        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy);
     }
 }

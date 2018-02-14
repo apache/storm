@@ -110,10 +110,10 @@
             <artifactId>commons-collections</artifactId>
         </dependency>
 
-        <!-- disruptor -->
+        <!-- jctools -->
         <dependency>
-            <groupId>com.lmax</groupId>
-            <artifactId>disruptor</artifactId>
+            <groupId>org.jctools</groupId>
+            <artifactId>jctools-core</artifactId>
         </dependency>
         
         <!-- JAXB -->

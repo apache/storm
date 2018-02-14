@@ -39,6 +39,11 @@ public class TridentCollectorMock implements TridentCollector {
   }
 
   @Override
+  public void flush() {
+    // NO-OP
+  }
+
+  @Override
   public void reportError(Throwable arg0) {
   }
 

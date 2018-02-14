@@ -2151,8 +2151,8 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 LOG.info("Cleaning up {}", topoId);
                 state.teardownHeartbeats(topoId);
                 state.teardownTopologyErrors(topoId);
-                state.removeBackpressure(topoId);
                 state.removeAllPrivateWorkerKeys(topoId);
+                state.removeBackpressure(topoId);
                 rmDependencyJarsInTopology(topoId);
                 forceDeleteTopoDistDir(topoId);
                 rmTopologyKeys(topoId);

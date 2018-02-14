@@ -17,9 +17,9 @@
  */
 package org.apache.storm.clojure;
 
+
 import clojure.lang.ILookup;
 import clojure.lang.ISeq;
-import clojure.lang.AFn;
 import clojure.lang.IPersistentMap;
 import clojure.lang.PersistentArrayMap;
 import clojure.lang.IMapEntry;
@@ -30,12 +30,10 @@ import java.util.Map;
 import java.util.Collection;
 import java.util.Set;
 
-public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap, Map {
+public class IndifferentAccessMap  implements ILookup, IPersistentMap, Map {
 
     protected IPersistentMap _map;
 
-    protected IndifferentAccessMap() {
-    }
 
     public IndifferentAccessMap(IPersistentMap map) {
         setMap(map);
@@ -75,17 +73,6 @@ public class IndifferentAccessMap extends AFn implements ILookup, IPersistentMap
         Object ret = valAt(o);
         if(ret==null) ret = def;
         return ret;
-    }
-
-    /* IFn */
-    @Override
-    public Object invoke(Object o) {
-        return valAt(o);
-    }
-
-    @Override
-    public Object invoke(Object o, Object notfound) {
-        return valAt(o, notfound);
     }
 
     /* IPersistentMap */

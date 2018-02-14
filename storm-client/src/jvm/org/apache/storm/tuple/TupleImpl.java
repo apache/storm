@@ -24,50 +24,55 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.task.GeneralTopologyContext;
 
 public class TupleImpl implements Tuple {
-    private final List<Object> values;
-    private final int taskId;
-    private final String streamId;
-    private final GeneralTopologyContext context;
-    private final MessageId id;
+    private List<Object> values;
+    private int taskId;
+    private String streamId;
+    private GeneralTopologyContext context;
+    private MessageId id;
+    private final String srcComponent;
     private Long _processSampleStartTime;
     private Long _executeSampleStartTime;
     private long _outAckVal = 0;
-    
+
     public TupleImpl(Tuple t) {
         this.values = t.getValues();
         this.taskId = t.getSourceTask();
         this.streamId = t.getSourceStreamId();
         this.id = t.getMessageId();
         this.context = t.getContext();
-        if (t instanceof TupleImpl) {
+        this.srcComponent = t.getSourceComponent();
+        try {
             TupleImpl ti = (TupleImpl) t;
             this._processSampleStartTime = ti._processSampleStartTime;
             this._executeSampleStartTime = ti._executeSampleStartTime;
             this._outAckVal = ti._outAckVal;
+        } catch (ClassCastException e) {
+            // ignore ... if t is not a TupleImpl type .. faster than checking and then casting
         }
     }
 
-    public TupleImpl(GeneralTopologyContext context, List<Object> values, int taskId, String streamId, MessageId id) {
+    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId, MessageId id) {
         this.values = Collections.unmodifiableList(values);
         this.taskId = taskId;
         this.streamId = streamId;
         this.id = id;
         this.context = context;
-        
-        String componentId = context.getComponentId(taskId);
-        Fields schema = context.getComponentOutputFields(componentId, streamId);
-        if(values.size()!=schema.size()) {
-            throw new IllegalArgumentException(
-                    "Tuple created with wrong number of fields. " +
-                    "Expected " + schema.size() + " fields but got " +
-                    values.size() + " fields");
+        this.srcComponent = srcComponent;
+
+        if (context.doSanityCheck()) {
+            String componentId = context.getComponentId(taskId);
+            Fields schema = context.getComponentOutputFields(componentId, streamId);
+            if (values.size() != schema.size()) {
+                throw new IllegalArgumentException("Tuple created with wrong number of fields. Expected " + schema.size()
+                    + " fields but got " + values.size() + " fields");
+            }
         }
     }
 
-    public TupleImpl(GeneralTopologyContext context, List<Object> values, int taskId, String streamId) {
-        this(context, values, taskId, streamId, MessageId.makeUnanchored());
-    }
-    
+    public TupleImpl(GeneralTopologyContext context, List<Object> values, String srcComponent, int taskId, String streamId) {
+        this(context, values, srcComponent, taskId, streamId, MessageId.makeUnanchored());
+    }    
+
     public void setProcessSampleStartTime(long ms) {
         _processSampleStartTime = ms;
     }
@@ -83,7 +88,7 @@ public class TupleImpl implements Tuple {
     public Long getExecuteSampleStartTime() {
         return _executeSampleStartTime;
     }
-    
+
     public void updateAckVal(long val) {
         _outAckVal = _outAckVal ^ val;
     }
@@ -91,7 +96,7 @@ public class TupleImpl implements Tuple {
     public long getAckVal() {
         return _outAckVal;
     }
-    
+
     /** Tuple APIs*/
     @Override
     public int size() {
@@ -213,7 +218,7 @@ public class TupleImpl implements Tuple {
         return values;
     }
 
-    @Override    
+    @Override
     public Fields getFields() {
         return context.getComponentOutputFields(getSourceComponent(), getSourceStreamId());
     }
@@ -235,7 +240,7 @@ public class TupleImpl implements Tuple {
 
     @Override
     public String getSourceComponent() {
-        return context.getComponentId(taskId);
+        return srcComponent;
     }
 
     @Override
@@ -257,7 +262,7 @@ public class TupleImpl implements Tuple {
     public GeneralTopologyContext getContext() {
         return context;
     }
-    
+
     @Override
     public String toString() {
         return "source: " + getSourceComponent() + ":" + taskId + ", stream: " + streamId + ", id: "+ id.toString() + ", " + values.toString() + " PROC_START_TIME(sampled): " + _processSampleStartTime + " EXEC_START_TIME(sampled): " + _executeSampleStartTime;

@@ -198,9 +198,9 @@ This is also just for bolts.  It is the average amount of time between when `exe
 This metric records how much time a spout was idle because more tuples than `topology.max.spout.pending` were still outstanding.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
 
 
-##### `__skipped-throttle-ms`
+##### `__skipped-backpressure-ms`
 
-This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled.
+This metric records how much time a spout was idle because back-pressure indicated that downstream queues in the topology were too full.  This is the total time in milliseconds, not the average amount of time and is not sub-sampled. This is similar to skipped-throttle-ms in Storm 1.x.
 
 ##### `skipped-inactive-ms`
 

@@ -70,7 +70,12 @@ public class AggregateProcessor implements TridentProcessor {
         _collector.setContext(processorContext);
         _agg.aggregate(processorContext.state[_context.getStateIndex()], _projection.create(tuple), _collector);
     }
-    
+
+    @Override
+    public void flush() {
+        _collector.flush();
+    }
+
     @Override
     public void finishBatch(ProcessorContext processorContext) {
         _collector.setContext(processorContext);

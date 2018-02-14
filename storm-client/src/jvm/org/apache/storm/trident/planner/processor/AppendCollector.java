@@ -52,6 +52,13 @@ public class AppendCollector implements TridentCollector {
     }
 
     @Override
+    public void flush() {
+        for(TupleReceiver r: _triContext.getReceivers()) {
+            r.flush();
+        }
+    }
+
+    @Override
     public void reportError(Throwable t) {
         _triContext.getDelegateCollector().reportError(t);
     } 

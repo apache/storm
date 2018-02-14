@@ -24,10 +24,10 @@ import org.apache.storm.messaging.IConnectionCallback;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
+import org.apache.storm.serialization.KryoValuesDeserializer;
 import org.apache.storm.serialization.KryoValuesSerializer;
 import org.apache.storm.utils.ObjectReader;
 
-import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
@@ -39,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Supplier;
+
 import org.jboss.netty.bootstrap.ServerBootstrap;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelFactory;
@@ -62,9 +64,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     final ServerBootstrap bootstrap;
  
     private volatile boolean closing = false;
-    List<TaskMessage> closeMessage = Arrays.asList(new TaskMessage(-1, null));
-    private KryoValuesSerializer _ser;
-    private IConnectionCallback _cb = null; 
+    KryoValuesSerializer _ser;
+    KryoValuesDeserializer deser;
+    private IConnectionCallback _cb = null;
+    private Supplier<Object> newConnectionResponse;
     private final int boundPort;
     
     @SuppressWarnings("rawtypes")
@@ -72,6 +75,7 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         this.topoConf = topoConf;
         this.port = port;
         _ser = new KryoValuesSerializer(topoConf);
+        deser = new KryoValuesDeserializer(topoConf);
 
         // Configure the server.
         int buffer_size = ObjectReader.getInt(topoConf.get(Config.STORM_MESSAGING_NETTY_BUFFER_SIZE));
@@ -143,12 +147,9 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
         _cb = cb;
     }
 
-    /**
-     * register a newly created channel
-     * @param channel newly created channel
-     */
-    protected void addChannel(Channel channel) {
-        allChannels.add(channel);
+    @Override
+    public void registerNewConnectionResponse(Supplier<Object> newConnectionResponse) {
+        this.newConnectionResponse = newConnectionResponse;
     }
 
     /**
@@ -176,14 +177,17 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     }
 
     @Override
-    public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
-        try {
-            MessageBatch mb = new MessageBatch(1);
-            mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
-            allChannels.write(mb);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+    synchronized public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
+        MessageBatch mb = new MessageBatch(1);
+        mb.add(new TaskMessage(-1, _ser.serialize(Arrays.asList((Object)taskToLoad))));
+        allChannels.write(mb);
+    }
+
+    // this method expected to be thread safe
+    @Override
+    synchronized public void sendBackPressureStatus(BackPressureStatus bpStatus)  {
+        LOG.info("Sending BackPressure status update to connected workers. BPStatus = {}", bpStatus);
+        allChannels.write(bpStatus);
     }
 
     @Override
@@ -264,7 +268,10 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
 
     /** Implementing IServer. **/
     public void channelConnected(Channel c) {
-        addChannel(c);
+        if (newConnectionResponse != null) {
+            c.write( newConnectionResponse.get() ); // not synchronized since it is not yet in channel grp, so pvt to this thread
+        }
+        allChannels.add(c);
     }
 
     public void received(Object message, String remote, Channel channel)  throws InterruptedException {
