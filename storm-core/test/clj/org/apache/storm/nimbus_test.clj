@@ -1734,7 +1734,7 @@
       (.submitTopology cluster "t1" {TOPOLOGY-WORKERS 1} topology)
       (.debug nimbus "t1" "" true 100))))
 
-;; if the user sends an empty log config, nimbus will say that all 
+;; if the user sends an empty log config, nimbus will say that all
 ;; log configs it contains are LogLevelAction/UNCHANGED
 (deftest empty-save-config-results-in-all-unchanged-actions
   (let [cluster-state (Mockito/mock IStormClusterState)
@@ -1880,8 +1880,7 @@
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (HashSet. inactive-topos))
         (mocking
           [teardown-heartbeats
-           teardown-topo-errors
-           teardown-backpressure-dirs]
+           teardown-topo-errors]
 
           (.doCleanup nimbus)
 
@@ -1892,10 +1891,6 @@
           ;; removed topo errors znode
           (verify-nth-call-args-for 1 teardown-topo-errors "topo2")
           (verify-nth-call-args-for 2 teardown-topo-errors "topo3")
-
-          ;; removed backpressure znodes
-          (verify-nth-call-args-for 1 teardown-backpressure-dirs "topo2")
-          (verify-nth-call-args-for 2 teardown-backpressure-dirs "topo3")
 
           ;; removed topo directories
           (.forceDeleteTopoDistDir (Mockito/verify nimbus) "topo2")
@@ -1925,14 +1920,12 @@
         (.thenReturn (Mockito/when (.storedTopoIds mock-blob-store)) (set inactive-topos))
         (mocking
           [teardown-heartbeats
-           teardown-topo-errors
-           teardown-backpressure-dirs]
+           teardown-topo-errors]
 
           (.doCleanup nimbus)
 
           (verify-call-times-for teardown-heartbeats 0)
           (verify-call-times-for teardown-topo-errors 0)
-          (verify-call-times-for teardown-backpressure-dirs 0)
           (.forceDeleteTopoDistDir (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
           (.rmTopologyKeys (Mockito/verify nimbus (Mockito/times 0)) (Mockito/anyObject))
 

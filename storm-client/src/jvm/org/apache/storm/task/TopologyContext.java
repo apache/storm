@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -32,7 +32,6 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.utils.Utils;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -272,7 +271,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         _hooks.add(hook);
     }
 
-    public Collection<ITaskHook> getHooks() {
+    public List<ITaskHook> getHooks() {
         return _hooks;
     }
 

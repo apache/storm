@@ -58,7 +58,7 @@ Storm also offers a clojure API for testing.
 
 ### Debugging your topology with an IDE
 
-One of the great use cases for local mode is to be able to walk through the code execution of your bolts and spouts using an IDE.  You can do this on the command line by adding the `--java-debug` option followed by the paramer you would pass to jdwp. This makes it simple to launch the local cluster with `-agentlib:jdwp=` turned on.
+One of the great use cases for local mode is to be able to walk through the code execution of your bolts and spouts using an IDE.  You can do this on the command line by adding the `--java-debug` option followed by the parameter you would pass to jdwp. This makes it simple to launch the local cluster with `-agentlib:jdwp=` turned on.
 
 When running from within an IDE itself you can modify your code run run withing a call to `LocalCluster.withLocalModeOverride`
 

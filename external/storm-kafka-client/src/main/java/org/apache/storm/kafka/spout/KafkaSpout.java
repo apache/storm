@@ -440,7 +440,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         } else {
             final OffsetAndMetadata committedOffset = kafkaConsumer.committed(tp);
             if (isAtLeastOnceProcessing()
-                && committedOffset != null 
+                && committedOffset != null
                 && committedOffset.offset() > record.offset()
                 && commitMetadataManager.isOffsetCommittedByThisTopology(tp,
                 committedOffset,

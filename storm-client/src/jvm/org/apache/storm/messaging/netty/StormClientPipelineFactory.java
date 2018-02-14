@@ -23,13 +23,16 @@ import org.jboss.netty.channel.Channels;
 
 import org.apache.storm.Config;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 class StormClientPipelineFactory implements ChannelPipelineFactory {
     private Client client;
+    private AtomicBoolean[] remoteBpStatus;
     private Map<String, Object> conf;
 
-    StormClientPipelineFactory(Client client, Map<String, Object> conf) {
+    StormClientPipelineFactory(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf) {
         this.client = client;
+        this.remoteBpStatus = remoteBpStatus;
         this.conf = conf;
     }
 
@@ -38,9 +41,9 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
         ChannelPipeline pipeline = Channels.pipeline();
 
         // Decoder
-        pipeline.addLast("decoder", new MessageDecoder());
+        pipeline.addLast("decoder", new MessageDecoder(client.deser));
         // Encoder
-        pipeline.addLast("encoder", new MessageEncoder());
+        pipeline.addLast("encoder", new MessageEncoder(client.ser));
 
         boolean isNettyAuth = (Boolean) conf
                 .get(Config.STORM_MESSAGING_NETTY_AUTHENTICATION);
@@ -50,7 +53,7 @@ class StormClientPipelineFactory implements ChannelPipelineFactory {
                     client));
         }
         // business logic.
-        pipeline.addLast("handler", new StormClientHandler(client, conf));
+        pipeline.addLast("handler", new StormClientHandler(client, remoteBpStatus, conf));
         return pipeline;
     }
 }

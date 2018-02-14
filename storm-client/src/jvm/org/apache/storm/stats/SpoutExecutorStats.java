@@ -26,27 +26,35 @@ import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
 @SuppressWarnings("unchecked")
 public class SpoutExecutorStats extends CommonStats {
 
-    public static final String ACKED = "acked";
-    public static final String FAILED = "failed";
-    public static final String COMPLETE_LATENCIES = "complete-latencies";
+    private final MultiCountStatAndMetric ackedStats;
+    private final MultiCountStatAndMetric failedStats;
+    private final MultiLatencyStatAndMetric completeLatencyStats;
 
     public SpoutExecutorStats(int rate,int numStatBuckets) {
         super(rate,numStatBuckets);
-        this.put(ACKED, new MultiCountStatAndMetric(numStatBuckets));
-        this.put(FAILED, new MultiCountStatAndMetric(numStatBuckets));
-        this.put(COMPLETE_LATENCIES, new MultiLatencyStatAndMetric(numStatBuckets));
+        this.ackedStats = new MultiCountStatAndMetric(numStatBuckets);
+        this.failedStats = new MultiCountStatAndMetric(numStatBuckets);
+        this.completeLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
     }
 
     public MultiCountStatAndMetric getAcked() {
-        return (MultiCountStatAndMetric) this.get(ACKED);
+        return ackedStats;
     }
 
     public MultiCountStatAndMetric getFailed() {
-        return (MultiCountStatAndMetric) this.get(FAILED);
+        return failedStats;
     }
 
     public MultiLatencyStatAndMetric getCompleteLatencies() {
-        return (MultiLatencyStatAndMetric) this.get(COMPLETE_LATENCIES);
+        return completeLatencyStats;
+    }
+
+    @Override
+    public void cleanupStats() {
+        ackedStats.close();
+        failedStats.close();
+        completeLatencyStats.close();
+        super.cleanupStats();
     }
 
     public void spoutAckedTuple(String stream, long latencyMs) {
@@ -62,13 +70,13 @@ public class SpoutExecutorStats extends CommonStats {
     public ExecutorStats renderStats() {
         ExecutorStats ret = new ExecutorStats();
         // common fields
-        ret.set_emitted(valueStat(EMITTED));
-        ret.set_transferred(valueStat(TRANSFERRED));
+        ret.set_emitted(valueStat(getEmitted()));
+        ret.set_transferred(valueStat(getTransferred()));
         ret.set_rate(this.rate);
 
         // spout stats
         SpoutStats spoutStats = new SpoutStats(
-                valueStat(ACKED), valueStat(FAILED), valueStat(COMPLETE_LATENCIES));
+                valueStat(ackedStats), valueStat(failedStats), valueStat(completeLatencyStats));
         ret.set_specific(ExecutorSpecificStats.spout(spoutStats));
 
         return ret;

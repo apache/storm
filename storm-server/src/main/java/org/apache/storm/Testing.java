@@ -54,10 +54,10 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.utils.ConfigUtils;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.RegisteredGlobalState;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Time.SimulatedTime;
+import org.apache.storm.utils.Utils;
 import org.apache.thrift.TException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -518,7 +518,7 @@ public class Testing {
     public static List<List<Object>> readTuples(Map<String, List<FixedTuple>> results, String componentId) {
         return readTuples(results, componentId, Utils.DEFAULT_STREAM_ID);
     }
-    
+
     /**
      * Get all of the tuples from a given component on a given stream
      * @param results the results of running a completed topology
@@ -696,7 +696,7 @@ public class Testing {
         Map<String, Fields> streamToFields = new HashMap<>();
         streamToFields.put(stream, new Fields(fields));
         compToStreamToFields.put(component, streamToFields);
-        
+
         TopologyContext context= new TopologyContext(null,
                 ConfigUtils.readStormConfig(),
                 taskToComp,
@@ -714,6 +714,6 @@ public class Testing {
                 new HashMap<>(),
                 new HashMap<>(),
                 new AtomicBoolean(false));
-        return new TupleImpl(context, values, 1, stream);
+        return new TupleImpl(context, values, component, 1, stream);
     }
 }

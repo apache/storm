@@ -24,6 +24,7 @@ import org.apache.storm.trident.operation.MapFunction;
 import org.apache.storm.trident.operation.TridentOperationContext;
 import org.apache.storm.trident.planner.ProcessorContext;
 import org.apache.storm.trident.planner.TridentProcessor;
+import org.apache.storm.trident.planner.TupleReceiver;
 import org.apache.storm.trident.tuple.TridentTuple;
 import org.apache.storm.trident.tuple.TridentTupleView;
 import org.apache.storm.tuple.Fields;
@@ -68,6 +69,11 @@ public class MapProcessor implements TridentProcessor {
     public void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple) {
         _collector.setContext(processorContext);
         _function.execute(_projection.create(tuple), _collector);
+    }
+
+    @Override
+    public void flush() {
+        _collector.flush();
     }
 
     @Override

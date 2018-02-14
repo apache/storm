@@ -18,6 +18,10 @@
 
 package org.apache.storm.perf;
 
+import java.util.Map;
+import java.util.UUID;
+
+import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hdfs.bolt.HdfsBolt;
 import org.apache.storm.hdfs.bolt.format.DefaultFileNameFormat;
@@ -35,11 +39,8 @@ import org.apache.storm.kafka.ZkHosts;
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
-
-import java.util.Map;
-import java.util.UUID;
+import org.apache.storm.utils.Utils;
 
 /***
  * This topo helps measure speed of reading from Kafka and writing to Hdfs.
@@ -49,84 +50,85 @@ import java.util.UUID;
 
 public class KafkaHdfsTopo {
 
-  // configs - topo parallelism
-  public static final String SPOUT_NUM = "spout.count";
-  public static final String BOLT_NUM = "bolt.count";
-  // configs - kafka spout
-  public static final String KAFKA_TOPIC = "kafka.topic";
-  public static final String ZOOKEEPER_URI = "zk.uri";
-  // configs - hdfs bolt
-  public static final String HDFS_URI = "hdfs.uri";
-  public static final String HDFS_PATH = "hdfs.dir";
-  public static final String HDFS_BATCH = "hdfs.batch";
+    // configs - topo parallelism
+    public static final String SPOUT_NUM = "spout.count";
+    public static final String BOLT_NUM = "bolt.count";
+    // configs - kafka spout
+    public static final String KAFKA_TOPIC = "kafka.topic";
+    public static final String ZOOKEEPER_URI = "zk.uri";
+    // configs - hdfs bolt
+    public static final String HDFS_URI = "hdfs.uri";
+    public static final String HDFS_PATH = "hdfs.dir";
+    public static final String HDFS_BATCH = "hdfs.batch";
 
 
-  public static final int DEFAULT_SPOUT_NUM = 1;
-  public static final int DEFAULT_BOLT_NUM = 1;
-  public static final int DEFAULT_HDFS_BATCH = 1000;
+    public static final int DEFAULT_SPOUT_NUM = 1;
+    public static final int DEFAULT_BOLT_NUM = 1;
+    public static final int DEFAULT_HDFS_BATCH = 1000;
 
-  // names
-  public static final String TOPOLOGY_NAME = "KafkaHdfsTopo";
-  public static final String SPOUT_ID = "kafkaSpout";
-  public static final String BOLT_ID = "hdfsBolt";
+    // names
+    public static final String TOPOLOGY_NAME = "KafkaHdfsTopo";
+    public static final String SPOUT_ID = "kafkaSpout";
+    public static final String BOLT_ID = "hdfsBolt";
 
 
+    static StormTopology getTopology(Map<String, Object> config) {
 
-  public static StormTopology getTopology(Map<String, Object> config) {
+        final int spoutNum = getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
+        final int boltNum = getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
 
-    final int spoutNum = getInt(config, SPOUT_NUM, DEFAULT_SPOUT_NUM);
-    final int boltNum = getInt(config, BOLT_NUM, DEFAULT_BOLT_NUM);
+        final int hdfsBatch = getInt(config, HDFS_BATCH, DEFAULT_HDFS_BATCH);
 
-    final int hdfsBatch = getInt(config, HDFS_BATCH, DEFAULT_HDFS_BATCH);
+        // 1 -  Setup Kafka Spout   --------
+        String zkConnString = getStr(config, ZOOKEEPER_URI);
+        String topicName = getStr(config, KAFKA_TOPIC);
 
-    // 1 -  Setup Kafka Spout   --------
-    String zkConnString = getStr(config, ZOOKEEPER_URI);
-    String topicName = getStr(config, KAFKA_TOPIC);
+        BrokerHosts brokerHosts = new ZkHosts(zkConnString);
+        SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, topicName, "/" + topicName, UUID.randomUUID().toString());
+        spoutConfig.scheme = new StringMultiSchemeWithTopic();
+        spoutConfig.ignoreZkOffsets = true;
 
-    BrokerHosts brokerHosts = new ZkHosts(zkConnString);
-    SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, topicName, "/" + topicName, UUID.randomUUID().toString());
-    spoutConfig.scheme = new StringMultiSchemeWithTopic();
-    spoutConfig.ignoreZkOffsets = true;
+        KafkaSpout spout = new KafkaSpout(spoutConfig);
 
-    KafkaSpout spout = new KafkaSpout(spoutConfig);
+        // 2 -  Setup HFS Bolt   --------
+        String hdfsUrls = getStr(config, HDFS_URI);
+        RecordFormat format = new LineWriter("str");
+        SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
+        FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
 
-    // 2 -  Setup HFS Bolt   --------
-    String Hdfs_url = getStr(config, HDFS_URI);
-    RecordFormat format = new LineWriter("str");
-    SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
-    FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
+        FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(getStr(config, HDFS_PATH));
 
-    FileNameFormat fileNameFormat = new DefaultFileNameFormat().withPath(getStr(config,HDFS_PATH) );
-
-    // Instantiate the HdfsBolt
-    HdfsBolt bolt = new HdfsBolt()
-            .withFsUrl(Hdfs_url)
+        // Instantiate the HdfsBolt
+        HdfsBolt bolt = new HdfsBolt()
+            .withFsUrl(hdfsUrls)
             .withFileNameFormat(fileNameFormat)
             .withRecordFormat(format)
             .withRotationPolicy(rotationPolicy)
             .withSyncPolicy(syncPolicy);
 
 
-    // 3 - Setup Topology  --------
-    TopologyBuilder builder = new TopologyBuilder();
-    builder.setSpout(SPOUT_ID, spout, spoutNum);
-    builder.setBolt(BOLT_ID, bolt, boltNum)
+        // 3 - Setup Topology  --------
+        TopologyBuilder builder = new TopologyBuilder();
+        builder.setSpout(SPOUT_ID, spout, spoutNum);
+        builder.setBolt(BOLT_ID, bolt, boltNum)
             .localOrShuffleGrouping(SPOUT_ID);
 
-    return builder.createTopology();
-  }
+        return builder.createTopology();
+    }
 
 
-  public static int getInt(Map map, Object key, int def) {
-    return ObjectReader.getInt(Utils.get(map, key, def));
-  }
+    public static int getInt(Map map, Object key, int def) {
+        return ObjectReader.getInt(Utils.get(map, key, def));
+    }
 
-  public static String getStr(Map map, Object key) {
-    return (String) map.get(key);
-  }
+    public static String getStr(Map map, Object key) {
+        return (String) map.get(key);
+    }
 
 
-    /** Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming */
+    /**
+     * Copies text file content from sourceDir to destinationDir. Moves source files into sourceDir after its done consuming
+     */
     public static void main(String[] args) throws Exception {
 
         if (args.length != 2) {
@@ -137,7 +139,13 @@ public class KafkaHdfsTopo {
         Integer durationSec = Integer.parseInt(args[0]);
         String confFile = args[1];
         Map<String, Object> topoConf = Utils.findAndReadConfigFile(confFile);
+        topoConf.put(Config.TOPOLOGY_PRODUCER_BATCH_SIZE, 1000);
+        topoConf.put(Config.TOPOLOGY_DISABLE_LOADAWARE_MESSAGING, true);
+        topoConf.put(Config.TOPOLOGY_STATS_SAMPLE_RATE, 0.0005);
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_STRATEGY, "org.apache.storm.policy.WaitStrategyPark");
+        topoConf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 0);
 
+        topoConf.putAll(Utils.readCommandLineOpts());
         //  Submit topology to Storm cluster
         Helper.runOnClusterAndPrintMetrics(durationSec, TOPOLOGY_NAME, topoConf, getTopology(topoConf));
     }
@@ -156,14 +164,14 @@ public class KafkaHdfsTopo {
          * @param delimiter
          * @return
          */
-        public LineWriter withLineDelimiter(String delimiter){
+        public LineWriter withLineDelimiter(String delimiter) {
             this.lineDelimiter = delimiter;
             return this;
         }
 
         @Override
         public byte[] format(Tuple tuple) {
-            return (tuple.getValueByField(fieldName).toString() +  this.lineDelimiter).getBytes();
+            return (tuple.getValueByField(fieldName).toString() + this.lineDelimiter).getBytes();
         }
     }
 }

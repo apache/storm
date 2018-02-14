@@ -40,21 +40,21 @@ import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
 
 public interface IStormClusterState {
-    public List<String> assignments(Runnable callback);
+    List<String> assignments(Runnable callback);
 
-    public Assignment assignmentInfo(String stormId, Runnable callback);
+    Assignment assignmentInfo(String stormId, Runnable callback);
 
-    public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
+    VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
 
-    public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
+    Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
 
-    public List<String> blobstoreInfo(String blobKey);
+    List<String> blobstoreInfo(String blobKey);
 
-    public List<NimbusSummary> nimbuses();
+    List<NimbusSummary> nimbuses();
 
-    public void addNimbusHost(String nimbusId, NimbusSummary nimbusSummary);
+    void addNimbusHost(String nimbusId, NimbusSummary nimbusSummary);
 
-    public List<String> activeStorms();
+    List<String> activeStorms();
 
     /**
      * Get a storm base for a topology
@@ -62,87 +62,95 @@ public interface IStormClusterState {
      * @param callback something to call if the data changes (best effort)
      * @return the StormBase or null if it is not alive.
      */
-    public StormBase stormBase(String stormId, Runnable callback);
+    StormBase stormBase(String stormId, Runnable callback);
 
-    public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
+    ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
 
-    public List<ProfileRequest> getWorkerProfileRequests(String stormId, NodeInfo nodeInfo);
+    List<ProfileRequest> getWorkerProfileRequests(String stormId, NodeInfo nodeInfo);
 
-    public List<ProfileRequest> getTopologyProfileRequests(String stormId);
+    List<ProfileRequest> getTopologyProfileRequests(String stormId);
 
-    public void setWorkerProfileRequest(String stormId, ProfileRequest profileRequest);
+    void setWorkerProfileRequest(String stormId, ProfileRequest profileRequest);
 
-    public void deleteTopologyProfileRequests(String stormId, ProfileRequest profileRequest);
+    void deleteTopologyProfileRequests(String stormId, ProfileRequest profileRequest);
 
-    public Map<ExecutorInfo, ExecutorBeat> executorBeats(String stormId, Map<List<Long>, NodeInfo> executorNodePort);
+    Map<ExecutorInfo, ExecutorBeat> executorBeats(String stormId, Map<List<Long>, NodeInfo> executorNodePort);
 
-    public List<String> supervisors(Runnable callback);
+    List<String> supervisors(Runnable callback);
 
-    public SupervisorInfo supervisorInfo(String supervisorId); // returns nil if doesn't exist
+    SupervisorInfo supervisorInfo(String supervisorId); // returns nil if doesn't exist
 
-    public void setupHeatbeats(String stormId);
+    void setupHeatbeats(String stormId);
 
-    public void teardownHeartbeats(String stormId);
+    void teardownHeartbeats(String stormId);
 
-    public void teardownTopologyErrors(String stormId);
+    void teardownTopologyErrors(String stormId);
 
-    public List<String> heartbeatStorms();
+    List<String> heartbeatStorms();
 
-    public List<String> errorTopologies();
+    List<String> errorTopologies();
 
-    public List<String> backpressureTopologies();
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    List<String> backpressureTopologies();
 
-    public void setTopologyLogConfig(String stormId, LogConfig logConfig);
+    void setTopologyLogConfig(String stormId, LogConfig logConfig);
 
-    public LogConfig topologyLogConfig(String stormId, Runnable cb);
+    LogConfig topologyLogConfig(String stormId, Runnable cb);
 
-    public void workerHeartbeat(String stormId, String node, Long port, ClusterWorkerHeartbeat info);
+    void workerHeartbeat(String stormId, String node, Long port, ClusterWorkerHeartbeat info);
 
-    public void removeWorkerHeartbeat(String stormId, String node, Long port);
+    void removeWorkerHeartbeat(String stormId, String node, Long port);
 
-    public void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
+    void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
 
-    public void workerBackpressure(String stormId, String node, Long port, long timestamp);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
 
-    public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void setupBackpressure(String stormId);
 
-    public void setupBackpressure(String stormId);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void removeBackpressure(String stormId);
 
-    public void removeBackpressure(String stormId);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void removeWorkerBackpressure(String stormId, String node, Long port);
 
-    public void removeWorkerBackpressure(String stormId, String node, Long port);
+    void activateStorm(String stormId, StormBase stormBase);
 
-    public void activateStorm(String stormId, StormBase stormBase);
+    void updateStorm(String stormId, StormBase newElems);
 
-    public void updateStorm(String stormId, StormBase newElems);
+    void removeStormBase(String stormId);
 
-    public void removeStormBase(String stormId);
+    void setAssignment(String stormId, Assignment info);
 
-    public void setAssignment(String stormId, Assignment info);
+    void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
 
-    public void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
+    List<String> activeKeys();
 
-    public List<String> activeKeys();
+    List<String> blobstore(Runnable callback);
 
-    public List<String> blobstore(Runnable callback);
+    void removeStorm(String stormId);
 
-    public void removeStorm(String stormId);
+    void removeBlobstoreKey(String blobKey);
 
-    public void removeBlobstoreKey(String blobKey);
+    void removeKeyVersion(String blobKey);
 
-    public void removeKeyVersion(String blobKey);
+    void reportError(String stormId, String componentId, String node, Long port, Throwable error);
 
-    public void reportError(String stormId, String componentId, String node, Long port, Throwable error);
+    List<ErrorInfo> errors(String stormId, String componentId);
 
-    public List<ErrorInfo> errors(String stormId, String componentId);
+    ErrorInfo lastError(String stormId, String componentId);
 
-    public ErrorInfo lastError(String stormId, String componentId);
+    void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException;
 
-    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException;
+    Credentials credentials(String stormId, Runnable callback);
 
-    public Credentials credentials(String stormId, Runnable callback);
-
-    public void disconnect();
+    void disconnect();
 
     /**
      * Get a private key used to validate a token is correct.

@@ -55,6 +55,11 @@ public class EachProcessor implements TridentProcessor {
     }
 
     @Override
+    public void flush() {
+        _collector.flush();
+    }
+
+    @Override
     public void cleanup() {
         _function.cleanup();
     }    
@@ -64,6 +69,7 @@ public class EachProcessor implements TridentProcessor {
         _collector.setContext(processorContext, tuple);
         _function.execute(_projection.create(tuple), _collector);
     }
+
 
     @Override
     public void startBatch(ProcessorContext processorContext) {

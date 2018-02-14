@@ -41,6 +41,11 @@ public class GroupCollector implements TridentCollector {
     }
 
     @Override
+    public void flush() {
+        _collector.flush();
+    }
+
+    @Override
     public void reportError(Throwable t) {
         _collector.reportError(t);
     }

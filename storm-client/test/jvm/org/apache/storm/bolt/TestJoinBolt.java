@@ -87,7 +87,7 @@ public class TestJoinBolt {
 
     @Test
     public void testTrivial() throws Exception {
-        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders);
+        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders, "ordersSpout");
         TupleWindow window = makeTupleWindow(orderStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "orders", orderFields[0])
@@ -101,7 +101,7 @@ public class TestJoinBolt {
 
     @Test
     public void testNestedKeys() throws Exception {
-        ArrayList<Tuple> userStream = makeNestedEventsStream("users", userFields, users);
+        ArrayList<Tuple> userStream = makeNestedEventsStream("users", userFields, users, "usersSpout");
         TupleWindow window = makeTupleWindow(userStream);
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", "outer.userId")
                 .select("outer.name, outer.city");
@@ -115,8 +115,8 @@ public class TestJoinBolt {
 
     @Test
     public void testProjection_FieldsWithStreamName() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> storeStream = makeStream("stores", storeFields, stores);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> storeStream = makeStream("stores", storeFields, stores, "storesSpout");
 
         TupleWindow window = makeTupleWindow(storeStream, userStream);
 
@@ -141,8 +141,8 @@ public class TestJoinBolt {
 
     @Test
     public void testInnerJoin() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders, "ordersSpout");
         TupleWindow window = makeTupleWindow(orderStream, userStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[0])
@@ -158,8 +158,8 @@ public class TestJoinBolt {
 
     @Test
     public void testLeftJoin() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> orderStream = makeStream("orders", orderFields, orders, "ordersSpout");
         TupleWindow window = makeTupleWindow(orderStream, userStream);
 
         JoinBolt bolt = new JoinBolt(JoinBolt.Selector.STREAM, "users", userFields[0])
@@ -175,9 +175,9 @@ public class TestJoinBolt {
 
     @Test
     public void testThreeStreamInnerJoin() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores);
-        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores, "storesSpout");
+        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities, "citiesSpout");
 
         TupleWindow window = makeTupleWindow(userStream, storesStream, cityStream);
 
@@ -196,9 +196,9 @@ public class TestJoinBolt {
 
     @Test
     public void testThreeStreamLeftJoin_1() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores);
-        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores, "storesSpout");
+        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities, "citiesSpout");
 
         TupleWindow window = makeTupleWindow(userStream,  cityStream, storesStream);
 
@@ -216,9 +216,9 @@ public class TestJoinBolt {
 
     @Test
     public void testThreeStreamLeftJoin_2() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores);
-        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores, "storesSpout");
+        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities, "citiesSpout");
 
         TupleWindow window = makeTupleWindow(userStream, cityStream, storesStream);
 
@@ -238,9 +238,9 @@ public class TestJoinBolt {
 
     @Test
     public void testThreeStreamMixedJoin() throws Exception {
-        ArrayList<Tuple> userStream = makeStream("users", userFields, users);
-        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores);
-        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities);
+        ArrayList<Tuple> userStream = makeStream("users", userFields, users, "usersSpout");
+        ArrayList<Tuple> storesStream = makeStream("stores", storeFields, stores, "storesSpout");
+        ArrayList<Tuple> cityStream = makeStream("cities", cityFields, cities, "citiesSpout");
 
         TupleWindow window = makeTupleWindow(userStream,  cityStream, storesStream);
 
@@ -286,12 +286,12 @@ public class TestJoinBolt {
     }
 
 
-    private static ArrayList<Tuple> makeStream(String streamName, String[] fieldNames, Object[][] data) {
+    private static ArrayList<Tuple> makeStream(String streamName, String[] fieldNames, Object[][] data, String srcComponentName) {
         ArrayList<Tuple> result = new ArrayList<>();
         MockContext mockContext = new MockContext(fieldNames);
 
         for (Object[] record : data) {
-            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), 0, streamName);
+            TupleImpl rec = new TupleImpl(mockContext, Arrays.asList(record), srcComponentName, 0, streamName);
             result.add( rec );
         }
 
@@ -299,7 +299,8 @@ public class TestJoinBolt {
     }
 
 
-    private static ArrayList<Tuple> makeNestedEventsStream (String streamName, String[] fieldNames, Object[][] records) {
+    private static ArrayList<Tuple> makeNestedEventsStream (String streamName, String[] fieldNames, Object[][] records
+        , String srcComponentName) {
 
         MockContext mockContext = new MockContext(new String[]{"outer"} );
         ArrayList<Tuple> result = new ArrayList<>(records.length);
@@ -313,7 +314,7 @@ public class TestJoinBolt {
 
             ArrayList<Object> tupleValues = new ArrayList<>(1);
             tupleValues.add(recordMap);
-            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, 0, streamName);
+            TupleImpl tuple = new TupleImpl(mockContext, tupleValues, srcComponentName, 0, streamName);
             result.add( tuple );
         }
 
@@ -341,7 +342,7 @@ public class TestJoinBolt {
         private final Fields fields;
 
         public MockContext(String[] fieldNames) {
-            super(null, null, null, null, null, null);
+            super(null, new HashMap<>(), null, null, null, null);
             this.fields = new Fields(fieldNames);
         }
 

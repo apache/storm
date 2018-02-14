@@ -18,6 +18,7 @@
 package org.apache.storm.messaging;
 
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * This interface needs to be implemented for messaging plugin. 
@@ -33,12 +34,12 @@ public interface IContext {
      * This method is invoked at the startup of messaging plugin
      * @param topoConf storm configuration
      */
-    public void prepare(Map<String, Object> topoConf);
+    void prepare(Map<String, Object> topoConf);
     
     /**
      * This method is invoked when a worker is unloading a messaging plugin
      */
-    public void term();
+    void term();
 
     /**
      * This method establishes a server side connection 
@@ -46,14 +47,15 @@ public interface IContext {
      * @param port port #
      * @return server side connection
      */
-    public IConnection bind(String storm_id, int port);
+    IConnection bind(String storm_id, int port);
     
     /**
      * This method establish a client side connection to a remote server
      * @param storm_id topology ID
      * @param host remote host
      * @param port remote port
+     * @param remoteBpStatus array of booleans reflecting Back Pressure status of remote tasks.
      * @return client side connection
      */
-    public IConnection connect(String storm_id, String host, int port);
+    IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus);
 }

@@ -42,6 +42,11 @@ public interface TridentCollector {
     void emit(List<Object> values);
 
     /**
+     * Flush any buffered tuples (when batching is enabled)
+     */
+    void flush();
+
+    /**
      * Reports an error. The corresponding stack trace will be visible in the Storm UI.
      *
      * Note that calling this method does not alter the processing of a batch. To explicitly fail a batch and trigger

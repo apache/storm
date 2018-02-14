@@ -36,6 +36,7 @@ import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.validation.ConfigValidationAnnotations.ValidatorParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -93,6 +94,38 @@ public class ConfigValidation {
                 return;
             }
             throw new IllegalArgumentException("Field " + name + " must be of type " + type + ". Object: " + o + " actual type: " + o.getClass());
+        }
+    }
+
+    /**
+     * Checks if the named type derives from the specified Class
+     */
+    public static class DerivedTypeValidator extends Validator {
+
+        private Class<?> baseType;
+
+        public DerivedTypeValidator(Map<String, Object> params) {
+            this.baseType = (Class<?>) params.get(ValidatorParams.BASE_TYPE);
+        }
+
+        @Override
+        public void validateField(String name, Object actualTypeName) {
+            validateField(name, this.baseType, actualTypeName);
+        }
+
+        public static void validateField(String name, Class<?> baseType, Object actualTypeName) {
+            if (actualTypeName == null) {
+                return;
+            }
+            try {
+                Class<?> actualType = Class.forName(actualTypeName.toString());
+                if (baseType.isAssignableFrom(actualType)) {
+                    return;
+                }
+                throw new IllegalArgumentException("Field " + name + " must represent a type that derives from '" + baseType + "'. Specified type = " + actualTypeName);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
         }
     }
 

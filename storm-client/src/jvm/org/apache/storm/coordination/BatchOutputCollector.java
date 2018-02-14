@@ -40,7 +40,12 @@ public abstract class BatchOutputCollector {
         emitDirect(taskId, Utils.DEFAULT_STREAM_ID, tuple);
     }
     
-    public abstract void emitDirect(int taskId, String streamId, List<Object> tuple); 
-    
+    public abstract void emitDirect(int taskId, String streamId, List<Object> tuple);
+
+    /**
+     * Flush any buffered tuples (when batching is enabled)
+     */
+    public abstract void flush();
+
     public abstract void reportError(Throwable error);
 }

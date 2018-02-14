@@ -39,6 +39,7 @@ public class ConfigValidationAnnotations {
     public static class ValidatorParams {
         static final String VALIDATOR_CLASS = "validatorClass";
         static final String TYPE = "type";
+        static final String BASE_TYPE = "baseType";
         static final String ENTRY_VALIDATOR_CLASSES = "entryValidatorClasses";
         static final String KEY_VALIDATOR_CLASSES = "keyValidatorClasses";
         static final String VALUE_VALIDATOR_CLASSES = "valueValidatorClasses";
@@ -58,6 +59,14 @@ public class ConfigValidationAnnotations {
         Class<?> validatorClass() default ConfigValidation.SimpleTypeValidator.class;
 
         Class<?> type();
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.FIELD)
+    public @interface isDerivedFrom {
+        Class<?> validatorClass() default ConfigValidation.DerivedTypeValidator.class;
+
+        Class<?> baseType();
     }
 
     @Retention(RetentionPolicy.RUNTIME)

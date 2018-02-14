@@ -63,6 +63,13 @@ public class ProjectedProcessor implements TridentProcessor {
     }
 
     @Override
+    public void flush() {
+        for(TupleReceiver r: _context.getReceivers()) {
+            r.flush();
+        }
+    }
+
+    @Override
     public void finishBatch(ProcessorContext processorContext) {
     }
 

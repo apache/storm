@@ -123,8 +123,8 @@ public class ClientSupervisorUtils {
         }
         final Process process = builder.start();
         if (logPrefix != null || exitCodeCallback != null) {
-            Utils.asyncLoop(new Callable<Object>() {
-                public Object call() {
+            Utils.asyncLoop(new Callable<Long>() {
+                public Long call() {
                     if (logPrefix != null ) {
                         Utils.readAndLogStream(logPrefix,
                                 process.getInputStream());
