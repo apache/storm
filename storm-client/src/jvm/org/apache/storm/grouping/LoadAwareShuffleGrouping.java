@@ -90,8 +90,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
         currentScope = Scope.WORKER_LOCAL;
-        higherBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT));
-        lowerBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT));
+        higherBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND));
+        lowerBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND));
 
         rets = (List<Integer>[]) new List<?>[targetTasks.size()];
         int i = 0;
