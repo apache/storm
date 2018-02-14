@@ -41,7 +41,7 @@ public final class TupleUtils {
     }
 
     public static <T> int chooseTaskIndex(List<T> keys, int numTasks) {
-        return Math.abs(listHashCode(keys)) % numTasks;
+        return Math.floorMod(listHashCode(keys), numTasks);
     }
 
     private static <T> int listHashCode(List<T> alist) {
