@@ -61,7 +61,6 @@
         </developer>
     </developers>
 
-
     <dependencies>
         <dependency>
             <groupId>com.datastax.cassandra</groupId>

@@ -611,7 +611,6 @@ public class Utils {
         } catch (TException | IOException e) {
             LOG.error("An exception happened while downloading {} from blob store.", localFile, e);
         }
-
         if (!isSuccess) {
             try {
                 Files.deleteIfExists(Paths.get(localFile));

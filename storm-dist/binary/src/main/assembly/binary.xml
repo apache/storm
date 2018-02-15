@@ -209,9 +209,6 @@
             <includes>
                 <include>storm*jar</include>
             </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-eventhubs</directory>
@@ -326,9 +323,6 @@
             <includes>
                 <include>README.*</include>
             </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-mongodb</directory>
@@ -344,16 +338,6 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-         <fileSet>
-            <directory>${project.basedir}/../../external/storm-kafka-example/target</directory>
-            <outputDirectory>external/storm-kafka-example</outputDirectory>
-            <includes>
-                <include>storm*-jar-with-dependencies.jar</include>
-            </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
-         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-opentsdb</directory>
             <outputDirectory>external/storm-opentsdb</outputDirectory>
