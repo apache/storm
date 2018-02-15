@@ -17,55 +17,51 @@
  */
 package org.apache.storm.elasticsearch.common;
 
-import java.util.Map;
-import java.util.UUID;
+import static org.junit.Assert.assertEquals;
 
-import com.google.common.collect.ImmutableMap;
-import com.google.common.testing.NullPointerTester;
-
-import org.elasticsearch.common.settings.Settings;
+import org.apache.http.HttpHost;
 import org.junit.Test;
 
-import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertThat;
+import com.google.common.testing.NullPointerTester;
 
 public class EsConfigTest {
 
-    private String clusterName = "name";
-    private String[] nodes = new String[] {"localhost:9300"};
-
     @Test(expected = IllegalArgumentException.class)
-    public void nodesCannotBeEmpty() throws Exception {
-        new EsConfig(clusterName, new String[] {});
-    }
-
-    @Test
-    public void settingsContainClusterName() throws Exception {
-        EsConfig esConfig = new EsConfig(clusterName, nodes);
-        assertThat(esConfig.toBasicSettings().get("cluster.name"), is(clusterName));
-    }
-
-    @Test
-    public void usesAdditionalConfiguration() throws Exception {
-        Map<String, String> additionalSettings = additionalSettings();
-        EsConfig esConfig = new EsConfig(clusterName, nodes, additionalSettings);
-        Settings settings = esConfig.toBasicSettings();
-        assertSettingsContainAllAdditionalValues(settings, additionalSettings);
-    }
-
-    private Map<String, String> additionalSettings() {
-        return ImmutableMap.of("client.transport.sniff", "true", UUID.randomUUID().toString(),
-                               UUID.randomUUID().toString());
-    }
-
-    private void assertSettingsContainAllAdditionalValues(Settings settings, Map<String, String> additionalSettings) {
-        for (String key : additionalSettings.keySet()) {
-            assertThat(settings.get(key), is(additionalSettings.get(key)));
-        }
+    public void urlsCannotBeEmpty() throws Exception {
+        new EsConfig(new String[] {});
     }
 
     @Test
     public void constructorThrowsOnNull() throws Exception {
         new NullPointerTester().testAllPublicConstructors(EsConfig.class);
+    }
+
+    @Test
+    public void usesElasticsearchDefaults() {
+        EsConfig esConfig = new EsConfig();
+        HttpHost[] httpHosts = esConfig.getHttpHosts();
+        assertEquals(1, httpHosts.length);
+        assertEquals("http", httpHosts[0].getSchemeName());
+        assertEquals(9200, httpHosts[0].getPort());
+        assertEquals("localhost", httpHosts[0].getHostName());
+    }
+
+    @Test
+    public void setsSchemePortAndHost() {
+        EsConfig esConfig = new EsConfig("https://somehost:1234");
+        HttpHost[] httpHosts = esConfig.getHttpHosts();
+        assertEquals(1, httpHosts.length);
+        assertEquals("https", httpHosts[0].getSchemeName());
+        assertEquals(1234, httpHosts[0].getPort());
+        assertEquals("somehost", httpHosts[0].getHostName());
+    }
+
+    @Test
+    public void usesMultipleHostnames() {
+        EsConfig esConfig = new EsConfig("http://host1:9200", "http://host2:9200");
+        HttpHost[] httpHosts = esConfig.getHttpHosts();
+        assertEquals(2, httpHosts.length);
+        assertEquals("host1", httpHosts[0].getHostName());
+        assertEquals("host2", httpHosts[1].getHostName());
     }
 }

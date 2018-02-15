@@ -21,6 +21,27 @@ config:
   topology.workers: 1
   # ...
 
+components:
+  - id: "foo"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "foo"
+  - id: "bar"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "bar"
+  - id: "baz"
+    className: "org.apache.storm.flux.test.TestBolt$TestClass"
+    constructorArgs:
+      - "baz"
+
+  - id: "time1"
+    className: "org.apache.storm.topology.base.BaseWindowedBolt$Duration"
+    factory: "hours"
+    factoryArgs:
+      - 10
+
+
 # spout definitions
 spouts:
   - id: "spout-1"
@@ -37,6 +58,7 @@ bolts:
       - FOO # enum class
       - 1.0
       - true
+      - reflist: ["foo", "bar"]
     configMethods:
       - name: "withFoo"
         args:
@@ -49,9 +71,45 @@ bolts:
         args:
           - "foo"
           - "bar"
+      - name: "withClasses"
+        args:
+          - reflist:
+            - "foo"
+            - "bar"
+            - "baz"
+      - name: "withDuration"
+        args:
+          - ref: "time1"
+      - name: "withDurationArr"
+        args:
+          - reflist:
+            - "time1"
+            - "time1"
+      - name: "setTimeLenArr"
+        args:
+          - reflist: ["time1", "time2"]
 
+    properties:
+      - name: "timeLen"
+        ref: "time1"
 
+  - id: "bolt-2"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    parallelism: 1
 
+  - id: "bolt-3"
+    className: "org.apache.storm.flux.test.TestBolt"
+    factory: "newInstance"
+    factoryArgs:
+      - FOO
+    parallelism: 1
+
+  - id: "bolt-4"
+    className: "org.apache.storm.flux.test.TestBolt"
+    constructorArgs:
+      - 10
+    parallelism: 1
 #stream definitions
 # stream definitions define connections between spouts and bolts.
 # note that such connections can be cyclical

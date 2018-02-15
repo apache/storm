@@ -34,8 +34,11 @@ import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Id;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class TransactionalState {
+    private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
     CuratorFramework _curator;
     KryoValuesSerializer _ser;
     KryoValuesDeserializer _des;
@@ -117,6 +120,8 @@ public class TransactionalState {
                 TransactionalState.createNode(_curator, path, ser, _zkAcls,
                         CreateMode.PERSISTENT);
             }
+        } catch (KeeperException.NodeExistsException nne){
+            LOG.warn("Node {} already created.", path);
         } catch(Exception e) {
             throw new RuntimeException(e);
         }        
@@ -126,6 +131,8 @@ public class TransactionalState {
         path = "/" + path;
         try {
             _curator.delete().forPath(path);
+        } catch (KeeperException.NoNodeException nne){
+           LOG.warn("Path {} already deleted.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

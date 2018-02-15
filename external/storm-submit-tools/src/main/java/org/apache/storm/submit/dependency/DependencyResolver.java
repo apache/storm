@@ -18,34 +18,68 @@
 
 package org.apache.storm.submit.dependency;
 
-import org.sonatype.aether.RepositorySystem;
-import org.sonatype.aether.RepositorySystemSession;
-import org.sonatype.aether.collection.CollectRequest;
-import org.sonatype.aether.graph.Dependency;
-import org.sonatype.aether.graph.DependencyFilter;
-import org.sonatype.aether.repository.RemoteRepository;
-import org.sonatype.aether.resolution.ArtifactResolutionException;
-import org.sonatype.aether.resolution.ArtifactResult;
-import org.sonatype.aether.resolution.DependencyRequest;
-import org.sonatype.aether.resolution.DependencyResolutionException;
-import org.sonatype.aether.util.artifact.JavaScopes;
-import org.sonatype.aether.util.filter.DependencyFilterUtils;
-
 import java.io.File;
-import java.net.MalformedURLException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class DependencyResolver {
-    private RepositorySystem system = Booter.newRepositorySystem();
-    private RepositorySystemSession session;
-    private RemoteRepository mavenCentral = Booter.newCentralRepository();
-    private RemoteRepository mavenLocal = Booter.newLocalRepository();
+import org.eclipse.aether.RepositorySystem;
+import org.eclipse.aether.RepositorySystemSession;
+import org.eclipse.aether.collection.CollectRequest;
+import org.eclipse.aether.graph.Dependency;
+import org.eclipse.aether.graph.DependencyFilter;
+import org.eclipse.aether.repository.Proxy;
+import org.eclipse.aether.repository.RemoteRepository;
+import org.eclipse.aether.resolution.ArtifactResolutionException;
+import org.eclipse.aether.resolution.ArtifactResult;
+import org.eclipse.aether.resolution.DependencyRequest;
+import org.eclipse.aether.resolution.DependencyResolutionException;
+import org.eclipse.aether.util.artifact.JavaScopes;
+import org.eclipse.aether.util.filter.DependencyFilterUtils;
 
+/**
+ * Resolver class of dependencies.
+ */
+public class DependencyResolver {
+    private final RepositorySystem system = Booter.newRepositorySystem();
+    private final RepositorySystemSession session;
+
+    private List<RemoteRepository> remoteRepositories;
+    private Proxy proxy;
+
+    /**
+     * Constuctor.
+     *
+     * @param localRepoPath the directory of local repository
+     */
     public DependencyResolver(String localRepoPath) {
+        this(localRepoPath, new ArrayList<RemoteRepository>());
+    }
+
+    /**
+     * Constuctor.
+     *
+     * @param localRepoPath the directory of local repository
+     * @param repositories list of remote repositories
+     */
+    public DependencyResolver(String localRepoPath, List<RemoteRepository> repositories) {
         localRepoPath = handleRelativePath(localRepoPath);
 
         session = Booter.newRepositorySystemSession(system, localRepoPath);
+
+        remoteRepositories = new ArrayList<>();
+        remoteRepositories.add(Booter.newCentralRepository());
+        remoteRepositories.addAll(repositories);
+    }
+
+    /**
+     * Setter of proxy if needed.
+     *
+     * @param proxyParam proxy object
+     */
+    public void setProxy(Proxy proxyParam) {
+        this.proxy = proxyParam;
+        applyProxy();
     }
 
     private String handleRelativePath(String localRepoPath) {
@@ -62,11 +96,17 @@ public class DependencyResolver {
         return localRepoPath;
     }
 
-    public List<ArtifactResult> resolve(List<Dependency> dependencies) throws MalformedURLException,
+    /**
+     * Resolve dependencies and return downloaded information of artifacts.
+     *
+     * @param dependencies the list of dependency
+     * @return downloaded information of artifacts
+     * @throws DependencyResolutionException If the dependency tree could not be built or any dependency
+     *     artifact could not be resolved.
+     * @throws ArtifactResolutionException If the artifact could not be resolved.
+     */
+    public List<ArtifactResult> resolve(List<Dependency> dependencies) throws
             DependencyResolutionException, ArtifactResolutionException {
-
-        DependencyFilter classpathFilter = DependencyFilterUtils
-                .classpathFilter(JavaScopes.COMPILE, JavaScopes.RUNTIME);
 
         if (dependencies.size() == 0) {
             return Collections.EMPTY_LIST;
@@ -78,11 +118,24 @@ public class DependencyResolver {
             collectRequest.addDependency(dependencies.get(idx));
         }
 
-        collectRequest.addRepository(mavenCentral);
-        collectRequest.addRepository(mavenLocal);
+        for (RemoteRepository repository : remoteRepositories) {
+            collectRequest.addRepository(repository);
+        }
+
+        DependencyFilter classpathFilter = DependencyFilterUtils
+                .classpathFilter(JavaScopes.COMPILE, JavaScopes.RUNTIME);
 
         DependencyRequest dependencyRequest = new DependencyRequest(collectRequest, classpathFilter);
         return system.resolveDependencies(session, dependencyRequest).getArtifactResults();
+    }
+
+    private void applyProxy() {
+        List<RemoteRepository> appliedRepositories = new ArrayList<>(remoteRepositories.size());
+        for (RemoteRepository repository : remoteRepositories) {
+            appliedRepositories.add(new RemoteRepository.Builder(repository).setProxy(proxy).build());
+        }
+
+        this.remoteRepositories = appliedRepositories;
     }
 
 }

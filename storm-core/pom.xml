@@ -20,7 +20,7 @@
     <parent>
         <artifactId>storm</artifactId>
         <groupId>org.apache.storm</groupId>
-        <version>1.0.1.2.6.0.0-SNAPSHOT</version>
+        <version>1.2.1-SNAPSHOT</version>
         <relativePath>..</relativePath>
     </parent>
     <groupId>org.apache.storm</groupId>
@@ -31,6 +31,7 @@
 
     <properties>
         <worker-launcher.conf.dir>/etc/storm</worker-launcher.conf.dir>
+        <worker-launcher.build.dir>${project.build.directory}/native/worker-launcher</worker-launcher.build.dir>
         <worker-launcher.additional_cflags />
         <argLine />
     </properties>
@@ -144,7 +145,7 @@
           <artifactId>java.jmx</artifactId>
           <version>${java_jmx.version}</version>
         </dependency>
-        
+
         <!--java-->
         <dependency>
             <groupId>commons-io</groupId>
@@ -188,44 +189,14 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
             <scope>compile</scope>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-recipes</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-test</artifactId>
-            <exclusions>
-                <exclusion>
-                    <groupId>log4j</groupId>
-                    <artifactId>log4j</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>slf4j-log4j12</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.googlecode.json-simple</groupId>
@@ -281,12 +252,25 @@
             <artifactId>metrics-core</artifactId>
         </dependency>
         <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-graphite</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>io.dropwizard.metrics</groupId>
+            <artifactId>metrics-ganglia</artifactId>
+        </dependency>
+        <dependency>
             <groupId>metrics-clojure</groupId>
             <artifactId>metrics-clojure</artifactId>
         </dependency>
         <dependency>
             <groupId>org.mockito</groupId>
-            <artifactId>mockito-all</artifactId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-library</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>
@@ -368,7 +352,7 @@
     </dependencies>
     <build>
         <sourceDirectory>src/jvm</sourceDirectory>
-         <testSourceDirectory>test/jvm</testSourceDirectory>
+        <testSourceDirectory>test/jvm</testSourceDirectory>
         <resources>
             <resource>
                 <directory>../conf</directory>
@@ -526,7 +510,6 @@
                             <include>org.clojure:tools.namespace</include>
                             <include>cheshire:cheshire</include>
                             <include>org.clojure:core.incubator</include>
-                            <include>io.dropwizard.metrics:*</include>
                             <include>metrics-clojure:*</include>
                         </includes>
                     </artifactSet>
@@ -701,10 +684,6 @@
                           <shadedPattern>org.apache.storm.shade.org.eclipse.jetty</shadedPattern>
                         </relocation>
                         <relocation>
-                            <pattern>com.codahale.metrics</pattern>
-                            <shadedPattern>org.apache.storm.shade.com.codahale.metrics</shadedPattern>
-                        </relocation>
-                        <relocation>
                             <pattern>metrics.core</pattern>
                             <shadedPattern>org.apache.storm.shade.metrics.core</shadedPattern>
                         </relocation>
@@ -830,14 +809,21 @@
                                 <exclude>META-INF/NOTICE.txt</exclude>
                             </excludes>
                         </filter>
-                         <filter>
-                           <artifact>*:*</artifact>
-                           <excludes>
-                             <exclude>META-INF/*.SF</exclude>
-                             <exclude>META-INF/*.DSA</exclude>
-                             <exclude>META-INF/*.RSA</exclude>
-                           </excludes>
-                         </filter>
+                        <filter>
+                            <artifact>*:*</artifact>
+                            <excludes>
+                                <exclude>META-INF/*.SF</exclude>
+                                <exclude>META-INF/*.sf</exclude>
+                                <exclude>META-INF/*.DSA</exclude>
+                                <exclude>META-INF/*.dsa</exclude>
+                                <exclude>META-INF/*.RSA</exclude>
+                                <exclude>META-INF/*.rsa</exclude>
+                                <exclude>META-INF/*.EC</exclude>
+                                <exclude>META-INF/*.ec</exclude>
+                                <exclude>META-INF/MSFTSIG.SF</exclude>
+                                <exclude>META-INF/MSFTSIG.RSA</exclude>
+                            </excludes>
+                        </filter>
                     </filters>
                 </configuration>
                 <dependencies>
@@ -1046,13 +1032,11 @@
                     <plugin>
                         <groupId>org.codehaus.mojo</groupId>
                         <artifactId>exec-maven-plugin</artifactId>
-                        <version>1.2.1</version>
+                        <version>1.6.0</version>
                         <executions>
                             <execution>
                                 <phase>generate-sources</phase>
                                 <goals><goal>exec</goal></goals>
-                            </execution>
-                        </executions>
                         <configuration>
                             <executable>sh</executable>
                             <arguments>
@@ -1060,50 +1044,62 @@
                                 <argument>mkdir -p ${project.build.directory}/; cp -rufv ${basedir}/src/native/ ${project.build.directory}/</argument>
                             </arguments>
                         </configuration>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>make-maven-plugin</artifactId>
-                        <version>1.0-beta-1</version>
-                        <executions>
+                            </execution>
                             <execution>
                                 <id>compile</id>
                                 <phase>compile</phase>
                                 <goals>
-                                    <goal>autoreconf</goal>
-                                    <goal>configure</goal>
-                                    <goal>make-install</goal>
+                                    <goal>exec</goal>
                                 </goals>
+                                <configuration>
+                                    <executable>sh</executable>
+                                    <arguments>
+                                        <argument>compile-worker-launcher.sh</argument>
+                                    </arguments>
+                                    <workingDirectory>${worker-launcher.build.dir}</workingDirectory>
+                                </configuration>
                             </execution>
                             <execution>
                                 <id>test</id>
                                 <phase>test</phase>
                                 <goals>
-                                    <goal>test</goal>
+                                    <goal>exec</goal>
                                 </goals>
+                        <configuration>
+                                    <executable>make</executable>
+                            <arguments>
+                                        <argument>check</argument>
+                            </arguments>
+                                    <workingDirectory>${worker-launcher.build.dir}</workingDirectory>
+                        </configuration>
                             </execution>
                         </executions>
-                        <configuration>
-                            <!-- autoreconf settings -->
-                            <workDir>${project.build.directory}/native/worker-launcher</workDir>
-                            <arguments>
-                                <argument>-i</argument>
-                            </arguments>
-
-                            <!-- configure settings -->
-                            <configureEnvironment>
-                                <property>
-                                    <name>CFLAGS</name>
-                                    <value>-DEXEC_CONF_DIR=${worker-launcher.conf.dir} ${worker-launcher.additional_cflags}</value>
-                                </property>
-                            </configureEnvironment>
-                            <configureWorkDir>${project.build.directory}/native/worker-launcher</configureWorkDir>
-                            <prefix>/usr/local</prefix>
-
-                            <!-- configure & make settings -->
-                            <destDir>${project.build.directory}/native/target</destDir>
-
-                        </configuration>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-resources-plugin</artifactId>
+                        <version>3.0.2</version>
+                        <executions>
+                            <execution>
+                                <id>copy-build-scripts</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>copy-resources</goal>
+                                </goals>
+                                <configuration>
+                                    <resources>
+                                        <resource>
+                                            <directory>src/resources</directory>
+                                            <includes>
+                                                <include>compile-worker-launcher.sh</include>
+                                            </includes>
+                                            <filtering>true</filtering>
+                                        </resource>
+                                    </resources>
+                                    <outputDirectory>${worker-launcher.build.dir}</outputDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
                     </plugin>
                 </plugins>
             </build>

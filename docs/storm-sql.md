@@ -31,11 +31,9 @@ The following features are supported in the current repository:
 * Streaming from and to external data sources
 * Filtering tuples
 * Projections
-* Aggregations (Grouping)
-* Join (Inner, Left outer, Right outer, Full outer)
-* User defined function (scalar and aggregate)
+* User defined function (scalar)
 
-Some of features rely on Trident micro-batch behavior: Aggregations and Join. When Storm SQL will support native `Streaming SQL`, the behaviors and limitations of these features may be also changed too.    
+Aggregations and Join are not supported by intention. When Storm SQL will support native `Streaming SQL`, these features will be introduced.    
 
 ## Specifying External Data Sources
 
@@ -48,11 +46,19 @@ CREATE EXTERNAL TABLE table_name field_list
       OUTPUTFORMAT output_format_classname
     ]
     LOCATION location
+    [ PARALLELISM parallelism ]
     [ TBLPROPERTIES tbl_properties ]
     [ AS select_stmt ]
 ```
 
-You can find detailed explanations of the properties in [Hive Data Definition Language](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL). For example, the following statement specifies a Kafka spout and sink:
+You can find detailed explanations of the properties in [Hive Data Definition Language](https://cwiki.apache.org/confluence/display/Hive/LanguageManual+DDL). 
+
+`PARALLELISM` is StormSQL's own keyword which describes parallelism hint for input data source. This is same as providing parallelism hint to Trident Spout.
+As same as Trident, downstream operators are executed with same parallelism before repartition (Aggregation triggers repartition).
+
+Default value is 1, and this option is no effect on output data source. (We might change if needed. Normally repartition is the thing to avoid.)
+
+For example, the following statement specifies a Kafka spout and sink:
 
 ```
 CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/brokers?topic=test' TBLPROPERTIES '{"producer":{"bootstrap.servers":"localhost:9092","acks":"1","key.serializer":"org.apache.org.apache.storm.kafka.IntSerializer","value.serializer":"org.apache.org.apache.storm.kafka.ByteBufferSerializer"}}'
@@ -62,7 +68,7 @@ CREATE EXTERNAL TABLE FOO (ID INT PRIMARY KEY) LOCATION 'kafka://localhost:2181/
 
 Users plug in external data sources through implementing the `ISqlTridentDataSource` interface and registers them using the mechanisms of Java's service loader. The external data source will be chosen based on the scheme of the URI of the tables. Please refer to the implementation of `storm-sql-kafka` for more details.
 
-## Specifying User Defined Function (UDF) and User Defined Aggregate Function (UDAF)
+## Specifying User Defined Function (UDF)
 
 Users can define user defined function (scalar or aggregate) using `CREATE FUNCTION` statement.
 For example, the following statement defines `MYPLUS` function which uses `org.apache.storm.sql.TestUtils$MyPlus` class.
@@ -72,8 +78,7 @@ CREATE FUNCTION MYPLUS AS 'org.apache.storm.sql.TestUtils$MyPlus'
 ```
 
 Storm SQL determines whether the function as scalar or aggregate by checking which methods are defined.
-If the class defines `evaluate` method, Storm SQL treats the function as `scalar`,
-and if the class defines `add` method, Storm SQL treats the function as `aggregate`.
+If the class defines `evaluate` method, Storm SQL treats the function as `scalar`.
 
 Example of class for scalar function is here:
 
@@ -85,25 +90,6 @@ Example of class for scalar function is here:
   }
 
 ```
-
-and class for aggregate function is here:
-
-```
-  public class MyConcat {
-    public static String init() {
-      return "";
-    }
-    public static String add(String accumulator, String val) {
-      return accumulator + val;
-    }
-    public static String result(String accumulator) {
-      return accumulator;
-    }
-  }
-```
-
-If users don't define `result` method, result is the last return value of `add` method.
-Users need to define `result` method only when we need to transform accumulated value.
 
 ## Example: Filtering Kafka Stream
 
@@ -180,12 +166,4 @@ LogicalTableModify(table=[[LARGE_ORDERS]], operation=[INSERT], updateColumnList=
 ## Current Limitations
 
 - Windowing is yet to be implemented.
-- Only equi-join (single field equality) is supported for joining table.
-- Joining table only applies within each small batch that comes off of the spout.
-  - Not across batches.
-  - Limitation came from `join` feature of Trident.
-  - Please refer this doc: `Trident API Overview` for details.
-- Specifying parallelism hints in the topology is not yet supported. 
-  - All processors have a parallelism hint of 1.
-- The current implementation of the Kafka connector in StormSQL assumes both the input and the output are in JSON formats. 
-  - The connector has not yet recognized the `INPUTFORMAT` and `OUTPUTFORMAT` clauses yet.
+- Aggregation and join are not supported (waiting for `Streaming SQL` to be matured)

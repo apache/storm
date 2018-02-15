@@ -17,79 +17,121 @@
  */
 package org.apache.storm.redis.state;
 
+import com.google.common.primitives.UnsignedBytes;
+import org.apache.storm.redis.common.commands.RedisCommands;
+import org.apache.storm.redis.common.container.RedisCommandsInstanceContainer;
 import org.apache.storm.state.DefaultStateSerializer;
-import org.apache.storm.redis.common.container.JedisCommandsInstanceContainer;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 import org.mockito.invocation.InvocationOnMock;
 import org.mockito.stubbing.Answer;
-import redis.clients.jedis.BinaryClient;
-import redis.clients.jedis.JedisCommands;
-import redis.clients.jedis.ScanResult;
-import redis.clients.jedis.SortingParams;
-import redis.clients.jedis.Tuple;
+import redis.clients.util.SafeEncoder;
 
 import java.util.HashMap;
-import java.util.List;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Set;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+import java.util.concurrent.ConcurrentSkipListMap;
 
 import static org.junit.Assert.*;
 
 /**
  * Unit tests for {@link RedisKeyValueState}
+ *
+ * NOTE: The type of key for mockMap is String, which should be byte[],
+ * since but byte[] doesn't implement equals() so taking workaround to make life happier.
+ * It shouldn't make issues on Redis side, since raw type of Redis is binary.
  */
 public class RedisKeyValueStateTest {
-    JedisCommandsInstanceContainer mockContainer;
-    JedisCommands mockCommands;
+    RedisCommandsInstanceContainer mockContainer;
+    RedisCommands mockCommands;
     RedisKeyValueState<String, String> keyValueState;
 
     @Before
     public void setUp() {
-        final Map<String, Map<String, String>> mockMap = new HashMap<>();
-        mockContainer = Mockito.mock(JedisCommandsInstanceContainer.class);
-        mockCommands = Mockito.mock(JedisCommands.class);
+        final NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap =
+                new ConcurrentSkipListMap<>(UnsignedBytes.lexicographicalComparator());
+        mockContainer = Mockito.mock(RedisCommandsInstanceContainer.class);
+        mockCommands = Mockito.mock(RedisCommands.class);
         Mockito.when(mockContainer.getInstance()).thenReturn(mockCommands);
         ArgumentCaptor<String> stringArgumentCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<String> stringArgumentCaptor2 = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Map> mapArgumentCaptor = ArgumentCaptor.forClass(Map.class);
+
+        Mockito.when(mockCommands.exists(Mockito.any(byte[].class)))
+                .thenAnswer(new Answer<Boolean>() {
+                    @Override
+                    public Boolean answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        return exists(mockMap, (byte[]) args[0]);
+                    }
+                });
+
+        Mockito.when(mockCommands.del(Mockito.any(byte[].class)))
+                .thenAnswer(new Answer<Long>() {
+                    @Override
+                    public Long answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        return del(mockMap, (byte[]) args[0]);
+                    }
+                });
+
+        Mockito.when(mockCommands.hmset(Mockito.any(byte[].class), Mockito.anyMap()))
+                .thenAnswer(new Answer<String>() {
+                    @Override
+                    public String answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        return hmset(mockMap, (byte[]) args[0], (Map<byte[], byte[]>) args[1]);
+                    }
+                });
+
+        Mockito.when(mockCommands.hget(Mockito.any(byte[].class), Mockito.any(byte[].class)))
+                .thenAnswer(new Answer<byte[]>() {
+                    @Override
+                    public byte[] answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        return hget(mockMap, (byte[]) args[0], (byte[]) args[1]);
+                    }
+                });
+
+        Mockito.when(mockCommands.hdel(Mockito.any(byte[].class), Mockito.<byte[]>anyVararg()))
+                .thenAnswer(new Answer<Long>() {
+                    @Override
+                    public Long answer(InvocationOnMock invocation) throws Throwable {
+                        Object[] args = invocation.getArguments();
+                        int argsSize = args.length;
+                        byte[][] fields = Arrays.asList(args).subList(1, argsSize).toArray(new byte[argsSize - 1][]);
+                        return hdel(mockMap, (byte[]) args[0], fields);
+                    }
+                });
 
         Mockito.when(mockCommands.exists(Mockito.anyString()))
                 .thenAnswer(new Answer<Boolean>() {
                     @Override
                     public Boolean answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();
-                        return mockMap.containsKey((String) args[0]);
+                        return exists(mockMap, (String) args[0]);
                     }
                 });
-
 
         Mockito.when(mockCommands.hmset(Mockito.anyString(), Mockito.anyMap()))
                 .thenAnswer(new Answer<String>() {
                     @Override
                     public String answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();
-                        return hmset(mockMap, (String) args[0], (Map) args[1]);
+                        return hmset(mockMap, (String) args[0], (Map<String, String>) args[1]);
                     }
                 });
 
-        Mockito.when(mockCommands.del(Mockito.anyString()))
-                .thenAnswer(new Answer<Long>() {
+        Mockito.when(mockCommands.hgetAll(Mockito.anyString()))
+                .thenAnswer(new Answer<Map<String, String>>() {
                     @Override
-                    public Long answer(InvocationOnMock invocation) throws Throwable {
+                    public Map<String, String> answer(InvocationOnMock invocation) throws Throwable {
                         Object[] args = invocation.getArguments();
-                        return del(mockMap, (String) args[0]);
-                    }
-                });
-
-        Mockito.when(mockCommands.hget(Mockito.anyString(), Mockito.anyString()))
-                .thenAnswer(new Answer<String>() {
-                    @Override
-                    public String answer(InvocationOnMock invocation) throws Throwable {
-                        Object[] args = invocation.getArguments();
-                        return hget(mockMap, (String) args[0], (String) args[1]);
+                        return hgetAll(mockMap, (String) args[0]);
                     }
                 });
 
@@ -97,12 +139,24 @@ public class RedisKeyValueStateTest {
                                                                new DefaultStateSerializer<String>());
     }
 
-
     @Test
     public void testPutAndGet() throws Exception {
         keyValueState.put("a", "1");
         keyValueState.put("b", "2");
         assertEquals("1", keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+    }
+
+    @Test
+    public void testPutAndDelete() throws Exception {
+        keyValueState.put("a", "1");
+        keyValueState.put("b", "2");
+        assertEquals("1", keyValueState.get("a"));
+        assertEquals("2", keyValueState.get("b"));
+        assertEquals(null, keyValueState.get("c"));
+        assertEquals("1", keyValueState.delete("a"));
+        assertEquals(null, keyValueState.get("a"));
         assertEquals("2", keyValueState.get("b"));
         assertEquals(null, keyValueState.get("c"));
     }
@@ -124,6 +178,20 @@ public class RedisKeyValueStateTest {
         assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
         keyValueState.rollback();
         assertArrayEquals(new String[]{"1", "2", null}, getValues());
+        keyValueState.put("c", "3");
+        assertEquals("2", keyValueState.delete("b"));
+        assertEquals("3", keyValueState.delete("c"));
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.prepareCommit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.commit(2);
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
+        keyValueState.put("b", "2");
+        keyValueState.prepareCommit(3);
+        keyValueState.put("c", "3");
+        assertArrayEquals(new String[]{"1", "2", "3"}, getValues());
+        keyValueState.rollback();
+        assertArrayEquals(new String[]{"1", null, null}, getValues());
     }
 
     private String[] getValues() {
@@ -134,21 +202,73 @@ public class RedisKeyValueStateTest {
         };
     }
 
-    private String hmset(Map<String, Map<String, String>> mockMap, String key, Map value) {
-        mockMap.put(key, value);
+    private Boolean exists(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, byte[] key) {
+        return mockMap.containsKey(key);
+    }
+
+    private String hmset(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, byte[] key, Map<byte[], byte[]> value) {
+        NavigableMap<byte[], byte[]> currentValue = mockMap.get(key);
+        if (currentValue == null) {
+            currentValue = new TreeMap<>(UnsignedBytes.lexicographicalComparator());
+        }
+
+        for (Map.Entry<byte[], byte[]> entry : value.entrySet()) {
+            currentValue.put(entry.getKey(), entry.getValue());
+        }
+
+        mockMap.put(key, currentValue);
         return "";
     }
 
-    private Long del(Map<String, Map<String, String>> mockMap, String key) {
-        mockMap.remove(key);
-        return 0L;
+    private Long del(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, byte[] key) {
+        if (mockMap.remove(key) == null)
+            return 0L;
+        else
+            return 1L;
     }
 
-    private String hget(Map<String, Map<String, String>> mockMap, String namespace, String key) {
+    private byte[] hget(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, byte[] namespace, byte[] key) {
         if (mockMap.containsKey(namespace)) {
             return mockMap.get(namespace).get(key);
         }
         return null;
     }
 
+    private Long hdel(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, byte[] namespace, byte[] ... keys) {
+        Long count = 0L;
+        for (byte[] key: keys) {
+            if (mockMap.get(namespace).remove(key) != null) count++;
+        }
+        return count;
+    }
+
+    private Boolean exists(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, String key) {
+        return mockMap.containsKey(SafeEncoder.encode(key));
+    }
+
+
+    private String hmset(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, String key, Map<String, String> value) {
+        NavigableMap<byte[], byte[]> currentValue = mockMap.get(SafeEncoder.encode(key));
+        if (currentValue == null) {
+            currentValue = new TreeMap<>(UnsignedBytes.lexicographicalComparator());
+        }
+
+        for (Map.Entry<String, String> entry : value.entrySet()) {
+            currentValue.put(SafeEncoder.encode(entry.getKey()), SafeEncoder.encode(entry.getValue()));
+        }
+
+        mockMap.put(SafeEncoder.encode(key), currentValue);
+        return "";
+    }
+
+    private Map<String, String> hgetAll(NavigableMap<byte[], NavigableMap<byte[], byte[]>> mockMap, String key) {
+        Map<byte[], byte[]> currentValue = mockMap.get(SafeEncoder.encode(key));
+
+        Map<String, String> converted = new HashMap<>(currentValue.size());
+        for (Map.Entry<byte[], byte[]> entry : currentValue.entrySet()) {
+            converted.put(SafeEncoder.encode(entry.getKey()), SafeEncoder.encode(entry.getValue()));
+        }
+
+        return converted;
+    }
 }

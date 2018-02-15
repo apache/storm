@@ -19,12 +19,13 @@
 require 'uri'
 # Vagrantfile API/syntax version. Don't touch unless you know what you're doing!
 VAGRANTFILE_API_VERSION = "2"
-STORM_BOX_TYPE = "hashicorp/precise64"
-STORM_ZIP = Dir.glob("../../storm-dist/binary/target/**/*.zip")
+STORM_BOX_TYPE = "ubuntu/xenial64"
+STORM_ZIP = Dir.glob("../../storm-dist/binary/**/*.zip")
 if(STORM_ZIP.length != 1)
-  raise "expected one storm-binary found: " + STORM_ZIP.join(",")
+  raise "Expected one storm-binary found: " + STORM_ZIP.join(",") + ". Did you run : cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
 end
 STORM_ARCHIVE = STORM_ZIP[0]
+puts "Using storm archive: " + STORM_ARCHIVE
 STORM_VERSION = File.basename(STORM_ARCHIVE, '.*')
 STORM_SUPERVISOR_COUNT = 2
 
@@ -52,12 +53,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     }
   end
 
-  if(!File.exist?(STORM_ARCHIVE))
-    `wget -N #{STORM_DIST_URL}`
-  end
-
-  config.vm.synced_folder "../../", "/home/vagrant/build/vagrant/storm"
-  config.vm.synced_folder "~/.m2", "/home/vagrant/.m2"
+  config.vm.synced_folder "../../", "/home/ubuntu/build/vagrant/storm"
+  config.vm.synced_folder "~/.m2", "/home/ubuntu/.m2"
 
   config.vm.define "node1" do |node1|
     node1.vm.provider "virtualbox" do |v|
@@ -65,7 +62,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     end
     node1.vm.network "private_network", ip: "192.168.50.3"
     node1.vm.hostname = "node1"
-    node1.vm.provision :shell, :inline => "echo run integration test; whoami; env; cd /home/vagrant/build/vagrant/storm/; pwd; bash integration-test/run-it.sh", privileged: false
+    node1.vm.provision :shell, :inline => "echo run integration test; whoami; env; cd /home/ubuntu/build/vagrant/storm/; pwd; bash integration-test/run-it.sh", privileged: false
     #node1.vm.provision :shell, :inline => "sudo ln -fs /vagrant/etc-hosts /etc/hosts"
   end
 

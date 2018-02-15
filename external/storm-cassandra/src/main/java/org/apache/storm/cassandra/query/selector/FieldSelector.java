@@ -26,10 +26,8 @@ import java.io.Serializable;
 
 public class FieldSelector implements Serializable {
 
+    protected final String field;
     private String as;
-
-    private String field;
-
     private boolean isNow;
 
     /**
@@ -41,7 +39,15 @@ public class FieldSelector implements Serializable {
     }
 
     public Column select(ITuple t) {
-        return new Column<>(as != null ? as : field, isNow ? UUIDs.timeBased() : t.getValueByField(field));
+        return new Column<>(as != null ? as : field, isNow ? UUIDs.timeBased() : getFieldValue(t));
+    }
+
+    /**
+     * @param tuple
+     * @return Compute the value of this field from given {@code tuple}.
+     */
+    protected Object getFieldValue(ITuple tuple) {
+        return tuple.getValueByField(field);
     }
 
     /**

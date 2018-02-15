@@ -39,6 +39,9 @@ public class OutputFieldsGetter implements OutputFieldsDeclarer {
     }
 
     public void declareStream(String streamId, boolean direct, Fields fields) {
+        if (null == streamId) {
+            throw new IllegalArgumentException("streamId can't be null");
+        }
         if(_fields.containsKey(streamId)) {
             throw new IllegalArgumentException("Fields for " + streamId + " already set");
         }

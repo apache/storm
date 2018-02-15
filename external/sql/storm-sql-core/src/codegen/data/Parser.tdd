@@ -32,6 +32,7 @@
     "LOCATION",
     "INPUTFORMAT",
     "OUTPUTFORMAT",
+    "PARALLELISM",
     "STORED",
     "TBLPROPERTIES",
     "JAR"
@@ -53,6 +54,15 @@
   ]
 
   nonReservedKeywords: [
+  ]
+
+  createStatementParserMethods: [
+  ]
+
+  alterStatementParserMethods: [
+  ]
+
+  dropStatementParserMethods: [
   ]
 
   # List of files in @includes directory that have parser method

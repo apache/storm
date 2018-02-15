@@ -17,16 +17,74 @@
  */
 package org.apache.storm.hbase.common;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.util.Bytes;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hadoop.security.token.Token;
+import org.apache.hadoop.security.token.TokenIdentifier;
+import org.apache.storm.hbase.security.HBaseSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.math.BigDecimal;
+import java.security.PrivilegedExceptionAction;
 
 public class Utils {
     private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
+    public static final String TOKEN_KIND_HBASE_AUTH_TOKEN = "HBASE_AUTH_TOKEN";
 
     private Utils(){}
+
+    public static HTable getTable(UserProvider provider, final Configuration config, final String tableName)
+            throws IOException, InterruptedException {
+        UserGroupInformation ugi;
+        if (provider != null) {
+            ugi = provider.getCurrent().getUGI();
+            LOG.debug("Current USER for provider: {}", ugi.getUserName());
+        } else {
+            // autocreds puts delegation token into current user UGI
+            ugi = UserGroupInformation.getCurrentUser();
+
+            LOG.debug("UGI for current USER : {}", ugi.getUserName());
+            boolean foundHBaseAuthToken = false;
+            for (Token<? extends TokenIdentifier> token : ugi.getTokens()) {
+                LOG.debug("Token in UGI (delegation token): {} / {}", token.toString(),
+                        token.decodeIdentifier().getUser());
+
+                // token.getKind() = Text, Text is annotated by @Stringable
+                // which ensures toString() implementation
+                if (token.getKind().toString().equals(TOKEN_KIND_HBASE_AUTH_TOKEN)) {
+                    // use UGI from token
+                    if (!foundHBaseAuthToken) {
+                        LOG.debug("Found HBASE_AUTH_TOKEN - using the token to replace current user.");
+
+                        ugi = token.decodeIdentifier().getUser();
+                        ugi.addToken(token);
+
+                        foundHBaseAuthToken = true;
+                    } else {
+                        LOG.warn("Found multiple HBASE_AUTH_TOKEN - will use already found token. " +
+                                "Please enable DEBUG log level to track delegation tokens.");
+                    }
+                }
+            }
+
+            if (!foundHBaseAuthToken) {
+                LOG.warn("Can't find HBase auth token in delegation tokens.");
+            }
+
+        }
+
+        HBaseSecurityUtil.spawnReLoginThread(ugi);
+        return ugi.doAs(new PrivilegedExceptionAction<HTable>() {
+            @Override public HTable run() throws IOException {
+                return new HTable(config, tableName);
+            }
+        });
+    }
 
     public static long toLong(Object obj){
         long l = 0;

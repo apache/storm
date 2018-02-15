@@ -213,14 +213,9 @@ To pull in a merge request you should generally follow the command line instruct
         $ git pull <remote_repo_url> <remote_branch>
     You can use `./dev-tools/storm-merge.py <pull-number>` to produce the above command most of the time.
 
-4.  Assuming that the pull request merges without any conflicts:
-    Update the top-level `CHANGELOG.md`, and add in the JIRA ticket number (example: `STORM-1234`) and ticket
-    description to the change log.  Make sure that you place the JIRA ticket number in the commit comments where
-    applicable.
+4. Run any sanity tests that you think are needed.
 
-5. Run any sanity tests that you think are needed.
-
-6. Once you are confident that everything is ok, you can merge your local test branch into your local `master` branch,
+5. Once you are confident that everything is ok, you can merge your local test branch into your local `master` branch,
    and push the changes back to the official Apache repo.
 
         # Pull request looks ok, change log was updated, etc.  We are ready for pushing.
@@ -232,7 +227,7 @@ To pull in a merge request you should generally follow the command line instruct
         # automatically a short while after you have pushed to the Apache repo.
         $ git push origin master
 
-7. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
+6. The last step is updating the corresponding JIRA ticket.  [Go to JIRA](https://issues.apache.org/jira/browse/STORM)
    and resolve the ticket.  Be sure to set the `Fix Version/s` field to the version you pushed your changes to.
    It is usually good practice to thank the author of the pull request for their contribution if you have not done
    so already.
@@ -243,19 +238,19 @@ To pull in a merge request you should generally follow the command line instruct
 # Build the code and run the tests
 
 ## Prerequisites
-Firt of all you need to make sure you are using maven 3.2.5 or below.  There is a bug in later versions of maven as linked to from https://issues.apache.org/jira/browse/MSHADE-206 that
+First of all you need to make sure you are using maven 3.2.5 or below.  There is a bug in later versions of maven as linked to from https://issues.apache.org/jira/browse/MSHADE-206 that
 cause shaded dependencies to not be packaged correctly.  Also please be aware that because we are shading dependencies mvn dependency:tree will not always show the dependencies correctly. 
 
-In order to build `storm` you need `python`, `ruby` and `nodejs`. In order to avoid an overful page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
+In order to build `storm` you need `python`, `ruby` and `nodejs`. In order to avoid an overfull page we don't provide platform/OS specific installation instructions for those here. Please refer to you platform's/OS' documentation for support.
 
 The `ruby` package manager `rvm` and `nodejs` package manager `nvm` are for convenience and are used in the tests which run on [travis](https://travis-ci.org/apache/storm). They can be installed using `curl -L https://get.rvm.io | bash -s stable --autolibs=enabled && source ~/.profile` (see the [rvm installation instructions](https://github.com/rvm/rvm) for details) and `wget -qO- https://raw.githubusercontent.com/creationix/nvm/v0.26.1/install.sh | bash && source ~/.bashrc` (see the [nvm installation instructions](https://github.com/creationix/nvm) for details).
 
 With `rvm` and `nvm` installed you can run
 
 ```sh
-rvm use 2.1.5 --install
-nvm install 0.12.2
-nvm use 0.12.2
+rvm use 2.4.2 --install
+nvm install 8.9.3
+nvm use 8.9.3
 ```
 
 in order to get started as fast as possible. Users can still install a specific version of `ruby` and/or `node` manually.

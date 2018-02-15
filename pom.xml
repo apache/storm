@@ -15,7 +15,7 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
@@ -27,7 +27,7 @@
 
     <groupId>org.apache.storm</groupId>
     <artifactId>storm</artifactId>
-    <version>1.0.1.2.6.0.0-SNAPSHOT</version>
+    <version>1.2.1-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>Storm</name>
     <description>Distributed and fault-tolerant realtime computation</description>
@@ -174,6 +174,24 @@
             </roles>
             <timezone>+8</timezone>
         </developer>
+        <developer>
+            <id>vesense</id>
+            <name>Xin Wang</name>
+            <email>xinwang@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>+8</timezone>
+        </developer>
+        <developer>
+            <id>hmclouro</id>
+            <name>Hugo da Cruz Louro</name>
+            <email>hmclouro@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-8</timezone>
+        </developer>
     </developers>
 
 
@@ -212,7 +230,8 @@
         <commons-codec.version>1.6</commons-codec.version>
         <commons-cli.version>1.3.1</commons-cli.version>
         <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>2.10.0</curator.version>
+        <curator.version>4.0.0</curator.version>
+        <curator-test.version>2.12.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
         <ring.version>1.3.1</ring.version>
         <ring-json.version>0.3.1</ring-json.version>
@@ -227,21 +246,21 @@
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
-        <netty.version>3.9.0.Final</netty.version>
+        <netty.version>3.9.9.Final</netty.version>
         <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
-        <log4j.version>2.1</log4j.version>
-        <slf4j.version>1.7.7</slf4j.version>
+        <log4j.version>2.8.2</log4j.version>
+        <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.1.0</metrics.version>
         <clojure.tools.nrepl.version>0.2.3</clojure.tools.nrepl.version>
         <clojure-complete.version>0.2.3</clojure-complete.version>
         <mockito.version>1.9.5</mockito.version>
         <conjure.version>2.1.3</conjure.version>
-        <zookeeper.version>3.4.6</zookeeper.version>
+        <zookeeper.version>3.4.6.2.6.3.0-SNAPSHOT</zookeeper.version>
         <clojure-data-codec.version>0.1.0</clojure-data-codec.version>
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
-        <hive.version>1.2.1000.2.5.2.0-70</hive.version>
-        <hadoop.version>2.7.3.2.5.2.0-70</hadoop.version>
-        <hbase.version>1.1.0</hbase.version>
+        <hive.version>1.2.1000.2.6.3.0-SNAPSHOT</hive.version>
+        <hadoop.version>2.7.3.2.6.3.0-SNAPSHOT</hadoop.version>
+        <hbase.version>1.1.2.2.6.3.0-SNAPSHOT</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>
@@ -249,8 +268,9 @@
         <junit.version>4.11</junit.version>
         <metrics-clojure.version>2.5.1</metrics-clojure.version>
         <hdrhistogram.version>2.1.7</hdrhistogram.version>
+        <hamcrest.version>1.3</hamcrest.version>
 
-        <calcite.version>1.10.0</calcite.version>
+        <calcite.version>1.11.0</calcite.version>
 
         <jackson.version>2.6.3</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
@@ -259,19 +279,23 @@
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
 
         <!-- kafka version used by new storm-kafka-client spout code -->
-        <storm.kafka.client.version>0.10.0.0</storm.kafka.client.version>
+        <storm.kafka.client.version>0.10.1.0</storm.kafka.client.version>
 
         <!-- Java and clojure build lifecycle test properties are defined here to avoid having to create a default profile -->
         <java.unit.test.exclude>org.apache.storm.testing.IntegrationTest</java.unit.test.exclude>
         <java.unit.test.include>**/Test*.java, **/*Test.java, **/*TestCase.java</java.unit.test.include>    <!--maven surefire plugin default test list-->
+        <java.integration.test.include>no.tests</java.integration.test.include>
         <!-- by default the clojure test set are all clojure tests that are not integration tests. This property is overridden in the profiles -->
         <clojure.test.set>!integration.*</clojure.test.set>
 
-        <aetherVersion>1.0.0.v20140518</aetherVersion>
+        <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
         <qpid.version>0.32</qpid.version>
         <eventhubs.client.version>1.0.1</eventhubs.client.version>
+
+        <!-- see intellij profile below... This fixes an annoyance with intellij -->
+        <provided.scope>provided</provided.scope>
     </properties>
 
     <modules>
@@ -284,6 +308,7 @@
         <module>storm-rename-hack</module>
 
         <!-- externals -->
+        <module>external/storm-autocreds</module>
         <module>external/storm-kafka</module>
         <module>external/storm-hdfs</module>
         <module>external/storm-hbase</module>
@@ -306,6 +331,7 @@
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-jms</module>
+        <module>external/storm-pmml</module>
 
         <!-- examples -->
         <module>examples/storm-starter</module>
@@ -321,6 +347,9 @@
         <module>examples/storm-hive-examples</module>
         <module>examples/storm-elasticsearch-examples</module>
         <module>examples/storm-mqtt-examples</module>
+        <module>examples/storm-pmml-examples</module>
+        <module>examples/storm-jms-examples</module>
+        <module>examples/storm-perf</module>
     </modules>
 
     <dependencies>
@@ -334,6 +363,17 @@
     </dependencies>
 
     <profiles>
+	<!--
+            Hack to make intellij behave.
+            If you use intellij, enable this profile in your IDE.
+            It should make life easier.
+        -->
+        <profile>
+            <id>intellij</id>
+            <properties>
+                <provided.scope>compile</provided.scope>
+            </properties>
+        </profile>
 	<profile>
             <id>windows</id>
             <modules>
@@ -367,6 +407,7 @@
                 </plugins>
             </build>
         </profile>
+
         <profile>
             <id>rat</id>
             <build>
@@ -434,6 +475,13 @@
                                 <exclude>**/src/ui/public/js/arbor-tween.js</exclude>
                                 <exclude>**/src/ui/public/js/jquery.mustache.js</exclude>
                                 <exclude>**/src/ui/public/js/typeahead.jquery.min.js</exclude>
+                                <exclude>**/src/ui/public/js/cytoscape-dagre.js</exclude>
+                                <exclude>**/src/ui/public/js/dagre.min.js</exclude>
+                                <exclude>**/src/ui/public/js/esprima.min.js</exclude>
+                                <exclude>**/src/ui/public/js/js-yaml.min.js</exclude>
+                                <exclude>**/src/main/resources/Audit.50.csv</exclude>
+                                <exclude>**/src/main/resources/KNIME_PMML_4.1_Examples_single_audit_logreg.xml</exclude>
+                                <exclude>**/src/main/sampledata/**</exclude>
 
                                 <!-- generated by shade plugin -->
                                 <exclude>**/dependency-reduced-pom.xml</exclude>
@@ -452,6 +500,7 @@
 
                                 <!-- Vagrant related files -->
                                 <exclude>integration-test/config/.vagrant/**</exclude>
+
                             </excludes>
                         </configuration>
                     </plugin>
@@ -542,7 +591,6 @@
             <id>all-tests</id>
             <properties>
                 <java.integration.test.include>**/*.java</java.integration.test.include>
-                <java.integration.test.group>org.apache.storm.testing.IntegrationTest</java.integration.test.group>
                 <clojure.test.set>*.*</clojure.test.set>
             </properties>
         </profile>
@@ -552,7 +600,6 @@
                 <!--Java-->
                 <java.unit.test.include>no.unit.tests</java.unit.test.include>
                 <java.integration.test.include>**/*.java</java.integration.test.include>
-                <java.integration.test.group>org.apache.storm.testing.IntegrationTest</java.integration.test.group>
                 <!--Clojure-->
                 <clojure.test.set>integration.*</clojure.test.set>
                 <clojure.test.declared.namespace.only>true</clojure.test.declared.namespace.only>
@@ -718,10 +765,6 @@
                 <version>${curator.version}</version>
                 <exclusions>
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
                         <groupId>org.jboss.netty</groupId>
                         <artifactId>netty</artifactId>
                     </exclusion>
@@ -731,16 +774,6 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-recipes</artifactId>
                 <version>${curator.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
-                    </exclusion>
-                    <exclusion>
-                        <groupId>org.slf4j</groupId>
-                        <artifactId>slf4j-log4j12</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -750,7 +783,10 @@
             <dependency>
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-test</artifactId>
-                <version>${curator.version}</version>
+                <!-- curator-test is not compatible with Zookeeper 3.4.x.
+                Curator works around this by using an older curator-test jar.
+                See https://github.com/apache/curator/tree/6ba4de36d4e8b2b65d45c005a6a92dd85c3c497f/curator-test-zk34-->
+                <version>${curator-test.version}</version>
                 <scope>test</scope>
             </dependency>
             <dependency>
@@ -901,6 +937,16 @@
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-graphite</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-ganglia</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>metrics-clojure</groupId>
                 <artifactId>metrics-clojure</artifactId>
                 <version>${metrics-clojure.version}</version>
@@ -939,6 +985,24 @@
                         <groupId>org.clojure</groupId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.mockito</groupId>
+                <artifactId>mockito-core</artifactId>
+                <version>${mockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-core</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.hamcrest</groupId>
+                <artifactId>hamcrest-library</artifactId>
+                <version>${hamcrest.version}</version>
+                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.mockito</groupId>
@@ -1051,6 +1115,8 @@
                             <include>${java.unit.test.include}</include>
                         </includes>
                         <argLine>-Xmx1536m</argLine>
+                        <forkCount>1.0C</forkCount>
+                        <reuseForks>true</reuseForks>
                     </configuration>
                 </plugin>
                 <plugin>
@@ -1058,10 +1124,11 @@
                     <artifactId>maven-failsafe-plugin</artifactId>
                     <version>${maven-surefire.version}</version>
                     <configuration>
+                        <redirectTestOutputToFile>true</redirectTestOutputToFile>
                         <includes>
                             <include>${java.integration.test.include}</include>
                         </includes>
-                        <groups>${java.integration.test.group}</groups>  <!--set in integration-test the profile-->
+                        <groups>org.apache.storm.testing.IntegrationTest</groups>
                         <argLine>-Xmx1536m</argLine>
                     </configuration>
                     <executions>

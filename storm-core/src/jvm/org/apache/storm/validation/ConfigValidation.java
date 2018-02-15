@@ -493,6 +493,73 @@ public class ConfigValidation {
         }
     }
 
+    public static class MetricReportersValidator extends Validator {
+        private static final String NIMBUS = "nimbus";
+        private static final String SUPERVISOR = "supervisor";
+        private static final String WORKER = "worker";
+        private static final String CLASS = "class";
+        private static final String FILTER = "filter";
+        private static final String DAEMONS = "daemons";
+
+        @Override
+        public void validateField(String name, Object o) {
+            if(o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if(!((Map) o).containsKey(CLASS) ) {
+                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            }
+            if(!((Map) o).containsKey(DAEMONS) ) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: daemons");
+            } else {
+                // daemons can only be 'nimbus', 'supervisor', or 'worker'
+                Object list = ((Map)o).get(DAEMONS);
+                if(!(list instanceof List)){
+                    throw new IllegalArgumentException("Field 'daemons' must be a non-null list.");
+                }
+                List daemonList = (List)list;
+                for(Object string : daemonList){
+                    if (string instanceof String &&
+                            (string.equals(NIMBUS) ||
+                                    string.equals(SUPERVISOR) ||
+                                    string.equals(WORKER))) {
+                        continue;
+                    }
+                    throw new IllegalArgumentException("Field 'daemons' must contain at least one of the following:" +
+                            " \"nimbus\", \"supervisor\", or \"worker\"");
+                }
+
+            }
+            if(((Map)o).containsKey(FILTER)){
+                Map filterMap = (Map)((Map)o).get(FILTER);
+                SimpleTypeValidator.validateField(CLASS, String.class, filterMap.get(CLASS));
+            }
+            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get(CLASS));
+
+        }
+    }
+
+    public static class EventLoggerRegistryValidator extends Validator {
+
+        @Override
+        public void validateField(String name, Object o) {
+            if(o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if(!((Map<?, ?>) o).containsKey("class") ) {
+                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            }
+
+            SimpleTypeValidator.validateField(name, String.class, ((Map<?, ?>) o).get("class"));
+
+            if(((Map<?, ?>) o).containsKey("arguments") ) {
+                SimpleTypeValidator.validateField(name, Map.class, ((Map<?, ?>) o).get("arguments"));
+            }
+        }
+    }
+
     public static class MapOfStringToMapOfStringToObjectValidator extends Validator {
       @Override
       public  void validateField(String name, Object o) {

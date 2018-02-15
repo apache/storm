@@ -25,6 +25,7 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.generated.ReadableBlobMeta;
 
 import org.apache.storm.nimbus.NimbusInfo;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
 import org.slf4j.Logger;
@@ -45,6 +46,8 @@ import java.util.Set;;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.ADMIN;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.READ;
 import static org.apache.storm.blobstore.BlobStoreAclHandler.WRITE;
+
+import com.google.common.annotations.VisibleForTesting;
 
 /**
  * Provides a local file system backed blob store implementation for Nimbus.
@@ -82,10 +85,7 @@ public class LocalFsBlobStore extends BlobStore {
         this.nimbusInfo = nimbusInfo;
         zkClient = BlobStoreUtils.createZKClient(conf);
         if (overrideBase == null) {
-            overrideBase = (String)conf.get(Config.BLOBSTORE_DIR);
-            if (overrideBase == null) {
-                overrideBase = (String) conf.get(Config.STORM_LOCAL_DIR);
-            }
+            overrideBase = ConfigUtils.absoluteStormBlobStoreDir(conf);
         }
         File baseDir = new File(overrideBase, BASE_BLOBS_DIR_NAME);
         try {
@@ -129,9 +129,7 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public AtomicOutputStream updateBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
+        checkPermission(key, who, WRITE);
         try {
             return new BlobStoreFileOutputStream(fbs.write(DATA_PREFIX+key, false));
         } catch (IOException e) {
@@ -219,14 +217,47 @@ public class LocalFsBlobStore extends BlobStore {
     @Override
     public void deleteBlob(String key, Subject who) throws AuthorizationException, KeyNotFoundException {
         validateKey(key);
-        checkForBlobOrDownload(key);
-        SettableBlobMeta meta = getStoredBlobMeta(key);
-        _aclHandler.hasPermissions(meta.get_acl(), WRITE, who, key);
+
+        if (!_aclHandler.checkForValidUsers(who, WRITE)) {
+            // need to get ACL from meta
+            LOG.debug("Retrieving meta to get ACL info... key: {} subject: {}", key, who);
+
+            try {
+                checkPermission(key, who, WRITE);
+            } catch (KeyNotFoundException e) {
+                LOG.error("Error while retrieving meta from ZK or local... key: {} subject: {}", key, who);
+                throw e;
+            }
+        } else {
+            // able to delete the blob without checking meta's ACL
+            // skip checking everything and continue deleting local files
+            LOG.debug("Given subject is eligible to delete key without checking ACL, skipping... key: {} subject: {}",
+                    key, who);
+        }
+
         try {
-            fbs.deleteKey(DATA_PREFIX+key);
-            fbs.deleteKey(META_PREFIX+key);
+            deleteKeyIgnoringFileNotFound(DATA_PREFIX + key);
+            deleteKeyIgnoringFileNotFound(META_PREFIX + key);
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void checkPermission(String key, Subject who, int mask) throws KeyNotFoundException, AuthorizationException {
+        checkForBlobOrDownload(key);
+        SettableBlobMeta meta = getStoredBlobMeta(key);
+        _aclHandler.hasPermissions(meta.get_acl(), mask, who, key);
+    }
+
+    private void deleteKeyIgnoringFileNotFound(String key) throws IOException {
+        try {
+            fbs.deleteKey(key);
+        } catch (IOException e) {
+            if (e instanceof FileNotFoundException) {
+                LOG.debug("Ignoring FileNotFoundException since we're about to delete such key... key: {}", key);
+            } else {
+                throw e;
+            }
         }
     }
 
@@ -281,7 +312,7 @@ public class LocalFsBlobStore extends BlobStore {
     }
 
     //This additional check and download is for nimbus high availability in case you have more than one nimbus
-    public synchronized boolean checkForBlobOrDownload(String key) {
+    public synchronized boolean checkForBlobOrDownload(String key) throws KeyNotFoundException {
         boolean checkBlobDownload = false;
         try {
             List<String> keyList = BlobStoreUtils.getKeyListFromBlobStore(this);
@@ -295,6 +326,8 @@ public class LocalFsBlobStore extends BlobStore {
                     }
                 }
             }
+        } catch (KeyNotFoundException e) {
+            throw e;
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -307,5 +340,10 @@ public class LocalFsBlobStore extends BlobStore {
 
     public void fullCleanup(long age) throws IOException {
         fbs.fullCleanup(age);
+    }
+    
+    @VisibleForTesting
+    File getKeyDataDir(String key) {
+        return fbs.getKeyDir(DATA_PREFIX + key);
     }
 }

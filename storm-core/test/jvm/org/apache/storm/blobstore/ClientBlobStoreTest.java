@@ -164,6 +164,12 @@ public class ClientBlobStoreTest {
     validatedBlobAcls(testKey);
   }
 
+  @Test
+  public void testBloblStoreKeyWithUnicodesValidation() throws Exception {
+    BlobStore.validateKey("msg:kafka-unicodewriter䶵-11-1483434711-stormconf.ser");
+    BlobStore.validateKey("msg:kafka-ascii-11-148343436363-stormconf.ser");
+  }
+
   private void createTestBlob(String testKey, SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
     AccessControl submitterAcl = BlobStoreAclHandler.parseAccessControl("u:tester:rwa");
     meta.add_to_acl(submitterAcl);

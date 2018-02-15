@@ -87,6 +87,7 @@ public class ColumnList {
 
 
     private ArrayList<Column> columns;
+    private ArrayList<Column> columnsToDelete;
     private ArrayList<Counter> counters;
 
 
@@ -95,6 +96,13 @@ public class ColumnList {
             this.columns = new ArrayList<Column>();
         }
         return this.columns;
+    }
+
+    private ArrayList<Column> columnsToDelete(){
+        if(this.columnsToDelete == null){
+            this.columnsToDelete = new ArrayList<Column>();
+        }
+        return this.columnsToDelete;
     }
 
     private ArrayList<Counter> counters(){
@@ -163,6 +171,17 @@ public class ColumnList {
         return this.addCounter(counter.family(), counter.qualifier(), counter.increment());
     }
 
+    /**
+     * Remove a standard HBase column
+     *
+     * @param family
+     * @param qualifier
+     * @return
+     */
+    public ColumnList deleteColumn(byte[] family, byte[] qualifier) {
+        columnsToDelete().add(new Column(family, qualifier, -1, null));
+        return this;
+    }
 
     /**
      * Query to determine if we have column definitions.
@@ -171,6 +190,15 @@ public class ColumnList {
      */
     public boolean hasColumns(){
         return this.columns != null;
+    }
+
+    /**
+     * Query to determine if we have column delete definitions.
+     *
+     * @return
+     */
+    public boolean hasColumnsToDelete(){
+        return this.columnsToDelete != null;
     }
 
     /**
@@ -189,6 +217,15 @@ public class ColumnList {
      */
     public List<Column> getColumns(){
         return this.columns;
+    }
+
+    /**
+     * Get the list of 'column to delete' definitions.
+     *
+     * @return
+     */
+    public ArrayList<Column> getColumnsToDelete() {
+        return this.columnsToDelete;
     }
 
     /**

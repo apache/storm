@@ -17,22 +17,19 @@
  */
 package org.apache.storm.metric;
 
-import com.google.common.util.concurrent.MoreExecutors;
-import org.apache.storm.Config;
 import org.apache.storm.metric.api.DataPoint;
 import org.apache.storm.metric.api.IClusterMetricsConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 public class ClusterMetricsConsumerExecutor {
     public static final Logger LOG = LoggerFactory.getLogger(ClusterMetricsConsumerExecutor.class);
+    private static final String ERROR_MESSAGE_PREPARATION_CLUSTER_METRICS_CONSUMER_FAILED =
+            "Preparation of Cluster Metrics Consumer failed. " +
+            "Please check your configuration and/or corresponding systems and relaunch Nimbus. " +
+            "Skipping handle metrics.";
 
     private IClusterMetricsConsumer metricsConsumer;
     private String consumerClassName;
@@ -46,15 +43,24 @@ public class ClusterMetricsConsumerExecutor {
     public void prepare() {
         try {
             metricsConsumer = (IClusterMetricsConsumer)Class.forName(consumerClassName).newInstance();
+            metricsConsumer.prepare(registrationArgument);
         } catch (Exception e) {
-            throw new RuntimeException("Could not instantiate a class listed in config under section " +
-                    Config.STORM_CLUSTER_METRICS_CONSUMER_REGISTER + " with fully qualified name " + consumerClassName, e);
-        }
+            LOG.error("Could not instantiate or prepare Cluster Metrics Consumer with fully qualified name " +
+                    consumerClassName, e);
 
-        metricsConsumer.prepare(registrationArgument);
+            if (metricsConsumer != null) {
+                metricsConsumer.cleanup();
+            }
+            metricsConsumer = null;
+        }
     }
 
     public void handleDataPoints(final IClusterMetricsConsumer.ClusterInfo clusterInfo, final Collection<DataPoint> dataPoints) {
+        if (metricsConsumer == null) {
+            LOG.error(ERROR_MESSAGE_PREPARATION_CLUSTER_METRICS_CONSUMER_FAILED);
+            return;
+        }
+
         try {
             metricsConsumer.handleDataPoints(clusterInfo, dataPoints);
         } catch (Throwable e) {
@@ -63,6 +69,11 @@ public class ClusterMetricsConsumerExecutor {
     }
 
     public void handleDataPoints(final IClusterMetricsConsumer.SupervisorInfo supervisorInfo, final Collection<DataPoint> dataPoints) {
+        if (metricsConsumer == null) {
+            LOG.error(ERROR_MESSAGE_PREPARATION_CLUSTER_METRICS_CONSUMER_FAILED);
+            return;
+        }
+
         try {
             metricsConsumer.handleDataPoints(supervisorInfo, dataPoints);
         } catch (Throwable e) {
@@ -71,6 +82,8 @@ public class ClusterMetricsConsumerExecutor {
     }
 
     public void cleanup() {
-        metricsConsumer.cleanup();
+        if (metricsConsumer != null) {
+            metricsConsumer.cleanup();
+        }
     }
 }

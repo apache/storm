@@ -171,14 +171,14 @@
 (deftest test-storm-cluster-state-basics
   (with-inprocess-zookeeper zk-port
     (let [state (mk-storm-state zk-port)
-          assignment1 (Assignment. "/aaa" {} {[1] ["1" 1001 1]} {} {})
-          assignment2 (Assignment. "/aaa" {} {[2] ["2" 2002]} {} {})
+          assignment1 (Assignment. "/aaa" {} {[1] ["1" 1001 1]} {} {} "")
+          assignment2 (Assignment. "/aaa" {} {[2] ["2" 2002]} {} {} "")
           nimbusInfo1 (NimbusInfo. "nimbus1" 6667 false)
           nimbusInfo2 (NimbusInfo. "nimbus2" 6667 false)
           nimbusSummary1 (NimbusSummary. "nimbus1" 6667 (current-time-secs) false "v1")
           nimbusSummary2 (NimbusSummary. "nimbus2" 6667 (current-time-secs) false "v2")
-          base1 (StormBase. "/tmp/storm1" 1 {:type :active} 2 {} "" nil nil {})
-          base2 (StormBase. "/tmp/storm2" 2 {:type :active} 2 {} "" nil nil {})]
+          base1 (StormBase. "/tmp/storm1" 1 {:type :active} 2 {} "" nil nil {} "")
+          base2 (StormBase. "/tmp/storm2" 2 {:type :active} 2 {} "" nil nil {} "")]
       (is (= [] (.assignments state nil)))
       (.set-assignment! state "storm1" assignment1)
       (is (= assignment1 (.assignment-info state "storm1" nil)))
@@ -319,3 +319,18 @@
       (mk-storm-cluster-state {})
       (verify-call-times-for mk-distributed-cluster-state 1)
       (verify-first-call-args-for-indices mk-distributed-cluster-state [4] nil))))
+
+(deftest test-cluster-state-backpressure
+         (testing "Test that we can get topology backpressure."
+                  (stubbing [zk/mkdirs nil
+                             zk/mk-client (reify CuratorFramework (^void close [this] nil))
+                             mk-distributed-cluster-state (reify ClusterState
+                                                                 (get_data [this path watch?] (byte-array 10))
+                                                                 (register [this callback] nil)
+                                                                 (mkdirs [this path acls] nil)
+                                                                 (node_exists [this path watch?]
+                                                                              (log-message "Running node_exists.") true)
+                                                                 (get_children [this path watch?] '("/foo/bar")))]
+                            (let [cluster-state (mk-storm-cluster-state {})]
+                                 (.get_data (mk-distributed-cluster-state) "/foo/bar" false)
+                                 (topology-backpressure cluster-state "" 30 nil)))))

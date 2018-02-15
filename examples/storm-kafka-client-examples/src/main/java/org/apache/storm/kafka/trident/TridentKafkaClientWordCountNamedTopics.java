@@ -18,32 +18,28 @@
 
 package org.apache.storm.kafka.trident;
 
+import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+import org.apache.kafka.clients.consumer.ConsumerConfig;
+
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.AlreadyAliveException;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.InvalidTopologyException;
+import org.apache.storm.kafka.spout.Func;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff;
+import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryService;
-import org.apache.storm.kafka.spout.KafkaSpoutStreams;
-import org.apache.storm.kafka.spout.KafkaSpoutStreamsNamedTopics;
-import org.apache.storm.kafka.spout.KafkaSpoutTupleBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilder;
-import org.apache.storm.kafka.spout.KafkaSpoutTuplesBuilderNamedTopics;
-import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutManager;
 import org.apache.storm.kafka.spout.trident.KafkaTridentSpoutOpaque;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
-import static org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST;
 
 public class TridentKafkaClientWordCountNamedTopics {
     private static final String TOPIC_1 = "test-trident";
@@ -51,61 +47,43 @@ public class TridentKafkaClientWordCountNamedTopics {
     private static final String KAFKA_LOCAL_BROKER = "localhost:9092";
 
     private KafkaTridentSpoutOpaque<String, String> newKafkaTridentSpoutOpaque() {
-        return new KafkaTridentSpoutOpaque<>(new KafkaTridentSpoutManager<>(
-                        newKafkaSpoutConfig(
-                        newKafkaSpoutStreams())));
+        return new KafkaTridentSpoutOpaque<>(newKafkaSpoutConfig());
     }
 
-    private KafkaSpoutConfig<String,String> newKafkaSpoutConfig(KafkaSpoutStreams kafkaSpoutStreams) {
-        return new KafkaSpoutConfig.Builder<>(newKafkaConsumerProps(),
-                    kafkaSpoutStreams, newTuplesBuilder(), newRetryService())
+    private static Func<ConsumerRecord<String, String>, List<Object>> JUST_VALUE_FUNC = new JustValueFunc();
+
+    /**
+     * Needs to be serializable
+     */
+    private static class JustValueFunc implements Func<ConsumerRecord<String, String>, List<Object>>, Serializable {
+        @Override
+        public List<Object> apply(ConsumerRecord<String, String> record) {
+            return new Values(record.value());
+        }
+    }
+
+    protected KafkaSpoutConfig<String,String> newKafkaSpoutConfig() {
+        return KafkaSpoutConfig.builder(KAFKA_LOCAL_BROKER, TOPIC_1, TOPIC_2)
+                .setProp(ConsumerConfig.GROUP_ID_CONFIG, "kafkaSpoutTestGroup_" + System.nanoTime())
+                .setProp(ConsumerConfig.MAX_PARTITION_FETCH_BYTES_CONFIG, 200)
+                .setRecordTranslator(JUST_VALUE_FUNC, new Fields("str"))
+                .setRetry(newRetryService())
                 .setOffsetCommitPeriodMs(10_000)
                 .setFirstPollOffsetStrategy(EARLIEST)
                 .setMaxUncommittedOffsets(250)
                 .build();
     }
 
-    protected Map<String,Object> newKafkaConsumerProps() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(KafkaSpoutConfig.Consumer.BOOTSTRAP_SERVERS, "127.0.0.1:9092");
-        props.put(KafkaSpoutConfig.Consumer.GROUP_ID, "kafkaSpoutTestGroup");
-        props.put(KafkaSpoutConfig.Consumer.KEY_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put(KafkaSpoutConfig.Consumer.VALUE_DESERIALIZER, "org.apache.kafka.common.serialization.StringDeserializer");
-        props.put("max.partition.fetch.bytes", 200);
-        return props;
-    }
-
-    protected KafkaSpoutTuplesBuilder<String, String> newTuplesBuilder() {
-        return new KafkaSpoutTuplesBuilderNamedTopics.Builder<>(
-                new TopicsTupleBuilder<String, String>(TOPIC_1, TOPIC_2))
-                .build();
-    }
-
     protected KafkaSpoutRetryService newRetryService() {
-        return new KafkaSpoutRetryExponentialBackoff(new KafkaSpoutRetryExponentialBackoff.TimeInterval(500L, TimeUnit.MICROSECONDS),
-                KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(2),
-                Integer.MAX_VALUE, KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(10));
-    }
-
-    protected KafkaSpoutStreams newKafkaSpoutStreams() {
-        return new KafkaSpoutStreamsNamedTopics.Builder(new Fields("str"), new String[]{"test-trident","test-trident-1"}).build();
-    }
-
-    protected static class TopicsTupleBuilder<K, V> extends KafkaSpoutTupleBuilder<K,V> {
-        public TopicsTupleBuilder(String... topics) {
-            super(topics);
-        }
-        @Override
-        public List<Object> buildTuple(ConsumerRecord<K, V> consumerRecord) {
-            return new Values(consumerRecord.value());
-        }
+        return new KafkaSpoutRetryExponentialBackoff(new TimeInterval(500L, TimeUnit.MICROSECONDS),
+                TimeInterval.milliSeconds(2), Integer.MAX_VALUE, TimeInterval.seconds(10));
     }
 
     public static void main(String[] args) throws Exception {
         new TridentKafkaClientWordCountNamedTopics().run(args);
     }
 
-    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException {
+    protected void run(String[] args) throws AlreadyAliveException, InvalidTopologyException, AuthorizationException, InterruptedException {
         if (args.length > 0 && Arrays.binarySearch(args, "-h") >= 0) {
             System.out.printf("Usage: java %s [%s] [%s] [%s] [%s]\n", getClass().getName(),
                     "broker_host:broker_port", "topic1", "topic2", "topology_name");
@@ -116,7 +94,7 @@ public class TridentKafkaClientWordCountNamedTopics {
 
             System.out.printf("Running with broker_url: [%s], topics: [%s, %s]\n", brokerUrl, topic1, topic2);
 
-            Config tpConf = LocalSubmitter.defaultConfig();
+            Config tpConf = LocalSubmitter.defaultConfig(true);
 
             if (args.length == 4) { //Submit Remote
                 // Producers
@@ -124,6 +102,11 @@ public class TridentKafkaClientWordCountNamedTopics {
                 StormSubmitter.submitTopology(topic2 + "-producer", tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
                 // Consumer
                 StormSubmitter.submitTopology("topics-consumer", tpConf, TridentKafkaConsumerTopology.newTopology(newKafkaTridentSpoutOpaque()));
+
+                // Print results to console, which also causes the print filter in the consumer topology to print the results in the worker log
+                Thread.sleep(2000);
+                DrpcResultsPrinter.remoteClient().printResults(60, 1, TimeUnit.SECONDS);
+
             } else { //Submit Local
 
                 final LocalSubmitter localSubmitter = LocalSubmitter.newInstance();
@@ -136,11 +119,15 @@ public class TridentKafkaClientWordCountNamedTopics {
                     localSubmitter.submit(topic1Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic1));
                     localSubmitter.submit(topic2Tp, tpConf, KafkaProducerTopology.newTopology(brokerUrl, topic2));
                     // Consumer
-                    localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
-                            localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
+                    try {
+                        localSubmitter.submit(consTpName, tpConf, TridentKafkaConsumerTopology.newTopology(
+                                localSubmitter.getDrpc(), newKafkaTridentSpoutOpaque()));
+                        // print
+                        localSubmitter.printResults(15, 1, TimeUnit.SECONDS);
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
 
-                    // print
-                    localSubmitter.printResults(15, 1, TimeUnit.SECONDS);
                 } finally {
                     // kill
                     localSubmitter.kill(topic1Tp);

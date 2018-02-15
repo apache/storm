@@ -20,7 +20,7 @@
   <parent>
       <artifactId>storm</artifactId>
       <groupId>org.apache.storm</groupId>
-      <version>1.0.1.2.6.0.0-SNAPSHOT</version>
+      <version>1.2.1-SNAPSHOT</version>
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -33,17 +33,8 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <!-- see comment below... This fixes an annoyance with intellij -->
     <provided.scope>provided</provided.scope>
-    <hbase.version>1.1.2.2.6.0.0-SNAPSHOT</hbase.version>
+    <hbase.version>1.1.2.2.6.0.2-SNAPSHOT</hbase.version>
   </properties>
-
-  <profiles>
-    <profile>
-        <id>intellij</id>
-        <properties>
-            <provided.scope>compile</provided.scope>
-        </properties>
-    </profile>
-  </profiles>
 
   <dependencies>
     <dependency>
@@ -77,11 +68,6 @@
       <artifactId>jmock</artifactId>
       <version>2.6.0</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-     <groupId>org.twitter4j</groupId>
-     <artifactId>twitter4j-stream</artifactId>
-     <version>3.0.3</version>
     </dependency>
     <dependency>
       <groupId>org.apache.storm</groupId>
@@ -172,17 +158,24 @@
             <groupId>org.apache.maven.plugins</groupId>
             <artifactId>maven-shade-plugin</artifactId>
             <configuration>
-              <createDependencyReducedPom>true</createDependencyReducedPom>
-              <filters>
-                <filter>
-                  <artifact>*:*</artifact>
-                  <excludes>
-                    <exclude>META-INF/*.SF</exclude>
-                    <exclude>META-INF/*.DSA</exclude>
-                    <exclude>META-INF/*.RSA</exclude>
-                  </excludes>
-                </filter>
-              </filters>
+                <createDependencyReducedPom>true</createDependencyReducedPom>
+                <filters>
+                    <filter>
+                        <artifact>*:*</artifact>
+                        <excludes>
+                            <exclude>META-INF/*.SF</exclude>
+                            <exclude>META-INF/*.sf</exclude>
+                            <exclude>META-INF/*.DSA</exclude>
+                            <exclude>META-INF/*.dsa</exclude>
+                            <exclude>META-INF/*.RSA</exclude>
+                            <exclude>META-INF/*.rsa</exclude>
+                            <exclude>META-INF/*.EC</exclude>
+                            <exclude>META-INF/*.ec</exclude>
+                            <exclude>META-INF/MSFTSIG.SF</exclude>
+                            <exclude>META-INF/MSFTSIG.RSA</exclude>
+                        </excludes>
+                    </filter>
+                </filters>
             </configuration>
             <executions>
                 <execution>

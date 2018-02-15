@@ -23,7 +23,12 @@
 (defn -main [^String tmpjarpath & args]
   (let [conf (read-storm-config)
         ; since this is not a purpose to add to leader lock queue, passing nil as blob-store is ok
-        zk-leader-elector (zk-leader-elector conf nil)
+        zk (mk-client conf
+                      (conf STORM-ZOOKEEPER-SERVERS)
+                      (conf STORM-ZOOKEEPER-PORT)
+                      :root (conf STORM-ZOOKEEPER-ROOT)
+                      :auth-conf conf)
+        zk-leader-elector (zk-leader-elector conf zk nil)
         leader-nimbus (.getLeader zk-leader-elector)
         host (.getHost leader-nimbus)
         port (.getPort leader-nimbus)

@@ -109,7 +109,7 @@ def emitBolt(tup, stream=None, anchors = [], directTask=None):
     m = {"command": "emit"}
     if stream is not None:
         m["stream"] = stream
-    m["anchors"] = map(lambda a: a.id, anchors)
+    m["anchors"] = [a.id for a in anchors]
     if directTask is not None:
         m["task"] = directTask
     m["tuple"] = tup
@@ -232,6 +232,12 @@ class Spout(object):
     def initialize(self, conf, context):
         pass
 
+    def activate(self):
+        pass
+
+    def deactivate(self):
+        pass
+
     def ack(self, id):
         pass
 
@@ -249,6 +255,10 @@ class Spout(object):
             self.initialize(conf, context)
             while True:
                 msg = readCommand()
+                if msg["command"] == "activate":
+                    self.activate()
+                if msg["command"] == "deactivate":
+                    self.deactivate()
                 if msg["command"] == "next":
                     self.nextTuple()
                 if msg["command"] == "ack":

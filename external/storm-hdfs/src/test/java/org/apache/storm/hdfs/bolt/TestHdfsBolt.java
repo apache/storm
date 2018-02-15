@@ -1,3 +1,4 @@
+
 /**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
@@ -35,6 +36,7 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
+import org.apache.storm.hdfs.common.Partitioner;
 import org.junit.Before;
 import org.junit.After;
 import org.junit.Rule;
@@ -43,7 +45,7 @@ import org.junit.Assert;
 
 import org.junit.rules.ExpectedException;
 import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
+
 import static org.mockito.Mockito.*;
 
 import org.apache.hadoop.conf.Configuration;
@@ -58,40 +60,50 @@ import org.apache.hadoop.hdfs.protocol.HdfsConstants.SafeModeAction;
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
+import org.apache.storm.hdfs.testing.MiniDFSClusterRule;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
 
+@RunWith(MockitoJUnitRunner.class)
 public class TestHdfsBolt {
+
+    @Rule
+    public MiniDFSClusterRule dfsClusterRule = new MiniDFSClusterRule(new MiniDFSClusterRule.Java7Supplier<Configuration>() {
+        @Override
+        public Configuration get() {
+            Configuration conf = new Configuration();
+            conf.set("fs.trash.interval", "10");
+            conf.setBoolean("dfs.permissions", true);
+            File baseDir = new File("./target/hdfs/").getAbsoluteFile();
+            FileUtil.fullyDelete(baseDir);
+            conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
+            return conf;
+        }
+    });
 
     private String hdfsURI;
     private DistributedFileSystem fs;
-    private MiniDFSCluster hdfsCluster;
     private static final String testRoot = "/unittest";
     Tuple tuple1 = generateTestTuple(1, "First Tuple", "SFO", "CA");
     Tuple tuple2 = generateTestTuple(1, "Second Tuple", "SJO", "CA");
 
-    @Mock private OutputCollector collector;
-    @Mock private TopologyContext topologyContext;
-    @Rule public ExpectedException thrown = ExpectedException.none();
+    @Mock
+    private OutputCollector collector;
+    @Mock
+    private TopologyContext topologyContext;
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
 
     @Before
     public void setup() throws Exception {
-        MockitoAnnotations.initMocks(this);
-        Configuration conf = new Configuration();
-        conf.set("fs.trash.interval", "10");
-        conf.setBoolean("dfs.permissions", true);
-        File baseDir = new File("./target/hdfs/").getAbsoluteFile();
-        FileUtil.fullyDelete(baseDir);
-        conf.set(MiniDFSCluster.HDFS_MINIDFS_BASEDIR, baseDir.getAbsolutePath());
-
-        MiniDFSCluster.Builder builder = new MiniDFSCluster.Builder(conf);
-        hdfsCluster = builder.build();
-        fs = hdfsCluster.getFileSystem();
-        hdfsURI = "hdfs://localhost:" + hdfsCluster.getNameNodePort() + "/";
+        fs = dfsClusterRule.getDfscluster().getFileSystem();
+        hdfsURI = "hdfs://localhost:" + dfsClusterRule.getDfscluster().getNameNodePort() + "/";
     }
 
     @After
     public void shutDown() throws IOException {
         fs.close();
-        hdfsCluster.shutdown();
     }
 
     @Test
@@ -109,8 +121,31 @@ public class TestHdfsBolt {
     }
 
     @Test
-    public void testTwoTuplesOneFile() throws IOException
-    {
+    public void testPartitionedOutput() throws IOException {
+        HdfsBolt bolt = makeHdfsBolt(hdfsURI, 1, 1000f);
+
+        Partitioner partitoner = new Partitioner() {
+            @Override
+            public String getPartitionPath(Tuple tuple) {
+                return Path.SEPARATOR + tuple.getStringByField("city");
+            }
+        };
+
+        bolt.prepare(new Config(), topologyContext, collector);
+        bolt.withPartitioner(partitoner);
+
+        bolt.execute(tuple1);
+        bolt.execute(tuple2);
+
+        verify(collector).ack(tuple1);
+        verify(collector).ack(tuple2);
+
+        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SFO"));
+        Assert.assertEquals(1, countNonZeroLengthFiles(testRoot + "/SJO"));
+    }
+
+    @Test
+    public void testTwoTuplesOneFile() throws IOException {
         HdfsBolt bolt = makeHdfsBolt(hdfsURI, 2, 10000f);
         bolt.prepare(new Config(), topologyContext, collector);
         bolt.execute(tuple1);
@@ -125,10 +160,10 @@ public class TestHdfsBolt {
     }
 
     @Test
-    public void testFailedSync() throws IOException
-    {
-        HdfsBolt bolt = makeHdfsBolt(hdfsURI, 1, .00001f);
+    public void testFailedSync() throws IOException {
+        HdfsBolt bolt = makeHdfsBolt(hdfsURI, 2, 10000f);
         bolt.prepare(new Config(), topologyContext, collector);
+        bolt.execute(tuple1);
 
         fs.setSafeMode(SafeModeAction.SAFEMODE_ENTER);
 
@@ -138,42 +173,37 @@ public class TestHdfsBolt {
 
     }
 
-    // One tuple and one rotation should yield one file with data and one zero length file
-    // The failed executions should not cause rotations and new zero length files
+    // One tuple and one rotation should yield one file with data
+    // The failed executions should not cause rotations and any new files
     @Test
-    public void testFailureFilecount() throws IOException, InterruptedException
-    {
+    public void testFailureFilecount() throws IOException, InterruptedException {
         HdfsBolt bolt = makeHdfsBolt(hdfsURI, 1, .000001f);
         bolt.prepare(new Config(), topologyContext, collector);
 
         bolt.execute(tuple1);
         fs.setSafeMode(SafeModeAction.SAFEMODE_ENTER);
-        try
-        {
+        try {
             bolt.execute(tuple2);
         } catch (RuntimeException e) {
             //
         }
-        try
-        {
+        try {
             bolt.execute(tuple2);
         } catch (RuntimeException e) {
             //
         }
-        try
-        {
+        try {
             bolt.execute(tuple2);
         } catch (RuntimeException e) {
             //
         }
 
         Assert.assertEquals(1, countNonZeroLengthFiles(testRoot));
-        Assert.assertEquals(1, countZeroLengthFiles(testRoot));
+        Assert.assertEquals(0, countZeroLengthFiles(testRoot));
     }
 
     @Test
-    public void testTickTuples() throws IOException
-    {
+    public void testTickTuples() throws IOException {
         HdfsBolt bolt = makeHdfsBolt(hdfsURI, 10, 10000f);
         bolt.prepare(new Config(), topologyContext, collector);
 
@@ -200,36 +230,28 @@ public class TestHdfsBolt {
         SyncPolicy fieldsSyncPolicy = new CountSyncPolicy(countSync);
 
         FileRotationPolicy fieldsRotationPolicy =
-                new FileSizeRotationPolicy(rotationSizeMB, FileSizeRotationPolicy.Units.MB);
+            new FileSizeRotationPolicy(rotationSizeMB, FileSizeRotationPolicy.Units.MB);
 
         FileNameFormat fieldsFileNameFormat = new DefaultFileNameFormat().withPath(testRoot);
 
         return new HdfsBolt()
-                .withFsUrl(nameNodeAddr)
-                .withFileNameFormat(fieldsFileNameFormat)
-                .withRecordFormat(fieldsFormat)
-                .withRotationPolicy(fieldsRotationPolicy)
-                .withSyncPolicy(fieldsSyncPolicy);
+            .withFsUrl(nameNodeAddr)
+            .withFileNameFormat(fieldsFileNameFormat)
+            .withRecordFormat(fieldsFormat)
+            .withRotationPolicy(fieldsRotationPolicy)
+            .withSyncPolicy(fieldsSyncPolicy);
     }
 
-    private Tuple generateTestTuple(Object id, Object msg,Object city,Object state) {
+    private Tuple generateTestTuple(Object id, Object msg, Object city, Object state) {
         TopologyBuilder builder = new TopologyBuilder();
         GeneralTopologyContext topologyContext = new GeneralTopologyContext(builder.createTopology(),
-                new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
+            new Config(), new HashMap(), new HashMap(), new HashMap(), "") {
             @Override
             public Fields getComponentOutputFields(String componentId, String streamId) {
-                return new Fields("id", "msg","city","state");
+                return new Fields("id", "msg", "city", "state");
             }
         };
-        return new TupleImpl(topologyContext, new Values(id, msg,city,state), 1, "");
-    }
-
-    private void printFiles(String path) throws IOException {
-        Path p = new Path(path);
-        FileStatus[] fileStatuses = fs.listStatus(p);
-        for (FileStatus file : fileStatuses) {
-            System.out.println("@@@ " + file.getPath() + " [" + file.getLen() + "]");
-        }
+        return new TupleImpl(topologyContext, new Values(id, msg, city, state), 1, "");
     }
 
     // Generally used to compare how files were actually written and compare to expectations based on total
@@ -238,9 +260,11 @@ public class TestHdfsBolt {
         Path p = new Path(path);
         int nonZero = 0;
 
-        for (FileStatus file : fs.listStatus(p))
-            if (file.getLen() > 0)
+        for (FileStatus file : fs.listStatus(p)) {
+            if (file.getLen() > 0) {
                 nonZero++;
+            }
+        }
 
         return nonZero;
     }
@@ -249,9 +273,11 @@ public class TestHdfsBolt {
         Path p = new Path(path);
         int zeroLength = 0;
 
-        for (FileStatus file : fs.listStatus(p))
-            if (file.getLen() == 0)
+        for (FileStatus file : fs.listStatus(p)) {
+            if (file.getLen() == 0) {
                 zeroLength++;
+            }
+        }
 
         return zeroLength;
     }

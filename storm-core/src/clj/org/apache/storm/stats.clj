@@ -26,7 +26,8 @@
             WorkerResources])
   (:import [org.apache.storm.utils Utils])
   (:import [org.apache.storm.scheduler WorkerSlot])
-  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric])
+  (:import [org.apache.storm.metric.internal MultiCountStatAndMetric MultiLatencyStatAndMetric]
+           (com.codahale.metrics Counter))
   (:use [org.apache.storm log util])
   (:use [clojure.math.numeric-tower :only [ceil]]))
 
@@ -117,13 +118,16 @@
   `(:complete-latencies ~stats))
 
 (defn emitted-tuple!
-  [stats stream]
-  (let [^MultiCountStatAndMetric emitted (stats-emitted stats)]
-    (.incBy emitted ^Object stream ^long (stats-rate stats))))
+  [stats ^Counter emitted-counter stream]
+  (let [^MultiCountStatAndMetric emitted (stats-emitted stats)
+        ^long rate (stats-rate stats)]
+    (.incBy emitted ^Object stream rate)
+    (.inc emitted-counter rate)))
 
 (defn transferred-tuples!
-  [stats stream amt]
+  [stats ^Counter transferred-counter stream amt]
   (let [^MultiCountStatAndMetric transferred (stats-transferred stats)]
+    (.inc transferred-counter amt)
     (.incBy transferred ^Object stream ^long (* (stats-rate stats) amt))))
 
 (defn bolt-execute-tuple!
@@ -135,30 +139,38 @@
     (.record exec-lat key latency-ms)))
 
 (defn bolt-acked-tuple!
-  [^BoltExecutorStats stats component stream latency-ms]
+  [^BoltExecutorStats stats ^Counter acked-counter component stream latency-ms]
   (let [key [component stream]
         ^MultiCountStatAndMetric acked (stats-acked stats)
-        ^MultiLatencyStatAndMetric process-lat (stats-process-latencies stats)]
-    (.incBy acked key (stats-rate stats))
+        ^MultiLatencyStatAndMetric process-lat (stats-process-latencies stats)
+        ^long rate (stats-rate stats)]
+    (.incBy acked key rate)
+    (.inc acked-counter rate)
     (.record process-lat key latency-ms)))
 
 (defn bolt-failed-tuple!
-  [^BoltExecutorStats stats component stream latency-ms]
+  [^BoltExecutorStats stats ^Counter failed-counter component stream latency-ms]
   (let [key [component stream]
-        ^MultiCountStatAndMetric failed (stats-failed stats)]
-    (.incBy failed key (stats-rate stats))))
+        ^MultiCountStatAndMetric failed (stats-failed stats)
+        ^long rate (stats-rate stats)]
+    (.incBy failed key rate)
+    (.inc failed-counter rate)))
 
 (defn spout-acked-tuple!
-  [^SpoutExecutorStats stats stream latency-ms]
+  [^SpoutExecutorStats stats ^Counter acked-counter stream latency-ms]
   (let [^MultiCountStatAndMetric acked (stats-acked stats)
-        ^MultiLatencyStatAndMetric complete-latencies (stats-complete-latencies stats)]
-    (.incBy acked stream (stats-rate stats))
+        ^MultiLatencyStatAndMetric complete-latencies (stats-complete-latencies stats)
+        ^long rate (stats-rate stats)]
+    (.incBy acked stream rate)
+    (.inc acked-counter rate)
     (.record complete-latencies stream latency-ms)))
 
 (defn spout-failed-tuple!
-  [^SpoutExecutorStats stats stream latency-ms]
-  (let [^MultiCountStatAndMetric failed (stats-failed stats)]
-    (.incBy failed stream (stats-rate stats))))
+  [^SpoutExecutorStats stats ^Counter failed-counter stream latency-ms]
+  (let [^MultiCountStatAndMetric failed (stats-failed stats)
+        ^long rate (stats-rate stats)]
+    (.incBy failed stream rate)
+    (.inc failed-counter rate)))
 
 (defn- close-stat! [stat]
   (.close stat))

@@ -17,35 +17,35 @@
  */
 package org.apache.storm.elasticsearch.bolt;
 
+import static java.util.Objects.requireNonNull;
+import static org.apache.http.util.Args.notBlank;
+
 import java.util.Map;
 
 import org.apache.storm.elasticsearch.common.EsConfig;
 import org.apache.storm.elasticsearch.common.StormElasticSearchClient;
-import org.elasticsearch.client.Client;
-import org.elasticsearch.common.annotations.VisibleForTesting;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Tuple;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.elasticsearch.client.RestClient;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import static org.elasticsearch.common.base.Preconditions.checkNotNull;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
-public abstract class AbstractEsBolt extends BaseRichBolt {
+public abstract class AbstractEsBolt extends BaseTickTupleAwareRichBolt {
 
     private static final Logger LOG = LoggerFactory.getLogger(AbstractEsBolt.class);
 
-    protected static Client client;
+    protected static RestClient client;
+    protected final static ObjectMapper objectMapper = new ObjectMapper();
 
     protected OutputCollector collector;
     private EsConfig esConfig;
 
     public AbstractEsBolt(EsConfig esConfig) {
-        checkNotNull(esConfig);
-        this.esConfig = esConfig;
+        this.esConfig = requireNonNull(esConfig);
     }
 
     @Override
@@ -63,19 +63,37 @@ public abstract class AbstractEsBolt extends BaseRichBolt {
     }
 
     @Override
-    public abstract void execute(Tuple tuple);
-
-    @Override
     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
     }
 
-    @VisibleForTesting
-    static Client getClient() {
+    /**
+     * Construct an Elasticsearch endpoint from the provided index, type and
+     * id.
+     * @param index - required; name of Elasticsearch index
+     * @param type - optional; name of Elasticsearch type
+     * @param id - optional; Elasticsearch document ID
+     * @return the index, type and id concatenated with '/'.
+     */
+    static String getEndpoint(String index, String type, String id) {
+        requireNonNull(index);
+        notBlank(index, "index");
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("/").append(index);
+        if (!(type == null || type.isEmpty())) {
+            sb.append("/").append(type);
+        }
+        if (!(id == null || id.isEmpty())) {
+            sb.append("/").append(id);
+        }
+        return sb.toString();
+    }
+
+    static RestClient getClient() {
         return AbstractEsBolt.client;
     }
 
-    @VisibleForTesting
-    static void replaceClient(Client client) {
+    static void replaceClient(RestClient client) {
         AbstractEsBolt.client = client;
     }
 }

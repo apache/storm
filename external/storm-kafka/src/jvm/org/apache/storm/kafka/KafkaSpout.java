@@ -61,7 +61,7 @@ public class KafkaSpout extends BaseRichSpout {
     public void open(Map conf, final TopologyContext context, final SpoutOutputCollector collector) {
         _collector = collector;
         String topologyInstanceId = context.getStormId();
-        Map stateConf = new HashMap(conf);
+        Map<String, Object> stateConf = new HashMap<>(conf);
         List<String> zkServers = _spoutConfig.zkServers;
         if (zkServers == null) {
             zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
@@ -82,11 +82,11 @@ public class KafkaSpout extends BaseRichSpout {
         if (_spoutConfig.hosts instanceof StaticHosts) {
             _coordinator = new StaticCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, context.getThisTaskId(), topologyInstanceId);
         } else {
             _coordinator = new ZkCoordinator(_connections, conf,
                     _spoutConfig, _state, context.getThisTaskIndex(),
-                    totalTasks, topologyInstanceId);
+                    totalTasks, context.getThisTaskId(), topologyInstanceId);
         }
 
         context.registerMetric("kafkaOffset", new IMetric() {
@@ -157,12 +157,27 @@ public class KafkaSpout extends BaseRichSpout {
         }
     }
 
+    private PartitionManager getManagerForPartition(int partition) {
+        for (PartitionManager partitionManager: _coordinator.getMyManagedPartitions()) {
+            if (partitionManager.getPartition().partition == partition) {
+                return partitionManager;
+            }
+        }
+        return null;
+    }
+
     @Override
     public void ack(Object msgId) {
         KafkaMessageId id = (KafkaMessageId) msgId;
         PartitionManager m = _coordinator.getManager(id.partition);
         if (m != null) {
             m.ack(id.offset);
+        } else {
+            // managers for partitions changed - try to find new manager responsible for that partition
+            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            if (newManager != null) {
+                newManager.ack(id.offset);
+            }
         }
     }
 
@@ -172,6 +187,12 @@ public class KafkaSpout extends BaseRichSpout {
         PartitionManager m = _coordinator.getManager(id.partition);
         if (m != null) {
             m.fail(id.offset);
+        } else {
+            // managers for partitions changed - try to find new manager responsible for that partition
+            PartitionManager newManager = getManagerForPartition(id.partition.partition);
+            if (newManager != null) {
+                newManager.fail(id.offset);
+            }
         }
     }
 

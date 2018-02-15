@@ -198,6 +198,7 @@ Similar to sync policies, file rotation policies allow you to control when data 
 public interface FileRotationPolicy extends Serializable {
     boolean mark(Tuple tuple, long offset);
     void reset();
+    FileRotationPolicy copy();
 }
 ``` 
 
@@ -254,6 +255,23 @@ If you are using Trident and sequence files you can do something like this:
                 .addRotationAction(new MoveFileAction().withDestination("/dest2/"));
 ```
 
+### Data Partitioning
+Data can be partitioned to different HDFS directories based on characteristics of the tuple being processed or purely
+external factors, such as system time.  To partition your your data, write a class that implements the ```Partitioner```
+interface and pass it to the withPartitioner() method of your bolt. The getPartitionPath() method returns a partition
+path for a given tuple.
+
+Here's an example of a Partitioner that operates on a specific field of data:
+
+```java
+
+    Partitioner partitoner = new Partitioner() {
+            @Override
+            public String getPartitionPath(Tuple tuple) {
+                return Path.SEPARATOR + tuple.getStringByField("city");
+            }
+     };
+```
 
 ## HDFS Bolt Support for HDFS Sequence Files
 
@@ -317,16 +335,15 @@ The `org.apache.storm.hdfs.bolt.AvroGenericRecordBolt` class allows you to write
         AvroGenericRecordBolt bolt = new AvroGenericRecordBolt()
                 .withFsUrl("hdfs://localhost:54310")
                 .withFileNameFormat(fileNameFormat)
-                .withSchemaAsString(schema)
                 .withRotationPolicy(rotationPolicy)
                 .withSyncPolicy(syncPolicy);
 ```
-The setup is very similar to the `SequenceFileBolt` example above.  The key difference is that instead of specifying a
-`SequenceFormat` you must provide a string representation of an Avro schema through the `withSchemaAsString()` method.
-An `org.apache.avro.Schema` object cannot be directly provided since it does not implement `Serializable`.
 
-The AvroGenericRecordBolt expects to receive tuples containing an Avro GenericRecord that conforms to the provided
-schema.
+The avro bolt will write records to separate files based on the schema of the record being processed.  In other words,
+if the bolt receives records with two different schemas, it will write to two separate files.  Each file will be rotatated
+in accordance with the specified rotation policy. If a large number of Avro schemas are expected, then the bolt should
+be configured with a maximum number of open files at least equal to the number of schemas expected to prevent excessive
+file open/close/create operations.
 
 To use this bolt you **must** register the appropriate Kryo serializers with your topology configuration.  A convenience
 method is provided for this:
@@ -394,23 +411,44 @@ If your topology is going to interact with secure HDFS, your bolts/states needs 
 currently have 2 options to support this:
 
 ### Using HDFS delegation tokens 
-Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user.
-The nimbus need to start with following configurations:
+Your administrator can configure nimbus to automatically get delegation tokens on behalf of the topology submitter user. The nimbus should be started with following configurations:
 
-nimbus.autocredential.plugins.classes : ["org.apache.storm.hdfs.common.security.AutoHDFS"] 
-nimbus.credential.renewers.classes : ["org.apache.storm.hdfs.common.security.AutoHDFS"] 
+```
+nimbus.autocredential.plugins.classes : ["org.apache.storm.hdfs.security.AutoHDFS"]
+nimbus.credential.renewers.classes : ["org.apache.storm.hdfs.security.AutoHDFS"]
 hdfs.keytab.file: "/path/to/keytab/on/nimbus" (This is the keytab of hdfs super user that can impersonate other users.)
 hdfs.kerberos.principal: "superuser@EXAMPLE.com" 
-nimbus.credential.renewers.freq.secs : 82800 (23 hours, hdfs tokens needs to be renewed every 24 hours so this value should be
-less then 24 hours.)
-topology.hdfs.uri:"hdfs://host:port" (This is an optional config, by default we will use value of "fs.defaultFS" property
-specified in hadoop's core-site.xml)
+nimbus.credential.renewers.freq.secs : 82800 (23 hours, hdfs tokens needs to be renewed every 24 hours so this value should be less then 24 hours.)
+topology.hdfs.uri:"hdfs://host:port" (This is an optional config, by default we will use value of "fs.defaultFS" property specified in hadoop's core-site.xml)
+```
 
 Your topology configuration should have:
-topology.auto-credentials :["org.apache.storm.hdfs.common.security.AutoHDFS"] 
 
-If nimbus did not have the above configuration you need to add it and then restart it. Ensure the hadoop configuration 
-files(core-site.xml and hdfs-site.xml) and the storm-hdfs jar with all the dependencies is present in nimbus's classpath. 
+```
+topology.auto-credentials :["org.apache.storm.hdfs.common.security.AutoHDFS"]
+```
+
+If nimbus did not have the above configuration you need to add and then restart it. Ensure the hadoop configuration 
+files (core-site.xml and hdfs-site.xml) and the storm-hdfs jar with all the dependencies is present in nimbus's classpath.
+
+As an alternative to adding the configuration files (core-site.xml and hdfs-site.xml) to the classpath, you could specify the configurations
+as a part of the topology configuration. E.g. in you custom storm.yaml (or -c option while submitting the topology),
+
+```
+hdfsCredentialsConfigKeys : ["cluster1", "cluster2"] (the hdfs clusters you want to fetch the tokens from)
+"cluster1": {"config1": "value1", "config2": "value2", ... } (A map of config key-values specific to cluster1)
+"cluster2": {"config1": "value1", "hdfs.keytab.file": "/path/to/keytab/for/cluster2/on/nimubs", "hdfs.kerberos.principal": "cluster2user@EXAMPLE.com"} (here along with other configs, we have custom keytab and principal for "cluster2" which will override the keytab/principal specified at topology level)
+```
+
+Instead of specifying key values you may also directly specify the resource files for e.g.,
+
+```
+"cluster1": {"resources": ["/path/to/core-site1.xml", "/path/to/hdfs-site1.xml"]}
+"cluster2": {"resources": ["/path/to/core-site2.xml", "/path/to/hdfs-site2.xml"]}
+```
+
+Storm will download the tokens separately for each of the clusters and populate it into the subject and also renew the tokens periodically. This way it would be possible to run multiple bolts connecting to separate HDFS cluster within the same topology.
+
 Nimbus will use the keytab and principal specified in the config to authenticate with Namenode. From then on for every
 topology submission, nimbus will impersonate the topology submitter user and acquire delegation tokens on behalf of the
 topology submitter user. If topology was started with topology.auto-credentials set to AutoHDFS, nimbus will push the
@@ -537,7 +575,8 @@ Only methods mentioned in **bold** are required.
 | .setLockTimeoutSec()       |~~hdfsspout.lock.timeout.sec~~        |  5 minutes  | Duration of inactivity after which a lock file is considered to be abandoned and ready for another spout to take ownership |
 | .setClocksInSync()         |~~hdfsspout.clocks.insync~~           |    true     | Indicates whether clocks on the storm machines are in sync (using services like NTP). Used for detecting stale locks. |
 | .withConfigKey()           |                                      |             | Optional setting. Overrides the default key name ('hdfs.config', see below) used for specifying HDFS client configs. |
-| .setHdfsClientSettings()   |~~hdfs.config~~ (unless changed via withConfigKey)| | Set it to a Map of Key/value pairs indicating the HDFS settings to be used. For example, keytab and principle could be set using this. See section **Using keytabs on all worker hosts** under HDFS bolt below.| 
+| .setHdfsClientSettings()   |~~hdfs.config~~ (unless changed via withConfigKey)| | Set it to a Map of Key/value pairs indicating the HDFS settings to be used. For example, keytab and principle could be set using this. See section **Using keytabs on all worker hosts** under HDFS bolt below.|
+| .withOutputStream()        |                                      |             | Name of output stream. If set, the tuples will be emited to the specified stream. Else tuples will be emited to the default output stream |
 
 ---
 

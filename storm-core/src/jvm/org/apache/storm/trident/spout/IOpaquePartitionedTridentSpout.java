@@ -29,12 +29,32 @@ import java.util.Map;
  * This defines a transactional spout which does *not* necessarily
  * replay the same batch every time it emits a batch for a transaction id.
  * 
+ * @param <M> The type of metadata object passed to the Emitter when emitting a new batch based on a previous batch. This type must be JSON
+ * serializable by json-simple.
+ * @param <Partitions> The type of metadata object used by the coordinator to describe partitions. This type must be JSON serializable by
+ * json-simple.
  */
 public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends ISpoutPartition, M>
     extends ITridentDataSource {
 
+    /**
+     * Coordinator for batches. Trident will only begin committing once at least one coordinator is ready.
+     * 
+     * @param <Partitions> The type of metadata object used by the coordinator to describe partitions. This type must be JSON serializable
+     * by json-simple.
+     */
     interface Coordinator<Partitions> {
+        /**
+         * Indicates whether this coordinator is ready to commit the given transaction.
+         * The master batch coordinator will only begin committing if at least one coordinator indicates it is ready to commit.
+         * @param txid The transaction id
+         * @return true if this coordinator is ready to commit, false otherwise.
+         */
         boolean isReady(long txid);
+        /**
+         * Gets the partitions for the following batches. The emitter will be asked to refresh partitions when this value changes.
+         * @return The partitions for the following batches.
+         */
         Partitions getPartitionsForBatch();
         void close();
     }
@@ -52,13 +72,26 @@ public interface IOpaquePartitionedTridentSpout<Partitions, Partition extends IS
          * This method is called when this task is responsible for a new set of partitions. Should be used
          * to manage things like connections to brokers.
          */        
-        void refreshPartitions(List<Partition> partitionResponsibilities);        
+        void refreshPartitions(List<Partition> partitionResponsibilities);
+
+        /**
+         * @return The oredered list of partitions being processed by all the tasks
+         */
         List<Partition> getOrderedPartitions(Partitions allPartitionInfo);
+
+        /**
+         * @return The list of partitions that are to be processed by the task with id {@code taskId}
+         */
+        List<Partition> getPartitionsForTask(int taskId, int numTasks, Partitions allPartitionInfo);
+
         void close();
     }
     
-    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);     
-    Coordinator getCoordinator(Map conf, TopologyContext context);     
+    Emitter<Partitions, Partition, M> getEmitter(Map conf, TopologyContext context);
+
+    Coordinator<Partitions> getCoordinator(Map conf, TopologyContext context);
+
     Map<String, Object> getComponentConfiguration();
+
     Fields getOutputFields();
 }

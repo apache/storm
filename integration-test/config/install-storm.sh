@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 #
 # Licensed to the Apache Software Foundation (ASF) under one or more
 # contributor license agreements.  See the NOTICE file distributed with
@@ -25,13 +26,12 @@ chown -R storm:storm /usr/share/apache-storm*
 ln -s /usr/share/apache-storm* /usr/share/storm
 ln -s /usr/share/storm/bin/storm /usr/bin/storm
 
-mkdir /etc/storm
-chown storm:storm /etc/storm
+mkdir -p /etc/storm/conf
+chown -R storm:storm /etc/storm
 
 rm /usr/share/storm/conf/storm.yaml
 cp "${SCRIPT_DIR}/storm.yaml" /usr/share/storm/conf/
-cp "${SCRIPT_DIR}/cluster.xml" /usr/share/storm/logback/
-ln -s /usr/share/storm/conf/storm.yaml /etc/storm/storm.yaml
+ln -s /usr/share/storm/conf/storm.yaml /etc/storm/conf/storm.yaml
 
 mkdir /var/log/storm
 chown storm:storm /var/log/storm

@@ -21,7 +21,7 @@ import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.List;
 import org.json.simple.JSONValue;
-
+import org.json.simple.parser.ParseException;
 
 public class JSONTransactionalSerializer implements Serializer<TransactionalValue> {
     @Override
@@ -40,9 +40,9 @@ public class JSONTransactionalSerializer implements Serializer<TransactionalValu
     public TransactionalValue deserialize(byte[] b) {
         try {
             String s = new String(b, "UTF-8");
-            List deser = (List) JSONValue.parse(s);
+            List deser = (List) JSONValue.parseWithException(s);
             return new TransactionalValue((Long) deser.get(0), deser.get(1));
-        } catch (UnsupportedEncodingException e) {
+        } catch (UnsupportedEncodingException | ParseException e) {
             throw new RuntimeException(e);
         }
     }

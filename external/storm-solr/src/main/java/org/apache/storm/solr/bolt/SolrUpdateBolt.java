@@ -18,20 +18,22 @@
 
 package org.apache.storm.solr.bolt;
 
-import org.apache.storm.task.OutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichBolt;
-import org.apache.storm.tuple.Tuple;
-import org.apache.storm.utils.TupleUtils;
 import org.apache.solr.client.solrj.SolrClient;
 import org.apache.solr.client.solrj.SolrRequest;
 import org.apache.solr.client.solrj.SolrServerException;
 import org.apache.solr.client.solrj.impl.CloudSolrClient;
+import org.apache.solr.client.solrj.impl.HttpClientUtil;
+import org.apache.solr.client.solrj.impl.Krb5HttpClientConfigurer;
 import org.apache.storm.solr.config.CountBasedCommit;
 import org.apache.storm.solr.config.SolrCommitStrategy;
 import org.apache.storm.solr.config.SolrConfig;
 import org.apache.storm.solr.mapper.SolrMapper;
+import org.apache.storm.task.OutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseTickTupleAwareRichBolt;
+import org.apache.storm.tuple.Tuple;
+import org.apache.storm.utils.TupleUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,7 +42,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-public class SolrUpdateBolt extends BaseRichBolt {
+public class SolrUpdateBolt extends BaseTickTupleAwareRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(SolrUpdateBolt.class);
 
     /**
@@ -73,6 +75,8 @@ public class SolrUpdateBolt extends BaseRichBolt {
     @Override
     public void prepare(Map stormConf, TopologyContext context, OutputCollector collector) {
         this.collector = collector;
+        if (solrConfig.isKerberosEnabled())
+            HttpClientUtil.setConfigurer(new Krb5HttpClientConfigurer());
         this.solrClient = new CloudSolrClient(solrConfig.getZkHostString());
         this.toCommitTuples = new ArrayList<>(capacity());
     }
@@ -85,12 +89,10 @@ public class SolrUpdateBolt extends BaseRichBolt {
     }
 
     @Override
-    public void execute(Tuple tuple) {
+    protected void process(Tuple tuple) {
         try {
-            if (!TupleUtils.isTick(tuple)) {    // Don't add tick tuples to the SolrRequest
-                SolrRequest request = solrMapper.toSolrRequest(tuple);
-                solrClient.request(request, solrMapper.getCollection());
-            }
+            SolrRequest request = solrMapper.toSolrRequest(tuple);
+            solrClient.request(request, solrMapper.getCollection());
             ack(tuple);
         } catch (Exception e) {
             fail(tuple, e);
@@ -153,5 +155,16 @@ public class SolrUpdateBolt extends BaseRichBolt {
 
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) { }
+
+    @Override
+    public void cleanup() {
+        if (solrClient != null) {
+            try {
+                solrClient.close();
+            } catch (IOException e) {
+                LOG.error("Error while closing solrClient", e);
+            }
+        }
+    }
 
 }

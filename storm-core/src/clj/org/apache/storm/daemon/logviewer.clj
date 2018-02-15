@@ -396,7 +396,7 @@
                         "Next" :enabled (> next-start start))])]]))
 
 (defn- download-link [fname]
-  [[:p (link-to (url-format "/download/%s" fname) "Download Full File")]])
+  [[:p (link-to (url-format "/download?file=%s" fname) "Download Full File")]])
 
 (defn- daemon-download-link [fname]
   [[:p (link-to (url-format "/daemondownload/%s" fname) "Download Full File")]])
@@ -518,7 +518,7 @@
 
 (defn url-to-match-centered-in-log-page
   [needle fname offset port]
-  (let [host (local-hostname)
+  (let [host (hostname)
         port (logviewer-port)
         fname (clojure.string/join file-path-separator (take-last 3 (split fname (re-pattern file-path-separator))))]
     (url (str "http://" host ":" port "/log")
@@ -531,7 +531,7 @@
 
 (defn url-to-match-centered-in-log-page-daemon-file
   [needle fname offset port]
-  (let [host (local-hostname)
+  (let [host (hostname)
         port (logviewer-port)
         fname (clojure.string/join file-path-separator (take-last 1 (split fname (re-pattern file-path-separator))))]
     (url (str "http://" host ":" port "/daemonlog")
@@ -848,8 +848,8 @@
                   (str "Search substring must be between 1 and 1024 UTF-8 "
                     "bytes in size (inclusive)"))))
             (catch Exception ex
-              (json-response (exception->json ex) callback :status 500))))
-        (json-response (unauthorized-user-json user) callback :status 401))
+              (json-response (exception->json ex 500) callback :status 500))))
+        (json-response (unauthorized-user-json user) callback :status 403))
       (json-response {"error" "Not Found"
                       "errorMessage" "The file was not found on this node."}
         callback
@@ -1086,10 +1086,11 @@
       (catch InvalidRequestException ex
         (log-error ex)
         (ring-response-from-exception ex))))
-  (GET "/download/:file" [:as {:keys [servlet-request servlet-response log-root]} file & m]
+  (GET "/download" [:as {:keys [servlet-request servlet-response log-root]} & m]
     (try
-      (mark! logviewer:num-download-log-file-http-requests)
-      (let [user (.getUserName http-creds-handler servlet-request)]
+      (.mark logviewer:num-download-log-file-http-requests)
+      (let [user (.getUserName http-creds-handler servlet-request)
+            file (url-decode (:file m))]
         (download-log-file file servlet-request servlet-response user log-root))
       (catch InvalidRequestException ex
         (log-error ex)
@@ -1120,7 +1121,7 @@
           (.getHeader servlet-request "Origin")))
       (catch InvalidRequestException ex
         (log-error ex)
-        (json-response (exception->json ex) (:callback m) :status 400))))
+        (json-response (exception->json ex 400) (:callback m) :status 400))))
   (GET "/deepSearch/:topo-id" [:as {:keys [servlet-request servlet-response log-root]} topo-id & m]
     ;; We do not use servlet-response here, but do not remove it from the
     ;; :keys list, or this rule could stop working when an authentication
@@ -1140,7 +1141,7 @@
           (.getHeader servlet-request "Origin")))
       (catch InvalidRequestException ex
         (log-error ex)
-        (json-response (exception->json ex) (:callback m) :status 400))))
+        (json-response (exception->json ex 400) (:callback m) :status 400))))
   (GET "/searchLogs" [:as req & m]
     (try
       (let [servlet-request (:servlet-request req)
@@ -1153,7 +1154,7 @@
           (.getHeader servlet-request "Origin")))
       (catch InvalidRequestException ex
         (log-error ex)
-        (json-response (exception->json ex) (:callback m) :status 400))))
+        (json-response (exception->json ex 400) (:callback m) :status 400))))
   (GET "/listLogs" [:as req & m]
     (try
       (mark! logviewer:num-list-logs-http-requests)
@@ -1167,7 +1168,7 @@
           (.getHeader servlet-request "Origin")))
       (catch InvalidRequestException ex
         (log-error ex)
-        (json-response (exception->json ex) (:callback m) :status 400))))
+        (json-response (exception->json ex 400) (:callback m) :status 400))))
   (route/resources "/")
   (route/not-found "Page not found"))
 

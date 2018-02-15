@@ -638,7 +638,18 @@ public class Slot extends Thread implements AutoCloseable {
         Container container = null;
         if (currentAssignment != null) { 
             try {
-                container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+                // For now we do not make a transaction when removing a topology assignment from local, an overdue
+                // assignment may be left on local disk.
+                // So we should check if the local disk assignment is valid when initializing:
+                // if topology files does not exist, the worker[possibly alive] will be reassigned if it is timed-out;
+                // if topology files exist but the topology id is invalid, just let Supervisor make a sync;
+                // if topology files exist and topology files is valid, recover the container.
+                if (SupervisorUtils.doRequiredTopoFilesExist(conf, currentAssignment.get_topology_id())) {
+                    container = containerLauncher.recoverContainer(port, currentAssignment, localState);
+                } else {
+                    // Make the assignment null to let slot clean up the disk assignment.
+                    currentAssignment = null;
+                }
             } catch (ContainerRecoveryException e) {
                 //We could not recover container will be null.
             }
@@ -748,6 +759,17 @@ public class Slot extends Thread implements AutoCloseable {
                 if (!equivalent(nextState.currentAssignment, dynamicState.currentAssignment)) {
                     LOG.info("SLOT {}: Changing current assignment from {} to {}", staticState.port, dynamicState.currentAssignment, nextState.currentAssignment);
                     saveNewAssignment(nextState.currentAssignment);
+                }
+
+                if (equivalent(nextState.newAssignment, nextState.currentAssignment) &&
+                    nextState.currentAssignment != null && nextState.currentAssignment.get_owner() == null &&
+                    nextState.newAssignment != null && nextState.newAssignment.get_owner() != null) {
+                    //This is an odd case for a rolling upgrade where the user on the old assignment may be null,
+                    // but not on the new one.  Although in all other ways they are the same.
+                    // If this happens we want to use the assignment with the owner.
+                    LOG.info("Updating assignment to save owner {}", nextState.newAssignment.get_owner());
+                    saveNewAssignment(nextState.newAssignment);
+                    nextState = nextState.withCurrentAssignment(nextState.container, nextState.newAssignment);
                 }
                 
                 // clean up the profiler actions that are not being processed

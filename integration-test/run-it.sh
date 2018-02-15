@@ -20,7 +20,7 @@ set -x
 set -e
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 echo SCRIPT_DIR="${SCRIPT_DIR}"
-STORM_SRC_DIR=$(dirname ${SCRIPT_DIR})
+STORM_SRC_DIR=$(dirname "${SCRIPT_DIR}")
 echo SCRIPT_SRC_DIR="${SCRIPT_SRC_DIR}"
 function die() {
   echo $*
@@ -32,11 +32,11 @@ function list_storm_processes() {
 
 list_storm_processes || true
 # increasing swap space so we can run lots of workers
-sudo dd if=/dev/zero of=/swapfile.img bs=8192 count=1M
+sudo dd if=/dev/zero of=/swapfile.img bs=4096 count=1M
 sudo mkswap /swapfile.img
 sudo swapon /swapfile.img
 
-if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8
+if [[ "${USER}" == "ubuntu" ]]; then # install oracle jdk8
     sudo apt-get update
     sudo apt-get -y install python-software-properties
     sudo apt-add-repository -y ppa:webupd8team/java
@@ -44,29 +44,35 @@ if [[ "${USER}" == "vagrant" ]]; then # install oracle jdk8
     echo "oracle-java8-installer shared/accepted-oracle-license-v1-1 select true" | sudo debconf-set-selections
     sudo apt-get install -y oracle-java8-installer
     sudo apt-get -y install maven
+    sudo apt-get install unzip
     java -version
     mvn --version
     export MAVEN_OPTS="-Xmx3000m"
+    zookeeper_version=3.4.8*
 else
     ( while true; do echo "heartbeat"; sleep 300; done ) & #heartbeat needed by travis ci
-    (cd ${STORM_SRC_DIR} && mvn clean install -DskipTests=true) || die "maven install command failed"
-    (cd ${STORM_SRC_DIR}/storm-dist/binary && mvn package -Dgpg.skip=true) || die "maven package command failed"
+    if [[ "${USER}" == "travis" ]]; then
+        ( cd "${STORM_SRC_DIR}/storm-dist/binary" && mvn clean package -Dgpg.skip=true )
+    fi
+    (( $(find "${STORM_SRC_DIR}/storm-dist/binary" -iname 'apache-storm*.zip' | wc -l) == 1 )) || die "expected exactly one zip file, did you run: cd ${STORM_SRC_DIR}/storm-dist/binary && mvn clean package -Dgpg.skip=true"
+    zookeeper_version=3.4.5*
 fi
-storm_binary_zip=$(find ${STORM_SRC_DIR}/storm-dist -iname '*.zip')
-storm_binary_name=$(basename ${storm_binary_zip})
-export STORM_VERSION=$(grep -oPe '\d.*(?=.zip)' <<<${storm_binary_name})
+
+storm_binary_zip=$(find "${STORM_SRC_DIR}/storm-dist" -iname '*.zip')
+storm_binary_name=$(basename "${storm_binary_zip}")
+export STORM_VERSION=$(grep -oPe '\d.*(?=.zip)' <<<"${storm_binary_name}")
 echo "Using storm version:" ${STORM_VERSION}
 
 # setup storm cluster
 list_storm_processes || true
-sudo bash ${SCRIPT_DIR}/config/common.sh
-sudo bash ${SCRIPT_DIR}/config/install-zookeeper.sh
-sudo bash ${SCRIPT_DIR}/config/install-storm.sh $storm_binary_zip
-export JAVA_HOME
+sudo bash "${SCRIPT_DIR}/config/common.sh"
+sudo bash "${SCRIPT_DIR}/config/install-zookeeper.sh" "$zookeeper_version"
+sudo bash "${SCRIPT_DIR}/config/install-storm.sh" "$storm_binary_zip"
+export JAVA_HOME="${JAVA_HOME}"
 env
 function start_storm_process() {
     echo starting: storm $1
-    sudo su storm -c "export JAVA_HOME=${JAVA_HOME} && cd /home/storm && storm $1" &
+    sudo su storm -c "export JAVA_HOME=\"${JAVA_HOME}\" && cd /usr/share/storm && storm $1" &
 }
 start_storm_process nimbus
 start_storm_process ui

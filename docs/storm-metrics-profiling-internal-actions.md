@@ -1,4 +1,8 @@
-# Storm Metrics for Profiling Various Storm Internal Actions
+---
+title: Storm Metrics for Profiling Various Storm Internal Actions
+layout: documentation
+documentation: true
+---
 
 With the addition of these metrics, Storm users can collect, view, and analyze the performance of various internal actions.  The actions that are profiled include thrift rpc calls and http quests within the storm daemons. For instance, in the Storm Nimbus daemon, the following thrift calls defined in the Nimbus$Iface are profiled:
 

@@ -56,6 +56,10 @@ public class ThriftClient implements AutoCloseable {
             port = type.getPort(storm_conf);
         }
 
+        if (timeout == null) {
+            timeout = type.getSocketTimeOut(storm_conf);
+        }
+
         if (port<=0) {
             throw new IllegalArgumentException("invalid port: "+port);
         }          

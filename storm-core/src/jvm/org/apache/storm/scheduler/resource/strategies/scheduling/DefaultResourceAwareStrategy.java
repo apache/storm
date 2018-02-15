@@ -71,7 +71,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
             LOG.warn("No available nodes to schedule tasks on!");
             return SchedulingResult.failure(SchedulingStatus.FAIL_NOT_ENOUGH_RESOURCES, "No available nodes to schedule tasks on!");
         }
-        Collection<ExecutorDetails> unassignedExecutors = new HashSet<ExecutorDetails>(_cluster.getUnassignedExecutors(td));
+        Collection<ExecutorDetails> unassignedExecutors = new HashSet<>(_cluster.getUnassignedExecutors(td));
         Map<WorkerSlot, Collection<ExecutorDetails>> schedulerAssignmentMap = new HashMap<>();
         LOG.debug("ExecutorsNeedScheduling: {}", unassignedExecutors);
         Collection<ExecutorDetails> scheduledTasks = new ArrayList<>();
@@ -521,13 +521,13 @@ public class DefaultResourceAwareStrategy implements IStrategy {
     }
 
     /**
-     * sort components by the number of in and out connections that need to be made
+     * sort components by the number of in and out connections that need to be made, in descending order
      *
      * @param componentMap The components that need to be sorted
      * @return a sorted set of components
      */
     private Set<Component> sortComponents(final Map<String, Component> componentMap) {
-        Set<Component> sortedComponents = new TreeSet<Component>(new Comparator<Component>() {
+        Set<Component> sortedComponents = new TreeSet<>(new Comparator<Component>() {
             @Override
             public int compare(Component o1, Component o2) {
                 int connections1 = 0;
@@ -541,7 +541,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
                     connections2 += (componentMap.get(childId).execs.size() * o2.execs.size());
                 }
 
-                if (connections1 > connections1) {
+                if (connections1 > connections2) {
                     return -1;
                 } else if (connections1 < connections2) {
                     return 1;
@@ -555,7 +555,7 @@ public class DefaultResourceAwareStrategy implements IStrategy {
     }
 
     /**
-     * Sort a component's neighbors by the number of connections it needs to make with this component
+     * Sort a component's neighbors by the number of connections it needs to make with this component, in descending order
      *
      * @param thisComp     the component that we need to sort its neighbors
      * @param componentMap all the components to sort
@@ -580,8 +580,15 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         return sortedComponents;
     }
 
+    private static Comparator<ExecutorDetails> ORDER_EXEC_BY_IDS = new Comparator<ExecutorDetails>() {
+        @Override
+        public int compare(ExecutorDetails a, ExecutorDetails b) {
+            return Integer.compare(a.getStartTask(), b.getStartTask());
+        }
+    };
+
     /**
-     * Order executors based on how many in and out connections it will potentially need to make.
+     * Order executors based on how many in and out connections it will potentially need to make, in descending order.
      * First order components by the number of in and out connections it will have.  Then iterate through the sorted list of components.
      * For each component sort the neighbors of that component by how many connections it will have to make with that component.
      * Add an executor from this component and then from each neighboring component in sorted order.  Do this until there is nothing left to schedule
@@ -597,7 +604,9 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();
         for (Component component : componentMap.values()) {
             compToExecsToSchedule.put(component.id, new LinkedList<ExecutorDetails>());
-            for (ExecutorDetails exec : component.execs) {
+            List<ExecutorDetails> sortedExecs = new ArrayList<>(component.execs);
+            Collections.sort(sortedExecs, ORDER_EXEC_BY_IDS);
+            for (ExecutorDetails exec : sortedExecs) {
                 if (unassignedExecutors.contains(exec)) {
                     compToExecsToSchedule.get(component.id).add(exec);
                 }
@@ -608,14 +617,14 @@ public class DefaultResourceAwareStrategy implements IStrategy {
         sortedComponents.addAll(componentMap.values());
 
         for (Component currComp : sortedComponents) {
-            Map<String, Component> neighbors = new HashMap<String, Component>();
+            Map<String, Component> neighbors = new HashMap<>();
             for (String compId : (List<String>) ListUtils.union(currComp.children, currComp.parents)) {
                 neighbors.put(compId, componentMap.get(compId));
             }
             Set<Component> sortedNeighbors = sortNeighbors(currComp, neighbors);
             Queue<ExecutorDetails> currCompExesToSched = compToExecsToSchedule.get(currComp.id);
 
-            boolean flag = false;
+            boolean flag;
             do {
                 flag = false;
                 if (!currCompExesToSched.isEmpty()) {

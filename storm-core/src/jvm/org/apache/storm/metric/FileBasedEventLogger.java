@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.metric;
 
 import org.apache.commons.lang.StringUtils;
@@ -34,7 +35,10 @@ import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
 
 public class FileBasedEventLogger implements IEventLogger {
     private static final Logger LOG = LoggerFactory.getLogger(FileBasedEventLogger.class);
@@ -43,6 +47,7 @@ public class FileBasedEventLogger implements IEventLogger {
 
     private Path eventLogPath;
     private BufferedWriter eventLogWriter;
+    private ScheduledExecutorService flushScheduler;
     private volatile boolean dirty = false;
 
     private void initLogWriter(Path logFilePath) {
@@ -59,12 +64,17 @@ public class FileBasedEventLogger implements IEventLogger {
 
 
     private void setUpFlushTask() {
-        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
-        Runnable task = new Runnable() {
+        ThreadFactory threadFactory = new ThreadFactoryBuilder()
+                .setNameFormat("event-logger-flush-%d")
+                .setDaemon(true)
+                .build();
+
+        flushScheduler = Executors.newSingleThreadScheduledExecutor(threadFactory);
+        Runnable runnable = new Runnable() {
             @Override
             public void run() {
                 try {
-                    if(dirty) {
+                    if (dirty) {
                         eventLogWriter.flush();
                         dirty = false;
                     }
@@ -75,7 +85,7 @@ public class FileBasedEventLogger implements IEventLogger {
             }
         };
 
-        scheduler.scheduleAtFixedRate(task, FLUSH_INTERVAL_MILLIS, FLUSH_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
+        flushScheduler.scheduleAtFixedRate(runnable, FLUSH_INTERVAL_MILLIS, FLUSH_INTERVAL_MILLIS, TimeUnit.MILLISECONDS);
     }
 
     private String getFirstNonNull(String... strings) {
@@ -101,7 +111,7 @@ public class FileBasedEventLogger implements IEventLogger {
     }
 
     @Override
-    public void prepare(Map stormConf, TopologyContext context) {
+    public void prepare(Map<String, Object> stormConf, Map<String, Object> arguments, TopologyContext context) {
         String workersArtifactDir; // workers artifact directory
         String stormId = context.getStormId();
         int port = context.getThisWorkerPort();
@@ -129,7 +139,7 @@ public class FileBasedEventLogger implements IEventLogger {
     public void log(EventInfo event) {
         try {
             //TODO: file rotation
-            eventLogWriter.write(event.toString());
+            eventLogWriter.write(buildLogMessage(event));
             eventLogWriter.newLine();
             dirty = true;
         } catch (IOException ex) {
@@ -138,12 +148,35 @@ public class FileBasedEventLogger implements IEventLogger {
         }
     }
 
+    protected String buildLogMessage(EventInfo event) {
+        return event.toString();
+    }
+
     @Override
     public void close() {
         try {
             eventLogWriter.close();
+
         } catch (IOException ex) {
             LOG.error("Error closing event log.", ex);
+        }
+
+        closeFlushScheduler();
+    }
+
+    private void closeFlushScheduler() {
+        if (flushScheduler != null) {
+            flushScheduler.shutdown();
+            try {
+                if (!flushScheduler.awaitTermination(2, TimeUnit.SECONDS)) {
+                    flushScheduler.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                // (Re-)Cancel if current thread also interrupted
+                flushScheduler.shutdownNow();
+                // Preserve interrupt status
+                Thread.currentThread().interrupt();
+            }
         }
     }
 }

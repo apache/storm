@@ -145,6 +145,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                 }
             }
             HashSet<Integer> allPorts = new HashSet<>(assignedPorts);
+            iSuper.assigned(allPorts);
             allPorts.addAll(slots.keySet());
             
             Map<Integer, Set<TopoProfileAction>> filtered = new HashMap<>();
@@ -155,7 +156,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                         NodeInfo ni = req.get_nodeInfo();
                         if (host.equals(ni.get_node())) {
                             Long port = ni.get_port().iterator().next();
-                            Set<TopoProfileAction> actions = filtered.get(port);
+                            Set<TopoProfileAction> actions = filtered.get(port.intValue());
                             if (actions == null) {
                                 actions = new HashSet<>();
                                 filtered.put(port.intValue(), actions);
@@ -195,7 +196,7 @@ public class ReadClusterState implements Runnable, AutoCloseable {
             }
             if (version == null) {
                 // ignore
-            } else if (version == recordedVersion) {
+            } else if (version.equals(recordedVersion)) {
                 updateAssignmentVersion.put(topoId, locAssignment);
             } else {
                 VersionedData<Assignment> assignmentVersion = stormClusterState.assignmentInfoWithVersion(topoId, callback);
@@ -275,6 +276,9 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                             localAssignment = new LocalAssignment(stormId, executors);
                             if (slotsResources.containsKey(port)) {
                                 localAssignment.set_resources(slotsResources.get(port));
+                            }
+                            if (assignment.is_set_owner()) {
+                                localAssignment.set_owner(assignment.get_owner());
                             }
                             portTasks.put(port.intValue(), localAssignment);
                         }

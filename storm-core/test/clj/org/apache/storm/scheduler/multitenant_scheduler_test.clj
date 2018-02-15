@@ -138,7 +138,7 @@
                    2
                    {executor1 "spout1"
                     executor2 "bolt1"
-                    executor3 "bolt2"})]
+                    executor3 "bolt2"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -175,7 +175,7 @@
                    5
                    {executor1 "spout1"
                     executor2 "bolt1"
-                    executor3 "bolt2"})]
+                    executor3 "bolt2"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -216,7 +216,7 @@
                     executor2 "bolt1"
                     executor3 "bolt1"
                     executor4 "bolt1"
-                    executor5 "bolt2"})]
+                    executor5 "bolt2"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -255,7 +255,7 @@
                     executor2 "bolt1"
                     executor3 "bolt2"
                     executor4 "bolt3"
-                    executor5 "bolt4"})]
+                    executor5 "bolt4"} "user")]
     (let [node-map (Node/getAllNodesFrom single-cluster)
          free-pool (FreePool. )
          default-pool (DefaultPool. )]
@@ -302,7 +302,7 @@
                    2
                    {executor1 "spout1"
                     executor2 "bolt1"
-                    executor3 "bolt2"})
+                    executor3 "bolt2"} "user")
        topology2 (TopologyDetails. "topology2"
                     {TOPOLOGY-NAME "topology-name-2"}
                     (StormTopology.)
@@ -310,7 +310,7 @@
                     {executor11 "spout11"
                      executor12 "bolt12"
                      executor13 "bolt13"
-                     executor14 "bolt14"})]
+                     executor14 "bolt14"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -383,7 +383,7 @@
                    {executor1 "spout1"
                     executor2 "bolt1"
                     executor3 "bolt2"
-                    executor4 "bolt4"})]
+                    executor4 "bolt4"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -427,7 +427,7 @@
                    {executor1 "spout1"
                     executor2 "bolt1"
                     executor3 "bolt2"
-                    executor4 "bolt4"})]
+                    executor4 "bolt4"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -474,7 +474,7 @@
                    {executor1 "spout1"
                     executor2 "bolt1"
                     executor3 "bolt2"
-                    executor4 "bolt4"})
+                    executor4 "bolt4"} "user")
        topology2 (TopologyDetails. "topology2"
                     {TOPOLOGY-NAME "topology-name-2"
                      TOPOLOGY-ISOLATED-MACHINES 2}
@@ -483,7 +483,7 @@
                     {executor11 "spout11"
                      executor12 "bolt12"
                      executor13 "bolt13"
-                     executor14 "bolt14"})]
+                     executor14 "bolt14"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -579,7 +579,7 @@
                    {executor1 "spout1"
                     executor2 "bolt1"
                     executor3 "bolt2"
-                    executor4 "bolt4"})
+                    executor4 "bolt4"} "user")
        topology2 (TopologyDetails. "topology2"
                     {TOPOLOGY-NAME "topology-name-2"
                      TOPOLOGY-ISOLATED-MACHINES 2}
@@ -588,7 +588,7 @@
                     {executor11 "spout11"
                      executor12 "bolt12"
                      executor13 "bolt13"
-                     executor14 "bolt14"})]
+                     executor14 "bolt14"} "user")]
     ;; assign one node so it is not in the pool
     (.assign (.get node-map "super0") "topology1" (list executor1) cluster)
     (.init free-pool cluster node-map)
@@ -629,34 +629,31 @@
 (deftest test-multitenant-scheduler
   (let [supers (gen-supervisors 10)
        topology1 (TopologyDetails. "topology1"
-                   {TOPOLOGY-NAME "topology-name-1"
-                    TOPOLOGY-SUBMITTER-USER "userC"}
+                   {TOPOLOGY-NAME "topology-name-1"}
                    (StormTopology.)
                    4
                    (mk-ed-map [["spout1" 0 5]
                                ["bolt1" 5 10]
                                ["bolt2" 10 15]
-                               ["bolt3" 15 20]]))
+                               ["bolt3" 15 20]]) "userC")
        topology2 (TopologyDetails. "topology2"
                     {TOPOLOGY-NAME "topology-name-2"
-                     TOPOLOGY-ISOLATED-MACHINES 2
-                     TOPOLOGY-SUBMITTER-USER "userA"}
+                     TOPOLOGY-ISOLATED-MACHINES 2}
                     (StormTopology.)
                     4
                     (mk-ed-map [["spout11" 0 5]
                                 ["bolt12" 5 6]
                                 ["bolt13" 6 7]
-                                ["bolt14" 7 10]]))
+                                ["bolt14" 7 10]]) "userA")
        topology3 (TopologyDetails. "topology3"
                     {TOPOLOGY-NAME "topology-name-3"
-                     TOPOLOGY-ISOLATED-MACHINES 5
-                     TOPOLOGY-SUBMITTER-USER "userB"}
+                     TOPOLOGY-ISOLATED-MACHINES 5}
                     (StormTopology.)
                     10
                     (mk-ed-map [["spout21" 0 10]
                                 ["bolt22" 10 20]
                                 ["bolt23" 20 30]
-                                ["bolt24" 30 40]]))
+                                ["bolt24" 30 40]]) "userB")
        cluster (Cluster. (nimbus/standalone-nimbus) supers {} nil)
        node-map (Node/getAllNodesFrom cluster)
        topologies (Topologies. (to-top-map [topology1 topology2 topology3]))
@@ -682,14 +679,13 @@
 (deftest test-force-free-slot-in-bad-state
   (let [supers (gen-supervisors 1)
         topology1 (TopologyDetails. "topology1"
-                                    {TOPOLOGY-NAME "topology-name-1"
-                                     TOPOLOGY-SUBMITTER-USER "userC"}
+                                    {TOPOLOGY-NAME "topology-name-1"}
                                     (StormTopology.)
                                     4
                                     (mk-ed-map [["spout1" 0 5]
                                                 ["bolt1" 5 10]
                                                 ["bolt2" 10 15]
-                                                ["bolt3" 15 20]]))
+                                                ["bolt3" 15 20]]) "userC")
         existing-assignments {
                                "topology1" (SchedulerAssignmentImpl. "topology1" {(ExecutorDetails. 0 5) (WorkerSlot. "super0" 1)
                                                                                   (ExecutorDetails. 5 10) (WorkerSlot. "super0" 20)
@@ -719,25 +715,22 @@
   (testing "Assiging same worker slot to different topologies is bad state"
     (let [supers (gen-supervisors 5)
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userC"}
+                      {TOPOLOGY-NAME "topology-name-1"}
                       (StormTopology.)
                       1
-                      (mk-ed-map [["spout1" 0 1]]))
+                      (mk-ed-map [["spout1" 0 1]]) "userC")
           topology2 (TopologyDetails. "topology2"
                       {TOPOLOGY-NAME "topology-name-2"
-                       TOPOLOGY-ISOLATED-MACHINES 2
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                       TOPOLOGY-ISOLATED-MACHINES 2}
                       (StormTopology.)
                       2
-                      (mk-ed-map [["spout11" 1 2]["bolt11" 3 4]]))
+                      (mk-ed-map [["spout11" 1 2]["bolt11" 3 4]]) "userA")
           topology3 (TopologyDetails. "topology3"
                       {TOPOLOGY-NAME "topology-name-3"
-                       TOPOLOGY-ISOLATED-MACHINES 1
-                       TOPOLOGY-SUBMITTER-USER "userB"}
+                       TOPOLOGY-ISOLATED-MACHINES 1}
                       (StormTopology.)
                       1
-                      (mk-ed-map [["spout21" 2 3]]))
+                      (mk-ed-map [["spout21" 2 3]]) "userB")
           worker-slot-with-multiple-assignments (WorkerSlot. "super1" 1)
           existing-assignments {"topology2" (SchedulerAssignmentImpl. "topology2" {(ExecutorDetails. 1 1) worker-slot-with-multiple-assignments})
                                 "topology3" (SchedulerAssignmentImpl. "topology3" {(ExecutorDetails. 2 2) worker-slot-with-multiple-assignments})}
@@ -761,11 +754,10 @@
     (let [supers (gen-supervisors 1)
           port-not-reported-by-supervisor 6
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {TOPOLOGY-NAME "topology-name-1"}
                       (StormTopology.)
                       1
-                      (mk-ed-map [["spout11" 0 1]]))
+                      (mk-ed-map [["spout11" 0 1]]) "userA")
           existing-assignments {"topology1"
                                 (SchedulerAssignmentImpl. "topology1"
                                   {(ExecutorDetails. 0 0) (WorkerSlot. "super0" port-not-reported-by-supervisor)})}
@@ -787,19 +779,17 @@
           dead-supervisor "super1"
           port-not-reported-by-supervisor 6
           topology1 (TopologyDetails. "topology1"
-                      {TOPOLOGY-NAME "topology-name-1"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {TOPOLOGY-NAME "topology-name-1"}
                       (StormTopology.)
                       2
                       (mk-ed-map [["spout11" 0 1]
-                                  ["bolt12" 1 2]]))
+                                  ["bolt12" 1 2]]) "userA")
           topology2 (TopologyDetails. "topology2"
-                      {TOPOLOGY-NAME "topology-name-2"
-                       TOPOLOGY-SUBMITTER-USER "userA"}
+                      {TOPOLOGY-NAME "topology-name-2"}
                       (StormTopology.)
                       2
                       (mk-ed-map [["spout21" 4 5]
-                                  ["bolt22" 5 6]]))
+                                  ["bolt22" 5 6]]) "userA")
           worker-slot-with-multiple-assignments (WorkerSlot. dead-supervisor 1)
           existing-assignments {"topology1"
                                 (SchedulerAssignmentImpl. "topology1"
@@ -837,11 +827,10 @@
         supers {"super1" super1 "super2" super2}
         topology1 (TopologyDetails. "topology1"
                     {TOPOLOGY-NAME "topology-name-1"
-                     TOPOLOGY-SUBMITTER-USER "userA"
                      TOPOLOGY-ISOLATED-MACHINES 1}
                     (StormTopology.)
                     7
-                    (mk-ed-map [["spout21" 0 7]]))
+                    (mk-ed-map [["spout21" 0 7]]) "userA")
         existing-assignments {"topology1"
                               (SchedulerAssignmentImpl. "topology1"
                                 {(ExecutorDetails. 0 0) (WorkerSlot. "super1" 1)

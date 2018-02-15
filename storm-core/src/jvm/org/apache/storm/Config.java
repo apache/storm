@@ -20,6 +20,7 @@ package org.apache.storm;
 import org.apache.storm.scheduler.resource.strategies.eviction.IEvictionStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
+import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidationAnnotations.*;
@@ -139,6 +140,9 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
 
+    @isListEntryCustom(entryValidatorClasses={MetricReportersValidator.class})
+    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * A list of daemon metrics  reporter plugin class names.
      * These plugins must implement {@link org.apache.storm.daemon.metrics.reporters.PreparableReporter} interface.
@@ -208,7 +212,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * A directory on the local filesystem used by Storm for any local
      * filesystem usage it needs. The directory must exist and the Storm daemons must
-     * have permission to read/write from this location.
+     * have permission to read/write from this location. It could be either absolute or relative.
+     * If the setting is a relative directory, it is relative to root directory of Storm installation.
      */
     @isString
     public static final String STORM_LOCAL_DIR = "storm.local.dir";
@@ -323,7 +328,6 @@ public class Config extends HashMap<String, Object> {
      * to false, then Storm will use a pure-Java messaging system. The purpose
      * of this flag is to make it easy to run Storm in local mode by eliminating
      * the need for native dependencies, which can be difficult to install.
-     *
      * Defaults to false.
      */
     @isBoolean
@@ -384,7 +388,7 @@ public class Config extends HashMap<String, Object> {
     public static final String STORM_ZOOKEEPER_AUTH_PAYLOAD="storm.zookeeper.auth.payload";
 
     /**
-     * The topology Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication.
+     * The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it.
      */
     @isString
     public static final String STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME="storm.zookeeper.topology.auth.scheme";
@@ -484,6 +488,13 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_THRIFT_TRANSPORT_PLUGIN = "nimbus.thrift.transport";
 
     /**
+     * How long before a Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String STORM_THRIFT_SOCKET_TIMEOUT_MS = "storm.thrift.socket.timeout.ms";
+
+    /**
      * The host that the master server is running on, added only for backward compatibility,
      * the usage deprecated in favor of nimbus.seeds config.
      */
@@ -561,7 +572,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the nimbus daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String NIMBUS_CHILDOPTS = "nimbus.childopts";
 
 
@@ -724,6 +735,13 @@ public class Config extends HashMap<String, Object> {
     public static final String UI_CENTRAL_LOGGING_URL = "ui.central.logging.url";
 
     /**
+     * Storm UI drop-down pagination value. Set ui.pagination to be a positive integer
+     * or -1 (displays all entries). Valid values: -1, 10, 20, 25 etc.
+     */
+    @isInteger
+    public static final String UI_PAGINATION = "ui.pagination";
+
+    /**
      * HTTP UI port for log viewer
      */
     @isInteger
@@ -733,7 +751,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for log viewer java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String LOGVIEWER_CHILDOPTS = "logviewer.childopts";
 
     /**
@@ -843,7 +861,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for Storm UI Java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String UI_CHILDOPTS = "ui.childopts";
 
     /**
@@ -944,7 +962,7 @@ public class Config extends HashMap<String, Object> {
     @Deprecated
     @isString
     public static final String PACEMAKER_HOST = "pacemaker.host";
-    
+
     /**
      * The port Pacemaker should run on. Clients should
      * connect to this port to submit or read heartbeats.
@@ -966,7 +984,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the pacemaker daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String PACEMAKER_CHILDOPTS = "pacemaker.childopts";
 
     /**
@@ -1153,7 +1171,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * Childopts for Storm DRPC Java process.
      */
-    @isString
+    @isStringOrStringList
     public static final String DRPC_CHILDOPTS = "drpc.childopts";
 
     /**
@@ -1171,7 +1189,7 @@ public class Config extends HashMap<String, Object> {
     /**
      * the metadata configured on the supervisor
      */
-    @isType(type=Map.class)
+    @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String SUPERVISOR_SCHEDULER_META = "supervisor.scheduler.meta";
 
     /**
@@ -1236,7 +1254,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * What directory to use for the blobstore. The directory is expected to be an
      * absolute path when using HDFS blobstore, for LocalFsBlobStore it could be either
-     * absolute or relative.
+     * absolute or relative. If the setting is a relative directory, it is relative to
+     * root directory of Storm installation.
      */
     @isString
     public static final String BLOBSTORE_DIR = "blobstore.dir";
@@ -1338,7 +1357,7 @@ public class Config extends HashMap<String, Object> {
      * This parameter is used by the storm-deploy project to configure the
      * jvm options for the supervisor daemon.
      */
-    @isString
+    @isStringOrStringList
     public static final String SUPERVISOR_CHILDOPTS = "supervisor.childopts";
 
     /**
@@ -1421,6 +1440,15 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
 
     /**
+     * On some systems (windows for example) symlinks require special privileges that not everyone wants to
+     * grant a headless user.  You can completely disable the use of symlinks by setting this config to true, but
+     * by doing so you may also lose some features from storm.  For example the blobstore feature
+     * does not currently work without symlinks enabled.
+     */
+    @isBoolean
+    public static final String DISABLE_SYMLINKS = "storm.disable.symlinks";
+
+    /**
      * The jvm opts provided to workers launched by this supervisor.
      * All "%ID%", "%WORKER-ID%", "%TOPOLOGY-ID%",
      * "%WORKER-PORT%" and "%HEAP-MEM%" substrings are replaced with:
@@ -1435,7 +1463,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The default heap memory size in MB per worker, used in the jvm -Xmx opts for launching the worker
-      */
+     */
     @isInteger
     @isPositiveNumber
     public static final String WORKER_HEAP_MEMORY_MB = "worker.heap.memory.mb";
@@ -1543,6 +1571,23 @@ public class Config extends HashMap<String, Object> {
     public static final String BACKPRESSURE_DISRUPTOR_LOW_WATERMARK="backpressure.disruptor.low.watermark";
 
     /**
+     * How long until the backpressure znode is invalid.
+     * It's measured by the data (timestamp) of the znode, not the ctime (creation time) or mtime (modification time), etc.
+     * This must be larger than BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String BACKPRESSURE_ZNODE_TIMEOUT_SECS = "backpressure.znode.timeout.secs";
+
+    /**
+     * How often will the data (timestamp) of backpressure znode be updated.
+     * But if the worker backpressure status (on/off) changes, the znode will be updated anyway.
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS = "backpressure.znode.update.freq.secs";
+
+    /**
      * A list of classes implementing IClusterMetricsConsumer (See storm.yaml.example for exact config format).
      * Each listed class will be routed cluster related metrics data.
      * Each listed class maps 1:1 to a ClusterMetricsConsumerExecutor and they're executed in Nimbus.
@@ -1584,6 +1629,14 @@ public class Config extends HashMap<String, Object> {
      */
     @isBoolean
     public static final String TOPOLOGY_DEBUG = "topology.debug";
+
+    /**
+     * The fully qualified name of a {@link ShellLogHandler} to handle output
+     * from non-JVM processes e.g. "com.mycompany.CustomShellLogHandler". If
+     * not provided, org.apache.storm.utils.DefaultLogHandler will be used.
+     */
+    @isString
+    public static final String TOPOLOGY_MULTILANG_LOG_HANDLER = "topology.multilang.log.handler";
 
     /**
      * The serializer for communication between shell components and non-JVM
@@ -1684,6 +1737,18 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_ACKER_EXECUTORS = "topology.acker.executors";
+
+    /**
+     * A list of classes implementing IEventLogger (See storm.yaml.example for exact config format).
+     * Each listed class will be routed all the events sampled from emitting tuples.
+     * If there's no class provided to the option, default event logger will be initialized and used
+     * unless you disable event logger executor.
+     *
+     * Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering
+     * many implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
+     */
+    @isListEntryCustom(entryValidatorClasses={EventLoggerRegistryValidator.class})
+    public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
 
     /**
      * How many executors to spawn for event logger.
@@ -1902,14 +1967,6 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String TOPOLOGY_BOLTS_SLIDING_INTERVAL_DURATION_MS = "topology.bolts.window.sliding.interval.duration.ms";
 
-    /*
-     * Bolt-specific configuration for windowed bolts to specify the name of the field in the tuple that holds
-     * the timestamp (e.g. the ts when the tuple was actually generated). If this config is specified and the
-     * field is not present in the incoming tuple, a java.lang.IllegalArgumentException will be thrown.
-     */
-    @isString
-    public static final String TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME = "topology.bolts.tuple.timestamp.field.name";
-
     /**
      * Bolt-specific configuration for windowed bolts to specify the name of the stream on which late tuples are
      * going to be emitted. This configuration should only be used from the BaseWindowedBolt.withLateTupleStream builder
@@ -1918,10 +1975,10 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String TOPOLOGY_BOLTS_LATE_TUPLE_STREAM = "topology.bolts.late.tuple.stream";
 
-    /*
+    /**
      * Bolt-specific configuration for windowed bolts to specify the maximum time lag of the tuple timestamp
      * in milliseconds. It means that the tuple timestamps cannot be out of order by more than this amount.
-     * This config will be effective only if the TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME is also specified.
+     * This config will be effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
      */
     @isInteger
     @isPositiveNumber
@@ -1930,7 +1987,7 @@ public class Config extends HashMap<String, Object> {
     /*
      * Bolt-specific configuration for windowed bolts to specify the time interval for generating
      * watermark events. Watermark event tracks the progress of time when tuple timestamp is used.
-     * This config is effective only if TOPOLOGY_BOLTS_TUPLE_TIMESTAMP_FIELD_NAME is also specified.
+     * This config is effective only if {@link org.apache.storm.windowing.TimestampExtractor} is specified.
      */
     @isInteger
     @isPositiveNumber
@@ -1986,11 +2043,11 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
-   /**
-    * @deprecated this is no longer supported
-    * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
-    * vs. throughput
-    */
+    /**
+     * @deprecated this is no longer supported
+     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
+     * vs. throughput
+     */
     @Deprecated
     @isString
     public static final String TOPOLOGY_DISRUPTOR_WAIT_STRATEGY="topology.disruptor.wait.strategy";
@@ -2296,6 +2353,18 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String TOPOLOGY_METRICS_METRIC_NAME_SEPARATOR = "topology.metrics.metric.name.separator";
 
+    
+    /**
+     * This is a config that is not likely to be used.  Internally the disruptor queue will batch entries written
+     * into the queue.  A background thread pool will flush those batches if they get too old.  By default that
+     * pool can grow rather large, and sacrifice some CPU time to keep the latency low.  In some cases you may
+     * want the queue to be smaller so there is less CPU used, but the latency will increase in some situations.
+     * This configs is on a per cluster bases, if you want to control this on a per topology bases you need to set
+     * the java System property for the worker "num_flusher_pool_threads" to the value you want.
+     */
+    @isInteger
+    public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
+
     public static void setClasspath(Map conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }
@@ -2369,6 +2438,32 @@ public class Config extends HashMap<String, Object> {
 
     public void registerSerialization(Class klass, Class<? extends Serializer> serializerClass) {
         registerSerialization(this, klass, serializerClass);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        registerEventLogger(this, klass, argument);
+    }
+
+    public void registerEventLogger(Class<? extends IEventLogger> klass) {
+        registerEventLogger(this, klass, null);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass, Map<String, Object> argument) {
+        Map<String, Object> m = new HashMap<>();
+        m.put("class", klass.getCanonicalName());
+        m.put("arguments", argument);
+
+        List<Map<String, Object>> l = (List<Map<String, Object>>)conf.get(TOPOLOGY_EVENT_LOGGER_REGISTER);
+        if (l == null) {
+            l = new ArrayList<>();
+        }
+        l.add(m);
+
+        conf.put(TOPOLOGY_EVENT_LOGGER_REGISTER, l);
+    }
+
+    public static void registerEventLogger(Map<String, Object> conf, Class<? extends IEventLogger> klass) {
+        registerEventLogger(conf, klass, null);
     }
 
     public static void registerMetricsConsumer(Map conf, Class klass, Object argument, long parallelismHint) {

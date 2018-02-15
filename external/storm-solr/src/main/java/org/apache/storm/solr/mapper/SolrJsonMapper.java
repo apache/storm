@@ -58,6 +58,7 @@ public class SolrJsonMapper implements SolrMapper {
          * {@link SolrJsonMapper} builder class.
          * @param solrClient {@link SolrClient} implementation from where to extract the default Solr collection, if any defined.
          * @param jsonTupleField Name of the tuple field that contains the JSON object used to update the Solr index
+         * This doesn't work in secure mode, in secure mode we need to pass the collection
          */
         public Builder(SolrClient solrClient, String jsonTupleField) {
             String defaultCollection = null;

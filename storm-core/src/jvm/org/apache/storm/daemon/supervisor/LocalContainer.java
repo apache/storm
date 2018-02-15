@@ -42,7 +42,17 @@ public class LocalContainer extends Container {
         _sharedContext = sharedContext;
         _workerId = Utils.uuid();
     }
-    
+
+    @Override
+    protected void createArtifactsLink() {
+        //NOOP no need to create links in local mode
+    }
+
+    @Override
+    protected void createBlobstoreLinks() {
+        // NOOP no need to create links in local mode
+    }
+
     @Override
     public void launch() throws IOException {
         //TODO when worker goes to java, just call it directly (not through clojure)

@@ -77,7 +77,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     private final StormTimer eventTimer;
     private final StormTimer blobUpdateTimer;
     private final Localizer localizer;
-    private final ILocalizer asyncLocalizer;
+    private final AsyncLocalizer asyncLocalizer;
     private EventManager eventManager;
     private ReadClusterState readState;
     
@@ -118,7 +118,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.assignmentId = iSupervisor.getAssignmentId();
 
         try {
-            this.hostName = Utils.hostname(conf);
+            this.hostName = Utils.hostname();
         } catch (UnknownHostException e) {
             throw Utils.wrapInRuntime(e);
         }
@@ -208,8 +208,20 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
         this.readState = new ReadClusterState(this);
         
         Set<String> downloadedTopoIds = SupervisorUtils.readDownloadedTopologyIds(conf);
-        for (String topoId : downloadedTopoIds) {
-            SupervisorUtils.addBlobReferences(localizer, topoId, conf);
+        Map<Integer, LocalAssignment> portToAssignments = localState.getLocalAssignmentsMap();
+        if (portToAssignments != null) {
+            Map<String, LocalAssignment> assignments = new HashMap<>();
+            for (LocalAssignment la : localState.getLocalAssignmentsMap().values()) {
+                assignments.put(la.get_topology_id(), la);
+            }
+            for (String topoId : downloadedTopoIds) {
+                LocalAssignment la = assignments.get(topoId);
+                if (la != null) {
+                    SupervisorUtils.addBlobReferences(localizer, topoId, conf, la.get_owner());
+                } else {
+                    LOG.warn("Could not find an owner for topo {}", topoId);
+                }
+            }
         }
         // do this after adding the references so we don't try to clean things being used
         localizer.startCleaner();
@@ -233,7 +245,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
     /**
      * start distribute supervisor
      */
-    private void launchDaemon() {
+    public void launchDaemon() {
         LOG.info("Starting supervisor for storm version '{}'.", VersionInfo.getVersion());
         try {
             Map<String, Object> conf = getConf();
@@ -279,6 +291,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             if (readState != null) {
                 readState.close();
             }
+            asyncLocalizer.shutdown();
+            localizer.shutdown();
             getStormClusterState().disconnect();
         } catch (Exception e) {
             LOG.error("Error Shutting down", e);

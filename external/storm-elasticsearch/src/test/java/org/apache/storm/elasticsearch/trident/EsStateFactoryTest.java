@@ -26,7 +26,7 @@ public class EsStateFactoryTest {
 
     @Test
     public void constructorThrowsOnNull() throws Exception {
-        new NullPointerTester().setDefault(EsConfig.class, new EsConfig("cluster", new String[] {"localhost:9300"}))
+        new NullPointerTester().setDefault(EsConfig.class, new EsConfig(new String[] {"http://localhost:9300"}))
                                .testAllPublicConstructors(EsStateFactory.class);
     }
 }

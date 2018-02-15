@@ -17,6 +17,18 @@
  */
 package org.apache.storm.kafka;
 
+import kafka.admin.AdminUtils;
+import kafka.admin.RackAwareMode;
+import kafka.admin.RackAwareMode$;
+import kafka.api.PartitionMetadata;
+import kafka.api.TopicMetadata;
+import kafka.common.ErrorMapping;
+import kafka.server.KafkaConfig;
+import kafka.server.KafkaServerStartable;
+import kafka.utils.ZKStringSerializer$;
+import kafka.utils.ZkUtils;
+import org.I0Itec.zkclient.ZkClient;
+import org.I0Itec.zkclient.ZkConnection;
 import org.apache.commons.io.FileUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -24,19 +36,22 @@ import org.apache.curator.framework.imps.CuratorFrameworkState;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.curator.test.InstanceSpec;
 import org.apache.curator.test.TestingServer;
+import org.apache.kafka.common.requests.MetadataResponse;
+import scala.collection.JavaConversions;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Properties;
-
-import kafka.server.KafkaConfig;
-import kafka.server.KafkaServerStartable;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Date: 11/01/2014
  * Time: 13:15
  */
 public class KafkaTestBroker {
+
+    // Bind services to the loopback address for environments where _localhost_ may resolve to an unreachable host
+    private static final String LOCALHOST = "127.0.0.1";
 
     private int port;
     private KafkaServerStartable kafka;
@@ -45,15 +60,31 @@ public class KafkaTestBroker {
     private File logDir;
 
     public KafkaTestBroker() {
+        this(new Properties());
+    }
+
+    public KafkaTestBroker(Properties brokerProps) {
         try {
-            server = new TestingServer();
+            InstanceSpec spec = new InstanceSpec(
+                null,
+                -1,
+                -1,
+                -1,
+                true,
+                -1,
+                -1,
+                -1,
+                null,
+                LOCALHOST
+            );
+            server = new TestingServer(spec, true);
             String zookeeperConnectionString = server.getConnectString();
             ExponentialBackoffRetry retryPolicy = new ExponentialBackoffRetry(1000, 3);
             zookeeper = CuratorFrameworkFactory.newClient(zookeeperConnectionString, retryPolicy);
             zookeeper.start();
             port = InstanceSpec.getRandomPort();
             logDir = new File(System.getProperty("java.io.tmpdir"), "kafka/logs/kafka-test-" + port);
-            KafkaConfig config = buildKafkaConfig(zookeeperConnectionString);
+            KafkaConfig config = buildKafkaConfig(brokerProps, zookeeperConnectionString);
             kafka = new KafkaServerStartable(config);
             kafka.startup();
         } catch (Exception ex) {
@@ -61,17 +92,76 @@ public class KafkaTestBroker {
         }
     }
 
-    private kafka.server.KafkaConfig buildKafkaConfig(String zookeeperConnectionString) {
-        Properties p = new Properties();
+    public void createTopic(String topicName, int numPartitions, Properties properties) {
+        ZkClient zkClient = new ZkClient(getZookeeperConnectionString());
+        zkClient.setZkSerializer(ZKStringSerializer$.MODULE$);
+        ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(getZookeeperConnectionString()), false);
+        try {
+            AdminUtils.createTopic(zkUtils, topicName, numPartitions, 1, properties, RackAwareMode.Enforced$.MODULE$);
+
+            ensureTopicCreated(zkClient, topicName);
+        } finally {
+            zkClient.close();
+        }
+    }
+
+
+    /**
+     * Wait for up to 30 seconds for the topic to be created and leader assignments for all partitions
+     */
+    private void ensureTopicCreated(ZkClient zkClient, String topicName) {
+        long maxWaitTime = TimeUnit.SECONDS.toNanos(30);
+        long waitTime = 0;
+        boolean partitionsHaveLeaders = false;
+
+        while (!partitionsHaveLeaders && waitTime < maxWaitTime) {
+            partitionsHaveLeaders = true;
+            ZkUtils zkUtils = new ZkUtils(zkClient, new ZkConnection(getZookeeperConnectionString()), false);
+            MetadataResponse.TopicMetadata topicMetadata = AdminUtils.fetchTopicMetadataFromZk(topicName, zkUtils);
+            for (MetadataResponse.PartitionMetadata partitionMetadata : topicMetadata.partitionMetadata()) {
+                if (partitionMetadata.leader().isEmpty() || partitionMetadata.error().code() != ErrorMapping.NoError()) {
+                    partitionsHaveLeaders = false;
+                }
+            }
+
+            if (!partitionsHaveLeaders) {
+                long start = System.nanoTime();
+                try {
+                    Thread.sleep(100);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new RuntimeException("Interrupted while waiting for topic to be available");
+                }
+
+                waitTime += (System.nanoTime() - start);
+            }
+        }
+
+        if (!partitionsHaveLeaders) {
+            throw new RuntimeException("Could not create topic: " + topicName);
+        }
+    }
+
+    private kafka.server.KafkaConfig buildKafkaConfig(Properties brokerProps, String zookeeperConnectionString) {
+        Properties p = new Properties(brokerProps);
         p.setProperty("zookeeper.connect", zookeeperConnectionString);
         p.setProperty("broker.id", "0");
         p.setProperty("port", "" + port);
+        p.setProperty("host.name", LOCALHOST);
         p.setProperty("log.dirs", logDir.getAbsolutePath());
         return KafkaConfig.fromProps(p);
     }
 
     public String getBrokerConnectionString() {
-        return "localhost:" + port;
+        return LOCALHOST + ":" + port;
+    }
+
+    public String getZookeeperConnectionString() {
+        return server.getConnectString();
+    }
+
+    public int getZookeeperPort() {
+        return server.getPort();
     }
 
     public int getPort() {
@@ -95,3 +185,4 @@ public class KafkaTestBroker {
         FileUtils.deleteQuietly(logDir);
     }
 }
+

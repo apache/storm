@@ -18,7 +18,7 @@
 <assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0 http://maven.apache.org/xsd/assembly-1.1.0.xsd">
-<id>bin</id>
+    <id>bin</id>
     <formats>
         <format>tar.gz</format>
         <format>zip</format>
@@ -77,11 +77,14 @@
                 <exclude>js/script.js</exclude>
             </excludes>
         </fileSet>
+        <!-- EXAMPLES -->
         <fileSet>
             <directory>${project.basedir}/../../examples</directory>
             <outputDirectory>examples</outputDirectory>
             <excludes>
                 <exclude>**/target/**</exclude>
+                <exclude>**/dependency-reduced-pom.xml</exclude>
+                <exclude>**/*.iml</exclude>
             </excludes>
         </fileSet>
         <fileSet>
@@ -191,13 +194,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-jmxetric</directory>
-            <outputDirectory>external/storm-jmxetric</outputDirectory>
-            <includes>
-                <include>*/**</include>
-            </includes>
-        </fileSet>
-               <fileSet>
            <directory>${project.basedir}/../../external/storm-jms/target</directory>
            <outputDirectory>external/storm-jms</outputDirectory>
            <includes>
@@ -206,7 +202,7 @@
             <excludes>
               <exclude>*-test*.jar</exclude>
             </excludes>
-       </fileSet>
+        </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-eventhubs/target</directory>
             <outputDirectory>external/storm-eventhubs</outputDirectory>
@@ -252,65 +248,11 @@
         </fileSet>
 
         <fileSet>
-            <directory>${project.basedir}/../../external/flux/flux-core/target</directory>
-            <outputDirectory>external/flux</outputDirectory>
-            <includes>
-                <include>flux*jar</include>
-            </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/flux/flux-wrappers/target</directory>
-            <outputDirectory>external/flux</outputDirectory>
-            <includes>
-                <include>flux*jar</include>
-            </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/flux/flux-examples/target</directory>
-            <outputDirectory>external/flux</outputDirectory>
-            <includes>
-                <include>flux*jar</include>
-            </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/flux/flux-examples</directory>
-            <outputDirectory>external/flux/examples</outputDirectory>
-            <includes>
-                <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/flux/flux-examples/src/main/resources</directory>
-            <outputDirectory>external/flux/examples</outputDirectory>
-            <includes>
-                <include>*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../external/flux</directory>
             <outputDirectory>external/flux</outputDirectory>
             <includes>
                 <include>README.*</include>
             </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-redis/target</directory>
-            <outputDirectory>external/storm-redis</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-            <excludes>
-              <exclude>*-test*.jar</exclude>
-            </excludes>
         </fileSet>
         <fileSet>
             <directory>${project.basedir}/../../external/storm-redis</directory>
@@ -320,26 +262,13 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-solr/target</directory>
-            <outputDirectory>external/storm-solr</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../external/storm-solr</directory>
             <outputDirectory>external/storm-solr</outputDirectory>
             <includes>
                 <include>README.*</include>
             </includes>
         </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-cassandra/target</directory>
-            <outputDirectory>external/storm-cassandra</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
+        <!-- Storm SQL -->
         <fileSet>
             <directory>${project.basedir}/../../external/sql/storm-sql-core/target/app-assembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-core</outputDirectory>
@@ -369,6 +298,13 @@
             </includes>
         </fileSet>
         <fileSet>
+            <directory>${project.basedir}/../../external/sql/storm-sql-external/storm-sql-hdfs/target</directory>
+            <outputDirectory>external/sql/storm-sql-external/storm-sql-hdfs</outputDirectory>
+            <includes>
+                <include>storm*jar</include>
+            </includes>
+        </fileSet>
+        <fileSet>
             <directory>${project.basedir}/../../external/sql/storm-sql-runtime/target/app-assembler/repo</directory>
             <outputDirectory>external/sql/storm-sql-runtime</outputDirectory>
             <includes>
@@ -383,7 +319,7 @@
                 <include>README.*</include>
             </includes>
         </fileSet>
-
+        <!-- END Storm SQL -->
         <fileSet>
             <directory>${project.basedir}/../../external/storm-mqtt</directory>
             <outputDirectory>external/storm-mqtt</outputDirectory>
@@ -395,38 +331,10 @@
             </excludes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-mqtt/core/target</directory>
-            <outputDirectory>external/storm-mqtt</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-mqtt/examples/target</directory>
-            <outputDirectory>external/storm-mqtt</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-mongodb/target</directory>
-            <outputDirectory>external/storm-mongodb</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../external/storm-mongodb</directory>
             <outputDirectory>external/storm-mongodb</outputDirectory>
             <includes>
                 <include>README.*</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-kafka-client/target</directory>
-            <outputDirectory>external/storm-kafka-client</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
             </includes>
         </fileSet>
         <fileSet>
@@ -454,20 +362,6 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-opentsdb/target</directory>
-            <outputDirectory>external/storm-opentsdb</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
-            <directory>${project.basedir}/../../external/storm-druid/target</directory>
-            <outputDirectory>external/storm-druid</outputDirectory>
-            <includes>
-                <include>storm*jar</include>
-            </includes>
-        </fileSet>
-        <fileSet>
             <directory>${project.basedir}/../../external/storm-druid</directory>
             <outputDirectory>external/storm-druid</outputDirectory>
             <includes>
@@ -489,19 +383,22 @@
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-jms/core/target</directory>
-            <outputDirectory>external/storm-jms</outputDirectory>
+            <directory>${project.basedir}/../../external/storm-pmml</directory>
+            <outputDirectory>external/storm-pmml</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include>README.*</include>
             </includes>
         </fileSet>
         <fileSet>
-            <directory>${project.basedir}/../../external/storm-jms/examples/target</directory>
-            <outputDirectory>external/storm-jms</outputDirectory>
+            <directory>${project.basedir}/../../examples/storm-pmml-examples/src/main/resources</directory>
+            <outputDirectory>examples/storm-pmml-examples</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include>Audit.50.csv</include>
+                <include>KNIME_PMML_4.1_Examples_single_audit_logreg.xml</include>
+                <include>README.md</include>
             </includes>
         </fileSet>
+
         <!-- $STORM_HOME/extlib -->
         <fileSet>
             <directory></directory>
@@ -523,21 +420,26 @@
             <directory>${project.basedir}/../../external/storm-kafka-monitor/target</directory>
             <outputDirectory>toollib</outputDirectory>
             <includes>
-                <include>storm*jar</include>
+                <include>storm-kafka-monitor-${project.version}.jar</include>
             </includes>
         </fileSet>
-
+       <!-- Autocred plugins -->
+        <fileSet>
+            <directory>${project.basedir}/../../external/storm-autocreds/target/app-assembler/repo</directory>
+            <outputDirectory>external/storm-autocreds</outputDirectory>
+            <includes>
+                <include>*jar</include>
+            </includes>
+        </fileSet>
     </fileSets>
 
     <files>
-        <!-- EXAMPLES -->
+      <!-- EXAMPLES -->
         <file>
             <source>${project.basedir}/../../examples/storm-starter/target/storm-starter-${project.version}.jar</source>
             <outputDirectory>/examples/storm-starter/</outputDirectory>
             <destName>storm-starter-topologies-${project.version}.jar</destName>
         </file>
-
-
         <!--
             $STORM_HOME/conf
         -->
@@ -560,12 +462,11 @@
             <fileMode>0755</fileMode>
         </file>
         <file>
-            <source>${project.basedir}/../../conf/storm-env.sh</source>
+            <source>${project.basedir}/../../conf/storm-env.ps1</source>
             <outputDirectory>/conf</outputDirectory>
-            <destName>storm-slider-env.sh</destName>
+            <destName>storm-env.ps1</destName>
             <fileMode>0755</fileMode>
         </file>
-
         <file>
             <source>${project.basedir}/../../VERSION</source>
             <outputDirectory>/</outputDirectory>
@@ -596,10 +497,6 @@
         </file>
         <file>
             <source>${project.basedir}/../../README.markdown</source>
-            <outputDirectory>/</outputDirectory>
-        </file>
-        <file>
-            <source>${project.basedir}/../../CHANGELOG.md</source>
             <outputDirectory>/</outputDirectory>
         </file>
 

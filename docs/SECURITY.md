@@ -74,6 +74,7 @@ ui.filter.params:
    "kerberos.name.rules": "RULE:[2:$1@$0]([jt]t@.*EXAMPLE.COM)s/.*/$MAPRED_USER/ RULE:[2:$1@$0]([nd]n@.*EXAMPLE.COM)s/.*/$HDFS_USER/DEFAULT"
 ```
 make sure to create a principal 'HTTP/{hostname}' (here hostname should be the one where UI daemon runs
+Be aware that the UI user *MUST* be HTTP.
 
 Once configured users needs to do kinit before accessing UI.
 Ex:
@@ -423,16 +424,18 @@ nimbus.impersonation.acl:
 
 ### Automatic Credentials Push and Renewal
 Individual topologies have the ability to push credentials (tickets and tokens) to workers so that they can access secure services.  Exposing this to all of the users can be a pain for them.
-To hide this from them in the common case plugins can be used to populate the credentials, unpack them on the other side into a java Subject, and also allow Nimbus to renew the credentials if needed.
-These are controlled by the following configs. topology.auto-credentials is a list of java plugins, all of which must implement IAutoCredentials interface, that populate the credentials on gateway 
-and unpack them on the worker side. On a kerberos secure cluster they should be set by default to point to org.apache.storm.security.auth.kerberos.AutoTGT.  
-nimbus.credential.renewers.classes should also be set to this value so that nimbus can periodically renew the TGT on behalf of the user.
+To hide this from them in the common case plugins can be used to populate the credentials, unpack them on the other side into a java Subject, and also allow Nimbus to renew the credentials if needed. These are controlled by the following configs.
+ 
+`topology.auto-credentials` is a list of java plugins, all of which must implement the `IAutoCredentials` interface, that populate the credentials on gateway 
+and unpack them on the worker side. On a kerberos secure cluster they should be set by default to point to `org.apache.storm.security.auth.kerberos.AutoTGT`
 
-nimbus.credential.renewers.freq.secs controls how often the renewer will poll to see if anything needs to be renewed, but the default should be fine.
+`nimbus.credential.renewers.classes` should also be set to `org.apache.storm.security.auth.kerberos.AutoTGT` so that nimbus can periodically renew the TGT on behalf of the user.
 
-In addition Nimbus itself can be used to get credentials on behalf of the user submitting topologies. This can be configures using nimbus.autocredential.plugins.classes which is a list 
-of fully qualified class names ,all of which must implement INimbusCredentialPlugin.  Nimbus will invoke the populateCredentials method of all the configured implementation as part of topology
-submission. You should use this config with topology.auto-credentials and nimbus.credential.renewers.classes so the credentials can be populated on worker side and nimbus can automatically renew
+`nimbus.credential.renewers.freq.secs` controls how often the renewer will poll to see if anything needs to be renewed, but the default should be fine.
+
+In addition Nimbus itself can be used to get credentials on behalf of the user submitting topologies. This can be configured using `nimbus.autocredential.plugins.classes` which is a list 
+of fully qualified class names, all of which must implement `INimbusCredentialPlugin`.  Nimbus will invoke the populateCredentials method of all the configured implementation as part of topology
+submission. You should use this config with `topology.auto-credentials` and `nimbus.credential.renewers.classes` so the credentials can be populated on worker side and nimbus can automatically renew
 them. Currently there are 2 examples of using this config, AutoHDFS and AutoHBase which auto populates hdfs and hbase delegation tokens for topology submitter so they don't have to distribute keytabs
 on all possible worker hosts.
 
@@ -475,6 +478,44 @@ nimbus.groups:
  
 
 ### DRPC
-Hopefully more on this soon
+ 
+ Storm provides the Access Control List for the DRPC Authorizer.Users can see [org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer](javadocs/org/apache/storm/security/auth/authorizer/DRPCSimpleACLAuthorizer.html) for more details.
+ 
+ There are several DRPC ACL related configurations.
+ 
+ | YAML Setting | Description |
+ |------------|----------------------|
+ | drpc.authorizer.acl | A class that will perform authorization for DRPC operations. Set this to org.apache.storm.security.auth.authorizer.DRPCSimpleACLAuthorizer when using security.|
+ | drpc.authorizer.acl.filename | This is the name of a file that the ACLs will be loaded from. It is separate from storm.yaml to allow the file to be updated without bringing down a DRPC server. Defaults to drpc-auth-acl.yaml |
+ | drpc.authorizer.acl.strict| It is useful to set this to false for staging where users may want to experiment, but true for production where you want users to be secure. Defaults to false. |
+
+ The file pointed to by drpc.authorizer.acl.filename will have only one config in it drpc.authorizer.acl this should be of the form
+
+ drpc.authorizer.acl:
+   "functionName1":
+     "client.users":
+       - "alice"
+       - "bob"
+     "invocation.user": "bob"
+     
+ In this the users bob and alice as client.users are allowed to run DRPC requests against functionName1, but only bob as the invocation.user is allowed to run the topology that actually processes those requests.
 
 
+## Cluster Zookeeper Authentication
+ 
+ Users can implement cluster Zookeeper authentication by setting several configurations are shown below.
+ 
+ | YAML Setting | Description |
+ |------------|----------------------|
+ | storm.zookeeper.auth.scheme | The cluster Zookeeper authentication scheme to use, e.g. "digest". Defaults to no authentication. |
+ | storm.zookeeper.auth.payload | A string representing the payload for cluster Zookeeper authentication.It should only be set in the storm-cluster-auth.yaml.Users can see storm-cluster-auth.yaml.example for more details. |
+ 
+ 
+ Also,there are several configurations for topology Zookeeper authentication:
+ 
+ | YAML Setting | Description |
+ |------------|----------------------|
+ | storm.zookeeper.topology.auth.scheme | The topology Zookeeper authentication scheme to use, e.g. "digest". It is the internal config and user shouldn't set it. |
+ | storm.zookeeper.topology.auth.payload | A string representing the payload for topology Zookeeper authentication. |
+ 
+ Note: If storm.zookeeper.topology.auth.payload isn't set,storm will generate a ZooKeeper secret payload for MD5-digest with generateZookeeperDigestSecretPayload() method.

@@ -15,12 +15,12 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 -->
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <parent>
       <artifactId>storm</artifactId>
       <groupId>org.apache.storm</groupId>
-      <version>1.0.1.2.6.0.0-SNAPSHOT</version>
+      <version>1.2.1-SNAPSHOT</version>
       <relativePath>../../pom.xml</relativePath>
   </parent>
 
@@ -33,7 +33,7 @@
   <properties>
     <!-- settings for downloading the sigar native binary complete archive, which is not available in Maven central-->
     <sigar.version>1.6.4</sigar.version>
-    <sigar.download.url>https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/magelan/hyperic-sigar-${sigar.version}.zip</sigar.download.url>
+    <sigar.download.url>http://s3.amazonaws.com/dev.hortonworks.com/ARTIFACTS/hyperic-sigar-1.6.4.zip</sigar.download.url>
     <sigar.SHA1>8f79d4039ca3ec6c88039d5897a80a268213e6b7</sigar.SHA1>
     <!-- this will download the sigar ZIP to the local maven repository next to the sigar dependencies,
          so we only download it once -->
@@ -61,7 +61,7 @@
       <artifactId>storm-core</artifactId>
       <version>${project.version}</version>
       <!-- keep storm out of the jar-with-dependencies -->
-      <scope>provided</scope>
+      <scope>${provided.scope}</scope>
     </dependency>
   </dependencies>
   <build>
@@ -77,14 +77,14 @@
             <configuration>
               <tasks>
                 <echo message="Downloading sigar native binaries..." />
-                <get src="${sigar.download.url}" dest="${sigar.download.path}/" skipExisting="true" />
-                <checksum file="${sigar.download.path}/hyperic-sigar-${sigar.version}.zip" algorithm="SHA1" property="${sigar.SHA1}" verifyProperty="validChecksum" />
+                <get dest="${sigar.download.path}/" maxtime="180" skipExisting="true" src="${sigar.download.url}" />
+                <checksum algorithm="SHA1" file="${sigar.download.path}/hyperic-sigar-${sigar.version}.zip" property="${sigar.SHA1}" verifyProperty="validChecksum" />
                 <fail message="Checksum validation failed for hyperic-sigar-${sigar.version}.zip">
                   <condition>
                     <isfalse value="${validChecksum}" />
                   </condition>
                 </fail>
-                <unzip src="${sigar.download.path}/hyperic-sigar-${sigar.version}.zip" dest="${project.build.directory}/classes/resources">
+                <unzip dest="${project.build.directory}/classes/resources" src="${sigar.download.path}/hyperic-sigar-${sigar.version}.zip">
                   <patternset>
                     <include name="**/lib/libsigar-*" />
                     <include name="**/lib/sigar-*" />

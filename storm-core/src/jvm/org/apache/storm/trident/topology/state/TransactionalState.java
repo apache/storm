@@ -36,7 +36,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.json.simple.parser.ParseException;
 
+/**
+ * Class that contains the logic to extract the transactional state info from zookeeper. All transactional state
+ * is kept in zookeeper. This class only contains references to Curator, which is used to get all info from zookeeper.
+ */
 public class TransactionalState {
     private static final Logger LOG = LoggerFactory.getLogger(TransactionalState.class);
 
@@ -121,16 +126,19 @@ public class TransactionalState {
                 TransactionalState.createNode(_curator, path, ser, _zkAcls,
                         CreateMode.PERSISTENT);
             }
-            LOG.debug("Set [path = {}] => [data = {}]", path, asString(ser));
+        } catch (KeeperException.NodeExistsException nne){
+            LOG.warn("Node {} already created.", path);
         } catch(Exception e) {
             throw new RuntimeException(e);
-        }        
+        }
     }
     
     public void delete(String path) {
         path = "/" + path;
         try {
             _curator.delete().forPath(path);
+        } catch (KeeperException.NoNodeException nne){
+           LOG.warn("Path {} already deleted.");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -161,8 +169,15 @@ public class TransactionalState {
         path = "/" + path;
         try {
             Object data;
-            if(_curator.checkExists().forPath(path)!=null) {
-                data = JSONValue.parse(new String(_curator.getData().forPath(path), "UTF-8"));
+            if(_curator.checkExists().forPath(path) != null) {
+                // Use parseWithException instead of parse so we can capture deserialization errors in the log.
+                // They are likely to be bugs in the spout code.
+                try {
+                    data = JSONValue.parseWithException(new String(_curator.getData().forPath(path), "UTF-8"));
+                } catch (ParseException e) {
+                    LOG.warn("Failed to deserialize zookeeper data for path {}", path, e);
+                    data = null;
+                }
             } else {
                 data = null;
             }

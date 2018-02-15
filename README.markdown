@@ -92,6 +92,8 @@ under the License.
 * Zhuo Liu ([@zhuoliu](https://github.com/zhuoliu))
 * Haohui Mai ([@haohui](https://github.com/haohui))
 * Longda Feng ([@longda](https://github.com/longdafeng))
+* Xin Wang ([@vesense](https://github.com/vesense))
+* Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 
 ## Contributors
 
@@ -211,7 +213,6 @@ under the License.
 * Shyam Rajendran ([@bourneagain](https://github.com/bourneagain))
 * Reza Farivar ([@rfarivar](https://github.com/rfarivar))
 * Hugo Louro ([@hmcl](https://github.com/hmcl))
-* Xin Wang ([@vesense](https://github.com/vesense))
 * Charles Chan ([@charleswhchan](https://github.com/charleswhchan))
 * Chuanlei Ni ([@chuanlei](https://github.com/chuanlei))
 * Xingyu Su ([@errordaiwa](https://github.com/errordaiwa))

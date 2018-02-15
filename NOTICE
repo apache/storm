@@ -6,3 +6,6 @@ The Apache Software Foundation (http://www.apache.org/).
 
 This product includes software developed by Yahoo! Inc. (www.yahoo.com)
 Copyright (c) 2012-2015 Yahoo! Inc.
+
+This product includes JMS specifications (https://javaee.github.io/jms-spec/)
+which is distributed under the Common Development and Distribution License (https://javaee.github.io/jms-spec/LICENSE)
