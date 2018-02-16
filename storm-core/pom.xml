@@ -259,6 +259,7 @@
             <groupId>io.dropwizard.metrics</groupId>
             <artifactId>metrics-ganglia</artifactId>
             <exclusions>
+                <!-- the following is LGPL and needs to be installed manually -->
                 <exclusion>
                     <groupId>org.acplt</groupId>
                     <artifactId>oncrpc</artifactId>
