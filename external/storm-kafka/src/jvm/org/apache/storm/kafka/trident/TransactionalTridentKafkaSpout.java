@@ -25,7 +25,10 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import java.util.Map;
 import java.util.UUID;
 
-
+/**
+ * @deprecated storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+ */
+@Deprecated
 public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<GlobalPartitionInformation, Partition, Map> {
 
     TridentKafkaConfig _config;
