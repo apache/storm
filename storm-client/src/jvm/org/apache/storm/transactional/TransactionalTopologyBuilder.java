@@ -230,29 +230,19 @@ public class TransactionalTopologyBuilder {
             return this;
         }
 
+        /**
+         * return the current component configuration.
+         *
+         * @return the current configuration.
+         */
         @Override
-        public SpoutDeclarerImpl addResources(Map<String, Double> resources) {
-            if (resources != null) {
-                Map<String, Double> currentResources = (Map<String, Double>) spoutConf.computeIfAbsent(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-                currentResources.putAll(resources);
-            }
-            return this;
+        public Map<String, Object> getComponentConfiguration() {
+            return spoutConf;
         }
 
         @Override
         public SpoutDeclarer addSharedMemory(SharedMemory request) {
             spoutSharedMemory.add(request);
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public SpoutDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) spoutConf.computeIfAbsent(Config.TOPOLOGY_COMPONENT_RESOURCES_MAP,
-                (k) -> new HashMap<>());
-
-            resourcesMap.put(resourceName, resourceValue.doubleValue());
             return this;
         }
     }
@@ -553,33 +543,24 @@ public class TransactionalTopologyBuilder {
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             if (conf != null) {
-                component.componentConf.putAll(conf);
+                getComponentConfiguration().putAll(conf);
             }
             return this;
         }
 
+        /**
+         * return the current component configuration.
+         *
+         * @return the current configuration.
+         */
         @Override
-        public BoltDeclarer addResources(Map<String, Double> resources) {
-            if (resources != null) {
-                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-                currentResources.putAll(resources);
-            }
-            return this;
+        public Map<String, Object> getComponentConfiguration() {
+            return component.componentConf;
         }
+
         @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
             component.sharedMemory.add(request);
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-
-            resourcesMap.put(resourceName, resourceValue.doubleValue());
             return this;
         }
     }

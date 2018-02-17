@@ -585,6 +585,16 @@ public class TopologyBuilder {
             return (T) this;
         }
 
+        /**
+         * return the current component configuration.
+         *
+         * @return the current configuration.
+         */
+        @Override
+        public Map<String, Object> getComponentConfiguration() {
+            return parseJson(commons.get(id).get_json_conf());
+        }
+
         @Override
         public T addResources(Map<String, Double> resources) {
             if (resources != null && !resources.isEmpty()) {
