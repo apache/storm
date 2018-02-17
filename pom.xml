@@ -327,6 +327,7 @@
         <module>external/storm-druid</module>
         <module>external/storm-submit-tools</module>
         <module>external/storm-kafka-client</module>
+        <module>external/storm-kafka-migration</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-jms</module>

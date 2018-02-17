@@ -26,6 +26,7 @@ import java.util.Map;
 
 /**
  * @deprecated storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+ * If you need to migrate the committed offsets to the new spout, consider using the storm-kafka-migration tool.
  */
 @Deprecated
 public class TransactionalTridentKafkaSpout implements IPartitionedTridentSpout<GlobalPartitionInformation, Partition, Map> {
