@@ -17,6 +17,9 @@ Authentication and Authorization. But to do so usually requires
 configuring your Operating System to restrict the operations that can be done.
 This is generally a good idea even if you plan on running your cluster with Auth.
 
+Storm's OS level security relies on running Storm processes using OS accounts that have only the permissions they need. 
+Note that workers run under the same OS account as the Supervisor daemon by default.
+
 The exact detail of how to setup these precautions varies a lot and is beyond
 the scope of this document.
 
