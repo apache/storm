@@ -779,7 +779,7 @@ public class TridentTopologyBuilder {
             return component.componentConf;
         }
 
-       @Override
+        @Override
         public BoltDeclarer addSharedMemory(SharedMemory request) {
             component.sharedMemory.add(request);
             return this;
