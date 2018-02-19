@@ -16,57 +16,65 @@
  * under the License.
  */
 
-package org.apache.storm.metricstore.rocksdb;
-
-import org.apache.commons.io.FileUtils;
-import org.apache.storm.DaemonConfig;
-import org.apache.storm.metricstore.AggLevel;
-import org.apache.storm.metricstore.FilterOptions;
-import org.apache.storm.metricstore.Metric;
-import org.apache.storm.metricstore.MetricException;
-import org.apache.storm.metricstore.MetricStore;
-import org.apache.storm.metricstore.MetricStoreConfig;
-import org.junit.AfterClass;
-import org.junit.Assert;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+package org.apache.storm.hbasemetricstore;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.HBaseTestingUtility;
+import org.apache.hadoop.hbase.HColumnDescriptor;
+import org.apache.hadoop.hbase.HConstants;
+import org.apache.hadoop.hbase.HTableDescriptor;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.HBaseAdmin;
+import org.apache.storm.metricstore.AggLevel;
+import org.apache.storm.metricstore.FilterOptions;
+import org.apache.storm.metricstore.Metric;
+import org.apache.storm.metricstore.MetricException;
+import org.junit.AfterClass;
+import org.junit.Assert;
+import org.junit.BeforeClass;
+import org.junit.Test;
 
-public class RocksDbStoreTest {
-    private final static Logger LOG = LoggerFactory.getLogger(RocksDbStoreTest.class);
-    static MetricStore store;
-    static Path tempDirForTest;
+public class HBaseStoreTest {
+    private static HBaseStore store = new TestableHBaseStore();
+    private static HBaseTestingUtility hbaseTestingUtility = new HBaseTestingUtility();
+
+    private static class TestableHBaseStore extends HBaseStore {
+        @Override
+        protected Configuration createConfiguration(Map mapConfig) throws MetricException {
+            Configuration conf = super.createConfiguration(mapConfig);
+            int zkPort = hbaseTestingUtility.getZkCluster().getClientPort();
+            conf.setInt(HConstants.ZOOKEEPER_CLIENT_PORT, zkPort);
+            return conf;
+        }
+    }
 
     @BeforeClass
-    public static void setUp() throws MetricException, IOException {
-        // remove any previously created cache instance
-        StringMetadataCache.cleanUp();
-        tempDirForTest = Files.createTempDirectory("RocksDbStoreTest");
+    public static void setup() throws Exception {
+        hbaseTestingUtility.startMiniCluster();
+        createTable();
+
         Map<String, Object> conf = new HashMap<>();
-        conf.put(DaemonConfig.STORM_METRIC_STORE_CLASS, "org.apache.storm.metricstore.rocksdb.RocksDbStore");
-        conf.put(DaemonConfig.STORM_ROCKSDB_LOCATION, tempDirForTest.toString());
-        conf.put(DaemonConfig.STORM_ROCKSDB_CREATE_IF_MISSING, true);
-        conf.put(DaemonConfig.STORM_ROCKSDB_METADATA_STRING_CACHE_CAPACITY, 4000);
-        conf.put(DaemonConfig.STORM_ROCKSDB_METRIC_RETENTION_HOURS, 240);
-        store = MetricStoreConfig.configureMetricStore(conf);
+        store.prepare(conf);
     }
 
     @AfterClass
-    public static void tearDown() throws IOException {
-        if (store != null) {
-            store.close();
-        }
-        StringMetadataCache.cleanUp();
-        FileUtils.deleteDirectory(tempDirForTest.toFile());
+    public static void tearDown() throws Exception {
+        hbaseTestingUtility.shutdownMiniCluster();
+    }
+
+    private static void createTable() throws IOException {
+        HBaseAdmin admin = hbaseTestingUtility.getHBaseAdmin();
+        HTableDescriptor descriptor = new HTableDescriptor(TableName.valueOf("metrics"));
+        HColumnDescriptor columnDescriptor = new HColumnDescriptor("metricdata").setMaxVersions(HConstants.ALL_VERSIONS);
+        descriptor.addFamily(columnDescriptor);
+        columnDescriptor = new HColumnDescriptor("metadata").setMaxVersions(HConstants.ALL_VERSIONS);
+        descriptor.addFamily(columnDescriptor);
+        admin.createTable(descriptor);
     }
 
     @Test
@@ -282,38 +290,6 @@ public class RocksDbStoreTest {
         Assert.assertTrue(list.contains(m3));
     }
 
-    @Test
-    public void testMetricCleanup() throws Exception {
-        FilterOptions filter;
-        List<Metric> list;
-
-        // Share some common metadata strings to validate they do not get deleted
-        String commonTopologyId = "topology-cleanup-2";
-        String commonStreamId = "stream-cleanup-5";
-        String defaultS = "default";
-        Metric m1 = new Metric(defaultS, 40000000L, commonTopologyId, 1.0,
-                "component-1", defaultS, "hostname-1", commonStreamId, 1, AggLevel.AGG_LEVEL_NONE);
-        Metric m2 = new Metric(defaultS, System.currentTimeMillis(), commonTopologyId, 1.0,
-                "component-1", "executor-1", defaultS, commonStreamId, 1, AggLevel.AGG_LEVEL_NONE);
-
-        store.insert(m1);
-        store.insert(m2);
-        waitForInsertFinish(m2);
-
-        // validate at least two agg level none metrics exist
-        filter = new FilterOptions();
-        filter.addAggLevel(AggLevel.AGG_LEVEL_NONE);
-        list = getMetricsFromScan(filter);
-        Assert.assertTrue(list.size() >= 2);
-
-        // delete anything older than an hour
-        MetricsCleaner cleaner = new MetricsCleaner((RocksDbStore)store, 1, 1, null);
-        cleaner.purgeMetrics();
-        list = getMetricsFromScan(filter);
-        Assert.assertEquals(1, list.size());
-        Assert.assertTrue(list.contains(m2));
-    }
-
     private void waitForInsertFinish(Metric m) throws Exception {
         Metric last = new Metric(m);
         int attempts = 0;
@@ -324,5 +300,8 @@ public class RocksDbStoreTest {
                 throw new Exception("Insertion timing out");
             }
         } while (!store.populateValue(last));
+
+        // add some delay to allow aggregation to finish
+        Thread.sleep(30);
     }
 }

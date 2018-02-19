@@ -16,45 +16,33 @@
  * under the License.
  */
 
-package org.apache.storm.metricstore;
+package org.apache.storm.hbasemetricstore;
 
-import java.util.Collections;
-import java.util.EnumSet;
-import java.util.HashMap;
-import java.util.Map;
+import org.apache.storm.metricstore.Metric;
 
 /**
- * Specifies the available timeframes for Metric aggregation.
+ * Class that adds a version field to a Metric.  Aggregated metrics may be updated in HBase at the same time by two
+ * different threads.  The metric can be conditionally updated in HBase by checking that the version matches the
+ * expected value.  If the check fails, the metric can be re-fetched and re-aggregated and then updated on a retry.
  */
-public enum AggLevel {
-    AGG_LEVEL_NONE(0),
-    AGG_LEVEL_1_MIN(1),
-    AGG_LEVEL_10_MIN(10),
-    AGG_LEVEL_60_MIN(60);
+class HBaseAggregatedMetric extends Metric {
+    private int version;
 
-    private static Map<Byte, AggLevel> MAP;
-
-    static {
-        MAP = new HashMap<>();
-        for (AggLevel level : EnumSet.allOf(AggLevel.class)) {
-            MAP.put(level.getValue(), level);
-        }
-        MAP = Collections.unmodifiableMap(MAP);
+    /**
+     * A Metric constructor with the same settings cloned from another.
+     *
+     * @param o   metric to clone
+     */
+    HBaseAggregatedMetric(Metric o) {
+        super(o);
+        this.version = 0;
     }
 
-    private final byte value;
-
-    AggLevel(int value) {
-        this.value = (byte)value;
+    void setVersion(int version) {
+        this.version = version;
     }
 
-    public byte getValue() {
-        return this.value;
+    int getVersion() {
+        return this.version;
     }
-
-    public static AggLevel getAggLevel(byte value) {
-        return MAP.get(value);
-    }
-
-
 }

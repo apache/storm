@@ -18,6 +18,8 @@
 
 package org.apache.storm.utils;
 
+import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Lists;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -63,8 +65,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import com.google.common.collect.Lists;
+import javax.security.auth.Subject;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -82,7 +83,6 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
@@ -99,10 +99,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
-
-import com.google.common.annotations.VisibleForTesting;
-
-import javax.security.auth.Subject;
 
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
@@ -157,7 +153,7 @@ public class Utils {
                 ret.add(resources.nextElement());
             }
             return ret;
-        } catch(IOException e) {
+        } catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -179,10 +175,11 @@ public class Utils {
             }
 
             if (mustExist) {
-                if(confFileEmpty)
+                if(confFileEmpty) {
                     throw new RuntimeException("Config file " + name + " doesn't have any valid storm configs");
-                else
+                } else {
                     throw new RuntimeException("Could not find config file on classpath " + name);
+                }
             } else {
                 return new HashMap<>();
             }
@@ -529,6 +526,9 @@ public class Utils {
     }
 
     public static Id parseZkId(String id, String configName) {
+        if (id == null) {
+            throw new IllegalArgumentException("id is not set");
+        }
         String[] split = id.split(":", 2);
         if (split.length != 2) {
             throw new IllegalArgumentException(configName + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");

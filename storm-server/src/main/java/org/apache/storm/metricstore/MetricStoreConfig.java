@@ -30,7 +30,7 @@ public class MetricStoreConfig {
      * @return MetricStore prepared store
      * @throws MetricException  on misconfiguration
      */
-    public static MetricStore configure(Map conf) throws MetricException {
+    public static MetricStore configureMetricStore(Map conf) throws MetricException {
 
         try {
             String storeClass = (String)conf.get(DaemonConfig.STORM_METRIC_STORE_CLASS);

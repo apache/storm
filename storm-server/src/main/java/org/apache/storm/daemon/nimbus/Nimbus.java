@@ -1110,7 +1110,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
 
         this.metricsStore = null;
         try {
-            this.metricsStore = MetricStoreConfig.configure(conf);
+            this.metricsStore = MetricStoreConfig.configureMetricStore(conf);
         } catch (Exception e) {
             // the metrics store is not critical to the operation of the cluster, allow Nimbus to come up
             LOG.error("Failed to initialize metric store", e);
