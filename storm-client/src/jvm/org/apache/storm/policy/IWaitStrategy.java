@@ -25,7 +25,7 @@ import java.util.Map;
 
 
 public interface IWaitStrategy {
-    enum WAIT_SITUATION {BOLT_WAIT, BACK_PRESSURE_WAIT}
+    enum WAIT_SITUATION {SPOUT_WAIT, BOLT_WAIT, BACK_PRESSURE_WAIT}
 
     void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation);
 

@@ -39,7 +39,6 @@ import org.apache.storm.hooks.info.SpoutFailInfo;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
 import org.apache.storm.spout.ISpout;
-import org.apache.storm.spout.ISpoutWaitStrategy;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.stats.SpoutExecutorStats;
 import org.apache.storm.stats.StatsUtil;
@@ -65,7 +64,7 @@ public class SpoutExecutor extends Executor {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpoutExecutor.class);
 
-    private final ISpoutWaitStrategy spoutWaitStrategy;
+    private final IWaitStrategy spoutWaitStrategy;
     private final IWaitStrategy backPressureWaitStrategy;
     private Integer maxSpoutPending;
     private final AtomicBoolean lastActive;
@@ -84,7 +83,7 @@ public class SpoutExecutor extends Executor {
     public SpoutExecutor(final WorkerState workerData, final List<Long> executorId, Map<String, String> credentials) {
         super(workerData, executorId, credentials, StatsUtil.SPOUT);
         this.spoutWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_SPOUT_WAIT_STRATEGY));
-        this.spoutWaitStrategy.prepare(topoConf);
+        this.spoutWaitStrategy.prepare(topoConf, WAIT_SITUATION.SPOUT_WAIT);
         this.backPressureWaitStrategy = ReflectionUtils.newInstance((String) topoConf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY));
         this.backPressureWaitStrategy.prepare(topoConf, WAIT_SITUATION.BACK_PRESSURE_WAIT);
 
@@ -164,7 +163,8 @@ public class SpoutExecutor extends Executor {
         return new Callable<Long>() {
             int recvqCheckSkips = 0;
             final int recvqCheckSkipCountMax = getSpoutRecvqCheckSkipCount();
-            int bpIdleCount = 0;
+            int swIdleCount = 0; // counter for spout wait strategy
+            int bpIdleCount = 0; // counter for back pressure wait strategy
             int rmspCount = 0;
             @Override
             public Long call() throws Exception {
@@ -225,6 +225,7 @@ public class SpoutExecutor extends Executor {
                     spoutWaitStrategy(reachedMaxSpoutPending, emptyStretch);
                     return 0L;
                 }
+                swIdleCount = 0;
                 return 0L;
             }
 
@@ -235,6 +236,19 @@ public class SpoutExecutor extends Executor {
                 }
                 bpIdleCount = backPressureWaitStrategy.idle(bpIdleCount);
                 spoutThrottlingMetrics.skippedBackPressureMs(Time.currentTimeMillis() - start);
+            }
+
+            private void spoutWaitStrategy(boolean reachedMaxSpoutPending, long emptyStretch) throws InterruptedException {
+                emptyEmitStreak.increment();
+                long start = Time.currentTimeMillis();
+                swIdleCount = spoutWaitStrategy.idle(swIdleCount);
+                if (reachedMaxSpoutPending) {
+                    spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
+                } else {
+                    if (emptyStretch > 0) {
+                        LOG.debug("Ending Spout Wait Stretch of {}", emptyStretch);
+                    }
+                }
             }
 
             // returns true if pendingEmits is empty
@@ -249,19 +263,6 @@ public class SpoutExecutor extends Executor {
                 return true;
             }
         };
-    }
-
-    private void spoutWaitStrategy(boolean reachedMaxSpoutPending, long emptyStretch) {
-        emptyEmitStreak.increment();
-        long start = Time.currentTimeMillis();
-        spoutWaitStrategy.emptyEmit(emptyEmitStreak.get());
-        if (reachedMaxSpoutPending) {
-            spoutThrottlingMetrics.skippedMaxSpoutMs(Time.currentTimeMillis() - start);
-        } else {
-            if (emptyStretch > 0) {
-                LOG.debug("Ending Spout Wait Stretch of {}", emptyStretch);
-            }
-        }
     }
 
     private void activateSpouts() {

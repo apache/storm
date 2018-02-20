@@ -44,7 +44,11 @@ public class WaitStrategyProgressive implements IWaitStrategy {
 
     @Override
     public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
-        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+        if (waitSituation == WAIT_SITUATION.SPOUT_WAIT) {
+            level1Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL1_COUNT));
+            level2Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL2_COUNT));
+            level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
+        } else if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
             level1Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT));
             level2Count   = ObjectReader.getInt(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT));
             level3SleepMs = ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS));
@@ -61,7 +65,7 @@ public class WaitStrategyProgressive implements IWaitStrategy {
     public int idle(int idleCounter) throws InterruptedException {
         if (idleCounter < level1Count) {                     // level 1 - no waiting
             ++idleCounter;
-        } else if (idleCounter < level1Count * level2Count) { // level 2 - parkNanos(1L)
+        } else if (idleCounter < level1Count + level2Count) { // level 2 - parkNanos(1L)
             ++idleCounter;
             LockSupport.parkNanos(1L);
         } else {                                      // level 3 - longer idling with Thread.sleep()

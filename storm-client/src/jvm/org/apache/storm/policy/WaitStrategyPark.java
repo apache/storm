@@ -29,7 +29,9 @@ public class WaitStrategyPark implements IWaitStrategy {
 
     @Override
     public void prepare(Map<String, Object> conf, WAIT_SITUATION waitSituation) {
-        if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
+        if (waitSituation == WAIT_SITUATION.SPOUT_WAIT) {
+            parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_SPOUT_WAIT_PARK_MICROSEC));
+        } else if (waitSituation == WAIT_SITUATION.BOLT_WAIT) {
             parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC));
         } else if (waitSituation == WAIT_SITUATION.BACK_PRESSURE_WAIT) {
             parkTimeNanoSec = 1_000 * ObjectReader.getLong(conf.get(Config.TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC));
