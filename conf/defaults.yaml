@@ -242,8 +242,12 @@ topology.tick.tuple.freq.secs: null
 topology.worker.shared.thread.pool.size: 4
 
 # Spout Wait Strategy - employed when there is no data to produce
-topology.spout.wait.strategy: "org.apache.storm.spout.SleepSpoutWaitStrategy"
-topology.sleep.spout.wait.strategy.time.ms: 1
+topology.spout.wait.strategy: "org.apache.storm.policy.WaitStrategyProgressive"
+topology.spout.wait.park.microsec : 100          # park time for org.apache.storm.policy.WaitStrategyPark. Busy spins if set to 0.
+
+topology.spout.wait.progressive.level1.count: 0          # number of iterations to spend in level 1 [no sleep] of WaitStrategyProgressive, before progressing to level 2
+topology.spout.wait.progressive.level2.count: 0          # number of iterations to spend in level 2 [parkNanos(1)] of WaitStrategyProgressive, before progressing to level 3
+topology.spout.wait.progressive.level3.sleep.millis: 1   # sleep duration for idling iterations in level 3 of WaitStrategyProgressive
 
 # Bolt Wait Strategy - employed when there is no data in its receive buffer to process
 topology.bolt.wait.strategy : "org.apache.storm.policy.WaitStrategyProgressive"

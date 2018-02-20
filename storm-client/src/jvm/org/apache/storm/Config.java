@@ -509,16 +509,6 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_MAX_SPOUT_PENDING="topology.max.spout.pending";
 
     /**
-     * A class that implements a strategy for what to do when a spout needs to wait. Waiting is
-     * triggered in one of two conditions:
-     *
-     * 1. nextTuple emits no tuples
-     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
-     */
-    @isString
-    public static final String TOPOLOGY_SPOUT_WAIT_STRATEGY="topology.spout.wait.strategy";
-
-    /**
      * The amount of milliseconds the SleepEmptyEmitStrategy should sleep for.
      */
     @isInteger
@@ -872,6 +862,46 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
 
     /**
+     * A class that implements a wait strategy for spout. Waiting is triggered in one of two conditions:
+     *
+     * 1. nextTuple emits no tuples
+     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     */
+    @isString
+    @isDerivedFrom(baseType = IWaitStrategy.class)
+    public static final String TOPOLOGY_SPOUT_WAIT_STRATEGY = "topology.spout.wait.strategy";
+
+    /**
+     * Configures park time for WaitStrategyPark for spout.  If set to 0, returns immediately (i.e busy wait).
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PARK_MICROSEC = "topology.spout.wait.park.microsec";
+
+    /**
+     * Configures number of iterations to spend in level 1 of WaitStrategyProgressive, before progressing to level 2
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL1_COUNT =  "topology.spout.wait.progressive.level1.count";
+
+    /**
+     * Configures number of iterations to spend in level 2 of WaitStrategyProgressive, before progressing to level 3
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL2_COUNT =  "topology.spout.wait.progressive.level2.count";
+
+    /**
+     * Configures sleep time for WaitStrategyProgressive.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.spout.wait.progressive.level3.sleep.millis";
+
+    /**
      * Selects the Bolt's Wait Strategy to use when there are no incoming msgs. Used to trade off latency vs CPU usage.
      */
     @isString
@@ -890,7 +920,7 @@ public class Config extends HashMap<String, Object> {
      */
     @NotNull
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT =  "topology.bolt.wait.progressive.level1.count";
 
     /**
@@ -898,7 +928,7 @@ public class Config extends HashMap<String, Object> {
      */
     @NotNull
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT =  "topology.bolt.wait.progressive.level2.count";
 
     /**
@@ -939,7 +969,7 @@ public class Config extends HashMap<String, Object> {
      */
     @NotNull
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT = "topology.backpressure.wait.progressive.level1.count";
 
     /**
@@ -947,7 +977,7 @@ public class Config extends HashMap<String, Object> {
      */
     @NotNull
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT = "topology.backpressure.wait.progressive.level2.count";
 
 

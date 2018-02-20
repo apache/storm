@@ -90,8 +90,10 @@ values.
 ## 4. Wait Strategy
 Wait strategies are used to conserve CPU usage by trading off some latency and throughput. They are applied for the following situations:
 
-4.1 **Spout Wait:**  In low/no traffic situations, Spout's nextTuple() may not produce any new emits. To prevent invoking the Spout's nextTuple,
-this wait strategy is used between nextTuple() calls to allow the spout's executor thread to idle and conserve CPU. Select a strategy using `topology.spout.wait.strategy`.
+4.1 **Spout Wait:**  In low/no traffic situations, Spout's nextTuple() may not produce any new emits. To prevent invoking the Spout's nextTuple too often,
+this wait strategy is used between nextTuple() calls, allowing the spout's executor thread to idle and conserve CPU. Spout wait strategy is also used
+when the `topology.max.spout.pending` limit has been reached when ACKers are enabled. Select a strategy using `topology.spout.wait.strategy`. Configure the
+chosen wait strategy using one of the `topology.spout.wait.*` settings.
 
 4.2 **Bolt Wait:** : When a bolt polls it's receive queue for new messages to process, it is possible that the queue is empty. This typically happens
 in case of low/no traffic situations or when the upstream spout/bolt is inherently slower. This wait strategy is used in such cases. It avoids high CPU usage
@@ -104,24 +106,23 @@ conserving CPU. The chosen strategy can be further configured using the `topolog
 
 
 #### Built-in wait strategies:
-
-- **SleepSpoutWaitStrategy** : This is the only built-in strategy available for Spout Wait. It cannot be applied to other Wait situations. It is a simple static strategy that
-calls Thread.sleep() each time. Set `topology.spout.wait.strategy` to `org.apache.storm.spout.SleepSpoutWaitStrategy` for using this. `topology.sleep.spout.wait.strategy.time.ms`
-configures the sleep time.
+These wait strategies are availabe for use with all of the above mentioned wait situations.
 
 - **ProgressiveWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to 'org.apache.storm.policy.WaitStrategyProgressive' to
 select this wait strategy. This is a dynamic wait strategy that enters into progressively deeper states of CPU conservation if the Backpressure Wait or Bolt Wait situations persist.
 It has 3 levels of idling and allows configuring how long to stay at each level :
 
-  1. No Waiting - The first few times it will return immediately. This does not conserve any CPU. The number of times it remains in this state is configured using
-  `topology.bolt.wait.progressive.level1.count` or `topology.backpressure.wait.progressive.level1.count` depending which situation it is being used.
+  1. Level1 / No Waiting - The first few times it will return immediately. This does not conserve any CPU. The number of times it remains in this state is configured using
+  `topology.spout.wait.progressive.level1.count` or `topology.bolt.wait.progressive.level1.count` or `topology.backpressure.wait.progressive.level1.count` depending which
+  situation it is being used.
 
-  2. Park Nanos - In this state it disables the current thread for thread scheduling purposes, for 1 nano second using LockSupport.parkNanos(). This puts the CPU in a minimal
-  conservation state. It remains in this state for `topology.bolt.wait.progressive.level2.count` or `topology.backpressure.wait.progressive.level2.count` iterations.
+  2. Level 2 / Park Nanos - In this state it disables the current thread for thread scheduling purposes, for 1 nano second using LockSupport.parkNanos(). This puts the CPU in a minimal
+  conservation state. It remains in this state for `topology.spout.wait.progressive.level2.count` or `topology.bolt.wait.progressive.level2.count` or
+  `topology.backpressure.wait.progressive.level2.count` iterations.
 
-  3. Thread.sleep() - In this state it calls Thread.sleep() with the value specified in `topology.backpressure.wait.progressive.level3.sleep.millis` or in
-  `topology.bolt.wait.progressive.level3.sleep.millis` based on the Wait situation it is used in. This is the most CPU conserving level it remains in this level for
-  the remaining iterations.
+  3. Level 3 / Thread.sleep() - In this level it calls Thread.sleep() with the value specified in `topology.spout.wait.progressive.level3.sleep.millis` or
+  `topology.bolt.wait.progressive.level3.sleep.millis` or `topology.backpressure.wait.progressive.level3.sleep.millis`. This is the most CPU conserving level and it remains in
+  this level for the remaining iterations.
 
 
 - **ParkWaitStrategy** : This strategy can be used for Bolt Wait or Backpressure Wait situations. Set the strategy to `org.apache.storm.policy.WaitStrategyPark` to use this.
