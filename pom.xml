@@ -299,7 +299,7 @@
         <jedis.version>2.9.0</jedis.version>
         <rocketmq.version>4.0.0-incubating</rocketmq.version>
 
-        <jackson.version>2.9.2</jackson.version>
+        <jackson.version>2.9.4</jackson.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.2</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
