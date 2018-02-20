@@ -195,25 +195,16 @@ public class TestGenericResourceAwareStrategy {
         rs.prepare(conf);
         rs.schedule(topologies, cluster);
 
-        //We need to have 3 slots on 3 separate hosts. The topology needs 6 GPUs 3500 MB memory and 350% CPU
-        // The bolt-3 instances must be on separate nodes because they each need 2 GPUs.
-        // The bolt-2 instances must be on the same node as they each need 1 GPU
-        // (this assumes that we are packing the components to avoid fragmentation).
-        // The bolt-1 and spout instances fill in the rest.
-
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3)))); //bolt-3 - 500 MB, 50% CPU, 2 GPU
-        //Total 500 MB, 50% CPU, 2 - GPU -> this node has 1000 MB, 100% cpu, 0 GPU left
         expectedScheduling.add(new HashSet<>(Arrays.asList(
-            new ExecutorDetails(2, 2), //bolt-1 - 500 MB, 50% CPU, 0 GPU
-            new ExecutorDetails(5, 5), //bolt-2 - 500 MB, 50% CPU, 1 GPU
-            new ExecutorDetails(6, 6)))); //bolt-2 - 500 MB, 50% CPU, 1 GPU
-        //Total 1500 MB, 150% CPU, 2 GPU -> this node has 0 MB, 0% CPU, 0 GPU left
+                new ExecutorDetails(0, 0),
+                new ExecutorDetails(2, 2),
+                new ExecutorDetails(6, 6))));
         expectedScheduling.add(new HashSet<>(Arrays.asList(
-            new ExecutorDetails(0, 0), //Spout - 500 MB, 50% CPU, 0 GPU
-            new ExecutorDetails(1, 1), //bolt-1 - 500 MB, 50% CPU, 0 GPU
-            new ExecutorDetails(4, 4)))); //bolt-3 500 MB, 50% cpu, 2 GPU
-        //Total 1500 MB, 150% CPU, 2 GPU -> this node has 0 MB, 0% CPU, 0 GPU left
+                new ExecutorDetails(4, 4),
+                new ExecutorDetails(1, 1))));
+        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(5, 5))));
+        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3))));
         HashSet<HashSet<ExecutorDetails>> foundScheduling = new HashSet<>();
         SchedulerAssignment assignment = cluster.getAssignmentById("testTopology-id");
         for (Collection<ExecutorDetails> execs : assignment.getSlotToExecutors().values()) {

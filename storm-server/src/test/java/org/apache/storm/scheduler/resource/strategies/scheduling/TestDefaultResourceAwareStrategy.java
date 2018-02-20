@@ -201,17 +201,18 @@ public class TestDefaultResourceAwareStrategy {
 
         rs.prepare(conf);
         rs.schedule(topologies, cluster);
+        //:<[[[0, 0], [6, 6], [2, 2]], [[3, 3]], [[5, 5], [4, 4], [1, 1]]]>
 
         HashSet<HashSet<ExecutorDetails>> expectedScheduling = new HashSet<>();
-        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(0, 0)))); //Spout
         expectedScheduling.add(new HashSet<>(Arrays.asList(
-            new ExecutorDetails(2, 2), //bolt-1
-            new ExecutorDetails(4, 4), //bolt-2
-            new ExecutorDetails(6, 6)))); //bolt-3
+            new ExecutorDetails(0, 0), //spout
+            new ExecutorDetails(6, 6), //bolt-2
+            new ExecutorDetails(2, 2)))); //bolt-1
+        expectedScheduling.add(new HashSet<>(Arrays.asList(new ExecutorDetails(3, 3)))); //bolt-3
         expectedScheduling.add(new HashSet<>(Arrays.asList(
-            new ExecutorDetails(1, 1), //bolt-1
-            new ExecutorDetails(3, 3), //bolt-2
-            new ExecutorDetails(5, 5)))); //bolt-3
+            new ExecutorDetails(5, 5), //bolt-2
+            new ExecutorDetails(4, 4), //bolt-3
+            new ExecutorDetails(1, 1)))); //bolt-1
         HashSet<HashSet<ExecutorDetails>> foundScheduling = new HashSet<>();
         SchedulerAssignment assignment = cluster.getAssignmentById("testTopology-id");
         for (Collection<ExecutorDetails> execs : assignment.getSlotToExecutors().values()) {

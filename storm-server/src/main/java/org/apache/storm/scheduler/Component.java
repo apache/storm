@@ -18,11 +18,15 @@
 
 package org.apache.storm.scheduler;
 
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import org.apache.storm.generated.ComponentType;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Grouping;
 
 public class Component {
     private final String id;
@@ -30,6 +34,7 @@ public class Component {
     private final ComponentType type;
     private final Set<String> parents = new HashSet<>();
     private final Set<String> children = new HashSet<>();
+    private final Map<GlobalStreamId,Grouping> input = new HashMap<>();
 
     /**
      * Create a new component.
@@ -37,10 +42,11 @@ public class Component {
      * @param compId the id of the component
      * @param execs the executors for this component.
      */
-    public Component(ComponentType type, String compId, List<ExecutorDetails> execs) {
+    public Component(ComponentType type, String compId, List<ExecutorDetails> execs, Map<GlobalStreamId, Grouping> input) {
         this.type = type;
         this.id = compId;
         this.execs = execs;
+        this.input.putAll(input);
     }
 
     /**
@@ -73,16 +79,19 @@ public class Component {
         return children;
     }
 
+    public Map<GlobalStreamId, Grouping> getInput() {
+        return input;
+    }
+
     @Override
     public String toString() {
-        return "{id: "
-            + getId()
-            + " Parents: "
-            + getParents()
-            + " Children: "
-            + getChildren()
-            + " Execs: "
-            + getExecs()
-            + "}";
+        return "Component{" +
+                "id='" + id + '\'' +
+                ", execs=" + execs +
+                ", type=" + type +
+                ", parents=" + parents +
+                ", children=" + children +
+                ", input=" + input +
+                '}';
     }
 }

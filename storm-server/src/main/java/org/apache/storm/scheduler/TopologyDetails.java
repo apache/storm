@@ -209,8 +209,9 @@ public class TopologyDetails {
         if (spouts != null) {
             for (Map.Entry<String, SpoutSpec> entry : spouts.entrySet()) {
                 String compId = entry.getKey();
+                SpoutSpec spout = entry.getValue();
                 if (!Utils.isSystemId(compId)) {
-                    Component comp = new Component(ComponentType.SPOUT, compId, componentToExecs(compId));
+                    Component comp = new Component(ComponentType.SPOUT, compId, componentToExecs(compId), spout.get_common().get_inputs());
                     ret.put(compId, comp);
                 }
             }
@@ -218,8 +219,9 @@ public class TopologyDetails {
         if (bolts != null) {
             for (Map.Entry<String, Bolt> entry : bolts.entrySet()) {
                 String compId = entry.getKey();
+                Bolt bolt = entry.getValue();
                 if (!Utils.isSystemId(compId)) {
-                    Component comp = new Component(ComponentType.BOLT, compId, componentToExecs(compId));
+                    Component comp = new Component(ComponentType.BOLT, compId, componentToExecs(compId), bolt.get_common().get_inputs());
                     ret.put(compId, comp);
                 }
             }
