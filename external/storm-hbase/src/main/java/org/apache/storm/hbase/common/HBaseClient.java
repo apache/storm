@@ -62,7 +62,11 @@ public class HBaseClient implements Closeable {
     public HBaseClient(Map<String, Object> map , final Configuration configuration, final String tableName) {
         try {
             UserProvider provider = HBaseSecurityUtil.login(map, configuration);
-            this.connection = ConnectionFactory.createConnection(configuration, provider.getCurrent());
+            if(provider != null) {
+                this.connection = ConnectionFactory.createConnection(configuration, provider.getCurrent());
+            } else {
+                this.connection = ConnectionFactory.createConnection(configuration);
+            }
             this.table = Utils.getTable(this.connection, provider, configuration, tableName);
         } catch (Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
