@@ -84,7 +84,6 @@
                     <artifactId>jersey-core</artifactId>
                 </exclusion>
                 <exclusion>
-                <exclusion>
                     <groupId>org.apache.curator</groupId>
                     <artifactId>curator-client</artifactId>
                 </exclusion>
