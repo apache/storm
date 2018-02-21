@@ -115,8 +115,8 @@ public class TestHiveBolt {
 
     @Before
     public void setup() throws Exception {
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
+        TxnDbUtil.cleanDb(conf);
+        TxnDbUtil.prepDb(conf);
         MockitoAnnotations.initMocks(this);
         HiveSetupUtil.dropDB(conf, dbName);
         dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();

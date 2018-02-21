@@ -96,8 +96,8 @@ public class TestHiveWriter {
 
     @Before
     public void setUp() throws Exception {
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
+        TxnDbUtil.cleanDb(conf);
+        TxnDbUtil.prepDb(conf);
         HiveSetupUtil.dropDB(conf, dbName);
         dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
         dbLocation = dbLocation.replaceAll("\\\\","/"); //windows
