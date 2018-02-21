@@ -39,6 +39,8 @@ import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
 
+import java.util.HashMap;
+
 public class WordCountTrident {
     public static StormTopology buildTopology(String hbaseRoot){
         Fields fields = new Fields("word", "count");
@@ -85,9 +87,15 @@ public class WordCountTrident {
     public static void main(String[] args) throws Exception {
         Config conf = new Config();
         conf.setMaxSpoutPending(5);
+
+        String configKey = "hbase.conf";
+        HashMap hbConf = new HashMap();
+        hbConf.put("hbase.rootdir", args[0]);
+        conf.put(configKey, hbConf);
+
         if (args.length == 1) {
             LocalCluster cluster = new LocalCluster();
-            cluster.submitTopology("wordCounter", conf, buildTopology(args[0]));
+            cluster.submitTopology("wordCounter", conf, buildTopology(configKey));
             Thread.sleep(60 * 1000);
             cluster.killTopology("wordCounter");
             cluster.shutdown();
@@ -95,7 +103,7 @@ public class WordCountTrident {
         }
         else if(args.length == 2) {
             conf.setNumWorkers(3);
-            StormSubmitter.submitTopology(args[1], conf, buildTopology(args[0]));
+            StormSubmitter.submitTopology(args[1], conf, buildTopology(configKey));
         } else{
             System.out.println("Usage: TridentFileTopology <hdfs url> [topology name]");
         }
