@@ -25,28 +25,19 @@ import org.apache.hadoop.fs.permission.FsPermission;
 import org.apache.hadoop.hive.conf.HiveConf;
 import org.apache.hadoop.hive.metastore.HiveMetaStoreClient;
 import org.apache.hadoop.hive.metastore.IMetaStoreClient;
-import org.apache.hadoop.hive.ql.metadata.HiveException;
-import org.apache.hadoop.hive.serde.serdeConstants;
-import org.apache.hadoop.hive.shims.ShimLoader;
-
 import org.apache.hadoop.hive.metastore.api.FieldSchema;
 import org.apache.hadoop.hive.metastore.api.MetaException;
-import org.apache.hadoop.hive.metastore.api.Partition;
-import org.apache.hadoop.hive.metastore.api.StorageDescriptor;
-import org.apache.hadoop.hive.metastore.api.Table;
-
 import org.apache.hadoop.hive.ql.Driver;
-import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.ql.metadata.HiveException;
+import org.apache.hadoop.hive.shims.ShimLoader;
 import org.apache.hive.hcatalog.streaming.QueryFailedException;
 import org.apache.thrift.TException;
-
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.util.ArrayList;
 import java.util.List;
 
 public class HiveSetupUtil {
@@ -180,16 +171,8 @@ public class HiveSetupUtil {
     private static boolean runDDL(Driver driver, String sql) throws QueryFailedException {
         int retryCount = 1; // # of times to retry if first attempt fails
         for (int attempt=0; attempt <= retryCount; ++attempt) {
-            try {
-                //LOG.debug("Running Hive Query: "+ sql);
                 driver.run(sql);
                 return true;
-            } catch (CommandNeedRetryException e) {
-                if (attempt == retryCount) {
-                    throw new QueryFailedException(sql, e);
-                }
-                continue;
-            }
         } // for
         return false;
     }
