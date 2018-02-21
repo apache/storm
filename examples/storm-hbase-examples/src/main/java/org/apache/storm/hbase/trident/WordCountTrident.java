@@ -19,6 +19,7 @@ package org.apache.storm.hbase.trident;
 
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.storm.Config;
+import org.apache.storm.LocalCluster;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
@@ -37,6 +38,8 @@ import org.apache.storm.trident.state.StateFactory;
 import org.apache.storm.trident.testing.FixedBatchSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
+
+import java.util.HashMap;
 
 public class WordCountTrident {
     public static StormTopology buildTopology(String hbaseRoot){
@@ -88,10 +91,14 @@ public class WordCountTrident {
         
         if (args.length == 2) {
             topoName = args[1];
-        } else if (args.length > 2) {
+        } else if (args.length == 0 || args.length > 2) {
             System.out.println("Usage: TridentFileTopology <hdfs url> [topology name]");
             return;
         }
+        String configKey = "hbase.conf";
+        HashMap hbConf = new HashMap();
+        hbConf.put("hbase.rootdir", args[0]);
+        conf.put(configKey, hbConf);
         conf.setNumWorkers(3);
         StormSubmitter.submitTopology(topoName, conf, buildTopology(args[0]));
     }
