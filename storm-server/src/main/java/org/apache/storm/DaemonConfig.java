@@ -18,20 +18,22 @@
 
 package org.apache.storm;
 
+import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
 
+import java.util.ArrayList;
+import java.util.Map;
 import org.apache.storm.container.ResourceIsolationInterface;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
@@ -40,9 +42,6 @@ import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriori
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.Validated;
-
-import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Storm configs are specified as a plain old map. This class provides constants for
@@ -1080,6 +1079,42 @@ public class DaemonConfig implements Validated {
      */
     @isInteger
     public static final String STORM_ROCKSDB_METRIC_DELETION_PERIOD_HOURS = "storm.metricstore.rocksdb.deletion_period_hours";
+
+    /**
+     * Keytab file for HBaseStore.  Required when using a secure HBase instance for a metricstore.
+     */
+    @isString
+    public static final String STORM_HBASESTORE_KEYTAB_FILE = "storm.hbasestore.keytab.file";
+
+    /**
+     * Principal for HBaseStore.  Required when using a secure HBase instance for a metricstore.
+     */
+    @isString
+    public static final String STORM_HBASESTORE_PRINCIPAL = "storm.hbasestore.principal";
+
+    /**
+     * hbase-site.xml file for use for an HBase metricstore.
+     */
+    @isString
+    public static final String STORM_HBASESTORE_HBASE_SITE = "storm.hbasestore.hbase.site";
+
+    /**
+     * Number of threads to use for inserting metrics into an HBaseStore.  Defaults to 1.
+     */
+    @isInteger
+    public static final String STORM_HBASESTORE_INSERTION_THREADS = "storm.hbasestore.insertion.threads";
+
+    /**
+     * Namespace for HBase table when using HBaseStore for metrics.  Defaults to the default namespace.
+     */
+    @isString
+    public static final String STORM_HBASESTORE_TABLE_NAMESPACE = "storm.hbasestore.table.namespace";
+
+    /**
+     * Name for HBase table when using HBaseStore for metrics.  Defaults to "metrics".
+     */
+    @isString
+    public static final String STORM_HBASESTORE_TABLE_NAME = "storm.hbasestore.table.name";
 
     /**
      * The number of hours a worker token is valid for.  This also sets how frequently worker tokens will be renewed.
