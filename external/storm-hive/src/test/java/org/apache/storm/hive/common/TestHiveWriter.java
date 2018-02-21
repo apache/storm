@@ -22,37 +22,33 @@ import com.google.common.util.concurrent.ThreadFactoryBuilder;
 import junit.framework.Assert;
 import org.apache.hadoop.hive.cli.CliSessionState;
 import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.ql.CommandNeedRetryException;
+import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
 import org.apache.hadoop.hive.ql.Driver;
 import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hive.hcatalog.streaming.HiveEndPoint;
-import org.apache.hive.hcatalog.streaming.StreamingException;
 import org.apache.hive.hcatalog.streaming.SerializationError;
+import org.apache.storm.Config;
+import org.apache.storm.hive.bolt.HiveSetupUtil;
 import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
 import org.apache.storm.hive.bolt.mapper.HiveMapper;
-import org.apache.storm.hive.bolt.HiveSetupUtil;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-
-import org.apache.storm.Config;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
-import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
-import org.mockito.MockitoAnnotations;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
 
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.HashMap;
 
 public class TestHiveWriter {
     final static String dbName = "testdb";
@@ -96,8 +92,8 @@ public class TestHiveWriter {
 
     @Before
     public void setUp() throws Exception {
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
+        TxnDbUtil.cleanDb(conf);
+        TxnDbUtil.prepDb(conf);
         HiveSetupUtil.dropDB(conf, dbName);
         dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
         dbLocation = dbLocation.replaceAll("\\\\","/"); //windows
@@ -184,13 +180,13 @@ public class TestHiveWriter {
     }
 
     private void checkRecordCountInTable(String dbName,String tableName,int expectedCount)
-        throws CommandNeedRetryException, IOException {
+        throws IOException {
         int count = listRecordsInTable(dbName,tableName).size();
         Assert.assertEquals(expectedCount, count);
     }
 
     private  ArrayList<String> listRecordsInTable(String dbName,String tableName)
-        throws CommandNeedRetryException, IOException {
+        throws IOException {
         driver.run("select * from " + dbName + "." + tableName);
         ArrayList<String> res = new ArrayList<String>();
         driver.getResults(res);

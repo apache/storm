@@ -18,7 +18,21 @@
 
 package org.apache.storm.hive.bolt;
 
+import junit.framework.Assert;
+import org.apache.hadoop.hive.cli.CliSessionState;
+import org.apache.hadoop.hive.conf.HiveConf;
+import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
+import org.apache.hadoop.hive.ql.Driver;
+import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
+import org.apache.hadoop.hive.ql.session.SessionState;
+import org.apache.hadoop.hive.serde.serdeConstants;
+import org.apache.hadoop.security.UserGroupInformation;
+import org.apache.hive.hcatalog.streaming.HiveEndPoint;
+import org.apache.hive.hcatalog.streaming.StreamingConnection;
 import org.apache.storm.Config;
+import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
+import org.apache.storm.hive.bolt.mapper.JsonRecordHiveMapper;
+import org.apache.storm.hive.common.HiveOptions;
 import org.apache.storm.hive.common.HiveWriter;
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.task.OutputCollector;
@@ -28,46 +42,28 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.MockTupleHelpers;
-
-import org.apache.storm.hive.common.HiveOptions;
-import org.apache.storm.hive.bolt.mapper.DelimitedRecordHiveMapper;
-import org.apache.storm.hive.bolt.mapper.JsonRecordHiveMapper;
-
-import org.apache.hadoop.hive.cli.CliSessionState;
-import org.apache.hadoop.hive.conf.HiveConf;
-import org.apache.hadoop.hive.ql.CommandNeedRetryException;
-import org.apache.hadoop.hive.ql.Driver;
-import org.apache.hadoop.hive.ql.session.SessionState;
-import org.apache.hadoop.hive.serde.serdeConstants;
-import org.apache.hadoop.hive.metastore.txn.TxnDbUtil;
-import org.apache.hadoop.security.UserGroupInformation;
-import org.apache.hadoop.hive.ql.processors.CommandProcessorResponse;
-
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
-import static org.junit.Assert.assertEquals;
-import static org.mockito.Mockito.*;
-
-import junit.framework.Assert;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.ArrayList;
 import java.io.IOException;
-import java.util.Date;
-import java.util.Set;
-import java.util.HashSet;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Set;
 
-
-import org.apache.hive.hcatalog.streaming.*;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyZeroInteractions;
 
 public class TestHiveBolt {
     final static String dbName = "testdb";
@@ -115,8 +111,8 @@ public class TestHiveBolt {
 
     @Before
     public void setup() throws Exception {
-        TxnDbUtil.cleanDb();
-        TxnDbUtil.prepDb();
+        TxnDbUtil.cleanDb(conf);
+        TxnDbUtil.prepDb(conf);
         MockitoAnnotations.initMocks(this);
         HiveSetupUtil.dropDB(conf, dbName);
         dbLocation = dbFolder.newFolder(dbName + ".db").getCanonicalPath();
@@ -432,13 +428,13 @@ public class TestHiveBolt {
     }
 
     private void checkRecordCountInTable(String tableName,String dbName,int expectedCount)
-        throws CommandNeedRetryException, IOException {
+        throws IOException {
         int count = listRecordsInTable(tableName,dbName).size();
         Assert.assertEquals(expectedCount, count);
     }
 
     private  ArrayList<String> listRecordsInTable(String tableName,String dbName)
-        throws CommandNeedRetryException, IOException {
+        throws IOException {
         CommandProcessorResponse cpr = driver.run("select * from " + dbName + "." + tableName);
         System.out.println("cpr.respCode=" + cpr.getResponseCode() + " cpr.errMsg=" + cpr.getErrorMessage() +
                 " for table " + tableName);
@@ -448,7 +444,7 @@ public class TestHiveBolt {
     }
 
     private void checkDataWritten(String tableName,String dbName,String... row)
-        throws CommandNeedRetryException, IOException {
+        throws IOException {
         ArrayList<String> results = listRecordsInTable(tableName,dbName);
         for(int i = 0; i < row.length && results.size() > 0; i++) {
             String resultRow = results.get(i).replace("\t",",");
