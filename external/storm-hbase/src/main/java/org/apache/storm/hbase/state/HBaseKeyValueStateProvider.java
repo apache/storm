@@ -47,7 +47,7 @@ public class HBaseKeyValueStateProvider implements StateProvider {
     @Override
     public State newState(String namespace, Map stormConf, TopologyContext context) {
         try {
-            return getHBaseKeyValueState(namespace, stormConf, getStateConfig(stormConf));
+            return getHBaseKeyValueState(namespace, stormConf, context, getStateConfig(stormConf));
         } catch (Exception ex) {
             LOG.error("Error loading config from storm conf {}", stormConf);
             throw new RuntimeException(ex);
@@ -55,12 +55,12 @@ public class HBaseKeyValueStateProvider implements StateProvider {
     }
 
     StateConfig getStateConfig(Map stormConf) throws Exception {
-        StateConfig stateConfig = null;
-        String providerConfig = null;
+        StateConfig stateConfig;
+        String providerConfig;
         ObjectMapper mapper = new ObjectMapper();
         mapper.setVisibility(PropertyAccessor.FIELD, JsonAutoDetect.Visibility.ANY);
-        if (stormConf.containsKey(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
-            providerConfig = (String) stormConf.get(org.apache.storm.Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
+        if (stormConf.containsKey(Config.TOPOLOGY_STATE_PROVIDER_CONFIG)) {
+            providerConfig = (String) stormConf.get(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
             stateConfig = mapper.readValue(providerConfig, StateConfig.class);
         } else {
             stateConfig = new StateConfig();
@@ -74,7 +74,8 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         return stateConfig;
     }
 
-    private HBaseKeyValueState getHBaseKeyValueState(String namespace, Map stormConf, StateConfig config) throws Exception {
+    private HBaseKeyValueState getHBaseKeyValueState(String namespace, Map<String, Object> stormConf, TopologyContext context,
+                                                     StateConfig config) throws Exception {
         Map<String, Object> conf = getHBaseConfigMap(stormConf, config.hbaseConfigKey);
         final Configuration hbConfig = getHBaseConfigurationInstance(conf);
 
@@ -85,7 +86,7 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         HBaseClient hbaseClient = new HBaseClient(hbaseConfMap, hbConfig, config.tableName);
 
         return new HBaseKeyValueState(hbaseClient, config.columnFamily, namespace,
-                getKeySerializer(config), getValueSerializer(config));
+                getKeySerializer(stormConf, context, config), getValueSerializer(stormConf, context, config));
     }
 
     private Configuration getHBaseConfigurationInstance(Map<String, Object> conf) {
@@ -114,10 +115,10 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         }
     }
 
-    private Serializer getKeySerializer(StateConfig config) throws Exception {
-        Serializer serializer = null;
+    private Serializer getKeySerializer(Map<String, Object> topoConf, TopologyContext context, StateConfig config) throws Exception {
+        Serializer serializer;
         if (config.keySerializerClass != null) {
-            Class<?> klass = (Class<?>) Class.forName(config.keySerializerClass);
+            Class<?> klass = Class.forName(config.keySerializerClass);
             serializer = (Serializer) klass.newInstance();
         } else if (config.keyClass != null) {
             serializer = new DefaultStateSerializer(Collections.singletonList(Class.forName(config.keyClass)));
@@ -127,7 +128,7 @@ public class HBaseKeyValueStateProvider implements StateProvider {
         return serializer;
     }
 
-    private Serializer getValueSerializer(StateConfig config) throws Exception {
+    private Serializer getValueSerializer(Map topoConf, TopologyContext context, StateConfig config) throws Exception {
         Serializer serializer = null;
         if (config.valueSerializerClass != null) {
             Class<?> klass = (Class<?>) Class.forName(config.valueSerializerClass);

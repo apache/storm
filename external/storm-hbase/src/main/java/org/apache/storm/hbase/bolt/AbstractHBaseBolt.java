@@ -38,7 +38,6 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     private static final Logger LOG = LoggerFactory.getLogger(AbstractHBaseBolt.class);
 
     protected transient OutputCollector collector;
-
     protected transient HBaseClient hBaseClient;
     protected String tableName;
     protected HBaseMapper mapper;
@@ -52,11 +51,11 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
     }
 
     @Override
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
+    public void prepare(Map topoConf, TopologyContext topologyContext, OutputCollector collector) {
         this.collector = collector;
         final Configuration hbConfig = HBaseConfiguration.create();
 
-        Map<String, Object> conf = (Map<String, Object>)map.get(this.configKey);
+        Map<String, Object> conf = (Map<String, Object>)topoConf.get(this.configKey);
         if(conf == null) {
             throw new IllegalArgumentException("HBase configuration not found using key '" + this.configKey + "'");
         }
@@ -71,7 +70,7 @@ public abstract class AbstractHBaseBolt extends BaseRichBolt {
         //heck for backward compatibility, we need to pass TOPOLOGY_AUTO_CREDENTIALS to hbase conf
         //the conf instance is instance of persistentMap so making a copy.
         Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
-        hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, map.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
+        hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, topoConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
         this.hBaseClient = new HBaseClient(hbaseConfMap, hbConfig, tableName);
     }
 

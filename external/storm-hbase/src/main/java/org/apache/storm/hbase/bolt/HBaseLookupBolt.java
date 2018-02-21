@@ -17,14 +17,13 @@
  */
 package org.apache.storm.hbase.bolt;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.LoadingCache;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.TupleUtils;
 
-import com.google.common.cache.CacheBuilder;
-import com.google.common.cache.CacheLoader;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Lists;
 
 import java.util.Map;
@@ -41,6 +40,7 @@ import org.apache.storm.task.TopologyContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 /**
  * Basic bolt for querying from HBase.
  *
@@ -48,90 +48,88 @@ import org.slf4j.LoggerFactory;
  *
  */
 public class HBaseLookupBolt extends AbstractHBaseBolt {
-  private static final Logger LOG = LoggerFactory.getLogger(HBaseLookupBolt.class);
+     private static final Logger LOG = LoggerFactory.getLogger(HBaseLookupBolt.class);
 
-  private HBaseValueMapper rowToTupleMapper;
+     private HBaseValueMapper rowToTupleMapper;
+     private HBaseProjectionCriteria projectionCriteria;
+     private transient LoadingCache<byte[], Result> cache;
+     private transient boolean cacheEnabled;
 
-  private HBaseProjectionCriteria projectionCriteria;
-  private transient LoadingCache<byte[], Result> cache;
-  private transient boolean cacheEnabled;
+     public HBaseLookupBolt(String tableName, HBaseMapper mapper, HBaseValueMapper rowToTupleMapper) {
+          super(tableName, mapper);
+          Validate.notNull(rowToTupleMapper, "rowToTupleMapper can not be null");
+          this.rowToTupleMapper = rowToTupleMapper;
+     }
 
-  public HBaseLookupBolt(String tableName, HBaseMapper mapper, HBaseValueMapper rowToTupleMapper) {
-    super(tableName, mapper);
-    Validate.notNull(rowToTupleMapper, "rowToTupleMapper can not be null");
-    this.rowToTupleMapper = rowToTupleMapper;
-  }
+     public HBaseLookupBolt withConfigKey(String configKey) {
+          this.configKey = configKey;
+          return this;
+     }
 
-  public HBaseLookupBolt withConfigKey(String configKey) {
-    this.configKey = configKey;
-    return this;
-  }
-  
-  public Object getOrDefault(@SuppressWarnings("rawtypes") Map map, String property, Object defaultValue) {
-    Object conf = map.get(property);
-      if(conf==null) {
-        conf = defaultValue;
-      }
-      return conf;
-  }
+     public HBaseLookupBolt withProjectionCriteria(HBaseProjectionCriteria projectionCriteria) {
+          this.projectionCriteria = projectionCriteria;
+          return this;
+     }
 
-  @SuppressWarnings({ "rawtypes" })
-  @Override
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
-      super.prepare(map, topologyContext, collector);
-      cacheEnabled = Boolean.parseBoolean(getOrDefault(map, "hbase.cache.enable", "false").toString());
-      
-    int cacheTTL = Integer.parseInt(getOrDefault(map, "hbase.cache.ttl.seconds", "300").toString());
-    int maxCacheSize = Integer.parseInt(getOrDefault(map, "hbase.cache.size", "1000").toString());
-    if (cacheEnabled) {
-      cache = CacheBuilder.newBuilder().maximumSize(maxCacheSize).expireAfterWrite(cacheTTL, TimeUnit.SECONDS)
-          .build(new CacheLoader<byte[], Result>() {
+     @SuppressWarnings({ "unchecked", "rawtypes" })
+     @Override
+     public void prepare(Map config, TopologyContext topologyContext, OutputCollector collector) {
+          super.prepare(config, topologyContext, collector);
+          cacheEnabled = Boolean.parseBoolean(getOrDefault(config,"hbase.cache.enable", "false").toString());
+          int cacheTTL = Integer.parseInt(getOrDefault(config,"hbase.cache.ttl.seconds", "300").toString());
+          int maxCacheSize = Integer.parseInt(getOrDefault(config,"hbase.cache.size", "1000").toString());
+          if (cacheEnabled) {
+               cache = CacheBuilder.newBuilder().maximumSize(maxCacheSize).expireAfterWrite(cacheTTL, TimeUnit.SECONDS)
+                       .build(new com.google.common.cache.CacheLoader<byte[], Result>() {
 
-            @Override
-            public Result load(byte[] rowKey) throws Exception {
-              Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
-              if (LOG.isDebugEnabled()) {
-                LOG.debug("Cache miss for key:" + new String(rowKey));
-              }
-              return hBaseClient.batchGet(Lists.newArrayList(get))[0];
-            }
+                            @Override
+                            public Result load(byte[] rowKey) throws Exception {
+                                 Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
+                                 if (LOG.isDebugEnabled()) {
+                                      LOG.debug("Cache miss for key:" + new String(rowKey));
+                                 }
+                                 return hBaseClient.batchGet(Lists.newArrayList(get))[0];
+                            }
 
-          });
-    }
-    }
+                       });
+          }
+     }
 
-  public HBaseLookupBolt withProjectionCriteria(HBaseProjectionCriteria projectionCriteria) {
-    this.projectionCriteria = projectionCriteria;
-    return this;
-  }
+     @Override
+     public void execute(Tuple tuple) {
+          if (TupleUtils.isTick(tuple)) {
+               collector.ack(tuple);
+               return;
+          }
+          byte[] rowKey = this.mapper.rowKey(tuple);
+          Result result = null;
+          try {
+               if (cacheEnabled) {
+                    result = cache.get(rowKey);
+               } else {
+                    Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
+                    result = hBaseClient.batchGet(Lists.newArrayList(get))[0];
+               }
+               for (Values values : rowToTupleMapper.toValues(tuple, result)) {
+                    this.collector.emit(tuple, values);
+               }
+               this.collector.ack(tuple);
+          } catch (Exception e) {
+               this.collector.reportError(e);
+               this.collector.fail(tuple);
+          }
+     }
 
-  @Override
-  public void execute(Tuple tuple) {
-    if (TupleUtils.isTick(tuple)) {
-      collector.ack(tuple);
-      return;
-    }
-    byte[] rowKey = this.mapper.rowKey(tuple);
-    Result result = null;
-    try {
-      if (cacheEnabled) {
-        result = cache.get(rowKey);
-      } else {
-        Get get = hBaseClient.constructGetRequests(rowKey, projectionCriteria);
-        result = hBaseClient.batchGet(Lists.newArrayList(get))[0];
-      }
-      for (Values values : rowToTupleMapper.toValues(tuple, result)) {
-        this.collector.emit(tuple, values);
-      }
-      this.collector.ack(tuple);
-    } catch (Exception e) {
-      this.collector.reportError(e);
-      this.collector.fail(tuple);
-    }
-  }
+     @Override
+     public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
+          rowToTupleMapper.declareOutputFields(outputFieldsDeclarer);
+     }
 
-  @Override
-  public void declareOutputFields(OutputFieldsDeclarer outputFieldsDeclarer) {
-    rowToTupleMapper.declareOutputFields(outputFieldsDeclarer);
-  }
+     public Object getOrDefault(@SuppressWarnings("rawtypes") Map map, String property, Object defaultValue) {
+          Object conf = map.get(property);
+          if(conf==null) {
+               conf = defaultValue;
+          }
+          return conf;
+     }
 }

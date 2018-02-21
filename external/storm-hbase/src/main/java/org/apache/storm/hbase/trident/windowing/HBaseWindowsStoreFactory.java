@@ -23,6 +23,7 @@ import org.apache.hadoop.hbase.HBaseConfiguration;
 import org.apache.storm.trident.windowing.WindowsStore;
 import org.apache.storm.trident.windowing.WindowsStoreFactory;
 
+import java.io.IOException;
 import java.util.Map;
 
 /**
@@ -42,14 +43,18 @@ public class HBaseWindowsStoreFactory implements WindowsStoreFactory {
         this.qualifier = qualifier;
     }
 
-    public WindowsStore create(Map stormConf) {
+    public WindowsStore create(Map topoConf) {
         Configuration configuration = HBaseConfiguration.create();
         for (Map.Entry<String, Object> entry : config.entrySet()) {
             if (entry.getValue() != null) {
                 configuration.set(entry.getKey(), entry.getValue().toString());
             }
         }
-        return new HBaseWindowsStore(stormConf, configuration, tableName, family, qualifier);
+        try {
+            return new HBaseWindowsStore(topoConf, configuration, tableName, family, qualifier);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to connect to HBase.", e);
+        }
     }
 
 }

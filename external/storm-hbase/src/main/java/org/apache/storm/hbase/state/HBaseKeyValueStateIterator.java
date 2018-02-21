@@ -18,12 +18,15 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
+
+import com.google.common.primitives.UnsignedBytes;
+
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import com.google.common.primitives.UnsignedBytes;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.ResultScanner;
 import org.apache.storm.hbase.common.HBaseClient;
@@ -32,8 +35,6 @@ import org.apache.storm.state.DefaultStateEncoder;
 import org.apache.storm.state.Serializer;
 
 import org.apache.storm.state.StateEncoder;
-
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
 
 /**
  * An iterator over {@link HBaseKeyValueState}.
@@ -44,7 +45,7 @@ public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
     private byte[] cursorKey;
     private final byte[] endScanKey;
     private final byte[] columnFamily;
-    private final HBaseClient hBaseClient;
+    private final HBaseClient hbaseClient;
     private final int chunkSize;
     private final StateEncoder<K, V, byte[], byte[]> encoder;
 
@@ -55,14 +56,14 @@ public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
      *
      * @param namespace The namespace of State
      * @param columnFamily The column family of state
-     * @param hBaseClient The instance of HBaseClient
+     * @param hbaseClient The instance of HBaseClient
      * @param pendingPrepareIterator The iterator of pendingPrepare
      * @param pendingCommitIterator The iterator of pendingCommit
      * @param chunkSize The size of chunk to get entries from HBase
      * @param keySerializer The serializer of key
      * @param valueSerializer The serializer of value
      */
-    public HBaseKeyValueStateIterator(String namespace, byte[] columnFamily, HBaseClient hBaseClient,
+    public HBaseKeyValueStateIterator(String namespace, byte[] columnFamily, HBaseClient hbaseClient,
                                       Iterator<Map.Entry<byte[], byte[]>> pendingPrepareIterator,
                                       Iterator<Map.Entry<byte[], byte[]>> pendingCommitIterator,
                                       int chunkSize, Serializer<K> keySerializer,
@@ -74,7 +75,7 @@ public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
 
         // this is the end key for whole scan
         this.endScanKey = advanceRow(this.cursorKey);
-        this.hBaseClient = hBaseClient;
+        this.hbaseClient = hbaseClient;
         this.chunkSize = chunkSize;
         this.encoder = new DefaultStateEncoder<K, V>(keySerializer, valueSerializer);
     }
@@ -92,7 +93,7 @@ public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
         }
 
         try {
-            ResultScanner resultScanner = hBaseClient.scan(cursorKey, endScanKey);
+            ResultScanner resultScanner = hbaseClient.scan(cursorKey, endScanKey);
             return !(resultScanner.iterator().hasNext());
         } catch (Exception e) {
             throw new RuntimeException("Fail to scan from HBase state storage.");
@@ -117,7 +118,7 @@ public class HBaseKeyValueStateIterator<K, V> extends BaseBinaryStateIterator<K,
     private void loadChunkFromHBase() {
         Map<byte[], byte[]> chunk = new TreeMap<>(UnsignedBytes.lexicographicalComparator());
         try {
-            ResultScanner resultScanner = hBaseClient.scan(cursorKey, endScanKey);
+            ResultScanner resultScanner = hbaseClient.scan(cursorKey, endScanKey);
 
             Result[] results = resultScanner.next(chunkSize);
 

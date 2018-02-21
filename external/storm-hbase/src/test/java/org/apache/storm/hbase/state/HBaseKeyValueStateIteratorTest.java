@@ -16,7 +16,21 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 import com.google.common.primitives.UnsignedBytes;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.TreeMap;
+
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Durability;
 import org.apache.hadoop.hbase.client.Mutation;
@@ -27,17 +41,6 @@ import org.apache.storm.state.DefaultStateSerializer;
 import org.apache.storm.state.Serializer;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NavigableMap;
-import java.util.TreeMap;
-
-import static org.apache.storm.hbase.state.HBaseKeyValueState.STATE_QUALIFIER;
-import static org.junit.Assert.*;
 
 /**
  * Test for HBaseKeyValueStateIterator.
@@ -65,10 +68,10 @@ public class HBaseKeyValueStateIteratorTest {
     @Test
     public void testGetEntriesInHBase() throws Exception {
         // pendingPrepare has no entries
-        NavigableMap<byte[], byte[]> pendingPrepare = getBinaryTreeMap();
+        final NavigableMap<byte[], byte[]> pendingPrepare = getBinaryTreeMap();
 
         // pendingCommit has no entries
-        NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
+        final NavigableMap<byte[], byte[]> pendingCommit = getBinaryTreeMap();
 
         // HBase has some entries
         NavigableMap<byte[], byte[]> chunkMap = getBinaryTreeMap();

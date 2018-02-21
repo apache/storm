@@ -259,7 +259,7 @@
         <clojure-contrib.version>1.2.0</clojure-contrib.version>
         <hive.version>1.2.1000.2.6.3.0-SNAPSHOT</hive.version>
         <hadoop.version>2.7.3.2.6.3.0-SNAPSHOT</hadoop.version>
-        <hbase.version>1.1.2.2.6.3.0-SNAPSHOT</hbase.version>
+        <hbase.version>2.0.0.3.0.0.2-SNAPSHOT</hbase.version>
         <kryo.version>3.0.3</kryo.version>
         <servlet.version>2.5</servlet.version>
         <joda-time.version>2.3</joda-time.version>
@@ -899,6 +899,11 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.github.ben-manes.caffeine</groupId>
+                <artifactId>caffeine</artifactId>
+                <version>${caffeine.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>

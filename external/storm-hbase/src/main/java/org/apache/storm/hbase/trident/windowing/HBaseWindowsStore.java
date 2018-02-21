@@ -19,9 +19,12 @@
 package org.apache.storm.hbase.trident.windowing;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
 import org.apache.hadoop.hbase.client.Delete;
 import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.client.Put;
 import org.apache.hadoop.hbase.client.Result;
 import org.apache.hadoop.hbase.client.Scan;
@@ -50,21 +53,23 @@ public class HBaseWindowsStore implements WindowsStore {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseWindowsStore.class);
     public static final String UTF_8 = "utf-8";
 
-    private final ThreadLocal<HTable> threadLocalHtable;
+    private final ThreadLocal<Table> threadLocalHtable;
     private final ThreadLocal<WindowKryoSerializer> threadLocalWindowKryoSerializer;
-    private final Queue<HTable> htables = new ConcurrentLinkedQueue<>();
+    private final Queue<Table> htables = new ConcurrentLinkedQueue<>();
     private final byte[] family;
     private final byte[] qualifier;
+    private Connection connection;
 
-    public HBaseWindowsStore(final Map stormConf, final Configuration config, final String tableName, byte[] family, byte[] qualifier) {
+    public HBaseWindowsStore(final Map<String, Object> topoConf, final Configuration config, final String tableName, byte[] family, byte[] qualifier) throws IOException {
         this.family = family;
         this.qualifier = qualifier;
+        this.connection = ConnectionFactory.createConnection(config);
 
-        threadLocalHtable = new ThreadLocal<HTable>() {
+        threadLocalHtable = new ThreadLocal<Table>() {
             @Override
-            protected HTable initialValue() {
+            protected Table initialValue() {
                 try {
-                    HTable hTable = new HTable(config, tableName);
+                    Table hTable = connection.getTable(TableName.valueOf(tableName));
                     htables.add(hTable);
                     return hTable;
                 } catch (IOException e) {
@@ -76,13 +81,13 @@ public class HBaseWindowsStore implements WindowsStore {
         threadLocalWindowKryoSerializer = new ThreadLocal<WindowKryoSerializer>(){
             @Override
             protected WindowKryoSerializer initialValue() {
-                return new WindowKryoSerializer(stormConf);
+                return new WindowKryoSerializer(topoConf);
             }
         };
 
     }
 
-    private HTable htable() {
+    private Table htable() {
         return threadLocalHtable.get();
     }
 
@@ -259,7 +264,7 @@ public class HBaseWindowsStore implements WindowsStore {
     @Override
     public void shutdown() {
         // close all the created hTable instances
-        for (HTable htable : htables) {
+        for (Table htable : htables) {
             try {
                 htable.close();
             } catch (IOException e) {

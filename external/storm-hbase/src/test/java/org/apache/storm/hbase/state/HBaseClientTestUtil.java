@@ -18,23 +18,10 @@
 
 package org.apache.storm.hbase.state;
 
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.mock;
+
 import com.google.common.primitives.UnsignedBytes;
-import org.apache.hadoop.hbase.Cell;
-import org.apache.hadoop.hbase.CellUtil;
-import org.apache.hadoop.hbase.KeyValue;
-import org.apache.hadoop.hbase.client.Delete;
-import org.apache.hadoop.hbase.client.Durability;
-import org.apache.hadoop.hbase.client.Get;
-import org.apache.hadoop.hbase.client.Mutation;
-import org.apache.hadoop.hbase.client.Put;
-import org.apache.hadoop.hbase.client.Result;
-import org.apache.hadoop.hbase.client.ResultScanner;
-import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
-import org.apache.storm.hbase.common.ColumnList;
-import org.apache.storm.hbase.common.HBaseClient;
-import org.mockito.Mockito;
-import org.mockito.invocation.InvocationOnMock;
-import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -48,8 +35,23 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentNavigableMap;
 import java.util.concurrent.ConcurrentSkipListMap;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Mockito.mock;
+import org.apache.hadoop.hbase.Cell;
+import org.apache.hadoop.hbase.CellUtil;
+import org.apache.hadoop.hbase.KeyValue;
+import org.apache.hadoop.hbase.client.Delete;
+import org.apache.hadoop.hbase.client.Durability;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.Mutation;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.ResultScanner;
+import org.apache.hadoop.hbase.client.metrics.ScanMetrics;
+import org.apache.storm.hbase.bolt.mapper.HBaseProjectionCriteria;
+import org.apache.storm.hbase.common.ColumnList;
+import org.apache.storm.hbase.common.HBaseClient;
+import org.mockito.Mockito;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 public class HBaseClientTestUtil {
     private HBaseClientTestUtil() {
@@ -366,6 +368,16 @@ public class HBaseClientTestUtil {
             @Override
             public void close() {
 
+            }
+
+            @Override
+            public boolean renewLease() {
+                return true;
+            }
+
+            @Override
+            public ScanMetrics getScanMetrics() {
+                return null;
             }
 
             @Override

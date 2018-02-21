@@ -15,32 +15,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.hbase.trident.state;
 
-import org.apache.storm.hbase.common.Utils;
-import org.apache.storm.task.IMetricsContext;
-import org.apache.storm.topology.FailedException;
-import org.apache.storm.tuple.Values;
 import com.google.common.collect.Maps;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.hbase.HBaseConfiguration;
-import org.apache.hadoop.hbase.client.*;
-import org.apache.hadoop.hbase.security.UserProvider;
-import org.apache.storm.hbase.security.HBaseSecurityUtil;
-import org.apache.storm.hbase.trident.mapper.TridentHBaseMapMapper;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.apache.storm.trident.state.*;
-import org.apache.storm.trident.state.map.*;
 
 import java.io.IOException;
 import java.io.InterruptedIOException;
 import java.io.Serializable;
-import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.CellBuilder;
+import org.apache.hadoop.hbase.CellBuilderFactory;
+import org.apache.hadoop.hbase.CellBuilderType;
+import org.apache.hadoop.hbase.HBaseConfiguration;
+import org.apache.hadoop.hbase.client.Connection;
+import org.apache.hadoop.hbase.client.ConnectionFactory;
+import org.apache.hadoop.hbase.client.Get;
+import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Put;
+import org.apache.hadoop.hbase.client.Result;
+import org.apache.hadoop.hbase.client.RetriesExhaustedWithDetailsException;
+import org.apache.hadoop.hbase.client.Table;
+import org.apache.hadoop.hbase.security.UserProvider;
+import org.apache.storm.hbase.common.Utils;
+import org.apache.storm.hbase.security.HBaseSecurityUtil;
+import org.apache.storm.hbase.trident.mapper.TridentHBaseMapMapper;
+import org.apache.storm.task.IMetricsContext;
+import org.apache.storm.topology.FailedException;
+import org.apache.storm.trident.state.JSONNonTransactionalSerializer;
+import org.apache.storm.trident.state.JSONOpaqueSerializer;
+import org.apache.storm.trident.state.JSONTransactionalSerializer;
+import org.apache.storm.trident.state.OpaqueValue;
+import org.apache.storm.trident.state.Serializer;
+import org.apache.storm.trident.state.State;
+import org.apache.storm.trident.state.StateFactory;
+import org.apache.storm.trident.state.StateType;
+import org.apache.storm.trident.state.TransactionalValue;
+import org.apache.storm.trident.state.map.CachedMap;
+import org.apache.storm.trident.state.map.IBackingMap;
+import org.apache.storm.trident.state.map.MapState;
+import org.apache.storm.trident.state.map.NonTransactionalMap;
+import org.apache.storm.trident.state.map.OpaqueMap;
+import org.apache.storm.trident.state.map.SnapshottableMap;
+import org.apache.storm.trident.state.map.TransactionalMap;
+import org.apache.storm.tuple.Values;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class HBaseMapState<T> implements IBackingMap<T> {
     private static Logger LOG = LoggerFactory.getLogger(HBaseMapState.class);
@@ -59,8 +83,16 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
     private Options<T> options;
     private Serializer<T> serializer;
-    private HTable table;
+    private Table table;
+    private Connection connection;
 
+    /**
+     * Constructor.
+     *
+     * @param options HBase State options.
+     * @param map topology config map.
+     * @param partitionNum the number of partition.
+     */
     public HBaseMapState(final Options<T> options, Map map, int partitionNum) {
         this.options = options;
         this.serializer = options.serializer;
@@ -68,7 +100,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
 
         final Configuration hbConfig = HBaseConfiguration.create();
         Map<String, Object> conf = (Map<String, Object>)map.get(options.configKey);
-        if(conf == null){
+        if (conf == null) {
             LOG.info("HBase configuration not found using key '" + options.configKey + "'");
             LOG.info("Using HBase config from first hbase-site.xml found on classpath.");
         } else {
@@ -80,10 +112,11 @@ public class HBaseMapState<T> implements IBackingMap<T> {
             }
         }
 
-        try{
+        try {
             UserProvider provider = HBaseSecurityUtil.login(map, hbConfig);
-            this.table = Utils.getTable(provider, hbConfig, options.tableName);
-        } catch(Exception e){
+            this.connection = ConnectionFactory.createConnection(hbConfig, provider.getCurrent());
+            this.table = Utils.getTable(this.connection, provider, hbConfig, options.tableName);
+        } catch (Exception e) {
             throw new RuntimeException("HBase bolt preparation failed: " + e.getMessage(), e);
         }
 
@@ -162,7 +195,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
             LOG.info("Preparing HBase State for partition {} of {}.", partitionIndex + 1, numPartitions);
             IBackingMap state = new HBaseMapState(options, conf, partitionIndex);
 
-            if(options.cacheSize > 0) {
+            if (options.cacheSize > 0) {
                 state = new CachedMap(state, options.cacheSize);
             }
 
@@ -188,7 +221,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
     @Override
     public List<T> multiGet(List<List<Object>> keys) {
         List<Get> gets = new ArrayList<Get>();
-        for(List<Object> key : keys){
+        for (List<Object> key : keys) {
             byte[] hbaseKey = this.options.mapMapper.rowKey(key);
             String qualifier = this.options.mapMapper.qualifier(key);
 
@@ -205,13 +238,13 @@ public class HBaseMapState<T> implements IBackingMap<T> {
                 String qualifier = this.options.mapMapper.qualifier(keys.get(i));
                 Result result = results[i];
                 byte[] value = result.getValue(this.options.columnFamily.getBytes(), qualifier.getBytes());
-                if(value != null) {
+                if (value != null) {
                     retval.add(this.serializer.deserialize(value));
                 } else {
                     retval.add(null);
                 }
             }
-        } catch(IOException e){
+        } catch (IOException e) {
             throw new FailedException("IOException while reading from HBase.", e);
         }
         return retval;
@@ -220,15 +253,21 @@ public class HBaseMapState<T> implements IBackingMap<T> {
     @Override
     public void multiPut(List<List<Object>> keys, List<T> values) {
         List<Put> puts = new ArrayList<Put>(keys.size());
+        CellBuilder builder = CellBuilderFactory.create(CellBuilderType.DEEP_COPY);
         for (int i = 0; i < keys.size(); i++) {
             byte[] hbaseKey = this.options.mapMapper.rowKey(keys.get(i));
             String qualifier = this.options.mapMapper.qualifier(keys.get(i));
-            LOG.info("Partiton: {}, Key: {}, Value: {}", new Object[]{this.partitionNum, new String(hbaseKey), new String(this.serializer.serialize(values.get(i)))});
+            LOG.info("Partiton: {}, Key: {}, Value: {}",
+                    new Object[]{this.partitionNum, new String(hbaseKey), new String(this.serializer.serialize(values.get(i)))});
             Put put = new Put(hbaseKey);
             T val = values.get(i);
-            put.add(this.options.columnFamily.getBytes(),
-                    qualifier.getBytes(),
-                    this.serializer.serialize(val));
+            try {
+                put.add(builder.setFamily(this.options.columnFamily.getBytes())
+                        .setQualifier(qualifier.getBytes())
+                        .setValue(this.serializer.serialize(val)).build());
+            } catch (IOException e) {
+                throw new FailedException("IOException while writing to HBase", e);
+            }
 
             puts.add(put);
         }
@@ -237,7 +276,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
         } catch (InterruptedIOException e) {
             throw new FailedException("Interrupted while writing to HBase", e);
         } catch (RetriesExhaustedWithDetailsException e) {
-            throw new FailedException("Retries exhaused while writing to HBase", e);
+            throw new FailedException("Retries exhausted while writing to HBase", e);
         } catch (IOException e) {
             throw new FailedException("IOException while writing to HBase", e);
         }

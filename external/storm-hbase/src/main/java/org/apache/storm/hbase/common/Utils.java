@@ -18,13 +18,15 @@
 package org.apache.storm.hbase.common;
 
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.hbase.TableName;
+import org.apache.hadoop.hbase.client.Connection;
 import org.apache.hadoop.hbase.client.HTable;
+import org.apache.hadoop.hbase.client.Table;
 import org.apache.hadoop.hbase.security.UserProvider;
 import org.apache.hadoop.hbase.util.Bytes;
 import org.apache.hadoop.security.UserGroupInformation;
 import org.apache.hadoop.security.token.Token;
 import org.apache.hadoop.security.token.TokenIdentifier;
-import org.apache.storm.hbase.security.HBaseSecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -38,7 +40,7 @@ public class Utils {
 
     private Utils(){}
 
-    public static HTable getTable(UserProvider provider, final Configuration config, final String tableName)
+    public static Table getTable(final Connection connection, UserProvider provider, Configuration config, final String tableName)
             throws IOException, InterruptedException {
         UserGroupInformation ugi;
         if (provider != null) {
@@ -78,10 +80,9 @@ public class Utils {
 
         }
 
-        HBaseSecurityUtil.spawnReLoginThread(ugi);
-        return ugi.doAs(new PrivilegedExceptionAction<HTable>() {
-            @Override public HTable run() throws IOException {
-                return new HTable(config, tableName);
+        return ugi.doAs(new PrivilegedExceptionAction<Table>() {
+            @Override public Table run() throws IOException {
+                return connection.getTable(TableName.valueOf(tableName));
             }
         });
     }
