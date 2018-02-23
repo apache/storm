@@ -222,7 +222,7 @@
         <hiccup.version>0.3.6</hiccup.version>
         <commons-compress.version>1.4.1</commons-compress.version>
         <commons-io.version>2.5</commons-io.version>
-        <commons-lang.version>2.5</commons-lang.version>
+        <commons-lang.version>2.6</commons-lang.version>
         <commons-exec.version>1.1</commons-exec.version>
         <commons-collections.version>3.2.2</commons-collections.version>
         <commons-fileupload.version>1.3.2</commons-fileupload.version>
@@ -235,7 +235,7 @@
         <ring.version>1.3.1</ring.version>
         <ring-json.version>0.3.1</ring-json.version>
         <ring-cors.version>0.1.5</ring-cors.version>
-        <jetty.version>7.6.13.v20130916</jetty.version>
+        <jetty.version>9.3.19.v20170502</jetty.version>
         <clojure.tools.logging.version>0.2.3</clojure.tools.logging.version>
         <clojure.math.numeric-tower.version>0.0.1</clojure.math.numeric-tower.version>
         <carbonite.version>1.5.0</carbonite.version>
@@ -741,6 +741,11 @@
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-core</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
