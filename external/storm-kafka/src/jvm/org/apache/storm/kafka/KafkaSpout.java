@@ -36,6 +36,7 @@ import java.util.*;
 // TODO: need to make a best effort to not re-emit messages if don't have to
 /**
  * @deprecated storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+ * If you need to migrate the committed offsets to the new spout, consider using the storm-kafka-migration tool.
  */
 @Deprecated
 public class KafkaSpout extends BaseRichSpout {

@@ -4,6 +4,10 @@ layout: documentation
 documentation: true
 ---
 
+## Deprecated
+Storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+If you need to migrate the committed offsets to the new spout, consider using the storm-kafka-migration tool.
+
 Provides core Storm and Trident spout implementations for consuming data from Apache Kafka 0.8.x.
 
 ##Spouts
