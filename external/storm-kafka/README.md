@@ -1,6 +1,9 @@
 Storm Kafka
 ====================
 
+## Deprecated
+Storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+
 Provides core Storm and Trident spout implementations for consuming data from Apache Kafka 0.8.x.
 
 ## Spouts
