@@ -866,9 +866,10 @@ public class Config extends HashMap<String, Object> {
      *
      * 1. nextTuple emits no tuples
      * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     *
+     * This class must implement {@link IWaitStrategy}.
      */
     @isString
-    @isDerivedFrom(baseType = IWaitStrategy.class)
     public static final String TOPOLOGY_SPOUT_WAIT_STRATEGY = "topology.spout.wait.strategy";
 
     /**
@@ -903,9 +904,9 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * Selects the Bolt's Wait Strategy to use when there are no incoming msgs. Used to trade off latency vs CPU usage.
+     * This class must implement {@link IWaitStrategy}.
      */
     @isString
-    @isDerivedFrom(baseType = IWaitStrategy.class)
     public static final String TOPOLOGY_BOLT_WAIT_STRATEGY = "topology.bolt.wait.strategy";
 
     /**
@@ -945,9 +946,10 @@ public class Config extends HashMap<String, Object> {
      *
      * 1. nextTuple emits no tuples
      * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     *
+     * This class must implement {@link IWaitStrategy}.
      */
     @isString
-    @isDerivedFrom(baseType = IWaitStrategy.class)
     public static final String TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY="topology.backpressure.wait.strategy";
 
     /**
