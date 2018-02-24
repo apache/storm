@@ -25,7 +25,10 @@ import org.apache.storm.tuple.Fields;
 import java.util.List;
 import java.util.Map;
 
-
+/**
+ * @deprecated storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+ */
+@Deprecated
 public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<List<GlobalPartitionInformation>, Partition, Map> {
 
 
