@@ -17,7 +17,7 @@
 spout.count : 1
 bolt.count : 1
 kafka.topic : "kafka_topic"
-zk.uri : "zkhostname:2181"
+kafka.bootstrap.hosts : "localhost:9092"
 hdfs.uri : "hdfs://hdfs.namenode:8020"
 hdfs.dir : "/tmp/storm"
 hdfs.batch : 1000

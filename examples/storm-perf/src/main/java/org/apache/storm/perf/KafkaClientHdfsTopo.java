@@ -19,7 +19,6 @@
 package org.apache.storm.perf;
 
 import java.util.Map;
-import java.util.UUID;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
@@ -31,11 +30,8 @@ import org.apache.storm.hdfs.bolt.rotation.FileRotationPolicy;
 import org.apache.storm.hdfs.bolt.rotation.FileSizeRotationPolicy;
 import org.apache.storm.hdfs.bolt.sync.CountSyncPolicy;
 import org.apache.storm.hdfs.bolt.sync.SyncPolicy;
-import org.apache.storm.kafka.BrokerHosts;
-import org.apache.storm.kafka.KafkaSpout;
-import org.apache.storm.kafka.SpoutConfig;
-import org.apache.storm.kafka.StringMultiSchemeWithTopic;
-import org.apache.storm.kafka.ZkHosts;
+import org.apache.storm.kafka.spout.KafkaSpout;
+import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 import org.apache.storm.perf.utils.Helper;
 import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Tuple;
@@ -48,14 +44,14 @@ import org.apache.storm.utils.Utils;
  *  Bolt writes to Hdfs
  */
 
-public class KafkaHdfsTopo {
+public class KafkaClientHdfsTopo {
 
     // configs - topo parallelism
     public static final String SPOUT_NUM = "spout.count";
     public static final String BOLT_NUM = "bolt.count";
     // configs - kafka spout
     public static final String KAFKA_TOPIC = "kafka.topic";
-    public static final String ZOOKEEPER_URI = "zk.uri";
+    public static final String KAFKA_BOOTSTRAP_HOSTS = "kafka.bootstrap.hosts";
     // configs - hdfs bolt
     public static final String HDFS_URI = "hdfs.uri";
     public static final String HDFS_PATH = "hdfs.dir";
@@ -80,19 +76,18 @@ public class KafkaHdfsTopo {
         final int hdfsBatch = getInt(config, HDFS_BATCH, DEFAULT_HDFS_BATCH);
 
         // 1 -  Setup Kafka Spout   --------
-        String zkConnString = getStr(config, ZOOKEEPER_URI);
+        String bootstrapHosts = getStr(config, KAFKA_BOOTSTRAP_HOSTS);
         String topicName = getStr(config, KAFKA_TOPIC);
 
-        BrokerHosts brokerHosts = new ZkHosts(zkConnString);
-        SpoutConfig spoutConfig = new SpoutConfig(brokerHosts, topicName, "/" + topicName, UUID.randomUUID().toString());
-        spoutConfig.scheme = new StringMultiSchemeWithTopic();
-        spoutConfig.ignoreZkOffsets = true;
+        KafkaSpoutConfig<String, String> spoutConfig = KafkaSpoutConfig.builder(bootstrapHosts, topicName)
+            .setFirstPollOffsetStrategy(KafkaSpoutConfig.FirstPollOffsetStrategy.EARLIEST)
+            .build();
 
-        KafkaSpout spout = new KafkaSpout(spoutConfig);
+        KafkaSpout<String, String> spout = new KafkaSpout<>(spoutConfig);
 
         // 2 -  Setup HFS Bolt   --------
         String hdfsUrls = getStr(config, HDFS_URI);
-        RecordFormat format = new LineWriter("str");
+        RecordFormat format = new LineWriter("value");
         SyncPolicy syncPolicy = new CountSyncPolicy(hdfsBatch);
         FileRotationPolicy rotationPolicy = new FileSizeRotationPolicy(1.0f, FileSizeRotationPolicy.Units.GB);
 
