@@ -34,6 +34,10 @@ import java.util.*;
 
 // TODO: need to add blacklisting
 // TODO: need to make a best effort to not re-emit messages if don't have to
+/**
+ * @deprecated storm-kafka has been deprecated and will be removed in a future Storm release. Please upgrade to storm-kafka-client.
+ */
+@Deprecated
 public class KafkaSpout extends BaseRichSpout {
     static enum EmitState {
         EMITTED_MORE_LEFT,
