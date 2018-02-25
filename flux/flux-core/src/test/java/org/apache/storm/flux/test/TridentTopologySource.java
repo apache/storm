@@ -21,7 +21,6 @@ import org.apache.storm.Config;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
-import org.apache.storm.kafka.StringScheme;
 import org.apache.storm.trident.TridentTopology;
 import org.apache.storm.trident.operation.BaseFunction;
 import org.apache.storm.trident.operation.TridentCollector;
