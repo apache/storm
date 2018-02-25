@@ -22,6 +22,7 @@ import java.util.List;
 
 
 public class SpoutConfig extends KafkaConfig implements Serializable {
+    private static final long serialVersionUID = -1247769246497567352L;
     public List<String> zkServers = null;
     public Integer zkPort = null;
     public String zkRoot = null;
