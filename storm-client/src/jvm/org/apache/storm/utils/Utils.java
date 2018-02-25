@@ -65,6 +65,10 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -1030,8 +1034,34 @@ public class Utils {
         return ret;
     }
 
-    public static boolean isValidConf(Map<String, Object> topoConf) {
-        return normalizeConf(topoConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConf))));
+    @SuppressWarnings("unchecked")
+    public static boolean isValidConf(Map<String, Object> topoConfIn) {
+	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
+	Map<String, Object> deserTopoConf = normalizeConf(
+		(Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConfIn)));
+	return confMapDiff(origTopoConf, deserTopoConf);
+    }
+
+    @VisibleForTesting
+    static boolean confMapDiff(Map<String, Object> orig, Map<String, Object> deser) {
+	MapDifference<String, Object> diff = Maps.difference(orig, deser);
+	if (diff.areEqual()) {
+	    return true;
+	}
+	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
+	    LOG.warn("Config property not serializable. Name: {} - Value: {}", entryOnLeft.getKey(), entryOnLeft.getValue());
+	}
+	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
+	    LOG.warn("Some config property changed during serialization. Changed Name: {} - Value: {}", entryOnRight.getKey(),
+		    entryOnRight.getValue());
+	}
+	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+	    Object leftValue = entryDiffers.getValue().leftValue();
+	    Object rightValue = entryDiffers.getValue().rightValue();
+	    LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
+		    entryDiffers.getKey(), leftValue, rightValue);
+	}
+	return false;
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {

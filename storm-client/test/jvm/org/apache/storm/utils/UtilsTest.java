@@ -18,16 +18,19 @@
 
 package org.apache.storm.utils;
 
+import org.apache.curator.shaded.com.google.common.collect.ImmutableList;
+import org.apache.curator.shaded.com.google.common.collect.ImmutableSet;
 import org.apache.storm.Config;
 import org.apache.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableMap;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 public class UtilsTest {
 
@@ -172,5 +175,24 @@ public class UtilsTest {
                 System.setProperty(key, oldValue);
             }
         }
+    }
+
+    @Test
+    public void testMapDiff() {
+	Map<String, Object> map0 = ImmutableMap.of();
+	Assert.assertTrue("case0", Utils.confMapDiff(map0, map0));
+	Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+		"k2", "as");
+	Assert.assertTrue("case1", Utils.confMapDiff(map1, map1));
+	Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+		"k2", "as");
+	Assert.assertTrue("case2", Utils.confMapDiff(map2, map2));
+	Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 't'),
+		"k2", "as");
+	Assert.assertFalse("case3", Utils.confMapDiff(map1, map3));
+	Map<String, Object> map4 = ImmutableMap.of("k0", 2L);
+	Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
+	Assert.assertFalse("case4", Utils.confMapDiff(map4, map5));
+	Assert.assertFalse("case5", Utils.confMapDiff(map0, map5));
     }
 }
