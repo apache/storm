@@ -19,6 +19,7 @@
 package org.apache.storm.healthcheck;
 
 import org.apache.storm.DaemonConfig;
+import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ServerConfigUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -56,6 +57,7 @@ public class HealthChecker {
             for (String script : healthScripts) {
                 String result = processScript(conf, script);
                 results.add(result);
+                LOG.info("The healthcheck script [ {} ] exited with status: {}", script, result);
             }
         }
 
@@ -64,9 +66,12 @@ public class HealthChecker {
         // to execute properly, not that the system is unhealthy, in which case
         // we don't want to start killing things.
 
-        if (results.contains(FAILED) || results.contains(TIMEOUT)) {
+        if (results.contains(FAILED)|| results.contains(FAILED_WITH_EXIT_CODE)
+            || results.contains(TIMEOUT)) {
+            LOG.warn("The supervisor healthchecks failed!!!");
             return 1;
         } else {
+            LOG.info("The supervisor healthchecks succeeded.");
             return 0;
         }
 
@@ -76,7 +81,7 @@ public class HealthChecker {
         Thread interruptThread = null;
         try {
             Process process = Runtime.getRuntime().exec(script);
-            final long timeout = (long) (conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS));
+            final long timeout = ObjectReader.getLong(conf.get(DaemonConfig.STORM_HEALTH_CHECK_TIMEOUT_MS), 5000L);
             final Thread curThread = Thread.currentThread();
             // kill process when timeout
             interruptThread = new Thread(new Runnable() {
@@ -106,6 +111,7 @@ public class HealthChecker {
                 }
                 return SUCCESS;
             }
+            LOG.warn("The healthcheck process {} exited with code {}", script, process.exitValue());
             return FAILED_WITH_EXIT_CODE;
         } catch (InterruptedException | ClosedByInterruptException e) {
             LOG.warn("Script:  {} timed out.", script);
