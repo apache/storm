@@ -26,9 +26,8 @@ Topologies that measure I/O with external systems are designed to run in cluster
 4. **FileReadWordCountTopo:** Measures speed of word counting. The spout loads a file into memory and emits these lines in an infinite loop. Supports cluster mode only.
 5. **HdfsSpoutNullBoltTopo:** Measures speed at which HdfsSpout can read from HDFS. Supports cluster mode only.
 6. **StrGenSpoutHdfsBoltTopo:** Measures speed at which HdfsBolt can write to HDFS. Supports cluster mode only.
-7. **KafkaSpoutNullBoltTopo:** Measures speed at which the storm-kafka KafkaSpout can read from Kafka. Supports cluster mode only.
-8. **KafkaHdfsTopo:** Measures how fast Storm can read from Kafka and write to HDFS, using the storm-kafka spout. Supports cluster mode only
-9. **KafkaClientSpoutNullBoltTopo:** Measures the speed at which the storm-kafka-client KafkaSpout can read from Kafka. Supports cluster mode only.
+7. **KafkaClientHdfsTopo:** Measures how fast Storm can read from Kafka and write to HDFS, using the storm-kafka-client spout. Supports cluster mode only
+8. **KafkaClientSpoutNullBoltTopo:** Measures the speed at which the storm-kafka-client KafkaSpout can read from Kafka. Supports cluster mode only.
 
 
 ## How to run ?
