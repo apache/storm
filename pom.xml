@@ -271,7 +271,7 @@
 
         <calcite.version>1.11.0</calcite.version>
 
-        <jackson.version>2.6.3</jackson.version>
+        <jackson.version>2.9.4</jackson.version>
         <maven-surefire.version>2.18.1</maven-surefire.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.1</storm.kafka.version>
