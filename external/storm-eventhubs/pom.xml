@@ -32,7 +32,7 @@
     
     <build>
         <plugins>
-            <plugin>
+             <plugin>
 		        <artifactId>maven-antrun-plugin</artifactId>
 		        <executions>
 		          <execution>
@@ -76,5 +76,9 @@
             <groupId>org.apache.curator</groupId>
             <artifactId>curator-framework</artifactId>
         </dependency>
-    </dependencies>
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+        </dependency>
+    </dependencies> 
 </project>
