@@ -52,8 +52,11 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyObject;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 
-import org.apache.storm.kafka.spout.subscription.Subscription;
+import org.apache.kafka.clients.consumer.internals.PartitionAssignor.Subscription;
+import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
+import org.apache.storm.kafka.spout.subscription.TopicFilter;
 
 public class KafkaSpoutEmitTest {
 
@@ -67,7 +70,7 @@ public class KafkaSpoutEmitTest {
 
     @Before
     public void setUp() {
-        spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
+        spoutConfig = createKafkaSpoutConfigBuilder(mock(TopicFilter.class), mock(ManualPartitioner.class), -1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
             .build();
         consumerMock = mock(KafkaConsumer.class);

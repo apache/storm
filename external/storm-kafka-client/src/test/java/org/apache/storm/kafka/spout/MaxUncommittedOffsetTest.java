@@ -82,7 +82,6 @@ public class MaxUncommittedOffsetTest {
         //This is to verify that a low maxPollRecords does not interfere with reemitting failed tuples
         //The spout must be able to reemit all retriable tuples, even if the maxPollRecords is set to a low value compared to maxUncommittedOffsets.
         assertThat("Current tests require maxPollRecords < maxUncommittedOffsets", maxPollRecords, lessThanOrEqualTo(maxUncommittedOffsets));
-        MockitoAnnotations.initMocks(this);
         spout = new KafkaSpout<>(spoutConfig);
         new KafkaConsumerFactoryDefault<String, String>().createConsumer(spoutConfig);
     }

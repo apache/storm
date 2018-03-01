@@ -19,9 +19,9 @@ package org.apache.storm.kafka.spout.trident;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertThat;
 
-import java.util.Collections;
+import java.util.List;
 import java.util.Map;
-import org.apache.kafka.clients.consumer.ConsumerRecords;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.SpoutWithMockedConsumerSetupHelper;
 import org.json.simple.JSONValue;
@@ -38,27 +38,24 @@ public class KafkaTridentSpoutBatchMetadataTest {
          * It is important that all map entries are types json-simple knows about,
          * since otherwise the library just calls toString on them which will likely produce invalid JSON.
          */
-        TopicPartition tp = new TopicPartition("topic", 0);
         long startOffset = 10;
         long endOffset = 20;
 
-        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(tp, startOffset, endOffset);
+        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(startOffset, endOffset);
         Map<String, Object> map = metadata.toMap();
         Map deserializedMap = (Map)JSONValue.parseWithException(JSONValue.toJSONString(map));
         KafkaTridentSpoutBatchMetadata deserializedMetadata = KafkaTridentSpoutBatchMetadata.fromMap(deserializedMap);
-        assertThat(deserializedMetadata.getTopicPartition(), is(metadata.getTopicPartition()));
         assertThat(deserializedMetadata.getFirstOffset(), is(metadata.getFirstOffset()));
         assertThat(deserializedMetadata.getLastOffset(), is(metadata.getLastOffset()));
     }
 
     @Test
     public void testCreateMetadataFromRecords() {
-        TopicPartition tp = new TopicPartition("topic", 0);
         long firstOffset = 15;
         long lastOffset = 55;
-        ConsumerRecords<?, ?> records = new ConsumerRecords<>(Collections.singletonMap(tp, SpoutWithMockedConsumerSetupHelper.createRecords(tp, firstOffset, (int) (lastOffset - firstOffset + 1))));
+        List<ConsumerRecord<String, String>> records = SpoutWithMockedConsumerSetupHelper.createRecords(new TopicPartition("test", 0), firstOffset, (int) (lastOffset - firstOffset + 1));
 
-        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(tp, records);
+        KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(records);
         assertThat("The first offset should be the first offset in the record set", metadata.getFirstOffset(), is(firstOffset));
         assertThat("The last offset should be the last offset in the record set", metadata.getLastOffset(), is(lastOffset));
     }

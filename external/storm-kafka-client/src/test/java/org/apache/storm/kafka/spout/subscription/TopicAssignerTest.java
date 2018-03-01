@@ -16,49 +16,38 @@
 
 package org.apache.storm.kafka.spout.subscription;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.clearInvocations;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
+import java.util.Set;
 import org.apache.kafka.clients.consumer.ConsumerRebalanceListener;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.task.TopologyContext;
 import org.junit.Test;
 import org.mockito.InOrder;
 
-public class ManualPartitionSubscriptionTest {
+public class TopicAssignerTest {
 
     @Test
-    public void testCanReassignPartitions() {
-        ManualPartitioner partitionerMock = mock(ManualPartitioner.class);
-        TopicFilter filterMock = mock(TopicFilter.class);
-        KafkaConsumer<String, String> consumerMock = mock(KafkaConsumer.class);
-        ConsumerRebalanceListener listenerMock = mock(ConsumerRebalanceListener.class);
-        TopologyContext contextMock = mock(TopologyContext.class);
-        ManualPartitionSubscription subscription = new ManualPartitionSubscription(partitionerMock, filterMock);
-        
-        List<TopicPartition> onePartition = Collections.singletonList(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0));
-        List<TopicPartition> twoPartitions = new ArrayList<>();
+    public void testCanReassignPartitions() {    
+        Set<TopicPartition> onePartition = Collections.singleton(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0));
+        Set<TopicPartition> twoPartitions = new HashSet<>();
         twoPartitions.add(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0));
         twoPartitions.add(new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 1));
-        when(partitionerMock.partition(anyList(), any(TopologyContext.class)))
-            .thenReturn(onePartition)
-            .thenReturn(twoPartitions);
+        KafkaConsumer<String, String> consumerMock = mock(KafkaConsumer.class);
+        ConsumerRebalanceListener listenerMock = mock(ConsumerRebalanceListener.class);
+        TopicAssigner assigner = new TopicAssigner();
         
         //Set the first assignment
-        subscription.subscribe(consumerMock, listenerMock, contextMock);
+        assigner.assignPartitions(consumerMock, onePartition, listenerMock);
         
         InOrder inOrder = inOrder(consumerMock, listenerMock);
+        inOrder.verify(listenerMock).onPartitionsRevoked(Collections.emptySet());
         inOrder.verify(consumerMock).assign(new HashSet<>(onePartition));
         inOrder.verify(listenerMock).onPartitionsAssigned(new HashSet<>(onePartition));
         
@@ -67,7 +56,7 @@ public class ManualPartitionSubscriptionTest {
         when(consumerMock.assignment()).thenReturn(new HashSet<>(onePartition));
         
         //Update to set the second assignment
-        subscription.refreshAssignment();
+        assigner.assignPartitions(consumerMock, twoPartitions, listenerMock);
         
         //The partition revocation hook must be called before the new partitions are assigned to the consumer,
         //to allow the revocation hook to commit offsets for the revoked partitions.

@@ -52,7 +52,8 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import org.apache.storm.kafka.spout.subscription.Subscription;
+import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
+import org.apache.storm.kafka.spout.subscription.TopicFilter;
 
 public class KafkaSpoutLogCompactionSupportTest {
 
@@ -70,7 +71,7 @@ public class KafkaSpoutLogCompactionSupportTest {
     @Before
     public void setUp() {
         MockitoAnnotations.initMocks(this);
-        spoutConfig = createKafkaSpoutConfigBuilder(mock(Subscription.class), -1)
+        spoutConfig = createKafkaSpoutConfigBuilder(mock(TopicFilter.class), mock(ManualPartitioner.class), -1)
             .setOffsetCommitPeriodMs(offsetCommitPeriodMs)
             .build();
         consumerMock = mock(KafkaConsumer.class);
