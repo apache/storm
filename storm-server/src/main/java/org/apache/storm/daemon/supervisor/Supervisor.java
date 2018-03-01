@@ -209,7 +209,7 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             eventTimer.scheduleRecurring(0, 10, new EventManagerPushCallback(readState, eventManager));
 
             // supervisor health check
-            eventTimer.scheduleRecurring(300, 300, new SupervisorHealthCheck(this));
+            eventTimer.scheduleRecurring(30, 30, new SupervisorHealthCheck(this));
         }
         LOG.info("Starting supervisor with id {} at host {}.", getId(), getHostName());
     }
