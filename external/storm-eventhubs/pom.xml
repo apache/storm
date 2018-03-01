@@ -69,6 +69,10 @@
             <artifactId>curator-framework</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.qpid</groupId>
             <artifactId>qpid-amqp-1-0-client</artifactId>
             <version>${qpid.version}</version>
