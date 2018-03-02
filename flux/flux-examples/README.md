@@ -40,7 +40,7 @@ written in java.
 
 ### [kafka_spout.yaml](src/main/resources/kafka_spout.yaml)
 
-This example illustrates how to configure Storm's `storm-kafka` spout using Flux YAML DSL `components`, `references`,
+This example illustrates how to configure Storm's `storm-kafka-client` spout using Flux YAML DSL `components`, `references`,
 and `constructor arguments` constructs.
 
 ### [simple_hdfs.yaml](src/main/resources/simple_hdfs.yaml)

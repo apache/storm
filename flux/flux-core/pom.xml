@@ -38,7 +38,7 @@
         </dependency>
         <dependency>
             <groupId>org.apache.storm</groupId>
-            <artifactId>storm-kafka</artifactId>
+            <artifactId>storm-kafka-client</artifactId>
             <version>${project.version}</version>
             <scope>test</scope>
         </dependency>
