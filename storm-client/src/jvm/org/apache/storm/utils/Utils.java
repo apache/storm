@@ -1039,27 +1039,28 @@ public class Utils {
 	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
 	Map<String, Object> deserTopoConf = normalizeConf(
 		(Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConfIn)));
-	return confMapDiff(origTopoConf, deserTopoConf);
+	return checkMapEquality(origTopoConf, deserTopoConf);
     }
 
     @VisibleForTesting
-    static boolean confMapDiff(Map<String, Object> orig, Map<String, Object> deser) {
+    static boolean checkMapEquality(Map<String, Object> orig, Map<String, Object> deser) {
 	MapDifference<String, Object> diff = Maps.difference(orig, deser);
 	if (diff.areEqual()) {
 	    return true;
 	}
 	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
-	    LOG.warn("Config property not serializable. Name: {} - Value: {}", entryOnLeft.getKey(), entryOnLeft.getValue());
+	    LOG.warn("Config property not serializable. Name: {} - Value: {}", entryOnLeft.getKey(),
+	            entryOnLeft.getValue());
 	}
 	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
-	    LOG.warn("Some config property changed during serialization. Changed Name: {} - Value: {}", entryOnRight.getKey(),
-		    entryOnRight.getValue());
+	    LOG.warn("Some config property changed during serialization. Changed Name: {} - Value: {}",
+	            entryOnRight.getKey(), entryOnRight.getValue());
 	}
 	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
 	    Object leftValue = entryDiffers.getValue().leftValue();
 	    Object rightValue = entryDiffers.getValue().rightValue();
 	    LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
-		    entryDiffers.getKey(), leftValue, rightValue);
+	            entryDiffers.getKey(), leftValue, rightValue);
 	}
 	return false;
     }
