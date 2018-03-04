@@ -23,6 +23,7 @@ import com.codahale.metrics.Histogram;
 import com.codahale.metrics.Meter;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableMap;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -469,7 +470,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             });
     }
 
-    private static <K, V> Map<K, V> mapDiff(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> second) {
+    private static <K, V> Map<K, V> mapValuesOnlyOnRight(Map<? extends K, ? extends V> first, Map<? extends K, ? extends V> second) {
         Map<K, V> ret = new HashMap<>();
         for (Entry<? extends K, ? extends V> entry: second.entrySet()) {
             if (!entry.getValue().equals(first.get(entry.getKey()))) {
@@ -707,7 +708,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             value.sort((a, b) -> a.get(0).compareTo(b.get(0)));
             newSlotAssigned.put(entry.getKey(), value);
         }
-        Map<List<Object>, List<List<Long>>> diff = mapDiff(slotAssigned, newSlotAssigned);
+        Map<List<Object>, List<List<Long>>> diff = mapValuesOnlyOnRight(slotAssigned, newSlotAssigned);
         List<List<Long>> ret = new ArrayList<>();
         for (List<List<Long>> val: diff.values()) {
             ret.addAll(val);

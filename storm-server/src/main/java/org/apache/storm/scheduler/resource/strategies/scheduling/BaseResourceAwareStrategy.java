@@ -19,6 +19,8 @@
 package org.apache.storm.scheduler.resource.strategies.scheduling;
 
 import com.google.common.annotations.VisibleForTesting;
+import com.google.common.collect.Sets;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -410,12 +412,12 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 int connections1 = 0;
                 int connections2 = 0;
 
-                for (String childId : union(o1.getChildren(), o1.getParents())) {
+                for (String childId : Sets.union(o1.getChildren(), o1.getParents())) {
                     connections1 +=
                         (componentMap.get(childId).getExecs().size() * o1.getExecs().size());
                 }
 
-                for (String childId : union(o2.getChildren(), o2.getParents())) {
+                for (String childId : Sets.union(o2.getChildren(), o2.getParents())) {
                     connections2 +=
                         (componentMap.get(childId).getExecs().size() * o2.getExecs().size());
                 }
@@ -430,12 +432,6 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
             });
         sortedComponents.addAll(componentMap.values());
         return sortedComponents;
-    }
-
-    private static <T> Set<T> union(Set<T> a, Set<T> b) {
-        HashSet<T> ret = new HashSet<>(a);
-        ret.addAll(b);
-        return ret;
     }
 
     /**
@@ -495,7 +491,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
 
         for (Component currComp : sortedComponents) {
             Map<String, Component> neighbors = new HashMap<String, Component>();
-            for (String compId : union(currComp.getChildren(), currComp.getParents())) {
+            for (String compId : Sets.union(currComp.getChildren(), currComp.getParents())) {
                 neighbors.put(compId, componentMap.get(compId));
             }
             Set<Component> sortedNeighbors = sortNeighbors(currComp, neighbors);
