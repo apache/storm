@@ -204,7 +204,7 @@
             (into [] (DirectoryCleaner/getFilesForDir port-dir)))))
 
 (defn is-active-log [^File file]
-  (re-find #"\.(log|err|out|current|yaml|pid)$" (.getName file)))
+  (re-find #"\.(log|err|out|current|yaml|pid|metrics)$" (.getName file)))
 
 (defn sum-file-size
   "Given a sequence of Files, sum their sizes."
