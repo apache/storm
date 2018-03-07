@@ -29,104 +29,104 @@ import com.esotericsoftware.minlog.Log;
 import com.microsoft.azure.eventhubs.EventData;
 
 public class PartitionManager extends SimplePartitionManager {
-	private static final Logger logger = LoggerFactory.getLogger(PartitionManager.class);
+    private static final Logger logger = LoggerFactory.getLogger(PartitionManager.class);
 
-	// all sent events are stored in pending
-	private final Map<String, EventHubMessage> pending;
+    // all sent events are stored in pending
+    private final Map<String, EventHubMessage> pending;
 
-	// all failed events are put in toResend, which is sorted by event's offset
-	private final TreeSet<EventHubMessage> toResend;
+    // all failed events are put in toResend, which is sorted by event's offset
+    private final TreeSet<EventHubMessage> toResend;
 
-	private final TreeSet<EventHubMessage> waitingToEmit;
+    private final TreeSet<EventHubMessage> waitingToEmit;
 
-	public PartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
-			IEventHubReceiver receiver) {
-		super(ehConfig, partitionId, stateStore, receiver);
+    public PartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
+                            IEventHubReceiver receiver) {
+        super(ehConfig, partitionId, stateStore, receiver);
 
-		this.pending = new LinkedHashMap<String, EventHubMessage>();
-		this.toResend = new TreeSet<EventHubMessage>();
-		this.waitingToEmit = new TreeSet<EventHubMessage>();
-	}
+        this.pending = new LinkedHashMap<String, EventHubMessage>();
+        this.toResend = new TreeSet<EventHubMessage>();
+        this.waitingToEmit = new TreeSet<EventHubMessage>();
+    }
 
-	private void fill() {
-		Iterable<EventData> receivedEvents = receiver.receive(config.getReceiveEventsMaxCount());
-		if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
-			logger.debug("No messages received from EventHub.");
-			return;
-		}
+    private void fill() {
+        Iterable<EventData> receivedEvents = receiver.receive(config.getReceiveEventsMaxCount());
+        if (receivedEvents == null || receivedEvents.spliterator().getExactSizeIfKnown() == 0) {
+            logger.debug("No messages received from EventHub.");
+            return;
+        }
 
-		String startOffset = null;
-		String endOffset = null;
-		for (EventData ed : receivedEvents) {
-			EventHubMessage ehm = new EventHubMessage(ed, partitionId);
-			startOffset = (startOffset == null) ? ehm.getOffset() : startOffset;
-			endOffset = ehm.getOffset();
-			waitingToEmit.add(ehm);
-		}
+        String startOffset = null;
+        String endOffset = null;
+        for (EventData ed : receivedEvents) {
+            EventHubMessage ehm = new EventHubMessage(ed, partitionId);
+            startOffset = (startOffset == null) ? ehm.getOffset() : startOffset;
+            endOffset = ehm.getOffset();
+            waitingToEmit.add(ehm);
+        }
 
-		logger.debug("Received Messages Start Offset: " + startOffset + ", End Offset: " + endOffset);
-	}
+        logger.debug("Received Messages Start Offset: " + startOffset + ", End Offset: " + endOffset);
+    }
 
-	@Override
-	public EventHubMessage receive() {
-		logger.debug("Retrieving messages for partition: " + partitionId);
-		int countToRetrieve = pending.size() - config.getMaxPendingMsgsPerPartition();
+    @Override
+    public EventHubMessage receive() {
+        logger.debug("Retrieving messages for partition: " + partitionId);
+        int countToRetrieve = pending.size() - config.getMaxPendingMsgsPerPartition();
 
-		if (countToRetrieve >= 0) {
-			Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
-					+ " messages. No new events will be retrieved from EventHub.");
-			return null;
-		}
+        if (countToRetrieve >= 0) {
+            Log.debug("Pending queue has more than " + config.getMaxPendingMsgsPerPartition()
+                    + " messages. No new events will be retrieved from EventHub.");
+            return null;
+        }
 
-		EventHubMessage ehm = null;
-		if (!toResend.isEmpty()) {
-			ehm = toResend.pollFirst();
-		} else {
-			if (waitingToEmit.isEmpty()) {
-				fill();
-			}
-			ehm = waitingToEmit.pollFirst();
-		}
+        EventHubMessage ehm = null;
+        if (!toResend.isEmpty()) {
+            ehm = toResend.pollFirst();
+        } else {
+            if (waitingToEmit.isEmpty()) {
+                fill();
+            }
+            ehm = waitingToEmit.pollFirst();
+        }
 
-		if (ehm == null) {
-			logger.debug("No messages pending or waiting for reprocessing.");
-			return null;
-		}
+        if (ehm == null) {
+            logger.debug("No messages pending or waiting for reprocessing.");
+            return null;
+        }
 
-		lastOffset = ehm.getOffset();
-		pending.put(lastOffset, ehm);
-		return ehm;
-	}
+        lastOffset = ehm.getOffset();
+        pending.put(lastOffset, ehm);
+        return ehm;
+    }
 
-	@Override
-	public void ack(String offset) {
-		pending.remove(offset);
-	}
+    @Override
+    public void ack(String offset) {
+        pending.remove(offset);
+    }
 
-	@Override
-	public void fail(String offset) {
-		logger.warn("fail on " + offset);
-		toResend.add(pending.remove(offset));
-	}
+    @Override
+    public void fail(String offset) {
+        logger.warn("fail on " + offset);
+        toResend.add(pending.remove(offset));
+    }
 
-	@Override
-	protected String getCompletedOffset() {
-		String offset = null;
+    @Override
+    protected String getCompletedOffset() {
+        String offset = null;
 
-		if (pending.size() > 0) {
-			// find the smallest offset in pending list
-			offset = pending.keySet().iterator().next();
-		}
-		if (toResend.size() > 0) {
-			// find the smallest offset in toResend list
-			String offset2 = toResend.first().getOffset();
-			if (offset == null || offset2.compareTo(offset) < 0) {
-				offset = offset2;
-			}
-		}
-		if (offset == null) {
-			offset = lastOffset;
-		}
-		return offset;
-	}
+        if (pending.size() > 0) {
+            // find the smallest offset in pending list
+            offset = pending.keySet().iterator().next();
+        }
+        if (toResend.size() > 0) {
+            // find the smallest offset in toResend list
+            String offset2 = toResend.first().getOffset();
+            if (offset == null || offset2.compareTo(offset) < 0) {
+                offset = offset2;
+            }
+        }
+        if (offset == null) {
+            offset = lastOffset;
+        }
+        return offset;
+    }
 }

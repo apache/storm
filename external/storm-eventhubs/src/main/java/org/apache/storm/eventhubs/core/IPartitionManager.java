@@ -25,66 +25,63 @@ import com.microsoft.azure.eventhubs.EventData;
 
 /**
  * Read/Write events from an EventHub partition.
- *
  */
 public interface IPartitionManager {
 
-	/**
-	 * Establishes connection to EventHub
-	 * 
-	 * @throws Exception
-	 */
-	void open() throws Exception;
+    /**
+     * Establishes connection to EventHub
+     *
+     * @throws Exception
+     */
+    void open() throws Exception;
 
-	/**
-	 * Closes EventHub connection
-	 */
-	void close();
+    /**
+     * Closes EventHub connection
+     */
+    void close();
 
-	/**
-	 * returns a list of {@link EventData} from an EventHub partition
-	 * 
-	 * @return {@link EventData}
-	 */
-	EventHubMessage receive();
+    /**
+     * returns a list of {@link EventData} from an EventHub partition
+     *
+     * @return {@link EventData}
+     */
+    EventHubMessage receive();
 
-	/**
-	 * Persists the last successfully processed EventHub offset information to a
-	 * state store.
-	 */
-	void checkpoint();
+    /**
+     * Persists the last successfully processed EventHub offset information to a
+     * state store.
+     */
+    void checkpoint();
 
-	/**
-	 * ACK's successful processing of {@link EventData} identified by given offset.
-	 * The specifics of successfully processed message handling are up to the
-	 * implementation.
-	 * 
-	 * @param offset
-	 *            index of processed message.
-	 */
-	void ack(String offset);
+    /**
+     * ACK's successful processing of {@link EventData} identified by given offset.
+     * The specifics of successfully processed message handling are up to the
+     * implementation.
+     *
+     * @param offset index of processed message.
+     */
+    void ack(String offset);
 
-	/**
-	 * Handles failed processing of {@link EventData} identified by given offset.
-	 * The specifics of failed message handling are up to the implementation.
-	 * 
-	 * @param offset
-	 *            index of processed message.
-	 */
-	void fail(String offset);
+    /**
+     * Handles failed processing of {@link EventData} identified by given offset.
+     * The specifics of failed message handling are up to the implementation.
+     *
+     * @param offset index of processed message.
+     */
+    void fail(String offset);
 
-	/**
-	 * Returns pairs of {<String, Object>} metrics collected. See {@link IMetric}
-	 * implementations for better understanding.
-	 * 
-	 * @return Map
-	 */
-	Map<String, Object> getMetricsData();
+    /**
+     * Returns pairs of {<String, Object>} metrics collected. See {@link IMetric}
+     * implementations for better understanding.
+     *
+     * @return Map
+     */
+    Map<String, Object> getMetricsData();
 
-	/**
-	 * Returns the partitionId that this manager is responsible for.
-	 * 
-	 * @return partition id.
-	 */
-	String getPartitionId();
+    /**
+     * Returns the partitionId that this manager is responsible for.
+     *
+     * @return partition id.
+     */
+    String getPartitionId();
 }

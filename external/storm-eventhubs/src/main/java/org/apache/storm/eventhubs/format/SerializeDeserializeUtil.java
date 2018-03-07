@@ -26,23 +26,21 @@ import org.apache.commons.lang.SerializationUtils;
 
 /**
  * Utility methods for SerDe operations.
- *
  */
 public class SerializeDeserializeUtil {
-	/**
-	 * Serializes a given object to byte array
-	 * 
-	 * @param obj
-	 *            object instance to be serialized
-	 * @return byte array
-	 * @throws IOException
-	 */
-	public static byte[] serialize(Object obj) throws IOException {
-		try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
-			try (ObjectOutputStream o = new ObjectOutputStream(b)) {
-				o.writeObject(obj);
-			}
-			return b.toByteArray();
-		}
-	}
+    /**
+     * Serializes a given object to byte array
+     *
+     * @param obj object instance to be serialized
+     * @return byte array
+     * @throws IOException
+     */
+    public static byte[] serialize(Object obj) throws IOException {
+        try (ByteArrayOutputStream b = new ByteArrayOutputStream()) {
+            try (ObjectOutputStream o = new ObjectOutputStream(b)) {
+                o.writeObject(obj);
+            }
+            return b.toByteArray();
+        }
+    }
 }

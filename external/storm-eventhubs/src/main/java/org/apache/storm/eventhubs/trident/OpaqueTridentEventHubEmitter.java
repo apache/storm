@@ -33,36 +33,36 @@ import org.apache.storm.trident.topology.TransactionAttempt;
  * OpaqueTridentEventHubSpout
  */
 public class OpaqueTridentEventHubEmitter
-		implements IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map> {
-	private final TransactionalTridentEventHubEmitter transactionalEmitter;
+        implements IOpaquePartitionedTridentSpout.Emitter<Partitions, Partition, Map> {
+    private final TransactionalTridentEventHubEmitter transactionalEmitter;
 
-	public OpaqueTridentEventHubEmitter(EventHubSpoutConfig spoutConfig) {
-		transactionalEmitter = new TransactionalTridentEventHubEmitter(spoutConfig);
-	}
+    public OpaqueTridentEventHubEmitter(EventHubSpoutConfig spoutConfig) {
+        transactionalEmitter = new TransactionalTridentEventHubEmitter(spoutConfig);
+    }
 
-	public OpaqueTridentEventHubEmitter(EventHubSpoutConfig spoutConfig, int batchSize,
-			ITridentPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
-		transactionalEmitter = new TransactionalTridentEventHubEmitter(spoutConfig, batchSize, pmFactory, recvFactory);
-	}
+    public OpaqueTridentEventHubEmitter(EventHubSpoutConfig spoutConfig, int batchSize,
+                                        ITridentPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
+        transactionalEmitter = new TransactionalTridentEventHubEmitter(spoutConfig, batchSize, pmFactory, recvFactory);
+    }
 
-	@Override
-	public void close() {
-		transactionalEmitter.close();
-	}
+    @Override
+    public void close() {
+        transactionalEmitter.close();
+    }
 
-	@Override
-	public Map emitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
-			Map meta) {
-		return transactionalEmitter.emitPartitionBatchNew(attempt, collector, partition, meta);
-	}
+    @Override
+    public Map emitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
+                                  Map meta) {
+        return transactionalEmitter.emitPartitionBatchNew(attempt, collector, partition, meta);
+    }
 
-	@Override
-	public List<Partition> getOrderedPartitions(Partitions partitions) {
-		return transactionalEmitter.getOrderedPartitions(partitions);
-	}
+    @Override
+    public List<Partition> getOrderedPartitions(Partitions partitions) {
+        return transactionalEmitter.getOrderedPartitions(partitions);
+    }
 
-	@Override
-	public void refreshPartitions(List<Partition> partitionList) {
-		transactionalEmitter.refreshPartitions(partitionList);
-	}
+    @Override
+    public void refreshPartitions(List<Partition> partitionList) {
+        transactionalEmitter.refreshPartitions(partitionList);
+    }
 }

@@ -31,35 +31,35 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
  * Transactional Trident EventHub Spout
  */
 public class TransactionalTridentEventHubSpout
-		implements IPartitionedTridentSpout<Partitions, Partition, Map<String, String>> {
-	private static final long serialVersionUID = 1L;
-	private final IEventDataScheme scheme;
-	private final EventHubSpoutConfig spoutConfig;
+        implements IPartitionedTridentSpout<Partitions, Partition, Map<String, String>> {
+    private static final long serialVersionUID = 1L;
+    private final IEventDataScheme scheme;
+    private final EventHubSpoutConfig spoutConfig;
 
-	public TransactionalTridentEventHubSpout(EventHubSpoutConfig config) {
-		spoutConfig = config;
-		scheme = spoutConfig.getEventDataScheme();
-	}
+    public TransactionalTridentEventHubSpout(EventHubSpoutConfig config) {
+        spoutConfig = config;
+        scheme = spoutConfig.getEventDataScheme();
+    }
 
-	@Override
-	public Map<String, Object> getComponentConfiguration() {
-		return null;
-	}
+    @Override
+    public Map<String, Object> getComponentConfiguration() {
+        return null;
+    }
 
-	@Override
-	public IPartitionedTridentSpout.Coordinator<Partitions> getCoordinator(Map conf, TopologyContext context) {
-		return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
-	}
+    @Override
+    public IPartitionedTridentSpout.Coordinator<Partitions> getCoordinator(Map conf, TopologyContext context) {
+        return new org.apache.storm.eventhubs.trident.Coordinator(spoutConfig);
+    }
 
-	@Override
-	public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> getEmitter(Map conf,
-			TopologyContext context) {
-		return new TransactionalTridentEventHubEmitter(spoutConfig);
-	}
+    @Override
+    public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> getEmitter(Map conf,
+                                                                                                   TopologyContext context) {
+        return new TransactionalTridentEventHubEmitter(spoutConfig);
+    }
 
-	@Override
-	public Fields getOutputFields() {
-		return scheme.getOutputFields();
-	}
+    @Override
+    public Fields getOutputFields() {
+        return scheme.getOutputFields();
+    }
 
 }

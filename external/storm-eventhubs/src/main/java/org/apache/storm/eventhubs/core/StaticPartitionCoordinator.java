@@ -28,44 +28,43 @@ import org.slf4j.LoggerFactory;
 
 /**
  * Implements round robin allocation scheme of tasks to partitions.
- *
  */
 public class StaticPartitionCoordinator implements IPartitionCoordinator {
 
-	private static final Logger logger = LoggerFactory.getLogger(StaticPartitionCoordinator.class);
+    private static final Logger logger = LoggerFactory.getLogger(StaticPartitionCoordinator.class);
 
-	protected final Map<String, IPartitionManager> partitionManagerMap;
+    protected final Map<String, IPartitionManager> partitionManagerMap;
 
-	/**
-	 * This helps in achieving a predictable traversing of partitions in ascending
-	 * order of id.
-	 */
-	protected final List<IPartitionManager> partitionManagers;
+    /**
+     * This helps in achieving a predictable traversing of partitions in ascending
+     * order of id.
+     */
+    protected final List<IPartitionManager> partitionManagers;
 
-	public StaticPartitionCoordinator(EventHubConfig ehConfig, int taskIndex, int totalTasks, IStateStore stateStore,
-			IPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
-		logger.info("Computing partition managers for TaskIndex: " + taskIndex + ", Total tasks: " + totalTasks
-				+ ", Total Partitions: " + ehConfig.getPartitionCount());
+    public StaticPartitionCoordinator(EventHubConfig ehConfig, int taskIndex, int totalTasks, IStateStore stateStore,
+                                      IPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
+        logger.info("Computing partition managers for TaskIndex: " + taskIndex + ", Total tasks: " + totalTasks
+                + ", Total Partitions: " + ehConfig.getPartitionCount());
 
-		partitionManagerMap = new TreeMap<String, IPartitionManager>();
-		partitionManagers = new LinkedList<IPartitionManager>();
-		for (int partitionId = taskIndex; partitionId < ehConfig.getPartitionCount(); partitionId += totalTasks) {
-			String partitionIdStr = String.valueOf(partitionId);
-			IEventHubReceiver receiver = recvFactory.create(ehConfig, partitionIdStr);
-			IPartitionManager partitionManager = pmFactory.create(ehConfig, partitionIdStr, stateStore, receiver);
-			partitionManagerMap.put(partitionIdStr, partitionManager);
-			partitionManagers.add(partitionManager);
-			logger.info("taskIndex " + taskIndex + " owns partitionId " + partitionIdStr);
-		}
-	}
+        partitionManagerMap = new TreeMap<String, IPartitionManager>();
+        partitionManagers = new LinkedList<IPartitionManager>();
+        for (int partitionId = taskIndex; partitionId < ehConfig.getPartitionCount(); partitionId += totalTasks) {
+            String partitionIdStr = String.valueOf(partitionId);
+            IEventHubReceiver receiver = recvFactory.create(ehConfig, partitionIdStr);
+            IPartitionManager partitionManager = pmFactory.create(ehConfig, partitionIdStr, stateStore, receiver);
+            partitionManagerMap.put(partitionIdStr, partitionManager);
+            partitionManagers.add(partitionManager);
+            logger.info("taskIndex " + taskIndex + " owns partitionId " + partitionIdStr);
+        }
+    }
 
-	@Override
-	public List<IPartitionManager> getMyPartitionManagers() {
-		return partitionManagers;
-	}
+    @Override
+    public List<IPartitionManager> getMyPartitionManagers() {
+        return partitionManagers;
+    }
 
-	@Override
-	public IPartitionManager getPartitionManager(String partitionId) {
-		return partitionManagerMap.get(partitionId);
-	}
+    @Override
+    public IPartitionManager getPartitionManager(String partitionId) {
+        return partitionManagerMap.get(partitionId);
+    }
 }

@@ -21,36 +21,32 @@ import java.io.Serializable;
 
 /**
  * Contracts for persisting checkpoint data
- *
  */
 public interface IStateStore extends Serializable {
 
-	/**
-	 * Open/initialize connection to the persistent store.
-	 */
-	public void open();
+    /**
+     * Open/initialize connection to the persistent store.
+     */
+    void open();
 
-	/**
-	 * Cleanup and sever the connection to persistent store.
-	 */
-	public void close();
+    /**
+     * Cleanup and sever the connection to persistent store.
+     */
+    void close();
 
-	/**
-	 * Persist the given data against the specified path.
-	 * 
-	 * @param path
-	 *            key/path to save the data at.
-	 * @param data
-	 *            data to be saved
-	 */
-	public void saveData(String path, String data);
+    /**
+     * Persist the given data against the specified path.
+     *
+     * @param path key/path to save the data at.
+     * @param data data to be saved
+     */
+    void saveData(String path, String data);
 
-	/**
-	 * Retrieve information stored against the specified key/path
-	 * 
-	 * @param path
-	 *            key/path to get data from
-	 * @return
-	 */
-	public String readData(String path);
+    /**
+     * Retrieve information stored against the specified key/path
+     *
+     * @param path key/path to get data from
+     * @return
+     */
+    String readData(String path);
 }

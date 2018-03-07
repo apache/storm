@@ -24,24 +24,24 @@ import org.apache.storm.tuple.Tuple;
  * into a delimited string.
  */
 public class DefaultEventDataFormat implements IEventDataFormat {
-  private static final long serialVersionUID = 1L;
-  private String delimiter = ",";
-  
-  public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
-    this.delimiter = delimiter;
-    return this;
-  }
+    private static final long serialVersionUID = 1L;
+    private String delimiter = ",";
 
-  @Override
-  public byte[] serialize(Tuple tuple) {
-    StringBuilder sb = new StringBuilder();
-    for(Object obj : tuple.getValues()) {
-      if(sb.length() != 0) {
-        sb.append(delimiter);
-      }
-      sb.append(obj.toString());
+    public DefaultEventDataFormat withFieldDelimiter(String delimiter) {
+        this.delimiter = delimiter;
+        return this;
     }
-    return sb.toString().getBytes();
-  }
+
+    @Override
+    public byte[] serialize(Tuple tuple) {
+        StringBuilder sb = new StringBuilder();
+        for (Object obj : tuple.getValues()) {
+            if (sb.length() != 0) {
+                sb.append(delimiter);
+            }
+            sb.append(obj.toString());
+        }
+        return sb.toString().getBytes();
+    }
 
 }

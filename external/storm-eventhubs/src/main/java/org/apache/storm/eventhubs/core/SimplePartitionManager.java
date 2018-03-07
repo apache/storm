@@ -31,103 +31,103 @@ import com.microsoft.azure.eventhubs.EventData;
  * A simple partition manager that does not re-send failed messages
  */
 public class SimplePartitionManager implements IPartitionManager {
-	private static final Logger logger = LoggerFactory.getLogger(SimplePartitionManager.class);
-	protected static final String statePathPrefix = "/eventhubspout";
+    private static final Logger logger = LoggerFactory.getLogger(SimplePartitionManager.class);
+    protected static final String statePathPrefix = "/eventhubspout";
 
-	protected final IEventHubReceiver receiver;
-	protected String lastOffset = FieldConstants.DefaultStartingOffset;
-	protected String committedOffset = FieldConstants.DefaultStartingOffset;
+    protected final IEventHubReceiver receiver;
+    protected String lastOffset = FieldConstants.DefaultStartingOffset;
+    protected String committedOffset = FieldConstants.DefaultStartingOffset;
 
-	protected final EventHubConfig config;
-	protected final String partitionId;
-	protected final IStateStore stateStore;
-	protected final String statePath;
+    protected final EventHubConfig config;
+    protected final String partitionId;
+    protected final IStateStore stateStore;
+    protected final String statePath;
 
-	public SimplePartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
-			IEventHubReceiver receiver) {
-		this.receiver = receiver;
-		this.config = ehConfig;
-		this.partitionId = partitionId;
-		this.statePath = this.getPartitionStatePath();
-		this.stateStore = stateStore;
-	}
+    public SimplePartitionManager(EventHubConfig ehConfig, String partitionId, IStateStore stateStore,
+                                  IEventHubReceiver receiver) {
+        this.receiver = receiver;
+        this.config = ehConfig;
+        this.partitionId = partitionId;
+        this.statePath = this.getPartitionStatePath();
+        this.stateStore = stateStore;
+    }
 
-	@Override
-	public void open() throws Exception {
-		// read from state store, if not found, use startingOffset
-		String offset = stateStore.readData(statePath);
-		logger.debug("read offset from state store: " + offset);
+    @Override
+    public void open() throws Exception {
+        // read from state store, if not found, use startingOffset
+        String offset = stateStore.readData(statePath);
+        logger.debug("read offset from state store: " + offset);
 
-		IEventFilter filter;
-		if (offset == null && config.getEnqueueTimeFilter() != 0) {
-			filter = new TimestampFilter(Instant.ofEpochMilli(config.getEnqueueTimeFilter()));
-		} else {
-			filter = new OffsetFilter((offset == null) ? FieldConstants.DefaultStartingOffset : offset);
-		}
+        IEventFilter filter;
+        if (offset == null && config.getEnqueueTimeFilter() != 0) {
+            filter = new TimestampFilter(Instant.ofEpochMilli(config.getEnqueueTimeFilter()));
+        } else {
+            filter = new OffsetFilter((offset == null) ? FieldConstants.DefaultStartingOffset : offset);
+        }
 
-		receiver.open(filter);
-	}
+        receiver.open(filter);
+    }
 
-	@Override
-	public void close() {
-		this.receiver.close();
-		this.checkpoint();
-	}
+    @Override
+    public void close() {
+        this.receiver.close();
+        this.checkpoint();
+    }
 
-	@Override
-	public void checkpoint() {
-		String completedOffset = getCompletedOffset();
-		if (committedOffset.equals(completedOffset)) {
-			logger.debug("No checkpointing needed. Completed Offset: " + completedOffset);
-			return;
-		}
+    @Override
+    public void checkpoint() {
+        String completedOffset = getCompletedOffset();
+        if (committedOffset.equals(completedOffset)) {
+            logger.debug("No checkpointing needed. Completed Offset: " + completedOffset);
+            return;
+        }
 
-		logger.debug("saving Offset: " + completedOffset + ", to path: " + statePath);
-		stateStore.saveData(statePath, completedOffset);
-		committedOffset = completedOffset;
-	}
+        logger.debug("saving Offset: " + completedOffset + ", to path: " + statePath);
+        stateStore.saveData(statePath, completedOffset);
+        committedOffset = completedOffset;
+    }
 
-	protected String getCompletedOffset() {
-		return lastOffset;
-	}
+    protected String getCompletedOffset() {
+        return lastOffset;
+    }
 
-	@Override
-	public EventHubMessage receive() {
-		EventHubMessage msg = null;
+    @Override
+    public EventHubMessage receive() {
+        EventHubMessage msg = null;
 
-		Iterable<EventData> receivedEvent = receiver.receive(1);
-		EventData lastEvent = Iterables.getLast(receivedEvent);
-		if (lastEvent != null) {
-			msg = new EventHubMessage(lastEvent, partitionId);
-			lastOffset = msg.getOffset();
-		}
-		return msg;
-	}
+        Iterable<EventData> receivedEvent = receiver.receive(1);
+        EventData lastEvent = Iterables.getLast(receivedEvent);
+        if (lastEvent != null) {
+            msg = new EventHubMessage(lastEvent, partitionId);
+            lastOffset = msg.getOffset();
+        }
+        return msg;
+    }
 
-	@Override
-	public void ack(String offset) {
-	}
+    @Override
+    public void ack(String offset) {
+    }
 
-	@Override
-	public void fail(String offset) {
-		logger.warn("fail on " + offset);
-	}
+    @Override
+    public void fail(String offset) {
+        logger.warn("fail on " + offset);
+    }
 
-	private String getPartitionStatePath() {
-		// "/{prefix}/{topologyName}/{namespace}/{entityPath}/partitions/{partitionId}/state";
-		String partitionStatePath = String.join("/", new String[] { statePathPrefix, config.getTopologyName(),
-				config.getNamespace(), config.getEntityPath(), "partitions", partitionId });
-		logger.debug("partition state path: " + partitionStatePath);
-		return partitionStatePath;
-	}
+    private String getPartitionStatePath() {
+        // "/{prefix}/{topologyName}/{namespace}/{entityPath}/partitions/{partitionId}/state";
+        String partitionStatePath = String.join("/", new String[]{statePathPrefix, config.getTopologyName(),
+                config.getNamespace(), config.getEntityPath(), "partitions", partitionId});
+        logger.debug("partition state path: " + partitionStatePath);
+        return partitionStatePath;
+    }
 
-	@Override
-	public Map<String, Object> getMetricsData() {
-		return receiver.getMetricsData();
-	}
+    @Override
+    public Map<String, Object> getMetricsData() {
+        return receiver.getMetricsData();
+    }
 
-	@Override
-	public String getPartitionId() {
-		return partitionId;
-	}
+    @Override
+    public String getPartitionId() {
+        return partitionId;
+    }
 }

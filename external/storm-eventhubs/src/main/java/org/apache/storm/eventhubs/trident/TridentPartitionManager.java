@@ -35,56 +35,56 @@ import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubException;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
-	private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
-	private final IEventHubReceiver receiver;
-	private final EventHubSpoutConfig spoutConfig;
-	private String lastOffset = FieldConstants.DefaultStartingOffset;
-	private String partitionId;
+    private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
+    private final IEventHubReceiver receiver;
+    private final EventHubSpoutConfig spoutConfig;
+    private String lastOffset = FieldConstants.DefaultStartingOffset;
+    private String partitionId;
 
-	public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver, String partitionId) {
-		this.receiver = receiver;
-		this.spoutConfig = spoutConfig;
-		this.partitionId = partitionId;
-	}
+    public TridentPartitionManager(EventHubSpoutConfig spoutConfig, IEventHubReceiver receiver, String partitionId) {
+        this.receiver = receiver;
+        this.spoutConfig = spoutConfig;
+        this.partitionId = partitionId;
+    }
 
-	@Override
-	public void open(String offset) throws IOException, EventHubException {
-		logger.debug("Creating EventHub Client");
-		if ((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
-				&& spoutConfig.getEnqueueTimeFilter() != 0) {
-			receiver.open(new TimestampFilter(Instant.ofEpochMilli(spoutConfig.getEnqueueTimeFilter())));
-		} else {
-			receiver.open(new OffsetFilter(offset));
-		}
-		lastOffset = offset;
-	}
+    @Override
+    public void open(String offset) throws IOException, EventHubException {
+        logger.debug("Creating EventHub Client");
+        if ((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
+                && spoutConfig.getEnqueueTimeFilter() != 0) {
+            receiver.open(new TimestampFilter(Instant.ofEpochMilli(spoutConfig.getEnqueueTimeFilter())));
+        } else {
+            receiver.open(new OffsetFilter(offset));
+        }
+        lastOffset = offset;
+    }
 
-	@Override
-	public void close() {
-		receiver.close();
-	}
+    @Override
+    public void close() {
+        receiver.close();
+    }
 
-	@Override
-	public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException {
-		List<EventHubMessage> batch = new ArrayList<EventHubMessage>(spoutConfig.getReceiveEventsMaxCount());
-		if (!offset.equals(lastOffset) || !receiver.isOpen()) {
-			close();
-			open(offset);
-		}
+    @Override
+    public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException {
+        List<EventHubMessage> batch = new ArrayList<EventHubMessage>(spoutConfig.getReceiveEventsMaxCount());
+        if (!offset.equals(lastOffset) || !receiver.isOpen()) {
+            close();
+            open(offset);
+        }
 
-		Iterable<EventData> messages = receiver.receive(count);
+        Iterable<EventData> messages = receiver.receive(count);
 
-		for (EventData ed : messages) {
-			EventHubMessage ehm = new EventHubMessage(ed, partitionId);
-			batch.add(ehm);
-			lastOffset = ehm.getOffset();
-		}
+        for (EventData ed : messages) {
+            EventHubMessage ehm = new EventHubMessage(ed, partitionId);
+            batch.add(ehm);
+            lastOffset = ehm.getOffset();
+        }
 
-		return batch;
-	}
+        return batch;
+    }
 
-	@Override
-	public String getPartitionId() {
-		return partitionId;
-	}
+    @Override
+    public String getPartitionId() {
+        return partitionId;
+    }
 }

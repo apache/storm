@@ -30,25 +30,25 @@ import com.microsoft.azure.eventhubs.EventData;
  * This scheme constructs an {@link EventHubMessage} object from the received
  * EventHub events, and exposes the constructed EventHubMessage object as a single
  * tuple.
- * 
+ *
  * @see EventHubMessage
  */
 public class EventHubMessageDataScheme implements IEventDataScheme {
 
-	private static final long serialVersionUID = 5548996695376773616L;	
+    private static final long serialVersionUID = 5548996695376773616L;
 
-	@Override
-	public Fields getOutputFields() {
-		List<String> fields = new LinkedList<String>();
-		fields.add(FieldConstants.MESSAGE_FIELD);
+    @Override
+    public Fields getOutputFields() {
+        List<String> fields = new LinkedList<String>();
+        fields.add(FieldConstants.MESSAGE_FIELD);
 
-		return new Fields(fields);
-	}
+        return new Fields(fields);
+    }
 
-	@Override
-	public List<Object> deserialize(EventHubMessage eventHubMessage) {
-		List<Object> contents = new LinkedList<Object>();
-		contents.add(eventHubMessage);
-		return contents;
-	}
+    @Override
+    public List<Object> deserialize(EventHubMessage eventHubMessage) {
+        List<Object> contents = new LinkedList<Object>();
+        contents.add(eventHubMessage);
+        return contents;
+    }
 }

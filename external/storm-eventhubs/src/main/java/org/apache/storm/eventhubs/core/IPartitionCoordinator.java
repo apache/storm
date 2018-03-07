@@ -22,24 +22,22 @@ import java.util.List;
 /**
  * Contracts for assigning and handling workers to read/write data from EventHub
  * partitions.
- *
  */
 public interface IPartitionCoordinator {
 
-	/**
-	 * Retrieve list of {@link IPartitionManager} instances for the target EventHub.
-	 * 
-	 * @return List of {@link IPartitionManager} instances
-	 */
-	List<IPartitionManager> getMyPartitionManagers();
+    /**
+     * Retrieve list of {@link IPartitionManager} instances for the target EventHub.
+     *
+     * @return List of {@link IPartitionManager} instances
+     */
+    List<IPartitionManager> getMyPartitionManagers();
 
-	/**
-	 * Retrieves {@link IPartitionManager} instance for the EventHub partition
-	 * identified by specified id.
-	 * 
-	 * @param partitionId
-	 *            partition id
-	 * @return {@link IPartitionManager} implementation
-	 */
-	IPartitionManager getPartitionManager(String partitionId);
+    /**
+     * Retrieves {@link IPartitionManager} instance for the EventHub partition
+     * identified by specified id.
+     *
+     * @param partitionId partition id
+     * @return {@link IPartitionManager} implementation
+     */
+    IPartitionManager getPartitionManager(String partitionId);
 }

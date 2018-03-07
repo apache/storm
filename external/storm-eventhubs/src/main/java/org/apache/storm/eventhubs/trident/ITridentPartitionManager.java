@@ -25,22 +25,20 @@ import org.apache.storm.eventhubs.core.EventHubMessage;
 
 public interface ITridentPartitionManager {
 
-	void open(String offset) throws IOException, EventHubException;
+    void open(String offset) throws IOException, EventHubException;
 
-	void close();
+    void close();
 
-	String getPartitionId();
+    String getPartitionId();
 
-	/**
-	 * receive a batch of messages from EvenHub up to "count" messages
-	 * 
-	 * @param offset
-	 *            the starting offset
-	 * @param count
-	 *            max number of messages in this batch
-	 * @return list of EventData, if failed to receive, return empty list
-	 * @throws EventHubException
-	 * @throws IOException
-	 */
-	public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException;
+    /**
+     * receive a batch of messages from EvenHub up to "count" messages
+     *
+     * @param offset the starting offset
+     * @param count  max number of messages in this batch
+     * @return list of EventData, if failed to receive, return empty list
+     * @throws EventHubException
+     * @throws IOException
+     */
+    public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException;
 }

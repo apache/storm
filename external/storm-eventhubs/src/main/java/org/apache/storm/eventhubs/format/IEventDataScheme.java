@@ -25,26 +25,22 @@ import org.apache.storm.tuple.Fields;
 
 /**
  * Data scheme to use when deserializing bytes read from eventhub.
- *
  */
 public interface IEventDataScheme extends Serializable {
 
-	/**
-	 * Deserialize read EventHub Message into a Tuple.
-	 *
-	 * @see #getOutputFields() for the list of fields the tuple will contain.
-	 *
-	 * @param eventHubMessage
-	 *            The EventHubMessage to be deserialized.
-	 * 
-	 * @return A list of Objects representing the deserialized the message.
-	 */
-	List<Object> deserialize(EventHubMessage eventHubMessage);
+    /**
+     * Deserialize read EventHub Message into a Tuple.
+     *
+     * @param eventHubMessage The EventHubMessage to be deserialized.
+     * @return A list of Objects representing the deserialized the message.
+     * @see #getOutputFields() for the list of fields the tuple will contain.
+     */
+    List<Object> deserialize(EventHubMessage eventHubMessage);
 
-	/**
-	 * Retrieve the Fields that are present on tuples created by this object.
-	 *
-	 * @return The Fields that are present on tuples created by this object.
-	 */
-	Fields getOutputFields();
+    /**
+     * Retrieve the Fields that are present on tuples created by this object.
+     *
+     * @return The Fields that are present on tuples created by this object.
+     */
+    Fields getOutputFields();
 }

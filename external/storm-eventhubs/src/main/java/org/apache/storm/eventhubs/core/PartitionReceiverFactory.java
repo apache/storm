@@ -25,33 +25,33 @@ import com.microsoft.azure.eventhubs.EventHubException;
 
 public final class PartitionReceiverFactory {
 
-	public static PartitionReceiver createReceiver(EventHubClient ehClient, IEventFilter filter,
-			EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
+    public static PartitionReceiver createReceiver(EventHubClient ehClient, IEventFilter filter,
+                                                   EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
 
-		if (filter instanceof OffsetFilter) {
-			return createOffsetReceiver(ehClient, (OffsetFilter) filter, eventHubConfig, partitionId);
-		} else {
-			return createTimestampReceiver(ehClient, (TimestampFilter) filter, eventHubConfig, partitionId);
-		}
-	}
+        if (filter instanceof OffsetFilter) {
+            return createOffsetReceiver(ehClient, (OffsetFilter) filter, eventHubConfig, partitionId);
+        } else {
+            return createTimestampReceiver(ehClient, (TimestampFilter) filter, eventHubConfig, partitionId);
+        }
+    }
 
-	private static PartitionReceiver createOffsetReceiver(EventHubClient ehClient, OffsetFilter filter,
-			EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
+    private static PartitionReceiver createOffsetReceiver(EventHubClient ehClient, OffsetFilter filter,
+                                                          EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
 
-		return ehClient.createEpochReceiverSync(
-				eventHubConfig.getConsumerGroupName(),
-				partitionId,
-				EventPosition.fromOffset(filter.getOffset(),false),
-				1);
-	}
+        return ehClient.createEpochReceiverSync(
+                eventHubConfig.getConsumerGroupName(),
+                partitionId,
+                EventPosition.fromOffset(filter.getOffset(), false),
+                1);
+    }
 
-	private static PartitionReceiver createTimestampReceiver(EventHubClient ehClient, TimestampFilter filter,
-			EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
+    private static PartitionReceiver createTimestampReceiver(EventHubClient ehClient, TimestampFilter filter,
+                                                             EventHubConfig eventHubConfig, String partitionId) throws EventHubException {
 
-		return ehClient.createEpochReceiverSync(
-				eventHubConfig.getConsumerGroupName(),
-				partitionId,
-				EventPosition.fromEnqueuedTime(filter.getTime()),
-				1);
-	}
+        return ehClient.createEpochReceiverSync(
+                eventHubConfig.getConsumerGroupName(),
+                partitionId,
+                EventPosition.fromEnqueuedTime(filter.getTime()),
+                1);
+    }
 }

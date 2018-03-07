@@ -18,6 +18,7 @@
 package org.apache.storm.eventhubs.format;
 
 import java.io.Serializable;
+
 import org.apache.storm.tuple.Tuple;
 
 /**
@@ -25,12 +26,11 @@ import org.apache.storm.tuple.Tuple;
  */
 public interface IEventDataFormat extends Serializable {
 
-	/**
-	 * Serialize given tuple to byte stream
-	 * 
-	 * @param tuple
-	 *            {@link Tuple} instance
-	 * @return byte array representing the tuples
-	 */
-	public byte[] serialize(Tuple tuple);
+    /**
+     * Serialize given tuple to byte stream
+     *
+     * @param tuple {@link Tuple} instance
+     * @return byte array representing the tuples
+     */
+    public byte[] serialize(Tuple tuple);
 }

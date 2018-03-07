@@ -19,38 +19,38 @@ package org.apache.storm.eventhubs.core;
 
 public class MessageId {
 
-  private final String partitionId;
-  private final String offset;
-  private final long sequenceNumber;
+    private final String partitionId;
+    private final String offset;
+    private final long sequenceNumber;
 
-  public MessageId(
-    String partitionId,
-    String offset,
-    long sequenceNumber) {
-    this.partitionId = partitionId;
-    this.offset = offset;
-    this.sequenceNumber = sequenceNumber;
-  }
+    public MessageId(
+            String partitionId,
+            String offset,
+            long sequenceNumber) {
+        this.partitionId = partitionId;
+        this.offset = offset;
+        this.sequenceNumber = sequenceNumber;
+    }
 
-  public static MessageId create(String partitionId, String offset, long sequenceNumber) {
-    return new MessageId(partitionId, offset, sequenceNumber);
-  }
+    public static MessageId create(String partitionId, String offset, long sequenceNumber) {
+        return new MessageId(partitionId, offset, sequenceNumber);
+    }
 
-  public String getPartitionId() {
-    return this.partitionId;
-  }
+    public String getPartitionId() {
+        return this.partitionId;
+    }
 
-  public String getOffset() {
-    return this.offset;
-  }
+    public String getOffset() {
+        return this.offset;
+    }
 
-  public Long getSequenceNumber() {
-    return this.sequenceNumber;
-  }
-  
-  @Override
-  public String toString() {
-    return String.format("PartitionId: %s, Offset: %s, SequenceNumber: %s",
-      this.partitionId, this.offset, this.sequenceNumber);
-  }
+    public Long getSequenceNumber() {
+        return this.sequenceNumber;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("PartitionId: %s, Offset: %s, SequenceNumber: %s",
+                this.partitionId, this.offset, this.sequenceNumber);
+    }
 }

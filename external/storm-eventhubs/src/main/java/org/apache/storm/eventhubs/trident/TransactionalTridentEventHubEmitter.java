@@ -39,134 +39,134 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class TransactionalTridentEventHubEmitter
-		implements IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> {
-	private static final Logger logger = LoggerFactory.getLogger(TransactionalTridentEventHubEmitter.class);
-	private final int batchSize;
-	private final EventHubSpoutConfig spoutConfig;
-	private Map<String, ITridentPartitionManager> pmMap;
-	private ITridentPartitionManagerFactory pmFactory;
-	private IEventHubReceiverFactory recvFactory;
+        implements IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> {
+    private static final Logger logger = LoggerFactory.getLogger(TransactionalTridentEventHubEmitter.class);
+    private final int batchSize;
+    private final EventHubSpoutConfig spoutConfig;
+    private Map<String, ITridentPartitionManager> pmMap;
+    private ITridentPartitionManagerFactory pmFactory;
+    private IEventHubReceiverFactory recvFactory;
 
-	private final String OFFSET_KEY = "offset";
-	private final String NEXT_OFFSET_KEY = "nextOffset";
-	private final String COUNT_KEY = "count";
+    private final String OFFSET_KEY = "offset";
+    private final String NEXT_OFFSET_KEY = "nextOffset";
+    private final String COUNT_KEY = "count";
 
-	public TransactionalTridentEventHubEmitter(EventHubSpoutConfig spoutConfig) {
-		this(spoutConfig, spoutConfig.getReceiverCredits(), null, null);
-	}
+    public TransactionalTridentEventHubEmitter(EventHubSpoutConfig spoutConfig) {
+        this(spoutConfig, spoutConfig.getReceiverCredits(), null, null);
+    }
 
-	public TransactionalTridentEventHubEmitter(final EventHubSpoutConfig spoutConfig, int batchSize,
-			ITridentPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
-		this.spoutConfig = spoutConfig;
-		this.batchSize = batchSize;
-		this.pmFactory = pmFactory;
-		this.recvFactory = recvFactory;
-		pmMap = new HashMap<String, ITridentPartitionManager>();
-		if (this.pmFactory == null) {
-			this.pmFactory = new ITridentPartitionManagerFactory() {
-				private static final long serialVersionUID = 7694972161358936580L;
+    public TransactionalTridentEventHubEmitter(final EventHubSpoutConfig spoutConfig, int batchSize,
+                                               ITridentPartitionManagerFactory pmFactory, IEventHubReceiverFactory recvFactory) {
+        this.spoutConfig = spoutConfig;
+        this.batchSize = batchSize;
+        this.pmFactory = pmFactory;
+        this.recvFactory = recvFactory;
+        pmMap = new HashMap<String, ITridentPartitionManager>();
+        if (this.pmFactory == null) {
+            this.pmFactory = new ITridentPartitionManagerFactory() {
+                private static final long serialVersionUID = 7694972161358936580L;
 
-				@Override
-				public ITridentPartitionManager create(IEventHubReceiver receiver, String partitionId) {
-					return new TridentPartitionManager(spoutConfig, receiver, partitionId);
-				}
-			};
-		}
-		if (this.recvFactory == null) {
-			this.recvFactory = new IEventHubReceiverFactory() {
-				private static final long serialVersionUID = 5105886777136979123L;
+                @Override
+                public ITridentPartitionManager create(IEventHubReceiver receiver, String partitionId) {
+                    return new TridentPartitionManager(spoutConfig, receiver, partitionId);
+                }
+            };
+        }
+        if (this.recvFactory == null) {
+            this.recvFactory = new IEventHubReceiverFactory() {
+                private static final long serialVersionUID = 5105886777136979123L;
 
-				@Override
-				public IEventHubReceiver create(EventHubConfig config, String partitionId) {
-					return new EventHubReceiverImpl(config, partitionId);
-				}
-			};
-		}
-	}
+                @Override
+                public IEventHubReceiver create(EventHubConfig config, String partitionId) {
+                    return new EventHubReceiverImpl(config, partitionId);
+                }
+            };
+        }
+    }
 
-	@Override
-	public void close() {
-		for (ITridentPartitionManager pm : pmMap.values()) {
-			pm.close();
-		}
-	}
+    @Override
+    public void close() {
+        for (ITridentPartitionManager pm : pmMap.values()) {
+            pm.close();
+        }
+    }
 
-	/**
-	 * Check if partition manager for a given partiton is created if not, create it.
-	 * 
-	 * @param partition
-	 */
-	private ITridentPartitionManager getOrCreatePartitionManager(Partition partition) {
-		ITridentPartitionManager pm;
-		if (!pmMap.containsKey(partition.getId())) {
-			IEventHubReceiver receiver = recvFactory.create(spoutConfig, partition.getId());
-			pm = pmFactory.create(receiver, partition.getId());
-			pmMap.put(partition.getId(), pm);
-		} else {
-			pm = pmMap.get(partition.getId());
-		}
-		return pm;
-	}
+    /**
+     * Check if partition manager for a given partiton is created if not, create it.
+     *
+     * @param partition
+     */
+    private ITridentPartitionManager getOrCreatePartitionManager(Partition partition) {
+        ITridentPartitionManager pm;
+        if (!pmMap.containsKey(partition.getId())) {
+            IEventHubReceiver receiver = recvFactory.create(spoutConfig, partition.getId());
+            pm = pmFactory.create(receiver, partition.getId());
+            pmMap.put(partition.getId(), pm);
+        } else {
+            pm = pmMap.get(partition.getId());
+        }
+        return pm;
+    }
 
-	@Override
-	public void emitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
-			Map<String, String> meta) {
-		String offset = meta.get(OFFSET_KEY);
-		int count = Integer.parseInt(meta.get(COUNT_KEY));
-		logger.info("re-emit for partition " + partition.getId() + ", offset=" + offset + ", count=" + count);
-		ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
-		List<EventHubMessage> listEvents = null;
-		try {
-			listEvents = pm.receiveBatch(offset, count);
-		} catch (IOException | EventHubException e) {
-			throw new RuntimeException("Failed to retrieve events from EventHub.", e);
-		}
+    @Override
+    public void emitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition,
+                                   Map<String, String> meta) {
+        String offset = meta.get(OFFSET_KEY);
+        int count = Integer.parseInt(meta.get(COUNT_KEY));
+        logger.info("re-emit for partition " + partition.getId() + ", offset=" + offset + ", count=" + count);
+        ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
+        List<EventHubMessage> listEvents = null;
+        try {
+            listEvents = pm.receiveBatch(offset, count);
+        } catch (IOException | EventHubException e) {
+            throw new RuntimeException("Failed to retrieve events from EventHub.", e);
+        }
 
-		if (listEvents.size() != count) {
-			logger.error("failed to refetch eventhub messages, new count=" + listEvents.size());
-			return;
-		}
+        if (listEvents.size() != count) {
+            logger.error("failed to refetch eventhub messages, new count=" + listEvents.size());
+            return;
+        }
 
-		for (EventHubMessage ed : listEvents) {
-			List<Object> tuples = spoutConfig.getEventDataScheme().deserialize(ed);
-			collector.emit(tuples);
-		}
-	}
+        for (EventHubMessage ed : listEvents) {
+            List<Object> tuples = spoutConfig.getEventDataScheme().deserialize(ed);
+            collector.emit(tuples);
+        }
+    }
 
-	@Override
-	public Map<String, String> emitPartitionBatchNew(TransactionAttempt attempt, TridentCollector collector,
-			Partition partition, Map<String, String> meta) {
-		ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
-		String offset = (meta != null) ? meta.getOrDefault(NEXT_OFFSET_KEY, FieldConstants.DefaultStartingOffset)
-				: FieldConstants.DefaultStartingOffset;
-		String nextOffset = offset;
-		List<EventHubMessage> listEvents = null;
+    @Override
+    public Map<String, String> emitPartitionBatchNew(TransactionAttempt attempt, TridentCollector collector,
+                                                     Partition partition, Map<String, String> meta) {
+        ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
+        String offset = (meta != null) ? meta.getOrDefault(NEXT_OFFSET_KEY, FieldConstants.DefaultStartingOffset)
+                : FieldConstants.DefaultStartingOffset;
+        String nextOffset = offset;
+        List<EventHubMessage> listEvents = null;
 
-		try {
-			listEvents = pm.receiveBatch(offset, batchSize);
-		} catch (IOException | EventHubException e) {
-			throw new RuntimeException("Failed to retrieve events from EventHub.", e);
-		}
-		for (EventHubMessage ed : listEvents) {
-			nextOffset = ed.getMessageId().getOffset();
-			List<Object> tuples = spoutConfig.getEventDataScheme().deserialize(ed);
-			collector.emit(tuples);
-		}
+        try {
+            listEvents = pm.receiveBatch(offset, batchSize);
+        } catch (IOException | EventHubException e) {
+            throw new RuntimeException("Failed to retrieve events from EventHub.", e);
+        }
+        for (EventHubMessage ed : listEvents) {
+            nextOffset = ed.getMessageId().getOffset();
+            List<Object> tuples = spoutConfig.getEventDataScheme().deserialize(ed);
+            collector.emit(tuples);
+        }
 
-		Map<String, String> newMeta = new HashMap<String, String>();
-		newMeta.put(OFFSET_KEY, offset);
-		newMeta.put(NEXT_OFFSET_KEY, nextOffset);
-		newMeta.put(COUNT_KEY, String.valueOf(listEvents.size()));
-		return newMeta;
-	}
+        Map<String, String> newMeta = new HashMap<String, String>();
+        newMeta.put(OFFSET_KEY, offset);
+        newMeta.put(NEXT_OFFSET_KEY, nextOffset);
+        newMeta.put(COUNT_KEY, String.valueOf(listEvents.size()));
+        return newMeta;
+    }
 
-	@Override
-	public List<Partition> getOrderedPartitions(Partitions partitions) {
-		return partitions.getPartitions();
-	}
+    @Override
+    public List<Partition> getOrderedPartitions(Partitions partitions) {
+        return partitions.getPartitions();
+    }
 
-	@Override
-	public void refreshPartitions(List<Partition> partitionList) {
-		return;
-	}
+    @Override
+    public void refreshPartitions(List<Partition> partitionList) {
+        return;
+    }
 }

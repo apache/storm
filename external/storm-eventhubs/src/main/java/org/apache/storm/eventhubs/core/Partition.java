@@ -25,15 +25,15 @@ import org.apache.storm.trident.spout.ISpoutPartition;
  * Represents an EventHub partition
  */
 public class Partition implements ISpoutPartition, Serializable {
-  private static final long serialVersionUID = 1L;
-  String partitionId;
-  
-  public Partition(String partitionId) {
-    this.partitionId = partitionId;
-  }
-  
-  @Override
-  public String getId() {
-    return partitionId;
-  }
+    private static final long serialVersionUID = 1L;
+    String partitionId;
+
+    public Partition(String partitionId) {
+        this.partitionId = partitionId;
+    }
+
+    @Override
+    public String getId() {
+        return partitionId;
+    }
 }

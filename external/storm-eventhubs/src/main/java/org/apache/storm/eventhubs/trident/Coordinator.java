@@ -26,26 +26,26 @@ import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
 import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 
 public class Coordinator implements IPartitionedTridentSpout.Coordinator<Partitions>,
-		IOpaquePartitionedTridentSpout.Coordinator<Partitions> {
-	Partitions partitions;
+        IOpaquePartitionedTridentSpout.Coordinator<Partitions> {
+    Partitions partitions;
 
-	public Coordinator(EventHubSpoutConfig spoutConfig) {
-		partitions = new Partitions();
-		IntStream.range(0, spoutConfig.getPartitionCount())
-				.forEach(i -> partitions.addPartition(new Partition(String.valueOf(i))));
-	}
+    public Coordinator(EventHubSpoutConfig spoutConfig) {
+        partitions = new Partitions();
+        IntStream.range(0, spoutConfig.getPartitionCount())
+                .forEach(i -> partitions.addPartition(new Partition(String.valueOf(i))));
+    }
 
-	@Override
-	public void close() {
-	}
+    @Override
+    public void close() {
+    }
 
-	@Override
-	public Partitions getPartitionsForBatch() {
-		return partitions;
-	}
+    @Override
+    public Partitions getPartitionsForBatch() {
+        return partitions;
+    }
 
-	@Override
-	public boolean isReady(long txid) {
-		return true;
-	}
+    @Override
+    public boolean isReady(long txid) {
+        return true;
+    }
 }

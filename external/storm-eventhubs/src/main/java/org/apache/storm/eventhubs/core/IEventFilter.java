@@ -20,6 +20,7 @@ package org.apache.storm.eventhubs.core;
 
 /**
  * Marker interface to identify filter criteria for receiving from EventHubs
+ *
  * @see OffsetFilter
  * @see TimestampFilter
  */

@@ -28,7 +28,7 @@ import org.apache.storm.tuple.Fields;
  * An Event Data Scheme which deserializes message payload into the Strings. No
  * encoding is assumed. The receiver will need to handle parsing of the string
  * data in appropriate encoding.
- *
+ * <p>
  * The resulting tuple would contain three items, the first being the message
  * bytes, and the second a map of properties that include metadata, which can be
  * used to determine who processes the message, and how it is processed.The third is
@@ -37,25 +37,25 @@ import org.apache.storm.tuple.Fields;
  */
 public class StringEventDataScheme implements IEventDataScheme {
 
-	private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 1L;
 
-	@Override
-	public List<Object> deserialize(EventHubMessage eventHubMessage) {
-		final List<Object> fieldContents = new ArrayList<Object>();
-		final String messageData = new String(eventHubMessage.getContent());
+    @Override
+    public List<Object> deserialize(EventHubMessage eventHubMessage) {
+        final List<Object> fieldContents = new ArrayList<Object>();
+        final String messageData = new String(eventHubMessage.getContent());
 
-		fieldContents.add(messageData);
-		fieldContents.add(eventHubMessage.getApplicationProperties());
-		fieldContents.add(eventHubMessage.getSystemProperties());
+        fieldContents.add(messageData);
+        fieldContents.add(eventHubMessage.getApplicationProperties());
+        fieldContents.add(eventHubMessage.getSystemProperties());
 
-		return fieldContents;
-	}
+        return fieldContents;
+    }
 
-	@Override
-	public Fields getOutputFields() {
-		return new Fields(
-				FieldConstants.MESSAGE_FIELD,
-				FieldConstants.META_DATA_FIELD,
-				FieldConstants.SYSTEM_META_DATA);
-	}
+    @Override
+    public Fields getOutputFields() {
+        return new Fields(
+                FieldConstants.MESSAGE_FIELD,
+                FieldConstants.META_DATA_FIELD,
+                FieldConstants.SYSTEM_META_DATA);
+    }
 }
