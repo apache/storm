@@ -318,7 +318,7 @@
         <aetherVersion>1.1.0</aetherVersion>
         <mavenVersion>3.1.0</mavenVersion>
         <wagonVersion>1.0</wagonVersion>
-        <azure-eventhubs.version>0.14.5</azure-eventhubs.version>
+        <azure-eventhubs.version>1.0.0</azure-eventhubs.version>
         <jersey.version>2.24.1</jersey.version>
         <dropwizard.version>1.1.2</dropwizard.version>
         <j2html.version>1.0.0</j2html.version>

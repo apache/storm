@@ -21,7 +21,10 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
+import com.microsoft.azure.eventhubs.EventHubException;
 import org.apache.storm.metric.api.CountMetric;
 import org.apache.storm.metric.api.MeanReducer;
 import org.apache.storm.metric.api.ReducedMetric;
@@ -32,7 +35,6 @@ import com.google.common.collect.Iterables;
 import com.microsoft.azure.eventhubs.EventData;
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import com.microsoft.azure.servicebus.ServiceBusException;
 
 /**
  * {@link PartitionReceiver} based implementation to receives messages from a
@@ -47,6 +49,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 
 	private PartitionReceiver receiver;
 	private EventHubClient ehClient;
+	private ExecutorService executorService;
 
 	private ReducedMetric receiveApiLatencyMean;
 	private CountMetric receiveApiCallCount;
@@ -71,11 +74,12 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 	}
 
 	@Override
-	public void open(IEventFilter filter) throws IOException, ServiceBusException {
+	public void open(IEventFilter filter) throws IOException, EventHubException {
 		long start = System.currentTimeMillis();
 		logger.debug(String.format("Creating EventHub Client: partitionId: %s, filter value:%s, prefetchCount: %s",
 				partitionId, filter.toString(), String.valueOf(eventHubConfig.getPrefetchCount())));
-		ehClient = EventHubClient.createFromConnectionStringSync(eventHubConfig.getConnectionString());
+		executorService = Executors.newSingleThreadExecutor();
+		ehClient = EventHubClient.createSync(eventHubConfig.getConnectionString(), executorService);
 		receiver = PartitionReceiverFactory.createReceiver(ehClient, filter, eventHubConfig, partitionId);
 		receiver.setPrefetchCount(eventHubConfig.getPrefetchCount());
 		logger.debug("created eventhub receiver, time taken(ms): " + (System.currentTimeMillis() - start));
@@ -87,7 +91,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 			return;
 
 		try {
-			receiver.close().whenComplete((voidargs, error) -> {
+			receiver.close().whenCompleteAsync((voidargs, error) -> {
 				try {
 					if (error != null) {
 						logger.error("Exception during receiver close phase: " + error.toString());
@@ -101,9 +105,12 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 			logger.warn("Exception occured during close phase: " + e.toString());
 		}
 
+		executorService.shutdown();
+
 		logger.info("closed eventhub receiver: partitionId=" + partitionId);
 		ehClient = null;
 		receiver = null;
+		executorService = null;
 	}
 
 	@Override
@@ -126,7 +133,7 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
 			if (receivedEvents != null) {
 				logger.debug("Batchsize: " + batchSize + ", Received event count: " + Iterables.size(receivedEvents));
 			}
-		} catch (ServiceBusException e) {
+		} catch (EventHubException e) {
 			logger.error("Exception occured during receive" + e.toString());
 			return null;
 		}

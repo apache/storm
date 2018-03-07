@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.microsoft.azure.eventhubs.EventHubException;
 import org.apache.storm.eventhubs.core.EventHubConfig;
 import org.apache.storm.eventhubs.core.EventHubMessage;
 import org.apache.storm.eventhubs.core.EventHubReceiverImpl;
@@ -36,8 +37,6 @@ import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.apache.storm.trident.topology.TransactionAttempt;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import com.microsoft.azure.servicebus.ServiceBusException;
 
 public class TransactionalTridentEventHubEmitter
 		implements IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, String>> {
@@ -119,7 +118,7 @@ public class TransactionalTridentEventHubEmitter
 		List<EventHubMessage> listEvents = null;
 		try {
 			listEvents = pm.receiveBatch(offset, count);
-		} catch (IOException | ServiceBusException e) {
+		} catch (IOException | EventHubException e) {
 			throw new RuntimeException("Failed to retrieve events from EventHub.", e);
 		}
 
@@ -145,7 +144,7 @@ public class TransactionalTridentEventHubEmitter
 
 		try {
 			listEvents = pm.receiveBatch(offset, batchSize);
-		} catch (IOException | ServiceBusException e) {
+		} catch (IOException | EventHubException e) {
 			throw new RuntimeException("Failed to retrieve events from EventHub.", e);
 		}
 		for (EventHubMessage ed : listEvents) {

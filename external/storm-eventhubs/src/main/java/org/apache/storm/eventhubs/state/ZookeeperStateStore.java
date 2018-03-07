@@ -17,15 +17,13 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.state;
 
-import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.retry.RetryNTimes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.microsoft.azure.servicebus.StringUtil;
-
+import com.microsoft.azure.eventhubs.impl.StringUtil;
 /**
  * Zookeeper based implementation of the state store.
  * 

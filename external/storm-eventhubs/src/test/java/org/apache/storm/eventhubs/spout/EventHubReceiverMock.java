@@ -30,8 +30,8 @@ import org.apache.storm.eventhubs.core.OffsetFilter;
 import org.apache.storm.eventhubs.core.TimestampFilter;
 
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.servicebus.ServiceBusException;
-import com.microsoft.azure.servicebus.amqp.AmqpConstants;
+import com.microsoft.azure.eventhubs.EventHubException;
+import com.microsoft.azure.eventhubs.impl.AmqpConstants;
 
 /**
  * A mock receiver that emits fake data with offset starting from given offset
@@ -78,7 +78,7 @@ public class EventHubReceiverMock implements IEventHubReceiver {
 	}
 
 	@Override
-	public void open(IEventFilter filter) throws IOException, ServiceBusException {
+	public void open(IEventFilter filter) throws IOException, EventHubException {
 		currentOffset = (filter instanceof OffsetFilter) ? Long.parseLong(((OffsetFilter) filter).getOffset())
 				: ((TimestampFilter) filter).getTime().toEpochMilli();
 		isOpen = true;

@@ -25,7 +25,7 @@ import org.apache.storm.eventhubs.format.StringEventDataScheme;
 
 import com.microsoft.azure.eventhubs.EventHubClient;
 import com.microsoft.azure.eventhubs.PartitionReceiver;
-import com.microsoft.azure.servicebus.ConnectionStringBuilder;
+import com.microsoft.azure.eventhubs.ConnectionStringBuilder;
 
 /**
  * Captures connection details for EventHub
@@ -56,7 +56,12 @@ public class EventHubConfig implements Serializable {
 		this.userName = userName;
 		this.password = password;
 		this.partitionCount = partitionCount;
-		this.connectionString = new ConnectionStringBuilder(namespace, entityPath, userName, password).toString();
+		this.connectionString = new ConnectionStringBuilder()
+				.setNamespaceName(namespace)
+				.setEventHubName(entityPath)
+				.setSasKeyName(userName)
+				.setSasKey(password)
+				.toString();
 	}
 
 	/**
@@ -303,8 +308,7 @@ public class EventHubConfig implements Serializable {
 	/**
 	 * Consumer group name to use when receiveing events from EventHub
 	 * 
-	 * @param consumerGroupName
-	 *            consumer group name
+	 * @return consumer group name
 	 */
 	public String getConsumerGroupName() {
 		return consumerGroupName;

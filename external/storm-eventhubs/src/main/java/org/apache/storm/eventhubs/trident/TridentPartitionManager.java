@@ -32,7 +32,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 
 public class TridentPartitionManager implements ITridentPartitionManager {
 	private static final Logger logger = LoggerFactory.getLogger(TridentPartitionManager.class);
@@ -48,7 +48,7 @@ public class TridentPartitionManager implements ITridentPartitionManager {
 	}
 
 	@Override
-	public void open(String offset) throws IOException, ServiceBusException {
+	public void open(String offset) throws IOException, EventHubException {
 		logger.debug("Creating EventHub Client");
 		if ((offset == null || offset.equals(FieldConstants.DefaultStartingOffset))
 				&& spoutConfig.getEnqueueTimeFilter() != 0) {
@@ -65,7 +65,7 @@ public class TridentPartitionManager implements ITridentPartitionManager {
 	}
 
 	@Override
-	public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, ServiceBusException {
+	public List<EventHubMessage> receiveBatch(String offset, int count) throws IOException, EventHubException {
 		List<EventHubMessage> batch = new ArrayList<EventHubMessage>(spoutConfig.getReceiveEventsMaxCount());
 		if (!offset.equals(lastOffset) || !receiver.isOpen()) {
 			close();

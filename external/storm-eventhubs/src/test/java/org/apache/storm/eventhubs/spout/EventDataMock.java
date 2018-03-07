@@ -19,21 +19,38 @@
 package org.apache.storm.eventhubs.spout;
 
 import java.util.HashMap;
+import java.util.Map;
 
 import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.eventhubs.impl.EventDataImpl;
 
-public class EventDataMock extends EventData {
+public class EventDataMock implements EventData {
 	private static final long serialVersionUID = -1362022940535977850L;
 	private SystemProperties sysprops;
+	private byte[] data;
 
 	
 	public EventDataMock(byte[] data, HashMap<String, Object> map) {		
-		super(data);
-		
 		this.sysprops = new SystemProperties(map);
-		
+		this.data = data;
+
 		System.out.println("OFF: " + sysprops.getOffset());
 		System.out.println("SEQ: " + sysprops.getSequenceNumber());
+	}
+
+	@Override
+	public Object getObject() {
+		return null;
+	}
+
+	@Override
+	public byte[] getBytes() {
+		return data;
+	}
+
+	@Override
+	public Map<String, Object> getProperties() {
+		return null;
 	}
 
 	@Override

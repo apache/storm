@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.eventhubs.EventHubException;
 
 /**
  * EventHub based Receiver contracts
@@ -38,7 +38,7 @@ public interface IEventHubReceiver {
 	 * @throws EventHubException
 	 * @see {@link IEventFilter} {@link OffsetFilter} {@link TimestampFilter}
 	 */
-	void open(IEventFilter filter) throws IOException, ServiceBusException ;
+	void open(IEventFilter filter) throws IOException, EventHubException ;
 
 	/**
 	 * Cleanup and close connection to Eventhub
