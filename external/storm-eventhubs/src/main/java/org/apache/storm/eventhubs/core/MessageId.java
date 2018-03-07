@@ -15,27 +15,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.trident;
+package org.apache.storm.eventhubs.core;
 
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
+public class MessageId {
 
-/**
- * Represents all EventHub partitions a spout is receiving messages from.
- */
-public class Partitions implements Serializable {
-  private static final long serialVersionUID = 1L;
-  private List<Partition> partitionList;
-  public Partitions() {
-    partitionList = new ArrayList<Partition>();
+  private final String partitionId;
+  private final String offset;
+  private final long sequenceNumber;
+
+  public MessageId(
+    String partitionId,
+    String offset,
+    long sequenceNumber) {
+    this.partitionId = partitionId;
+    this.offset = offset;
+    this.sequenceNumber = sequenceNumber;
+  }
+
+  public static MessageId create(String partitionId, String offset, long sequenceNumber) {
+    return new MessageId(partitionId, offset, sequenceNumber);
+  }
+
+  public String getPartitionId() {
+    return this.partitionId;
+  }
+
+  public String getOffset() {
+    return this.offset;
+  }
+
+  public Long getSequenceNumber() {
+    return this.sequenceNumber;
   }
   
-  public void addPartition(Partition partition) {
-    partitionList.add(partition);
-  }
-  
-  public List<Partition> getPartitions() {
-    return partitionList;
+  @Override
+  public String toString() {
+    return String.format("PartitionId: %s, Offset: %s, SequenceNumber: %s",
+      this.partitionId, this.offset, this.sequenceNumber);
   }
 }

@@ -15,19 +15,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-/**
- * 
- */
-package org.apache.storm.eventhubs.spout;
 
-import java.io.Serializable;
+package org.apache.storm.eventhubs.core;
 
 /**
- * An interface of factory method to create IPartitionManager
+ * Marker interface to identify filter criteria for receiving from EventHubs
+ * @see OffsetFilter
+ * @see TimestampFilter
  */
-public interface IPartitionManagerFactory extends Serializable {
-  IPartitionManager create(EventHubSpoutConfig spoutConfig,
-      String partitionId,
-      IStateStore stateStore,
-      IEventHubReceiver receiver);
+public interface IEventFilter {
+
 }

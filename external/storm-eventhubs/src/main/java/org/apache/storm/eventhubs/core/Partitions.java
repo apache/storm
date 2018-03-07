@@ -15,14 +15,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
-public class FieldConstants {
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
-  public static final String PartitionKey = "partitionKey";
-  public static final String Offset = "offset";
-  public static final String Message = "message";
-  public static final String META_DATA = "metadata";
-  public static final String SYSTEM_META_DATA = "eventdata_system_properties";
-  public static final String DefaultStartingOffset = "-1";
+/**
+ * Represents all EventHub partitions a spout is receiving messages from.
+ */
+public class Partitions implements Serializable {
+  private static final long serialVersionUID = 1L;
+  private List<Partition> partitionList;
+  public Partitions() {
+    partitionList = new ArrayList<Partition>();
+  }
+  
+  public void addPartition(Partition partition) {
+    partitionList.add(partition);
+  }
+  
+  public List<Partition> getPartitions() {
+    return partitionList;
+  }
 }

@@ -17,31 +17,28 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
+import static org.junit.Assert.assertTrue;
+
+import org.apache.storm.eventhubs.core.EventHubMessage;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import static org.junit.Assert.assertTrue;
-
 public class TestEventData {
 
-  @Before
-  public void setUp() throws Exception {
-  }
+	@Before
+	public void setUp() throws Exception {
+	}
 
-  @After
-  public void tearDown() throws Exception {
-  }
+	@After
+	public void tearDown() throws Exception {
+	}
 
-  @Test
-  public void testEventDataComparision() {
-
-	MessageId messageId1 = MessageId.create(null, "3", 1);
-	EventDataWrap eventData1 = EventDataWrap.create(null, messageId1);
-
-	MessageId messageId2 = MessageId.create(null, "13", 2);
-	EventDataWrap eventData2 = EventDataWrap.create(null, messageId2);
-
-	assertTrue(eventData2.compareTo(eventData1) > 0);
-  }
+	@Test
+	public void testEventDataComparision() {
+		EventHubMessage ehm = new EventHubMessage(EventHubReceiverMock.getEventData("mesg1", "3", 1L, null), "1");
+		EventHubMessage ehm1 = new EventHubMessage(EventHubReceiverMock.getEventData("mesg1", "13", 2L, null), "2");
+				
+		assertTrue(ehm1.compareTo(ehm) > 0);
+	}
 }

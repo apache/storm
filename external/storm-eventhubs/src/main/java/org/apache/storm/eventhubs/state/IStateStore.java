@@ -15,25 +15,42 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.trident;
+package org.apache.storm.eventhubs.state;
 
 import java.io.Serializable;
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.trident.spout.ISpoutPartition;
 
 /**
- * Represents an EventHub partition
+ * Contracts for persisting checkpoint data
+ *
  */
-public class Partition implements ISpoutPartition, Serializable {
-  private static final long serialVersionUID = 1L;
-  String partitionId;
-  
-  public Partition(EventHubSpoutConfig config, String partitionId) {
-    this.partitionId = partitionId;
-  }
-  
-  @Override
-  public String getId() {
-    return partitionId;
-  }
+public interface IStateStore extends Serializable {
+
+	/**
+	 * Open/initialize connection to the persistent store.
+	 */
+	public void open();
+
+	/**
+	 * Cleanup and sever the connection to persistent store.
+	 */
+	public void close();
+
+	/**
+	 * Persist the given data against the specified path.
+	 * 
+	 * @param path
+	 *            key/path to save the data at.
+	 * @param data
+	 *            data to be saved
+	 */
+	public void saveData(String path, String data);
+
+	/**
+	 * Retrieve information stored against the specified key/path
+	 * 
+	 * @param path
+	 *            key/path to get data from
+	 * @return
+	 */
+	public String readData(String path);
 }

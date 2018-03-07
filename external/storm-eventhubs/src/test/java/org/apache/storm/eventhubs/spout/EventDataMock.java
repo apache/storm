@@ -15,34 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
+
 package org.apache.storm.eventhubs.spout;
+
+import java.util.HashMap;
 
 import com.microsoft.azure.eventhubs.EventData;
 
-public class EventDataWrap implements Comparable<EventDataWrap> {
-  private final EventData eventData;
-  private final MessageId messageId;
+public class EventDataMock extends EventData {
+	private static final long serialVersionUID = -1362022940535977850L;
+	private SystemProperties sysprops;
 
-  public EventDataWrap(EventData eventdata, MessageId messageId) {
-    this.eventData = eventdata;
-    this.messageId = messageId;
-  }
+	
+	public EventDataMock(byte[] data, HashMap<String, Object> map) {		
+		super(data);
+		
+		this.sysprops = new SystemProperties(map);
+		
+		System.out.println("OFF: " + sysprops.getOffset());
+		System.out.println("SEQ: " + sysprops.getSequenceNumber());
+	}
 
-  public static EventDataWrap create(EventData eventData, MessageId messageId) {
-    return new EventDataWrap(eventData, messageId);
-  }
-
-  public EventData getEventData() {
-    return this.eventData;
-  }
-
-  public MessageId getMessageId() {
-    return this.messageId;
-  }
-
-  @Override
-  public int compareTo(EventDataWrap ed) {
-    return messageId.getSequenceNumber().
-        compareTo(ed.getMessageId().getSequenceNumber());
-  }
+	@Override
+	public SystemProperties getSystemProperties() {
+		return sysprops;
+	}
 }

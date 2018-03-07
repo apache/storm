@@ -15,19 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+/**
+ * 
+ */
+package org.apache.storm.eventhubs.core;
 
-import java.util.Map;
+import java.io.Serializable;
 
-public interface IEventHubReceiver {
+import org.apache.storm.eventhubs.state.IStateStore;
 
-  void open(IEventFilter filter) throws EventHubException;
-
-  void close();
-
-  boolean isOpen();
-
-  EventDataWrap receive();
-
-  Map getMetricsData();
+/**
+ * An interface of factory method to create IPartitionManager
+ */
+public interface IPartitionManagerFactory extends Serializable {
+  IPartitionManager create(EventHubConfig spoutConfig,
+      String partitionId,
+      IStateStore stateStore,
+      IEventHubReceiver receiver);   
 }

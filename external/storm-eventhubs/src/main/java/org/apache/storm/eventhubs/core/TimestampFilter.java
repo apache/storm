@@ -16,13 +16,27 @@
  * limitations under the License.
  *******************************************************************************/
 
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
 import java.time.Instant;
 
-public interface IEventFilter {
+public class TimestampFilter implements IEventFilter {
+	Instant time = null;
 
-    String getOffset();
+	public TimestampFilter(Instant time) {
+		this.time = time;
+	}
 
-    Instant getTime();
+	public Instant getTime() {
+		return time;
+	}
+
+	@Override
+	public String toString() {
+		if (time != null) {
+			return Long.toString(time.toEpochMilli());
+		}
+
+		return null;
+	}
 }

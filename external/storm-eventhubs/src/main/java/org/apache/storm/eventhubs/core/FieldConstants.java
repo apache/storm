@@ -15,17 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
-import java.io.Serializable;
+public class FieldConstants {
 
-public interface IStateStore extends Serializable {
-
-  public void open();
-
-  public void close();
-
-  public void saveData(String path, String data);
-
-  public String readData(String path);
+	public static final String PartitionKey = "partitionKey";
+	public static final String Offset = "offset";
+	public static final String SYSTEM_META_DATA = "eventdata_system_properties";
+	public static final String DefaultStartingOffset = "-1";
+	public static final String MESSAGE_FIELD = "message";
+	public static final String META_DATA_FIELD = "metadata";
+	public static final int DEFAULT_EVENTHUB_RECEIVE_TIMEOUT_MS = 5000;
+	public static final String EH_SERVICE_FQDN_SUFFIX = "servicebus.windows.net";
+	public static final int DEFAULT_RECEIVE_MAX_CAP = 1;
+	public static final String SYSTEM_PROPERTIES_FIELD = "systemProperties";
+	public static final String PARTITION_ID_KEY = "partitionId";
+	public static final int DEFAULT_PREFETCH_COUNT = 999;
+	public static final int DEFAULT_MAX_PENDING_PER_PARTITION = 1024;
+	public static final long DEFAULT_SEQUENCE_NUMBER = 0L;
 }

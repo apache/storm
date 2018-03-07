@@ -15,60 +15,47 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.format;
 
-import com.microsoft.azure.eventhubs.EventData;
-import org.apache.storm.tuple.Fields;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
+import org.apache.storm.eventhubs.core.EventHubMessage;
+import org.apache.storm.eventhubs.core.FieldConstants;
+import org.apache.storm.tuple.Fields;
 
 /**
- * An Event Data Scheme which deserializes message payload into the raw bytes.
+ * An Event Data Scheme which deserializes message payload into the Strings. No
+ * encoding is assumed. The receiver will need to handle parsing of the string
+ * data in appropriate encoding.
  *
  * The resulting tuple would contain three items, the first being the message
  * bytes, and the second a map of properties that include metadata, which can be
  * used to determine who processes the message, and how it is processed.The third is
  * the system properties which exposes information like enqueue-time, offset and
- * sequence number
+ * sequence number.
  */
-public class BinaryEventDataScheme implements IEventDataScheme {
+public class StringEventDataScheme implements IEventDataScheme {
 
-	private static final Logger logger = LoggerFactory.getLogger(BinaryEventDataScheme.class);
+	private static final long serialVersionUID = 1L;
+
 	@Override
-	public List<Object> deserialize(EventData eventData){
+	public List<Object> deserialize(EventHubMessage eventHubMessage) {
 		final List<Object> fieldContents = new ArrayList<Object>();
-		byte [] messageData = null;
-		if (eventData.getBytes() != null) {
-			messageData = eventData.getBytes();
-		}
-		else if (eventData.getObject()!=null) {
-			try {
-				messageData = SerializeDeserializeUtil.serialize(eventData.getObject());
-			} catch (IOException e) {
-				logger.error("Failed to serialize EventData payload class"
-						+ eventData.getObject().getClass());
-				logger.error("Exception encountered while serializing EventData payload is"
-						+ e.toString());
-				throw new RuntimeException(e);
-			}
-		}
-		Map metaDataMap =  eventData.getProperties();
-		Map systemMetaDataMap = eventData.getSystemProperties();
+		final String messageData = new String(eventHubMessage.getContent());
+
 		fieldContents.add(messageData);
-		fieldContents.add(metaDataMap);
-		fieldContents.add(systemMetaDataMap);
+		fieldContents.add(eventHubMessage.getApplicationProperties());
+		fieldContents.add(eventHubMessage.getSystemProperties());
+
 		return fieldContents;
 	}
 
 	@Override
 	public Fields getOutputFields() {
-		return new Fields(FieldConstants.Message, FieldConstants.META_DATA,
+		return new Fields(
+				FieldConstants.MESSAGE_FIELD,
+				FieldConstants.META_DATA_FIELD,
 				FieldConstants.SYSTEM_META_DATA);
 	}
 }

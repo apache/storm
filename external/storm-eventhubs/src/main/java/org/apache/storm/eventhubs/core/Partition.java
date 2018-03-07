@@ -15,23 +15,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
-import java.util.Map;
+import java.io.Serializable;
 
-public interface IPartitionManager {
+import org.apache.storm.trident.spout.ISpoutPartition;
 
-  void open() throws Exception;
-
-  void close();
-
-  EventDataWrap receive();
-
-  void checkpoint();
-
-  void ack(String offset);
-
-  void fail(String offset);
+/**
+ * Represents an EventHub partition
+ */
+public class Partition implements ISpoutPartition, Serializable {
+  private static final long serialVersionUID = 1L;
+  String partitionId;
   
-  Map getMetricsData();
+  public Partition(String partitionId) {
+    this.partitionId = partitionId;
+  }
+  
+  @Override
+  public String getId() {
+    return partitionId;
+  }
 }

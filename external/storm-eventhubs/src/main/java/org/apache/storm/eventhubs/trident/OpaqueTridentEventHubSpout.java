@@ -19,9 +19,10 @@ package org.apache.storm.eventhubs.trident;
 
 import java.util.Map;
 
+import org.apache.storm.eventhubs.core.Partition;
+import org.apache.storm.eventhubs.core.Partitions;
+import org.apache.storm.eventhubs.format.IEventDataScheme;
 import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
-import org.apache.storm.eventhubs.spout.IEventDataScheme;
-
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;

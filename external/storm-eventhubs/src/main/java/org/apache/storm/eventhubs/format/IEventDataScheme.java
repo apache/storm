@@ -15,14 +15,36 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.bolt;
+package org.apache.storm.eventhubs.format;
 
 import java.io.Serializable;
-import org.apache.storm.tuple.Tuple;
+import java.util.List;
+
+import org.apache.storm.eventhubs.core.EventHubMessage;
+import org.apache.storm.tuple.Fields;
 
 /**
- * Serialize a tuple to a byte array to be sent to EventHubs
+ * Data scheme to use when deserializing bytes read from eventhub.
+ *
  */
-public interface IEventDataFormat extends Serializable {
-  public byte[] serialize(Tuple tuple);
+public interface IEventDataScheme extends Serializable {
+
+	/**
+	 * Deserialize read EventHub Message into a Tuple.
+	 *
+	 * @see #getOutputFields() for the list of fields the tuple will contain.
+	 *
+	 * @param eventHubMessage
+	 *            The EventHubMessage to be deserialized.
+	 * 
+	 * @return A list of Objects representing the deserialized the message.
+	 */
+	List<Object> deserialize(EventHubMessage eventHubMessage);
+
+	/**
+	 * Retrieve the Fields that are present on tuples created by this object.
+	 *
+	 * @return The Fields that are present on tuples created by this object.
+	 */
+	Fields getOutputFields();
 }

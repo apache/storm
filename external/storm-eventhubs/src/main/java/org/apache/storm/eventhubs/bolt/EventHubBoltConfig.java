@@ -17,95 +17,216 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.bolt;
 
+import java.io.Serializable;
+import java.net.URI;
+import java.net.URISyntaxException;
+
+import org.apache.storm.eventhubs.core.FieldConstants;
+import org.apache.storm.eventhubs.format.DefaultEventDataFormat;
+import org.apache.storm.eventhubs.format.IEventDataFormat;
+
 import com.microsoft.azure.servicebus.ConnectionStringBuilder;
-import org.apache.storm.eventhubs.spout.EventHubSpoutConfig;
 
-import java.io.Serializable;
-
-import java.io.Serializable;
-
-/*
+/**
  * EventHubs bolt configurations
  *
- * Partition mode:
- * With partitionMode=true you need to create the same number of tasks as the number of 
- * EventHubs partitions, and each bolt task will only send data to one partition.
- * The partition ID is the task ID of the bolt.
+ * Partition mode: partitionMode=true, in this mode each bolt task will write to
+ * a partition with the same id as that of the task index. For this mode, the
+ * number of bolt tasks must match the number of partitions.
  * 
- * Event format:
- * The formatter to convert tuple to bytes for EventHubs.
- * if null, the default format is common delimited tuple fields.
+ * partitionMode=false, default setting. There is no affinity between bolt tasks
+ * and partitions. Events are written to partitions as determined by the
+ * EventHub partitioning logic.
+ * 
+ * @see IEventDataFormat
  */
 public class EventHubBoltConfig implements Serializable {
-  private static final long serialVersionUID = 1L;
-  
-  private String connectionString;
-  private final String entityPath;
-  protected boolean partitionMode;
-  protected IEventDataFormat dataFormat;
-  
-  public EventHubBoltConfig(String connectionString, String entityPath) {
-    this(connectionString, entityPath, false, null);
-  }
-  
-  public EventHubBoltConfig(String connectionString, String entityPath,
-      boolean partitionMode) {
-    this(connectionString, entityPath, partitionMode, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String entityPath, boolean partitionMode) {
-    this(userName, password, namespace,
-        EventHubSpoutConfig.EH_SERVICE_FQDN_SUFFIX, entityPath, partitionMode);
-  }
-  
-  public EventHubBoltConfig(String connectionString, String entityPath,
-      boolean partitionMode, IEventDataFormat dataFormat) {
-    this.connectionString = connectionString;
-    this.entityPath = entityPath;
-    this.partitionMode = partitionMode;
-    this.dataFormat = dataFormat;
-    if(this.dataFormat == null) {
-      this.dataFormat = new DefaultEventDataFormat();
-    }
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath) {
-    this(userName, password, namespace, targetFqnAddress, entityPath, false, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath, boolean partitionMode) {
-    this(userName, password, namespace, targetFqnAddress, entityPath, partitionMode, null);
-  }
-  
-  public EventHubBoltConfig(String userName, String password, String namespace,
-      String targetFqnAddress, String entityPath, boolean partitionMode,
-      IEventDataFormat dataFormat) {
-    this.connectionString = new ConnectionStringBuilder(namespace,entityPath,
-            userName,password).toString();
-    this.entityPath = entityPath;
-    this.partitionMode = partitionMode;
-    this.dataFormat = dataFormat;
-    if(this.dataFormat == null) {
-      this.dataFormat = new DefaultEventDataFormat();
-    }
-  }
-  
-  public String getConnectionString() {
-    return connectionString;
-  }
-  
-  public String getEntityPath() {
-    return entityPath;
-  }
-  
-  public boolean getPartitionMode() {
-    return partitionMode;
-  }
-  
-  public IEventDataFormat getEventDataFormat() {
-    return dataFormat;
-  }
+	private static final long serialVersionUID = 1L;
+
+	private String connectionString;
+	protected boolean partitionMode;
+	protected IEventDataFormat dataFormat;
+
+	/**
+	 * Constructs an instance with specified connection string, and eventhub name
+	 * The @link {@link #partitionMode} is set to false.
+	 * 
+	 * @param connectionString
+	 *            EventHub connection string
+	 * @param entityPath
+	 *            EventHub name
+	 */
+	public EventHubBoltConfig(String connectionString, String entityPath) {
+		this(connectionString, false, null);
+	}
+
+	/**
+	 * Constructs an instance with specified connection string, eventhub name and
+	 * partition mode.
+	 * 
+	 * @param connectionString
+	 *            EventHub connection string
+	 * @param entityPath
+	 *            EventHub name
+	 * @param partitionMode
+	 *            partitionMode to apply
+	 */
+	public EventHubBoltConfig(String connectionString, String entityPath, boolean partitionMode) {
+		this(connectionString, partitionMode, null);
+	}
+
+	/**
+	 * Constructs an instance with specified credentials, eventhub name and
+	 * partition mode.
+	 * 
+	 * <p>
+	 * For soverign clouds please use the constructor
+	 * {@link EventHubBolt#EventHubBolt(String, String)}.
+	 * </p>
+	 * 
+	 * @param userName
+	 *            user name to connect as
+	 * @param password
+	 *            password for the user name
+	 * @param namespace
+	 *            servicebus namespace
+	 * @param entityPath
+	 *            EntityHub name
+	 * @param partitionMode
+	 *            Dictates write mode. if true will write to specific partitions
+	 */
+	public EventHubBoltConfig(String userName, String password, String namespace, String entityPath,
+			boolean partitionMode) {
+		this(userName, password, namespace, FieldConstants.EH_SERVICE_FQDN_SUFFIX, entityPath, partitionMode);
+	}
+
+	/**
+	 * Constructs an instance with specified connection string, and partition mode.
+	 * The specified {@link IEventDataFormat} will be used to format data to bytes
+	 * before
+	 * 
+	 * @param connectionString
+	 *            EventHub connection string
+	 * 
+	 * @param partitionMode
+	 *            Dictates write mode. if true will write to specific partitions
+	 * @param dataFormat
+	 *            data formatter for serializing event data
+	 */
+	public EventHubBoltConfig(String connectionString, boolean partitionMode, IEventDataFormat dataFormat) {
+		this.connectionString = connectionString;
+		this.partitionMode = partitionMode;
+		this.dataFormat = dataFormat;
+		if (this.dataFormat == null) {
+			this.dataFormat = new DefaultEventDataFormat();
+		}
+	}
+
+	/**
+	 * Constructs an instance with specified credentials, and connection information
+	 * 
+	 * @param userName
+	 *            user name to connect as
+	 * @param password
+	 *            password for the user name
+	 * @param namespace
+	 *            servicebus namespace
+	 * @param fqdnSuffix
+	 *            FQDN suffix for the servicebus entity url. servicebus.windows.net)
+	 * @param entityPath
+	 *            Name of the EventHub
+	 */
+	public EventHubBoltConfig(String userName, String password, String namespace, String fqdnSuffix,
+			String entityPath) {
+		this(userName, password, namespace, fqdnSuffix, entityPath, false, null);
+	}
+
+	/**
+	 * Constructs an instance with specified credentials, and partition mode
+	 * 
+	 * @param userName
+	 *            user name to connect as
+	 * @param userName
+	 *            user name to connect as
+	 * @param password
+	 *            password for the user name
+	 * @param namespace
+	 *            servicebus namespace
+	 * @param fqdnSuffix
+	 *            FQDN suffix for the servicebus entity url.
+	 * @param entityPath
+	 *            Name of the EventHub
+	 * @param partitionMode
+	 *            Dictates write mode. if true will write to specific partitions
+	 */
+	public EventHubBoltConfig(String userName, String password, String namespace, String fqdnSuffix, String entityPath,
+			boolean partitionMode) {
+		this(userName, password, namespace, fqdnSuffix, entityPath, partitionMode, null);
+	}
+
+	/**
+	 * Constructs an instance with specified credentials, partition mode, and data
+	 * formatter
+	 * 
+	 * @param userName
+	 *            user name to connect as
+	 * @param userName
+	 *            user name to connect as
+	 * @param password
+	 *            password for the user name
+	 * @param namespace
+	 *            servicebus namespace
+	 * @param fqdnSuffix
+	 *            FQDN suffix for the servicebus entity url. (example:
+	 *            servicebus.windows.net)
+	 * @param entityPath
+	 *            Name of the EventHub
+	 * @param partitionMode
+	 *            Dictates write mode. if true will write to specific partitions
+	 * @param dataFormat
+	 *            data formatter for serializing event data
+	 * 
+	 * @see IEventDataFormat
+	 */
+	public EventHubBoltConfig(String userName, String password, String namespace, String fqdnSuffix, String entityPath,
+			boolean partitionMode, IEventDataFormat dataFormat) {
+		URI uri = null;
+		try {
+			uri = new URI(String.format("amqps://%s.%s", namespace, fqdnSuffix));
+		} catch (URISyntaxException e) {
+			throw new RuntimeException("Failed to construct EventHub connection URI.", e);
+		}
+		this.connectionString = new ConnectionStringBuilder(uri, userName, password).toString();
+		this.partitionMode = partitionMode;
+		this.dataFormat = dataFormat;
+		if (this.dataFormat == null) {
+			this.dataFormat = new DefaultEventDataFormat();
+		}
+	}
+
+	/**
+	 * Connection string to the service bus entity
+	 * 
+	 * @return
+	 */
+	public String getConnectionString() {
+		return connectionString;
+	}
+
+	/**
+	 * 
+	 * @return returns partition mode configuration.
+	 */
+	public boolean getPartitionMode() {
+		return partitionMode;
+	}
+
+	/**
+	 * Data formatter for event data
+	 * 
+	 * @return Instance of {@link IEventDataFormat}
+	 */
+	public IEventDataFormat getEventDataFormat() {
+		return dataFormat;
+	}
 }

@@ -20,7 +20,7 @@ package org.apache.storm.eventhubs.spout;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.apache.storm.eventhubs.spout.IStateStore;
+import org.apache.storm.eventhubs.state.IStateStore;
 
 /**
  * A state store mocker

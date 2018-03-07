@@ -17,69 +17,107 @@
  *******************************************************************************/
 package org.apache.storm.eventhubs.spout;
 
-import com.microsoft.azure.eventhubs.EventData;
-
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+
+import org.apache.storm.eventhubs.core.IEventFilter;
+import org.apache.storm.eventhubs.core.IEventHubReceiver;
+import org.apache.storm.eventhubs.core.OffsetFilter;
+import org.apache.storm.eventhubs.core.TimestampFilter;
+
+import com.microsoft.azure.eventhubs.EventData;
+import com.microsoft.azure.servicebus.ServiceBusException;
+import com.microsoft.azure.servicebus.amqp.AmqpConstants;
 
 /**
  * A mock receiver that emits fake data with offset starting from given offset
  * and increase by 1 each time.
  */
 public class EventHubReceiverMock implements IEventHubReceiver {
-  private static boolean isPaused = false;
-  private final String partitionId;
-  private long currentOffset;
-  private boolean isOpen;
+	private enum BodyType {
+		Data, AmqpSequence, AmqpValue
+	};
 
-  public EventHubReceiverMock(String pid) {
-    partitionId = pid;
-    isPaused = false;
-  }
-  
-  /**
-   * Use this method to pause/resume all the receivers.
-   * If paused all receiver will return null.
-   * @param val
-   */
-  public static void setPause(boolean val) {
-    isPaused = val;
-  }
+	private static boolean isPaused = false;
+	private final String partitionId;
+	private long currentOffset;
+	private boolean isOpen;
+	private BodyType bodyType;
 
-  @Override
-  public void open(IEventFilter filter) throws EventHubException {
-    currentOffset = filter.getOffset() != null ?
-            Long.parseLong(filter.getOffset()) :
-            filter.getTime().toEpochMilli();
-    isOpen = true;
-  }
+	public EventHubReceiverMock(String pid) {
+		this(pid, BodyType.Data);
+	}
 
-  @Override
-  public void close() {
-    isOpen = false;
-  }
+	public EventHubReceiverMock(String pid, BodyType bodyType) {
+		partitionId = pid;
+		isPaused = false;
+		this.bodyType = bodyType;
+	}
 
-  @Override
-  public boolean isOpen() {
-    return isOpen;
-  }
+	/**
+	 * Use this method to pause/resume all the receivers. If paused all receiver
+	 * will return null.
+	 * 
+	 * @param val
+	 */
+	public static void setPause(boolean val) {
+		isPaused = val;
+	}
 
-  @Override
-  public EventDataWrap receive() {
-    if(isPaused) {
-      return null;
-    }
+	public static EventData getEventData(String body, String offset, Long sequence, Date enqueueTime) {
+		HashMap<String, Object> m = new HashMap<String, Object>();
+		m.put(AmqpConstants.OFFSET_ANNOTATION_NAME, offset);
+		m.put(AmqpConstants.SEQUENCE_NUMBER_ANNOTATION_NAME, sequence);
+		m.put(AmqpConstants.ENQUEUED_TIME_UTC_ANNOTATION_NAME, enqueueTime);
+		EventData ed = new EventDataMock(body.getBytes(), m);
+		return ed;
+	}
 
-    currentOffset++;
+	@Override
+	public void open(IEventFilter filter) throws IOException, ServiceBusException {
+		currentOffset = (filter instanceof OffsetFilter) ? Long.parseLong(((OffsetFilter) filter).getOffset())
+				: ((TimestampFilter) filter).getTime().toEpochMilli();
+		isOpen = true;
+	}
 
-    //the body of the message is "message" + currentOffset, e.g. "message123"
+	@Override
+	public void close() {
+		isOpen = false;
+	}
 
-    MessageId mid = new MessageId(partitionId, "" + currentOffset, currentOffset);
-    EventData ed = new EventData(("message" + currentOffset).getBytes());
-    return EventDataWrap.create(ed,mid);
-  }
-  
-  @Override
-  public Map getMetricsData() {
-    return null;
-  }
+	@Override
+	public boolean isOpen() {
+		return isOpen;
+	}
+
+	@Override
+	public Iterable<EventData> receive() {
+		return receive(1);
+	}
+
+	@Override
+	public Iterable<EventData> receive(int batchSize) {
+		if (isPaused) {
+			return new LinkedList<EventData>();
+		}
+
+		List<EventData> retList = new LinkedList<EventData>();
+		for (int i = 0; i < batchSize; ++i) {
+			currentOffset++;
+			EventData edata = getEventData("message" + currentOffset, String.valueOf(currentOffset),
+					(long) currentOffset, new Date());
+			retList.add(edata);
+		}
+
+		return retList;
+	}
+
+	@Override
+	public Map getMetricsData() {
+		return null;
+	}
 }

@@ -15,42 +15,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  *******************************************************************************/
-package org.apache.storm.eventhubs.spout;
+package org.apache.storm.eventhubs.core;
 
-public class MessageId {
+import java.util.List;
 
-  private final String partitionId;
-  private final String offset;
-  private final long sequenceNumber;
+/**
+ * Contracts for assigning and handling workers to read/write data from EventHub
+ * partitions.
+ *
+ */
+public interface IPartitionCoordinator {
 
-  public MessageId(
-    String partitionId,
-    String offset,
-    long sequenceNumber) {
-    this.partitionId = partitionId;
-    this.offset = offset;
-    this.sequenceNumber = sequenceNumber;
-  }
+	/**
+	 * Retrieve list of {@link IPartitionManager} instances for the target EventHub.
+	 * 
+	 * @return List of {@link IPartitionManager} instances
+	 */
+	List<IPartitionManager> getMyPartitionManagers();
 
-  public static MessageId create(String partitionId, String offset, long sequenceNumber) {
-    return new MessageId(partitionId, offset, sequenceNumber);
-  }
-
-  public String getPartitionId() {
-    return this.partitionId;
-  }
-
-  public String getOffset() {
-    return this.offset;
-  }
-
-  public Long getSequenceNumber() {
-    return this.sequenceNumber;
-  }
-  
-  @Override
-  public String toString() {
-    return String.format("PartitionId: %s, Offset: %s, SequenceNumber: %s",
-      this.partitionId, this.offset, this.sequenceNumber);
-  }
+	/**
+	 * Retrieves {@link IPartitionManager} instance for the EventHub partition
+	 * identified by specified id.
+	 * 
+	 * @param partitionId
+	 *            partition id
+	 * @return {@link IPartitionManager} implementation
+	 */
+	IPartitionManager getPartitionManager(String partitionId);
 }
