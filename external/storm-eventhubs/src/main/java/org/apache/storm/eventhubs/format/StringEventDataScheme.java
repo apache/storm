@@ -45,8 +45,6 @@ public class StringEventDataScheme implements IEventDataScheme {
         final String messageData = new String(eventHubMessage.getContent());
 
         fieldContents.add(messageData);
-        fieldContents.add(eventHubMessage.getApplicationProperties());
-        fieldContents.add(eventHubMessage.getSystemProperties());
 
         return fieldContents;
     }
@@ -54,8 +52,6 @@ public class StringEventDataScheme implements IEventDataScheme {
     @Override
     public Fields getOutputFields() {
         return new Fields(
-                FieldConstants.MESSAGE_FIELD,
-                FieldConstants.META_DATA_FIELD,
-                FieldConstants.SYSTEM_META_DATA);
+                FieldConstants.MESSAGE_FIELD);
     }
 }
