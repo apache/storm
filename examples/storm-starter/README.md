@@ -66,8 +66,8 @@ then you must first perform a local build of Storm itself.  Otherwise you will r
 "Could not resolve dependencies for project `org.apache.storm:storm-starter:<storm-version>-SNAPSHOT`".
 
     # Must be run from the top-level directory of the Storm code repository
-    $ mvn clean install -DskipTests=true
-
+    $ mvn clean install -DskipTests=true -U
+    
 This command will build Storm locally and install its jar files to your user's `$HOME/.m2/repository/`.  When you run
 the Maven command to build and run storm-starter (see below), Maven will then be able to find the corresponding version
 of Storm in this local Maven repository at `$HOME/.m2/repository`.
