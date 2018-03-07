@@ -158,12 +158,13 @@ public class LogviewerServer implements AutoCloseable {
         Map<String, Object> conf = ConfigUtils.readStormConfig();
 
         String logRoot = ConfigUtils.workerArtifactsRoot(conf);
-        File logRootFile = new File(logRoot);
-        WorkerLogs workerLogs = new WorkerLogs(conf, logRootFile);
+        File logRootDir = new File(logRoot);
+        logRootDir.mkdirs();
+        WorkerLogs workerLogs = new WorkerLogs(conf, logRootDir);
         DirectoryCleaner directoryCleaner = new DirectoryCleaner();
 
         try (LogviewerServer server = new LogviewerServer(conf);
-             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootFile)) {
+             LogCleaner logCleaner = new LogCleaner(conf, workerLogs, directoryCleaner, logRootDir)) {
             Utils.addShutdownHookWithForceKillIn1Sec(() -> server.close());
             logCleaner.start();
             StormMetricsRegistry.startMetricsReporters(conf);
