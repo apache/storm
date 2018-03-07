@@ -22,7 +22,6 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.microsoft.azure.eventhubs.EventData;
-import com.microsoft.azure.eventhubs.impl.EventDataImpl;
 
 public class EventDataMock implements EventData {
 	private static final long serialVersionUID = -1362022940535977850L;

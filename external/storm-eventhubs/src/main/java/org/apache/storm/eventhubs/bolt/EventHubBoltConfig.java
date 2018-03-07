@@ -54,8 +54,8 @@ public class EventHubBoltConfig implements Serializable {
      * @param connectionString EventHub connection string
      * @param entityPath       EventHub name
      */
-    public EventHubBoltConfig(String connectionString, String entityPath) {
-        this(connectionString, false, null);
+    public EventHubBoltConfig(final String connectionString, final String entityPath) {
+        this(connectionString, entityPath, false, null);
     }
 
     /**
@@ -67,7 +67,7 @@ public class EventHubBoltConfig implements Serializable {
      * @param partitionMode    partitionMode to apply
      */
     public EventHubBoltConfig(String connectionString, String entityPath, boolean partitionMode) {
-        this(connectionString, partitionMode, null);
+        this(connectionString, entityPath, partitionMode, null);
     }
 
     /**
@@ -99,8 +99,10 @@ public class EventHubBoltConfig implements Serializable {
      * @param partitionMode    Dictates write mode. if true will write to specific partitions
      * @param dataFormat       data formatter for serializing event data
      */
-    public EventHubBoltConfig(String connectionString, boolean partitionMode, IEventDataFormat dataFormat) {
-        this.connectionString = connectionString;
+    public EventHubBoltConfig(String connectionString, String entityPath, boolean partitionMode, IEventDataFormat dataFormat) {
+        this.connectionString = new ConnectionStringBuilder(connectionString)
+                .setEventHubName(entityPath)
+                .toString();
         this.partitionMode = partitionMode;
         this.dataFormat = dataFormat;
         if (this.dataFormat == null) {
