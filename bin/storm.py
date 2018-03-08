@@ -104,6 +104,8 @@ JAVA_CMD = get_java_cmd();
 if JAVA_HOME and not os.path.exists(JAVA_CMD):
     print("ERROR:  JAVA_HOME is invalid.  Could not find bin/java at %s." % JAVA_HOME)
     sys.exit(1)
+NIMBUS_EXTRA_CLASSPATHS = os.getenv('NIMBUS_EXTRA_CLASSPATHS', None)
+SUPERVISOR_EXTRA_CLASSPATHS = os.getenv('SUPERVISOR_EXTRA_CLASSPATHS', None)
 STORM_EXT_CLASSPATH = os.getenv('STORM_EXT_CLASSPATH', None)
 STORM_EXT_CLASSPATH_DAEMON = os.getenv('STORM_EXT_CLASSPATH_DAEMON', None)
 DEP_JARS_OPTS = []
@@ -694,7 +696,10 @@ def nimbus(klass="org.apache.storm.daemon.nimbus.Nimbus"):
     See Setting up a Storm cluster for more information.
     (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
-    cppaths = [CLUSTER_CONF_DIR]
+    if NIMBUS_EXTRA_CLASSPATHS != None:
+        cppaths = [CLUSTER_CONF_DIR, NIMBUS_EXTRA_CLASSPATHS]
+    else:
+        cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("nimbus.childopts", cppaths)) + [
         "-Dlogfile.name=nimbus.log",
         "-DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector",
@@ -737,7 +742,10 @@ def supervisor(klass="org.apache.storm.daemon.supervisor.Supervisor"):
     See Setting up a Storm cluster for more information.
     (http://storm.apache.org/documentation/Setting-up-a-Storm-cluster)
     """
-    cppaths = [CLUSTER_CONF_DIR]
+    if SUPERVISOR_EXTRA_CLASSPATHS != None:
+        cppaths = [CLUSTER_CONF_DIR, SUPERVISOR_EXTRA_CLASSPATHS]
+    else:
+        cppaths = [CLUSTER_CONF_DIR]
     jvmopts = parse_args(confvalue("supervisor.childopts", cppaths)) + [
         "-Dlogfile.name=" + STORM_SUPERVISOR_LOG_FILE,
         "-Dlog4j.configurationFile=" + os.path.join(get_log4j2_conf_dir(), "cluster.xml"),
