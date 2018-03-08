@@ -266,7 +266,7 @@
         <auto-service.version>1.0-rc3</auto-service.version>
         <netty.version>3.9.9.Final</netty.version>
         <sysout-over-slf4j.version>1.0.2</sysout-over-slf4j.version>
-        <log4j-over-slf4j.version>1.6.6</log4j-over-slf4j.version>
+        <slf4j-log4j12.version>1.6.6</slf4j-log4j12.version>
         <log4j.version>2.8.2</log4j.version>
         <slf4j.version>1.7.21</slf4j.version>
         <metrics.version>3.1.0</metrics.version>
@@ -912,6 +912,11 @@
                 </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-1.2-api</artifactId>
+                <version>${log4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
                 <version>${log4j.version}</version>
             </dependency>
@@ -928,12 +933,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
-                <artifactId>log4j-over-slf4j</artifactId>
-                <version>${log4j-over-slf4j.version}</version>
+                <version>${slf4j-log4j12.version}</version>
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
