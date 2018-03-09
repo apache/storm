@@ -35,6 +35,14 @@ public interface PasswordProvider {
     Optional<char[]> getPasswordFor(String user);
 
     /**
+     * Should impersonation be allowed by this password provider.  The default is false.
+     * @return true if it should else false.
+     */
+    default boolean isImpersonationAllowed() {
+        return false;
+    }
+
+    /**
      * Convert the supplied user name to the actual user name that should be used
      * in the system.  This may be called on any name.  If it cannot be translated
      * then a null may be returned or an exception thrown.  If getPassword returns successfully

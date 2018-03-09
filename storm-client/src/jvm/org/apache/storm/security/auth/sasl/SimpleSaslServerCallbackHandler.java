@@ -31,28 +31,33 @@ import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.sasl.AuthorizeCallback;
 import javax.security.sasl.RealmCallback;
 import org.apache.storm.security.auth.ReqContext;
+import org.apache.storm.streams.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class SimpleSaslServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(SimpleSaslServerCallbackHandler.class);
     private final List<PasswordProvider> providers;
+    private final boolean impersonationAllowed;
 
     /**
      * Constructor with different password providers.
+     * @param impersonationAllowed true if impersonation is allowed else false.
      * @param providers what will provide a password.  They will be checked in order, and the first one to
      *     return a password wins.
      */
-    public SimpleSaslServerCallbackHandler(PasswordProvider ... providers) {
-        this(Arrays.asList(providers));
+    public SimpleSaslServerCallbackHandler(boolean impersonationAllowed, PasswordProvider ... providers) {
+        this(impersonationAllowed, Arrays.asList(providers));
     }
 
     /**
      * Constructor with different password providers.
+     * @param impersonationAllowed true if impersonation is allowed else false.
      * @param providers what will provide a password.  They will be checked in order, and the first one to
      *     return a password wins.
      */
-    public SimpleSaslServerCallbackHandler(List<PasswordProvider> providers) {
+    public SimpleSaslServerCallbackHandler(boolean impersonationAllowed, List<PasswordProvider> providers) {
+        this.impersonationAllowed = impersonationAllowed;
         this.providers = new ArrayList<>(providers);
     }
 
@@ -82,12 +87,12 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
         }
     }
 
-    private String translateName(String orig) {
+    private Pair<String, Boolean> translateName(String orig) {
         for (PasswordProvider provider: providers) {
             try {
                 String ret = provider.userName(orig);
                 if (ret != null) {
-                    return ret;
+                    return Pair.of(ret, provider.isImpersonationAllowed());
                 }
             } catch (Exception e) {
                 //Translating the name (this call) happens in a different callback from validating
@@ -103,7 +108,7 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
         // In the worst case we will return a serialized name after a password provider said that the password
         // was okay.  In that case the ACLs are likely to prevent the request from going through anyways.
         // But that is only if there is a bug in one of the password providers.
-        return orig;
+        return Pair.of(orig, false);
     }
 
     @Override
@@ -152,14 +157,19 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
         }
 
         if (ac != null) {
+            boolean allowImpersonation = impersonationAllowed;
             String nid = ac.getAuthenticationID();
             if (nid != null) {
-                nid = translateName(nid);
+                Pair<String, Boolean> tmp = translateName(nid);
+                nid = tmp.getFirst();
+                allowImpersonation = allowImpersonation && tmp.getSecond();
             }
 
             String zid = ac.getAuthorizationID();
             if (zid != null) {
-                zid = translateName(zid);
+                Pair<String, Boolean> tmp = translateName(zid);
+                zid = tmp.getFirst();
+                allowImpersonation = allowImpersonation && tmp.getSecond();
             }
             LOG.info("Successfully authenticated client: authenticationID = {} authorizationID = {}",
                 nid, zid);
@@ -177,6 +187,10 @@ public class SimpleSaslServerCallbackHandler implements CallbackHandler {
             if (!nid.equals(zid)) {
                 LOG.info("Impersonation attempt  authenticationID = {} authorizationID = {}",
                     nid,  zid);
+                if (!allowImpersonation) {
+                    throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
+                        + ".  This is not allowed.");
+                }
                 ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(nid));
             } else {
                 ReqContext.context().setRealPrincipal(null);
