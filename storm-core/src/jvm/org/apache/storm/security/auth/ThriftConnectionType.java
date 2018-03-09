@@ -27,11 +27,11 @@ import java.util.Map;
  */
 public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
-         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS),
+         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS, true),
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
-         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null),
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, false),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null);
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, false);
 
     private final String _transConf;
     private final String _portConf;
@@ -39,15 +39,18 @@ public enum ThriftConnectionType {
     private final String _threadsConf;
     private final String _buffConf;
     private final String _socketTimeoutConf;
+    private final boolean impersonationAllowed;
 
     ThriftConnectionType(String transConf, String portConf, String qConf,
-                         String threadsConf, String buffConf, String socketTimeoutConf) {
+                         String threadsConf, String buffConf, String socketTimeoutConf,
+                         boolean impersonationAllowed) {
         _transConf = transConf;
         _portConf = portConf;
         _qConf = qConf;
         _threadsConf = threadsConf;
         _buffConf = buffConf;
         _socketTimeoutConf = socketTimeoutConf;
+        this.impersonationAllowed = impersonationAllowed;
     }
 
     public String getTransportPlugin(Map conf) {
@@ -88,5 +91,13 @@ public enum ThriftConnectionType {
             return null;
         }
         return Utils.getInt(conf.get(_socketTimeoutConf));
+    }
+
+    /**
+     * Check if SASL impersonation is allowed for this transport type.
+     * @return true if it is else false.
+     */
+    public boolean isImpersonationAllowed() {
+        return impersonationAllowed;
     }
 }
