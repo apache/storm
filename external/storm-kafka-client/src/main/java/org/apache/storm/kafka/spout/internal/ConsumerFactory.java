@@ -16,14 +16,13 @@
 
 package org.apache.storm.kafka.spout.internal;
 
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import java.io.Serializable;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
 
-public class KafkaConsumerFactoryDefault<K, V> implements KafkaConsumerFactory<K, V> {
-
-    @Override
-    public KafkaConsumer<K, V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        return new KafkaConsumer<>(kafkaSpoutConfig.getKafkaProps());
-    }
-    
+/**
+ * This is here to enable testing.
+ */
+public interface ConsumerFactory<K, V> extends Serializable {
+    public Consumer<K,V> createConsumer(KafkaSpoutConfig<K, V> kafkaSpoutConfig);
 }

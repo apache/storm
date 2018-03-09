@@ -31,15 +31,15 @@ import static org.mockito.Mockito.when;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig.FirstPollOffsetStrategy;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -65,7 +65,7 @@ public class KafkaSpoutReactivationTest {
     private final Map<String, Object> conf = new HashMap<>();
     private final SpoutOutputCollector collector = mock(SpoutOutputCollector.class);
     private final long commitOffsetPeriodMs = 2_000;
-    private KafkaConsumer<String, String> consumerSpy;
+    private Consumer<String, String> consumerSpy;
     private KafkaSpout<String, String> spout;
     private final int maxPollRecords = 10;
 
@@ -77,9 +77,9 @@ public class KafkaSpoutReactivationTest {
                 .setOffsetCommitPeriodMs(commitOffsetPeriodMs)
                 .setProp(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, maxPollRecords)
                 .build();
-        KafkaConsumerFactory<String, String> consumerFactory = new KafkaConsumerFactoryDefault<>();
+        ConsumerFactory<String, String> consumerFactory = new ConsumerFactoryDefault<>();
         this.consumerSpy = spy(consumerFactory.createConsumer(spoutConfig));
-        KafkaConsumerFactory<String, String> consumerFactoryMock = mock(KafkaConsumerFactory.class);
+        ConsumerFactory<String, String> consumerFactoryMock = mock(ConsumerFactory.class);
         when(consumerFactoryMock.createConsumer(any()))
             .thenReturn(consumerSpy);
         this.spout = new KafkaSpout<>(spoutConfig, consumerFactoryMock, new TopicAssigner());

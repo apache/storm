@@ -24,26 +24,29 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.spout.KafkaSpoutConfig;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
 import org.apache.storm.kafka.spout.internal.Timer;
 import org.apache.storm.trident.spout.IOpaquePartitionedTridentSpout;
+import org.apache.storm.trident.spout.IPartitionedTridentSpout;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
+public class KafkaTridentSpoutCoordinator<K,V> implements 
+    IOpaquePartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
+    IPartitionedTridentSpout.Coordinator<List<Map<String, Object>>>,
         Serializable {
     //Initial delay for the assignment refresh timer
     public static final long TIMER_DELAY_MS = 500;
-    private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutOpaqueCoordinator.class);
+    private static final Logger LOG = LoggerFactory.getLogger(KafkaTridentSpoutCoordinator.class);
 
     private final TopicPartitionSerializer tpSerializer = new TopicPartitionSerializer();
     private final KafkaSpoutConfig<K, V> kafkaSpoutConfig;
     private final Timer refreshAssignmentTimer;
-    private final KafkaConsumer<K, V> consumer;
+    private final Consumer<K, V> consumer;
     
     private Set<TopicPartition> partitionsForBatch;
 
@@ -51,11 +54,11 @@ public class KafkaTridentSpoutOpaqueCoordinator<K,V> implements IOpaquePartition
      * Creates a new coordinator based on the given spout config.
      * @param kafkaSpoutConfig The spout config to use
      */
-    public KafkaTridentSpoutOpaqueCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
-        this(kafkaSpoutConfig, new KafkaConsumerFactoryDefault<>());
+    public KafkaTridentSpoutCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig) {
+        this(kafkaSpoutConfig, new ConsumerFactoryDefault<>());
     }
     
-    KafkaTridentSpoutOpaqueCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig, KafkaConsumerFactory<K, V> consumerFactory) {
+    KafkaTridentSpoutCoordinator(KafkaSpoutConfig<K, V> kafkaSpoutConfig, ConsumerFactory<K, V> consumerFactory) {
         this.kafkaSpoutConfig = kafkaSpoutConfig;
         this.refreshAssignmentTimer = new Timer(TIMER_DELAY_MS, kafkaSpoutConfig.getPartitionRefreshPeriodMs(), TimeUnit.MILLISECONDS);
         this.consumer = consumerFactory.createConsumer(kafkaSpoutConfig);

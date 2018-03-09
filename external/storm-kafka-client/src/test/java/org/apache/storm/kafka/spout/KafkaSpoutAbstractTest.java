@@ -33,8 +33,9 @@ import org.apache.kafka.clients.consumer.OffsetAndMetadata;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.kafka.KafkaUnitExtension;
 import org.apache.storm.kafka.spout.config.builder.SingleTopicKafkaSpoutConfiguration;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactory;
-import org.apache.storm.kafka.spout.internal.KafkaConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.internal.ConsumerFactory;
+import org.apache.storm.kafka.spout.internal.ConsumerFactoryDefault;
+import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.kafka.spout.subscription.TopicAssigner;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -90,9 +91,9 @@ public abstract class KafkaSpoutAbstractTest {
         return consumerSpy;
     }
 
-    private KafkaConsumerFactory<String, String> createConsumerFactory() {
+    private ConsumerFactory<String, String> createConsumerFactory() {
 
-        return new KafkaConsumerFactory<String, String>() {
+        return new ConsumerFactory<String, String>() {
             @Override
             public KafkaConsumer<String, String> createConsumer(KafkaSpoutConfig<String, String> kafkaSpoutConfig) {
                 return consumerSpy;
@@ -102,7 +103,7 @@ public abstract class KafkaSpoutAbstractTest {
     }
 
     KafkaConsumer<String, String> createConsumerSpy() {
-        return spy(new KafkaConsumerFactoryDefault<String, String>().createConsumer(spoutConfig));
+        return spy(new ConsumerFactoryDefault<String, String>().createConsumer(spoutConfig));
     }
 
     @AfterEach

@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
 import org.apache.kafka.common.TopicPartition;
 import org.apache.storm.task.TopologyContext;
 
