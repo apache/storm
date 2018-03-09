@@ -18,7 +18,6 @@
  */
 package org.apache.storm.cassandra.client;
 
-import org.apache.storm.utils.Utils;
 import com.datastax.driver.core.ConsistencyLevel;
 import com.datastax.driver.core.policies.DefaultRetryPolicy;
 import com.datastax.driver.core.policies.DowngradingConsistencyRetryPolicy;
@@ -30,11 +29,14 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.storm.cassandra.client.SslProps;
+import org.apache.storm.utils.Utils;
+
 /**
  * Configuration used by cassandra storm components.
  */
 public class CassandraConf implements Serializable {
-    
+
     public static final String CASSANDRA_USERNAME           = "cassandra.username";
     public static final String CASSANDRA_PASSWORD           = "cassandra.password";
     public static final String CASSANDRA_KEYSPACE           = "cassandra.keyspace";
@@ -45,6 +47,11 @@ public class CassandraConf implements Serializable {
     public static final String CASSANDRA_RETRY_POLICY       = "cassandra.retryPolicy";
     public static final String CASSANDRA_RECONNECT_POLICY_BASE_MS  = "cassandra.reconnectionPolicy.baseDelayMs";
     public static final String CASSANDRA_RECONNECT_POLICY_MAX_MS   = "cassandra.reconnectionPolicy.maxDelayMs";
+    public static final String CASSANDRA_SSL_SECURITY_PROTOCOL = "cassandra.ssl.security.protocol";
+    public static final String CASSANDRA_SSL_KEYSTORE_PATH = "cassandra.ssl.keystore.path";
+    public static final String CASSANDRA_SSL_KEYSTORE_PASSWORD = "cassandra.ssl.keystore.password";
+    public static final String CASSANDRA_SSL_TRUSTSTORE_PATH = "cassandra.ssl.truststore.path";
+    public static final String CASSANDRA_SSL_TRUSTSTORE_PASSWORD = "cassandra.ssl.truststore.password";
 
     /**
      * The authorized cassandra username.
@@ -91,7 +98,17 @@ public class CassandraConf implements Serializable {
      * The maximum delay to wait between two attempts.
      */
     private long reconnectionPolicyMaxMs;
-    
+
+    private String sslSecurityProtocol;
+
+    private String sslTruststorePath;
+
+    private String sslTruststorePassword;
+
+    private String sslKeystorePath;
+
+    private String sslKeystorePassword;
+
     /**
      * Creates a new {@link CassandraConf} instance.
      */
@@ -116,6 +133,11 @@ public class CassandraConf implements Serializable {
         this.retryPolicyName = (String)Utils.get(conf, CASSANDRA_RETRY_POLICY, DefaultRetryPolicy.class.getSimpleName());
         this.reconnectionPolicyBaseMs = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_BASE_MS), 100L);
         this.reconnectionPolicyMaxMs  = getLong(conf.get(CASSANDRA_RECONNECT_POLICY_MAX_MS), TimeUnit.MINUTES.toMillis(1));
+        this.sslSecurityProtocol = (String) Utils.get(conf, CASSANDRA_SSL_SECURITY_PROTOCOL, null);
+        this.sslKeystorePath = (String) Utils.get(conf, CASSANDRA_SSL_KEYSTORE_PATH, null);
+        this.sslKeystorePassword = (String) Utils.get(conf, CASSANDRA_SSL_KEYSTORE_PASSWORD, null);
+        this.sslTruststorePath = (String) Utils.get(conf, CASSANDRA_SSL_TRUSTSTORE_PATH, null);
+        this.sslTruststorePassword = (String) Utils.get(conf, CASSANDRA_SSL_TRUSTSTORE_PASSWORD, null);
     }
 
     public String getUsername() {
@@ -162,6 +184,10 @@ public class CassandraConf implements Serializable {
         if(this.retryPolicyName.equals(DefaultRetryPolicy.class.getSimpleName()))
             return DefaultRetryPolicy.INSTANCE;
         throw new IllegalArgumentException("Unknown cassandra retry policy " + this.retryPolicyName);
+    }
+
+    public SslProps getSslProps() {
+        return new SslProps(sslSecurityProtocol, sslTruststorePath, sslTruststorePassword, sslKeystorePath, sslKeystorePassword);
     }
 
     private <T> T get(Map<String, Object> conf, String key) {
