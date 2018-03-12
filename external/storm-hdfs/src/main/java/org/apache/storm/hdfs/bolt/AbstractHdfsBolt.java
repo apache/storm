@@ -259,16 +259,18 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
     }
 
     private void doRotationAndRemoveAllWriters() {
-        for (final Writer writer : writers.values()) {
-            try {
-                rotateOutputFile(writer);
-            } catch (IOException e) {
-                this.collector.reportError(e);
-                LOG.warn("IOException during scheduled file rotation.", e);
+        synchronized (writeLock) {
+            for (final Writer writer : writers.values()) {
+                try {
+                    rotateOutputFile(writer);
+                } catch (IOException e) {
+                    this.collector.reportError(e);
+                    LOG.warn("IOException during scheduled file rotation.", e);
+                }
             }
+            //above for-loop has closed all the writers. It's safe to clear the map here.
+            writers.clear();
         }
-        //above for-loop has closed all the writers. It's safe to clear the map here.
-        writers.clear();
     }
 
     private void syncAllWriters() throws IOException {
