@@ -273,14 +273,16 @@ public abstract class AbstractHdfsBolt extends BaseRichBolt {
         TimerTask task = new TimerTask() {
             @Override
             public void run() {
-                for (final Writer writer : writers.values()) {
-                    try {
-                        rotateOutputFile(writer);
-                    } catch (IOException e) {
-                        LOG.warn("IOException during scheduled file rotation.", e);
+                synchronized (writeLock) {
+                    for (final Writer writer : writers.values()) {
+                        try {
+                            rotateOutputFile(writer);
+                        } catch (IOException e) {
+                            LOG.warn("IOException during scheduled file rotation.", e);
+                        }
                     }
+                    writers.clear();
                 }
-                writers.clear();
             }
         };
         this.rotationTimer.scheduleAtFixedRate(task, interval, interval);
