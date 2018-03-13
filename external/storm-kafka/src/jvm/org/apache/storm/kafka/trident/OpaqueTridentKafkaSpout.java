@@ -26,7 +26,11 @@ import java.util.List;
 import java.util.Map;
 
 
-public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<List<GlobalPartitionInformation>, Partition, Map> {
+public class OpaqueTridentKafkaSpout
+        implements IOpaquePartitionedTridentSpout<
+                List<GlobalPartitionInformation>,
+                Partition,
+                Map<String, Object>> {
 
 
     TridentKafkaConfig _config;
@@ -36,13 +40,18 @@ public class OpaqueTridentKafkaSpout implements IOpaquePartitionedTridentSpout<L
     }
 
     @Override
-    public IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map> getEmitter(Map<String, Object> conf, TopologyContext context) {
+    public Emitter<List<GlobalPartitionInformation>,
+            Partition,
+            Map<String, Object>> getEmitter(Map<String, Object> conf,
+                    TopologyContext context) {
         return new TridentKafkaEmitter(conf, context, _config, context
                 .getStormId()).asOpaqueEmitter();
     }
 
     @Override
-    public IOpaquePartitionedTridentSpout.Coordinator getCoordinator(Map<String, Object> conf, TopologyContext tc) {
+    public IOpaquePartitionedTridentSpout.Coordinator getCoordinator(
+            Map<String, Object> conf,
+            TopologyContext tc) {
         return new org.apache.storm.kafka.trident.Coordinator(conf, _config);
     }
 

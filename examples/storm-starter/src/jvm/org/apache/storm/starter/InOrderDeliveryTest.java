@@ -159,7 +159,7 @@ public class InOrderDeliveryTest {
     conf.setNumWorkers(1);
     StormSubmitter.submitTopologyWithProgressBar(name, conf, builder.createTopology());
 
-    Map clusterConf = Utils.readStormConfig();
+    Map<String, Object> clusterConf = Utils.readStormConfig();
     clusterConf.putAll(Utils.readCommandLineOpts());
     Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 

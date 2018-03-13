@@ -43,7 +43,7 @@ public class KafkaTridentSpoutBatchMetadataTest {
 
         KafkaTridentSpoutBatchMetadata metadata = new KafkaTridentSpoutBatchMetadata(startOffset, endOffset);
         Map<String, Object> map = metadata.toMap();
-        Map deserializedMap = (Map)JSONValue.parseWithException(JSONValue.toJSONString(map));
+        Map<String, Object> deserializedMap = (Map)JSONValue.parseWithException(JSONValue.toJSONString(map));
         KafkaTridentSpoutBatchMetadata deserializedMetadata = KafkaTridentSpoutBatchMetadata.fromMap(deserializedMap);
         assertThat(deserializedMetadata.getFirstOffset(), is(metadata.getFirstOffset()));
         assertThat(deserializedMetadata.getLastOffset(), is(metadata.getLastOffset()));

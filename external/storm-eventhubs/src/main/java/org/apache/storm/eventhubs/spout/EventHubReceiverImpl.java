@@ -156,8 +156,8 @@ public class EventHubReceiverImpl implements IEventHubReceiver {
   }
 
   @Override
-  public Map getMetricsData() {
-    Map ret = new HashMap();
+  public Map<String, Object> getMetricsData() {
+    Map<String, Object> ret = new HashMap<>();
     ret.put(partitionId + "/receiveApiLatencyMean", receiveApiLatencyMean.getValueAndReset());
     ret.put(partitionId + "/receiveApiCallCount", receiveApiCallCount.getValueAndReset());
     ret.put(partitionId + "/receiveMessageCount", receiveMessageCount.getValueAndReset());

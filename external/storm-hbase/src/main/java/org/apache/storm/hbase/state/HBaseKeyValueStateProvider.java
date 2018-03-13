@@ -45,7 +45,7 @@ public class HBaseKeyValueStateProvider implements StateProvider {
     private static final Logger LOG = LoggerFactory.getLogger(HBaseKeyValueStateProvider.class);
 
     @Override
-    public State newState(String namespace, Map stormConf, TopologyContext context) {
+    public State newState(String namespace, Map<String, Object> stormConf, TopologyContext context) {
         try {
             return getHBaseKeyValueState(namespace, stormConf, context, getStateConfig(stormConf));
         } catch (Exception ex) {
@@ -81,7 +81,7 @@ public class HBaseKeyValueStateProvider implements StateProvider {
 
         //heck for backward compatibility, we need to pass TOPOLOGY_AUTO_CREDENTIALS to hbase conf
         //the conf instance is instance of persistentMap so making a copy.
-        Map<String, Object> hbaseConfMap = new HashMap<String, Object>(conf);
+        Map<String, Object> hbaseConfMap = new HashMap<>(conf);
         hbaseConfMap.put(Config.TOPOLOGY_AUTO_CREDENTIALS, stormConf.get(Config.TOPOLOGY_AUTO_CREDENTIALS));
         HBaseClient hbaseClient = new HBaseClient(hbaseConfMap, hbConfig, config.tableName);
 

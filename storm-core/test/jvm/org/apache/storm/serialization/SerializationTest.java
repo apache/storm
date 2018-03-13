@@ -78,27 +78,27 @@ public class SerializationTest {
         isRoundtrip(Lists.newArrayList(mkString(1024 * 1024 * 2)));
     }
 
-    private Map mkConf(Map extra) {
+    private Map<String, Object> mkConf(Map<String, Object> extra) {
         Map<String, Object> config = Utils.readDefaultConfig();
         config.putAll(extra);
         return config;
     }
 
-    private byte[] serialize(List vals, Map<String, Object> conf) throws IOException {
+    private byte[] serialize(List<Object> vals, Map<String, Object> conf) throws IOException {
         KryoValuesSerializer serializer = new KryoValuesSerializer(mkConf(conf));
         return serializer.serialize(vals);
     }
 
-    private List deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
+    private List<Object> deserialize(byte[] bytes, Map<String, Object> conf) throws IOException {
         KryoValuesDeserializer deserializer = new KryoValuesDeserializer(mkConf(conf));
         return deserializer.deserialize(bytes);
     }
 
-    private List roundtrip(List vals) throws IOException {
-        return roundtrip(vals, new HashMap());
+    private List<Object> roundtrip(List<Object> vals) throws IOException {
+        return roundtrip(vals, new HashMap<>());
     }
 
-    private List roundtrip(List vals, Map<String, Object> conf) throws IOException {
+    private List<Object> roundtrip(List<Object> vals, Map<String, Object> conf) throws IOException {
         return deserialize(serialize(vals, conf), conf);
     }
 

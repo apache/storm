@@ -549,7 +549,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         return ret;
     }
 
-    public Map getConfig() {
+    public Map<String, Object> getConfig() {
         return topoConf;
     }
 

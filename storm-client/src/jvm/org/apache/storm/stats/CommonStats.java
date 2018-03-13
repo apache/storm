@@ -61,11 +61,11 @@ public abstract class CommonStats {
         transferredStats.close();
     }
 
-    protected Map valueStat(MultiCountStatAndMetric metric) {
+    protected Map<String,Map<String,Long>> valueStat(MultiCountStatAndMetric metric) {
         return metric.getTimeCounts();
     }
 
-    protected Map valueStat(MultiLatencyStatAndMetric metric) {
+    protected Map<String, Map<String, Double>> valueStat(MultiLatencyStatAndMetric metric) {
         return metric.getTimeLatAvg();
     }
 

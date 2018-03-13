@@ -271,7 +271,7 @@ public class ConfigUtils {
         return ret;
     }
 
-    public static Map overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
+    public static Map<String, Object> overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
             conf.put("java.security.auth.login.config", loginConfFile);
@@ -322,7 +322,7 @@ public class ConfigUtils {
         return conf;
     }
 
-    public static Map readYamlConfig(String name) {
+    public static Map<String, Object> readYamlConfig(String name) {
         return readYamlConfig(name, true);
     }
 

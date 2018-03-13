@@ -80,22 +80,22 @@ public class MapStateFactoryBuilder<T> {
     private Integer maxParallelism;
     private StateType stateType;
     private StateMapper<T> stateMapper;
-    private Map cassandraConfig;
+    private Map<String, Object> cassandraConfig;
     private int cacheSize;
 
-    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<OpaqueValue<U>> opaque(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<OpaqueValue<U>>()
                 .withStateType(StateType.OPAQUE)
                 .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<TransactionalValue<U>> transactional(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<TransactionalValue<U>>()
                 .withStateType(StateType.TRANSACTIONAL)
                 .withCassandraConfig(cassandraConf);
     }
 
-    public static <U> MapStateFactoryBuilder<U> nontransactional(Map cassandraConf) {
+    public static <U> MapStateFactoryBuilder<U> nontransactional(Map<String, Object> cassandraConf) {
         return new MapStateFactoryBuilder<U>()
                 .withStateType(StateType.NON_TRANSACTIONAL)
                 .withCassandraConfig(cassandraConf);
@@ -145,7 +145,7 @@ public class MapStateFactoryBuilder<T> {
         return this;
     }
 
-    protected MapStateFactoryBuilder<T> withCassandraConfig(Map cassandraConf) {
+    protected MapStateFactoryBuilder<T> withCassandraConfig(Map<String, Object> cassandraConf) {
         this.cassandraConfig = cassandraConf;
         return this;
     }

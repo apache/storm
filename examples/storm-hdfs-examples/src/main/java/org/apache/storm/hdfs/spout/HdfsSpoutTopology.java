@@ -132,7 +132,7 @@ public class HdfsSpoutTopology {
     builder.setBolt(BOLT_ID, bolt, 1).shuffleGrouping(SPOUT_ID);
 
     // 4 - submit topology, wait for a few min and terminate it
-    Map clusterConf = Utils.readStormConfig();
+    Map<String, Object> clusterConf = Utils.readStormConfig();
     StormSubmitter.submitTopologyWithProgressBar(topologyName, conf, builder.createTopology());
     Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
 

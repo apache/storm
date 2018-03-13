@@ -63,8 +63,8 @@ public class ZkCoordinatorTest {
         when(dynamicPartitionConnections.register(any(Broker.class), any(String.class) ,anyInt())).thenReturn(simpleConsumer);
     }
 
-    private Map buildZookeeperConfig(TestingServer server) {
-        Map<String, Object> conf = new HashMap();
+    private Map<String, Object> buildZookeeperConfig(TestingServer server) {
+        Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TRANSACTIONAL_ZOOKEEPER_PORT, server.getPort());
         conf.put(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Arrays.asList("localhost"));
         conf.put(Config.STORM_ZOOKEEPER_SESSION_TIMEOUT, 20000);

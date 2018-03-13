@@ -73,16 +73,20 @@ public class TridentKafkaEmitter {
     }
 
 
-    private Map failFastEmitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map lastMeta) {
+    private Map<String, Object> failFastEmitNewPartitionBatch(
+            final TransactionAttempt attempt,
+            TridentCollector collector,
+            Partition partition,
+            Map<String, Object> lastMeta) {
         SimpleConsumer consumer = _connections.register(partition);
-        Map ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta, attempt);
+        Map<String, Object> ret = doEmitNewPartitionBatch(consumer, partition, collector, lastMeta, attempt);
         Long offset = (Long) ret.get("offset");
         Long endOffset = (Long) ret.get("nextOffset");
         _kafkaOffsetMetric.setOffsetData(partition, new PartitionManager.OffsetData(endOffset, offset));
         return ret;
     }
 
-    private Map emitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map lastMeta) {
+    private Map<String, Object> emitNewPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map<String, Object> lastMeta) {
         try {
             return failFastEmitNewPartitionBatch(attempt, collector, partition, lastMeta);
         } catch (FailedFetchException e) {
@@ -90,7 +94,7 @@ public class TridentKafkaEmitter {
             if (lastMeta == null) {
                 return null;
             } else {
-                Map ret = new HashMap();
+                Map<String, Object> ret = new HashMap<>();
                 ret.put("offset", lastMeta.get("nextOffset"));
                 ret.put("nextOffset", lastMeta.get("nextOffset"));
                 ret.put("partition", partition.partition);
@@ -102,12 +106,17 @@ public class TridentKafkaEmitter {
         }
     }
 
-    private Map doEmitNewPartitionBatch(SimpleConsumer consumer, Partition partition, TridentCollector collector, Map lastMeta, TransactionAttempt attempt) {
+    private Map<String, Object> doEmitNewPartitionBatch(SimpleConsumer consumer,
+            Partition partition,
+            TridentCollector collector,
+            Map<String, Object> lastMeta,
+            TransactionAttempt attempt) {
         LOG.debug("Emitting new partition batch - [transaction = {}], [lastMeta = {}]", attempt, lastMeta);
         long offset;
         if (lastMeta != null) {
             String lastInstanceId = null;
-            Map lastTopoMeta = (Map) lastMeta.get("topology");
+            Map<String, Object> lastTopoMeta = (Map<String, Object>)
+                    lastMeta.get("topology");
             if (lastTopoMeta != null) {
                 lastInstanceId = (String) lastTopoMeta.get("id");
             }
@@ -136,7 +145,7 @@ public class TridentKafkaEmitter {
             emit(collector, msg.message(), partition, msg.offset(), attempt);
             endoffset = msg.nextOffset();
         }
-        Map newMeta = new HashMap();
+        Map<String, Object> newMeta = new HashMap<>();
         newMeta.put("offset", offset);
         newMeta.put("nextOffset", endoffset);
         newMeta.put("instanceId", _topologyInstanceId);
@@ -161,7 +170,7 @@ public class TridentKafkaEmitter {
     /**
      * re-emit the batch described by the meta data provided
      */
-    private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map meta) {
+    private void reEmitPartitionBatch(TransactionAttempt attempt, TridentCollector collector, Partition partition, Map<String, Object> meta) {
         LOG.info("re-emitting batch, attempt " + attempt);
         String instanceId = (String) meta.get("instanceId");
         if (!_config.ignoreZkOffsets || instanceId.equals(_topologyInstanceId)) {
@@ -221,9 +230,9 @@ public class TridentKafkaEmitter {
     }
 
 
-    public IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map> asOpaqueEmitter() {
+    public IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map<String, Object>> asOpaqueEmitter() {
 
-        return new IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map>() {
+        return new IOpaquePartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map<String, Object>>() {
 
             /**
              * Emit a batch of tuples for a partition/transaction.
@@ -232,7 +241,7 @@ public class TridentKafkaEmitter {
              * for defining the parameters of the next batch.
              */
             @Override
-            public Map emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map map) {
+            public Map<String, Object> emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
                 return emitNewPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 
@@ -254,14 +263,14 @@ public class TridentKafkaEmitter {
     }
 
     public IPartitionedTridentSpout.Emitter asTransactionalEmitter() {
-        return new IPartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map>() {
+        return new IPartitionedTridentSpout.Emitter<List<GlobalPartitionInformation>, Partition, Map<String, Object>>() {
 
             /**
              * Emit a batch of tuples for a partition/transaction that's never been emitted before.
              * Return the metadata that can be used to reconstruct this partition/batch in the future.
              */
             @Override
-            public Map emitPartitionBatchNew(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map map) {
+            public Map<String, Object> emitPartitionBatchNew(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
                 return failFastEmitNewPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 
@@ -270,7 +279,7 @@ public class TridentKafkaEmitter {
              * the metadata created when it was first emitted.
              */
             @Override
-            public void emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map map) {
+            public void emitPartitionBatch(TransactionAttempt transactionAttempt, TridentCollector tridentCollector, Partition partition, Map<String, Object> map) {
                 reEmitPartitionBatch(transactionAttempt, tridentCollector, partition, map);
             }
 

@@ -296,7 +296,7 @@ public class StormCommon {
 
         for (SpoutSpec spout : topology.get_spouts().values()) {
             ComponentCommon common = spout.get_common();
-            Map spoutConf = componentConf(spout);
+            Map<String, Object> spoutConf = componentConf(spout);
             spoutConf.put(Config.TOPOLOGY_TICK_TUPLE_FREQ_SECS,
                     ObjectReader.getInt(conf.get(Config.TOPOLOGY_MESSAGE_TIMEOUT_SECS)));
             common.set_json_conf(JSONValue.toJSONString(spoutConf));

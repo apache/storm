@@ -63,7 +63,7 @@ public class ResourceAwareScheduler implements IScheduler {
     }
 
     @Override
-    public Map<String, Object> config() {
+    public Map<String, Map<String, Double>> config() {
         return (Map) getUserResourcePools();
     }
 
@@ -282,7 +282,7 @@ public class ResourceAwareScheduler implements IScheduler {
         }
 
         // if no configs from loader, try to read from user-resource-pools.yaml
-        Map fromFile = Utils.findAndReadConfigFile("user-resource-pools.yaml", false);
+        Map<String, Object> fromFile = Utils.findAndReadConfigFile("user-resource-pools.yaml", false);
         raw = (Map<String, Map<String, Number>>) fromFile.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_USER_POOLS);
         if (raw != null) {
             return convertToDouble(raw);

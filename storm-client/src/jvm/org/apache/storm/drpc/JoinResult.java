@@ -44,7 +44,7 @@ public class JoinResult extends BaseRichBolt {
         this.returnComponent = returnComponent;
     }
  
-    public void prepare(Map map, TopologyContext context, OutputCollector collector) {
+    public void prepare(Map<String, Object> map, TopologyContext context, OutputCollector collector) {
         _collector = collector;
     }
 

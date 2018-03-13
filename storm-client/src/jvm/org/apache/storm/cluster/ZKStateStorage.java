@@ -50,7 +50,7 @@ public class ZKStateStorage implements IStateStorage {
     private AtomicBoolean active;
 
     private boolean isNimbus;
-    private Map authConf;
+    private Map<String, Object> authConf;
     private Map<String, Object> conf;
 
     private class ZkWatcherCallBack implements WatcherCallBack{
@@ -73,7 +73,7 @@ public class ZKStateStorage implements IStateStorage {
         }
     }
 
-    public ZKStateStorage(Map<String, Object> conf, Map authConf, ClusterStateContext context) throws Exception {
+    public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
         if (context.getDaemonType().equals(DaemonType.NIMBUS))

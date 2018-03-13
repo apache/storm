@@ -44,18 +44,21 @@ public class UploadCredentials {
         if (null != rawCredentials && ((rawCredentials.size() % 2) != 0)) {
             throw new RuntimeException("Need an even number of arguments to make a map");
         }
-        Map credentialsMap = new HashMap<>();
+        Map<String,String> credentialsMap = new HashMap<>();
         if (null != credentialFile) {
             Properties credentialProps = new Properties();
             credentialProps.load(new FileReader(credentialFile));
-            credentialsMap.putAll(credentialProps);
+            for(Map.Entry<Object, Object> credentialProp : credentialProps.entrySet()) {
+                credentialsMap.put((String)credentialProp.getKey(),
+                        (String)credentialProp.getValue());
+            }
         }
         if (null != rawCredentials) {
             for (int i = 0; i < rawCredentials.size(); i += 2) {
                 credentialsMap.put(rawCredentials.get(i), rawCredentials.get(i + 1));
             }
         }
-        StormSubmitter.pushCredentials(topologyName, new HashMap(), credentialsMap);
+        StormSubmitter.pushCredentials(topologyName, new HashMap<>(), credentialsMap);
         LOG.info("Uploaded new creds to topology: {}", topologyName);
     }
 }

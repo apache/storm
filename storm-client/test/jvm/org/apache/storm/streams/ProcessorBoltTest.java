@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.apache.storm.generated.Grouping;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -140,7 +141,7 @@ public class ProcessorBoltTest {
         node.setWindowed(isWindowed);
         Mockito.when(mockStreamToProcessors.get(Mockito.anyString())).thenReturn(Collections.singletonList(node));
         Mockito.when(mockStreamToProcessors.keySet()).thenReturn(Collections.singleton("inputstream"));
-        Map mockSources = Mockito.mock(Map.class);
+        Map<GlobalStreamId, Grouping> mockSources = Mockito.mock(Map.class);
         GlobalStreamId mockGlobalStreamId = Mockito.mock(GlobalStreamId.class);
         Mockito.when(mockTopologyContext.getThisSources()).thenReturn(mockSources);
         Mockito.when(mockSources.keySet()).thenReturn(Collections.singleton(mockGlobalStreamId));

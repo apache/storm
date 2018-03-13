@@ -80,9 +80,9 @@ public class ReturnResultsReducer implements MultiReducer<ReturnResultsState> {
         // only one of the multireducers will receive the tuples
         if (state.returnInfo!=null) {
             String result = JSONValue.toJSONString(state.results);
-            Map retMap = null;
+            Map<String, Object> retMap;
             try {
-                retMap = (Map) JSONValue.parseWithException(state.returnInfo);
+                retMap = (Map<String, Object>) JSONValue.parseWithException(state.returnInfo);
             } catch (ParseException e) {
                 collector.reportError(e);
                 return;

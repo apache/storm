@@ -529,17 +529,17 @@ public class TridentTopology {
                 }
             }
         }
-        HashMap<String, Number> combinedMasterCoordResources = new HashMap<String, Number>(_resourceDefaults);
+        HashMap<String, Number> combinedMasterCoordResources = new HashMap<>(_resourceDefaults);
         combinedMasterCoordResources.putAll(_masterCoordResources);
         return builder.buildTopology(combinedMasterCoordResources);
     }
 
-    private static Map<String, Number> mergeDefaultResources(Map<String, Number> res, Map defaultConfig) {
-        Map<String, Number> ret = new HashMap<String, Number>();
+    private static Map<String, Number> mergeDefaultResources(Map<String, Number> res, Map<String, Number> defaultConfig) {
+        Map<String, Number> ret = new HashMap<>();
 
-        Number onHeapDefault = (Number)defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
-        Number offHeapDefault = (Number)defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
-        Number cpuLoadDefault = (Number)defaultConfig.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
+        Number onHeapDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB);
+        Number offHeapDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB);
+        Number cpuLoadDefault = defaultConfig.get(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT);
 
         if(res == null) {
             ret.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, onHeapDefault);

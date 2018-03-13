@@ -225,15 +225,21 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         }
     }
 
-    private static List<Object> All_CONFIGS() {
-        List<Object> ret = new ArrayList<Object>();
-        Config config = new Config();
-        Class<?> ConfigClass = config.getClass();
-        Field[] fields = ConfigClass.getFields();
+    /**
+     * Retrieves all values of all static fields of {@link Config} which
+     * represent all available configuration keys through reflection. The method
+     * assumes that they are {@code String}s through reflection.
+     * @return the list of retrieved field values
+     * @throws ClassCastException if one of the fields is not of type
+     * {@code String}
+     */
+    private static List<String> retrieveAllConfigKeys() {
+        List<String> ret = new ArrayList<>();
+        Field[] fields = Config.class.getFields();
         for (int i = 0; i < fields.length; i++) {
             try {
-                Object obj = fields[i].get(null);
-                ret.add(obj);
+                String fieldValue = (String)fields[i].get(null);
+                ret.add(fieldValue);
             } catch (IllegalArgumentException e) {
                 LOG.error(e.getMessage(), e);
             } catch (IllegalAccessException e) {
@@ -432,8 +438,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // ============================ getter methods =================================
     // =============================================================================
 
-    private Map normalizedComponentConf(Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
-        List<Object> keysToRemove = All_CONFIGS();
+    private Map<String, Object> normalizedComponentConf(Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
+        List<String> keysToRemove = retrieveAllConfigKeys();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
         keysToRemove.remove(Config.TOPOLOGY_MAX_TASK_PARALLELISM);
@@ -451,11 +457,11 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         keysToRemove.remove(Config.TOPOLOGY_STATE_PROVIDER_CONFIG);
         keysToRemove.remove(Config.TOPOLOGY_BOLTS_LATE_TUPLE_STREAM);
 
-        Map<Object, Object> componentConf;
+        Map<String, Object> componentConf;
         String specJsonConf = topologyContext.getComponentCommon(componentId).get_json_conf();
         if (specJsonConf != null) {
             try {
-                componentConf = (Map<Object, Object>) JSONValue.parseWithException(specJsonConf);
+                componentConf = (Map<String, Object>) JSONValue.parseWithException(specJsonConf);
             } catch (ParseException e) {
                 throw new RuntimeException(e);
             }
@@ -466,7 +472,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
             componentConf = new HashMap<>();
         }
 
-        Map<Object, Object> ret = new HashMap<>();
+        Map<String, Object> ret = new HashMap<>();
         ret.putAll(topoConf);
         ret.putAll(componentConf);
 
@@ -489,7 +495,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return openOrPrepareWasCalled;
     }
 
-    public Map getTopoConf() {
+    public Map<String, Object> getTopoConf() {
         return topoConf;
     }
 

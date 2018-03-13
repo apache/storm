@@ -79,7 +79,7 @@ public class EventHubReceiverMock implements IEventHubReceiver {
   }
   
   @Override
-  public Map getMetricsData() {
+  public Map<String, Object> getMetricsData() {
     return null;
   }
 }

@@ -36,9 +36,9 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
     @Override
     public abstract void prepare(Map<String, Object> conf);
 
-    abstract protected boolean permitClientRequest(ReqContext context, String operation, Map params);
+    abstract protected boolean permitClientRequest(ReqContext context, String operation, Map<String, Object> params);
 
-    abstract protected boolean permitInvocationRequest(ReqContext context, String operation, Map params);
+    abstract protected boolean permitInvocationRequest(ReqContext context, String operation, Map<String, Object> params);
     
     /**
      * Authorizes request from to the DRPC server.
@@ -47,7 +47,7 @@ public abstract class DRPCAuthorizerBase implements IAuthorizer {
      * @param params a Map with any key-value entries of use to the authorization implementation
      */
     @Override
-    public boolean permit(ReqContext context, String operation, Map params) {
+    public boolean permit(ReqContext context, String operation, Map<String, Object> params) {
         if ("execute".equals(operation)) {
             return permitClientRequest(context, operation, params);
         } else if ("failRequest".equals(operation) || 

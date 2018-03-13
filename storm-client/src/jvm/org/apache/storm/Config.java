@@ -1853,11 +1853,11 @@ public class Config extends HashMap<String, Object> {
         setClasspath(this, cp);
     }
 
-    public static void setEnvironment(Map<String, Object> conf, Map env) {
+    public static void setEnvironment(Map<String, Object> conf, Map<String, Object> env) {
         conf.put(Config.TOPOLOGY_ENVIRONMENT, env);
     }
 
-    public void setEnvironment(Map env) {
+    public void setEnvironment(Map<String, Object> env) {
         setEnvironment(this, env);
     }
 
@@ -1955,7 +1955,7 @@ public class Config extends HashMap<String, Object> {
     }
 
     public static void registerMetricsConsumer(Map<String, Object> conf, Class klass, Object argument, long parallelismHint) {
-        HashMap m = new HashMap();
+        HashMap<String, Object> m = new HashMap<>();
         m.put("class", klass.getCanonicalName());
         m.put("parallelism.hint", parallelismHint);
         m.put("argument", argument);

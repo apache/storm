@@ -34,7 +34,7 @@ import org.slf4j.LoggerFactory;
 public class MultitenantScheduler implements IScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
   @SuppressWarnings("rawtypes")
-  private Map conf;
+  private Map<String, Object> conf;
   protected IConfigLoader configLoader;
   
   @Override
@@ -82,8 +82,8 @@ public class MultitenantScheduler implements IScheduler {
   }
 
   @Override
-  public Map<String, Object> config() {
-    return (Map) getUserConf();
+  public Map config() {
+    return getUserConf();
   }
  
   @Override

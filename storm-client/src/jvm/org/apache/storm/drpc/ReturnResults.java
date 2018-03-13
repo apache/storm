@@ -47,7 +47,7 @@ public class ReturnResults extends BaseRichBolt {
     public static final Logger LOG = LoggerFactory.getLogger(ReturnResults.class);
     OutputCollector _collector;
     boolean local;
-    Map _conf; 
+    Map<String, Object> _conf;
     Map<List, DRPCInvocationsClient> _clients = new HashMap<List, DRPCInvocationsClient>();
 
     @Override
@@ -62,9 +62,9 @@ public class ReturnResults extends BaseRichBolt {
         String result = (String) input.getValue(0);
         String returnInfo = (String) input.getValue(1);
         if (returnInfo!=null) {
-            Map retMap = null;
+            Map<String, Object> retMap;
             try {
-                retMap = (Map) JSONValue.parseWithException(returnInfo);
+                retMap = (Map<String, Object>) JSONValue.parseWithException(returnInfo);
             } catch (ParseException e) {
                  LOG.error("Parseing returnInfo failed", e);
                  _collector.fail(input);

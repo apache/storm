@@ -41,7 +41,7 @@ public class NonRichBoltTracker implements IBolt {
 
     public void execute(Tuple input) {
         _delegate.execute(input);
-        Map stats = (Map) RegisteredGlobalState.getState(_trackId);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 

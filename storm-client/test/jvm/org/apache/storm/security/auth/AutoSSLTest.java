@@ -59,7 +59,7 @@ public class AutoSSLTest {
     @Test
     public void testgetSSLFilesFromConf() throws Exception {
         AutoSSL assl = new AutoSSL();
-        Map<String, Object> conf = new HashMap();
+        Map<String, Object> conf = new HashMap<>();
         assertNull(assl.getSSLFilesFromConf(conf));
         conf.put(AutoSSL.SSL_FILES_CONF, "sslfile1.txt");
         assl.prepare(conf);
@@ -74,14 +74,14 @@ public class AutoSSLTest {
     @Test
     public void testgetSSLFilesFromConfMultipleComma() throws Exception {
         AutoSSL assl = new AutoSSL();
-        Map<String, Object> conf = new HashMap();
+        Map<String, Object> conf = new HashMap<>();
         assertNull(assl.getSSLFilesFromConf(conf));
         conf.put(AutoSSL.SSL_FILES_CONF, "sslfile1.txt,sslfile2.txt,sslfile3.txt");
         assl.prepare(conf);
         Collection<String> sslFiles = assl.getSSLFilesFromConf(conf);
         assertNotNull(sslFiles);
         assertEquals(3, sslFiles.size());
-        ArrayList valid = new ArrayList<String>();
+        List<String> valid = new ArrayList<>();
         Collections.addAll(valid, "sslfile1.txt", "sslfile2.txt", "sslfile3.txt");
         for(String file: sslFiles) {
             assertTrue("removing: " + file, valid.remove(file));
@@ -104,13 +104,13 @@ public class AutoSSLTest {
             AutoSSL assl = new TestAutoSSL(baseDir.getPath());
 
             LOG.debug("base dir is; " + baseDir);
-            Map sslconf = new HashMap();
+            Map<String, Object> sslconf = new HashMap<>();
 
             sslconf.put(AutoSSL.SSL_FILES_CONF, temp.getPath());
             assl.prepare(sslconf);
             Collection<String> sslFiles = assl.getSSLFilesFromConf(sslconf);
  
-            Map<String, String> creds = new HashMap();
+            Map<String, String> creds = new HashMap<>();
             assl.populateCredentials(creds);
             assertTrue(creds.containsKey(temp.getName()));
 

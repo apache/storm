@@ -109,7 +109,7 @@ public class UIHelpers {
         return "[" + e.get_task_start() + "-" + e.get_task_end() + "]";
     }
 
-    public static Map unauthorizedUserJson(String user) {
+    public static Map<String, Object> unauthorizedUserJson(String user) {
         return ImmutableMap.of(
                 "error", "No Authorization",
                 "errorMessage", String.format("User %s is not authorized.", user));
@@ -203,7 +203,7 @@ public class UIHelpers {
         for (FilterConfiguration filterConf : filtersConfs) {
             String filterName = filterConf.getFilterName();
             String filterClass = filterConf.getFilterClass();
-            Map filterParams = filterConf.getFilterParams();
+            Map<String, String> filterParams = filterConf.getFilterParams();
             if (filterClass != null) {
                 FilterHolder filterHolder = new FilterHolder();
                 filterHolder.setClassName(filterClass);
@@ -215,7 +215,7 @@ public class UIHelpers {
                 if (filterParams != null) {
                     filterHolder.setInitParameters(filterParams);
                 } else {
-                    filterHolder.setInitParameters(new HashMap<String, String>());
+                    filterHolder.setInitParameters(new HashMap<>());
                 }
                 context.addFilter(filterHolder, "/*", EnumSet.allOf(DispatcherType.class));
             }

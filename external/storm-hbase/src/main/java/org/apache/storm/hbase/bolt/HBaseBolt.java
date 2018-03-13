@@ -105,7 +105,7 @@ public class HBaseBolt  extends AbstractHBaseBolt {
     }
 
     @Override
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
+    public void prepare(Map<String, Object> map, TopologyContext topologyContext, OutputCollector collector) {
         super.prepare(map, topologyContext, collector);
         this.batchHelper = new BatchHelper(batchSize, collector);
     }

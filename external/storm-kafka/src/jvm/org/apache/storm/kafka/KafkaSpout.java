@@ -111,7 +111,7 @@ public class KafkaSpout extends BaseRichSpout {
             @Override
             public Object getValueAndReset() {
                 List<PartitionManager> pms = _coordinator.getMyManagedPartitions();
-                Map concatMetricsDataMaps = new HashMap();
+                Map<String, Object> concatMetricsDataMaps = new HashMap<>();
                 for (PartitionManager pm : pms) {
                     concatMetricsDataMaps.putAll(pm.getMetricsDataMap());
                 }

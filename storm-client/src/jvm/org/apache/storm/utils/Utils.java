@@ -934,18 +934,17 @@ public class Utils {
      * @param listSeq to reverse
      * @return a reversed map
      */
-    public static HashMap reverseMap(List listSeq) {
-        HashMap<Object, List<Object>> rtn = new HashMap();
+    public static Map<Object, List<Object>> reverseMap(List<List<Object>> listSeq) {
+        Map<Object, List<Object>> rtn = new HashMap<>();
         if (listSeq == null) {
             return rtn;
         }
-        for (Object entry : listSeq) {
-            List listEntry = (List) entry;
+        for (List<Object> listEntry : listSeq) {
             Object key = listEntry.get(0);
             Object val = listEntry.get(1);
-            List list = rtn.get(val);
+            List<Object> list = rtn.get(val);
             if (list == null) {
-                list = new ArrayList<Object>();
+                list = new ArrayList<>();
                 rtn.put(val, list);
             }
             list.add(key);

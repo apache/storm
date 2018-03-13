@@ -67,7 +67,7 @@ public class ObjectMapperCqlStatementMapper implements CQLStatementTupleMapper {
     }
 
     @Override
-    public List<Statement> map(Map map, Session session, ITuple tuple) {
+    public List<Statement> map(Map<String, Object> map, Session session, ITuple tuple) {
         final ObjectMapperOperation operation = (ObjectMapperOperation)tuple.getValueByField(operationField);
 
         Preconditions.checkNotNull(operation, "Operation must not be null");

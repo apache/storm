@@ -588,8 +588,8 @@ public class TestHdfsSpout {
         return result;
     }
 
-    private Map getCommonConfigs() {
-        Map<String, Object> topoConf = new HashMap();
+    private Map<String, Object> getCommonConfigs() {
+        Map<String, Object> topoConf = new HashMap<>();
         topoConf.put(Config.TOPOLOGY_ACKER_EXECUTORS, "0");
         return topoConf;
     }

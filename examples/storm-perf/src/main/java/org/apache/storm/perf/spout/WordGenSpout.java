@@ -52,7 +52,9 @@ public class WordGenSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+    public void open(Map<String, Object> conf,
+            TopologyContext context,
+            SpoutOutputCollector collector) {
         this.collector = collector;
         Integer ackers = Helper.getInt(conf, "topology.acker.executors", 0);
         if (ackers.equals(0)) {
@@ -82,7 +84,10 @@ public class WordGenSpout extends BaseRichSpout {
         declarer.declare(new Fields(FIELDS));
     }
 
-    // reads text file and extracts words from each line. returns list of all (non-unique) words
+    /**
+     * Reads text file and extracts words from each line.
+     * @return a list of all (non-unique) words
+     */
     public static ArrayList<String> readWords(String file)  {
         ArrayList<String> lines = new ArrayList<>();
         try {

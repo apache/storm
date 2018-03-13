@@ -38,7 +38,7 @@ public class PrepareRequest extends BaseBasicBolt {
     Random rand;
 
     @Override
-    public void prepare(Map map, TopologyContext context) {
+    public void prepare(Map<String, Object> map, TopologyContext context) {
         rand = new Random();
     }
 
