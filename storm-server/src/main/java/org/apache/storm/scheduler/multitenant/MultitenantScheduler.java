@@ -33,7 +33,6 @@ import org.slf4j.LoggerFactory;
 
 public class MultitenantScheduler implements IScheduler {
   private static final Logger LOG = LoggerFactory.getLogger(MultitenantScheduler.class);
-  @SuppressWarnings("rawtypes")
   private Map<String, Object> conf;
   protected IConfigLoader configLoader;
   

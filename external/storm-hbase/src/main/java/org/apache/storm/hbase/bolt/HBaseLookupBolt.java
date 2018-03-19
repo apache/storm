@@ -71,7 +71,6 @@ public class HBaseLookupBolt extends AbstractHBaseBolt {
           return this;
      }
 
-     @SuppressWarnings({ "unchecked", "rawtypes" })
      @Override
      public void prepare(Map<String, Object> config, TopologyContext topologyContext, OutputCollector collector) {
           super.prepare(config, topologyContext, collector);

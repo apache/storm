@@ -44,7 +44,6 @@ public class RollingCountAggBolt extends BaseRichBolt {
   private OutputCollector collector;
 
 
-  @SuppressWarnings("rawtypes")
   @Override
   public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
     this.collector = collector;

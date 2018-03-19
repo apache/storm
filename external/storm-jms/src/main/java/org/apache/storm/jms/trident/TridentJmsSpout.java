@@ -163,12 +163,12 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
     
     @Override
     public ITridentSpout.BatchCoordinator<JmsBatch> getCoordinator(
-            String txStateId, @SuppressWarnings("rawtypes") Map<String, Object> conf, TopologyContext context) {
+            String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new JmsBatchCoordinator(name);
     }
 
     @Override
-    public Emitter<JmsBatch> getEmitter(String txStateId, @SuppressWarnings("rawtypes") Map<String, Object> conf, TopologyContext context) {
+    public Emitter<JmsBatch> getEmitter(String txStateId, Map<String, Object> conf, TopologyContext context) {
         return new JmsEmitter(name, jmsProvider, tupleProducer, jmsAcknowledgeMode, conf);
     }
 
@@ -210,7 +210,7 @@ public class TridentJmsSpout implements ITridentSpout<JmsBatch> {
        
         private final Logger LOG = LoggerFactory.getLogger(JmsEmitter.class);
  
-        public JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode, @SuppressWarnings("rawtypes") Map<String, Object> conf) {
+        public JmsEmitter(String name, JmsProvider jmsProvider, JmsTupleProducer tupleProducer, int jmsAcknowledgeMode, Map<String, Object> conf) {
             if (jmsProvider == null) {
                 throw new IllegalStateException("JMS provider has not been set.");
             }

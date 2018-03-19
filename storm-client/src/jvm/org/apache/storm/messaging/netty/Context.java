@@ -31,7 +31,6 @@ import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 
 public class Context implements IContext {
-    @SuppressWarnings("rawtypes")
     private Map<String, Object> topoConf;
     private Map<String, IConnection> connections;
     private NioClientSocketChannelFactory clientChannelFactory;
@@ -40,7 +39,6 @@ public class Context implements IContext {
     /**
      * initialization per Storm configuration 
      */
-    @SuppressWarnings("rawtypes")
     public void prepare(Map<String, Object> topoConf) {
         this.topoConf = topoConf;
         connections = new HashMap<>();

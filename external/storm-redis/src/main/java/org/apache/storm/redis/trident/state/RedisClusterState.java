@@ -69,7 +69,7 @@ public class RedisClusterState implements State {
          * {@inheritDoc}
          */
         @Override
-        public State makeState(@SuppressWarnings("rawtypes") Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisCluster jedisCluster = new JedisCluster(jedisClusterConfig.getNodes(),
                                                     jedisClusterConfig.getTimeout(),
                                                     jedisClusterConfig.getTimeout(),

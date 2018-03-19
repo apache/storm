@@ -233,7 +233,6 @@ public class Context implements IContext {
         return ret;
     }
         
-    @SuppressWarnings("rawtypes")
     @Override
     public void prepare(Map<String, Object> topoConf) {
         //NOOP
@@ -249,7 +248,6 @@ public class Context implements IContext {
         return new LocalClient(getLocalServer(storm_id, port));
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void term() {
         //NOOP

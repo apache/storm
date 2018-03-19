@@ -406,7 +406,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public static class StandaloneINimbus implements INimbus {
 
         @Override
-        public void prepare(@SuppressWarnings("rawtypes") Map<String, Object> topoConf, String schedulerLocalDir) {
+        public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
             //NOOP
         }
 
