@@ -142,7 +142,7 @@ public class PartitionManager {
                 LOG.info("Topology change detected and ignore zookeeper offsets set to true, using configuration to determine offset");
             } else {
                 _committedTo = jsonOffset;
-                LOG.info("Read last commit offset from zookeeper: " + _committedTo + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId);
+                LOG.info("Read last commit offset from zookeeper: " + id + "; old topology_id: " + jsonTopologyId + " - new topology_id: " + topologyInstanceId);
             }
 
             if (currentOffset - _committedTo > spoutConfig.maxOffsetBehind || _committedTo <= 0) {
@@ -153,7 +153,7 @@ public class PartitionManager {
                         spoutConfig.maxOffsetBehind + " behind latest offset " + currentOffset + ", resetting to startOffsetTime=" + spoutConfig.startOffsetTime);
             }
 
-            LOG.info("Starting Kafka " + _consumer.host() + " " + id + " from offset " + _committedTo);
+            LOG.info("Starting Kafka " + id + " from offset " + _committedTo);
             _emittedToOffset = _committedTo;
         }
 
