@@ -28,7 +28,7 @@ import static org.apache.storm.kafka.KafkaUtils.taskPrefix;
 public class ZkCoordinator implements PartitionCoordinator {
     private static final Logger LOG = LoggerFactory.getLogger(ZkCoordinator.class);
 
-    SpoutConfig _spoutConfig;
+    ExponentialBackoffMsgRetryManagerSpoutConfig _spoutConfig;
     int _taskIndex;
     int _totalTasks;
     int _taskId;
@@ -42,13 +42,30 @@ public class ZkCoordinator implements PartitionCoordinator {
     ZkState _state;
     Map _topoConf;
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state,
-            int taskIndex, int totalTasks, int taskId, String topologyInstanceId) {
-        this(connections, topoConf, spoutConfig, state, taskIndex, totalTasks, taskId, topologyInstanceId, buildReader(topoConf, spoutConfig));
+    public ZkCoordinator(DynamicPartitionConnections connections,
+            Map<String, Object> topoConf,
+            ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig,
+            ZkState state,
+            int taskIndex,
+            int totalTasks,
+            int taskId,
+            String topologyInstanceId) {
+        this(connections,
+                topoConf,
+                spoutConfig,
+                state,
+                taskIndex, totalTasks, taskId, topologyInstanceId, buildReader(topoConf, spoutConfig));
     }
 
-    public ZkCoordinator(DynamicPartitionConnections connections, Map<String, Object> topoConf, SpoutConfig spoutConfig, ZkState state,
-            int taskIndex, int totalTasks, int taskId, String topologyInstanceId, DynamicBrokersReader reader) {
+    public ZkCoordinator(DynamicPartitionConnections connections,
+            Map<String, Object> topoConf,
+            ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig,
+            ZkState state,
+            int taskIndex,
+            int totalTasks,
+            int taskId,
+            String topologyInstanceId,
+            DynamicBrokersReader reader) {
         _spoutConfig = spoutConfig;
         _connections = connections;
         _taskIndex = taskIndex;
@@ -102,14 +119,30 @@ public class ZkCoordinator implements PartitionCoordinator {
             LOG.info(taskPrefix(_taskIndex, _totalTasks, _taskId) + " New partition managers: " + newPartitions.toString());
 
             for (Partition id : newPartitions) {
-                PartitionManager man = new PartitionManager(
-                        _connections,
-                        _topologyInstanceId,
-                        _state,
-                        _topoConf,
-                        _spoutConfig,
-                        id,
-                        deletedManagers.get(id.partition));
+                PartitionManager<ExponentialBackoffMsgRetryManagerSpoutConfig,
+                        ExponentialBackoffMsgRetryManager> partitionManager =
+                        deletedManagers.get(id.partition);
+                PartitionManager<ExponentialBackoffMsgRetryManagerSpoutConfig,
+                        ExponentialBackoffMsgRetryManager> man;
+                if (partitionManager == null) {
+                    man = new PartitionManager<ExponentialBackoffMsgRetryManagerSpoutConfig,
+                            ExponentialBackoffMsgRetryManager>(_connections,
+                            _topologyInstanceId,
+                            _state,
+                            _topoConf,
+                            _spoutConfig,
+                            id,
+                            new ExponentialBackoffMsgRetryManager());
+                } else {
+                    man = new PartitionManager<>(
+                            _connections,
+                            _topologyInstanceId,
+                            _state,
+                            _topoConf,
+                            _spoutConfig,
+                            id,
+                            partitionManager);
+                }
                 _managers.put(id, man);
             }
 

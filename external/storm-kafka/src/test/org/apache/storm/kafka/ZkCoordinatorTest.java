@@ -45,7 +45,7 @@ public class ZkCoordinatorTest {
     private KafkaTestBroker broker = new KafkaTestBroker();
     private TestingServer server;
     private Map<String, Object> topoConf = new HashMap();
-    private SpoutConfig spoutConfig;
+    private ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig;
     private ZkState state;
     private SimpleConsumer simpleConsumer;
 
@@ -56,7 +56,7 @@ public class ZkCoordinatorTest {
         String connectionString = server.getConnectString();
         ZkHosts hosts = new ZkHosts(connectionString);
         hosts.refreshFreqSecs = 1;
-        spoutConfig = new SpoutConfig(hosts, "topic", "/test", "id");
+        spoutConfig = new ExponentialBackoffMsgRetryManagerSpoutConfig(hosts, "topic", "/test", "id");
         Map<String, Object> conf = buildZookeeperConfig(server);
         state = new ZkState(conf);
         simpleConsumer = new SimpleConsumer("localhost", broker.getPort(), 60000, 1024, "testClient");
@@ -145,9 +145,9 @@ public class ZkCoordinatorTest {
         assertNotNull(managerBefore);
         assertNotNull(managerAfter);
         assertNotSame(managerBefore, managerAfter);
-        assertSame(managerBefore._waitingToEmit, managerAfter._waitingToEmit);
-        assertSame(managerBefore._emittedToOffset, managerAfter._emittedToOffset);
-        assertSame(managerBefore._committedTo, managerAfter._committedTo);
+        assertSame(managerBefore.waitingToEmit, managerAfter.waitingToEmit);
+        assertSame(managerBefore.emittedToOffset, managerAfter.emittedToOffset);
+        assertSame(managerBefore.committedTo, managerAfter.committedTo);
     }
 
     private void assertPartitionsAreDifferent(List<PartitionManager> partitionManagersBefore, List<PartitionManager> partitionManagersAfter, int partitionsPerTask) {

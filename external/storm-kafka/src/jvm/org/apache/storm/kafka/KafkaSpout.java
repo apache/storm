@@ -43,7 +43,7 @@ public class KafkaSpout extends BaseRichSpout {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaSpout.class);
 
-    SpoutConfig _spoutConfig;
+    ExponentialBackoffMsgRetryManagerSpoutConfig _spoutConfig;
     SpoutOutputCollector _collector;
     PartitionCoordinator _coordinator;
     DynamicPartitionConnections _connections;
@@ -53,7 +53,7 @@ public class KafkaSpout extends BaseRichSpout {
 
     int _currPartitionIndex = 0;
 
-    public KafkaSpout(SpoutConfig spoutConf) {
+    public KafkaSpout(ExponentialBackoffMsgRetryManagerSpoutConfig spoutConf) {
         _spoutConfig = spoutConf;
     }
 

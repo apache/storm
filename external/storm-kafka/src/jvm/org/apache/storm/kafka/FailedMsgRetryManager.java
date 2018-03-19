@@ -21,12 +21,20 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Set;
 
-public interface FailedMsgRetryManager extends Serializable {
+/**
+ * Manages retrying of sending failed messages.
+ * @author unknown
+ * @param <S> the type of spout config to use
+ */
+public interface FailedMsgRetryManager<S extends SpoutConfig>
+        extends Serializable {
 
     /**
-     * Initialization
+     * Initialization.
+     * @param spoutConfig the spout configuration to use
+     * @param topoConf the topology configuration to use
      */
-    void prepare(SpoutConfig spoutConfig, Map<String, Object> topoConf);
+    void prepare(S spoutConfig, Map<String, Object> topoConf);
 
     /**
      * Message corresponding to the offset failed in kafka spout.

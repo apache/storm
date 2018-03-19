@@ -267,17 +267,29 @@ public class ExponentialBackoffMsgRetryManagerTest {
 
         assertFalse(manager.retryFurther(TEST_OFFSET));
     }
-    
-    private ExponentialBackoffMsgRetryManager buildExponentialBackoffMsgRetryManager(long retryInitialDelayMs, 
-                                                                                     double retryDelayMultiplier,
-                                                                                     long retryDelayMaxMs,
-                                                                                     int retryLimit) {
-        SpoutConfig spoutConfig = new SpoutConfig(null, null, null, null);
-        spoutConfig.retryInitialDelayMs = retryInitialDelayMs;
-        spoutConfig.retryDelayMultiplier = retryDelayMultiplier;
-        spoutConfig.retryDelayMaxMs = retryDelayMaxMs;
-        spoutConfig.retryLimit = retryLimit; 
-        ExponentialBackoffMsgRetryManager exponentialBackoffMsgRetryManager = new ExponentialBackoffMsgRetryManager();
+
+    /**
+     * Creates a {@link ExponentialBackoffMsgRetryManager} with the specified
+     * values.
+     * @param retryInitialDelayMs the initial retry delay in milliseconds
+     * @param retryDelayMultiplier the retry delay multiplier
+     * @param retryDelayMaxMs the maximum retry delay
+     * @param retryLimit the retry limit
+     * @return the created retry manager
+     */
+    private ExponentialBackoffMsgRetryManager
+        buildExponentialBackoffMsgRetryManager(final long retryInitialDelayMs,
+                final double retryDelayMultiplier,
+                final long retryDelayMaxMs,
+                final int retryLimit) {
+        ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig =
+                new ExponentialBackoffMsgRetryManagerSpoutConfig(
+                        retryInitialDelayMs,
+                        retryDelayMultiplier,
+                        retryDelayMaxMs,
+                        retryLimit);
+        ExponentialBackoffMsgRetryManager exponentialBackoffMsgRetryManager =
+                new ExponentialBackoffMsgRetryManager();
         exponentialBackoffMsgRetryManager.prepare(spoutConfig, null);
         return exponentialBackoffMsgRetryManager;
     }

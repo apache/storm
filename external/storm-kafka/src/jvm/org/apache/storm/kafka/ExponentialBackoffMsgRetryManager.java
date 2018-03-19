@@ -26,26 +26,35 @@ import java.util.Queue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager {
+public class ExponentialBackoffMsgRetryManager
+        implements FailedMsgRetryManager
+                <ExponentialBackoffMsgRetryManagerSpoutConfig> {
 
-    private long retryInitialDelayMs;
-    private double retryDelayMultiplier;
-    private long retryDelayMaxMs;
-    private int retryLimit;
-
+    /**
+     * The spout configuration passed in
+     * {@link #prepare(
+     * org.apache.storm.kafka.ExponentialBackoffMsgRetryManagerSpoutConfig,
+     * java.util.Map) }.
+     */
+    private ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig;
     private Queue<MessageRetryRecord> waiting;
     private Map<Long,MessageRetryRecord> records;
 
     public ExponentialBackoffMsgRetryManager() {
-
     }
 
-    public void prepare(SpoutConfig spoutConfig, Map<String, Object> topoConf) {
-        this.retryInitialDelayMs = spoutConfig.retryInitialDelayMs;
-        this.retryDelayMultiplier = spoutConfig.retryDelayMultiplier;
-        this.retryDelayMaxMs = spoutConfig.retryDelayMaxMs;
-        this.retryLimit = spoutConfig.retryLimit;
-        this.waiting = new PriorityQueue<MessageRetryRecord>(11, new RetryTimeComparator());
+    /**
+     * Initialization.
+     * @param spoutConfig the spout configuration to use
+     * @param topoConf the topology configuration to use
+     */
+    @Override
+    public void prepare(
+            final ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig,
+            final Map<String, Object> topoConf) {
+        this.spoutConfig = spoutConfig;
+        this.waiting = new PriorityQueue<MessageRetryRecord>(11,
+                new RetryTimeComparator());
         this.records = new ConcurrentHashMap<Long,MessageRetryRecord>();
     }
 
@@ -105,9 +114,9 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
     @Override
     public boolean retryFurther(Long offset) {
         MessageRetryRecord record = this.records.get(offset);
-        return ! (record != null &&
-               this.retryLimit > 0 &&
-               this.retryLimit <= record.retryNum);
+        return ! (record != null
+                && this.spoutConfig.getRetryLimit() > 0
+                && this.spoutConfig.getRetryLimit() <= record.retryNum);
     }
 
     @Override
@@ -170,13 +179,17 @@ public class ExponentialBackoffMsgRetryManager implements FailedMsgRetryManager 
         }
 
         private long calculateRetryDelay() {
-            double delayMultiplier = Math.pow(retryDelayMultiplier, this.retryNum - 1);
-            double delay = retryInitialDelayMs * delayMultiplier;
+            double delayMultiplier = Math.pow(
+                    spoutConfig.getRetryDelayMultiplier(),
+                    this.retryNum - 1);
+            double delay = spoutConfig.getRetryInitialDelayMs()
+                    * delayMultiplier;
             Long maxLong = Long.MAX_VALUE;
             long delayThisRetryMs = delay >= maxLong.doubleValue()
                                     ?  maxLong
                                     : (long) delay;
-            return Math.min(delayThisRetryMs, retryDelayMaxMs);
+            return Math.min(delayThisRetryMs,
+                    spoutConfig.getRetryDelayMaxMs());
         }
 
         @Override

@@ -76,7 +76,7 @@ public class PartitionManagerTest {
 
         ZkHosts zkHosts = new ZkHosts(broker.getZookeeperConnectionString());
 
-        SpoutConfig spoutConfig = new SpoutConfig(zkHosts, TOPIC_NAME, "/test", "id");
+        ExponentialBackoffMsgRetryManagerSpoutConfig spoutConfig = new ExponentialBackoffMsgRetryManagerSpoutConfig(zkHosts, TOPIC_NAME, "/test", "id");
 
         coordinator = new ZkCoordinator(
             new DynamicPartitionConnections(spoutConfig, new ZkBrokerReader(conf, TOPIC_NAME, zkHosts)),

@@ -36,13 +36,6 @@ public class SpoutConfig extends KafkaConfig implements Serializable {
     // Retry strategy for failed messages
     public String failedMsgRetryManagerClass = ExponentialBackoffMsgRetryManager.class.getName();
 
-    // Exponential back-off retry settings.  These are used by ExponentialBackoffMsgRetryManager for retrying messages after a bolt
-    // calls OutputCollector.fail(). These come into effect only if ExponentialBackoffMsgRetryManager is being used.
-    public long retryInitialDelayMs = 0;
-    public double retryDelayMultiplier = 1.0;
-    public long retryDelayMaxMs = 60 * 1000;
-    public int retryLimit = -1;
-
     /**
      * Create a SpoutConfig without setting client.id, which can make the source application ambiguous when tracing Kafka calls.
      */
