@@ -42,7 +42,7 @@ import org.slf4j.LoggerFactory;
 public class DirectoryCleaner {
     private static final Logger LOG = LoggerFactory.getLogger(DirectoryCleaner.class);
     // used to recognize the pattern of active log files, we may remove the "current" from this list
-    private static final Pattern ACTIVE_LOG_PATTERN = Pattern.compile(".*\\.(log|err|out|current|yaml|pid)$");
+    private static final Pattern ACTIVE_LOG_PATTERN = Pattern.compile(".*\\.(log|err|out|current|yaml|pid|metrics)$");
     // used to recognize the pattern of some meta files in a worker log directory
     private static final Pattern META_LOG_PATTERN = Pattern.compile(".*\\.(yaml|pid)$");// max number of files to delete for every round
 
