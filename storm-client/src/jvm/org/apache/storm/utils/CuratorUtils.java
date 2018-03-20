@@ -49,7 +49,10 @@ public class CuratorUtils {
         for (String zkServer : servers) {
             serverPorts.add(zkServer + ":" + ObjectReader.getInt(port));
         }
-        String zkStr = StringUtils.join(serverPorts, ",") + root;
+        String zkStr = StringUtils.join(serverPorts, ",");
+        if(!StringUtils.isEmpty(root)){
+            zkStr = zkStr + "," + root;
+        }
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
 
         setupBuilder(builder, zkStr, conf, auth);
