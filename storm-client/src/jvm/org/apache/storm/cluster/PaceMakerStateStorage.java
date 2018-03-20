@@ -24,6 +24,7 @@ import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.ZKStateChangedCallback;
 import org.apache.storm.generated.*;
 import org.apache.storm.pacemaker.PacemakerClientPool;
+import org.apache.storm.pacemaker.PacemakerConnectionException;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
@@ -123,12 +124,15 @@ public class PaceMakerStateStorage implements IStateStorage {
                 }
                 LOG.debug("Successful set_worker_hb");
                 break;
-            } catch (Exception e) {
+            } catch (HBExecutionException e) {
                 if (retry <= 0) {
-                    throw Utils.wrapInRuntime(e);
+                    throw new RuntimeException(e);
                 }
                 retry--;
                 LOG.error("{} Failed to set_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+            } catch (InterruptedException e) {
+                LOG.debug("set_worker_hb got interrupted: {}", e);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -165,12 +169,15 @@ public class PaceMakerStateStorage implements IStateStorage {
                     throw new HBExecutionException("Failed to get a response.");
                 }
                 return ret;
-            } catch (Exception e) {
+            } catch (HBExecutionException|PacemakerConnectionException e) {
                 if (retry <= 0) {
-                    throw Utils.wrapInRuntime(e);
+                    throw new RuntimeException(e);
                 }
                 retry--;
                 LOG.error("{} Failed to get_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+            } catch (InterruptedException e) {
+                LOG.debug("get_worker_hb got interrupted: {}", e);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -194,14 +201,17 @@ public class PaceMakerStateStorage implements IStateStorage {
                     }
                 }
 
-                LOG.debug("Successful get_worker_hb");
+                LOG.debug("Successful get_worker_hb_children");
                 return new ArrayList<>(retSet);
-            } catch (Exception e) {
+            } catch (PacemakerConnectionException e) {
                 if (retry <= 0) {
-                    throw Utils.wrapInRuntime(e);
+                    throw new RuntimeException(e);
                 }
                 retry--;
                 LOG.error("{} Failed to get_worker_hb_children. Will make {} more attempts.", e.getMessage(), retry);
+            } catch (InterruptedException e) {
+                LOG.debug("get_worker_hb_children got interrupted: {}", e);
+                throw new RuntimeException(e);
             }
         }
     }
@@ -231,7 +241,7 @@ public class PaceMakerStateStorage implements IStateStorage {
                 else {
                     throw new HBExecutionException("Failed to delete from all pacemakers.");
                 }
-            } catch (Exception e) {
+            } catch (HBExecutionException|PacemakerConnectionException e) {
                 if (retry <= 0) {
                     if(someSucceeded) {
                         LOG.warn("Unable to delete_worker_hb from every pacemaker.");
@@ -239,11 +249,14 @@ public class PaceMakerStateStorage implements IStateStorage {
                     }
                     else {
                         LOG.error("Unable to delete_worker_hb from any pacemaker.");
-                        throw Utils.wrapInRuntime(e);
+                        throw new RuntimeException(e);
                     }
                 }
                 retry--;
                 LOG.debug("{} Failed to delete_worker_hb. Will make {} more attempts.", e.getMessage(), retry);
+            } catch (InterruptedException e) {
+                LOG.debug("delete_worker_hb got interrupted: {}", e);
+                throw new RuntimeException(e);
             }
         }
     }
