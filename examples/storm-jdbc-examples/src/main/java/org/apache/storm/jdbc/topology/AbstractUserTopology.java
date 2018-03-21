@@ -71,7 +71,7 @@ public abstract class AbstractUserTopology {
                     + "<user> <password> [topology name]");
             System.exit(-1);
         }
-        Map map = Maps.newHashMap();
+        Map<String, Object> map = Maps.newHashMap();
         map.put("dataSourceClassName", args[0]);//com.mysql.jdbc.jdbc2.optional.MysqlDataSource
         map.put("dataSource.url", args[1]);//jdbc:mysql://localhost/test
         map.put("dataSource.user", args[2]);//root

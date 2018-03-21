@@ -28,7 +28,7 @@ public interface MetricStore extends AutoCloseable {
      * @param config Storm config map
      * @throws MetricException on preparation error
      */
-    void prepare(Map config) throws MetricException;
+    void prepare(Map<String, Object> config) throws MetricException;
 
     /**
      * Stores a metric in the store.

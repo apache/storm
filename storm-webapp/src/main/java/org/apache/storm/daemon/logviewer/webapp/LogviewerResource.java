@@ -258,9 +258,9 @@ public class LogviewerResource {
                 startFileOffset, startByteOffset, BooleanUtils.toBooleanObject(searchArchived), callback, origin);
     }
 
-    private int parseIntegerFromMap(Map map, String parameterKey) throws InvalidRequestException {
+    private int parseIntegerFromMap(Map<String, String[]> map, String parameterKey) throws InvalidRequestException {
         try {
-            return Integer.parseInt(((String[]) map.get(parameterKey))[0]);
+            return Integer.parseInt(map.get(parameterKey)[0]);
         } catch (NumberFormatException ex) {
             throw new InvalidRequestException("Could not make an integer out of the query parameter '"
                 + parameterKey + "'", ex);

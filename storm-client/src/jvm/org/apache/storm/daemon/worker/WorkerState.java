@@ -96,7 +96,7 @@ public class WorkerState {
     private final WorkerTransfer workerTransfer;
     private final BackPressureTracker bpTracker;
 
-    public Map getConf() {
+    public Map<String, Object> getConf() {
         return conf;
     }
 
@@ -140,7 +140,7 @@ public class WorkerState {
         return localReceiveQueues;
     }
 
-    public Map getTopologyConf() {
+    public Map<String, Object> getTopologyConf() {
         return topologyConf;
     }
 

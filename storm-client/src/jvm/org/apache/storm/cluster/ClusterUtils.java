@@ -256,12 +256,12 @@ public class ClusterUtils {
         if (stateStorage instanceof IStateStorage) {
             return new StormClusterStateImpl((IStateStorage) stateStorage, context, false);
         } else {
-            IStateStorage Storage = _instance.mkStateStorageImpl((Map) stateStorage, (Map) stateStorage, context);
+            IStateStorage Storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage, (Map<String, Object>) stateStorage, context);
             return new StormClusterStateImpl(Storage, context, true);
         }
     }
 
-    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map auth_conf, ClusterStateContext context) throws Exception {
+    public IStateStorage mkStateStorageImpl(Map<String, Object> config, Map<String, Object> auth_conf, ClusterStateContext context) throws Exception {
         String className = null;
         IStateStorage stateStorage = null;
         if (config.get(Config.STORM_CLUSTER_STATE_STORE) != null) {
@@ -275,7 +275,7 @@ public class ClusterUtils {
         return stateStorage;
     }
 
-    public static IStateStorage mkStateStorage(Map<String, Object> config, Map auth_conf, ClusterStateContext context) throws Exception {
+    public static IStateStorage mkStateStorage(Map<String, Object> config, Map<String, Object> auth_conf, ClusterStateContext context) throws Exception {
         return _instance.mkStateStorageImpl(config, auth_conf, context);
     }
 

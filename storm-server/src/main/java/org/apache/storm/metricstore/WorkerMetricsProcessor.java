@@ -36,5 +36,5 @@ public interface WorkerMetricsProcessor {
      * @param config Storm config map
      * @throws MetricException  on error
      */
-    void prepare(Map config) throws MetricException;
+    void prepare(Map<String, Object> config) throws MetricException;
 }

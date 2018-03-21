@@ -39,7 +39,7 @@ public final class AutoHBaseCommand {
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap<>();
     conf.put(HBASE_PRINCIPAL_KEY, args[1]); // hbase principal storm-hbase@WITZEN.COM
     conf.put(HBASE_KEYTAB_FILE_KEY,
         args[2]); // storm hbase keytab /etc/security/keytabs/storm-hbase.keytab

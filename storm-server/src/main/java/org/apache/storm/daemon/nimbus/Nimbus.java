@@ -406,7 +406,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public static class StandaloneINimbus implements INimbus {
 
         @Override
-        public void prepare(@SuppressWarnings("rawtypes") Map<String, Object> topoConf, String schedulerLocalDir) {
+        public void prepare(Map<String, Object> topoConf, String schedulerLocalDir) {
             //NOOP
         }
 
@@ -3637,7 +3637,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     //heartbeats "stats"
                     Map<String, Object> hb = (Map<String, Object>)heartbeat.get("heartbeat");
                     if (hb != null) {
-                        Map ex = (Map) hb.get("stats");
+                        Map<String, Object> ex = (Map<String, Object>) hb.get("stats");
                         if (ex != null) {
                             ExecutorStats stats = StatsUtil.thriftifyExecutorStats(ex);
                             summ.set_stats(stats);
@@ -4101,7 +4101,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             IStormClusterState state = stormClusterState;
             Map<String, Assignment> topoIdToAssignments = state.topologyAssignments();
             Map<String, StormBase> topoIdToBases = state.topologyBases();
-            Map<String, Object> clusterSchedulerConfig = scheduler.config();
+            Map<String, Number> clusterSchedulerConfig = scheduler.config();
 
             //put [owner-> StormBase-list] mapping to ownerToBasesMap
             //if this owner (the input parameter) is null, add all the owners with stormbase and guarantees

@@ -27,7 +27,7 @@ public interface ITopologyActionNotifierPlugin {
      * Called once during nimbus initialization.
      * @param StormConf
      */
-    void prepare(Map StormConf);
+    void prepare(Map<String, Object> StormConf);
 
     /**
      * When a new actions is executed for a topology, this method will be called.

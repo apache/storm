@@ -160,7 +160,7 @@ public class GeneralTopologyContext implements JSONAware {
 
     @Override
     public String toJSONString() {
-        Map obj = new HashMap();
+        Map<String, Object> obj = new HashMap<>();
         obj.put("task->component", _taskToComponent);
         // TODO: jsonify StormTopology
         // at the minimum should send source info

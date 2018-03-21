@@ -151,7 +151,6 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
     // wait strategy when the netty channel is not writable
     private final IWaitStrategy waitStrategy;
 
-    @SuppressWarnings("rawtypes")
     Client(Map<String, Object> topoConf, AtomicBoolean[] remoteBpStatus, ChannelFactory factory, HashedWheelTimer scheduler, String host, int port, Context context) {
         this.topoConf = topoConf;
         closing = false;
@@ -549,7 +548,7 @@ public class Client extends ConnectionWithStatus implements IStatefulObject, ISa
         return ret;
     }
 
-    public Map getConfig() {
+    public Map<String, Object> getConfig() {
         return topoConf;
     }
 

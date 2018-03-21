@@ -22,9 +22,11 @@ import org.apache.storm.generated.StormTopology;
 import java.util.Map;
 
 public class DefaultTopologyValidator implements ITopologyValidator {
+
     @Override
-    public void prepare(Map StormConf){
+    public void prepare(Map<String, Object> StormConf){
     }
+
     @Override
     public void validate(String topologyName, Map<String, Object> topologyConf, StormTopology topology) throws InvalidTopologyException {        
     }    

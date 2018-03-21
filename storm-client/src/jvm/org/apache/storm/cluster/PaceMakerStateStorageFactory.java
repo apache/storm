@@ -24,7 +24,7 @@ import org.apache.storm.utils.Utils;
 
 public class PaceMakerStateStorageFactory implements StateStorageFactory {
     @Override
-    public IStateStorage mkStore(Map<String, Object> config, Map auth_conf, ClusterStateContext context) {
+    public IStateStorage mkStore(Map<String, Object> config, Map<String, Object> auth_conf, ClusterStateContext context) {
         try {
             ZKStateStorageFactory zkfact = new ZKStateStorageFactory();
             IStateStorage zkState = zkfact.mkStore(config, auth_conf, context);

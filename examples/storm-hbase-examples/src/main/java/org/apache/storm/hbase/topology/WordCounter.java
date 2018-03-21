@@ -31,7 +31,6 @@ import static org.apache.storm.utils.Utils.tuple;
 public class WordCounter implements IBasicBolt {
 
 
-    @SuppressWarnings("rawtypes")
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 

@@ -49,7 +49,7 @@ public class StormCluster {
         this.client = NimbusClient.getConfiguredClient(conf).getClient();
     }
 
-    public static Map getConfig() {
+    public static Map<String, Object> getConfig() {
         return Utils.readStormConfig();
     }
 

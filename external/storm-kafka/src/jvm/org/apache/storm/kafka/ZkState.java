@@ -36,7 +36,8 @@ public class ZkState {
     private static final Logger LOG = LoggerFactory.getLogger(ZkState.class);
     CuratorFramework _curator;
 
-    private CuratorFramework newCurator(Map stateConf) throws Exception {
+    private CuratorFramework newCurator(final Map<String, Object> stateConf)
+            throws Exception {
         Integer port = (Integer) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_PORT);
         String serverPorts = "";
         for (String server : (List<String>) stateConf.get(Config.TRANSACTIONAL_ZOOKEEPER_SERVERS)) {
@@ -54,8 +55,8 @@ public class ZkState {
         return _curator;
     }
 
-    public ZkState(Map stateConf) {
-        stateConf = new HashMap(stateConf);
+    public ZkState(Map<String, Object> stateConf) {
+        stateConf = new HashMap<>(stateConf);
 
         try {
             _curator = newCurator(stateConf);

@@ -49,7 +49,7 @@ public class ConfigMethodDef {
         List<Object> newVal = new ArrayList<Object>();
         for (Object obj : args) {
             if (obj instanceof LinkedHashMap) {
-                Map map = (Map)obj;
+                Map<String, Object> map = (Map<String, Object>)obj;
                 if (map.containsKey("ref") && map.size() == 1) {
                     newVal.add(new BeanReference((String)map.get("ref")));
                     this.hasReferences = true;

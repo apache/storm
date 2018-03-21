@@ -30,7 +30,7 @@ import java.util.Map;
 
 
 public class TransactionalTridentEventHubEmitter
-    implements IPartitionedTridentSpout.Emitter<Partitions, Partition, Map> {
+    implements IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, Object>> {
   private static final Logger logger = LoggerFactory.getLogger(TransactionalTridentEventHubEmitter.class);
   private final int batchSize; 
   private final EventHubSpoutConfig spoutConfig;
@@ -98,7 +98,7 @@ public class TransactionalTridentEventHubEmitter
 
   @Override
   public void emitPartitionBatch(TransactionAttempt attempt,
-      TridentCollector collector, Partition partition, Map meta) {
+      TridentCollector collector, Partition partition, Map<String, Object> meta) {
     String offset = (String)meta.get("offset");
     int count = Integer.parseInt((String)meta.get("count"));
     logger.info("re-emit for partition " + partition.getId() + ", offset=" + offset + ", count=" + count);
@@ -117,8 +117,8 @@ public class TransactionalTridentEventHubEmitter
   }
 
   @Override
-  public Map emitPartitionBatchNew(TransactionAttempt attempt,
-      TridentCollector collector, Partition partition, Map meta) {
+  public Map<String, Object> emitPartitionBatchNew(TransactionAttempt attempt,
+      TridentCollector collector, Partition partition, Map<String, Object> meta) {
     ITridentPartitionManager pm = getOrCreatePartitionManager(partition);
     String offset = FieldConstants.DefaultStartingOffset;
     if(meta != null && meta.containsKey("nextOffset")) {
@@ -138,7 +138,7 @@ public class TransactionalTridentEventHubEmitter
     }
     //logger.info("emitted new batches: " + listEvents.size());
     
-    Map newMeta = new HashMap();
+    Map<String, Object> newMeta = new HashMap<>();
     newMeta.put("offset", offset);
     newMeta.put("nextOffset", nextOffset);
     newMeta.put("count", ""+listEvents.size());

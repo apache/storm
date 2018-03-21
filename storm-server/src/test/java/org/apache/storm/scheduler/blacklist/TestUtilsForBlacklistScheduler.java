@@ -84,9 +84,9 @@ public class TestUtilsForBlacklistScheduler {
     }
 
     public static Map<String, SupervisorDetails> genSupervisors(int numSup, int numPorts) {
-        Map<String, SupervisorDetails> retList = new HashMap<String, SupervisorDetails>();
+        Map<String, SupervisorDetails> retList = new HashMap<>();
         for (int i = 0; i < numSup; i++) {
-            List<Number> ports = new LinkedList<Number>();
+            List<Number> ports = new LinkedList<>();
             for (int j = 0; j < numPorts; j++) {
                 ports.add(j);
             }
@@ -97,7 +97,7 @@ public class TestUtilsForBlacklistScheduler {
     }
 
 
-    public static TopologyDetails getTopology(String name, Map config, int numSpout, int numBolt,
+    public static TopologyDetails getTopology(String name, Map<String, Object> config, int numSpout, int numBolt,
                                               int spoutParallelism, int boltParallelism, int launchTime, boolean blacklistEnable) {
 
         Config conf = new Config();
@@ -110,7 +110,7 @@ public class TestUtilsForBlacklistScheduler {
     }
 
     public static Map<ExecutorDetails, String> genExecsAndComps(StormTopology topology, int spoutParallelism, int boltParallelism) {
-        Map<ExecutorDetails, String> retMap = new HashMap<ExecutorDetails, String>();
+        Map<ExecutorDetails, String> retMap = new HashMap<>();
         int startTask = 0;
         int endTask = 1;
         for (Map.Entry<String, SpoutSpec> entry : topology.get_spouts().entrySet()) {
@@ -166,7 +166,7 @@ public class TestUtilsForBlacklistScheduler {
             _isDistributed = isDistributed;
         }
 
-        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
             _collector = collector;
         }
 
@@ -194,7 +194,7 @@ public class TestUtilsForBlacklistScheduler {
         @Override
         public Map<String, Object> getComponentConfiguration() {
             if (!_isDistributed) {
-                Map<String, Object> ret = new HashMap<String, Object>();
+                Map<String, Object> ret = new HashMap<>();
                 ret.put(Config.TOPOLOGY_MAX_TASK_PARALLELISM, 1);
                 return ret;
             } else {
@@ -207,7 +207,7 @@ public class TestUtilsForBlacklistScheduler {
         OutputCollector _collector;
 
         @Override
-        public void prepare(Map conf, TopologyContext context,
+        public void prepare(Map<String, Object> conf, TopologyContext context,
                             OutputCollector collector) {
             _collector = collector;
         }
@@ -225,7 +225,7 @@ public class TestUtilsForBlacklistScheduler {
 
     public static class INimbusTest implements INimbus {
         @Override
-        public void prepare(Map stormConf, String schedulerLocalDir) {
+        public void prepare(Map<String, Object> stormConf, String schedulerLocalDir) {
 
         }
 

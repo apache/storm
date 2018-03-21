@@ -50,7 +50,7 @@ public class FaultGenerateUtils {
         return supervisorsList;
     }
 
-    public static Cluster nextCluster(Cluster cluster, Map<String, SupervisorDetails> supervisors, INimbus iNimbus, Map config,
+    public static Cluster nextCluster(Cluster cluster, Map<String, SupervisorDetails> supervisors, INimbus iNimbus, Map<String, Object> config,
                                       Topologies topologies) {
         Map<String, SchedulerAssignmentImpl> assignment;
         if (cluster == null) {

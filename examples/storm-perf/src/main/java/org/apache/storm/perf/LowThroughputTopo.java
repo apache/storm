@@ -110,7 +110,8 @@ public class LowThroughputTopo {
         }
 
         @Override
-        public void open(Map conf, TopologyContext context, SpoutOutputCollector collector) {
+        public void open(Map<String, Object> conf, TopologyContext context,
+                SpoutOutputCollector collector) {
             this.collector = collector;
         }
 
@@ -133,7 +134,9 @@ public class LowThroughputTopo {
         private OutputCollector collector;
 
         @Override
-        public void prepare(Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> topoConf,
+                TopologyContext context,
+                OutputCollector collector) {
             this.collector = collector;
         }
 

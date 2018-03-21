@@ -62,7 +62,7 @@ public class TestTransactionalTridentEmitter {
   @Test
   public void testEmitInSequence() {
     //test the happy path, emit batches in sequence
-    Map meta = emitter.emitPartitionBatchNew(null, collectorMock, partition, null);
+    Map<String, Object> meta = emitter.emitPartitionBatchNew(null, collectorMock, partition, null);
     String collected = collectorMock.getBuffer();
     assertTrue(collected.startsWith("message"+0));
     //System.out.println("collected: " + collected);
@@ -77,11 +77,11 @@ public class TestTransactionalTridentEmitter {
   @Test
   public void testReEmit() {
     //test we can re-emit the second batch
-    Map meta = emitter.emitPartitionBatchNew(null, collectorMock, partition, null);
+    Map<String, Object> meta = emitter.emitPartitionBatchNew(null, collectorMock, partition, null);
     collectorMock.clear();
     
     //emit second batch
-    Map meta1 = emitter.emitPartitionBatchNew(null, collectorMock, partition, meta);
+    Map<String, Object> meta1 = emitter.emitPartitionBatchNew(null, collectorMock, partition, meta);
     String collected0 = collectorMock.getBuffer();
     collectorMock.clear();
     

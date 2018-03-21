@@ -204,7 +204,7 @@ public class DRPCSpout extends BaseRichSpout {
                 try {
                     DRPCRequest req = client.fetchRequest(_function);
                     if(req.get_request_id().length() > 0) {
-                        Map returnInfo = new HashMap();
+                        Map<String, Object> returnInfo = new HashMap<>();
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", client.getHost());
                         returnInfo.put("port", client.getPort());
@@ -228,7 +228,7 @@ public class DRPCSpout extends BaseRichSpout {
                 try {
                     DRPCRequest req = drpc.fetchRequest(_function);
                     if(req.get_request_id().length() > 0) {
-                        Map returnInfo = new HashMap();
+                        Map<String, Object> returnInfo = new HashMap<>();
                         returnInfo.put("id", req.get_request_id());
                         returnInfo.put("host", _local_drpc_id);
                         returnInfo.put("port", 0);

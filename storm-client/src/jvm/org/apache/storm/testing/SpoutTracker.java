@@ -45,7 +45,7 @@ public class SpoutTracker extends BaseRichSpout {
         }
         
         private void recordSpoutEmit() {
-            Map stats = (Map) RegisteredGlobalState.getState(_trackId);
+            Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
             ((AtomicInteger) stats.get("spout-emitted")).incrementAndGet();
             
         }
@@ -99,13 +99,13 @@ public class SpoutTracker extends BaseRichSpout {
 
     public void ack(Object msgId) {
         _delegate.ack(msgId);
-        Map stats = (Map) RegisteredGlobalState.getState(_trackId);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();
     }
 
     public void fail(Object msgId) {
         _delegate.fail(msgId);
-        Map stats = (Map) RegisteredGlobalState.getState(_trackId);
+        Map<String, Object> stats = (Map<String, Object>) RegisteredGlobalState.getState(_trackId);
         ((AtomicInteger) stats.get("processed")).incrementAndGet();        
     }
 

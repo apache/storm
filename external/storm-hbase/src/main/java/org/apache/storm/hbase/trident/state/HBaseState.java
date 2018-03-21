@@ -46,11 +46,11 @@ public class HBaseState implements State {
 
     private Options options;
     private HBaseClient hBaseClient;
-    private Map map;
+    private Map<String, Object> map;
     private int numPartitions;
     private int partitionIndex;
 
-    protected HBaseState(Map map, int partitionIndex, int numPartitions, Options options) {
+    protected HBaseState(Map<String, Object> map, int partitionIndex, int numPartitions, Options options) {
         this.options = options;
         this.map = map;
         this.partitionIndex = partitionIndex;

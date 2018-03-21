@@ -70,7 +70,7 @@ public class Helper {
 
     /** Kill topo on Ctrl-C */
     public static void setupShutdownHook(final String topoName) {
-        Map clusterConf = Utils.readStormConfig();
+        Map<String, Object> clusterConf = Utils.readStormConfig();
         final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {

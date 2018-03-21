@@ -132,7 +132,7 @@ public class ServerUtils {
             type = LocalFsBlobStore.class.getName();
         }
         BlobStore store = (BlobStore) ReflectionUtils.newInstance(type);
-        HashMap nconf = new HashMap(conf);
+        Map<String, Object> nconf = new HashMap<>(conf);
         // only enable cleanup of blobstore on nimbus
         nconf.put(Config.BLOBSTORE_CLEANUP_ENABLE, Boolean.TRUE);
 

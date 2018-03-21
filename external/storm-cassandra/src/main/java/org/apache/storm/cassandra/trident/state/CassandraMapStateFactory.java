@@ -45,23 +45,23 @@ public class CassandraMapStateFactory implements StateFactory {
     private final StateType stateType;
     private final CassandraBackingMap.Options options;
     private int cacheSize;
-    private Map cassandraConfig;
+    private Map<String, Object> cassandraConfig;
 
-    private CassandraMapStateFactory(StateType stateType, CassandraBackingMap.Options options, Map cassandraConfig) {
+    private CassandraMapStateFactory(StateType stateType, CassandraBackingMap.Options options, Map<String, Object> cassandraConfig) {
         this.stateType = stateType;
         this.options = options;
         this.cassandraConfig = cassandraConfig;
     }
 
-    public static CassandraMapStateFactory opaque(CassandraBackingMap.Options options, Map cassandraConfig) {
+    public static CassandraMapStateFactory opaque(CassandraBackingMap.Options options, Map<String, Object> cassandraConfig) {
         return new CassandraMapStateFactory(StateType.OPAQUE, options, cassandraConfig);
     }
 
-    public static CassandraMapStateFactory transactional(CassandraBackingMap.Options options, Map cassandraConfig) {
+    public static CassandraMapStateFactory transactional(CassandraBackingMap.Options options, Map<String, Object> cassandraConfig) {
         return new CassandraMapStateFactory(StateType.TRANSACTIONAL, options, cassandraConfig);
     }
 
-    public static CassandraMapStateFactory nonTransactional(CassandraBackingMap.Options options, Map cassandraConfig) {
+    public static CassandraMapStateFactory nonTransactional(CassandraBackingMap.Options options, Map<String, Object> cassandraConfig) {
         return new CassandraMapStateFactory(StateType.NON_TRANSACTIONAL, options, cassandraConfig);
     }
 

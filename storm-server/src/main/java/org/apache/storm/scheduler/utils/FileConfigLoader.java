@@ -56,12 +56,12 @@ public class FileConfigLoader implements IConfigLoader {
      * @return The scheduler configuration if exists; null otherwise.
      */
     @Override
-    public Map load(String configKey) {
+    public Map<String, Object> load(String configKey) {
         if (targetFilePath != null) {
             try {
-                Map raw = (Map) Utils.readYamlFile(targetFilePath);
+                Map<String, Object> raw = (Map<String, Object>) Utils.readYamlFile(targetFilePath);
                 if (raw != null) {
-                    return (Map) raw.get(configKey);
+                    return (Map<String, Object>) raw.get(configKey);
                 }
             } catch (Exception e) {
                 LOG.error("Failed to load from file {}", targetFilePath);

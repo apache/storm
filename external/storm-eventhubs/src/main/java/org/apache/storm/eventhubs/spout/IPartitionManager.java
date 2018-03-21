@@ -33,5 +33,5 @@ public interface IPartitionManager {
 
   void fail(String offset);
   
-  Map getMetricsData();
+  Map<String, Object> getMetricsData();
 }

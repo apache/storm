@@ -30,7 +30,7 @@ import static org.apache.storm.hbase.security.HBaseSecurityUtil.HBASE_CREDENTIAL
  */
 public class AutoHBase extends AbstractHadoopAutoCreds {
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
     }
 
     @Override

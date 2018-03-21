@@ -111,7 +111,7 @@ public class NimbusClient extends ThriftClient {
         return true;
     }
 
-    public static NimbusClient getConfiguredClientAs(Map conf, String asUser) {
+    public static NimbusClient getConfiguredClientAs(Map<String, Object> conf, String asUser) {
         return getConfiguredClientAs(conf, asUser, null);
     }
 

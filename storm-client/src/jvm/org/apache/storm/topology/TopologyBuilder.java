@@ -735,8 +735,8 @@ public class TopologyBuilder {
         }        
     }
 
-    private static String mergeIntoJson(Map into, Map newMap) {
-        Map res = new HashMap<>(into);
+    private static String mergeIntoJson(Map<String, Object> into, Map<String, Object> newMap) {
+        Map<String, Object> res = new HashMap<>(into);
         res.putAll(newMap);
         return JSONValue.toJSONString(res);
     }

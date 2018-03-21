@@ -622,7 +622,6 @@ public class Testing {
         return ret;
     }
     
-    @SuppressWarnings("rawtypes")
     private static void printRec(Object o, String prefix) {
         if (o instanceof Collection) {
             LOG.info("{} {} ({}) [",prefix,o, o.getClass());

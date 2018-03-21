@@ -50,22 +50,22 @@ public class UtilsTest {
                 Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")));
     }
 
-    private Map topologyMockMap(String value) {
+    private Map<String, Object> topologyMockMap(String value) {
         return mockMap(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME, value);
     }
 
-    private Map mockMap(String key, String value) {
-        Map<String, Object> map = new HashMap<String, Object>();
+    private Map<String, Object> mockMap(String key, String value) {
+        Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
     }
 
-    private Map serverMockMap(String value) {
+    private Map<String, Object> serverMockMap(String value) {
         return mockMap(Config.STORM_ZOOKEEPER_AUTH_SCHEME, value);
     }
 
-    private Map emptyMockMap() {
-        return new HashMap<String, Object>();
+    private Map<String, Object> emptyMockMap() {
+        return new HashMap<>();
     }
     
     private void doParseJvmHeapMemByChildOptsTest(String message, String opt, double expected) {

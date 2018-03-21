@@ -29,6 +29,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
 
@@ -189,7 +190,7 @@ public class JCQueue implements IStatefulObject {
         }
 
         public Object getState() {
-            HashMap state = new HashMap<String, Object>();
+            Map<String, Object> state = new HashMap<>();
 
             final double arrivalRateInSecs = arrivalsTracker.reportRate();
 

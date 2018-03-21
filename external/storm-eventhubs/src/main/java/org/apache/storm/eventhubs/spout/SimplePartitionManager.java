@@ -127,7 +127,7 @@ public class SimplePartitionManager implements IPartitionManager {
   }
   
   @Override
-  public Map getMetricsData() {
+  public Map<String, Object> getMetricsData() {
     return receiver.getMetricsData();
   }
 }

@@ -22,5 +22,5 @@ import java.util.Map;
 
 public interface StateStorageFactory {
 
-    IStateStorage mkStore(Map<String, Object> config, Map auth_conf, ClusterStateContext context);
+    IStateStorage mkStore(Map<String, Object> config, Map<String, Object> auth_conf, ClusterStateContext context);
 }

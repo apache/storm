@@ -47,7 +47,6 @@ public class UserSpout implements IRichSpout {
         return this.isDistributed;
     }
 
-    @SuppressWarnings("rawtypes")
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
     }

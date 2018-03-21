@@ -31,7 +31,7 @@ import static org.apache.storm.hive.security.HiveSecurityUtil.HIVE_CREDENTIALS_C
  */
 public class AutoHive extends AbstractHadoopAutoCreds {
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
     }
 
     @Override

@@ -68,7 +68,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * @param config Storm config map
      * @throws MetricException on preparation error
      */
-    public void prepare(Map config) throws MetricException {
+    public void prepare(Map<String, Object> config) throws MetricException {
         validateConfig(config);
 
         this.failureMeter = StormMetricsRegistry.registerMeter("RocksDB:metric-failures");
@@ -125,7 +125,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
      * @throws MetricException if there is a missing required configuration or if the store does not exist but
      *                         the config specifies not to create the store
      */
-    private void validateConfig(Map config) throws MetricException {
+    private void validateConfig(Map<String, Object> config) throws MetricException {
         if (!(config.containsKey(DaemonConfig.STORM_ROCKSDB_LOCATION))) {
             throw new MetricException("Not a vaild RocksDB configuration - Missing store location " + DaemonConfig.STORM_ROCKSDB_LOCATION);
         }
@@ -156,7 +156,7 @@ public class RocksDbStore implements MetricStore, AutoCloseable {
         }
     }
 
-    private String getRocksDbAbsoluteDir(Map conf) throws MetricException {
+    private String getRocksDbAbsoluteDir(Map<String, Object> conf) throws MetricException {
         String storePath = (String)conf.get(DaemonConfig.STORM_ROCKSDB_LOCATION);
         if (storePath == null) {
             throw new MetricException("Not a vaild RocksDB configuration - Missing store location " + DaemonConfig.STORM_ROCKSDB_LOCATION);

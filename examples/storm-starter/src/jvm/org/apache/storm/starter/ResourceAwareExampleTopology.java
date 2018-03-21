@@ -64,7 +64,7 @@ public class ResourceAwareExampleTopology {
         }
 
         @Override
-        public void prepare(Map conf, TopologyContext context, OutputCollector collector) {
+        public void prepare(Map<String, Object> conf, TopologyContext context, OutputCollector collector) {
             _collector = collector;
         }
 

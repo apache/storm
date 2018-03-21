@@ -22,7 +22,9 @@ import org.apache.storm.generated.StormTopology;
 import java.util.Map;
 
 public interface ITopologyValidator {
-    void prepare(Map StormConf);
+
+    void prepare(Map<String, Object> StormConf);
+
     void validate(String topologyName, Map<String, Object> topologyConf, StormTopology topology)
             throws InvalidTopologyException;
 }

@@ -80,9 +80,8 @@ public class StormSubmitter {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
-    public static Map prepareZookeeperAuthentication(Map<String, Object> conf) {
-        Map toRet = new HashMap();
+    public static Map<String, Object> prepareZookeeperAuthentication(Map<String, Object> conf) {
+        Map<String, Object> toRet = new HashMap<>();
         String secretPayload = (String) conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         // Is the topology ZooKeeper authentication configuration unset?
         if (! conf.containsKey(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD) ||

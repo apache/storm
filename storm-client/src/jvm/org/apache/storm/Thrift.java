@@ -94,7 +94,7 @@ public class Thrift {
             return parallelism;
         }
 
-        public Map getConf() {
+        public Map<String, Object> getConf() {
             return conf;
         }
     }
@@ -117,7 +117,7 @@ public class Thrift {
             return bolt;
         }
 
-        public Map getConf() {
+        public Map<String, Object> getConf() {
             return conf;
         }
 

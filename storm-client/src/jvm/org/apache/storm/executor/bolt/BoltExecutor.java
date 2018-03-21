@@ -37,7 +37,9 @@ import org.apache.storm.daemon.Task;
 import org.apache.storm.daemon.metrics.BuiltinMetricsUtil;
 import org.apache.storm.daemon.worker.WorkerState;
 import org.apache.storm.executor.Executor;
+import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.hooks.info.BoltExecuteInfo;
+import org.apache.storm.messaging.IConnection;
 import org.apache.storm.metric.api.IMetricsRegistrant;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.policy.IWaitStrategy.WAIT_SITUATION;
@@ -95,7 +97,7 @@ public class BoltExecutor extends Executor {
 
     private static IWaitStrategy makeSystemBoltWaitStrategy() {
         WaitStrategyPark ws = new WaitStrategyPark();
-        HashMap conf = new HashMap<String, Object>();
+        Map<String, Object> conf = new HashMap<>();
         conf.put(Config.TOPOLOGY_BOLT_WAIT_PARK_MICROSEC, 5000);
         ws.prepare(conf, WAIT_SITUATION.BOLT_WAIT);
         return ws;
@@ -126,7 +128,7 @@ public class BoltExecutor extends Executor {
                 Map<String, JCQueue> map = ImmutableMap.of("receive", receiveQueue, "transfer", workerData.getTransferQueue());
                 BuiltinMetricsUtil.registerQueueMetrics(map, topoConf, userContext);
 
-                Map cachedNodePortToSocket = workerData.getCachedNodeToPortSocket().get();
+                Map<NodeInfo, IConnection> cachedNodePortToSocket = workerData.getCachedNodeToPortSocket().get();
                 BuiltinMetricsUtil.registerIconnectionClientMetrics(cachedNodePortToSocket, topoConf, userContext);
                 BuiltinMetricsUtil.registerIconnectionServerMetric(workerData.getReceiver(), topoConf, userContext);
 

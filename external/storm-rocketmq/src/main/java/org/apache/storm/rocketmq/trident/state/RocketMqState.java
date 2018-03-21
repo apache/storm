@@ -45,7 +45,7 @@ public class RocketMqState implements State {
     private Options options;
     private MQProducer producer;
 
-    protected RocketMqState(Map map, Options options) {
+    protected RocketMqState(Map<String, Object> map, Options options) {
         this.options = options;
     }
 

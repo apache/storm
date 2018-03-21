@@ -37,5 +37,5 @@ public class NimbusMetricProcessor implements  WorkerMetricsProcessor {
     }
 
     @Override
-    public void prepare(Map config) throws MetricException {}
+    public void prepare(Map<String, Object> config) throws MetricException {}
 }

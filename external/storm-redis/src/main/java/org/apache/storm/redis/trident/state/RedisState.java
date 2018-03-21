@@ -69,7 +69,7 @@ public class RedisState implements State {
          * {@inheritDoc}
          */
         @Override
-        public State makeState(@SuppressWarnings("rawtypes") Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
+        public State makeState(Map<String, Object> conf, IMetricsContext metrics, int partitionIndex, int numPartitions) {
             JedisPool jedisPool = new JedisPool(DEFAULT_POOL_CONFIG,
                                                 jedisPoolConfig.getHost(),
                                                 jedisPoolConfig.getPort(),

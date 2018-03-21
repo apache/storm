@@ -43,9 +43,9 @@ public class ArtifactoryConfigLoaderTest {
 
     private class ArtifactoryConfigLoaderMock extends ArtifactoryConfigLoader {
         String getData;
-        HashMap<String, String> getDataMap = new HashMap<String, String>();
+        HashMap<String, String> getDataMap = new HashMap<>();
 
-        public ArtifactoryConfigLoaderMock(Map conf) {
+        public ArtifactoryConfigLoaderMock(Map<String, Object> conf) {
             super(conf);
         }
 
@@ -84,7 +84,7 @@ public class ArtifactoryConfigLoaderTest {
     public void testInvalidConfig() {
         Config conf = new Config();
         ArtifactoryConfigLoaderMock loaderMock = new ArtifactoryConfigLoaderMock(conf);
-        Map ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNull("Unexpectedly returned not null", ret);
     }
 
@@ -101,7 +101,7 @@ public class ArtifactoryConfigLoaderTest {
                 "{\"children\" : [ { \"uri\" : \"/20160621204337.yaml\", \"folder\" : false }]}" );
         loaderMock.setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3, four : 4}}");
 
-        Map ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNotNull("Unexpectedly returned null", ret);
         Assert.assertEquals(1, ret.get("one"));
         Assert.assertEquals(2, ret.get("two"));
@@ -111,7 +111,7 @@ public class ArtifactoryConfigLoaderTest {
         // Now let's load w/o setting up gets and we should still get valid map back
         ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
 
-        Map ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNotNull("Unexpectedly returned null", ret2);
         Assert.assertEquals(1, ret2.get("one"));
         Assert.assertEquals(2, ret2.get("two"));
@@ -132,7 +132,7 @@ public class ArtifactoryConfigLoaderTest {
             loaderMock.setData("Anything", "/location/of/test/dir",
                     "{\"children\" : [ { \"uri\" : \"/20160621204337.yaml\", \"folder\" : false }]}" );
             loaderMock.setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3}}");
-            Map ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+            Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
             Assert.assertNotNull("Unexpectedly returned null", ret);
             Assert.assertEquals(1, ret.get("one"));
@@ -142,7 +142,7 @@ public class ArtifactoryConfigLoaderTest {
 
             // Now let's load w/o setting up gets and we should still get valid map back
             ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
-            Map ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+            Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
             Assert.assertNotNull("Unexpectedly returned null", ret2);
             Assert.assertEquals(1, ret2.get("one"));
             Assert.assertEquals(2, ret2.get("two"));
@@ -199,7 +199,7 @@ public class ArtifactoryConfigLoaderTest {
 
         loaderMock.setData("Anything", "/location/of/this/artifact", "{ \"downloadUri\": \"anything\"}");
         loaderMock.setData(null, null, "{ \"" + DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS + "\": {one: 1, two: 2, three: 3}}");
-        Map ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
         Assert.assertNotNull("Unexpectedly returned null", ret);
         Assert.assertEquals(1, ret.get("one"));
@@ -208,7 +208,7 @@ public class ArtifactoryConfigLoaderTest {
 
         // Now let's load w/o setting up gets and we should still get valid map back
         ArtifactoryConfigLoaderMock tc2 = new ArtifactoryConfigLoaderMock(conf);
-        Map ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret2 = tc2.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNotNull("Unexpectedly returned null", ret2);
         Assert.assertEquals(1, ret2.get("one"));
         Assert.assertEquals(2, ret2.get("two"));
@@ -226,7 +226,7 @@ public class ArtifactoryConfigLoaderTest {
         loaderMock.setData("Anything", "/location/of/this/artifact", "{ \"downloadUri\": \"anything\"}");
         loaderMock.setData(null, null, "ThisIsNotValidYaml");
 
-        Map ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> ret = loaderMock.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNull("Unexpectedly returned a map", ret);
     }
 }

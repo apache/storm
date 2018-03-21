@@ -53,7 +53,6 @@ import org.slf4j.LoggerFactory;
 class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServer {
 
     private static final Logger LOG = LoggerFactory.getLogger(Server.class);
-    @SuppressWarnings("rawtypes")
     Map<String, Object> topoConf;
     int port;
     private final ConcurrentHashMap<String, AtomicInteger> messagesEnqueued = new ConcurrentHashMap<>();
@@ -70,7 +69,6 @@ class Server extends ConnectionWithStatus implements IStatefulObject, ISaslServe
     private Supplier<Object> newConnectionResponse;
     private final int boundPort;
     
-    @SuppressWarnings("rawtypes")
     Server(Map<String, Object> topoConf, int port) {
         this.topoConf = topoConf;
         this.port = port;

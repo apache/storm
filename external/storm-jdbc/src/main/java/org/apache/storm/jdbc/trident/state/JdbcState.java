@@ -46,7 +46,7 @@ public class JdbcState implements State {
     private JdbcClient jdbcClient;
     private Map map;
 
-    protected JdbcState(Map map, int partitionIndex, int numPartitions, Options options) {
+    protected JdbcState(Map<String, Object> map, int partitionIndex, int numPartitions, Options options) {
         this.options = options;
         this.map = map;
     }

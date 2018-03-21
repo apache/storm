@@ -97,7 +97,8 @@ public class ThroughputVsLatency {
         }
 
         @Override
-        public void prepare(Map stormConf, TopologyContext context) {
+        public void prepare(Map<String, Object> stormConf,
+                TopologyContext context) {
             executorIndex = context.getThisTaskIndex();
             sleep.prepare();
         }

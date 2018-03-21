@@ -73,7 +73,7 @@ public class ClientZookeeper {
         _instance.mkdirsImpl(zk, path, acls);
     }
 
-    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf) {
+    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map<String, Object> authConf) {
         return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf);
     }
 
@@ -313,15 +313,15 @@ public class ClientZookeeper {
         return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack());
     }
 
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, Map authConf) {
+    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, Map<String, Object> authConf) {
         return mkClientImpl(conf, servers, port, "", new DefaultWatcherCallBack(), authConf);
     }
 
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, Map authConf) {
+    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, Map<String, Object> authConf) {
         return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack(), authConf);
     }
 
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf) {
+    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map<String, Object> authConf) {
         CuratorFramework fk;
         if (authConf != null) {
             fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf));
