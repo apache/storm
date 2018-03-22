@@ -1047,6 +1047,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     private final Object schedLock = new Object();
     private final Object credUpdateLock = new Object();
     private final AtomicReference<Map<String, Map<List<Integer>, Map<String, Object>>>> heartbeatsCache;
+    private final AtomicReference<Map<String, Assignment>> assignmentsCache;
     @SuppressWarnings("deprecation")
     private final TimeCacheMap<String, BufferInputStream> downloaders;
     @SuppressWarnings("deprecation")
@@ -1134,6 +1135,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
         this.stormClusterState = stormClusterState;
         this.heartbeatsCache = new AtomicReference<>(new HashMap<>());
+        this.assignmentsCache = new AtomicReference<>(new HashMap<>());
         this.downloaders = fileCacheMap(conf);
         this.uploaders = fileCacheMap(conf);
         if (blobStore == null) {
@@ -1195,6 +1197,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public AtomicReference<Map<String,Map<List<Integer>,Map<String,Object>>>> getHeartbeatsCache() {
         return heartbeatsCache;
     }
+
+    @VisibleForTesting
+    public AtomicReference<Map<String, Assignment>> getAssignmentsCache() {
+        return assignmentsCache;
+    }
+
 
     private BlobStore getBlobStore() {
         return blobStore;
@@ -1754,7 +1762,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             try {
                 IStormClusterState state = stormClusterState;
                 TopologyDetails details = readTopologyDetails(topoId, base);
-                Assignment assignment = state.assignmentInfo(topoId, null);
+                Assignment assignment = getAssignmentInfo(state, topoId);
                 ret = new TopologyResources(details, assignment);
             } catch(KeyNotFoundException e) {
                 //This can happen when a topology is first coming up
@@ -1771,7 +1779,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         if (ret == null) {
             IStormClusterState state = stormClusterState;
             ret = new HashMap<>();
-            Assignment assignment = state.assignmentInfo(topoId, null);
+            Assignment assignment = getAssignmentInfo(state, topoId);
             if (assignment != null && assignment.is_set_worker_resources()) {
                 for (Entry<NodeInfo, WorkerResources> entry: assignment.get_worker_resources().entrySet()) {
                     NodeInfo ni = entry.getKey();
@@ -1782,6 +1790,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             }
         }
         return ret;
+    }
+
+    private Assignment getAssignmentInfo(IStormClusterState state, String topoId) {
+        return assignmentsCache.get().computeIfAbsent(topoId, (id) -> state.assignmentInfo(id, null));
     }
 
     private void mkAssignments() throws Exception {
@@ -1824,12 +1836,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // we exclude its assignment, meaning that all the slots occupied by its assignment
             // will be treated as free slot in the scheduler code.
             if (!id.equals(scratchTopoId)) {
-                Assignment currentAssignment = state.assignmentInfo(id, null);
+                Assignment currentAssignment = getAssignmentInfo(state, id);
                 if (!currentAssignment.is_set_owner()) {
                     TopologyDetails td = tds.get(id);
                     if (td != null) {
                         currentAssignment.set_owner(td.getTopologySubmitter());
                         state.setAssignment(id, currentAssignment);
+                        assignmentsCache.get().put(id, currentAssignment);
                     }
                 }
                 existingAssignments.put(id, currentAssignment);
@@ -1944,6 +1957,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 } else {
                     LOG.info("Setting new assignment for topology id {}: {}", topoId, assignment);
                     state.setAssignment(topoId, assignment);
+                    assignmentsCache.get().put(topoId, assignment);
                 }
             }
 
@@ -2158,6 +2172,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 forceDeleteTopoDistDir(topoId);
                 rmTopologyKeys(topoId);
                 heartbeatsCache.getAndUpdate(new Dissoc<>(topoId));
+                assignmentsCache.get().remove(topoId);
             }
         }
     }
@@ -2372,7 +2387,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 continue;
             }
             String topoId = entry.getKey();
-            Assignment assignment = state.assignmentInfo(topoId, null);
+            Assignment assignment = getAssignmentInfo(state, topoId);
             
             int numTasks = 0;
             int numExecutors = 0;
@@ -2454,7 +2469,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         } else {
             ret.launchTimeSecs = 0;
         }
-        ret.assignment = state.assignmentInfo(topoId, null);
+        ret.assignment = getAssignmentInfo(state, topoId);
         ret.beats = Utils.OR(heartbeatsCache.get().get(topoId), Collections.emptyMap());
         ret.allComponents = new HashSet<>(ret.taskToComponent.values());
         return ret;
@@ -3827,7 +3842,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 supervisorIds = Arrays.asList(superId);
             }
             SupervisorPageInfo pageInfo = new SupervisorPageInfo();
-            Map<String, Assignment> topoToAssignment = state.topologyAssignments();
+            Map<String, Assignment> topoToAssignment = assignmentsCache.get();
             for (String sid: supervisorIds) {
                 SupervisorInfo info = superInfos.get(sid);
                 LOG.info("SIDL {} SI: {} ALL: {}", sid, info, superInfos);
