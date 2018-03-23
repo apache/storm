@@ -53,7 +53,7 @@ import com.google.common.base.Strings;
 /**
  * Emit tuples (messages) from an Azure EventHub
  */
-public final class EventHubSpout extends BaseRichSpout {
+public class EventHubSpout extends BaseRichSpout {
 
     private static final long serialVersionUID = -8460916098313963614L;
 
