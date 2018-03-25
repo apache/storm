@@ -50,9 +50,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 
-// Trident subsumes the functionality provided by this class, so it's deprecated
-@Deprecated
-public class LinearDRPCTopologyBuilder {    
+public class LinearDRPCTopologyBuilder {
     String function;
     List<Component> components = new ArrayList<>();
     
