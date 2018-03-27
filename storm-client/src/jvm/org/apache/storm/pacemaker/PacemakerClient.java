@@ -192,9 +192,11 @@ public class PacemakerClient implements ISaslClient {
         }
 
         HBMessage ret = messages[next];
-        if(ret == null) {
+        if (ret == null) {
             // This can happen if we lost the connection and subsequently reconnected or timed out.
-            send(m);
+            LOG.warn("Got null response. This can happen if we lost the connection and subsequently reconnected or timed out. "
+                    + "Resending message...");
+            ret = send(m);
         }
         messages[next] = null;
         LOG.debug("Got Response: {}", ret);
