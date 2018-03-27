@@ -57,3 +57,11 @@ hs_err_pid*
 
 # ignore vagrant files
 /integration-test/config/.vagrant/
+
+# Visual Studio & MSBuild
+.vs
+.vscode
+/storm-multilang/dotnet/logs
+/storm-multilang/dotnet/output
+/storm-multilang/dotnet/**/bin
+/storm-multilang/dotnet/**/obj

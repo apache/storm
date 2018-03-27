@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>netcoreapp2.0</TargetFramework>
+  </PropertyGroup>
+
+  <PropertyGroup Label="NuGet">
+    <AssemblyTitle>Dotnet.Storm.Adapter</AssemblyTitle>
+    <AssemblyName>Dotnet.Storm.Adapter</AssemblyName>
+    <PackageId>Dotnet.Storm.Adapter</PackageId>
+
+    <Description>A dotnet corw adapter for apache storm multilang protocol.</Description>
+    <PackageTags>apache;storm;storm-multilang;storm-dotnet-adapter;dotnet-core-adapter</PackageTags>
+
+    <VersionPrefix>1.0.0</VersionPrefix>
+    <Version>1.0.0</Version>
+    <FileVersion>1.0.0.917</FileVersion>
+
+    <NeutralLanguage>en-US</NeutralLanguage>
+    <Authors>Yuriy Alikin</Authors>
+    <Company>Apache Storm</Company>
+    <Copyright>Copyright © Apache 2018</Copyright>
+
+    <RepositoryType>git</RepositoryType>
+
+    <PackageIconUrl>http://storm.apache.org/images/logo.png</PackageIconUrl>
+    <PackageProjectUrl>http://storm.apache.org/</PackageProjectUrl>
+    <PackageLicenseUrl>http://www.apache.org/licenses/LICENSE-2.0.html</PackageLicenseUrl>
+    <RepositoryUrl>https://github.com/apache/storm</RepositoryUrl>
+
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <SignAssembly>False</SignAssembly>
+
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommandLineParser" Version="2.2.1" />
+    <PackageReference Include="log4net" Version="2.0.8" />
+    <PackageReference Include="Newtonsoft.Json" Version="11.0.1" />
+    <PackageReference Include="System.Runtime.Caching" Version="4.5.0-preview1-26216-02" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="log4net.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+</Project>

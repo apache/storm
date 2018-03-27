@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Microsoft.Storm.Adapter": {
+      "commandName": "Project",
+      "commandLineArgs": "-c Dotnet.Storm.Adapter.Components.DebugComponent -l debug"
+    }
+  }
+}
