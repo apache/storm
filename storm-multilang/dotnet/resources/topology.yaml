@@ -11,7 +11,7 @@ spouts:
    className: org.apache.storm.flux.wrappers.spouts.FluxShellSpout
    constructorArgs:
      - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.EmitSentense", "-a", "Dotnet.Storm.Example", "-l", "debug"]
-     - [sentance]
+     - [sentence]
    parallelism: 1
 bolts:
  - id: split-sentence

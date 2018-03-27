@@ -2,6 +2,7 @@
 using log4net;
 using log4net.Appender;
 using log4net.Core;
+using log4net.Layout;
 using log4net.Repository.Hierarchy;
 using System.Reflection;
 
@@ -9,11 +10,15 @@ namespace Dotnet.Storm.Adapter.Logging
 {
     public class StormAppender : AppenderSkeleton
     {
+        private static StormAppender instance;
+
+        private StormAppender() { }
+
         internal bool Enabled { get; set; }
 
         protected override void Append(LoggingEvent loggingEvent)
         {
-            if(Enabled)
+            if (Enabled)
             {
                 string message = RenderLoggingEvent(loggingEvent);
                 LogLevel level = GetStormLevel(loggingEvent.Level);
@@ -75,39 +80,40 @@ namespace Dotnet.Storm.Adapter.Logging
 
         internal static void Enable()
         {
-            var repository = LogManager.GetRepository(Assembly.GetEntryAssembly());
-            IAppender[] appenders = repository.GetAppenders();
-            foreach (IAppender appender in appenders)
-            {
-                if (appender is StormAppender)
-                {
-                    (appender as StormAppender).Enabled = true;
-                }
-            }
+            instance.Enabled = true;
         }
 
-        internal static void Disable(log4net.Repository.ILoggerRepository repository, Level newLevel)
+        internal static void Disable()
         {
-            IAppender[] appenders = repository.GetAppenders();
-            foreach (IAppender appender in appenders)
+            instance.Enabled = false;
+        }
+
+        internal static void CreateAppender(Level level)
+        {
+            Hierarchy repository = (Hierarchy)LogManager.GetRepository(Assembly.GetEntryAssembly());
+
+            // we don't want any console logger to be enabled since it is bracking storm multilang protocol
+            // it will not prevent the case other appenders write standard output
+            // also remove any StormAppender configured in log4net.config file
+            foreach (IAppender appender in repository.GetAppenders())
             {
-                // don't wand any console logger to be enabled since it is bracking storm multilang protocol
-                if (appender.GetType().IsAssignableFrom(typeof(ConsoleAppender)))
+                if (appender.GetType().IsAssignableFrom(typeof(ConsoleAppender)) || appender.GetType().IsAssignableFrom(typeof(StormAppender)))
                 {
-                    Logger root = ((Hierarchy)repository).Root;
+                    Logger root = repository.Root;
                     IAppenderAttachable attachable = root as IAppenderAttachable;
                     attachable.RemoveAppender(appender);
                 }
-                else
-                {
-                    if (appender is StormAppender)
-                    {
-                        // we have to disable Storm logger untill a connection will be established
-                        (appender as StormAppender).Enabled = false;
-                    }
-                    ((AppenderSkeleton)appender).Threshold = newLevel;
-                }
+                ((AppenderSkeleton)appender).Threshold = level;
             }
+
+            instance = new StormAppender
+            {
+                Layout = new PatternLayout("%m"),
+                Enabled = false,
+                Threshold = level
+            };
+            repository.Root.AddAppender(instance);
+
         }
     }
 }

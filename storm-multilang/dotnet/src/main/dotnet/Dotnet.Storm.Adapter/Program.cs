@@ -58,25 +58,11 @@ namespace Dotnet.Storm.Adapter
             // setting up log level
             Level newLevel = StormAppender.GetLogLevel(level);
 
-            // we want to disable storm logger since storm is not accessible yet
-            StormAppender.Disable(repository, newLevel);
-            Logger.Debug("Storm logger disabled.");
+            // now wlet's add StormApender and remove all console appenders
+            // initially StormAppender i in desblem mode, we'llenable it later
+            StormAppender.CreateAppender(newLevel);
 
             Logger.Debug($"Current working directory: {Environment.CurrentDirectory}.");
-
-            // we don't want any console logger to be enabled since it is bracking storm multilang protocol
-            // it will not prevent the case other appenders write standard output
-            IAppender[] appenders = repository.GetAppenders();
-            foreach (IAppender appender in appenders)
-            {
-                if (appender.GetType().IsAssignableFrom(typeof(ConsoleAppender)))
-                {
-                    Logger root = ((Hierarchy)repository).Root;
-                    IAppenderAttachable attachable = root as IAppenderAttachable;
-                    attachable.RemoveAppender(appender);
-                    Logger.Debug($"Removing console logger {appender.Name}.");
-                }
-            }
 
             // Instantiate component
             Type type = null;
