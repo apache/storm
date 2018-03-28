@@ -77,6 +77,10 @@ topology.max.replication.wait.time.sec: 60
 nimbus.credential.renewers.freq.secs: 600
 nimbus.queue.size: 100000
 scheduler.display.resource: false
+nimbus.local.assignments.backend.class: "org.apache.storm.assignments.InMemoryAssignmentBackend"
+nimbus.assignments.service.threads: 10
+nimbus.assignments.service.thread.queue.size: 100
+nimbus.worker.heartbeats.recovery.strategy.class: "org.apache.storm.nimbus.TimeOutWorkerHeartbeatsRecoveryStrategy"
 
 ### ui.* configs are for the master
 ui.host: 0.0.0.0
@@ -154,6 +158,8 @@ supervisor.worker.shutdown.sleep.secs: 3
 supervisor.monitor.frequency.secs: 3
 #how frequently the supervisor heartbeats to the cluster state (for nimbus)
 supervisor.heartbeat.frequency.secs: 5
+#max timeout for a node worker heartbeats when master gains leadership
+supervisor.worker.heartbeats.max.timeout.secs: 600
 supervisor.enable: true
 supervisor.supervisors: []
 supervisor.supervisors.commands: []
@@ -162,6 +168,13 @@ supervisor.memory.capacity.mb: 4096.0
 # using 100 makes it simple to set the desired value to the capacity measurement
 # for single threaded bolts
 supervisor.cpu.capacity: 400.0
+
+#Supervisor thrift config
+supervisor.thrift.port: 6628
+supervisor.queue.size: 128
+supervisor.thrift.threads: 16
+supervisor.thrift.max_buffer_size: 1048576
+supervisor.thrift.socket.timeout.ms: 5000
 
 ### worker.* configs are for task workers
 worker.heap.memory.mb: 768
@@ -181,6 +194,9 @@ worker.log.level.reset.poll.secs: 30
 
 # control how many worker receiver threads we need per worker
 topology.worker.receiver.thread.count: 1
+
+# Executor metrics reporting interval.
+executor.metrics.frequency.secs: 60
 
 task.heartbeat.frequency.secs: 3
 task.refresh.poll.secs: 10

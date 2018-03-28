@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor.timer;
 
 import java.util.ArrayList;
@@ -33,10 +34,10 @@ import org.apache.storm.utils.Time;
 
 public class SupervisorHeartbeat implements Runnable {
 
-     private final IStormClusterState stormClusterState;
-     private final String supervisorId;
-     private final Map<String, Object> conf;
-     private final Supervisor supervisor;
+    private final IStormClusterState stormClusterState;
+    private final String supervisorId;
+    private final Map<String, Object> conf;
+    private final Supervisor supervisor;
 
     public SupervisorHeartbeat(Map<String, Object> conf, Supervisor supervisor) {
         this.stormClusterState = supervisor.getStormClusterState();
@@ -50,17 +51,19 @@ public class SupervisorHeartbeat implements Runnable {
         supervisorInfo.set_time_secs(Time.currentTimeSecs());
         supervisorInfo.set_hostname(supervisor.getHostName());
         supervisorInfo.set_assignment_id(supervisor.getAssignmentId());
+        supervisorInfo.set_server_port(supervisor.getThriftServerPort());
 
         List<Long> usedPorts = new ArrayList<>();
         usedPorts.addAll(supervisor.getCurrAssignment().get().keySet());
         supervisorInfo.set_used_ports(usedPorts);
         List metaDatas = (List)supervisor.getiSupervisor().getMetadata();
         List<Long> portList = new ArrayList<>();
-        if (metaDatas != null){
-            for (Object data : metaDatas){
+        if (metaDatas != null) {
+            for (Object data : metaDatas) {
                 Integer port = ObjectReader.getInt(data);
-                if (port != null)
+                if (port != null) {
                     portList.add(port.longValue());
+                }
             }
         }
 

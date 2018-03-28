@@ -1102,6 +1102,13 @@ public class Config extends HashMap<String, Object> {
     public static final String NIMBUS_QUEUE_SIZE = "nimbus.queue.size";
 
     /**
+     * Nimbus assignments backend for storing local assignments. We will use it to store physical plan and runtime storm ids.
+     */
+    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.assignments.ILocalAssignmentsBackend.class)
+    public static final String NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS = "nimbus.local.assignments.backend.class";
+
+    /**
      * The number of threads that should be used by the nimbus thrift server.
      */
     @isInteger
@@ -1411,6 +1418,44 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
 
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Port used for supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_PORT = "supervisor.thrift.port";
+
+    @isString
+    /**
+     * The Supervisor invocations transport plug-in for Thrift client/server communication.
+     */
+    public static final String SUPERVISOR_THRIFT_TRANSPORT_PLUGIN = "supervisor.thrift.transport";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Supervisor thrift server queue size.
+     */
+    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * The number of threads that should be used by the supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_THREADS = "supervisor.thrift.threads";
+
+    @isNumber
+    @isPositiveNumber
+    public static final String SUPERVISOR_THRIFT_MAX_BUFFER_SIZE = "supervisor.thrift.max_buffer_size";
+
+    /**
+     * How long before a supervisor Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS = "supervisor.thrift.socket.timeout.ms";
+
     /**
      * A map of resources the Supervisor has e.g {"cpu.pcore.percent" : 200.0. "onheap.memory.mb": 256.0, "gpu.count" : 2.0 }
      */
@@ -1524,6 +1569,12 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_RUN_WORKER_AS_USER = "supervisor.run.worker.as.user";
 
     /**
+     * max timeout for supervisor reported heartbeats when master gains leadership
+     */
+    @isInteger
+    public static final String SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS = "supervisor.worker.heartbeats.max.timeout.secs";
+
+    /**
      * On some systems (windows for example) symlinks require special privileges that not everyone wants to
      * grant a headless user.  You can completely disable the use of symlinks by setting this config to true, but
      * by doing so you may also lose some features from storm.  For example the blobstore feature
@@ -1572,10 +1623,18 @@ public class Config extends HashMap<String, Object> {
     /**
      * A list of users that run the supervisors and should be authorized to interact with
      * nimbus as a supervisor would.  To use this set
-     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
+     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer.
      */
     @isStringList
     public static final String NIMBUS_SUPERVISOR_USERS = "nimbus.supervisor.users";
+
+    /**
+     * A list of users that nimbus runs as and should be authorized to interact with
+     * the supervisor as nimbus would. To use this set supervisor.authorizer to
+     * org.apache.storm.security.auth.authorizer.SupervisorSimpleACLAuthorizer.
+     */
+    @isStringList
+    public static final String NIMBUS_DAEMON_USERS = "nimbus.daemon.users";
 
     /**
      * A list of users that are cluster admins and can run any command.  To use this set
@@ -1781,8 +1840,17 @@ public class Config extends HashMap<String, Object> {
     public static final String WORKER_HEARTBEAT_FREQUENCY_SECS = "worker.heartbeat.frequency.secs";
 
     /**
-     * How often a task should heartbeat its status to the master.
+     * How often executor metrics should report to master, used for RPC heartbeat mode.
      */
+    @isInteger
+    @isPositiveNumber
+    public static final String EXECUTOR_METRICS_FREQUENCY_SECS = "executor.metrics.frequency.secs";
+
+    /**
+     * How often a task should heartbeat its status to the master,
+     * deprecated for 2.0 RPC heartbeat reporting, see {@code EXECUTOR_METRICS_FREQUENCY_SECS }.
+     */
+    @Deprecated
     @isInteger
     @isPositiveNumber
     public static final String TASK_HEARTBEAT_FREQUENCY_SECS = "task.heartbeat.frequency.secs";

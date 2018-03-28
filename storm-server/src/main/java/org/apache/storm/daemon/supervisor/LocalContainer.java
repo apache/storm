@@ -34,8 +34,9 @@ public class LocalContainer extends Container {
     private volatile boolean _isAlive = false;
     private final IContext _sharedContext;
     
-    public LocalContainer(Map<String, Object> conf, String supervisorId, int port, LocalAssignment assignment, IContext sharedContext) throws IOException {
-        super(ContainerType.LAUNCH, conf, supervisorId, port, assignment, null, null, null, null);
+    public LocalContainer(Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
+            LocalAssignment assignment, IContext sharedContext) throws IOException {
+        super(ContainerType.LAUNCH, conf, supervisorId, supervisorPort, port, assignment, null, null, null, null);
         _sharedContext = sharedContext;
         _workerId = Utils.uuid();
     }
@@ -52,7 +53,7 @@ public class LocalContainer extends Container {
 
     @Override
     public void launch() throws IOException {
-        Worker worker = new Worker(_conf, _sharedContext, _topologyId, _supervisorId, _port, _workerId);
+        Worker worker = new Worker(_conf, _sharedContext, _topologyId, _supervisorId, _supervisorPort, _port, _workerId);
         try {
             worker.start();
         } catch (Exception e) {

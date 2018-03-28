@@ -15,7 +15,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.topology;
+
+import java.io.NotSerializableException;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.Bolt;
@@ -24,10 +34,10 @@ import org.apache.storm.generated.ComponentObject;
 import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.NullStruct;
+import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.generated.SpoutSpec;
 import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
-import org.apache.storm.generated.SharedMemory;
 import org.apache.storm.grouping.CustomStreamGrouping;
 import org.apache.storm.grouping.PartialKeyGrouping;
 import org.apache.storm.hooks.IWorkerHook;
@@ -46,15 +56,6 @@ import org.apache.storm.tuple.Tuple;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.windowing.TupleWindow;
 import org.json.simple.JSONValue;
-
-import java.io.NotSerializableException;
-import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_COMPONENT_ID;
 import static org.apache.storm.spout.CheckpointSpout.CHECKPOINT_STREAM_ID;

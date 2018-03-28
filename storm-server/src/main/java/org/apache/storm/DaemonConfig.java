@@ -38,6 +38,7 @@ import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
+import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.Validated;
 
@@ -264,6 +265,13 @@ public class DaemonConfig implements Validated {
     public static final String NIMBUS_AUTHORIZER = "nimbus.authorizer";
 
     /**
+     * Class name for authorization plugin for supervisor.
+     */
+    @isImplementationOfClass(implementsClass = IAuthorizer.class)
+    @isString
+    public static final String SUPERVISOR_AUTHORIZER = "supervisor.authorizer";
+
+    /**
      * Impersonation user ACL config entries.
      */
     @isString
@@ -281,6 +289,24 @@ public class DaemonConfig implements Validated {
      */
     @isImplementationOfClass(implementsClass = ITopologyActionNotifierPlugin.class)
     public static final String NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN = "nimbus.topology.action.notifier.plugin.class";
+
+    /**
+     * This controls the number of working threads for distributing master assignments to supervisors.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREADS = "nimbus.assignments.service.threads";
+
+    /**
+     * This controls the number of working thread queue size of assignment service.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREAD_QUEUE_SIZE = "nimbus.assignments.service.thread.queue.size";
+
+    /**
+     * class controls heartbeats recovery strategy
+     */
+    @isString
+    public static final String NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS = "nimbus.worker.heartbeats.recovery.strategy.class";
 
     /**
      * Storm UI binds to this host/interface.

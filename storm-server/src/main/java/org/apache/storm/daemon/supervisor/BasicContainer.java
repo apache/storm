@@ -18,6 +18,7 @@
 
 package org.apache.storm.daemon.supervisor;
 
+import static org.apache.storm.daemon.nimbus.Nimbus.MIN_VERSION_SUPPORT_RPC_HEARTBEAT;
 import static org.apache.storm.utils.Utils.OR;
 
 import com.google.common.base.Joiner;
@@ -95,27 +96,30 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Create a new BasicContainer
+     * Create a new BasicContainer.
      * @param type the type of container being made.
      * @param conf the supervisor config
      * @param supervisorId the ID of the supervisor this is a part of.
+     * @param supervisorPort the thrift server port of the supervisor this is a part of.
      * @param port the port the container is on.  Should be <= 0 if only a partial recovery
      * @param assignment the assignment for this container. Should be null if only a partial recovery.
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
      * @param localState the local state of the supervisor.  May be null if partial recovery
      * @param workerId the id of the worker to use.  Must not be null if doing a partial recovery.
      */
-    public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
-            LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
+    public BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
+            int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
             LocalState localState, String workerId) throws IOException {
-        this(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, null, null, null);
+        this(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
+                workerId, null, null, null);
     }
 
     /**
-     * Create a new BasicContainer
+     * Create a new BasicContainer.
      * @param type the type of container being made.
      * @param conf the supervisor config
      * @param supervisorId the ID of the supervisor this is a part of.
+     * @param supervisorPort the thrift server port of the supervisor this is a part of.
      * @param port the port the container is on.  Should be <= 0 if only a partial recovery
      * @param assignment the assignment for this container. Should be null if only a partial recovery.
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
@@ -128,11 +132,11 @@ public class BasicContainer extends Container {
      * @throws IOException on any error
      * @throws ContainerRecoveryException if the Container could not be recovered.
      */
-    BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
+    BasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort, int port,
             LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
             LocalState localState, String workerId, Map<String, Object> topoConf,
             AdvancedFSOps ops, String profileCmd) throws IOException {
-        super(type, conf, supervisorId, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
+        super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, workerId, topoConf, ops);
         assert(localState != null);
         _localState = localState;
 
@@ -151,7 +155,7 @@ public class BasicContainer extends Container {
                 LOG.info("Recovered Worker {}", wid);
                 _workerId = wid;
             }
-        } else if (_workerId == null){
+        } else if (_workerId == null) {
             createNewWorkerId();
         }
 
@@ -237,7 +241,7 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Run the given command for profiling
+     * Run the given command for profiling.
      *
      * @param command
      *            the command to run
@@ -291,7 +295,7 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Get the command to run when doing profiling
+     * Get the command to run when doing profiling.
      * @param action the profiling action to perform
      * @param stop if this is meant to stop the profiling or start it
      * @param workerPid the PID of the process to profile
@@ -422,7 +426,7 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Compute the classpath for the worker process
+     * Compute the classpath for the worker process.
      * @param stormJar the topology jar
      * @param dependencyLocations any dependencies from the topology
      * @param topoVersion the version of the storm framework to use
@@ -485,7 +489,7 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Launch the worker process (non-blocking)
+     * Launch the worker process (non-blocking).
      *
      * @param command
      *            the command to run
@@ -624,7 +628,7 @@ public class BasicContainer extends Container {
 
     /**
      * Get parameters for the class path of the worker process.  Also used by the
-     * log Writer
+     * log Writer.
      * @param stormRoot the root dist dir for the topology
      * @return the classpath for the topology as command line arguments.
      * @throws IOException on any error.
@@ -700,7 +704,7 @@ public class BasicContainer extends Container {
     }
 
     /**
-     * Create the command to launch the worker process
+     * Create the command to launch the worker process.
      * @param memOnheap the on heap memory for the worker
      * @param stormRoot the root dist dir for the topology
      * @param jlp java library path for the topology
@@ -751,6 +755,14 @@ public class BasicContainer extends Container {
         commandList.add(getWorkerMain(topoVersion));
         commandList.add(_topologyId);
         commandList.add(_supervisorId);
+
+        // supervisor port should be only presented to worker which supports RPC heartbeat
+        // unknown version should be treated as "current version", which supports RPC heartbeat
+        if ((topoVersion.getMajor() == -1 && topoVersion.getMinor() == -1) ||
+                topoVersion.compareTo(MIN_VERSION_SUPPORT_RPC_HEARTBEAT) >= 0) {
+            commandList.add(String.valueOf(_supervisorPort));
+        }
+
         commandList.add(String.valueOf(_port));
         commandList.add(_workerId);
         

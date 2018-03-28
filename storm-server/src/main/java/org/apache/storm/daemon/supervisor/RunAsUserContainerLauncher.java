@@ -28,18 +28,21 @@ import org.apache.storm.utils.LocalState;
 public class RunAsUserContainerLauncher extends ContainerLauncher {
     private final Map<String, Object> _conf;
     private final String _supervisorId;
+    private final int _supervisorPort;
     protected final ResourceIsolationInterface _resourceIsolationManager;
     
-    public RunAsUserContainerLauncher(Map<String, Object> conf, String supervisorId, ResourceIsolationInterface resourceIsolationManager) throws IOException {
+    public RunAsUserContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
+            ResourceIsolationInterface resourceIsolationManager) throws IOException {
         _conf = conf;
         _supervisorId = supervisorId;
+        _supervisorPort = supervisorPort;
         _resourceIsolationManager = resourceIsolationManager;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        Container container = new RunAsUserContainer(ContainerType.LAUNCH, _conf, _supervisorId, port, assignment,
-                _resourceIsolationManager, state, null, null, null, null);
+        Container container = new RunAsUserContainer(ContainerType.LAUNCH, _conf, _supervisorId, _supervisorPort, port,
+                assignment, _resourceIsolationManager, state, null, null, null, null);
         container.setup();
         container.launch();
         return container;
@@ -47,13 +50,13 @@ public class RunAsUserContainerLauncher extends ContainerLauncher {
 
     @Override
     public Container recoverContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        return new RunAsUserContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, port, assignment,
-                _resourceIsolationManager, state, null, null, null, null);
+        return new RunAsUserContainer(ContainerType.RECOVER_FULL, _conf, _supervisorId, _supervisorPort, port,
+                assignment, _resourceIsolationManager, state, null, null, null, null);
     }
     
     @Override
     public Killable recoverContainer(String workerId, LocalState localState) throws IOException {
-        return new RunAsUserContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, -1, null,
+        return new RunAsUserContainer(ContainerType.RECOVER_PARTIAL, _conf, _supervisorId, _supervisorPort, -1, null,
                 _resourceIsolationManager, localState, workerId, null, null, null);
     }
 

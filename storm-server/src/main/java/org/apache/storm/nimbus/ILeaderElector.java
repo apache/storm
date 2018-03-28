@@ -47,19 +47,19 @@ public interface ILeaderElector extends Closeable {
     void removeFromLeaderLockQueue() throws Exception;
 
     /**
-     *
+     * Decide if the caller currently has the leader lock.
      * @return true if the caller currently has the leader lock.
      */
     boolean isLeader() throws Exception;
 
     /**
-     *
+     * Get the current leader's address.
      * @return the current leader's address , may return null if no one has the lock.
      */
     NimbusInfo getLeader();
 
     /**
-     *
+     * Get list of current nimbus addresses.
      * @return list of current nimbus addresses, includes leader.
      */
     List<NimbusInfo> getAllNimbuses()throws Exception;

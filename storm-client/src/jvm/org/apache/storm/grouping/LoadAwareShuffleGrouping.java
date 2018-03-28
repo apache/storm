@@ -295,7 +295,13 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort) {
         Set<String> hosts = new HashSet();
         for (int task: targetTasks) {
-            hosts.add(taskToNodePort.get(task).get_node());
+            //if this task containing worker will be killed by a assignments sync,
+            //taskToNodePort will be an empty map which is refreshed by WorkerState
+            if (taskToNodePort.containsKey(task)) {
+                hosts.add(taskToNodePort.get(task).get_node());
+            } else {
+                LOG.error("Could not find task NodeInfo from local cache.");
+            }
         }
         hosts.add(sourceNodeInfo.get_node());
         return dnsToSwitchMapping.resolve(new ArrayList<>(hosts));

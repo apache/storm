@@ -19,6 +19,16 @@ package org.apache.storm.stats;
 
 import com.google.common.collect.Lists;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+
 import org.apache.storm.cluster.ExecutorBeat;
 import org.apache.storm.cluster.IStormClusterState;
 import org.apache.storm.generated.Bolt;
@@ -40,6 +50,7 @@ import org.apache.storm.generated.SpecificAggregateStats;
 import org.apache.storm.generated.SpoutAggregateStats;
 import org.apache.storm.generated.SpoutStats;
 import org.apache.storm.generated.StormTopology;
+import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.generated.TopologyPageInfo;
 import org.apache.storm.generated.TopologyStats;
 import org.apache.storm.generated.WorkerResources;
@@ -49,15 +60,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Time;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class StatsUtil {
@@ -1255,11 +1257,11 @@ public class StatsUtil {
     /**
      * aggregate statistics per worker for a topology. Optionally filtering on specific supervisors
      *
-     * @param topologyId       topology id
-     * @param topology         storm topology
-     * @param task2component   a Map of {task id -> component}
+     * @param stormId       topology id
+     * @param stormName         storm topology
+     * @param task2Component   a Map of {task id -> component}
      * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
-     * @param exec2hostPort    a Map of {executor -> host+port}
+     * @param exec2NodePort    a Map of {executor -> host+port}
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      * @param filterSupervisor if not null, only return WorkerSummaries for that supervisor
@@ -1318,10 +1320,7 @@ public class StatsUtil {
                     int hbeatSecs = 0;
                     if (beats != null) {
                         Map<String, Object> beat = beats.get(convertExecutor(exec));
-                        if (beat != null) {
-                            Map<String, Object> hbeat = (Map<String, Object>)beat.get("heartbeat");
-                            hbeatSecs = hbeat == null ? 0 : (int) hbeat.get("uptime");
-                        }
+                        hbeatSecs = beat == null ? 0 : (int) beat.get("uptime");
                     }
                     ws.set_uptime_secs(hbeatSecs);
                     ws.set_num_executors(ws.get_num_executors() + 1);
@@ -1360,11 +1359,11 @@ public class StatsUtil {
      * Convenience overload when called from the topology page code (in that case we want data
      * for all workers in the topology, not filtered by supervisor)
      *
-     * @param topologyId       topology id
-     * @param topology         storm topology
-     * @param task2component   a Map of {task id -> component}
+     * @param stormId       topology id
+     * @param stormName         storm topology
+     * @param task2Component   a Map of {task id -> component}
      * @param beats            a converted HashMap of executor heartbeats, {executor -> heartbeat}
-     * @param exec2hostPort    a Map of {executor -> host+port}
+     * @param exec2NodePort    a Map of {executor -> host+port}
      * @param includeSys       whether to include system streams
      * @param userAuthorized   whether the user is authorized to view topology info
      *
@@ -1396,6 +1395,23 @@ public class StatsUtil {
             ExecutorBeat executorBeat = beat.getValue();
             ret.put(Lists.newArrayList(executorInfo.get_task_start(), executorInfo.get_task_end()),
                     convertZkExecutorHb(executorBeat));
+        }
+
+        return ret;
+    }
+
+    /**
+     * convert {@link SupervisorWorkerHeartbeat} to nimbus local report executor heartbeats
+     * @param workerHeartbeat
+     * @return
+     */
+    public static Map<List<Integer>, Map<String, Object>> convertWorkerBeats(SupervisorWorkerHeartbeat workerHeartbeat) {
+        Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
+        for(ExecutorInfo executorInfo: workerHeartbeat.get_executors()) {
+            Map<String, Object> reportBeat = new HashMap<>();
+            reportBeat.put(TIME_SECS, workerHeartbeat.get_time_secs());
+            ret.put(Lists.newArrayList(executorInfo.get_task_start(), executorInfo.get_task_end()),
+                    reportBeat);
         }
 
         return ret;
@@ -1532,14 +1548,8 @@ public class StatsUtil {
         return ret;
     }
 
-
-    // =====================================================================================
-    // heartbeats related
-    // =====================================================================================
-
     /**
-     * update all executor heart beats
-     * TODO: should move this method to nimbus when nimbus.clj is translated
+     * update all executor heart beats (legacy ZK heartbeat compatibility)
      *
      * @param cache         existing heart beats cache
      * @param executorBeats new heart beats
@@ -1547,9 +1557,8 @@ public class StatsUtil {
      * @param timeout       timeout
      * @return a HashMap of updated executor heart beats
      */
-    public static Map<List<Integer>, Map<String, Object>> updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
-                                                                  Map<List<Integer>, Map<String, Object>> executorBeats,
-                                                                  Set<List<Integer>> executors, Integer timeout) {
+    public static Map<List<Integer>, Map<String, Object>> updateHeartbeatCacheFromZkHeartbeat(Map<List<Integer>, Map<String, Object>> cache,
+        Map<List<Integer>, Map<String, Object>> executorBeats, Set<List<Integer>> executors, Integer timeout) {
         Map<List<Integer>, Map<String, Object>> ret = new HashMap<>();
         if (cache == null && executorBeats == null) {
             return ret;
@@ -1567,6 +1576,36 @@ public class StatsUtil {
         }
 
         return ret;
+    }
+
+
+    // =====================================================================================
+    // heartbeats related
+    // =====================================================================================
+
+    /**
+     * update all executor heart beats.
+     * TODO: should move this method to nimbus when nimbus.clj is translated
+     *
+     * @param cache         existing heart beats cache
+     * @param executorBeats new heart beats
+     * @param executors     all executors
+     * @param timeout       timeout
+     */
+    public static void updateHeartbeatCache(Map<List<Integer>, Map<String, Object>> cache,
+        Map<List<Integer>, Map<String, Object>> executorBeats, Set<List<Integer>> executors, Integer timeout) {
+        //if not executor beats, refresh is-timed-out of the cache which is done by master
+        if (executorBeats == null) {
+            for (Map.Entry<List<Integer>, Map<String, Object>> executorbeat: cache.entrySet()) {
+                Map<String, Object> beat = executorbeat.getValue();
+                beat.put("is-timed-out", Time.deltaSecs((Integer)beat.get("nimbus-time")) >= timeout);
+            }
+            return;
+        }
+        //else refresh nimbus-time and executor-reported-time by heartbeats reporting
+        for (List<Integer> executor : executors) {
+            cache.put(executor, updateExecutorCache(cache.get(executor), executorBeats.get(executor), timeout));
+        }
     }
 
     // TODO: should move this method to nimbus when nimbus.clj is translated
@@ -1589,7 +1628,7 @@ public class StatsUtil {
             if (lastReportedTime != null) {
                 reportedTime = lastReportedTime;
             } else {
-                reportedTime = 0;
+                reportedTime = lastReportedTime = 0;
             }
         }
 
@@ -1600,7 +1639,6 @@ public class StatsUtil {
         ret.put("is-timed-out", Time.deltaSecs(lastNimbusTime) >= timeout);
         ret.put("nimbus-time", lastNimbusTime);
         ret.put("executor-reported-time", reportedTime);
-        ret.put(HEARTBEAT, newBeat);
 
         return ret;
     }
@@ -1647,20 +1685,17 @@ public class StatsUtil {
                 putKV(m, HOST, host);
                 putKV(m, PORT, port);
 
-                Map hb = getMapByKey(beat, HEARTBEAT);
-                if (hb != null) {
-                    Map stats = getMapByKey(hb, STATS);
-                    putKV(m, UPTIME, hb.get(UPTIME));
-                    putKV(m, STATS, stats);
+                Map stats = getMapByKey(beat, STATS);
+                putKV(m, UPTIME, beat.get(UPTIME));
+                putKV(m, STATS, stats);
 
-                    String type = componentType(topology, compId);
-                    if (type != null) {
-                        putKV(m, TYPE, type);
-                    } else {
-                        putKV(m, TYPE, stats.get(TYPE));
-                    }
-                    ret.add(m);
+                String type = componentType(topology, compId);
+                if (type != null) {
+                    putKV(m, TYPE, type);
+                } else {
+                    putKV(m, TYPE, stats.get(TYPE));
                 }
+                ret.add(m);
             }
         }
         return ret;
@@ -1815,7 +1850,7 @@ public class StatsUtil {
     /**
      * filter system streams from stats
      *
-     * @param stats      { stream id -> value }
+     * @param stream2stat      { stream id -> value }
      * @param includeSys whether to filter system streams
      * @return filtered stats
      */
@@ -2016,6 +2051,18 @@ public class StatsUtil {
         ret.set_executor_stats(convertedStats);
 
         return ret;
+    }
+
+    /**
+     * Used for local test.
+     * @return
+     */
+    public static SupervisorWorkerHeartbeat thriftifyRPCWorkerHb(String stormId, List<Long> executorId) {
+        SupervisorWorkerHeartbeat supervisorWorkerHeartbeat = new SupervisorWorkerHeartbeat();
+        supervisorWorkerHeartbeat.set_storm_id(stormId);
+        supervisorWorkerHeartbeat.set_executors(Collections.singletonList(new ExecutorInfo(executorId.get(0).intValue(), executorId.get(1).intValue())));
+        supervisorWorkerHeartbeat.set_time_secs(Time.currentTimeSecs());
+        return supervisorWorkerHeartbeat;
     }
 
     private static ComponentAggregateStats thriftifySpoutAggStats(Map m) {

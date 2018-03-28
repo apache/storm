@@ -18,6 +18,8 @@
 package org.apache.storm.cluster;
 
 import org.apache.storm.Config;
+import org.apache.storm.assignments.ILocalAssignmentsBackend;
+import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.generated.ClusterWorkerHeartbeat;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.ExecutorStats;
@@ -49,6 +51,7 @@ public class ClusterUtils {
     public static final String SUPERVISORS_ROOT = "supervisors";
     public static final String WORKERBEATS_ROOT = "workerbeats";
     public static final String BACKPRESSURE_ROOT = "backpressure";
+    public static final String LEADERINFO_ROOT = "leader-info";
     public static final String ERRORS_ROOT = "errors";
     public static final String BLOBSTORE_ROOT = "blobstore";
     public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT = "blobstoremaxkeysequencenumber";
@@ -63,6 +66,7 @@ public class ClusterUtils {
     public static final String SUPERVISORS_SUBTREE = ZK_SEPERATOR + SUPERVISORS_ROOT;
     public static final String WORKERBEATS_SUBTREE = ZK_SEPERATOR + WORKERBEATS_ROOT;
     public static final String BACKPRESSURE_SUBTREE = ZK_SEPERATOR + BACKPRESSURE_ROOT;
+    public static final String LEADERINFO_SUBTREE = ZK_SEPERATOR + LEADERINFO_ROOT;
     public static final String ERRORS_SUBTREE = ZK_SEPERATOR + ERRORS_ROOT;
     public static final String BLOBSTORE_SUBTREE = ZK_SEPERATOR + BLOBSTORE_ROOT;
     public static final String BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_SUBTREE = ZK_SEPERATOR + BLOBSTORE_MAX_KEY_SEQUENCE_NUMBER_ROOT;
@@ -252,12 +256,13 @@ public class ClusterUtils {
         return executorWhb;
     }
 
-    public IStormClusterState mkStormClusterStateImpl(Object stateStorage, ClusterStateContext context) throws Exception {
+    public IStormClusterState mkStormClusterStateImpl(Object stateStorage, ILocalAssignmentsBackend backend, ClusterStateContext context) throws Exception {
         if (stateStorage instanceof IStateStorage) {
-            return new StormClusterStateImpl((IStateStorage) stateStorage, context, false);
+            return new StormClusterStateImpl((IStateStorage) stateStorage, backend, context, false);
         } else {
-            IStateStorage Storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage, (Map<String, Object>) stateStorage, context);
-            return new StormClusterStateImpl(Storage, context, true);
+            IStateStorage Storage = _instance.mkStateStorageImpl((Map<String, Object>) stateStorage,
+                (Map<String, Object>) stateStorage, context);
+            return new StormClusterStateImpl(Storage, backend, context, true);
         }
     }
 
@@ -279,8 +284,12 @@ public class ClusterUtils {
         return _instance.mkStateStorageImpl(config, auth_conf, context);
     }
 
+    public static IStormClusterState mkStormClusterState(Object StateStorage, ILocalAssignmentsBackend backend, ClusterStateContext context) throws Exception {
+        return _instance.mkStormClusterStateImpl(StateStorage, backend, context);
+    }
+
     public static IStormClusterState mkStormClusterState(Object StateStorage, ClusterStateContext context) throws Exception {
-        return _instance.mkStormClusterStateImpl(StateStorage, context);
+        return _instance.mkStormClusterStateImpl(StateStorage, LocalAssignmentsBackendFactory.getDefault(), context);
     }
 
     public static String stringifyError(Throwable error) {

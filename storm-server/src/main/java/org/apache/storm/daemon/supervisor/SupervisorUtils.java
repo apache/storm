@@ -15,7 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.supervisor;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.storm.Config;
 import org.apache.storm.generated.LSWorkerHeartbeat;
@@ -29,13 +37,6 @@ import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 
 public class SupervisorUtils {
 
@@ -75,7 +76,7 @@ public class SupervisorUtils {
 
     /**
      * Given the blob information returns the value of the workerRestart field, handling it either being a string or a boolean value, or
-     * if it's not specified then returns false
+     * if it's not specified then returns false.
      *
      * @param blobInfo the info for the blob.
      * @return true if the blob needs a worker restart by way of the callback else false.

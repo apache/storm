@@ -30,7 +30,8 @@ import org.apache.thrift.TEnum;
 
 public enum WorkerTokenServiceType implements org.apache.thrift.TEnum {
   NIMBUS(0),
-  DRPC(1);
+  DRPC(1),
+  SUPERVISOR(2);
 
   private final int value;
 
@@ -55,6 +56,8 @@ public enum WorkerTokenServiceType implements org.apache.thrift.TEnum {
         return NIMBUS;
       case 1:
         return DRPC;
+      case 2:
+        return SUPERVISOR;
       default:
         return null;
     }
