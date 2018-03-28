@@ -25,7 +25,8 @@
 
         public override string ToString()
         {
-            return $"{IsError ? "Verification failed." : "Verification passed."} {reason}";
+            string prefix = IsError ? "Verification failed." : "Verification passed.";
+            return $"{prefix} {reason}";
         }
     }
 }

@@ -1,5 +1,4 @@
-﻿using Dotnet.Storm.Adapter.Extensions;
-using Dotnet.Storm.Adapter.Messaging;
+﻿using Dotnet.Storm.Adapter.Messaging;
 using System;
 using System.Collections.Generic;
 
