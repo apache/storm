@@ -15,7 +15,7 @@ namespace Dotnet.Storm.Adapter.Extensions
                 result.Append(ex.Message);
                 ex = ex.InnerException;
             }
-            while (ex.InnerException != null);
+            while (ex != null);
 
             return result.ToString(); ;
         }

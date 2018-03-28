@@ -8,7 +8,7 @@ namespace Dotnet.Storm.Adapter
         [Option('c', "class", Required = true, HelpText = "Component class name to be instantiated.")]
         public string Class { get; set; }
 
-        [Option('a', "assembly", Required = false, HelpText = "The assembly which contains the component class.")]
+        [Option('a', "assembly", Required = true, HelpText = "The assembly which contains the component class.")]
         public string Assembly { get; set; }
 
         [Option('p', "parameters", Required = false, HelpText = "Component command line parameters.")]

@@ -25,8 +25,7 @@
 
         public override string ToString()
         {
-            string prefix = IsError ? "Verification failed." : "Verification passed.";
-            return string.Format("{0} {1}", prefix, reason);
+            return $"{IsError ? "Verification failed." : "Verification passed."} {reason}";
         }
     }
 }

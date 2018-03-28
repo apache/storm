@@ -32,7 +32,7 @@ namespace Dotnet.Storm.Adapter.Components
 
                 if (result.IsError)
                 {
-                    Logger.Error($"Validation failed: {result} in {tuple}.");
+                    Logger.Error($"{result}  for nex tuple: {tuple}.");
                 }
                 else
                 {
