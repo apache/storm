@@ -1,39 +1,38 @@
 Overview
-=
+========
 Dotnet.Strom.Adapter is a .NET Core 2.0 implementation of Storm multi-lang protocol. You can use it to implement CSharp components for your topology. 
 Prerequisites
-=
  
 * .NET Core framework 2.0 and above
 * Git
 
 Install form NuGet
+========
 		PM> Install-Package Dotnet.Storm.Adapter
-=
 
 Build locally
-=
+========
 Run next command
 
 		cd /strom-mulilang/dotnet
 		build.sh adapter
 
 Creating NuGet package
-=
+========
 
 		cd /strom-mulilang/dotnet
 		build.sh nuget
 
 Run example
-=
+========
 
 		cd /strom-mulilang/dotnet
 		run.sh
 
 API
-=
+========
 
-##Common
+## Common
 
 - Properties
 
@@ -67,7 +66,7 @@ API
 
         public VerificationResult VerifyOutput(string stream, List<object> tuple)
             
-##Spout specific
+## Spout specific
 - Properties
 
         protected new LocalStorm Storm
@@ -88,7 +87,7 @@ API
 
         protected abstract void Next();
 
-##Bolt specific
+## Bolt specific
 - Events
 
         protected event EventHandler<EventArgs> OnTick;
