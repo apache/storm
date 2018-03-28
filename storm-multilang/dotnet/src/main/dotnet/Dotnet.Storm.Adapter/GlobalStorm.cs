@@ -32,7 +32,7 @@ namespace Dotnet.Storm.Adapter
             catch (Exception ex)
             {
                 //we're expecting this shouldn't happen
-                Logger.Error($"Message parsing error: {ex.GetMessageTrace()}");
+                Logger.Error($"Message parsing error: {ex}");
             }
 
             // just skip incorrect message

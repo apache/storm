@@ -105,15 +105,15 @@ namespace Dotnet.Storm.Adapter.Components
             try
             {
                 Execute(new StormTuple(tuple));
-                if (IsGuarantee)
+                if (IsGuaranteed)
                 {
                     Storm.Ack(tuple.Id);
                 }
             }
             catch (Exception ex)
             {
-                Logger.Error($"Failed to process tuple. {ex.GetMessageTrace()}");
-                if (IsGuarantee)
+                Logger.Error($"Failed to process tuple. {ex}");
+                if (IsGuaranteed)
                 {
                     Storm.Fail(tuple.Id);
                 }

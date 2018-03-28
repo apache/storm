@@ -23,7 +23,7 @@ namespace Dotnet.Storm.Adapter.Components
             public void Emit(List<object> tuple, string stream = "default", long task = 0, bool needTaskIds = false)
             {
                 string id = null;
-                if (IsGuarantee)
+                if (IsGuaranteed)
                 {
                     id = NextId();
                 }

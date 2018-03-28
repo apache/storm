@@ -94,7 +94,7 @@ namespace Dotnet.Storm.Adapter.Components
 
         protected static StormContext Context { get; private set; }
 
-        protected static bool IsGuarantee
+        protected static bool IsGuaranteed
         {
             get
             {

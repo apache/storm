@@ -10,7 +10,7 @@ spouts:
  - id: emit-sentence
    className: org.apache.storm.flux.wrappers.spouts.FluxShellSpout
    constructorArgs:
-     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.EmitSentense", "-a", "Dotnet.Storm.Example", "-l", "debug"]
+     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.EmitSentence", "-a", "Dotnet.Storm.Example", "-l", "debug"]
      - [sentence]
    parallelism: 1
 bolts:
