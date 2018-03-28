@@ -1,9 +1,6 @@
 #!/bin/bash
 
 pwd=$(pwd)
-if [[ "$1" = "" ]]; then
-  echo "usage: build.sh [adapter|example|nuget]"
-fi
 if [[ "$1" = "adapter" || "$1" = "example" ]]; then
     dotnet publish $pwd/src/main/dotnet/Dotnet.Storm.Adapter/Dotnet.Storm.Adapter.csproj -o $pwd/output/resources/ -v m
 fi
@@ -12,4 +9,6 @@ if [[ "$1" = "example" ]]; then
 fi
 if [[ "$1" = "nuget" ]]; then
     dotnet pack $pwd/src/main/dotnet/Dotnet.Storm.Adapter/Dotnet.Storm.Adapter.csproj -o $pwd/output/resources/ -v m
+else
+  echo "usage: build.sh [adapter|example|nuget]"
 fi
