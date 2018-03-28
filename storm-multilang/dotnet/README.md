@@ -29,6 +29,24 @@ Run example
 		cd /strom-mulilang/dotnet
 		run.sh
 
+Command line parameters
+========
+
+* -c (class name) - component class to instantiate
+* -a (assembly name) - dll, containing component class
+* -p (parameters) - parameters will be available through Arguments property
+* -l (log level) - one of TRACE, DEBUG, INFO, WARN, ERROR
+
+The example of usage is 
+
+		spouts:
+		 - id: emit-sentence
+		   className: org.apache.storm.flux.wrappers.spouts.FluxShellSpout
+		   constructorArgs:
+		     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.EmitSentense", "-a", "Dotnet.Storm.Example", "-l", "debug"]
+		     - [sentence]
+		   parallelism: 1
+
 API
 ========
 
