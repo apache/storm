@@ -1,33 +1,42 @@
-#Overview
+Overview
+=
 Dotnet.Strom.Adapter is a .NET Core 2.0 implementation of Storm multi-lang protocol. You can use it to implement CSharp components for your topology. 
-#Prerequisites
+Prerequisites
+=
  
 * .NET Core framework 2.0 and above
 * Git
 
-#Install form NuGet
+Install form NuGet
 		PM> Install-Package Dotnet.Storm.Adapter
+=
 
-#Build locally
+Build locally
+=
 Run next command
 
 		cd /strom-mulilang/dotnet
 		build.sh adapter
 
-#Creating NuGet package
+Creating NuGet package
+=
 
 		cd /strom-mulilang/dotnet
 		build.sh nuget
 
-#Run example
+Run example
+=
 
 		cd /strom-mulilang/dotnet
 		run.sh
 
-#API
+API
+=
 
 ##Common
-###Properties
+
+- Properties
+
         protected readonly static ILog Logger;
 
         protected LocalStorm Storm;
@@ -42,10 +51,12 @@ Run next command
 
         protected static int MessageTimeout;
         
-###Events
+- Events
+
         protected event EventHandler<TaskIds> OnTaskIds;
 
-###LocalStorm methods
+- LocalStorm methods
+
         public void Sync()
 
         public void Error(string message)
@@ -57,32 +68,39 @@ Run next command
         public VerificationResult VerifyOutput(string stream, List<object> tuple)
             
 ##Spout specific
-###Properties
+- Properties
+
         protected new LocalStorm Storm
 
         protected bool IsEnabled = false;
 
-###Events
+- Events
+
         protected event EventHandler OnActivate;
 
         protected event EventHandler OnDeactivate;
 
-###LocalStorm methods
+- LocalStorm methods
+
         public void Emit(List<object> tuple, string stream = "default", long task = 0, bool needTaskIds = false)
 
-###Methods
+- Methods
+
         protected abstract void Next();
 
 ##Bolt specific
-###Events
+- Events
+
         protected event EventHandler<EventArgs> OnTick;
 
-###LocalStorm methods
+- LocalStorm methods
+
         public void Ack(string id);
 
         public void Fail(string id);
 
         public void Emit(List<object> tuple, string stream = "default", long task = 0, List<string> anchors = null, bool needTaskIds = false);
 
-###Methods
+- Methods
+
          protected abstract void Execute(StormTuple tuple);
