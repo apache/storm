@@ -43,13 +43,15 @@ public abstract class ContainerLauncher {
      * for the config and the environment.
      * @param conf the config
      * @param supervisorId the ID of the supervisor
+     * @param supervisorPort the parent supervisor thrift server port
      * @param sharedContext Used in local mode to let workers talk together without netty
      * @return the proper container launcher
      * @throws IOException on any error
      */
-    public static ContainerLauncher make(Map<String, Object> conf, String supervisorId, IContext sharedContext) throws IOException {
+    public static ContainerLauncher make(Map<String, Object> conf, String supervisorId, int supervisorPort,
+        IContext sharedContext) throws IOException {
         if (ConfigUtils.isLocalMode(conf)) {
-            return new LocalContainerLauncher(conf, supervisorId, sharedContext);
+            return new LocalContainerLauncher(conf, supervisorId, supervisorPort, sharedContext);
         }
         
         ResourceIsolationInterface resourceIsolationManager = null;
@@ -60,9 +62,9 @@ public abstract class ContainerLauncher {
         }
 
         if (ObjectReader.getBoolean(conf.get(Config.SUPERVISOR_RUN_WORKER_AS_USER), false)) {
-            return new RunAsUserContainerLauncher(conf, supervisorId, resourceIsolationManager);
+            return new RunAsUserContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager);
         }
-        return new BasicContainerLauncher(conf, supervisorId, resourceIsolationManager);
+        return new BasicContainerLauncher(conf, supervisorId, supervisorPort, resourceIsolationManager);
     }
     
     protected ContainerLauncher() {

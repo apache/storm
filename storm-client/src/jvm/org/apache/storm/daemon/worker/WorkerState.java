@@ -81,6 +81,7 @@ import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import org.apache.storm.utils.Utils.SmartThread;
 import org.slf4j.Logger;
@@ -199,6 +200,7 @@ public class WorkerState {
     final IConnection receiver;
     final String topologyId;
     final String assignmentId;
+    final int supervisorPort;
     final int port;
     final String workerId;
     final IStateStorage stateStorage;
@@ -272,18 +274,17 @@ public class WorkerState {
     private final Collection<IAutoCredentials> autoCredentials;
     private static final long LOAD_REFRESH_INTERVAL_MS = 5000L;
 
-    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId, int port, String workerId,
-                       Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState,
-                       Collection<IAutoCredentials> autoCredentials)
-        throws IOException, InvalidTopologyException {
+    public WorkerState(Map<String, Object> conf, IContext mqContext, String topologyId, String assignmentId,
+        int supervisorPort, int port, String workerId, Map<String, Object> topologyConf, IStateStorage stateStorage,
+        IStormClusterState stormClusterState, Collection<IAutoCredentials> autoCredentials) throws IOException, InvalidTopologyException {
         this.autoCredentials = autoCredentials;
-        this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
-
         this.conf = conf;
+        this.localExecutors = new HashSet<>(readWorkerExecutors(stormClusterState, topologyId, assignmentId, port));
         this.mqContext = (null != mqContext) ? mqContext : TransportFactory.makeContext(topologyConf);
         this.receiver = this.mqContext.bind(topologyId, port);
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
+        this.supervisorPort = supervisorPort;
         this.port = port;
         this.workerId = workerId;
         this.stateStorage = stateStorage;
@@ -354,23 +355,7 @@ public class WorkerState {
     }
 
     public void refreshConnections(Runnable callback) throws Exception {
-        Integer version = stormClusterState.assignmentVersion(topologyId, callback);
-        version = (null == version) ? 0 : version;
-        VersionedData<Assignment> assignmentVersion = assignmentVersions.get().get(topologyId);
-        Assignment assignment;
-        if (null != assignmentVersion && (assignmentVersion.getVersion() == version)) {
-            assignment = assignmentVersion.getData();
-        } else {
-            VersionedData<Assignment>
-                newAssignmentVersion = new VersionedData<>(version,
-                stormClusterState.assignmentInfoWithVersion(topologyId, callback).getData());
-            assignmentVersions.getAndUpdate(prev -> {
-                Map<String, VersionedData<Assignment>> next = new HashMap<>(prev);
-                next.put(topologyId, newAssignmentVersion);
-                return next;
-            });
-            assignment = newAssignmentVersion.getData();
-        }
+        Assignment assignment = getLocalAssignment(conf, stormClusterState, topologyId);
 
         Set<NodeInfo> neededConnections = new HashSet<>();
         Map<Integer, NodeInfo> newTaskToNodePort = new HashMap<>();
@@ -645,8 +630,7 @@ public class WorkerState {
         LOG.info("Reading assignments");
         List<List<Long>> executorsAssignedToThisWorker = new ArrayList<>();
         executorsAssignedToThisWorker.add(Constants.SYSTEM_EXECUTOR_ID);
-        Map<List<Long>, NodeInfo> executorToNodePort =
-            stormClusterState.assignmentInfo(topologyId, null).get_executor_node_port();
+        Map<List<Long>, NodeInfo> executorToNodePort = getLocalAssignment(conf, stormClusterState, topologyId).get_executor_node_port();
         for (Map.Entry<List<Long>, NodeInfo> entry : executorToNodePort.entrySet()) {
             NodeInfo nodeInfo = entry.getValue();
             if (nodeInfo.get_node().equals(assignmentId) && nodeInfo.get_port().iterator().next() == port) {
@@ -654,6 +638,21 @@ public class WorkerState {
             }
         }
         return executorsAssignedToThisWorker;
+    }
+
+    private Assignment getLocalAssignment(Map<String, Object> conf, IStormClusterState stormClusterState, String topologyId) {
+        if (!ConfigUtils.isLocalMode(conf)) {
+            try (SupervisorClient supervisorClient = SupervisorClient.getConfiguredClient(conf, Utils.hostname(),
+                    supervisorPort)){
+                Assignment assignment = supervisorClient.getClient().getLocalAssignmentForStorm(topologyId);
+                return assignment;
+            } catch (Throwable tr1) {
+                //if any error/exception thrown, fetch it from zookeeper
+                return stormClusterState.remoteAssignmentInfo(topologyId, null);
+            }
+        } else {
+            return stormClusterState.remoteAssignmentInfo(topologyId, null);
+        }
     }
 
     private Map<List<Long>, JCQueue> mkReceiveQueueMap(Map<String, Object> topologyConf, Set<List<Long>> executors) {

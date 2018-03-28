@@ -56,12 +56,12 @@ public class BasicContainerTest {
     }
     
     public static class MockBasicContainer extends BasicContainer {
-        public MockBasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int port,
-                LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager, LocalState localState,
-                String workerId, Map<String, Object> topoConf, AdvancedFSOps ops, String profileCmd)
-                throws IOException {
-            super(type, conf, supervisorId, port, assignment, resourceIsolationManager, localState, workerId, topoConf, ops,
-                    profileCmd);
+        public MockBasicContainer(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
+                int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
+                LocalState localState, String workerId, Map<String, Object> topoConf, AdvancedFSOps ops,
+                String profileCmd) throws IOException {
+            super(type, conf, supervisorId, supervisorPort, port, assignment, resourceIsolationManager, localState,
+                    workerId, topoConf, ops, profileCmd);
         }
 
         public final List<CommandRun> profileCmds = new ArrayList<>();
@@ -118,6 +118,7 @@ public class BasicContainerTest {
     @Test
     public void testCreateNewWorkerId() throws Exception {
         final String topoId = "test_topology";
+        final int supervisorPort = 6628;
         final int port = 8080;
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
@@ -129,7 +130,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", supervisorPort, port, la, null, ls, null, new HashMap<>(), ops, "profile");
         //null worker id means generate one...
         
         assertNotNull(mc._workerId);
@@ -143,6 +144,7 @@ public class BasicContainerTest {
     public void testRecovery() throws Exception {
         final String topoId = "test_topology";
         final String workerId = "myWorker";
+        final int supervisorPort = 6628;
         final int port = 8080;
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
@@ -158,7 +160,7 @@ public class BasicContainerTest {
         when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.RECOVER_FULL, superConf, 
-                "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", supervisorPort, port, la, null, ls, null, new HashMap<>(), ops, "profile");
         
         assertEquals(workerId, mc._workerId);
     }
@@ -166,6 +168,7 @@ public class BasicContainerTest {
     @Test
     public void testRecoveryMiss() throws Exception {
         final String topoId = "test_topology";
+        final int supervisorPort = 6628;
         final int port = 8080;
         LocalAssignment la = new LocalAssignment();
         la.set_topology_id(topoId);
@@ -178,7 +181,7 @@ public class BasicContainerTest {
         
         try {
             new MockBasicContainer(ContainerType.RECOVER_FULL, new HashMap<String, Object>(), 
-                    "SUPERVISOR", port, la, null, ls, null, new HashMap<>(), null, "profile");
+                    "SUPERVISOR", supervisorPort, port, la, null, ls, null, new HashMap<>(), null, "profile");
             fail("Container recovered worker incorrectly");
         } catch (ContainerRecoveryException e) {
             //Expected
@@ -188,6 +191,7 @@ public class BasicContainerTest {
     @Test
     public void testCleanUp() throws Exception {
         final String topoId = "test_topology";
+        final int supervisorPort = 6628;
         final int port = 8080;
         final String workerId = "worker-id";
         LocalAssignment la = new LocalAssignment();
@@ -204,7 +208,7 @@ public class BasicContainerTest {
         when(ls.getApprovedWorkers()).thenReturn(new HashMap<>(workerState));
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         mc.cleanUp();
         
@@ -218,6 +222,7 @@ public class BasicContainerTest {
     public void testRunProfiling() throws Exception {
         final long pid = 100;
         final String topoId = "test_topology";
+        final int supervisorPort = 6628;
         final int port = 8080;
         final String workerId = "worker-id";
         final String stormLocal = ContainerTest.asAbsPath("tmp", "testing");
@@ -238,7 +243,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         //HEAP DUMP
         ProfileRequest req = new ProfileRequest();
@@ -357,7 +362,8 @@ public class BasicContainerTest {
     
     @Test
     public void testLaunch() throws Exception {
-        final String topoId = "test_topology";
+        final String topoId = "test_topology_current";
+        final int supervisorPort = 6628;
         final int port = 8080;
         final String stormHome = ContainerTest.asAbsPath("tmp", "storm-home");
         final String stormLogDir = ContainerTest.asFile(".", "target").getCanonicalPath();
@@ -393,8 +399,8 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         checkpoint(() -> {
-            MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                    "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+            MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf,
+                    "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
 
             mc.launch();
 
@@ -440,21 +446,223 @@ public class BasicContainerTest {
                     "-cp",
                     "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
                     "org.apache.storm.daemon.worker.Worker",
-                    topoId, 
+                    topoId,
                     "SUPERVISOR",
+                    String.valueOf(supervisorPort),
                     String.valueOf(port),
                     workerId
                     ), cmd.cmd);
             assertEquals(new File(workerRoot), cmd.pwd);
-          }, 
+          },
           "storm.home", stormHome,
           "storm.log.dir", stormLogDir);
     }
-    
+
+    @Test
+    public void testLaunchStorm1version() throws Exception {
+        final String topoId = "test_topology_storm_1.x";
+        final int supervisorPort = 6628;
+        final int port = 8080;
+        final String stormHome = ContainerTest.asAbsPath("tmp", "storm-home");
+        final String stormLogDir = ContainerTest.asFile(".", "target").getCanonicalPath();
+        final String workerId = "worker-id";
+        final String stormLocal = ContainerTest.asAbsPath("tmp", "storm-local");
+        final String distRoot = ContainerTest.asAbsPath(stormLocal, "supervisor", "stormdist", topoId);
+        final File stormcode = new File(distRoot, "stormcode.ser");
+        final File stormjar = new File(distRoot, "stormjar.jar");
+        final String log4jdir = ContainerTest.asAbsPath(stormHome, "conf");
+        final String workerConf = ContainerTest.asAbsPath(log4jdir, "worker.xml");
+        final String workerRoot = ContainerTest.asAbsPath(stormLocal, "workers", workerId);
+        final String workerTmpDir = ContainerTest.asAbsPath(workerRoot, "tmp");
+
+        final StormTopology st = new StormTopology();
+        st.set_spouts(new HashMap<>());
+        st.set_bolts(new HashMap<>());
+        st.set_state_spouts(new HashMap<>());
+
+        // minimum 1.x version of supporting STORM-2448 would be 1.0.4
+        st.set_storm_version("1.0.4");
+        byte [] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+
+        final Map<String, Object> superConf = new HashMap<>();
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+        superConf.put(DaemonConfig.STORM_LOG4J2_CONF_DIR, log4jdir);
+        superConf.put(Config.WORKER_CHILDOPTS, " -Dtesting=true");
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+        when(ops.slurp(stormcode)).thenReturn(serializedState);
+
+        LocalState ls = mock(LocalState.class);
+
+        checkpoint(() -> {
+                    MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf,
+                            "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+
+                    mc.launch();
+
+                    assertEquals(1, mc.workerCmds.size());
+                    CommandRun cmd = mc.workerCmds.get(0);
+                    mc.workerCmds.clear();
+                    assertListEquals(Arrays.asList(
+                            "java",
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "org.apache.storm.LogWriter",
+                            "java",
+                            "-server",
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "-Dtesting=true",
+                            "-Djava.library.path=JLP",
+                            "-Dstorm.conf.file=",
+                            "-Dstorm.options=",
+                            "-Djava.io.tmpdir="+workerTmpDir,
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "org.apache.storm.daemon.worker",
+                            topoId,
+                            "SUPERVISOR",
+                            String.valueOf(port),
+                            workerId
+                    ), cmd.cmd);
+                    assertEquals(new File(workerRoot), cmd.pwd);
+                },
+                "storm.home", stormHome,
+                "storm.log.dir", stormLogDir);
+    }
+
+    @Test
+    public void testLaunchStorm0version() throws Exception {
+        final String topoId = "test_topology_storm_0.x";
+        final int supervisorPort = 6628;
+        final int port = 8080;
+        final String stormHome = ContainerTest.asAbsPath("tmp", "storm-home");
+        final String stormLogDir = ContainerTest.asFile(".", "target").getCanonicalPath();
+        final String workerId = "worker-id";
+        final String stormLocal = ContainerTest.asAbsPath("tmp", "storm-local");
+        final String distRoot = ContainerTest.asAbsPath(stormLocal, "supervisor", "stormdist", topoId);
+        final File stormcode = new File(distRoot, "stormcode.ser");
+        final File stormjar = new File(distRoot, "stormjar.jar");
+        final String log4jdir = ContainerTest.asAbsPath(stormHome, "conf");
+        final String workerConf = ContainerTest.asAbsPath(log4jdir, "worker.xml");
+        final String workerRoot = ContainerTest.asAbsPath(stormLocal, "workers", workerId);
+        final String workerTmpDir = ContainerTest.asAbsPath(workerRoot, "tmp");
+
+        final StormTopology st = new StormTopology();
+        st.set_spouts(new HashMap<>());
+        st.set_bolts(new HashMap<>());
+        st.set_state_spouts(new HashMap<>());
+
+        // minimum 0.x version of supporting STORM-2448 would be 0.10.3
+        st.set_storm_version("0.10.3");
+        byte [] serializedState = Utils.gzip(Utils.thriftSerialize(st));
+
+        final Map<String, Object> superConf = new HashMap<>();
+        superConf.put(Config.STORM_LOCAL_DIR, stormLocal);
+        superConf.put(Config.STORM_WORKERS_ARTIFACTS_DIR, stormLocal);
+        superConf.put(DaemonConfig.STORM_LOG4J2_CONF_DIR, log4jdir);
+        superConf.put(Config.WORKER_CHILDOPTS, " -Dtesting=true");
+
+        LocalAssignment la = new LocalAssignment();
+        la.set_topology_id(topoId);
+
+        AdvancedFSOps ops = mock(AdvancedFSOps.class);
+        when(ops.doRequiredTopoFilesExist(superConf, topoId)).thenReturn(true);
+        when(ops.slurp(stormcode)).thenReturn(serializedState);
+
+        LocalState ls = mock(LocalState.class);
+
+        checkpoint(() -> {
+                    MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf,
+                            "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+
+                    mc.launch();
+
+                    assertEquals(1, mc.workerCmds.size());
+                    CommandRun cmd = mc.workerCmds.get(0);
+                    mc.workerCmds.clear();
+                    assertListEquals(Arrays.asList(
+                            "java",
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "backtype.storm.LogWriter",
+                            "java",
+                            "-server",
+                            "-Dlogging.sensitivity=S3",
+                            "-Dlogfile.name=worker.log",
+                            "-Dstorm.home=" + stormHome,
+                            "-Dworkers.artifacts=" + stormLocal,
+                            "-Dstorm.id=" + topoId,
+                            "-Dworker.id=" + workerId,
+                            "-Dworker.port=" + port,
+                            "-Dstorm.log.dir=" + stormLogDir,
+                            "-Dlog4j.configurationFile=" + workerConf,
+                            "-DLog4jContextSelector=org.apache.logging.log4j.core.selector.BasicContextSelector",
+                            "-Dstorm.local.dir=" + stormLocal,
+                            "-Dworker.memory_limit_mb=768",
+                            "-Dtesting=true",
+                            "-Djava.library.path=JLP",
+                            "-Dstorm.conf.file=",
+                            "-Dstorm.options=",
+                            "-Djava.io.tmpdir="+workerTmpDir,
+                            "-cp",
+                            "FRAMEWORK_CP:" + stormjar.getAbsolutePath(),
+                            "backtype.storm.daemon.worker",
+                            topoId,
+                            "SUPERVISOR",
+                            String.valueOf(port),
+                            workerId
+                    ), cmd.cmd);
+                    assertEquals(new File(workerRoot), cmd.pwd);
+                },
+                "storm.home", stormHome,
+                "storm.log.dir", stormLogDir);
+    }
+
     @Test
     public void testSubstChildOpts() throws Exception {
         String workerId = "w-01";
         String topoId = "s-01";
+        int supervisorPort = 6628;
         int port = 9999;
         int memOnheap = 512;
         
@@ -469,7 +677,7 @@ public class BasicContainerTest {
         LocalState ls = mock(LocalState.class);
         
         MockBasicContainer mc = new MockBasicContainer(ContainerType.LAUNCH, superConf, 
-                "SUPERVISOR", port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
+                "SUPERVISOR", supervisorPort, port, la, null, ls, workerId, new HashMap<>(), ops, "profile");
         
         assertListEquals(Arrays.asList(
                 "-Xloggc:/tmp/storm/logs/gc.worker-9999-s-01-w-01-9999.log",

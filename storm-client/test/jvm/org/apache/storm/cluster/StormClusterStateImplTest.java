@@ -18,9 +18,8 @@
 
 package org.apache.storm.cluster;
 
+import org.apache.storm.assignments.LocalAssignmentsBackendFactory;
 import org.apache.storm.callback.ZKStateChangedCallback;
-import org.apache.zookeeper.KeeperException;
-import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Matchers;
@@ -48,7 +47,7 @@ public class StormClusterStateImplTest {
     public void init() throws Exception {
         storage = Mockito.mock(IStateStorage.class);
         context = new ClusterStateContext();
-        state = new StormClusterStateImpl(storage, context, false /*solo*/);
+        state = new StormClusterStateImpl(storage, LocalAssignmentsBackendFactory.getDefault(), context, false /*solo*/);
     }
 
 

@@ -51,7 +51,9 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "getOwnerResourceSummaries"));
     protected Set<String> supervisorCommands = new HashSet<>(Arrays.asList(
             "fileDownload",
-            "processWorkerMetrics"));
+            "processWorkerMetrics",
+            "getSupervisorAssignments",
+            "sendSupervisorWorkerHeartbeats"));
     protected Set<String> topoReadOnlyCommands = new HashSet<>(Arrays.asList(
             "getTopologyConf",
             "getTopology",
@@ -75,7 +77,8 @@ public class SimpleACLAuthorizer implements IAuthorizer {
             "dumpProfile",
             "dumpJstack",
             "dumpHeap",
-            "debug"));
+            "debug",
+            "sendSupervisorWorkerHeartbeat"));
 
     {
         topoCommands.addAll(topoReadOnlyCommands);

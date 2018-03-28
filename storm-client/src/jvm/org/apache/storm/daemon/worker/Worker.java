@@ -57,6 +57,7 @@ import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.LSWorkerHeartbeat;
 import org.apache.storm.generated.LogConfig;
+import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 import org.apache.storm.security.auth.AuthUtils;
@@ -64,7 +65,9 @@ import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
+import org.apache.storm.utils.NimbusClient;
 import org.apache.storm.utils.ObjectReader;
+import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.apache.zookeeper.data.ACL;
@@ -82,6 +85,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     private final IContext context;
     private final String topologyId;
     private final String assignmentId;
+    private final int supervisorPort;
     private final int port;
     private final String workerId;
     private final LogConfigManager logConfigManager;
@@ -105,15 +109,18 @@ public class Worker implements Shutdownable, DaemonCommon {
      * @param context      -
      * @param topologyId   - topology id
      * @param assignmentId - assignment id
+     * @param supervisorPort - parent supervisor thrift server port
      * @param port         - port on which the worker runs
      * @param workerId     - worker id
      */
 
-    public Worker(Map<String, Object> conf, IContext context, String topologyId, String assignmentId, int port, String workerId) {
+    public Worker(Map<String, Object> conf, IContext context, String topologyId, String assignmentId,
+            int supervisorPort, int port, String workerId) {
         this.conf = conf;
         this.context = context;
         this.topologyId = topologyId;
         this.assignmentId = assignmentId;
+        this.supervisorPort = supervisorPort;
         this.port = port;
         this.workerId = workerId;
         this.logConfigManager = new LogConfigManager();
@@ -137,7 +144,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             ConfigUtils.overrideLoginConfigWithSystemProperty(ConfigUtils.readSupervisorStormConf(conf, topologyId));
         ClusterStateContext csContext = new ClusterStateContext(DaemonType.WORKER, topologyConf);
         IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
-        IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, csContext);
+        IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -156,8 +163,8 @@ public class Worker implements Shutdownable, DaemonCommon {
     private Object loadWorker(Map<String, Object> topologyConf, IStateStorage stateStorage, IStormClusterState stormClusterState,
                               Map<String, String> initCreds, Credentials initialCredentials)
         throws Exception {
-        workerState = new WorkerState(conf, context, topologyId, assignmentId, port, workerId, topologyConf, stateStorage,
-            stormClusterState, autoCreds);
+        workerState = new WorkerState(conf, context, topologyId, assignmentId, supervisorPort, port, workerId,
+            topologyConf, stateStorage, stormClusterState, autoCreds);
 
         // Heartbeat here so that worker process dies if this fails
         // it's important that worker heartbeat to supervisor ASAP so that supervisor knows
@@ -178,7 +185,7 @@ public class Worker implements Shutdownable, DaemonCommon {
             });
 
         workerState.executorHeartbeatTimer
-            .scheduleRecurring(0, (Integer) conf.get(Config.WORKER_HEARTBEAT_FREQUENCY_SECS),
+            .scheduleRecurring(0, (Integer) conf.get(Config.EXECUTOR_METRICS_FREQUENCY_SECS),
                 Worker.this::doExecutorHeartbeats);
 
         workerState.registerCallbacks();
@@ -313,12 +320,14 @@ public class Worker implements Shutdownable, DaemonCommon {
 
     public void doHeartBeat() throws IOException {
         LocalState state = ConfigUtils.workerState(workerState.conf, workerState.workerId);
-        state.setWorkerHeartBeat(new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
+        LSWorkerHeartbeat lsWorkerHeartbeat = new LSWorkerHeartbeat(Time.currentTimeSecs(), workerState.topologyId,
             workerState.localExecutors.stream()
                 .map(executor -> new ExecutorInfo(executor.get(0).intValue(), executor.get(1).intValue()))
-                .collect(Collectors.toList()), workerState.port));
+                .collect(Collectors.toList()), workerState.port);
+        state.setWorkerHeartBeat(lsWorkerHeartbeat);
         state.cleanup(60); // this is just in case supervisor is down so that disk doesn't fill up.
         // it shouldn't take supervisor 120 seconds between listing dir and reading it
+        heartbeatToMasterIfLocalbeatFail(lsWorkerHeartbeat);
     }
 
     public void doExecutorHeartbeats() {
@@ -392,6 +401,30 @@ public class Worker implements Shutdownable, DaemonCommon {
         workerState.stormClusterState.topologyLogConfig(topologyId, this::checkLogConfigChanged);
     }
 
+    /**
+     * Send a heartbeat to local supervisor first to check if supervisor is ok for heartbeating.
+     */
+    private void heartbeatToMasterIfLocalbeatFail(LSWorkerHeartbeat lsWorkerHeartbeat) {
+        if (ConfigUtils.isLocalMode(this.conf)) {
+            return;
+        }
+        //In distributed mode, send heartbeat directly to master if local supervisor goes down.
+        SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
+                lsWorkerHeartbeat.get_executors(), lsWorkerHeartbeat.get_time_secs());
+        try (SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPort)){
+            client.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
+        } catch (Exception tr1) {
+            //If any error/exception thrown, report directly to nimbus.
+            LOG.warn("Exception when send heartbeat to local supervisor", tr1.getMessage());
+            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)){
+                nimbusClient.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
+            } catch (Exception tr2) {
+                //if any error/exception thrown, just ignore.
+                LOG.error("Exception when send heartbeat to master",  tr2.getMessage());
+            }
+        }
+    }
+
     @Override
     public void shutdown() {
         try {
@@ -463,15 +496,17 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     public static void main(String[] args) throws Exception {
-        Preconditions.checkArgument(args.length == 4, "Illegal number of arguments. Expected: 4, Actual: " + args.length);
+        Preconditions.checkArgument(args.length == 5, "Illegal number of arguments. Expected: 5, Actual: " + args.length);
         String stormId = args[0];
         String assignmentId = args[1];
-        String portStr = args[2];
-        String workerId = args[3];
+        String supervisorPort = args[2];
+        String portStr = args[3];
+        String workerId = args[4];
         Map<String, Object> conf = Utils.readStormConfig();
         Utils.setupDefaultUncaughtExceptionHandler();
         StormCommon.validateDistributedMode(conf);
-        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(portStr), workerId);
+        Worker worker = new Worker(conf, null, stormId, assignmentId, Integer.parseInt(supervisorPort),
+                Integer.parseInt(portStr), workerId);
         worker.start();
         Utils.addShutdownHookWithForceKillIn1Sec(worker::shutdown);
     }

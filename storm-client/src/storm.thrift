@@ -483,6 +483,7 @@ struct SupervisorInfo {
     7: optional i64 uptime_secs;
     8: optional string version;
     9: optional map<string, double> resources_map;
+   10: optional i32 server_port;
 }
 
 struct NodeInfo {
@@ -672,6 +673,21 @@ struct OwnerResourceSummary {
   18: optional double assigned_off_heap_memory;
 }
 
+struct SupervisorWorkerHeartbeat {
+  1: required string storm_id;
+  2: required list<ExecutorInfo> executors
+  3: required i32 time_secs;
+}
+
+struct SupervisorWorkerHeartbeats {
+  1: required string supervisor_id;
+  2: required list<SupervisorWorkerHeartbeat> worker_heartbeats;
+}
+
+struct SupervisorAssignments {
+  1: optional map<string, Assignment> storm_assignment = {}
+}
+
 struct WorkerMetricPoint {
   1: required string metricName;
   2: required i64 timestamp;
@@ -768,6 +784,18 @@ service Nimbus {
   StormTopology getUserTopology(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
   TopologyHistoryInfo getTopologyHistory(1: string user) throws (1: AuthorizationException aze);
   list<OwnerResourceSummary> getOwnerResourceSummaries (1: string owner) throws (1: AuthorizationException aze);
+  /**
+   * Get assigned assignments for a specific supervisor
+   */
+  SupervisorAssignments getSupervisorAssignments(1: string node) throws (1: AuthorizationException aze);
+  /**
+   * Send supervisor worker heartbeats for a specific supervisor
+   */
+  void sendSupervisorWorkerHeartbeats(1: SupervisorWorkerHeartbeats heartbeats) throws (1: AuthorizationException aze);
+  /**
+   * Send supervisor local worker heartbeat when a supervisor is unreachable
+   */
+  void sendSupervisorWorkerHeartbeat(1: SupervisorWorkerHeartbeat heatbeat) throws (1: AuthorizationException aze, 2: NotAliveException e);
   void processWorkerMetrics(1: WorkerMetrics metrics);
 }
 
@@ -858,10 +886,26 @@ exception HBExecutionException {
   1: required string msg;
 }
 
+service Supervisor {
+  /**
+   * Send node specific assignments to supervisor
+   */
+  void sendSupervisorAssignments(1: SupervisorAssignments assignments) throws (1: AuthorizationException aze);
+  /**
+   * Get local assignment for a storm
+   */
+  Assignment getLocalAssignmentForStorm(1: string id) throws (1: NotAliveException e, 2: AuthorizationException aze);
+  /**
+   * Send worker heartbeat to local supervisor
+   */
+  void sendSupervisorWorkerHeartbeat(1: SupervisorWorkerHeartbeat heartbeat) throws (1: AuthorizationException aze);
+}
+
 # WorkerTokens are used as credentials that allow a Worker to authenticate with DRPC, Nimbus, or other storm processes that we add in here.
 enum WorkerTokenServiceType {
     NIMBUS,
-    DRPC
+    DRPC,
+    SUPERVISOR
 }
 
 #This is information that we want to be sure users do not modify in any way...

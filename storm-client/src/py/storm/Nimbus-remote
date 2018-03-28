@@ -88,6 +88,9 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  StormTopology getUserTopology(string id)')
   print('  TopologyHistoryInfo getTopologyHistory(string user)')
   print('   getOwnerResourceSummaries(string owner)')
+  print('  SupervisorAssignments getSupervisorAssignments(string node)')
+  print('  void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats)')
+  print('  void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat)')
   print('  void processWorkerMetrics(WorkerMetrics metrics)')
   print('')
   sys.exit(0)
@@ -420,6 +423,24 @@ elif cmd == 'getOwnerResourceSummaries':
     print('getOwnerResourceSummaries requires 1 args')
     sys.exit(1)
   pp.pprint(client.getOwnerResourceSummaries(args[0],))
+
+elif cmd == 'getSupervisorAssignments':
+  if len(args) != 1:
+    print('getSupervisorAssignments requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.getSupervisorAssignments(args[0],))
+
+elif cmd == 'sendSupervisorWorkerHeartbeats':
+  if len(args) != 1:
+    print('sendSupervisorWorkerHeartbeats requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.sendSupervisorWorkerHeartbeats(eval(args[0]),))
+
+elif cmd == 'sendSupervisorWorkerHeartbeat':
+  if len(args) != 1:
+    print('sendSupervisorWorkerHeartbeat requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.sendSupervisorWorkerHeartbeat(eval(args[0]),))
 
 elif cmd == 'processWorkerMetrics':
   if len(args) != 1:

@@ -83,7 +83,8 @@ public class ServerCallbackHandler implements CallbackHandler {
 
         if (ac != null) {
             String authenticationID = ac.getAuthenticationID();
-            LOG.info("Successfully authenticated client: authenticationID=" + authenticationID + " authorizationID= " + ac.getAuthorizationID());
+            LOG.debug("Successfully authenticated client: authenticationID={}  authorizationID= {}", authenticationID,
+                ac.getAuthorizationID());
 
             //if authorizationId is not set, set it to authenticationId.
             if (ac.getAuthorizationID() == null) {
