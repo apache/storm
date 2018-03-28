@@ -1,6 +1,9 @@
 #!/bin/bash
 
 pwd=$(pwd)
+if [[ "$1" = "" ]]; then
+  echo "usage: build.sh [adapter|example|nuget]"
+fi
 if [[ "$1" = "adapter" || "$1" = "example" ]]; then
     dotnet publish $pwd/src/main/dotnet/Dotnet.Storm.Adapter/Dotnet.Storm.Adapter.csproj -o $pwd/output/resources/ -v m
 fi

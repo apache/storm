@@ -92,7 +92,7 @@ namespace Dotnet.Storm.Adapter.Logging
         {
             Hierarchy repository = (Hierarchy)LogManager.GetRepository(Assembly.GetEntryAssembly());
 
-            // we don't want any console logger to be enabled since it is bracking storm multilang protocol
+            // disabel all console like logger
             // it will not prevent the case other appenders write standard output
             // also remove any StormAppender configured in log4net.config file
             foreach (IAppender appender in repository.GetAppenders())
