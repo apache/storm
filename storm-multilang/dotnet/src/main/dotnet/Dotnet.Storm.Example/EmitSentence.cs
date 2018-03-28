@@ -4,13 +4,13 @@ using System.Collections.Generic;
 
 namespace Dotnet.Storm.Example
 {
-    public class EmitSentense : BaseSpout
+    public class EmitSentence : BaseSpout
     {
         private IDictionary<int, string> sentences;
 
         private Random random = new Random();
 
-        public EmitSentense() : base()
+        public EmitSentence() : base()
         {
             sentences = new Dictionary<int, string>()
             {
