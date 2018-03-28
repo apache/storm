@@ -62,7 +62,7 @@ namespace Dotnet.Storm.Adapter.Components
         {
             policy = new CacheItemPolicy()
             {
-                SlidingExpiration = new TimeSpan(0, MessageTimeout, 0)
+                SlidingExpiration = new TimeSpan(0, 0, MessageTimeout)
             };
 
             while (running)
