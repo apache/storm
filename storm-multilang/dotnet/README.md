@@ -1,7 +1,9 @@
 Overview
 ========
 Dotnet.Strom.Adapter is a .NET Core 2.0 implementation of Storm multi-lang protocol. You can use it to implement CSharp components for your topology. 
+
 Prerequisites
+========
  
 * .NET Core framework 2.0 and above
 * Git
