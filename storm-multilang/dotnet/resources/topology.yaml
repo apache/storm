@@ -1,0 +1,40 @@
+name: example-topology
+config:
+  topology.workers: 3
+  topology.tick.tuple.freq.secs: 20
+  supervisor.worker.timeout.secs: 360
+  topology.message.timeout.secs: 360
+  topology.debug: true
+
+spouts:
+ - id: emit-sentence
+   className: org.apache.storm.flux.wrappers.spouts.FluxShellSpout
+   constructorArgs:
+     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.EmitSentence", "-a", "Dotnet.Storm.Example", "-l", "debug"]
+     - [sentence]
+   parallelism: 1
+bolts:
+ - id: split-sentence
+   className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
+   constructorArgs:
+     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.SplitSentence", "-a", "Dotnet.Storm.Example", "-l", "debug"]
+     - [word]
+   parallelism: 3
+ - id: count-words
+   className: org.apache.storm.flux.wrappers.bolts.FluxShellBolt
+   constructorArgs:
+     - ["dotnet", "Dotnet.Storm.Adapter.dll", "-c", "Dotnet.Storm.Example.CountWords", "-a", "Dotnet.Storm.Example", "-l", "debug"]
+     - [word, count]
+   parallelism: 3
+streams:
+ - name: "Split sentence into words"
+   from: emit-sentence
+   to: split-sentence
+   grouping:
+     type: SHUFFLE
+ - name: "Count words"
+   from: split-sentence
+   to: count-words
+   grouping:
+     type: FIELDS
+     args: ["word"]
