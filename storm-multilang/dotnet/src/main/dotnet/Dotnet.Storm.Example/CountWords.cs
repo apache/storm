@@ -9,11 +9,6 @@ namespace Dotnet.Storm.Example
     {
         private IDictionary<string, long> counts = new Dictionary<string, long>();
 
-        public CountWords() : base()
-        {
-
-        }
-
         protected override void Execute(StormTuple tuple)
         {
             string word = tuple.Tuple[0].ToString();

@@ -23,7 +23,7 @@ namespace Dotnet.Storm.Adapter.Logging
                 string message = RenderLoggingEvent(loggingEvent);
                 LogLevel level = GetStormLevel(loggingEvent.Level);
 
-                GlobalStorm.Send(new LogMessage(message, level));
+                Channel.Send(new LogMessage(message, level));
             }
         }
 

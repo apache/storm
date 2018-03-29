@@ -6,19 +6,19 @@ namespace Dotnet.Storm.Adapter.Components
 {
     public abstract class BaseBolt : Component
     {
-        protected new class LocalStorm : Component.LocalStorm
+        protected new class Storm : Component.Storm
         {
-            public void Ack(string id)
+            public static void Ack(string id)
             {
-                GlobalStorm.Send(new AckMessage(id));
+                Channel.Send(new AckMessage(id));
             }
 
-            public void Fail(string id)
+            public static void Fail(string id)
             {
-                GlobalStorm.Send(new FailMessage(id));
+                Channel.Send(new FailMessage(id));
             }
 
-            public void Emit(List<object> tuple, string stream = "default", long task = 0, List<string> anchors = null, bool needTaskIds = false)
+            public static void Emit(List<object> tuple, string stream = "default", long task = 0, List<string> anchors = null, bool needTaskIds = false)
             {
                 VerificationResult result = VerifyOutput(stream, tuple);
 
@@ -37,23 +37,18 @@ namespace Dotnet.Storm.Adapter.Components
                         NeedTaskIds = needTaskIds
                     };
 
-                    GlobalStorm.Send(message);
+                    Channel.Send(message);
                 }
             }
         }
 
         private bool running = true;
 
-        public BaseBolt()
-        {
-            Storm = new LocalStorm();
-        }
-
         internal override void Start()
         {
             while(running)
             {
-                Message message = GlobalStorm.Receive<ExecuteTuple>();
+                Message message = Channel.Receive<ExecuteTuple>();
                 if (message != null)
                 {
                     // there are only two options: task_ids and tuple to execute
@@ -120,8 +115,6 @@ namespace Dotnet.Storm.Adapter.Components
         }
 
         #region Bolt interface
-        protected new LocalStorm Storm { get; private set; }
-
         protected abstract void Execute(StormTuple tuple);
 
         protected event EventHandler<EventArgs> OnTick;

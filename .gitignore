@@ -61,7 +61,7 @@ hs_err_pid*
 # Visual Studio & MSBuild
 .vs
 .vscode
-/storm-multilang/dotnet/logs
-/storm-multilang/dotnet/output
+/storm-multilang/dotnet/**/logs
+/storm-multilang/dotnet/**/output
 /storm-multilang/dotnet/**/bin
 /storm-multilang/dotnet/**/obj

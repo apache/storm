@@ -12,15 +12,15 @@ namespace Dotnet.Storm.Adapter.Components
 
         private const string chars = "abcdefghijklmnopqrstuvwxyz0123456789";
 
-        internal static MemoryCache PendingQueue;
+        internal static MemoryCache PendingQueue = MemoryCache.Default;
 
         internal static CacheItemPolicy policy;
 
         private bool running = true;
 
-        protected new class LocalStorm : Component.LocalStorm
+        protected new class Storm : Component.Storm
         {
-            public void Emit(List<object> tuple, string stream = "default", long task = 0, bool needTaskIds = false)
+            public static void Emit(List<object> tuple, string stream = "default", long task = 0, bool needTaskIds = false)
             {
                 string id = null;
                 if (IsGuaranteed)
@@ -45,17 +45,11 @@ namespace Dotnet.Storm.Adapter.Components
                         NeedTaskIds = needTaskIds
                     };
 
-                    GlobalStorm.Send(message);
+                    Channel.Send(message);
 
                     PendingQueue.Set(id, message, policy);
                 }
             }
-        }
-
-        public BaseSpout()
-        {
-            Storm = new LocalStorm();
-            PendingQueue = MemoryCache.Default;
         }
 
         internal override void Start()
@@ -67,7 +61,7 @@ namespace Dotnet.Storm.Adapter.Components
 
             while (running)
             {
-                Message message = GlobalStorm.Receive<CommandMessage>();
+                Message message = Channel.Receive<CommandMessage>();
                 if (message != null)
                 {
                     // there are only two options: task_ids and command
@@ -143,7 +137,7 @@ namespace Dotnet.Storm.Adapter.Components
                 {
                     if (PendingQueue.Get(id) is SpoutTuple message)
                     {
-                        GlobalStorm.Send(message);
+                        Channel.Send(message);
                     }
                 }
                 else
@@ -198,8 +192,6 @@ namespace Dotnet.Storm.Adapter.Components
         protected event EventHandler OnDeactivate;
 
         protected event EventHandler<TaskIds> OnTaskIds;
-
-        protected new LocalStorm Storm { get; private set; }
 
         protected bool IsEnabled { get; private set; } = false;
 

@@ -10,24 +10,24 @@ namespace Dotnet.Storm.Adapter.Components
     public abstract class Component
     {
         #region Component interface
-        protected class LocalStorm
+        protected class Storm
         {
-            public void Sync()
+            public static void Sync()
             {
-                GlobalStorm.Send(new SyncMessage());
+                Channel.Send(new SyncMessage());
             }
 
-            public void Error(string message)
+            public static void Error(string message)
             {
-                GlobalStorm.Send(new ErrorMessage(message));
+                Channel.Send(new ErrorMessage(message));
             }
 
-            public void Metrics(string name, object value)
+            public static void Metrics(string name, object value)
             {
-                GlobalStorm.Send(new MetricMessage(name, value));
+                Channel.Send(new MetricMessage(name, value));
             }
 
-            public VerificationResult VerifyInput(string component, string stream, List<object> tuple)
+            public static VerificationResult VerifyInput(string component, string stream, List<object> tuple)
             {
                 if(stream == "__heartbeat" || stream == "__tick")
                 {
@@ -61,7 +61,7 @@ namespace Dotnet.Storm.Adapter.Components
                 return new VerificationResult(false, "Input: OK");
             }
 
-            public VerificationResult VerifyOutput(string stream, List<object> tuple)
+            public static VerificationResult VerifyOutput(string stream, List<object> tuple)
             {
                 if (string.IsNullOrEmpty(stream))
                 {
@@ -85,8 +85,6 @@ namespace Dotnet.Storm.Adapter.Components
         }
 
         protected readonly static ILog Logger = LogManager.GetLogger(typeof(Component));
-
-        protected LocalStorm Storm { get; private set; }
 
         protected string[] Arguments { get; private set; }
 
@@ -141,7 +139,7 @@ namespace Dotnet.Storm.Adapter.Components
         {
             // waiting for storm to send connect message
             Logger.Debug("Waiting for connect message.");
-            ConnectMessage message = (ConnectMessage)GlobalStorm.Receive<ConnectMessage>();
+            ConnectMessage message = (ConnectMessage)Channel.Receive<ConnectMessage>();
 
             int pid = Process.GetCurrentProcess().Id;
 
@@ -160,7 +158,7 @@ namespace Dotnet.Storm.Adapter.Components
             Configuration = message.Configuration;
 
             // send PID back to storm
-            GlobalStorm.Send(new PidMessage(pid));
+            Channel.Send(new PidMessage(pid));
         }
 
         internal abstract void Start();

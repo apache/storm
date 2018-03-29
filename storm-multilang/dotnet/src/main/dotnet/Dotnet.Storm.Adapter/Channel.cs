@@ -6,9 +6,9 @@ using System.Text;
 
 namespace Dotnet.Storm.Adapter
 {
-    internal sealed class GlobalStorm
+    internal sealed class Channel
     {
-        private readonly static ILog Logger = LogManager.GetLogger(typeof(GlobalStorm));
+        private readonly static ILog Logger = LogManager.GetLogger(typeof(Channel));
 
         public static void Send(OutMessage message)
         {
@@ -28,6 +28,11 @@ namespace Dotnet.Storm.Adapter
                 }
                 return JsonConvert.DeserializeObject<T>(message);
             }
+            catch (ArgumentNullException ex)
+            {
+                Logger.Debug($"{ex.Message}");
+                throw ex;
+            }
             catch (Exception ex)
             {
                 //we're expecting this shouldn't happen
@@ -46,6 +51,10 @@ namespace Dotnet.Storm.Adapter
             {
                 line = Console.ReadLine();
 
+                if(line == null)
+                {
+                    throw new ArgumentNullException("Storm is dead.");
+                }
                 if (line == "end")
                     break;
 
