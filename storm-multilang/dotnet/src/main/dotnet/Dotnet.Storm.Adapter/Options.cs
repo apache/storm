@@ -14,7 +14,13 @@ namespace Dotnet.Storm.Adapter
         [Option('p', "parameters", Required = false, HelpText = "Component command line parameters.")]
         public string Arguments { get; set; }
 
-        [Option('l', "loglevel", Required = false, Default = "INFO", HelpText = "Log level restriction. Possible values (TRACE,DEBUG,INFO,WARN,ERROR)")]
+        [Option('l', "loglevel", Required = false, Default = "INFO", HelpText = "Log level restriction. Possible values (TRACE,DEBUG,INFO,WARN,ERROR).")]
         public string LogLevel { get; set; }
+
+        [Option('s', "serializer", Required = false, Default = "json", HelpText = "Message serializer. Only JSON serializer is availiable now.")]
+        public string Serializer { get; set; }
+
+        [Option('h', "channel", Required = false, Default = "std", HelpText = "Message exchange channel. Only STD channel is availiable now.")]
+        public string Channel { get; set; }
     }
 }

@@ -2,13 +2,13 @@
 using System.IO;
 using System.Reflection;
 using CommandLine;
+using Dotnet.Storm.Adapter.Channels;
 using Dotnet.Storm.Adapter.Components;
 using Dotnet.Storm.Adapter.Logging;
+using Dotnet.Storm.Adapter.Serializers;
 using log4net;
-using log4net.Appender;
 using log4net.Config;
 using log4net.Core;
-using log4net.Repository.Hierarchy;
 
 namespace Dotnet.Storm.Adapter
 {
@@ -25,12 +25,16 @@ namespace Dotnet.Storm.Adapter
             string assemblyName = null;
             string arguments = null;
             LogLevel level = LogLevel.INFO;
+            string serializer;
+            string channel;
 
             parser.WithParsed(options =>
             {
                 className = options.Class;
                 assemblyName = options.Assembly;
                 arguments = options.Arguments;
+                serializer = options.Serializer;
+                channel = options.Channel;
 
                 // by default TryParse will return TRACE level in case of error
                 Enum.TryParse(options.LogLevel.ToUpper(), out level);
@@ -84,6 +88,13 @@ namespace Dotnet.Storm.Adapter
             {
                 component.SetArguments(arguments);
             }
+
+            // there is an idea to use shared memory channel
+            Channel.Instance = new StandardChannel
+            {
+                // there is an idea to use ProtoBuffer serialization 
+                Serializer = new JsonSerializer()
+            };
 
             //handshake protocol
             component.Connect();
