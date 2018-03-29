@@ -10,7 +10,7 @@ namespace Dotnet.Storm.Example
 
         private void ProcessTaskIds(object sender, TaskIds ids)
         {
-            Logger.Info($"Received task ids: {ids.Ids}");
+            Logger.Info($"Received task ids: {string.Join(',', ids.Ids)}");
         }
 
         protected override void Execute(StormTuple tuple)

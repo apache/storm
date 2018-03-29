@@ -1,22 +1,22 @@
-﻿using Dotnet.Storm.Adapter.Messaging;
-using log4net;
-using Newtonsoft.Json;
-using System;
+﻿using System;
 using System.Text;
+using log4net;
+using Dotnet.Storm.Adapter.Messaging;
+using Dotnet.Storm.Adapter.Serializers;
 
-namespace Dotnet.Storm.Adapter
+namespace Dotnet.Storm.Adapter.Channels
 {
-    internal sealed class Channel
+    internal class StandardChannel : Channel
     {
         private readonly static ILog Logger = LogManager.GetLogger(typeof(Channel));
 
-        public static void Send(OutMessage message)
+        public override void Send(OutMessage message)
         {
-            Console.WriteLine(message);
+            Console.WriteLine(Serializer.Serialize(message));
             Console.WriteLine("end");
         }
 
-        public static Message Receive<T>() where T : InMessage
+        public override InMessage Receive<T>()
         {
             try
             {
@@ -24,13 +24,13 @@ namespace Dotnet.Storm.Adapter
 
                 if (message.StartsWith("["))
                 {
-                    return JsonConvert.DeserializeObject<TaskIdsMessage>(message);
+                    return Serializer.Deserialize<TaskIdsMessage>(message);
                 }
-                return JsonConvert.DeserializeObject<T>(message);
+                return Serializer.Deserialize<T>(message);
             }
             catch (ArgumentNullException ex)
             {
-                Logger.Debug($"{ex.Message}");
+                Logger.Error($"{ex.Message}");
                 throw ex;
             }
             catch (Exception ex)
@@ -51,7 +51,7 @@ namespace Dotnet.Storm.Adapter
             {
                 line = Console.ReadLine();
 
-                if(line == null)
+                if (line == null)
                 {
                     throw new ArgumentNullException("Storm is dead.");
                 }

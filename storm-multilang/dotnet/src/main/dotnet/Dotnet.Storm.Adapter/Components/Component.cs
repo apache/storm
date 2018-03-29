@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using Dotnet.Storm.Adapter.Channels;
 using Dotnet.Storm.Adapter.Messaging;
 using log4net;
 using Newtonsoft.Json;
@@ -14,17 +15,17 @@ namespace Dotnet.Storm.Adapter.Components
         {
             public static void Sync()
             {
-                Channel.Send(new SyncMessage());
+                Channel.Instance.Send(new SyncMessage());
             }
 
             public static void Error(string message)
             {
-                Channel.Send(new ErrorMessage(message));
+                Channel.Instance.Send(new ErrorMessage(message));
             }
 
             public static void Metrics(string name, object value)
             {
-                Channel.Send(new MetricMessage(name, value));
+                Channel.Instance.Send(new MetricMessage(name, value));
             }
 
             public static VerificationResult VerifyInput(string component, string stream, List<object> tuple)
@@ -139,7 +140,7 @@ namespace Dotnet.Storm.Adapter.Components
         {
             // waiting for storm to send connect message
             Logger.Debug("Waiting for connect message.");
-            ConnectMessage message = (ConnectMessage)Channel.Receive<ConnectMessage>();
+            ConnectMessage message = (ConnectMessage)Channel.Instance.Receive<ConnectMessage>();
 
             int pid = Process.GetCurrentProcess().Id;
 
@@ -158,7 +159,7 @@ namespace Dotnet.Storm.Adapter.Components
             Configuration = message.Configuration;
 
             // send PID back to storm
-            Channel.Send(new PidMessage(pid));
+            Channel.Instance.Send(new PidMessage(pid));
         }
 
         internal abstract void Start();

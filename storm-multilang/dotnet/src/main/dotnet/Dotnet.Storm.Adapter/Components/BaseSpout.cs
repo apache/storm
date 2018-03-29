@@ -1,4 +1,5 @@
-﻿using Dotnet.Storm.Adapter.Messaging;
+﻿using Dotnet.Storm.Adapter.Channels;
+using Dotnet.Storm.Adapter.Messaging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -45,7 +46,7 @@ namespace Dotnet.Storm.Adapter.Components
                         NeedTaskIds = needTaskIds
                     };
 
-                    Channel.Send(message);
+                    Channel.Instance.Send(message);
 
                     PendingQueue.Set(id, message, policy);
                 }
@@ -61,7 +62,7 @@ namespace Dotnet.Storm.Adapter.Components
 
             while (running)
             {
-                Message message = Channel.Receive<CommandMessage>();
+                InMessage message = Channel.Instance.Receive<CommandMessage>();
                 if (message != null)
                 {
                     // there are only two options: task_ids and command
@@ -137,7 +138,7 @@ namespace Dotnet.Storm.Adapter.Components
                 {
                     if (PendingQueue.Get(id) is SpoutTuple message)
                     {
-                        Channel.Send(message);
+                        Channel.Instance.Send(message);
                     }
                 }
                 else

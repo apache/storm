@@ -1,4 +1,5 @@
-﻿using Dotnet.Storm.Adapter.Messaging;
+﻿using Dotnet.Storm.Adapter.Channels;
+using Dotnet.Storm.Adapter.Messaging;
 using System;
 using System.Collections.Generic;
 
@@ -10,12 +11,12 @@ namespace Dotnet.Storm.Adapter.Components
         {
             public static void Ack(string id)
             {
-                Channel.Send(new AckMessage(id));
+                Channel.Instance.Send(new AckMessage(id));
             }
 
             public static void Fail(string id)
             {
-                Channel.Send(new FailMessage(id));
+                Channel.Instance.Send(new FailMessage(id));
             }
 
             public static void Emit(List<object> tuple, string stream = "default", long task = 0, List<string> anchors = null, bool needTaskIds = false)
@@ -37,7 +38,7 @@ namespace Dotnet.Storm.Adapter.Components
                         NeedTaskIds = needTaskIds
                     };
 
-                    Channel.Send(message);
+                    Channel.Instance.Send(message);
                 }
             }
         }
@@ -48,13 +49,13 @@ namespace Dotnet.Storm.Adapter.Components
         {
             while(running)
             {
-                Message message = Channel.Receive<ExecuteTuple>();
+                InMessage message = Channel.Instance.Receive<ExecuteTuple>();
                 if (message != null)
                 {
                     // there are only two options: task_ids and tuple to execute
                     if (message is TaskIdsMessage ids)
                     {
-                        OnTaskIds(this, new TaskIds(ids));
+                        OnTaskIds?.Invoke(this, new TaskIds(ids));
                     }
                     if (message is ExecuteTuple tuple)
                     {

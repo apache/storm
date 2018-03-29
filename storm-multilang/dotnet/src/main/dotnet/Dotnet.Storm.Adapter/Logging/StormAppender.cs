@@ -1,4 +1,5 @@
-﻿using Dotnet.Storm.Adapter.Messaging;
+﻿using Dotnet.Storm.Adapter.Channels;
+using Dotnet.Storm.Adapter.Messaging;
 using log4net;
 using log4net.Appender;
 using log4net.Core;
@@ -23,7 +24,7 @@ namespace Dotnet.Storm.Adapter.Logging
                 string message = RenderLoggingEvent(loggingEvent);
                 LogLevel level = GetStormLevel(loggingEvent.Level);
 
-                Channel.Send(new LogMessage(message, level));
+                Channel.Instance.Send(new LogMessage(message, level));
             }
         }
 
