@@ -19,7 +19,7 @@
 
     <NeutralLanguage>en-US</NeutralLanguage>
     <Authors>Yuriy Alikin</Authors>
-    <Company>Apache Storm</Company>
+    <Company>Microsoft</Company>
     <Copyright>Copyright © Apache 2018</Copyright>
 
     <RepositoryType>git</RepositoryType>
