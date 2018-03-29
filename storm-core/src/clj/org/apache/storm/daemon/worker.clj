@@ -566,12 +566,10 @@
         worker-topology-context (worker-context worker)
         hooks (.get_worker_hooks topology)]
     (dofor [hook hooks]
-      (let [savedposition (.position hook)
-            hook-bytes (Utils/toByteArray hook)
-            deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)
-            nop (.position hook savedposition)]
-        (.start deser-hook topo-conf worker-topology-context))
-      )))
+      (let [duplicated-hook (.duplicate hook)
+            hook-bytes (Utils/toByteArray duplicated-hook)
+            deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
+        (.start deser-hook topo-conf worker-topology-context)))))
 
 (defn run-worker-shutdown-hooks [worker]
   (let [topology (:topology worker)
