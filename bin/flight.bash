@@ -33,7 +33,11 @@ elif [[ "$unamestr" == 'FreeBSD' ]]; then
 fi
 
 if [[ $platform == 'linux' ]]; then
-    BINPATH="$JDKPATH/bin"
+    if [ -z "$JDKPATH" ]; then
+        BINPATH="/usr/bin"
+    else
+        BINPATH="$JDKPATH/bin"
+    fi
 elif [[ $platform == 'darwin' ]]; then
     BINPATH="/usr/bin"
 fi
