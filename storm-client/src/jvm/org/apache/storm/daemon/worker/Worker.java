@@ -27,8 +27,10 @@ import java.security.PrivilegedExceptionAction;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -36,6 +38,7 @@ import java.util.stream.Collectors;
 
 import javax.security.auth.Subject;
 
+import com.google.common.collect.Sets;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.storm.Config;
@@ -221,9 +224,11 @@ public class Worker implements Shutdownable, DaemonCommon {
         }
         executorsAtom.set(newExecutors);
 
-
         // This thread will send out messages destined for remote tasks (on other workers)
-        if ( ( (Long)topologyConf.get(Config.TOPOLOGY_WORKERS) ) > 1 ) {
+        // If there are no remote tasks, don't start the thread.
+        Set<Integer> remoteTasks = Sets.difference(new HashSet<>( workerState.getOutboundTasks()),
+                new HashSet<>(workerState.getLocalTaskIds()));
+        if (!remoteTasks.isEmpty()) {
             transferThread = workerState.makeTransferThread();
             transferThread.setName("Worker-Transfer");
         }
