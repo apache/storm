@@ -12,7 +12,12 @@ DRPC is not so much a feature of Storm as it is a pattern expressed from Storm's
 Distributed RPC is coordinated by a "DRPC server" (Storm comes packaged with an implementation of this). The DRPC server coordinates receiving an RPC request, sending the request to the Storm topology, receiving the results from the Storm topology, and sending the results back to the waiting client. From a client's perspective, a distributed RPC call looks just like a regular RPC call. For example, here's how a client would compute the results for the "reach" function with the argument "http://twitter.com":
 
 ```java
-DRPCClient client = new DRPCClient("drpc-host", 3772);
+Config conf = new Config();
+        conf.put("storm.thrift.transport", "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin");
+        conf.put(Config.STORM_NIMBUS_RETRY_TIMES, 3);
+        conf.put(Config.STORM_NIMBUS_RETRY_INTERVAL, 10);
+        conf.put(Config.STORM_NIMBUS_RETRY_INTERVAL_CEILING, 20);
+DRPCClient client = new DRPCClient(conf, "drpc-host", 3772);
 String result = client.execute("reach", "http://twitter.com");
 ```
 
@@ -89,12 +94,14 @@ Launching a DRPC server can be done with the `storm` script and is just like lau
 bin/storm drpc
 ```
 
-Next, you need to configure your Storm cluster to know the locations of the DRPC server(s). This is how `DRPCSpout` knows from where to read function invocations. This can be done through the `storm.yaml` file or the topology configurations. Configuring this through the `storm.yaml` looks something like this:
+Next, you need to configure your Storm cluster to know the locations of the DRPC server(s). This is how `DRPCSpout` knows from where to read function invocations. This can be done through the `storm.yaml` file or the topology configurations. You should also specify storm.thrift.transport property to match DRPCClient settings. Configuring this through the `storm.yaml` looks something like this:
 
 ```yaml
 drpc.servers:
   - "drpc1.foo.com"
   - "drpc2.foo.com"
+
+storm.thrift.transport: "org.apache.storm.security.auth.plain.PlainSaslTransportPlugin"
 ```
 
 Finally, you launch DRPC topologies using `StormSubmitter` just like you launch any other topology. To run the above example in remote mode, you do something like this:
