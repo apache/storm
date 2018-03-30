@@ -47,18 +47,28 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
      */
     public static final String SECRET_KEY = "topology.tuple.serializer.blowfish.key";
     private static final Logger LOG = LoggerFactory.getLogger(BlowfishTupleSerializer.class);
-    private BlowfishSerializer _serializer;
+    private BlowfishSerializer serializer;
 
     public BlowfishTupleSerializer(Kryo kryo, Map<String, Object> topoConf) {
-        String encryption_key;
+        String encryptionkey;
         try {
-            encryption_key = (String)topoConf.get(SECRET_KEY);
+            encryptionkey = (String) topoConf.get(SECRET_KEY);
             LOG.debug("Blowfish serializer being constructed ...");
-            if (encryption_key == null) {
-                throw new RuntimeException("Blowfish encryption key not specified");
+
+            byte[] bytes;
+            if (encryptionkey != null) {
+                bytes = Hex.decodeHex(encryptionkey.toCharArray());
+            } else {
+                // try to use zookeeper secret
+                String payload = (String) topoConf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+                if (payload != null) {
+                    LOG.debug("{} is not present. Use {} as Blowfish encryption key", SECRET_KEY, Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
+                    bytes = payload.getBytes();
+                } else {
+                    throw new RuntimeException("Blowfish encryption key not specified");
+                }
             }
-            byte[] bytes =  Hex.decodeHex(encryption_key.toCharArray());
-            _serializer = new BlowfishSerializer(new ListDelegateSerializer(), bytes);
+            serializer = new BlowfishSerializer(new ListDelegateSerializer(), bytes);
         } catch (org.apache.commons.codec.DecoderException ex) {
             throw new RuntimeException("Blowfish encryption key invalid", ex);
         }
@@ -66,12 +76,12 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
 
     @Override
     public void write(Kryo kryo, Output output, ListDelegate object) {
-        kryo.writeObject(output, object, _serializer);
+        kryo.writeObject(output, object, serializer);
     }
 
     @Override
     public ListDelegate read(Kryo kryo, Input input, Class<ListDelegate> type) {
-        return kryo.readObject(input, ListDelegate.class, _serializer);
+        return kryo.readObject(input, ListDelegate.class, serializer);
     }
 
     /**
@@ -84,7 +94,7 @@ public class BlowfishTupleSerializer extends Serializer<ListDelegate> {
             SecretKey skey = kgen.generateKey();
             byte[] raw = skey.getEncoded();
             String keyString = new String(Hex.encodeHex(raw));
-            System.out.println("storm -c "+SECRET_KEY+"="+keyString+" -c "+Config.TOPOLOGY_TUPLE_SERIALIZER+"="+BlowfishTupleSerializer.class.getName() + " ..." );
+            System.out.println("storm -c " + SECRET_KEY + "=" + keyString + " -c " + Config.TOPOLOGY_TUPLE_SERIALIZER + "=" + BlowfishTupleSerializer.class.getName() + " ..." );
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
         }
