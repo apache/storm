@@ -51,11 +51,11 @@ import java.util.Set;
  * topicName/totalRecordsInPartitions //total number of records in all the associated partitions of this spout
  * </p>
  */
-public class KafkaOffsetMetric implements IMetric {
+public class KafkaOffsetMetric<K, V> implements IMetric {
 
     private static final Logger LOG = LoggerFactory.getLogger(KafkaOffsetMetric.class);
     private final Supplier<Map<TopicPartition, OffsetManager>> offsetManagerSupplier;
-    private final Supplier<KafkaConsumer> consumerSupplier;
+    private final Supplier<KafkaConsumer<K,V>> consumerSupplier;
 
     public KafkaOffsetMetric(Supplier offsetManagerSupplier, Supplier consumerSupplier) {
         this.offsetManagerSupplier = offsetManagerSupplier;
@@ -66,7 +66,7 @@ public class KafkaOffsetMetric implements IMetric {
     public Object getValueAndReset() {
 
         Map<TopicPartition, OffsetManager> offsetManagers = offsetManagerSupplier.get();
-        KafkaConsumer kafkaConsumer = consumerSupplier.get();
+        KafkaConsumer<K,V> kafkaConsumer = consumerSupplier.get();
 
         if (offsetManagers == null || offsetManagers.isEmpty() || kafkaConsumer == null) {
             LOG.debug("Metrics Tick: offsetManagers or kafkaConsumer is null.");

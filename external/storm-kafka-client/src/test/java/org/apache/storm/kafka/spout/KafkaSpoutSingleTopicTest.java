@@ -105,7 +105,7 @@ public class KafkaSpoutSingleTopicTest extends KafkaSpoutAbstractTest {
         Time.advanceTime(KafkaSpout.TIMER_DELAY_MS + commitOffsetPeriodMs);
         spout.ack(failedIdReplayCaptor.getValue());
         spout.nextTuple();
-        verify(consumerSpy).commitSync(commitCapture.capture());
+        verify(getKafkaConsumer()).commitSync(commitCapture.capture());
 
         Map<TopicPartition, OffsetAndMetadata> capturedCommit = commitCapture.getValue();
         TopicPartition expectedTp = new TopicPartition(SingleTopicKafkaSpoutConfiguration.TOPIC, 0);
