@@ -43,12 +43,6 @@
             <scope>compile</scope>
         </dependency> 
         <dependency>
-            <groupId>log4j</groupId>
-            <artifactId>log4j</artifactId>
-            <version>1.2.17</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
             <scope>compile</scope>
@@ -56,6 +50,12 @@
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
             <artifactId>log4j-slf4j-impl</artifactId>
+            <!-- This is present in the Storm /lib directory, and should not also be present in /lib-webapp since both are on the classpath -->
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-core</artifactId>
         </dependency>
         <dependency>
             <groupId>io.dropwizard.metrics</groupId>
@@ -88,16 +88,16 @@
             <version>${dropwizard.version}</version>
             <exclusions>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>log4j-over-slf4j</artifactId>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>org.slf4j</groupId>
-                    <artifactId>jcl-over-slf4j</artifactId>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-core</artifactId>
                 </exclusion>
                 <exclusion>
-                    <groupId>com.google.guava</groupId>
-                    <artifactId>guava</artifactId>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-access</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
