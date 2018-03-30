@@ -44,9 +44,7 @@ import java.util.List;
 import java.util.Map;
 
 
-// Trident subsumes the functionality provided by this class, so it's deprecated
-@Deprecated
-public class LinearDRPCTopologyBuilder {    
+public class LinearDRPCTopologyBuilder {
     String _function;
     List<Component> _components = new ArrayList<Component>();
     
