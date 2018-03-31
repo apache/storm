@@ -18,6 +18,9 @@
 
 package org.apache.storm.blobstore;
 
+import java.util.Iterator;
+import java.util.Map;
+
 import org.apache.storm.daemon.Shutdownable;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.ReadableBlobMeta;
@@ -27,9 +30,6 @@ import org.apache.storm.generated.KeyNotFoundException;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.NimbusClient;
-
-import java.util.Iterator;
-import java.util.Map;
 
 /**
  * The ClientBlobStore has two concrete implementations
@@ -66,6 +66,12 @@ public abstract class ClientBlobStore implements Shutdownable, AutoCloseable {
      * @param conf The storm conf containing the config details.
      */
     public abstract void prepare(Map<String, Object> conf);
+
+    /**
+     * Decide if the blob is deleted from cluster.
+     * @param blobKey blob key
+     */
+    public abstract boolean isRemoteBlobExists(String blobKey) throws AuthorizationException;
 
     /**
      * Client facing API to create a blob.

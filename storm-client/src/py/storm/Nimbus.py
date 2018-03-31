@@ -417,6 +417,15 @@ class Iface:
     """
     pass
 
+  def isRemoteBlobExists(self, blobKey):
+    """
+    Decide if the blob is removed from cluster.
+
+    Parameters:
+     - blobKey
+    """
+    pass
+
 
 class Client(Iface):
   def __init__(self, iprot, oprot=None):
@@ -2100,6 +2109,8 @@ class Client(Iface):
     iprot.readMessageEnd()
     if result.aze is not None:
       raise result.aze
+    if result.e is not None:
+      raise result.e
     return
 
   def processWorkerMetrics(self, metrics):
@@ -2130,6 +2141,41 @@ class Client(Iface):
     result.read(iprot)
     iprot.readMessageEnd()
     return
+
+  def isRemoteBlobExists(self, blobKey):
+    """
+    Decide if the blob is removed from cluster.
+
+    Parameters:
+     - blobKey
+    """
+    self.send_isRemoteBlobExists(blobKey)
+    return self.recv_isRemoteBlobExists()
+
+  def send_isRemoteBlobExists(self, blobKey):
+    self._oprot.writeMessageBegin('isRemoteBlobExists', TMessageType.CALL, self._seqid)
+    args = isRemoteBlobExists_args()
+    args.blobKey = blobKey
+    args.write(self._oprot)
+    self._oprot.writeMessageEnd()
+    self._oprot.trans.flush()
+
+  def recv_isRemoteBlobExists(self):
+    iprot = self._iprot
+    (fname, mtype, rseqid) = iprot.readMessageBegin()
+    if mtype == TMessageType.EXCEPTION:
+      x = TApplicationException()
+      x.read(iprot)
+      iprot.readMessageEnd()
+      raise x
+    result = isRemoteBlobExists_result()
+    result.read(iprot)
+    iprot.readMessageEnd()
+    if result.success is not None:
+      return result.success
+    if result.aze is not None:
+      raise result.aze
+    raise TApplicationException(TApplicationException.MISSING_RESULT, "isRemoteBlobExists failed: unknown result")
 
 
 class Processor(Iface, TProcessor):
@@ -2186,6 +2232,7 @@ class Processor(Iface, TProcessor):
     self._processMap["sendSupervisorWorkerHeartbeats"] = Processor.process_sendSupervisorWorkerHeartbeats
     self._processMap["sendSupervisorWorkerHeartbeat"] = Processor.process_sendSupervisorWorkerHeartbeat
     self._processMap["processWorkerMetrics"] = Processor.process_processWorkerMetrics
+    self._processMap["isRemoteBlobExists"] = Processor.process_isRemoteBlobExists
 
   def process(self, iprot, oprot):
     (name, type, seqid) = iprot.readMessageBegin()
@@ -3340,6 +3387,9 @@ class Processor(Iface, TProcessor):
     except AuthorizationException as aze:
       msg_type = TMessageType.REPLY
       result.aze = aze
+    except NotAliveException as e:
+      msg_type = TMessageType.REPLY
+      result.e = e
     except Exception as ex:
       msg_type = TMessageType.EXCEPTION
       logging.exception(ex)
@@ -3364,6 +3414,28 @@ class Processor(Iface, TProcessor):
       logging.exception(ex)
       result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
     oprot.writeMessageBegin("processWorkerMetrics", msg_type, seqid)
+    result.write(oprot)
+    oprot.writeMessageEnd()
+    oprot.trans.flush()
+
+  def process_isRemoteBlobExists(self, seqid, iprot, oprot):
+    args = isRemoteBlobExists_args()
+    args.read(iprot)
+    iprot.readMessageEnd()
+    result = isRemoteBlobExists_result()
+    try:
+      result.success = self._handler.isRemoteBlobExists(args.blobKey)
+      msg_type = TMessageType.REPLY
+    except (TTransport.TTransportException, KeyboardInterrupt, SystemExit):
+      raise
+    except AuthorizationException as aze:
+      msg_type = TMessageType.REPLY
+      result.aze = aze
+    except Exception as ex:
+      msg_type = TMessageType.EXCEPTION
+      logging.exception(ex)
+      result = TApplicationException(TApplicationException.INTERNAL_ERROR, 'Internal error')
+    oprot.writeMessageBegin("isRemoteBlobExists", msg_type, seqid)
     result.write(oprot)
     oprot.writeMessageEnd()
     oprot.trans.flush()
@@ -10728,15 +10800,18 @@ class sendSupervisorWorkerHeartbeat_result:
   """
   Attributes:
    - aze
+   - e
   """
 
   thrift_spec = (
     None, # 0
     (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
+    (2, TType.STRUCT, 'e', (NotAliveException, NotAliveException.thrift_spec), None, ), # 2
   )
 
-  def __init__(self, aze=None,):
+  def __init__(self, aze=None, e=None,):
     self.aze = aze
+    self.e = e
 
   def read(self, iprot):
     if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
@@ -10753,6 +10828,12 @@ class sendSupervisorWorkerHeartbeat_result:
           self.aze.read(iprot)
         else:
           iprot.skip(ftype)
+      elif fid == 2:
+        if ftype == TType.STRUCT:
+          self.e = NotAliveException()
+          self.e.read(iprot)
+        else:
+          iprot.skip(ftype)
       else:
         iprot.skip(ftype)
       iprot.readFieldEnd()
@@ -10767,6 +10848,10 @@ class sendSupervisorWorkerHeartbeat_result:
       oprot.writeFieldBegin('aze', TType.STRUCT, 1)
       self.aze.write(oprot)
       oprot.writeFieldEnd()
+    if self.e is not None:
+      oprot.writeFieldBegin('e', TType.STRUCT, 2)
+      self.e.write(oprot)
+      oprot.writeFieldEnd()
     oprot.writeFieldStop()
     oprot.writeStructEnd()
 
@@ -10777,6 +10862,7 @@ class sendSupervisorWorkerHeartbeat_result:
   def __hash__(self):
     value = 17
     value = (value * 31) ^ hash(self.aze)
+    value = (value * 31) ^ hash(self.e)
     return value
 
   def __repr__(self):
@@ -10889,6 +10975,149 @@ class processWorkerMetrics_result:
 
   def __hash__(self):
     value = 17
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isRemoteBlobExists_args:
+  """
+  Attributes:
+   - blobKey
+  """
+
+  thrift_spec = (
+    None, # 0
+    (1, TType.STRING, 'blobKey', None, None, ), # 1
+  )
+
+  def __init__(self, blobKey=None,):
+    self.blobKey = blobKey
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 1:
+        if ftype == TType.STRING:
+          self.blobKey = iprot.readString().decode('utf-8')
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isRemoteBlobExists_args')
+    if self.blobKey is not None:
+      oprot.writeFieldBegin('blobKey', TType.STRING, 1)
+      oprot.writeString(self.blobKey.encode('utf-8'))
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.blobKey)
+    return value
+
+  def __repr__(self):
+    L = ['%s=%r' % (key, value)
+      for key, value in self.__dict__.iteritems()]
+    return '%s(%s)' % (self.__class__.__name__, ', '.join(L))
+
+  def __eq__(self, other):
+    return isinstance(other, self.__class__) and self.__dict__ == other.__dict__
+
+  def __ne__(self, other):
+    return not (self == other)
+
+class isRemoteBlobExists_result:
+  """
+  Attributes:
+   - success
+   - aze
+  """
+
+  thrift_spec = (
+    (0, TType.BOOL, 'success', None, None, ), # 0
+    (1, TType.STRUCT, 'aze', (AuthorizationException, AuthorizationException.thrift_spec), None, ), # 1
+  )
+
+  def __init__(self, success=None, aze=None,):
+    self.success = success
+    self.aze = aze
+
+  def read(self, iprot):
+    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
+      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
+      return
+    iprot.readStructBegin()
+    while True:
+      (fname, ftype, fid) = iprot.readFieldBegin()
+      if ftype == TType.STOP:
+        break
+      if fid == 0:
+        if ftype == TType.BOOL:
+          self.success = iprot.readBool()
+        else:
+          iprot.skip(ftype)
+      elif fid == 1:
+        if ftype == TType.STRUCT:
+          self.aze = AuthorizationException()
+          self.aze.read(iprot)
+        else:
+          iprot.skip(ftype)
+      else:
+        iprot.skip(ftype)
+      iprot.readFieldEnd()
+    iprot.readStructEnd()
+
+  def write(self, oprot):
+    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
+      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
+      return
+    oprot.writeStructBegin('isRemoteBlobExists_result')
+    if self.success is not None:
+      oprot.writeFieldBegin('success', TType.BOOL, 0)
+      oprot.writeBool(self.success)
+      oprot.writeFieldEnd()
+    if self.aze is not None:
+      oprot.writeFieldBegin('aze', TType.STRUCT, 1)
+      self.aze.write(oprot)
+      oprot.writeFieldEnd()
+    oprot.writeFieldStop()
+    oprot.writeStructEnd()
+
+  def validate(self):
+    return
+
+
+  def __hash__(self):
+    value = 17
+    value = (value * 31) ^ hash(self.success)
+    value = (value * 31) ^ hash(self.aze)
     return value
 
   def __repr__(self):

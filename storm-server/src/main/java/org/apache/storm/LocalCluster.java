@@ -1161,6 +1161,11 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         getNimbus().processWorkerMetrics(metrics);
     }
 
+    @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException, TException {
+        throw new KeyNotFoundException("BLOBS NOT SUPPORTED IN LOCAL MODE");
+    }
+
     public static void main(final String [] args) throws Exception {
         if (args.length < 1) {
             throw new IllegalArgumentException("No class was specified to run");

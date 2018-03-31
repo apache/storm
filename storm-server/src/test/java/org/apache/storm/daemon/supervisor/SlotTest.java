@@ -332,7 +332,6 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.WAITING_FOR_BLOB_LOCALIZATION, nextState.state);
             verify(cContainer).cleanUp();
-            verify(localizer).releaseSlotFor(cAssignment, port);
             assertTrue(Time.currentTimeMillis() > 2000);
             
             nextState = Slot.stateMachineStep(nextState, staticState);
@@ -413,7 +412,6 @@ public class SlotTest {
             nextState = Slot.stateMachineStep(nextState, staticState);
             assertEquals(MachineState.EMPTY, nextState.state);
             verify(cContainer).cleanUp();
-            verify(localizer).releaseSlotFor(cAssignment, port);
             assertEquals(null, nextState.container);
             assertEquals(null, nextState.currentAssignment);
             assertTrue(Time.currentTimeMillis() > 2000);

@@ -259,6 +259,9 @@ public class AsyncLocalizer implements AutoCloseable {
                                 }
                             }
                             done = true;
+                        } catch (KeyNotFoundException kne) {
+                          //no blob exist on the cluster, cancel downloading.
+                            done = true;
                         } catch (Exception e) {
                             failures++;
                             if (failures > blobDownloadRetries) {
@@ -281,7 +284,7 @@ public class AsyncLocalizer implements AutoCloseable {
      * with a suffix. The runnable is intended to be run periodically by a timer, created elsewhere.
      */
     @VisibleForTesting
-    void updateBlobs() {
+    synchronized void updateBlobs() {
         List<CompletableFuture<?>> futures = new ArrayList<>();
         futures.add(downloadOrUpdate(topologyBlobs.values()));
         if (symlinksDisabled) {
@@ -478,19 +481,25 @@ public class AsyncLocalizer implements AutoCloseable {
         String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
         String topoConfKey = ConfigUtils.masterStormConfKey(topologyId);
 
-        LocallyCachedBlob topoJar = topologyBlobs.get(topoJarKey);
-        if (topoJar != null) {
-            topoJar.removeReference(pna);
-        }
+        Set<String> baseKeys = new HashSet<>();
+        baseKeys.add(topoJarKey);
+        baseKeys.add(topoCodeKey);
+        baseKeys.add(topoConfKey);
 
-        LocallyCachedBlob topoCode = topologyBlobs.get(topoCodeKey);
-        if (topoCode != null) {
-            topoCode.removeReference(pna);
-        }
-
-        LocallyCachedBlob topoConfBlob = topologyBlobs.get(topoConfKey);
-        if (topoConfBlob != null) {
-            topoConfBlob.removeReference(pna);
+        for (String blobKey: baseKeys) {
+            LocallyCachedBlob blob = topologyBlobs.get(blobKey);
+            if (blob != null) {
+                //Remove base blobs eagerly because #updateBlobs sync base blobs based on topologyBlobs.
+                blob.removeReference(pna);
+                if (!blob.isUsed()) {
+                    try {
+                        blob.completelyRemove();
+                    } catch (Exception e) {
+                        LOG.warn("Tried to remove {} but failed with", blob, e);
+                    }
+                    topologyBlobs.remove(blobKey);
+                }
+            }
         }
 
         for (LocalResource lr : getLocalResources(pna)) {

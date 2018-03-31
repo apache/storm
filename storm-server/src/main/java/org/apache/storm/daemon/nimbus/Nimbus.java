@@ -4616,4 +4616,13 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         }
     }
 
+    @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        try {
+            blobStore.getBlobMeta(blobKey, getSubject());
+        } catch (KeyNotFoundException e) {
+            return false;
+        }
+        return true;
+    }
 }

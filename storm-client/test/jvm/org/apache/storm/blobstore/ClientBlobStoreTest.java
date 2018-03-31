@@ -47,6 +47,11 @@ public class ClientBlobStoreTest {
     }
 
     @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+      return allBlobs.containsKey(blobKey);
+    }
+
+    @Override
     protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta) throws AuthorizationException, KeyAlreadyExistsException {
       allBlobs.put(key, meta);
       return null;

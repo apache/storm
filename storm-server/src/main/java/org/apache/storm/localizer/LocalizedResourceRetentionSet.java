@@ -27,7 +27,6 @@ import java.util.TreeMap;
 import java.util.concurrent.ConcurrentMap;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.generated.AuthorizationException;
-import org.apache.storm.generated.KeyNotFoundException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -94,17 +93,17 @@ public class LocalizedResourceRetentionSet {
             Map.Entry<LocallyCachedBlob, Map<String, ? extends LocallyCachedBlob>> rsrc = i.next();
             LocallyCachedBlob resource = rsrc.getKey();
             try {
-                resource.getRemoteVersion(store);
+                if (!store.isRemoteBlobExists(resource.getKey())) {
+                    //The key was removed so we should delete it too.
+                    Map<String, ? extends LocallyCachedBlob> set = rsrc.getValue();
+                    if (removeBlob(resource, set)) {
+                        bytesOver -= resource.getSizeOnDisk();
+                        LOG.info("Deleted blob: {} (REMOVED FROM CLUSTER).", resource.getKey());
+                        i.remove();
+                    }
+                }
             } catch (AuthorizationException e) {
                 //Ignored
-            } catch (KeyNotFoundException e) {
-                //The key was removed so we should delete it too.
-                Map<String, ? extends LocallyCachedBlob> set = rsrc.getValue();
-                if (removeBlob(resource, set)) {
-                    bytesOver -= resource.getSizeOnDisk();
-                    LOG.info("Deleted blob: {} (KEY NOT FOUND).", resource.getKey());
-                    i.remove();
-                }
             }
         }
 

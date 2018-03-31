@@ -276,7 +276,8 @@ public class Supervisor implements DaemonCommon, AutoCloseable {
             // This isn't strictly necessary, but it doesn't hurt and ensures that the machine stays up
             // to date even if callbacks don't all work exactly right
             eventTimer.scheduleRecurring(0, 10,
-                    new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState), eventManager));
+                new EventManagerPushCallback(new SynchronizeAssignments(this, null, readState),
+                    eventManager));
 
             // supervisor health check
             eventTimer.scheduleRecurring(30, 30, new SupervisorHealthCheck(this));

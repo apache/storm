@@ -497,7 +497,6 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
         assert(dynamicState.container.areAllProcessesDead());
         
         dynamicState.container.cleanUp();
-        staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
         DynamicState ret = dynamicState.withCurrentAssignment(null, null);
         if (nextState != null) {
             ret = ret.withState(nextState);
@@ -671,10 +670,13 @@ public class Slot extends Thread implements AutoCloseable, BlobChangingCallback 
             if (dynamicState.currentAssignment != null) {
                 staticState.localizer.releaseSlotFor(dynamicState.currentAssignment, staticState.port);
             }
-            staticState.localizer.releaseSlotFor(dynamicState.pendingChangingBlobsAssignment, staticState.port);
-            return prepareForNewAssignmentNoWorkersRunning(dynamicState.withCurrentAssignment(null, null)
-                    .withPendingChangingBlobs(Collections.emptySet(), null),
-                staticState);
+
+            if (!equivalent(dynamicState.newAssignment, dynamicState.pendingChangingBlobsAssignment)) {
+                staticState.localizer.releaseSlotFor(dynamicState.pendingChangingBlobsAssignment, staticState.port);
+                return prepareForNewAssignmentNoWorkersRunning(dynamicState.withCurrentAssignment(null, null)
+                        .withPendingChangingBlobs(Collections.emptySet(), null),
+                    staticState);
+            }
         }
 
         dynamicState = filterChangingBlobsFor(dynamicState, dynamicState.pendingChangingBlobsAssignment);

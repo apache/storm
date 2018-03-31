@@ -272,6 +272,18 @@ public class NimbusBlobStore extends ClientBlobStore implements AutoCloseable {
     }
 
     @Override
+    public boolean isRemoteBlobExists(String blobKey) throws AuthorizationException {
+        try {
+            return client.getClient().isRemoteBlobExists(blobKey);
+
+        } catch (AuthorizationException aze) {
+            throw aze;
+        } catch (TException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     protected AtomicOutputStream createBlobToExtend(String key, SettableBlobMeta meta)
             throws AuthorizationException, KeyAlreadyExistsException {
         try {

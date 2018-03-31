@@ -92,6 +92,7 @@ if len(sys.argv) <= 1 or sys.argv[1] == '--help':
   print('  void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats)')
   print('  void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat)')
   print('  void processWorkerMetrics(WorkerMetrics metrics)')
+  print('  bool isRemoteBlobExists(string blobKey)')
   print('')
   sys.exit(0)
 
@@ -447,6 +448,12 @@ elif cmd == 'processWorkerMetrics':
     print('processWorkerMetrics requires 1 args')
     sys.exit(1)
   pp.pprint(client.processWorkerMetrics(eval(args[0]),))
+
+elif cmd == 'isRemoteBlobExists':
+  if len(args) != 1:
+    print('isRemoteBlobExists requires 1 args')
+    sys.exit(1)
+  pp.pprint(client.isRemoteBlobExists(args[0],))
 
 else:
   print('Unrecognized method %s' % cmd)
