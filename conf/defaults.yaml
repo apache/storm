@@ -196,6 +196,9 @@ worker.log.level.reset.poll.secs: 30
 topology.worker.receiver.thread.count: 1
 
 # Executor metrics reporting interval.
+# Cause the ui only show built in metrics, we should keep sync with the built in metrics interval,
+# also the metrics consumer's collecting interval.
+# See topology.builtin.metrics.bucket.size.secs and storm.cluster.metrics.consumer.publish.interval.secs.
 executor.metrics.frequency.secs: 60
 
 task.heartbeat.frequency.secs: 3
