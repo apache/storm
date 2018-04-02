@@ -54,6 +54,7 @@ public final class DemoTest extends AbstractTest {
         topo.submitSuccessfully();
         final int minExclaim2Emits = 500;
         final int minSpountEmits = 10000;
+        //Keep the check time to be gt Config.EXECUTOR_METRICS_FREQUENCY_SECS.
         for(int i = 0; i < 10; ++i) {
             TopologyInfo topologyInfo = topo.getInfo();
             log.info(topologyInfo.toString());
