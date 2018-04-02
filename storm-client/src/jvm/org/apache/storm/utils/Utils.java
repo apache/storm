@@ -67,6 +67,10 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -1030,8 +1034,44 @@ public class Utils {
         return ret;
     }
 
-    public static boolean isValidConf(Map<String, Object> topoConf) {
-        return normalizeConf(topoConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConf))));
+    @SuppressWarnings("unchecked")
+    public static boolean isValidConf(Map<String, Object> topoConfIn) {
+	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
+	try {
+	    Map<String, Object> deserTopoConf = normalizeConf(
+		    (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
+	    return isValidConf(origTopoConf, deserTopoConf);
+	} catch (ParseException e) {
+	    LOG.error("Json serialized config could not be deserialized", e);
+	}
+	return false;
+    }
+
+    @VisibleForTesting
+    static boolean isValidConf(Map<String, Object> orig, Map<String, Object> deser) {
+	MapDifference<String, Object> diff = Maps.difference(orig, deser);
+	if (diff.areEqual()) {
+	    return true;
+	}
+	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
+	    LOG.warn("Config property ({}) is found in original config, but missing from the "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
+	}
+	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
+	    LOG.warn("Config property ({}) is not found in original config, but present in "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
+	}
+	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+	    Object leftValue = entryDiffers.getValue().leftValue();
+	    Object rightValue = entryDiffers.getValue().rightValue();
+	    LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
+	            entryDiffers.getKey(), leftValue, rightValue);
+	}
+	return false;
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
