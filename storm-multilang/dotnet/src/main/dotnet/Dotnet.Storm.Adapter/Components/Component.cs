@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -143,6 +144,8 @@ namespace Dotnet.Storm.Adapter.Components
                 return 30;
             }
         }
+
+        protected event EventHandler OnInitialized;
         #endregion
 
         internal void SetArguments(string line)
@@ -177,6 +180,9 @@ namespace Dotnet.Storm.Adapter.Components
 
             // send PID back to storm
             Channel.Instance.Send(new PidMessage(pid));
+
+            // now let's notify the component the context is set and configuration is available
+            OnInitialized?.Invoke(this, EventArgs.Empty);
         }
 
         internal abstract void Start();
