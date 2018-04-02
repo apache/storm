@@ -1037,24 +1037,33 @@ public class Utils {
     @SuppressWarnings("unchecked")
     public static boolean isValidConf(Map<String, Object> topoConfIn) {
 	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
-	Map<String, Object> deserTopoConf = normalizeConf(
-		(Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConfIn)));
-	return checkMapEquality(origTopoConf, deserTopoConf);
+	try {
+	    Map<String, Object> deserTopoConf = normalizeConf(
+		    (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
+	    return isValidConf(origTopoConf, deserTopoConf);
+	} catch (ParseException e) {
+	    LOG.error("Json serialized config could not be deserialized", e);
+	}
+	return false;
     }
 
     @VisibleForTesting
-    static boolean checkMapEquality(Map<String, Object> orig, Map<String, Object> deser) {
+    static boolean isValidConf(Map<String, Object> orig, Map<String, Object> deser) {
 	MapDifference<String, Object> diff = Maps.difference(orig, deser);
 	if (diff.areEqual()) {
 	    return true;
 	}
 	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
-	    LOG.warn("Config property not serializable. Name: {} - Value: {}", entryOnLeft.getKey(),
-	            entryOnLeft.getValue());
+	    LOG.warn("Config property ({}) is found in original config, but missing from the "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
 	}
 	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
-	    LOG.warn("Some config property changed during serialization. Changed Name: {} - Value: {}",
-	            entryOnRight.getKey(), entryOnRight.getValue());
+	    LOG.warn("Config property ({}) is not found in original config, but present in "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
 	}
 	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
 	    Object leftValue = entryDiffers.getValue().leftValue();

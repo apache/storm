@@ -178,47 +178,47 @@ public class UtilsTest {
     }
 
     @Test
-    public void testCheckMapEqualityEmpty() {
+    public void testIsValidConfEmpty() {
         Map<String, Object> map0 = ImmutableMap.of();
-        Assert.assertTrue(Utils.checkMapEquality(map0, map0));
+        Assert.assertTrue(Utils.isValidConf(map0, map0));
     }
 
     @Test
-    public void testCheckMapEqualityIdentical() {
+    public void testIsValidConfIdentical() {
         Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                 "k2", "as");
-        Assert.assertTrue(Utils.checkMapEquality(map1, map1));
+        Assert.assertTrue(Utils.isValidConf(map1, map1));
     }
 
     @Test
-    public void testCheckMapEqualityEqual() {
+    public void testIsValidConfEqual() {
         Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                 "k2", "as");
 	Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                 "k2", "as");
-        Assert.assertTrue(Utils.checkMapEquality(map1, map2)); // test deep equal
+        Assert.assertTrue(Utils.isValidConf(map1, map2)); // test deep equal
     }
 
     @Test
-    public void testCheckMapEqualityNotEqual() {
+    public void testIsValidConfNotEqual() {
         Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
                 "k2", "as");
         Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 't'),
                 "k2", "as");
-        Assert.assertFalse(Utils.checkMapEquality(map1, map3));
+        Assert.assertFalse(Utils.isValidConf(map1, map3));
     }
 
     @Test
-    public void testCheckMapEqualityPrimitiveNotEqual() {
+    public void testIsValidConfPrimitiveNotEqual() {
         Map<String, Object> map4 = ImmutableMap.of("k0", 2L);
         Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
-        Assert.assertFalse(Utils.checkMapEquality(map4, map5));
+        Assert.assertFalse(Utils.isValidConf(map4, map5));
     }
 
     @Test
-    public void testCheckMapEqualityEmptyNotEqual() {
+    public void testIsValidConfEmptyNotEqual() {
         Map<String, Object> map0 = ImmutableMap.of();
         Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
-        Assert.assertFalse(Utils.checkMapEquality(map0, map5));
+        Assert.assertFalse(Utils.isValidConf(map0, map5));
     }
 }
