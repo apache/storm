@@ -454,6 +454,9 @@
                                 <exclude>**/build/**</exclude>
                                 <!-- logs generated during test -->
                                 <exclude>**/logs/**</exclude>
+                                <!-- visual studio config dirs -->
+                                <exclude>**/.vs/**</exclude>
+                                <exclude>**/.vscode/**</exclude>
 
                                 <!-- exclude CHANGELOG, VERSION, AND TODO files -->
                                 <exclude>**/CHANGELOG.md</exclude>
@@ -519,6 +522,15 @@
                                 <!-- Vagrant related files -->
                                 <exclude>integration-test/config/.vagrant/**</exclude>
 
+                                <!-- Dotnet related files -->
+                                <exclude>storm-multilang/dotnet/build.sh</exclude>
+                                <exclude>storm-multilang/dotnet/run.sh</exclude>
+                                <exclude>storm-multilang/dotnet/resources/topology.yaml</exclude>
+                                <exclude>storm-multilang/dotnet/Dotnet.Storm.sln</exclude>
+                                <exclude>storm-multilang/dotnet/src/main/dotnet/Dotnet.Storm.Example/Dotnet.Storm.Example.csproj</exclude>
+                                <exclude>storm-multilang/dotnet/src/main/dotnet/Dotnet.Storm.Adapter/Dotnet.Storm.Adapter.csproj</exclude>
+                                <exclude>storm-multilang/dotnet/src/main/dotnet/Dotnet.Storm.Adapter/Properties/launchSettings.json</exclude>
+                                <exclude>storm-multilang/dotnet/src/main/dotnet/Dotnet.Storm.Adapter/log4net.config</exclude>
                             </excludes>
                         </configuration>
                     </plugin>
