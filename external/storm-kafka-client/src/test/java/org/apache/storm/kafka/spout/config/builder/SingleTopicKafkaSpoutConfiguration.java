@@ -29,6 +29,7 @@ import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
+
 public class SingleTopicKafkaSpoutConfiguration {
 
     public static final String STREAM = "test_stream";
@@ -54,6 +55,7 @@ public class SingleTopicKafkaSpoutConfiguration {
             .setPollTimeoutMs(1000);
     }
 
+
     protected static KafkaSpoutRetryService getNoDelayRetryService() {
         /**
          * Retry in a tight loop (keep unit tests fasts).
@@ -61,4 +63,5 @@ public class SingleTopicKafkaSpoutConfiguration {
         return new KafkaSpoutRetryExponentialBackoff(KafkaSpoutRetryExponentialBackoff.TimeInterval.seconds(0), KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0),
             DEFAULT_MAX_RETRIES, KafkaSpoutRetryExponentialBackoff.TimeInterval.milliSeconds(0));
     }
+
 }
