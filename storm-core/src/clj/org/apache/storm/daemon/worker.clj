@@ -560,7 +560,7 @@
       (reset! latest-log-config new-log-configs)
       (log-debug "New merged log config is " @latest-log-config))))
 
-(defn run-worker-start-hooks [worker]
+(defn deserialize-worker-hooks [worker deserialized-hooks]
   (let [topology (:topology worker)
         topo-conf (:storm-conf worker)
         worker-topology-context (worker-context worker)
@@ -568,15 +568,18 @@
     (dofor [hook hooks]
       (let [hook-bytes (Utils/toByteArray hook)
             deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
-        (.start deser-hook topo-conf worker-topology-context)))))
+        (.add deserialized-hooks deser-hook)))))
 
-(defn run-worker-shutdown-hooks [worker]
+(defn run-worker-start-hooks [worker deserialized-hooks]
   (let [topology (:topology worker)
-        hooks (.get_worker_hooks topology)]
-    (dofor [hook hooks]
-      (let [hook-bytes (Utils/toByteArray hook)
-            deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
-        (.shutdown deser-hook)))))
+        topo-conf (:storm-conf worker)
+        worker-topology-context (worker-context worker)]
+    (dofor [hook deserialized-hooks]
+      (.start hook topo-conf worker-topology-context))))
+
+(defn run-worker-shutdown-hooks [deserialized-hooks]
+  (dofor [hook deserialized-hooks]
+    (.shutdown hook)))
 
 ;; TODO: should worker even take the storm-id as input? this should be
 ;; deducable from cluster state (by searching through assignments)
@@ -585,6 +588,8 @@
 (defserverfn mk-worker [conf shared-mq-context storm-id assignment-id port worker-id]
   (log-message "Launching worker for " storm-id " on " assignment-id ":" port " with id " worker-id
                " and conf " conf)
+  ;; create an empty list to store deserialized hooks
+  (def deserialized-hooks (java.util.ArrayList.))
   (if-not (local-mode? conf)
     (redirect-stdio-to-slf4j!))
   ;; because in local mode, its not a separate
@@ -633,8 +638,10 @@
         _ (activate-worker-when-all-connections-ready worker)
 
         _ (refresh-storm-active worker nil)
+        
+        _ (deserialize-worker-hooks worker deserialized-hooks)
 
-        _ (run-worker-start-hooks worker)
+        _ (run-worker-start-hooks worker deserialized-hooks)
 
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e initial-credentials)))
 
@@ -690,7 +697,7 @@
                     (close-resources worker)
 
                     (log-message "Trigger any worker shutdown hooks")
-                    (run-worker-shutdown-hooks worker)
+                    (run-worker-shutdown-hooks deserialized-hooks)
 
                     (.remove-worker-heartbeat! (:storm-cluster-state worker) storm-id assignment-id port)
                     (.remove-worker-backpressure! (:storm-cluster-state worker) storm-id assignment-id port)
