@@ -289,7 +289,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 if (isAtLeastOnceProcessing()) {
                     commitOffsetsForAckedTuples(kafkaConsumer.assignment());
                 } else if (kafkaSpoutConfig.getProcessingGuarantee() == ProcessingGuarantee.NO_GUARANTEE) {
-                    Map<TopicPartition, OffsetAndMetadata> offsetsToCommit = 
+                    Map<TopicPartition, OffsetAndMetadata> offsetsToCommit =
                         createFetchedOffsetsMetadata(kafkaConsumer.assignment());
                     kafkaConsumer.commitAsync(offsetsToCommit, null);
                     LOG.debug("Committed offsets {} to Kafka", offsetsToCommit);
@@ -386,7 +386,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                 numPolledRecords);
             if (kafkaSpoutConfig.getProcessingGuarantee() == KafkaSpoutConfig.ProcessingGuarantee.AT_MOST_ONCE) {
                 //Commit polled records immediately to ensure delivery is at-most-once.
-                Map<TopicPartition, OffsetAndMetadata> offsetsToCommit = 
+                Map<TopicPartition, OffsetAndMetadata> offsetsToCommit =
                     createFetchedOffsetsMetadata(kafkaConsumer.assignment());
                 kafkaConsumer.commitSync(offsetsToCommit);
                 LOG.debug("Committed offsets {} to Kafka", offsetsToCommit);
@@ -500,8 +500,11 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
                     return true;
                 }
             } else {
+                /*if a null tuple is not configured to be emitted, it should be marked as emitted and acked immediately
+                * to allow its offset to be commited to Kafka*/
                 LOG.debug("Not emitting null tuple for record [{}] as defined in configuration.", record);
-                msgId.setEmitted(false);
+                msgId.setNullTuple(true);
+                offsetManagers.get(tp).addToEmitMsgs(msgId.offset());
                 ack(msgId);
             }
         }
@@ -522,7 +525,7 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         }
         return offsetsToCommit;
     }
-    
+
     private void commitOffsetsForAckedTuples(Set<TopicPartition> assignedPartitions) {
         // Find offsets that are ready to be committed for every assigned topic partition
         final Map<TopicPartition, OffsetManager> assignedOffsetManagers = new HashMap<>();
@@ -593,17 +596,22 @@ public class KafkaSpout<K, V> extends BaseRichSpout {
         // Only need to keep track of acked tuples if commits to Kafka are controlled by
         // tuple acks, which happens only for at-least-once processing semantics
         final KafkaSpoutMessageId msgId = (KafkaSpoutMessageId) messageId;
+
+        if (msgId.isNullTuple()) {
+            //a null tuple should be added to the ack list since by definition is a direct ack
+            offsetManagers.get(msgId.getTopicPartition()).addToAckMsgs(msgId);
+            LOG.debug("Received direct ack for message [{}], associated with null tuple", msgId);
+            tupleListener.onAck(msgId);
+            return;
+        }
+
         if (!emitted.contains(msgId)) {
-            if (msgId.isEmitted()) {
-                LOG.debug("Received ack for message [{}], associated with tuple emitted for a ConsumerRecord that "
-                    + "came from a topic-partition that this consumer group instance is no longer tracking "
-                    + "due to rebalance/partition reassignment. No action taken.", msgId);
-            } else {
-                LOG.debug("Received direct ack for message [{}], associated with null tuple", msgId);
-            }
+            LOG.debug("Received ack for message [{}], associated with tuple emitted for a ConsumerRecord that "
+                        + "came from a topic-partition that this consumer group instance is no longer tracking "
+                        + "due to rebalance/partition reassignment. No action taken.", msgId);
         } else {
             Validate.isTrue(!retryService.isScheduled(msgId), "The message id " + msgId + " is queued for retry while being acked."
-                + " This should never occur barring errors in the RetryService implementation or the spout code.");
+                        + " This should never occur barring errors in the RetryService implementation or the spout code.");
             offsetManagers.get(msgId.getTopicPartition()).addToAckMsgs(msgId);
             emitted.remove(msgId);
         }
