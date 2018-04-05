@@ -29,7 +29,6 @@ import java.util.Queue;
 import java.util.Random;
 import java.util.function.BooleanSupplier;
 
-
 import org.apache.storm.Config;
 import org.apache.storm.Thrift;
 import org.apache.storm.daemon.worker.WorkerState;
@@ -46,6 +45,7 @@ import org.apache.storm.generated.StormTopology;
 import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.hooks.ITaskHook;
 import org.apache.storm.hooks.info.EmitInfo;
+import org.apache.storm.metrics2.TaskMetrics;
 import org.apache.storm.spout.ShellSpout;
 import org.apache.storm.stats.CommonStats;
 import org.apache.storm.task.ShellBolt;
@@ -78,6 +78,7 @@ public class Task {
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper;
     private HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> streamToGroupers;
     private boolean debug;
+    private final TaskMetrics taskMetrics;
 
     public Task(Executor executor, Integer taskId) throws IOException {
         this.taskId = taskId;
@@ -95,6 +96,7 @@ public class Task {
         this.taskObject = mkTaskObject();
         this.debug = topoConf.containsKey(Config.TOPOLOGY_DEBUG) && (Boolean) topoConf.get(Config.TOPOLOGY_DEBUG);
         this.addTaskHooks();
+        this.taskMetrics = new TaskMetrics(this.workerTopologyContext, this.componentId, this.taskId);
     }
 
     public List<Integer> getOutgoingTasks(Integer outTaskId, String stream, List<Object> values) {
@@ -116,9 +118,9 @@ public class Task {
 
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream);
+                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
                 if (null != outTaskId) {
-                    executorStats.transferredTuples(stream, 1);
+                    executorStats.transferredTuples(stream, 1, this.taskMetrics.getTransferred(stream));
                 }
             }
         } catch (Exception e) {
@@ -140,7 +142,7 @@ public class Task {
 
         ArrayList<LoadAwareCustomStreamGrouping> groupers = streamToGroupers.get(stream);
         if (null != groupers)  {
-            for (int i=0; i<groupers.size(); ++i) {
+            for (int i = 0; i < groupers.size(); ++i) {
                 LoadAwareCustomStreamGrouping grouper = groupers.get(i);
                 if (grouper == GrouperFactory.DIRECT) {
                     throw new IllegalArgumentException("Cannot do regular emit to direct stream");
@@ -157,8 +159,8 @@ public class Task {
         }
         try {
             if (emitSampler.getAsBoolean()) {
-                executorStats.emittedTuple(stream);
-                executorStats.transferredTuples(stream, outTasks.size());
+                executorStats.emittedTuple(stream, this.taskMetrics.getEmitted(stream));
+                executorStats.transferredTuples(stream, outTasks.size(), this.taskMetrics.getTransferred(stream));
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -186,6 +188,9 @@ public class Task {
         return taskObject;
     }
 
+    public TaskMetrics getTaskMetrics() {
+        return taskMetrics;
+    }
 
     // Non Blocking call. If cannot emit to destination immediately, such tuples will be added to `pendingEmits` argument
     public void sendUnanchored(String stream, List<Object> values, ExecutorTransfer transfer, Queue<AddressedTuple> pendingEmits) {
@@ -284,7 +289,8 @@ public class Task {
         }
     }
 
-    private static HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> getGroupersPerStream(Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper) {
+    private static HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> getGroupersPerStream(
+            Map<String, Map<String, LoadAwareCustomStreamGrouping>> streamComponentToGrouper) {
         HashMap<String, ArrayList<LoadAwareCustomStreamGrouping>> result = new HashMap<>(streamComponentToGrouper.size());
 
         for (Entry<String, Map<String, LoadAwareCustomStreamGrouping>> entry : streamComponentToGrouper.entrySet()) {

@@ -18,20 +18,19 @@
 
 package org.apache.storm;
 
+import com.esotericsoftware.kryo.Serializer;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.storm.metric.IEventLogger;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.IKryoDecorator;
 import org.apache.storm.serialization.IKryoFactory;
 import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.validation.ConfigValidationAnnotations.*;
 import org.apache.storm.validation.ConfigValidation.*;
-import com.esotericsoftware.kryo.Serializer;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import org.apache.storm.validation.ConfigValidationAnnotations.*;
 
 /**
  * Topology configs are specified as a plain old map. This class provides a
@@ -148,7 +147,7 @@ public class Config extends HashMap<String, Object> {
      * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
     @isStringList
-    public static final String TOPOLOGY_READONLY_USERS="topology.readonly.users";
+    public static final String TOPOLOGY_READONLY_USERS = "topology.readonly.users";
 
     /**
      * A list of readonly groups that are allowed to interact with the topology.  To use this set
@@ -171,7 +170,7 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DEBUG = "topology.debug";
 
     /**
-     * User defined version of this topology
+     * User defined version of this topology.
      */
     @isString
     public static final String TOPOLOGY_VERSION = "topology.version";
@@ -186,7 +185,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The serializer for communication between shell components and non-JVM
-     * processes
+     * processes.
      */
     @isString
     public static final String TOPOLOGY_MULTILANG_SERIALIZER = "topology.multilang.serializer";
@@ -268,14 +267,16 @@ public class Config extends HashMap<String, Object> {
      * to allocate slots on machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB = "topology.metrics.consumer.resources.onheap.memory.mb";
+    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
+            "topology.metrics.consumer.resources.onheap.memory.mb";
 
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler
      * to allocate slots on machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB = "topology.metrics.consumer.resources.offheap.memory.mb";
+    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
+            "topology.metrics.consumer.resources.offheap.memory.mb";
 
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use.
@@ -311,13 +312,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_STATE_CHECKPOINT_INTERVAL = "topology.state.checkpoint.interval.ms";
 
     /**
-     * A per topology config that specifies the maximum amount of memory a worker can use for that specific topology
+     * A per topology config that specifies the maximum amount of memory a worker can use for that specific topology.
      */
     @isPositiveNumber
     public static final String TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB = "topology.worker.max.heap.size.mb";
 
     /**
-     * The strategy to use when scheduling a topology with Resource Aware Scheduler
+     * The strategy to use when scheduling a topology with Resource Aware Scheduler.
      */
     @NotNull
     @isString
@@ -388,7 +389,7 @@ public class Config extends HashMap<String, Object> {
      * Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering
      * many implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
      */
-    @isListEntryCustom(entryValidatorClasses={EventLoggerRegistryValidator.class})
+    @isListEntryCustom(entryValidatorClasses = {EventLoggerRegistryValidator.class})
     public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
 
     /**
@@ -452,10 +453,10 @@ public class Config extends HashMap<String, Object> {
      * rather than throw an error.
      */
     @isBoolean
-    public static final String TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS= "topology.skip.missing.kryo.registrations";
+    public static final String TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS = "topology.skip.missing.kryo.registrations";
 
     /**
-     * List of classes to register during state serialization
+     * List of classes to register during state serialization.
      */
     @isStringList
     public static final String TOPOLOGY_STATE_KRYO_REGISTER = "topology.state.kryo.register";
@@ -466,7 +467,7 @@ public class Config extends HashMap<String, Object> {
      * Each listed class maps 1:1 to a system bolt named __metrics_ClassName#N, and it's parallelism is configurable.
      */
 
-    @isListEntryCustom(entryValidatorClasses={MetricRegistryValidator.class})
+    @isListEntryCustom(entryValidatorClasses = {MetricRegistryValidator.class})
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
 
     /**
@@ -477,13 +478,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS = "topology.serialized.message.size.metrics";
 
     /**
-     * A map of metric name to class name implementing IMetric that will be created once per worker JVM
+     * A map of metric name to class name implementing IMetric that will be created once per worker JVM.
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String TOPOLOGY_WORKER_METRICS = "topology.worker.metrics";
 
     /**
-     * A map of metric name to class name implementing IMetric that will be created once per worker JVM
+     * A map of metric name to class name implementing IMetric that will be created once per worker JVM.
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String WORKER_METRICS = "worker.metrics";
@@ -494,7 +495,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_MAX_TASK_PARALLELISM="topology.max.task.parallelism";
+    public static final String TOPOLOGY_MAX_TASK_PARALLELISM = "topology.max.task.parallelism";
 
     /**
      * The maximum number of tuples that can be pending on a spout task at any given time.
@@ -506,14 +507,14 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_MAX_SPOUT_PENDING="topology.max.spout.pending";
+    public static final String TOPOLOGY_MAX_SPOUT_PENDING = "topology.max.spout.pending";
 
     /**
      * The amount of milliseconds the SleepEmptyEmitStrategy should sleep for.
      */
     @isInteger
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS="topology.sleep.spout.wait.strategy.time.ms";
+    public static final String TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS = "topology.sleep.spout.wait.strategy.time.ms";
 
     /**
      * The maximum amount of time a component gives a source of state to synchronize before it requests
@@ -522,49 +523,49 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_STATE_SYNCHRONIZATION_TIMEOUT_SECS="topology.state.synchronization.timeout.secs";
+    public static final String TOPOLOGY_STATE_SYNCHRONIZATION_TIMEOUT_SECS = "topology.state.synchronization.timeout.secs";
 
     /**
      * The percentage of tuples to sample to produce stats for a task.
      */
     @isPositiveNumber
-    public static final String TOPOLOGY_STATS_SAMPLE_RATE="topology.stats.sample.rate";
+    public static final String TOPOLOGY_STATS_SAMPLE_RATE = "topology.stats.sample.rate";
 
     /**
      * The time period that builtin metrics data in bucketed into.
      */
     @isInteger
-    public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS="topology.builtin.metrics.bucket.size.secs";
+    public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = "topology.builtin.metrics.bucket.size.secs";
 
     /**
      * Whether or not to use Java serialization in a topology.
      */
     @isBoolean
-    public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION="topology.fall.back.on.java.serialization";
+    public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION = "topology.fall.back.on.java.serialization";
 
     /**
      * Topology-specific options for the worker child process. This is used in addition to WORKER_CHILDOPTS.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_CHILDOPTS="topology.worker.childopts";
+    public static final String TOPOLOGY_WORKER_CHILDOPTS = "topology.worker.childopts";
 
     /**
      * Topology-specific options GC for the worker child process. This overrides WORKER_GC_CHILDOPTS.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_GC_CHILDOPTS="topology.worker.gc.childopts";
+    public static final String TOPOLOGY_WORKER_GC_CHILDOPTS = "topology.worker.gc.childopts";
 
     /**
      * Topology-specific options for the logwriter process of a worker.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS="topology.worker.logwriter.childopts";
+    public static final String TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS = "topology.worker.logwriter.childopts";
 
     /**
      * Topology-specific classpath for the worker child process. This is combined to the usual classpath.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_CLASSPATH="topology.classpath";
+    public static final String TOPOLOGY_CLASSPATH = "topology.classpath";
 
     /**
      * Topology-specific classpath for the worker child process. This will be *prepended* to
@@ -573,14 +574,14 @@ public class Config extends HashMap<String, Object> {
      * classpaths, set the storm.topology.classpath.beginning.enabled config to true.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_CLASSPATH_BEGINNING="topology.classpath.beginning";
+    public static final String TOPOLOGY_CLASSPATH_BEGINNING = "topology.classpath.beginning";
 
     /**
      * Topology-specific environment variables for the worker child process.
      * This is added to the existing environment (that of the supervisor)
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
-    public static final String TOPOLOGY_ENVIRONMENT="topology.environment";
+    public static final String TOPOLOGY_ENVIRONMENT = "topology.environment";
 
     /*
      * Bolt-specific configuration for windowed bolts to specify the window length as a count of number of tuples
@@ -651,7 +652,7 @@ public class Config extends HashMap<String, Object> {
      * topology in Zookeeper.
      */
     @isString
-    public static final String TOPOLOGY_TRANSACTIONAL_ID="topology.transactional.id";
+    public static final String TOPOLOGY_TRANSACTIONAL_ID = "topology.transactional.id";
 
     /**
      * A list of task hooks that are automatically added to every spout and bolt in the topology. An example
@@ -659,21 +660,21 @@ public class Config extends HashMap<String, Object> {
      * monitoring system. These hooks are instantiated using the zero-arg constructor.
      */
     @isStringList
-    public static final String TOPOLOGY_AUTO_TASK_HOOKS="topology.auto.task.hooks";
+    public static final String TOPOLOGY_AUTO_TASK_HOOKS = "topology.auto.task.hooks";
 
     /**
      * The size of the receive queue for each executor.
      */
     @isPositiveNumber
     @isInteger
-    public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE="topology.executor.receive.buffer.size";
+    public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE = "topology.executor.receive.buffer.size";
 
     /**
      * The size of the transfer queue for each worker.
      */
     @isPositiveNumber
     @isInteger
-    public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE="topology.transfer.buffer.size";
+    public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE = "topology.transfer.buffer.size";
 
     /**
      * The size of the transfer queue for each worker.
@@ -1240,6 +1241,9 @@ public class Config extends HashMap<String, Object> {
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
 
+    @isListEntryCustom(entryValidatorClasses={MetricReportersValidator.class})
+    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
+
     /**
      * What blobstore implementation the storm client should use.
      */
@@ -1672,7 +1676,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * Impersonation user ACL config entries.
      */
-    @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class}, valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
+    @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class},
+            valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
 
     /**
@@ -1912,6 +1917,27 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     public static final String WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS = "worker.blob.update.poll.interval.secs";
+
+    /**
+     * A specify Locale for daemon metrics reporter plugin.
+     * Use the specified IETF BCP 47 language tag string for a Locale.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
+
+    /**
+     * A specify rate-unit in TimeUnit to specify reporting frequency for daemon metrics reporter plugin.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
+
+    /**
+     * A specify duration-unit in TimeUnit to specify reporting window for daemon metrics reporter plugin.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
+
+
 
     public static void setClasspath(Map<String, Object> conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);

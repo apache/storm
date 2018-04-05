@@ -15,42 +15,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.stats;
 
+import com.codahale.metrics.Counter;
 import com.google.common.collect.Lists;
-
+import java.util.List;
 import org.apache.storm.generated.BoltStats;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.metric.internal.MultiCountStatAndMetric;
 import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
 
-import java.util.List;
-
 @SuppressWarnings("unchecked")
 public class BoltExecutorStats extends CommonStats {
-
-    MultiCountStatAndMetric   ackedStats;
-    MultiCountStatAndMetric   failedStats;
     MultiCountStatAndMetric   executedStats;
     MultiLatencyStatAndMetric processLatencyStats;
     MultiLatencyStatAndMetric executeLatencyStats;
 
     public BoltExecutorStats(int rate,int numStatBuckets) {
         super(rate,numStatBuckets);
-        this.ackedStats = new MultiCountStatAndMetric(numStatBuckets);
-        this.failedStats = new MultiCountStatAndMetric(numStatBuckets);
         this.executedStats = new MultiCountStatAndMetric(numStatBuckets);
         this.processLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
         this.executeLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
-    }
-
-    public MultiCountStatAndMetric getAcked() {
-        return ackedStats;
-    }
-
-    public MultiCountStatAndMetric getFailed() {
-        return failedStats;
     }
 
     public MultiCountStatAndMetric getExecuted() {
@@ -67,8 +54,6 @@ public class BoltExecutorStats extends CommonStats {
 
     @Override
     public void cleanupStats() {
-        ackedStats.close();
-        failedStats.close();
         executedStats.close();
         processLatencyStats.close();
         executeLatencyStats.close();
@@ -81,16 +66,17 @@ public class BoltExecutorStats extends CommonStats {
         this.getExecuteLatencies().record(key, latencyMs);
     }
 
-    public void boltAckedTuple(String component, String stream, long latencyMs) {
+    public void boltAckedTuple(String component, String stream, long latencyMs, Counter ackedCounter) {
         List key = Lists.newArrayList(component, stream);
         this.getAcked().incBy(key, this.rate);
+        ackedCounter.inc(this.rate);
         this.getProcessLatencies().record(key, latencyMs);
     }
 
-    public void boltFailedTuple(String component, String stream, long latencyMs) {
+    public void boltFailedTuple(String component, String stream, long latencyMs, Counter failedCounter) {
         List key = Lists.newArrayList(component, stream);
         this.getFailed().incBy(key, this.rate);
-
+        failedCounter.inc(this.rate);
     }
 
     @Override
@@ -103,8 +89,8 @@ public class BoltExecutorStats extends CommonStats {
 
         // bolt stats
         BoltStats boltStats = new BoltStats(
-                StatsUtil.windowSetConverter(valueStat(ackedStats), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
-                StatsUtil.windowSetConverter(valueStat(failedStats), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
+                StatsUtil.windowSetConverter(valueStat(getAcked()), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
+                StatsUtil.windowSetConverter(valueStat(getFailed()), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
                 StatsUtil.windowSetConverter(valueStat(processLatencyStats), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
                 StatsUtil.windowSetConverter(valueStat(executedStats), StatsUtil.TO_GSID, StatsUtil.IDENTITY),
                 StatsUtil.windowSetConverter(valueStat(executeLatencyStats), StatsUtil.TO_GSID, StatsUtil.IDENTITY));

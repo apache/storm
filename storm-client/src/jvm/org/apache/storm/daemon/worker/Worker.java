@@ -63,6 +63,7 @@ import org.apache.storm.generated.LogConfig;
 import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
+import org.apache.storm.metrics2.StormMetricRegistry;
 import org.apache.storm.security.auth.AuthUtils;
 import org.apache.storm.security.auth.IAutoCredentials;
 import org.apache.storm.stats.StatsUtil;
@@ -73,10 +74,8 @@ import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.SupervisorClient;
 import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
-import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 
 import uk.org.lidalia.sysoutslf4j.context.SysOutOverSLF4J;
 
@@ -148,6 +147,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         ClusterStateContext csContext = new ClusterStateContext(DaemonType.WORKER, topologyConf);
         IStateStorage stateStorage = ClusterUtils.mkStateStorage(conf, topologyConf, csContext);
         IStormClusterState stormClusterState = ClusterUtils.mkStormClusterState(stateStorage, null, csContext);
+
+        StormMetricRegistry.start(conf, DaemonType.WORKER);
 
         Credentials initialCredentials = stormClusterState.credentials(topologyId, null);
         Map<String, String> initCreds = new HashMap<>();
@@ -284,7 +285,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         final Integer xferBatchSize = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_TRANSFER_BATCH_SIZE));
         final Long flushIntervalMillis = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BATCH_FLUSH_INTERVAL_MILLIS));
         if ((producerBatchSize == 1 && xferBatchSize == 1) || flushIntervalMillis == 0) {
-            LOG.info("Flush Tuple generation disabled. producerBatchSize={}, xferBatchSize={}, flushIntervalMillis={}", producerBatchSize, xferBatchSize, flushIntervalMillis);
+            LOG.info("Flush Tuple generation disabled. producerBatchSize={}, xferBatchSize={}, flushIntervalMillis={}",
+                    producerBatchSize, xferBatchSize, flushIntervalMillis);
             return;
         }
 
@@ -309,8 +311,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             return;
         }
         final Long bpCheckIntervalMs = ObjectReader.getLong(topologyConf.get(Config.TOPOLOGY_BACKPRESSURE_CHECK_MILLIS));
-        workerState.backPressureCheckTimer.scheduleRecurringMs(bpCheckIntervalMs
-            , bpCheckIntervalMs, () -> workerState.refreshBackPressureStatus());
+        workerState.backPressureCheckTimer.scheduleRecurringMs(bpCheckIntervalMs,
+                bpCheckIntervalMs, () -> workerState.refreshBackPressureStatus());
         LOG.info("BackPressure status change checking will be performed every {} millis", bpCheckIntervalMs);
     }
 
@@ -416,12 +418,12 @@ public class Worker implements Shutdownable, DaemonCommon {
         //In distributed mode, send heartbeat directly to master if local supervisor goes down.
         SupervisorWorkerHeartbeat workerHeartbeat = new SupervisorWorkerHeartbeat(lsWorkerHeartbeat.get_topology_id(),
                 lsWorkerHeartbeat.get_executors(), lsWorkerHeartbeat.get_time_secs());
-        try (SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPort)){
+        try (SupervisorClient client = SupervisorClient.getConfiguredClient(conf, Utils.hostname(), supervisorPort)) {
             client.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
         } catch (Exception tr1) {
             //If any error/exception thrown, report directly to nimbus.
             LOG.warn("Exception when send heartbeat to local supervisor", tr1.getMessage());
-            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)){
+            try (NimbusClient nimbusClient = NimbusClient.getConfiguredClient(conf)) {
                 nimbusClient.getClient().sendSupervisorWorkerHeartbeat(workerHeartbeat);
             } catch (Exception tr2) {
                 //if any error/exception thrown, just ignore.
@@ -472,6 +474,8 @@ public class Worker implements Shutdownable, DaemonCommon {
             workerState.flushTupleTimer.close();
             workerState.backPressureCheckTimer.close();
             workerState.closeResources();
+
+            StormMetricRegistry.stop();
 
             LOG.info("Trigger any worker shutdown hooks");
             workerState.runWorkerShutdownHooks();

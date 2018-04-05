@@ -15,30 +15,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.task;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.generated.Grouping;
-import org.apache.storm.generated.StormTopology;
-import org.apache.storm.hooks.ITaskHook;
-import org.apache.storm.metric.api.IMetric;
-import org.apache.storm.metric.api.IReducer;
-import org.apache.storm.metric.api.ICombiner;
-import org.apache.storm.metric.api.ReducedMetric;
-import org.apache.storm.metric.api.CombinedMetric;
-import org.apache.storm.state.ISubscribedState;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.utils.Utils;
-
+import com.codahale.metrics.Counter;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.Histogram;
+import com.codahale.metrics.Meter;
+import com.codahale.metrics.Timer;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
+import java.util.concurrent.atomic.AtomicBoolean;
 import org.apache.commons.lang.NotImplementedException;
+import org.apache.storm.generated.GlobalStreamId;
+import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.StormTopology;
+import org.apache.storm.hooks.ITaskHook;
+import org.apache.storm.metric.api.CombinedMetric;
+import org.apache.storm.metric.api.ICombiner;
+import org.apache.storm.metric.api.IMetric;
+import org.apache.storm.metric.api.IReducer;
+import org.apache.storm.metric.api.ReducedMetric;
+import org.apache.storm.metrics2.StormMetricRegistry;
+import org.apache.storm.state.ISubscribedState;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 
 /**
@@ -168,9 +173,9 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     }
 
 	/**
-	 * Gets the declared output fields for the specified stream id for the
-	 * component this task is a part of.
-	 */
+     * Gets the declared output fields for the specified stream id for the
+     * component this task is a part of.
+     */
 	public Fields getThisOutputFields(String streamId) {
 		return getComponentOutputFields(getThisComponentId(), streamId);
 	}
@@ -202,8 +207,8 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     public int getThisTaskIndex() {
         List<Integer> tasks = new ArrayList<>(getComponentTasks(getThisComponentId()));
         Collections.sort(tasks);
-        for(int i=0; i<tasks.size(); i++) {
-            if(tasks.get(i) == getThisTaskId()) {
+        for (int i=0; i<tasks.size(); i++) {
+            if (tasks.get(i) == getThisTaskId()) {
                 return i;
             }
         }
@@ -329,6 +334,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      * You must call this during `IBolt.prepare()` or `ISpout.open()`.
      * @return The IMetric argument unchanged.
      */
+    @Deprecated
     public <T extends IMetric> T registerMetric(String name, T metric, int timeBucketSizeInSecs) {
         if(_openOrPrepareWasCalled.get()) {
             throw new RuntimeException("TopologyContext.registerMetric can only be called from within overridden " +
@@ -349,18 +355,18 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
         }
 
         Map<Integer, Map<Integer, Map<String, IMetric>>> m1 = _registeredMetrics;
-        if(!m1.containsKey(timeBucketSizeInSecs)) {
+        if (!m1.containsKey(timeBucketSizeInSecs)) {
             m1.put(timeBucketSizeInSecs, new HashMap<Integer, Map<String, IMetric>>());
         }
 
         Map<Integer, Map<String, IMetric>> m2 = m1.get(timeBucketSizeInSecs);
-        if(!m2.containsKey(_taskId)) {
+        if (!m2.containsKey(_taskId)) {
             m2.put(_taskId, new HashMap<String, IMetric>());
         }
 
         Map<String, IMetric> m3 = m2.get(_taskId);
-        if(m3.containsKey(name)) {
-            throw new RuntimeException("The same metric name `" + name + "` was registered twice." );
+        if (m3.containsKey(name)) {
+            throw new RuntimeException("The same metric name `" + name + "` was registered twice.");
         } else {
             m3.put(name, metric);
         }
@@ -375,6 +381,7 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
      *         cause the same metric name can register twice.
      *         So we just return the first metric we meet.
      */
+    @Deprecated
     public IMetric getRegisteredMetricByName(String name) {
         IMetric metric = null;
 
@@ -395,13 +402,40 @@ public class TopologyContext extends WorkerTopologyContext implements IMetricsCo
     /*
      * Convenience method for registering ReducedMetric.
      */
+    @Deprecated
     public ReducedMetric registerMetric(String name, IReducer reducer, int timeBucketSizeInSecs) {
         return registerMetric(name, new ReducedMetric(reducer), timeBucketSizeInSecs);
     }
+
     /*
      * Convenience method for registering CombinedMetric.
      */
+    @Deprecated
     public CombinedMetric registerMetric(String name, ICombiner combiner, int timeBucketSizeInSecs) {
         return registerMetric(name, new CombinedMetric(combiner), timeBucketSizeInSecs);
+    }
+
+    public Timer registerTimer(String name) {
+        return StormMetricRegistry.registry().timer(metricName(name));
+    }
+
+    public Histogram registerHistogram(String name) {
+        return StormMetricRegistry.registry().histogram(metricName(name));
+    }
+
+    public Meter registerMeter(String name) {
+        return StormMetricRegistry.registry().meter(metricName(name));
+    }
+
+    public Counter registerCounter(String name) {
+        return StormMetricRegistry.registry().counter(metricName(name));
+    }
+
+    public Gauge registerGauge(String name, Gauge gauge) {
+        return StormMetricRegistry.registry().register(metricName(name), gauge);
+    }
+
+    private String metricName(String name) {
+        return StormMetricRegistry.metricName(name, this);
     }
 }

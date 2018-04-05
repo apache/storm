@@ -16,36 +16,58 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.metrics.reporters;
+package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
-    private static final Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
+public class JmxStormReporter implements StormReporter {
+    private static final Logger LOG = LoggerFactory.getLogger(JmxStormReporter.class);
+    public static final String JMX_DOMAIN = "jmx.domain";
     JmxReporter reporter = null;
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
+    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> stormConf, Map<String, Object> reporterConf) {
         LOG.info("Preparing...");
         JmxReporter.Builder builder = JmxReporter.forRegistry(metricsRegistry);
-        String domain = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN), null);
-        if (domain != null) {
-            builder.inDomain(domain);
+
+        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(reporterConf);
+        if (durationUnit != null) {
+            builder.convertDurationsTo(durationUnit);
         }
-        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(topoConf);
+
+        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(reporterConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
-        reporter = builder.build();
 
+        String domain = getMetricsJmxDomain(reporterConf);
+        if (domain != null) {
+            builder.inDomain(domain);
+        }
+
+        StormMetricsFilter filter = ScheduledStormReporter.getMetricsFilter(reporterConf);
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        // other builder functions not exposed:
+        //  * createsObjectNamesWith(ObjectNameFactory onFactory) 
+        //  * registerWith (MBeanServer)
+        //  * specificDurationUnits (Map<String,TimeUnit> specificDurationUnits)
+        //  * specificRateUnits(Map<String,TimeUnit> specificRateUnits)
+
+        reporter = builder.build();
+    }
+
+    public static String getMetricsJmxDomain(Map reporterConf) {
+        return ObjectReader.getString(reporterConf, JMX_DOMAIN);
     }
 
     @Override

@@ -200,10 +200,10 @@ public class JCQueueTest {
     }
 
     private JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, queueSize, 0, 1, waitStrategy);
+        return createQueue(name, 1, queueSize);
     }
 
     private JCQueue createQueue(String name, int batchSize, int queueSize) {
-        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy);
+        return new JCQueue(name, queueSize, 0, batchSize, waitStrategy, "test", "test",1000, 1000);
     }
 }

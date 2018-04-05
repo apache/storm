@@ -18,27 +18,34 @@
 
 package org.apache.storm.utils;
 
-import org.apache.storm.policy.IWaitStrategy;
+import com.google.common.util.concurrent.ThreadFactoryBuilder;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicLong;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.internal.RateTracker;
+import org.apache.storm.metrics2.JcMetrics;
+import org.apache.storm.metrics2.StormMetricRegistry;
+import org.apache.storm.policy.IWaitStrategy;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpscArrayQueue;
 import org.jctools.queues.MpscUnboundedArrayQueue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.concurrent.atomic.AtomicLong;
-
-
 public class JCQueue implements IStatefulObject {
     private static final Logger LOG = LoggerFactory.getLogger(JCQueue.class);
+    private static final String PREFIX = "jc-";
+    private static final ScheduledThreadPoolExecutor METRICS_REPORTER_EXECUTOR = new ScheduledThreadPoolExecutor(1,
+            new ThreadFactoryBuilder().setDaemon(true).setNameFormat(PREFIX + "metrics-reporter").build());
 
     public static final Object INTERRUPT = new Object();
 
     private final ExitCondition continueRunning = () -> true;
+    private final JcMetrics jcMetrics;
 
     private interface Inserter {
         // blocking call that can be interrupted using Thread.interrupt()
@@ -64,7 +71,7 @@ public class JCQueue implements IStatefulObject {
             int idleCount = 0;
             while (!inserted) {
                 q.metrics.notifyInsertFailure();
-                if (idleCount==0) { // check avoids multiple log msgs when in a idle loop
+                if (idleCount == 0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure on recvQueue: '{}'. Entering BackPressure Wait", q.getName());
                 }
 
@@ -90,7 +97,6 @@ public class JCQueue implements IStatefulObject {
 
         @Override
         public void flush() throws InterruptedException {
-            return;
         }
 
         @Override
@@ -111,7 +117,7 @@ public class JCQueue implements IStatefulObject {
             this.currentBatch = new ArrayList<>(batchSz + 1);
         }
 
-        /** Blocking call - retires till element is successfully added */
+        /** Blocking call - retires till element is successfully added. */
         @Override
         public void publish(Object obj) throws InterruptedException {
             currentBatch.add(obj);
@@ -143,7 +149,7 @@ public class JCQueue implements IStatefulObject {
             int retryCount = 0;
             while (publishCount == 0) { // retry till at least 1 element is drained
                 q.metrics.notifyInsertFailure();
-                if (retryCount==0) { // check avoids multiple log msgs when in a idle loop
+                if (retryCount == 0) { // check avoids multiple log msgs when in a idle loop
                     LOG.debug("Experiencing Back Pressure when flushing batch to Q: {}. Entering BackPressure Wait.", q.getName());
                 }
                 retryCount = q.backPressureWaitStrategy.idle(retryCount);
@@ -236,7 +242,10 @@ public class JCQueue implements IStatefulObject {
     }
 
     private final MpscArrayQueue<Object> recvQueue;
-    private final MpscUnboundedArrayQueue<Object> overflowQ; // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
+
+    // only holds msgs from other workers (via WorkerTransfer), when recvQueue is full
+    private final MpscUnboundedArrayQueue<Object> overflowQ;
+
     private final int overflowLimit; // ensures... overflowCount <= overflowLimit. if set to 0, disables overflow.
 
 
@@ -250,17 +259,28 @@ public class JCQueue implements IStatefulObject {
     private String queueName;
     private final IWaitStrategy backPressureWaitStrategy;
 
-    public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy) {
+    public JCQueue(String queueName, int size, int overflowLimit, int producerBatchSz, IWaitStrategy backPressureWaitStrategy,
+                   String topologyId, String componentId, Integer taskId, int port) {
         this.queueName = queueName;
         this.overflowLimit = overflowLimit;
         this.recvQueue = new MpscArrayQueue<>(size);
         this.overflowQ = new MpscUnboundedArrayQueue<>(size);
 
         this.metrics = new JCQueue.QueueMetrics();
+        this.jcMetrics = StormMetricRegistry.jcMetrics(queueName, topologyId, componentId, taskId, port);
 
         //The batch size can be no larger than half the full recvQueue size, to avoid contention issues.
         this.producerBatchSz = Math.max(1, Math.min(producerBatchSz, size / 2));
         this.backPressureWaitStrategy = backPressureWaitStrategy;
+
+        if (!METRICS_REPORTER_EXECUTOR.isShutdown()) {
+            METRICS_REPORTER_EXECUTOR.scheduleAtFixedRate(new Runnable() {
+                @Override
+                public void run() {
+                    jcMetrics.set(metrics);
+                }
+            }, 15, 15, TimeUnit.SECONDS);
+        }
     }
 
     public String getName() {
@@ -271,6 +291,7 @@ public class JCQueue implements IStatefulObject {
     public boolean haltWithInterrupt() {
         boolean res = tryPublishInternal(INTERRUPT);
         metrics.close();
+        METRICS_REPORTER_EXECUTOR.shutdown();
         return res;
     }
 
@@ -294,15 +315,18 @@ public class JCQueue implements IStatefulObject {
         }
     }
 
-    public int size() { return recvQueue.size() + overflowQ.size(); }
+    public int size() {
+        return recvQueue.size() + overflowQ.size();
+    }
 
     /**
      * Non blocking. Returns immediately if Q is empty. Returns number of elements consumed from Q
+     *  @param consumer
      *  @param exitCond
      */
     private int consumeImpl(Consumer consumer, ExitCondition exitCond) throws InterruptedException {
         int drainCount = 0;
-        while ( exitCond.keepRunning() ) {
+        while (exitCond.keepRunning()) {
             Object tuple = recvQueue.poll();
             if (tuple == null) {
                 break;
@@ -374,7 +398,7 @@ public class JCQueue implements IStatefulObject {
     }
 
     /**
-     * Non-blocking call, returns false if full
+     * Non-blocking call, returns false if full.
      **/
     public boolean tryPublish(Object obj) {
         Inserter inserter = getInserter();
@@ -391,7 +415,7 @@ public class JCQueue implements IStatefulObject {
      * returns false if overflowLimit has reached
      */
     public boolean tryPublishToOverflow(Object obj) {
-        if (overflowLimit>0 && overflowQ.size() >= overflowLimit) {
+        if (overflowLimit > 0 && overflowQ.size() >= overflowLimit) {
             return false;
         }
         overflowQ.add(obj);
