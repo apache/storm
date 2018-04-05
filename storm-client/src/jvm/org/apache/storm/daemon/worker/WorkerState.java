@@ -718,6 +718,10 @@ public class WorkerState {
         return outboundTasks;
     }
 
+    public Set<Integer> getOutboundTasks() {
+        return this.outboundTasks;
+    }
+
     public void haltWorkerTransfer() {
         workerTransfer.haltTransferThd();
     }
