@@ -414,8 +414,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         List<ExecutorDetails> execsScheduled = new LinkedList<>();
 
         Map<String, Queue<ExecutorDetails>> compToExecsToSchedule = new HashMap<>();
-        for (Map.Entry<String, Component> componentEntry: componentMap.entrySet()) {
-            Component component = componentEntry.getValue();
+        for (Component component : componentMap.values()) {
             compToExecsToSchedule.put(component.getId(), new LinkedList<>());
             for (ExecutorDetails exec : component.getExecs()) {
                 if (unassignedExecutors.contains(exec)) {
@@ -430,7 +429,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         for (Component currComp: sortedComponents) {
             int numExecs = compToExecsToSchedule.get(currComp.getId()).size();
             for (int i = 0; i < numExecs; i++) {
-                execsScheduled.addAll(takeExecutors(currComp, numExecs - i, componentMap, compToExecsToSchedule));
+                execsScheduled.addAll(takeExecutors(currComp, componentMap, compToExecsToSchedule));
             }
         }
 
@@ -439,30 +438,49 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         return execsScheduled;
     }
 
-    private List<ExecutorDetails> takeExecutors(Component currComp, int numExecs,
+    /**
+     * Take unscheduled executors from current and all its downstream components in a particular order.
+     * First, take one executor from the current component;
+     * then for every child (direct downstream component) of this component,
+     *     if it's locality aware grouping from the current component to this child,
+     *         the number of executors to take from this child is the max of
+     *         1 and (the number of unscheduled executors this child has / the number of unscheduled executors the current component has);
+     *     otherwise, the number of executors to take is 1;
+     *     for every executor to take from this child, call takeExecutors(...).
+     * @param currComp The current component.
+     * @param componentMap The map from component Id to component object.
+     * @param compToExecsToSchedule The map from component Id to unscheduled executors.
+     * @return The executors to schedule in order.
+     */
+    private List<ExecutorDetails> takeExecutors(Component currComp,
                                                 final Map<String, Component> componentMap,
                                                 final Map<String, Queue<ExecutorDetails>> compToExecsToSchedule) {
         List<ExecutorDetails> execsScheduled = new ArrayList<>();
-        Queue<ExecutorDetails> currQueue = compToExecsToSchedule.get((currComp.getId()));
-        Set<String> sortedChildren = getSortedChildren(currComp, componentMap);
+        Queue<ExecutorDetails> currQueue = compToExecsToSchedule.get(currComp.getId());
+        int currUnscheduledNumExecs = currQueue.size();
 
+        //Just for defensive programming as this won't actually happen.
+        if (currUnscheduledNumExecs == 0) {
+            return execsScheduled;
+        }
         execsScheduled.add(currQueue.poll());
 
+        Set<String> sortedChildren = getSortedChildren(currComp, componentMap);
         for (String childId: sortedChildren) {
             Component childComponent = componentMap.get(childId);
             Queue<ExecutorDetails> childQueue = compToExecsToSchedule.get(childId);
-            int childNumExecs = childQueue.size();
-            if (childNumExecs == 0) {
+            int childUnscheduledNumExecs = childQueue.size();
+            if (childUnscheduledNumExecs == 0) {
                 continue;
             }
             int numExecsToTake = 1;
-            if (isShuffleFromParentToChild(currComp, childComponent)) {
-                // if it's shuffle grouping, truncate
-                numExecsToTake = Math.max(1, childNumExecs / numExecs);
+            if (hasLocalityAwareGroupingFromParentToChild(currComp, childComponent)) {
+                // if it's locality aware grouping, truncate
+                numExecsToTake = Math.max(1, childUnscheduledNumExecs / currUnscheduledNumExecs);
             } // otherwise, one-by-one
 
             for (int i = 0; i < numExecsToTake; i++) {
-                execsScheduled.addAll(takeExecutors(childComponent, childNumExecs, componentMap, compToExecsToSchedule));
+                execsScheduled.addAll(takeExecutors(childComponent, componentMap, compToExecsToSchedule));
             }
         }
 
@@ -475,8 +493,8 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
                 new TreeSet<String>((o1, o2) -> {
                     Component child1 = componentMap.get(o1);
                     Component child2 = componentMap.get(o2);
-                    boolean child1IsShuffle = isShuffleFromParentToChild(component, child1);
-                    boolean child2IsShuffle = isShuffleFromParentToChild(component, child2);
+                    boolean child1IsShuffle = hasLocalityAwareGroupingFromParentToChild(component, child1);
+                    boolean child2IsShuffle = hasLocalityAwareGroupingFromParentToChild(component, child2);
 
                     if (child1IsShuffle && child2IsShuffle) {
                         return o1.compareTo(o2);
@@ -490,7 +508,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         return sortedChildren;
     }
 
-    private boolean isShuffleFromParentToChild(Component parent, Component child) {
+    private boolean hasLocalityAwareGroupingFromParentToChild(Component parent, Component child) {
         for (Map.Entry<GlobalStreamId, Grouping> inputEntry: child.getInput().entrySet()) {
             GlobalStreamId globalStreamId = inputEntry.getKey();
             Grouping grouping = inputEntry.getValue();
