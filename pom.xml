@@ -210,6 +210,16 @@
             </roles>
             <timezone>-8</timezone>
         </developer>
+        <developer>
+            <id>roshannaik</id>
+            <name>Roshan Naik</name>
+            <email>roshannaik@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-8</timezone>
+        </developer>
+
     </developers>
 
 
