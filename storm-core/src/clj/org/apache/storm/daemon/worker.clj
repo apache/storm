@@ -285,6 +285,7 @@
       :executors executors
       :task-ids (->> receive-queue-map keys (map int) sort)
       :storm-conf storm-conf
+      :deserialized-worker-hooks (java.util.ArrayList.)
       :topology topology
       :system-topology (system-topology! storm-conf topology)
       :heartbeat-timer (mk-halting-timer "heartbeat-timer")
@@ -560,26 +561,29 @@
       (reset! latest-log-config new-log-configs)
       (log-debug "New merged log config is " @latest-log-config))))
 
-(defn deserialize-worker-hooks [worker deserialized-hooks]
+(defn deserialize-worker-hooks [worker]
   (let [topology (:topology worker)
         topo-conf (:storm-conf worker)
         worker-topology-context (worker-context worker)
-        hooks (.get_worker_hooks topology)]
+        hooks (.get_worker_hooks topology)
+        deserialized-worker-hooks (:deserialized-worker-hooks worker)]
     (dofor [hook hooks]
       (let [hook-bytes (Utils/toByteArray hook)
             deser-hook (Utils/javaDeserialize hook-bytes BaseWorkerHook)]
-        (.add deserialized-hooks deser-hook)))))
+        (.add deserialized-worker-hooks deser-hook)))))
 
-(defn run-worker-start-hooks [worker deserialized-hooks]
+(defn run-worker-start-hooks [worker]
   (let [topology (:topology worker)
         topo-conf (:storm-conf worker)
-        worker-topology-context (worker-context worker)]
-    (dofor [hook deserialized-hooks]
+        worker-topology-context (worker-context worker)
+        deserialized-worker-hooks (:deserialized-worker-hooks worker)]
+    (dofor [hook deserialized-worker-hooks]
       (.start hook topo-conf worker-topology-context))))
 
-(defn run-worker-shutdown-hooks [deserialized-hooks]
-  (dofor [hook deserialized-hooks]
-    (.shutdown hook)))
+(defn run-worker-shutdown-hooks [worker]
+    (let [deserialized-worker-hooks (:deserialized-worker-hooks worker)]
+      (dofor [hook deserialized-worker-hooks]
+        (.shutdown hook))))
 
 ;; TODO: should worker even take the storm-id as input? this should be
 ;; deducable from cluster state (by searching through assignments)
@@ -639,9 +643,9 @@
 
         _ (refresh-storm-active worker nil)
         
-        _ (deserialize-worker-hooks worker deserialized-hooks)
+        _ (deserialize-worker-hooks worker)
 
-        _ (run-worker-start-hooks worker deserialized-hooks)
+        _ (run-worker-start-hooks worker)
 
         _ (reset! executors (dofor [e (:executors worker)] (executor/mk-executor worker e initial-credentials)))
 
@@ -697,7 +701,7 @@
                     (close-resources worker)
 
                     (log-message "Trigger any worker shutdown hooks")
-                    (run-worker-shutdown-hooks deserialized-hooks)
+                    (run-worker-shutdown-hooks worker)
 
                     (.remove-worker-heartbeat! (:storm-cluster-state worker) storm-id assignment-id port)
                     (.remove-worker-backpressure! (:storm-cluster-state worker) storm-id assignment-id port)
