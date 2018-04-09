@@ -75,10 +75,13 @@ public class AsyncLocalizer implements AutoCloseable {
 
     private final boolean isLocalMode;
     // track resources - user to resourceSet
-    protected final ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> userFiles = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> userArchives = new ConcurrentHashMap<>();
+    //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
+    // computeIfAbsent where as ConcurrentMap allows for a retry of the function passed in, and would require the function to have
+    // no side effects.
+    protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userFiles = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userArchives = new ConcurrentHashMap<>();
     // topology to tracking of topology dir and resources
-    private final Map<String, CompletableFuture<Void>> blobPending;
+    private final ConcurrentHashMap<String, CompletableFuture<Void>> blobPending;
     private final Map<String, Object> conf;
     private final AdvancedFSOps fsOps;
     private final boolean symlinksDisabled;
@@ -118,7 +121,7 @@ public class AsyncLocalizer implements AutoCloseable {
         reconstructLocalizedResources();
 
         symlinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
-        blobPending = new HashMap<>();
+        blobPending = new ConcurrentHashMap<>();
     }
 
     public AsyncLocalizer(Map<String, Object> conf) throws IOException {
@@ -629,12 +632,12 @@ public class AsyncLocalizer implements AutoCloseable {
     void cleanup() {
         LocalizedResourceRetentionSet toClean = new LocalizedResourceRetentionSet(cacheTargetSize);
         // need one large set of all and then clean via LRU
-        for (Map.Entry<String, ConcurrentMap<String, LocalizedResource>> t : userArchives.entrySet()) {
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userArchives.entrySet()) {
             toClean.addResources(t.getValue());
             LOG.debug("Resources to be cleaned after adding {} archives : {}", t.getKey(), toClean);
         }
 
-        for (Map.Entry<String, ConcurrentMap<String, LocalizedResource>> t : userFiles.entrySet()) {
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userFiles.entrySet()) {
             toClean.addResources(t.getValue());
             LOG.debug("Resources to be cleaned after adding {} files : {}", t.getKey(), toClean);
         }

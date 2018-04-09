@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
@@ -298,11 +299,11 @@ public class AsyncLocalizerTest {
         }
 
         // For testing, be careful as it doesn't clone
-        ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> getUserFiles() {
+        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserFiles() {
             return userFiles;
         }
 
-        ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> getUserArchives() {
+        ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> getUserArchives() {
             return userArchives;
         }
 
