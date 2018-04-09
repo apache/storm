@@ -344,15 +344,7 @@ public class WorkerState {
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
         this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
-        // 
-        this.deserializedWorkerHooks = new ArrayList<>();
-        if (topology.is_set_worker_hooks()) {
-            for (ByteBuffer hook : topology.get_worker_hooks()) {
-                byte[] hookBytes = Utils.toByteArray(hook);
-                IWorkerHook hookObject = Utils.javaDeserialize(hookBytes, IWorkerHook.class);
-                deserializedWorkerHooks.add(hookObject);
-            }
-        }    
+        this.deserializedWorkerHooks = deserializeWorkerHooks();
     }
 
     public void refreshConnections() {
@@ -610,20 +602,28 @@ public class WorkerState {
         }
     }
 
+    private List<IWorkerHook> deserializeWorkerHooks() {
+        List<IWorkerHook> myHookList = new ArrayList<>();
+        if (topology.is_set_worker_hooks()) {
+            for (ByteBuffer hook : topology.get_worker_hooks()) {
+                byte[] hookBytes = Utils.toByteArray(hook);
+                IWorkerHook hookObject = Utils.javaDeserialize(hookBytes, IWorkerHook.class);
+                myHookList.add(hookObject);
+            }
+        }
+        return myHookList;
+    }
+
     public void runWorkerStartHooks() {
         WorkerTopologyContext workerContext = getWorkerTopologyContext();
-        if (topology.is_set_worker_hooks()) {
-            for (IWorkerHook hook : getDeserializedWorkerHooks()) {
-                hook.start(topologyConf, workerContext);
-            }
+        for (IWorkerHook hook : getDeserializedWorkerHooks()) {
+            hook.start(topologyConf, workerContext);
         }
     }
 
     public void runWorkerShutdownHooks() {
-        if (topology.is_set_worker_hooks()) {
-            for (IWorkerHook hook : getDeserializedWorkerHooks()) {
-                hook.shutdown();
-            }
+        for (IWorkerHook hook : getDeserializedWorkerHooks()) {
+            hook.shutdown();
         }
     }
 
