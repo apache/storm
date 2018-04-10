@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.stream.Collectors;
+
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
 import org.apache.storm.daemon.nimbus.TopologyResources;
@@ -80,6 +82,7 @@ public class Cluster implements ISchedulingState {
     private INimbus inimbus;
     private final Topologies topologies;
     private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
+    private final HashMap<String, Set<WorkerSlot>> nodeToUsedPortsCache;
 
     public Cluster(
         INimbus nimbus,
@@ -136,6 +139,7 @@ public class Cluster implements ISchedulingState {
         this.inimbus = nimbus;
         this.supervisors.putAll(supervisors);
         this.nodeToScheduledResourcesCache = new HashMap<>(this.supervisors.size());
+        this.nodeToUsedPortsCache = new HashMap<>(this.supervisors.size());
 
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             String nodeId = entry.getKey();
@@ -300,17 +304,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getUsedPorts(SupervisorDetails supervisor) {
-        Set<Integer> usedPorts = new HashSet<>();
-
-        for (SchedulerAssignment assignment : assignments.values()) {
-            for (WorkerSlot slot : assignment.getExecutorToSlot().values()) {
-                if (slot.getNodeId().equals(supervisor.getId())) {
-                    usedPorts.add(slot.getPort());
-                }
-            }
-        }
-
-        return usedPorts;
+        return nodeToUsedPortsCache.computeIfAbsent(supervisor.getId(), (x) -> new HashSet<>()).stream().map(WorkerSlot::getPort).collect(Collectors.toSet());
     }
 
     @Override
@@ -637,6 +631,7 @@ public class Cluster implements ISchedulingState {
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
                 nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(slot, new NormalizedResourceRequest());
+                nodeToUsedPortsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).remove(slot);
             }
         }
     }
@@ -656,13 +651,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
-        for (SchedulerAssignment assignment : assignments.values()) {
-            if (assignment.isSlotOccupied(slot)) {
-                return true;
-            }
-        }
-
-        return false;
+        return nodeToUsedPortsCache.computeIfAbsent(slot.getNodeId(), (x) -> new HashSet<>()).contains(slot);
     }
 
     @Override
@@ -690,11 +679,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Collection<WorkerSlot> getUsedSlots() {
-        Set<WorkerSlot> ret = new HashSet<>();
-        for (SchedulerAssignmentImpl s : assignments.values()) {
-            ret.addAll(s.getExecutorToSlot().values());
-        }
-        return ret;
+        return nodeToUsedPortsCache.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -733,6 +718,7 @@ public class Cluster implements ISchedulingState {
         }
         assignments.clear();
         nodeToScheduledResourcesCache.values().forEach(Map::clear);
+        nodeToUsedPortsCache.values().forEach(Set::clear);
         for (SchedulerAssignment assignment : newAssignments.values()) {
             assign(assignment, ignoreSingleExceptions);
         }
@@ -943,6 +929,7 @@ public class Cluster implements ISchedulingState {
         normalizedResourceRequest.add(workerResources);
         normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
         nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(workerSlot, normalizedResourceRequest);
+        nodeToUsedPortsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).add(workerSlot);
     }
 
     @Override
