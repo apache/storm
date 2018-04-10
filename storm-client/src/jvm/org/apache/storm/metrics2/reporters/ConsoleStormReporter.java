@@ -16,7 +16,7 @@
  * limitations under the License.
  */
 
-package org.apache.storm.daemon.metrics.reporters;
+package org.apache.storm.metrics2.reporters;
 
 import com.codahale.metrics.ConsoleReporter;
 import com.codahale.metrics.MetricRegistry;
@@ -24,53 +24,46 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.apache.storm.daemon.metrics.ClientMetricsUtils;
+import org.apache.storm.metrics2.filters.StormMetricsFilter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ConsolePreparableReporter implements PreparableReporter<ConsoleReporter> {
-    private static final Logger LOG = LoggerFactory.getLogger(ConsolePreparableReporter.class);
-    ConsoleReporter reporter = null;
+public class ConsoleStormReporter extends ScheduledStormReporter {
+    private static final Logger LOG = LoggerFactory.getLogger(ConsoleStormReporter.class);
 
     @Override
-    public void prepare(MetricRegistry metricsRegistry, Map<String, Object> topoConf) {
-        LOG.debug("Preparing...");
-        ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(metricsRegistry);
+    public void prepare(MetricRegistry registry, Map stormConf, Map reporterConf) {
+        LOG.debug("Preparing ConsoleReporter");
+        ConsoleReporter.Builder builder = ConsoleReporter.forRegistry(registry);
 
         builder.outputTo(System.out);
-        Locale locale = ClientMetricsUtils.getMetricsReporterLocale(topoConf);
+        Locale locale = ClientMetricsUtils.getMetricsReporterLocale(stormConf);
         if (locale != null) {
             builder.formattedFor(locale);
         }
 
-        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(topoConf);
+        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(stormConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
 
-        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(topoConf);
+        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(stormConf);
         if (durationUnit != null) {
             builder.convertDurationsTo(durationUnit);
         }
+
+        StormMetricsFilter filter = getMetricsFilter(reporterConf);
+        if (filter != null) {
+            builder.filter(filter);
+        }
+
+        //defaults to 10
+        reportingPeriod = getReportPeriod(reporterConf);
+
+        //defaults to seconds
+        reportingPeriodUnit = getReportPeriodUnit(reporterConf);
+
         reporter = builder.build();
     }
 
-    @Override
-    public void start() {
-        if (reporter != null) {
-            LOG.debug("Starting...");
-            reporter.start(10, TimeUnit.SECONDS);
-        } else {
-            throw new IllegalStateException("Attempt to start without preparing " + getClass().getSimpleName());
-        }
-    }
-
-    @Override
-    public void stop() {
-        if (reporter != null) {
-            LOG.debug("Stopping...");
-            reporter.stop();
-        } else {
-            throw new IllegalStateException("Attempt to stop without preparing " + getClass().getSimpleName());
-        }
-    }
 }

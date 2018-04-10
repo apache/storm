@@ -15,8 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.stats;
 
+import com.codahale.metrics.Counter;
 import java.util.Map;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.metric.internal.MultiCountStatAndMetric;
@@ -24,9 +26,10 @@ import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
 
 @SuppressWarnings("unchecked")
 public abstract class CommonStats {
-
     private final MultiCountStatAndMetric emittedStats;
     private final MultiCountStatAndMetric transferredStats;
+    private final MultiCountStatAndMetric ackedStats;
+    private final MultiCountStatAndMetric failedStats;
 
     protected final int rate;
 
@@ -34,6 +37,16 @@ public abstract class CommonStats {
         this.rate = rate;
         this.emittedStats = new MultiCountStatAndMetric(numStatBuckets);
         this.transferredStats = new MultiCountStatAndMetric(numStatBuckets);
+        this.ackedStats = new MultiCountStatAndMetric(numStatBuckets);
+        this.failedStats = new MultiCountStatAndMetric(numStatBuckets);
+    }
+
+    public MultiCountStatAndMetric getFailed() {
+        return failedStats;
+    }
+
+    public MultiCountStatAndMetric getAcked() {
+        return ackedStats;
     }
 
     public int getRate() {
@@ -48,17 +61,21 @@ public abstract class CommonStats {
         return transferredStats;
     }
 
-    public void emittedTuple(String stream) {
+    public void emittedTuple(String stream, Counter emittedCounter) {
         this.getEmitted().incBy(stream, this.rate);
+        emittedCounter.inc(this.rate);
     }
 
-    public void transferredTuples(String stream, int amount) {
+    public void transferredTuples(String stream, int amount, Counter transferredCounter) {
         this.getTransferred().incBy(stream, this.rate * amount);
+        transferredCounter.inc(amount);
     }
 
     public void cleanupStats() {
         emittedStats.close();
         transferredStats.close();
+        ackedStats.close();
+        failedStats.close();
     }
 
     protected Map<String,Map<String,Long>> valueStat(MultiCountStatAndMetric metric) {

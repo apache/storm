@@ -26,27 +26,27 @@ import org.apache.storm.generated.StormTopology;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class DefaultTopologyValidator implements ITopologyValidator {
-    private static final Logger LOG = LoggerFactory.getLogger(DefaultTopologyValidator.class);
+public class StrictTopologyValidator implements ITopologyValidator {
+    private static final Logger LOG = LoggerFactory.getLogger(StrictTopologyValidator.class);
 
     @Override
-    public void prepare(Map<String, Object> StormConf){
+    public void prepare(Map stormConf){
     }
 
     @Override
     public void validate(String topologyName, Map topologyConf, StormTopology topology) throws InvalidTopologyException {
         if (topologyName.contains(".")) {
-            LOG.warn("Metrics for topology name '{}' will be reported as '{}'.", topologyName, topologyName.replace('.', '_'));
+            throw new InvalidTopologyException(String.format("Topology name '%s' contains illegal character '.'", topologyName));
         }
         Map<String, SpoutSpec> spouts = topology.get_spouts();
         for (String spoutName : spouts.keySet()) {
             if (spoutName.contains(".")) {
-                LOG.warn("Metrics for spout name '{}' will be reported as '{}'.", spoutName, spoutName.replace('.', '_'));
+                throw new InvalidTopologyException(String.format("Spout name '%s' contains illegal character '.'", spoutName));
             }
             SpoutSpec spoutSpec = spouts.get(spoutName);
             for (String streamName : spoutSpec.get_common().get_streams().keySet()) {
                 if (streamName.contains(".")) {
-                    LOG.warn("Metrics for stream name '{}' will be reported as '{}'.", streamName, streamName.replace('.', '_'));
+                    throw new InvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
                 }
             }
         }
@@ -54,12 +54,12 @@ public class DefaultTopologyValidator implements ITopologyValidator {
         Map<String, Bolt> bolts = topology.get_bolts();
         for (String boltName : bolts.keySet()) {
             if (boltName.contains(".")) {
-                LOG.warn("Metrics for bolt name '{}' will be reported as '{}'.", boltName, boltName.replace('.', '_'));
+                throw new InvalidTopologyException(String.format("Bolt name '%s' contains illegal character '.'", boltName));
             }
             Bolt bolt = bolts.get(boltName);
             for (String streamName : bolt.get_common().get_streams().keySet()) {
                 if (streamName.contains(".")) {
-                    LOG.warn("Metrics for stream name '{}' will be reported as '{}'.", streamName, streamName.replace('.', '_'));
+                    throw new InvalidTopologyException(String.format("Stream name '%s' contains illegal character '.'", streamName));
                 }
             }
         }

@@ -18,7 +18,12 @@
 
 package org.apache.storm.daemon.worker;
 
+import java.util.Map;
+import java.util.Queue;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantReadWriteLock;
 import org.apache.storm.Config;
+import org.apache.storm.Constants;
 import org.apache.storm.messaging.TaskMessage;
 import org.apache.storm.policy.IWaitStrategy;
 import org.apache.storm.serialization.ITupleSerializer;
@@ -30,11 +35,6 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.SmartThread;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.Map;
-import java.util.Queue;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 // Transfers messages destined to other workers
 class WorkerTransfer implements JCQueue.Consumer {
@@ -53,7 +53,7 @@ class WorkerTransfer implements JCQueue.Consumer {
         this.workerState = workerState;
         this.backPressureWaitStrategy = IWaitStrategy.createBackPressureWaitStrategy(topologyConf);
         this.drainer = new TransferDrainer();
-        this.remoteBackPressureStatus = new AtomicBoolean[maxTaskIdInTopo+1];
+        this.remoteBackPressureStatus = new AtomicBoolean[maxTaskIdInTopo + 1];
         for (int i = 0; i < remoteBackPressureStatus.length; i++) {
             remoteBackPressureStatus[i] = new AtomicBoolean(false);
         }
@@ -65,7 +65,8 @@ class WorkerTransfer implements JCQueue.Consumer {
                 + Config.TOPOLOGY_TRANSFER_BUFFER_SIZE + ":" + xferQueueSz);
         }
 
-        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy);
+        this.transferQueue = new JCQueue("worker-transfer-queue", xferQueueSz, 0, xferBatchSz, backPressureWaitStrategy,
+                workerState.getTopologyId(), Constants.SYSTEM_COMPONENT_ID, -1, workerState.getPort());
     }
 
     public JCQueue getTransferQueue() {

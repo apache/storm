@@ -15,7 +15,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.metrics;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.daemon.metrics.reporters.JmxPreparableReporter;
@@ -26,15 +32,8 @@ import org.apache.storm.utils.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 public class MetricsUtils {
-    private final static Logger LOG = LoggerFactory.getLogger(MetricsUtils.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ClientMetricsUtils.class);
 
     public static List<PreparableReporter> getPreparableReporters(Map<String, Object> topoConf) {
         List<String> clazzes = (List<String>) topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGINS);
@@ -58,30 +57,6 @@ public class MetricsUtils {
             reporter = (PreparableReporter) ReflectionUtils.newInstance(clazz);
         }
         return reporter;
-    }
-
-    public static Locale getMetricsReporterLocale(Map<String, Object> topoConf) {
-        String languageTag = ObjectReader.getString(topoConf.get(DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE), null);
-        if (languageTag != null) {
-            return Locale.forLanguageTag(languageTag);
-        }
-        return null;
-    }
-
-    public static TimeUnit getMetricsRateUnit(Map<String, Object> topoConf) {
-        return getTimeUnitForCofig(topoConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT);
-    }
-
-    public static TimeUnit getMetricsDurationUnit(Map<String, Object> topoConf) {
-        return getTimeUnitForCofig(topoConf, DaemonConfig.STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT);
-    }
-
-    private static TimeUnit getTimeUnitForCofig(Map<String, Object> topoConf, String configName) {
-        String rateUnitString = ObjectReader.getString(topoConf.get(configName), null);
-        if (rateUnitString != null) {
-            return TimeUnit.valueOf(rateUnitString);
-        }
-        return null;
     }
 
     public static File getCsvLogDir(Map<String, Object> topoConf) {

@@ -19,11 +19,12 @@
 package org.apache.storm.daemon.worker;
 
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.concurrent.ConcurrentHashMap;
 
+import org.apache.storm.Constants;
 import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.apache.storm.utils.JCQueue;
 import org.slf4j.Logger;
@@ -37,7 +38,8 @@ import static org.apache.storm.Constants.SYSTEM_TASK_ID;
  *   ConcurrentHashMap does not allow storing null values, so we use the special value NONE instead.
  */
 public class BackPressureTracker {
-    private static final JCQueue NONE =  new JCQueue ("NoneQ", 2, 0, 1, null) { };
+    private static final JCQueue NONE =  new JCQueue("NoneQ", 2, 0, 1, null,
+            "none", Constants.SYSTEM_COMPONENT_ID, -1, 0) { };
 
     static final Logger LOG = LoggerFactory.getLogger(BackPressureTracker.class);
 
@@ -47,7 +49,7 @@ public class BackPressureTracker {
     public BackPressureTracker(String workerId, List<Integer> allLocalTasks) {
         this.workerId = workerId;
         for (Integer taskId : allLocalTasks) {
-            if(taskId != SYSTEM_TASK_ID) {
+            if (taskId != SYSTEM_TASK_ID) {
                 tasks.put(taskId, NONE);  // all tasks are considered to be not under BP initially
             }
         }
@@ -58,7 +60,7 @@ public class BackPressureTracker {
     }
 
     /***
-     * Record BP for a task
+     * Record BP for a task.
      * This is called by transferLocalBatch() on NettyWorker thread
      * @return true if an update was recorded, false if taskId is already under BP
      */
@@ -70,7 +72,7 @@ public class BackPressureTracker {
     public boolean refreshBpTaskList() {
         boolean changed = false;
         LOG.debug("Running Back Pressure status change check");
-        for ( Entry<Integer, JCQueue> entry : tasks.entrySet()) {
+        for (Entry<Integer, JCQueue> entry : tasks.entrySet()) {
             if (entry.getValue() != NONE  &&  entry.getValue().isEmptyOverflow()) {
                 recordNoBackPressure(entry.getKey());
                 changed = true;

@@ -46,7 +46,7 @@ public class JCQueueBackpressureTest extends TestCase {
     }
 
     private static JCQueue createQueue(String name, int queueSize) {
-        return new JCQueue(name, queueSize, 0, 1, new WaitStrategyPark(0));
+        return new JCQueue(name, queueSize, 0, 1, new WaitStrategyPark(0), "test", "test",1000, 1000);
     }
 
     private static class TestConsumer implements Consumer {

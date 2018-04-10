@@ -24,7 +24,6 @@ import com.google.common.collect.Lists;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.UnknownHostException;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -33,15 +32,15 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Random;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.concurrent.Callable;
 import java.util.function.BooleanSupplier;
 import java.util.stream.Collectors;
 
-
 import org.apache.storm.Config;
 import org.apache.storm.Constants;
+import org.apache.storm.StormTimer;
 import org.apache.storm.cluster.ClusterStateContext;
 import org.apache.storm.cluster.ClusterUtils;
 import org.apache.storm.cluster.DaemonType;
@@ -66,11 +65,8 @@ import org.apache.storm.grouping.LoadAwareCustomStreamGrouping;
 import org.apache.storm.grouping.LoadMapping;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IMetricsConsumer;
-import org.apache.storm.stats.BoltExecutorStats;
 import org.apache.storm.stats.CommonStats;
-import org.apache.storm.stats.SpoutExecutorStats;
 import org.apache.storm.stats.StatsUtil;
-import org.apache.storm.StormTimer;
 import org.apache.storm.task.WorkerTopologyContext;
 import org.apache.storm.tuple.AddressedTuple;
 import org.apache.storm.tuple.Fields;
@@ -78,9 +74,9 @@ import org.apache.storm.tuple.TupleImpl;
 import org.apache.storm.tuple.Values;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.JCQueue;
-import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
 import org.jctools.queues.MpscChunkedArrayQueue;
 import org.json.simple.JSONValue;
 import org.json.simple.parser.ParseException;
@@ -254,7 +250,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * separated from mkExecutor in order to replace executor transfer in executor data for testing
+     * separated from mkExecutor in order to replace executor transfer in executor data for testing.
      */
     public ExecutorShutdown execute() throws Exception {
         LOG.info("Loading executor tasks " + componentId + ":" + executorId);
@@ -400,7 +396,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     }
 
     /**
-     * Returns map of stream id to component id to grouper
+     * Returns map of stream id to component id to grouper.
      */
     private Map<String, Map<String, LoadAwareCustomStreamGrouping>> outboundComponents(
         WorkerTopologyContext workerTopologyContext, String componentId, Map<String, Object> topoConf) {
@@ -438,7 +434,8 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
     // ============================ getter methods =================================
     // =============================================================================
 
-    private Map<String, Object> normalizedComponentConf(Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
+    private Map<String, Object> normalizedComponentConf(
+            Map<String, Object> topoConf, WorkerTopologyContext topologyContext, String componentId) {
         List<String> keysToRemove = retrieveAllConfigKeys();
         keysToRemove.remove(Config.TOPOLOGY_DEBUG);
         keysToRemove.remove(Config.TOPOLOGY_MAX_SPOUT_PENDING);
@@ -503,7 +500,7 @@ public abstract class Executor implements Callable, JCQueue.Consumer {
         return stormId;
     }
 
-    abstract public CommonStats getStats();
+    public abstract CommonStats getStats();
 
     public String getType() {
         return type;

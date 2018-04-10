@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.metrics.reporters;
 
 import com.codahale.metrics.CsvReporter;
 import com.codahale.metrics.MetricRegistry;
-import org.apache.storm.daemon.metrics.MetricsUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import org.apache.storm.daemon.metrics.ClientMetricsUtils;
+import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class CsvPreparableReporter implements PreparableReporter<CsvReporter> {
-    private final static Logger LOG = LoggerFactory.getLogger(CsvPreparableReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(CsvPreparableReporter.class);
     CsvReporter reporter = null;
 
     @Override
@@ -37,17 +38,17 @@ public class CsvPreparableReporter implements PreparableReporter<CsvReporter> {
         LOG.debug("Preparing...");
         CsvReporter.Builder builder = CsvReporter.forRegistry(metricsRegistry);
 
-        Locale locale = MetricsUtils.getMetricsReporterLocale(topoConf);
+        Locale locale = ClientMetricsUtils.getMetricsReporterLocale(topoConf);
         if (locale != null) {
             builder.formatFor(locale);
         }
 
-        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(topoConf);
+        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(topoConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }
 
-        TimeUnit durationUnit = MetricsUtils.getMetricsDurationUnit(topoConf);
+        TimeUnit durationUnit = ClientMetricsUtils.getMetricsDurationUnit(topoConf);
         if (durationUnit != null) {
             builder.convertDurationsTo(durationUnit);
         }
