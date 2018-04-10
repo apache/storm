@@ -65,6 +65,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         final List<ObjectResources> sortedNodes = sortAllNodes(td, null, favoredNodes, unFavoredNodes);
 
         for (ExecutorDetails exec : orderedExecutors) {
+            if (!running) {
+                return null;
+            }
             LOG.debug(
                     "Attempting to schedule: {} of component {}[ REQ {} ]",
                     exec,
@@ -77,6 +80,9 @@ public class DefaultResourceAwareStrategy extends BaseResourceAwareStrategy impl
         LOG.debug("/* Scheduling left over task (most likely sys tasks) */");
         // schedule left over system tasks
         for (ExecutorDetails exec : executorsNotScheduled) {
+            if (!running) {
+                return null;
+            }
             scheduleExecutor(exec, td, scheduledTasks, sortedNodes);
         }
 

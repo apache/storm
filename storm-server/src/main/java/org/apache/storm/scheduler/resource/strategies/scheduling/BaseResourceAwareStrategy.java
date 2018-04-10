@@ -49,6 +49,10 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     protected Cluster cluster;
     private Map<String, List<String>> networkTopography;
     protected RAS_Nodes nodes;
+    /**
+     * Should be used by subclasses to know if they have been asked to stop scheduling.
+     */
+    protected volatile boolean running;
 
     @VisibleForTesting
     void prepare(Cluster cluster) {
@@ -56,11 +60,17 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
         nodes = new RAS_Nodes(cluster);
         networkTopography = cluster.getNetworkTopography();
         logClusterInfo();
+        running = true;
     }
 
     @Override
     public void prepare(Map<String, Object> config) {
         //NOOP
+    }
+
+    @Override
+    public void stop() {
+        running = false;
     }
 
     /**
@@ -127,7 +137,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     /**
      * a class to contain individual object resources as well as cumulative stats.
      */
-    static class AllResources {
+    protected static class AllResources {
         List<ObjectResources> objectResources = new LinkedList<>();
         NormalizedResourceOffer availableResourcesOverall = new NormalizedResourceOffer();
         NormalizedResourceOffer totalResourcesOverall = new NormalizedResourceOffer();
@@ -161,7 +171,7 @@ public abstract class BaseResourceAwareStrategy implements IStrategy {
     /**
      * class to keep track of resources on a rack or node.
      */
-    static class ObjectResources {
+    protected static class ObjectResources {
         public final String id;
         public NormalizedResourceOffer availableResources = new NormalizedResourceOffer();
         public NormalizedResourceOffer totalResources = new NormalizedResourceOffer();

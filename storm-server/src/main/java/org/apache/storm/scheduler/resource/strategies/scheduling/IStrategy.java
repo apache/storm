@@ -45,4 +45,9 @@ public interface IStrategy {
      *     successful.
      */
     SchedulingResult schedule(Cluster schedulingState, TopologyDetails td);
+
+    /**
+     * Stop any current scheduling as soon as possible.
+     */
+    void stop();
 }

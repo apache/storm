@@ -22,8 +22,15 @@ import com.google.common.collect.ImmutableList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import org.apache.storm.Config;
 import org.apache.storm.DaemonConfig;
@@ -41,16 +48,71 @@ import org.apache.storm.scheduler.utils.IConfigLoader;
 import org.apache.storm.utils.DisallowedStrategyException;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ReflectionUtils;
+import org.apache.storm.utils.Time;
 import org.apache.storm.utils.Utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class ResourceAwareScheduler implements IScheduler {
     private static final Logger LOG = LoggerFactory.getLogger(ResourceAwareScheduler.class);
+    private static final AtomicLong THREAD_COUNTER = new AtomicLong(0);
     private Map<String, Object> conf;
     private ISchedulingPriorityStrategy schedulingPriorityStrategy;
     private IConfigLoader configLoader;
     private int maxSchedulingAttempts;
+    private int schedulingBackgroundTimeoutSeconds;
+    private int schedulingForegroundTimeoutSeconds;
+    private ExecutorService background;
+    private Map<String, SchedulingPending> schedulingInBackground = new HashMap<>();
+
+    private static class SchedulingPending {
+        private Future<SchedulingResult> future;
+        public final IStrategy strategy;
+        private int attempt;
+        private long startTime;
+
+        public SchedulingPending(IStrategy strategy, int attempt) {
+            this.strategy = strategy;
+            this.attempt = attempt;
+        }
+
+        public void setAttempt(int attempt) {
+            this.attempt = attempt;
+        }
+
+        public int getAttempt() {
+            return attempt;
+        }
+
+        public void cancel() {
+            if (future != null) {
+                future.cancel(true);
+            }
+            strategy.stop();
+        }
+
+        public Future<SchedulingResult> scheduleIfNeeded(ExecutorService service, final Cluster cluster, final TopologyDetails td) {
+            if (future == null) {
+                future = service.submit(() -> {
+                    LOG.debug("Scheduling for {} started", td.getId());
+                    return strategy.schedule(cluster, td);
+                });
+                startTime = Time.currentTimeMillis();
+            }
+            return future;
+        }
+
+        /**
+         * Reset the future, we have completed processing it.
+         */
+        public void resetFuture() {
+            this.future = null;
+        }
+
+        public long getStartTime() {
+            return startTime;
+        }
+    }
 
     @Override
     public void prepare(Map<String, Object> conf) {
@@ -60,15 +122,33 @@ public class ResourceAwareScheduler implements IScheduler {
         configLoader = ConfigLoaderFactoryService.createConfigLoader(conf);
         maxSchedulingAttempts = ObjectReader.getInt(
             conf.get(DaemonConfig.RESOURCE_AWARE_SCHEDULER_MAX_TOPOLOGY_SCHEDULING_ATTEMPTS), 5);
+        schedulingBackgroundTimeoutSeconds = ObjectReader.getInt(
+            conf.get(DaemonConfig.SCHEDULING_TIMEOUT_SECONDS_PER_TOPOLOGY), 600);
+        schedulingForegroundTimeoutSeconds = ObjectReader.getInt(
+            conf.get(DaemonConfig.SCHEDULING_FOREGROUND_TIMEOUT_SECONDS_PER_TOPOLOGY), 10);
+        background =
+            Executors.newCachedThreadPool(r -> new Thread(r, "RAS_WORKER_" + THREAD_COUNTER.getAndIncrement()));
     }
 
     @Override
     public Map<String, Map<String, Double>> config() {
-        return (Map) getUserResourcePools();
+        return getUserResourcePools();
     }
 
     @Override
     public void schedule(Topologies topologies, Cluster cluster) {
+        //Cancel any pending scheduling attempts for a topology that is no longer running.
+        Collection<String> allIds = topologies.getAllIds();
+        Iterator<Map.Entry<String, SchedulingPending>> it = schedulingInBackground.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<String, SchedulingPending> pending = it.next();
+            if (!allIds.contains(pending.getKey())) {
+                LOG.warn("Canceling scheduling of {}", pending.getKey());
+                pending.getValue().cancel();
+                it.remove();
+            }
+        }
+
         Map<String, User> userMap = getUsers(cluster);
         List<TopologyDetails> orderedTopologies = new ArrayList<>(schedulingPriorityStrategy.getOrderedTopologies(cluster, userMap));
         if (LOG.isDebugEnabled()) {
@@ -100,49 +180,88 @@ public class ResourceAwareScheduler implements IScheduler {
         u.markTopoUnsuccess(td);
     }
 
+    private void cancelAllPendingClusterStateChanged() {
+        if (!schedulingInBackground.isEmpty()) {
+            LOG.warn("Canceling scheduling of {} cluster state changed", schedulingInBackground.keySet());
+            for (SchedulingPending sp : schedulingInBackground.values()) {
+                sp.cancel();
+            }
+            schedulingInBackground.clear();
+        }
+    }
+
     private void scheduleTopology(TopologyDetails td, Cluster cluster, final User topologySubmitter,
                                   List<TopologyDetails> orderedTopologies) {
+        LOG.debug("Scheduling {}", td.getId());
+        SchedulingPending sp = schedulingInBackground.get(td.getId());
+        if (sp == null) {
+            IStrategy rasStrategy;
+            String strategyConf = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
+            try {
+                String strategy = strategyConf;
+                if (strategy.startsWith("backtype.storm")) {
+                    // Storm supports to launch workers of older version.
+                    // If the config of TOPOLOGY_SCHEDULER_STRATEGY comes from the older version, replace the package name.
+                    strategy = strategy.replace("backtype.storm", "org.apache.storm");
+                    LOG.debug("Replace backtype.storm with org.apache.storm for Config.TOPOLOGY_SCHEDULER_STRATEGY");
+                }
+                rasStrategy = ReflectionUtils.newSchedulerStrategyInstance(strategy, conf);
+                rasStrategy.prepare(conf);
+            } catch (DisallowedStrategyException e) {
+                markFailedTopology(topologySubmitter, cluster, td,
+                    "Unsuccessful in scheduling - " + e.getAttemptedClass()
+                        + " is not an allowed strategy. Please make sure your "
+                        + Config.TOPOLOGY_SCHEDULER_STRATEGY
+                        + " config is one of the allowed strategies: "
+                        + e.getAllowedStrategies(), e);
+                return;
+            } catch (RuntimeException e) {
+                markFailedTopology(topologySubmitter, cluster, td,
+                    "Unsuccessful in scheduling - failed to create instance of topology strategy "
+                        + strategyConf
+                        + ". Please check logs for details", e);
+                return;
+            }
+
+            sp = new SchedulingPending(rasStrategy, 0);
+        }
+
         //A copy of cluster that we can modify, but does not get committed back to cluster unless scheduling succeeds
         Cluster workingState = new Cluster(cluster);
         RAS_Nodes nodes = new RAS_Nodes(workingState);
-        IStrategy rasStrategy = null;
-        String strategyConf = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
-        try {
-            String strategy = (String) td.getConf().get(Config.TOPOLOGY_SCHEDULER_STRATEGY);
-            if (strategy.startsWith("backtype.storm")) {
-                // Storm supports to launch workers of older version.
-                // If the config of TOPOLOGY_SCHEDULER_STRATEGY comes from the older version, replace the package name.
-                strategy = strategy.replace("backtype.storm", "org.apache.storm");
-                LOG.debug("Replace backtype.storm with org.apache.storm for Config.TOPOLOGY_SCHEDULER_STRATEGY");
-            }
-            rasStrategy = ReflectionUtils.newSchedulerStrategyInstance(strategy, conf);
-            rasStrategy.prepare(conf);
-        } catch (DisallowedStrategyException e) {
-            markFailedTopology(topologySubmitter, cluster, td,
-                "Unsuccessful in scheduling - " + e.getAttemptedClass()
-                    + " is not an allowed strategy. Please make sure your "
-                    + Config.TOPOLOGY_SCHEDULER_STRATEGY
-                    + " config is one of the allowed strategies: "
-                    + e.getAllowedStrategies(), e);
-            return;
-        } catch (RuntimeException e) {
-            markFailedTopology(topologySubmitter, cluster, td,
-                "Unsuccessful in scheduling - failed to create instance of topology strategy "
-                    + strategyConf
-                    + ". Please check logs for details", e);
-            return;
-        }
 
-        for (int i = 0; i < maxSchedulingAttempts; i++) {
+        for (int i = sp.getAttempt(); i < maxSchedulingAttempts; i++) {
             SingleTopologyCluster toSchedule = new SingleTopologyCluster(workingState, td.getId());
             try {
-                SchedulingResult result = rasStrategy.schedule(toSchedule, td);
+                SchedulingResult result;
+                Future<SchedulingResult> schedulingFuture = sp.scheduleIfNeeded(background, toSchedule, td);
+                try {
+                    result = schedulingFuture.get(schedulingForegroundTimeoutSeconds, TimeUnit.SECONDS);
+                    sp.resetFuture();
+                } catch (TimeoutException te) {
+                    long elapsedTimeSecs = (Time.currentTimeMillis() - sp.getStartTime())/1000;
+                    if (elapsedTimeSecs >= schedulingBackgroundTimeoutSeconds) {
+                        markFailedTopology(topologySubmitter, cluster, td, "Scheduling took too long for "
+                            + td.getId() + " using strategy " + sp.strategy.getClass().getName() + " timeout after " +
+                            schedulingBackgroundTimeoutSeconds + " seconds.");
+                        sp.cancel();
+                        schedulingInBackground.remove(td.getId());
+                    } else {
+                        //Nothing yet, would be nice to set the scheduling status without marking it as failed...
+                        cluster.setStatus(td, "Scheduling in background " + elapsedTimeSecs + " of "
+                            + schedulingBackgroundTimeoutSeconds + " seconds used.");
+                        schedulingInBackground.put(td.getId(), sp);
+                        LOG.info("{} has not completed, will continue to run in the background...", td.getId());
+                    }
+                    return;
+                }
                 LOG.debug("scheduling result: {}", result);
                 if (result == null) {
                     markFailedTopology(topologySubmitter, cluster, td, "Internal scheduler error");
                     return;
                 } else {
                     if (result.isSuccess()) {
+                        cancelAllPendingClusterStateChanged();
                         cluster.updateFrom(toSchedule);
                         cluster.setStatus(td.getId(), "Running - " + result.getMessage());
                         //DONE

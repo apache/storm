@@ -212,6 +212,7 @@ public class TestConstraintSolverStrategy {
         config.put(Config.TOPOLOGY_COMPONENT_CPU_PCORE_PERCENT, 10);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_ONHEAP_MEMORY_MB, 100);
         config.put(Config.TOPOLOGY_COMPONENT_RESOURCES_OFFHEAP_MEMORY_MB, 0.0);
+        config.put(DaemonConfig.SCHEDULING_FOREGROUND_TIMEOUT_SECONDS_PER_TOPOLOGY, 60); //Don't want to have to wait if we don't have to.
 
         TopologyDetails topo = genTopology("testTopo", config, 2, 3, 30, 300, 0, 0, "user");
         Map<String, TopologyDetails> topoMap = new HashMap<String, TopologyDetails>();
