@@ -79,8 +79,6 @@ public class Cluster implements ISchedulingState {
     private Set<String> blackListedHosts = new HashSet<>();
     private INimbus inimbus;
     private final Topologies topologies;
-    private final Map<String, Double> scheduledCpuCache = new HashMap<>();
-    private final Map<String, Double> scheduledMemoryCache = new HashMap<>();
     private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
 
     public Cluster(
@@ -570,8 +568,6 @@ public class Cluster implements ISchedulingState {
         double sharedOffHeapMemory = calculateSharedOffHeapMemory(nodeId, assignment);
         assignment.setTotalSharedOffHeapMemory(nodeId, sharedOffHeapMemory);
         updateScheduledResourcesCache(slot, resources, sharedOffHeapMemory);
-        scheduledCpuCache.remove(nodeId);
-        scheduledMemoryCache.remove(nodeId);
     }
 
     /**
@@ -640,8 +636,6 @@ public class Cluster implements ISchedulingState {
                 String nodeId = slot.getNodeId();
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
-                scheduledCpuCache.remove(nodeId);
-                scheduledMemoryCache.remove(nodeId);
                 nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(slot, new NormalizedResourceRequest());
             }
         }
@@ -943,13 +937,6 @@ public class Cluster implements ISchedulingState {
         return ret;
     }
 
-    private void updateScheduledResourcesForAssignment(SchedulerAssignment assignment) {
-        assignment.getScheduledResources().forEach((workerSlot, workerResources) -> {
-            Double sharedoffHeapMemory = assignment.getNodeIdToTotalSharedOffHeapMemory().get(workerSlot.getNodeId());
-            updateScheduledResourcesCache(workerSlot, workerResources, sharedoffHeapMemory);
-        });
-    }
-
     private void updateScheduledResourcesCache(WorkerSlot workerSlot, WorkerResources workerResources, Double sharedoffHeapMemory) {
         String nodeId = workerSlot.getNodeId();
         NormalizedResourceRequest normalizedResourceRequest = new NormalizedResourceRequest();
@@ -957,18 +944,6 @@ public class Cluster implements ISchedulingState {
         normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
         nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(workerSlot, normalizedResourceRequest);
     }
-
-    private void removeScheduledResourcesForAssignment(SchedulerAssignment assignment) {
-        assignment.getScheduledResources().forEach((workerSlot, workerResources) -> {
-            removeScheduledResourcesFromCacheForSlot(assignment, workerSlot, workerResources);
-        });
-    }
-
-    private void removeScheduledResourcesFromCacheForSlot(SchedulerAssignment assignment, WorkerSlot workerSlot, WorkerResources workerResources) {
-        Double sharedoffHeapMemory = assignment.getNodeIdToTotalSharedOffHeapMemory().get(workerSlot.getNodeId());
-        nodeToScheduledResourcesCache.computeIfAbsent(workerSlot.getNodeId(), (x) -> new HashMap<>()).remove(workerSlot);
-    }
-
 
     @Override
     public NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId) {
