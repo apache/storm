@@ -30,7 +30,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
-import org.apache.storm.blobstore.BlobStore;
 import org.apache.storm.blobstore.ClientBlobStore;
 import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.daemon.supervisor.IAdvancedFSOps;
@@ -197,7 +196,7 @@ public abstract class LocallyCachedBlob {
      * @param pna the slot and assignment that are using this blob.
      * @param cb an optional callback indicating that they want to know/synchronize when a blob is updated.
      */
-    public void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
+    public synchronized void addReference(final PortAndAssignment pna, BlobChangingCallback cb) {
         if (cb == null) {
             cb = NOOP_CB;
         }
@@ -210,7 +209,7 @@ public abstract class LocallyCachedBlob {
      * Removes a reservation for this blob from a given slot and assignemnt.
      * @param pna the slot + assignment that no longer needs this blob.
      */
-    public void removeReference(final PortAndAssignment pna) {
+    public synchronized void removeReference(final PortAndAssignment pna) {
         if (references.remove(pna) == null) {
             LOG.warn("{} had no reservation for {}", pna, blobDescription);
         }
