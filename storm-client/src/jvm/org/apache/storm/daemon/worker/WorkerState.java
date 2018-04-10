@@ -62,7 +62,7 @@ import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.generated.TopologyStatus;
 import org.apache.storm.grouping.Load;
 import org.apache.storm.grouping.LoadMapping;
-import org.apache.storm.hooks.BaseWorkerHook;
+import org.apache.storm.hooks.IWorkerHook;
 import org.apache.storm.messaging.ConnectionWithStatus;
 import org.apache.storm.messaging.DeserializingConnectionCallback;
 import org.apache.storm.messaging.IConnection;
@@ -95,6 +95,11 @@ public class WorkerState {
     final IContext mqContext;
     private final WorkerTransfer workerTransfer;
     private final BackPressureTracker bpTracker;
+    private final List<IWorkerHook> deserializedWorkerHooks;
+
+    public List<IWorkerHook> getDeserializedWorkerHooks() {
+        return deserializedWorkerHooks;
+    }
 
     public Map<String, Object> getConf() {
         return conf;
@@ -341,6 +346,7 @@ public class WorkerState {
         int maxTaskId = getMaxTaskId(componentToSortedTasks);
         this.workerTransfer = new WorkerTransfer(this, topologyConf, maxTaskId);
         this.bpTracker = new BackPressureTracker(workerId, localTaskIds);
+        this.deserializedWorkerHooks = deserializeWorkerHooks();
     }
 
     public void refreshConnections() {
@@ -582,24 +588,28 @@ public class WorkerState {
         }
     }
 
-    public void runWorkerStartHooks() {
-        WorkerTopologyContext workerContext = getWorkerTopologyContext();
+    private List<IWorkerHook> deserializeWorkerHooks() {
+        List<IWorkerHook> myHookList = new ArrayList<>();
         if (topology.is_set_worker_hooks()) {
             for (ByteBuffer hook : topology.get_worker_hooks()) {
                 byte[] hookBytes = Utils.toByteArray(hook);
-                BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
-                hookObject.start(topologyConf, workerContext);
+                IWorkerHook hookObject = Utils.javaDeserialize(hookBytes, IWorkerHook.class);
+                myHookList.add(hookObject);
             }
+        }
+        return myHookList;
+    }
+
+    public void runWorkerStartHooks() {
+        WorkerTopologyContext workerContext = getWorkerTopologyContext();
+        for (IWorkerHook hook : getDeserializedWorkerHooks()) {
+            hook.start(topologyConf, workerContext);
         }
     }
 
     public void runWorkerShutdownHooks() {
-        if (topology.is_set_worker_hooks()) {
-            for (ByteBuffer hook : topology.get_worker_hooks()) {
-                byte[] hookBytes = Utils.toByteArray(hook);
-                BaseWorkerHook hookObject = Utils.javaDeserialize(hookBytes, BaseWorkerHook.class);
-                hookObject.shutdown();
-            }
+        for (IWorkerHook hook : getDeserializedWorkerHooks()) {
+            hook.shutdown();
         }
     }
 
