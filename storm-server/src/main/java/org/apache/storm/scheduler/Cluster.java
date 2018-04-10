@@ -81,6 +81,7 @@ public class Cluster implements ISchedulingState {
     private final Topologies topologies;
     private final Map<String, Double> scheduledCpuCache = new HashMap<>();
     private final Map<String, Double> scheduledMemoryCache = new HashMap<>();
+    private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
 
     public Cluster(
         INimbus nimbus,
@@ -136,6 +137,7 @@ public class Cluster implements ISchedulingState {
         Map<String, List<String>> networkTopography) {
         this.inimbus = nimbus;
         this.supervisors.putAll(supervisors);
+        this.nodeToScheduledResourcesCache = new HashMap<>(this.supervisors.size());
 
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             String nodeId = entry.getKey();
@@ -187,7 +189,6 @@ public class Cluster implements ISchedulingState {
         if (blackListedHosts != null) {
             this.blackListedHosts.addAll(blackListedHosts);
         }
-
         setAssignments(assignments, true);
     }
 
@@ -566,8 +567,9 @@ public class Cluster implements ISchedulingState {
 
         assignment.assign(slot, executors, resources);
         String nodeId = slot.getNodeId();
-        assignment.setTotalSharedOffHeapMemory(
-            nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
+        double sharedOffHeapMemory = calculateSharedOffHeapMemory(nodeId, assignment);
+        assignment.setTotalSharedOffHeapMemory(nodeId, sharedOffHeapMemory);
+        updateScheduledResourcesCache(slot, resources, sharedOffHeapMemory);
         scheduledCpuCache.remove(nodeId);
         scheduledMemoryCache.remove(nodeId);
     }
@@ -635,12 +637,12 @@ public class Cluster implements ISchedulingState {
             if (assignment.isSlotOccupied(slot)) {
                 assertValidTopologyForModification(assignment.getTopologyId());
                 assignment.unassignBySlot(slot);
-
                 String nodeId = slot.getNodeId();
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
                 scheduledCpuCache.remove(nodeId);
                 scheduledMemoryCache.remove(nodeId);
+                nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(slot, new NormalizedResourceRequest());
             }
         }
     }
@@ -736,6 +738,7 @@ public class Cluster implements ISchedulingState {
             assertValidTopologyForModification(assignment.getTopologyId());
         }
         assignments.clear();
+        nodeToScheduledResourcesCache.values().forEach(Map::clear);
         for (SchedulerAssignment assignment : newAssignments.values()) {
             assign(assignment, ignoreSingleExceptions);
         }
@@ -940,65 +943,57 @@ public class Cluster implements ISchedulingState {
         return ret;
     }
 
+    private void updateScheduledResourcesForAssignment(SchedulerAssignment assignment) {
+        assignment.getScheduledResources().forEach((workerSlot, workerResources) -> {
+            Double sharedoffHeapMemory = assignment.getNodeIdToTotalSharedOffHeapMemory().get(workerSlot.getNodeId());
+            updateScheduledResourcesCache(workerSlot, workerResources, sharedoffHeapMemory);
+        });
+    }
+
+    private void updateScheduledResourcesCache(WorkerSlot workerSlot, WorkerResources workerResources, Double sharedoffHeapMemory) {
+        String nodeId = workerSlot.getNodeId();
+        NormalizedResourceRequest normalizedResourceRequest = new NormalizedResourceRequest();
+        normalizedResourceRequest.add(workerResources);
+        normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
+        nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(workerSlot, normalizedResourceRequest);
+    }
+
+    private void removeScheduledResourcesForAssignment(SchedulerAssignment assignment) {
+        assignment.getScheduledResources().forEach((workerSlot, workerResources) -> {
+            removeScheduledResourcesFromCacheForSlot(assignment, workerSlot, workerResources);
+        });
+    }
+
+    private void removeScheduledResourcesFromCacheForSlot(SchedulerAssignment assignment, WorkerSlot workerSlot, WorkerResources workerResources) {
+        Double sharedoffHeapMemory = assignment.getNodeIdToTotalSharedOffHeapMemory().get(workerSlot.getNodeId());
+        nodeToScheduledResourcesCache.computeIfAbsent(workerSlot.getNodeId(), (x) -> new HashMap<>()).remove(workerSlot);
+    }
+
+
     @Override
     public NormalizedResourceRequest getAllScheduledResourcesForNode(String nodeId) {
         NormalizedResourceRequest totalScheduledResources = new NormalizedResourceRequest();
-        for (SchedulerAssignmentImpl assignment : assignments.values()) {
-            for (Entry<WorkerSlot, WorkerResources> entry :
-                    assignment.getScheduledResources().entrySet()) {
-                if (nodeId.equals(entry.getKey().getNodeId())) {
-                    totalScheduledResources.add(entry.getValue());
-                }
-            }
-            Double sharedOffHeap = assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId);
-            if (sharedOffHeap != null) {
-                totalScheduledResources.addOffHeap(sharedOffHeap);
-            }
-        }
+        nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).values().forEach(totalScheduledResources::add);
         return totalScheduledResources;
     }
 
     @Override
     public double getScheduledMemoryForNode(String nodeId) {
-        Double ret = scheduledMemoryCache.get(nodeId);
-        if (ret != null) {
-            return ret;
-        }
         double totalMemory = 0.0;
-        for (SchedulerAssignmentImpl assignment : assignments.values()) {
-            for (Entry<WorkerSlot, WorkerResources> entry :
-                assignment.getScheduledResources().entrySet()) {
-                if (nodeId.equals(entry.getKey().getNodeId())) {
-                    WorkerResources resources = entry.getValue();
-                    totalMemory += resources.get_mem_off_heap() + resources.get_mem_on_heap();
-                }
-            }
-            Double sharedOffHeap = assignment.getNodeIdToTotalSharedOffHeapMemory().get(nodeId);
-            if (sharedOffHeap != null) {
-                totalMemory += sharedOffHeap;
-            }
+        NormalizedResourceRequest normalizedResourceRequest = getAllScheduledResourcesForNode(nodeId);
+        if (normalizedResourceRequest != null) {
+            totalMemory = normalizedResourceRequest.getTotalMemoryMb();
         }
-        scheduledMemoryCache.put(nodeId, totalMemory);
         return totalMemory;
     }
 
     @Override
     public double getScheduledCpuForNode(String nodeId) {
-        Double ret = scheduledCpuCache.get(nodeId);
-        if (ret != null) {
-            return ret;
-        }
         double totalCpu = 0.0;
-        for (SchedulerAssignmentImpl assignment : assignments.values()) {
-            for (Entry<WorkerSlot, WorkerResources> entry :
-                assignment.getScheduledResources().entrySet()) {
-                if (nodeId.equals(entry.getKey().getNodeId())) {
-                    WorkerResources resources = entry.getValue();
-                    totalCpu += resources.get_cpu();
-                }
-            }
+        NormalizedResourceRequest normalizedResourceRequest = getAllScheduledResourcesForNode(nodeId);
+        if (normalizedResourceRequest != null) {
+            totalCpu= normalizedResourceRequest.getTotalCpu();
         }
-        scheduledCpuCache.put(nodeId, totalCpu);
         return totalCpu;
     }
 

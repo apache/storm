@@ -340,4 +340,26 @@ public class NormalizedResources {
         }
         return min * 100.0;
     }
+
+
+    /**
+     * Remove the resources from a worker to this.
+     *
+     * @param value the worker resources that should be added to this.
+     */
+    public void remove(WorkerResources value) {
+        Map<String, Double> workerNormalizedResources = value.get_resources();
+        cpu -= workerNormalizedResources.getOrDefault(Constants.COMMON_CPU_RESOURCE_NAME, 0.0);
+        remove(RESOURCE_MAP_ARRAY_BRIDGE.translateToResourceArray(workerNormalizedResources));
+    }
+
+    private void remove(double[] resourceArray) {
+        int otherLength = resourceArray.length;
+        zeroPadOtherResourcesIfNecessary(otherLength);
+        for (int i = 0; i < otherLength; i++) {
+            otherResources[i] -= resourceArray[i];
+        }
+    }
+
+
 }
