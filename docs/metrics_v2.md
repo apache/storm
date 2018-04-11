@@ -28,7 +28,7 @@ API documentation: [Timer](http://metrics.dropwizard.io/4.0.0/apidocs/com/codaha
 [Histogram](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Histogram.html),
 [Meter](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Meter.html),
 [Counter](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Counter.html),
-[Guage](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Gauge.html)
+[Gauge](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Gauge.html)
 
 Each of these methods takes a `name` parameter that acts as an identifier. When metrics are 
 registered, Storm will add additional information such as hostname, port, topology ID, etc. to form a unique metric
@@ -69,7 +69,7 @@ public class TupleCountingBolt extends BaseRichBolt {
  
 ## Metric Reporter Configuration
 
- For metrics to be useful they must be *reported*, in other words sent somewhere where they can be consumed and analyed.
+ For metrics to be useful they must be *reported*, in other words sent somewhere where they can be consumed and analyzed.
  That can be as simple as writing them to a log file, sending them to a time series database, or exposing them via JMX.
  
  As of Storm 1.2.0 the following metric reporters are supported
