@@ -34,6 +34,11 @@ public abstract class AbstractSaslServerCallbackHandler implements CallbackHandl
     private static final Logger LOG = LoggerFactory.getLogger(AbstractSaslServerCallbackHandler.class);
     protected final Map<String,String> credentials = new HashMap<>();
     protected String userName;
+    protected final boolean impersonationAllowed;
+
+    protected AbstractSaslServerCallbackHandler(boolean impersonationAllowed) {
+        this.impersonationAllowed = impersonationAllowed;
+    }
 
     public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
         for (Callback callback : callbacks) {
@@ -82,6 +87,9 @@ public abstract class AbstractSaslServerCallbackHandler implements CallbackHandl
         //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
         //add the authNid as the real user in reqContext's subject which will be used during authorization.
         if(!authenticationID.equals(ac.getAuthorizationID())) {
+            if (!impersonationAllowed) {
+                throw new IllegalArgumentException("Impersonation is not allowed for this server");
+            }
             LOG.info("Impersonation attempt  authenticationID = {} authorizationID = {}",
                 ac.getAuthenticationID(),  ac.getAuthorizationID());
             ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));

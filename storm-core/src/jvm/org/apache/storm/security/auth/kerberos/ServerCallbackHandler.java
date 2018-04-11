@@ -24,7 +24,6 @@ import org.apache.storm.security.auth.SaslTransportPlugin;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.security.auth.Subject;
 import javax.security.auth.callback.*;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
@@ -39,8 +38,10 @@ public class ServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServerCallbackHandler.class);
 
     private String userName;
+    private final boolean impersonationAllowed;
 
-    public ServerCallbackHandler(Configuration configuration, Map stormConf) throws IOException {
+    public ServerCallbackHandler(Configuration configuration, Map stormConf, boolean impersonationAllowed) throws IOException {
+        this.impersonationAllowed = impersonationAllowed;
         if (configuration==null) return;
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
@@ -52,7 +53,7 @@ public class ServerCallbackHandler implements CallbackHandler {
 
     }
 
-    public void handle(Callback[] callbacks) throws UnsupportedCallbackException {
+    public void handle(Callback[] callbacks) {
         for (Callback callback : callbacks) {
             if (callback instanceof NameCallback) {
                 handleNameCallback((NameCallback) callback);
@@ -86,6 +87,10 @@ public class ServerCallbackHandler implements CallbackHandler {
         //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
         //add the authNid as the real user in reqContext's subject which will be used during authorization.
         if(!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
+            if (!impersonationAllowed) {
+                throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
+                    + ".  This is not allowed by this server");
+            }
             ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
         } else {
             ReqContext.context().setRealPrincipal(null);
