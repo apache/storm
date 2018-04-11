@@ -941,22 +941,12 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public double getScheduledMemoryForNode(String nodeId) {
-        double totalMemory = 0.0;
-        NormalizedResourceRequest normalizedResourceRequest = getAllScheduledResourcesForNode(nodeId);
-        if (normalizedResourceRequest != null) {
-            totalMemory = normalizedResourceRequest.getTotalMemoryMb();
-        }
-        return totalMemory;
+        return getAllScheduledResourcesForNode(nodeId).getTotalMemoryMb();
     }
 
     @Override
     public double getScheduledCpuForNode(String nodeId) {
-        double totalCpu = 0.0;
-        NormalizedResourceRequest normalizedResourceRequest = getAllScheduledResourcesForNode(nodeId);
-        if (normalizedResourceRequest != null) {
-            totalCpu= normalizedResourceRequest.getTotalCpu();
-        }
-        return totalCpu;
+        return getAllScheduledResourcesForNode(nodeId).getTotalCpu();
     }
 
     public INimbus getINimbus() {
