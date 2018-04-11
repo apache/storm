@@ -17,11 +17,19 @@
  */
 package org.apache.storm.messaging.netty;
 
+import org.apache.storm.serialization.KryoValuesSerializer;
 import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.handler.codec.oneone.OneToOneEncoder;
 
-public class MessageEncoder extends OneToOneEncoder {    
+public class MessageEncoder extends OneToOneEncoder {
+
+    private KryoValuesSerializer ser;
+
+    public MessageEncoder(KryoValuesSerializer ser) {
+        this.ser = ser;
+    }
+
     @Override
     protected Object encode(ChannelHandlerContext ctx, Channel channel, Object obj) throws Exception {
         if (obj instanceof ControlMessage) {
@@ -30,8 +38,12 @@ public class MessageEncoder extends OneToOneEncoder {
 
         if (obj instanceof MessageBatch) {
             return ((MessageBatch)obj).buffer();
-        } 
-        
+        }
+
+        if (obj instanceof BackPressureStatus) {
+            return ((BackPressureStatus)obj).buffer(ser);
+        }
+
         if (obj instanceof SaslMessageToken) {
         	return ((SaslMessageToken)obj).buffer();
         }

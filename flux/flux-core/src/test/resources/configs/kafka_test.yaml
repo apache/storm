@@ -25,46 +25,31 @@ name: "kafka-topology"
 #
 # for the time being, components must be declared in the order they are referenced
 components:
-  - id: "stringScheme"
-    className: "org.apache.storm.kafka.StringScheme"
-
-  - id: "stringMultiScheme"
-    className: "org.apache.storm.spout.SchemeAsMultiScheme"
+  - id: "onlyValueRecordTranslator"
+    className: "org.apache.storm.flux.test.OnlyValueRecordTranslator"
+    
+  - id: "spoutConfigBuilder"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig$Builder"
     constructorArgs:
-      - ref: "stringScheme"
-
-  - id: "zkHosts"
-    className: "org.apache.storm.kafka.ZkHosts"
-    constructorArgs:
-      - "localhost:2181"
-
-# Alternative kafka config
-#  - id: "kafkaConfig"
-#    className: "org.apache.storm.kafka.KafkaConfig"
-#    constructorArgs:
-#      # brokerHosts
-#      - ref: "zkHosts"
-#      # topic
-#      - "myKafkaTopic"
-#      # clientId (optional)
-#      - "myKafkaClientId"
-
-  - id: "spoutConfig"
-    className: "org.apache.storm.kafka.SpoutConfig"
-    constructorArgs:
-      # brokerHosts
-      - ref: "zkHosts"
-      # topic
-      - "myKafkaTopic"
-      # zkRoot
-      - "/kafkaSpout"
-      # id
-      - "myId"
+      - "localhost:9092"
+      - ["myKafkaTopic"]
     properties:
-      - name: "ignoreZkOffsets"
-        value: true
-      - name: "scheme"
-        ref: "stringMultiScheme"
+      - name: "firstPollOffsetStrategy"
+        value: EARLIEST
+      - name: "recordTranslator"
+        ref: "onlyValueRecordTranslator"
+    configMethods:
+      - name: "setProp"
+        args:
+          - {
+              "key.deserializer" : "org.apache.kafka.common.serialization.StringDeserializer",
+              "value.deserializer": "org.apache.kafka.common.serialization.StringDeserializer"
+            }
+                
+  - id: "spoutConfig"
+    className: "org.apache.storm.kafka.spout.KafkaSpoutConfig"
+    constructorArgs:
+      - ref: "spoutConfigBuilder"
 
 # topology configuration
 # this will be passed to the submitter as a map of config options
@@ -76,7 +61,7 @@ config:
 # spout definitions
 spouts:
   - id: "kafka-spout"
-    className: "org.apache.storm.kafka.KafkaSpout"
+    className: "org.apache.storm.kafka.spout.KafkaSpout"
     constructorArgs:
       - ref: "spoutConfig"
 

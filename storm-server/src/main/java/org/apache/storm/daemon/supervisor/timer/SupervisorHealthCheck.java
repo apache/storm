@@ -22,8 +22,11 @@ import java.util.Map;
 
 import org.apache.storm.daemon.supervisor.Supervisor;
 import org.apache.storm.healthcheck.HealthChecker;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SupervisorHealthCheck implements Runnable {
+    private static final Logger LOG = LoggerFactory.getLogger(SupervisorHealthCheck.class);
     private final Supervisor supervisor;
 
     public SupervisorHealthCheck(Supervisor supervisor) {
@@ -33,9 +36,12 @@ public class SupervisorHealthCheck implements Runnable {
     @Override
     public void run() {
         Map<String, Object> conf = supervisor.getConf();
+        LOG.info("Running supervisor healthchecks...");
         int healthCode = HealthChecker.healthCheck(conf);
         if (healthCode != 0) {
+            LOG.info("The supervisor healthchecks FAILED...");
             supervisor.shutdownAllWorkers(null, null);
+            throw new RuntimeException("Supervisor failed health check. Exiting.");
         }
     }
 }

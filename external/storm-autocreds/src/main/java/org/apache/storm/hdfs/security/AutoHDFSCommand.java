@@ -39,7 +39,7 @@ public final class AutoHDFSCommand {
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap<>();
     conf.put(STORM_USER_NAME_KEY, args[1]); //with realm e.g. hdfs@WITZEND.COM
     conf.put(STORM_KEYTAB_FILE_KEY, args[2]);// /etc/security/keytabs/storm.keytab
 

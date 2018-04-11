@@ -29,5 +29,5 @@ public interface IEventHubReceiver {
 
   EventDataWrap receive();
 
-  Map getMetricsData();
+  Map<String, Object> getMetricsData();
 }

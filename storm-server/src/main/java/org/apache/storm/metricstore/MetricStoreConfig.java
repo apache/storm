@@ -25,20 +25,38 @@ import org.apache.storm.DaemonConfig;
 public class MetricStoreConfig {
 
     /**
-     * Configures metrics store to use the class specified in the conf.
+     * Configures metrics store (running on Nimbus) to use the class specified in the conf.
      * @param conf Storm config map
      * @return MetricStore prepared store
      * @throws MetricException  on misconfiguration
      */
-    public static MetricStore configure(Map conf) throws MetricException {
+    public static MetricStore configure(Map<String, Object> conf) throws MetricException {
 
         try {
             String storeClass = (String)conf.get(DaemonConfig.STORM_METRIC_STORE_CLASS);
             MetricStore store = (MetricStore) (Class.forName(storeClass)).newInstance();
             store.prepare(conf);
             return store;
-        } catch (Throwable t) {
-            throw new MetricException("Failed to create metric store", t);
+        } catch (Exception e) {
+            throw new MetricException("Failed to create metric store", e);
+        }
+    }
+
+    /**
+     * Configures metric processor (running on supervisor) to use the class specified in the conf.
+     * @param conf  the supervisor config
+     * @return WorkerMetricsProcessor prepared processor
+     * @throws MetricException  on misconfiguration
+     */
+    public static WorkerMetricsProcessor configureMetricProcessor(Map conf) throws MetricException {
+
+        try {
+            String processorClass = (String)conf.get(DaemonConfig.STORM_METRIC_PROCESSOR_CLASS);
+            WorkerMetricsProcessor processor = (WorkerMetricsProcessor) (Class.forName(processorClass)).newInstance();
+            processor.prepare(conf);
+            return processor;
+        } catch (Exception e) {
+            throw new MetricException("Failed to create metric processor", e);
         }
     }
 }

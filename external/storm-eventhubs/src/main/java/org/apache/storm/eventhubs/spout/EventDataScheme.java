@@ -65,8 +65,8 @@ public class EventDataScheme implements IEventDataScheme {
 				throw e;
 			}
 		}
-		Map metaDataMap = eventData.getProperties();
-		fieldContents.add(messageData);
+		Map<String, Object> metaDataMap = eventData.getProperties();
+                fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);
 		return fieldContents;
 	}

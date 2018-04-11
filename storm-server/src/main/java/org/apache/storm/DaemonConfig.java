@@ -18,32 +18,32 @@
 
 package org.apache.storm;
 
+import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isInteger;
+import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isPositiveNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isString;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isStringOrStringList;
-import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isListEntryCustom;
-import static org.apache.storm.validation.ConfigValidationAnnotations.isBoolean;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isNumber;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isImplementationOfClass;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryType;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isNoDuplicateInList;
 import static org.apache.storm.validation.ConfigValidationAnnotations.isMapEntryCustom;
+import static org.apache.storm.validation.ConfigValidationAnnotations.NotNull;
+
+import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.storm.container.ResourceIsolationInterface;
-import org.apache.storm.metricstore.MetricStore;
 import org.apache.storm.nimbus.ITopologyActionNotifierPlugin;
 import org.apache.storm.scheduler.blacklist.reporters.IReporter;
 import org.apache.storm.scheduler.blacklist.strategies.IBlacklistStrategy;
 import org.apache.storm.scheduler.resource.strategies.priority.ISchedulingPriorityStrategy;
 import org.apache.storm.scheduler.resource.strategies.scheduling.IStrategy;
+import org.apache.storm.security.auth.IAuthorizer;
 import org.apache.storm.validation.ConfigValidation;
 import org.apache.storm.validation.Validated;
-
-import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * Storm configs are specified as a plain old map. This class provides constants for
@@ -69,30 +69,10 @@ public class DaemonConfig implements Validated {
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGINS = "storm.daemon.metrics.reporter.plugins";
 
     /**
-     * A specify Locale for daemon metrics reporter plugin.
-     * Use the specified IETF BCP 47 language tag string for a Locale.
-     */
-    @isString
-    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
-
-    /**
      * A specify domain for daemon metrics reporter plugin to limit reporting to specific domain.
      */
     @isString
     public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DOMAIN = "storm.daemon.metrics.reporter.plugin.domain";
-
-    /**
-     * A specify rate-unit in TimeUnit to specify reporting frequency for daemon metrics reporter plugin.
-     */
-    @isString
-    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
-
-    /**
-     * A specify duration-unit in TimeUnit to specify reporting window for daemon metrics reporter plugin.
-     */
-    @isString
-    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
-
 
     /**
      * A specify csv reporter directory for CvsPreparableReporter daemon metrics reporter.
@@ -265,6 +245,13 @@ public class DaemonConfig implements Validated {
     public static final String NIMBUS_AUTHORIZER = "nimbus.authorizer";
 
     /**
+     * Class name for authorization plugin for supervisor.
+     */
+    @isImplementationOfClass(implementsClass = IAuthorizer.class)
+    @isString
+    public static final String SUPERVISOR_AUTHORIZER = "supervisor.authorizer";
+
+    /**
      * Impersonation user ACL config entries.
      */
     @isString
@@ -282,6 +269,24 @@ public class DaemonConfig implements Validated {
      */
     @isImplementationOfClass(implementsClass = ITopologyActionNotifierPlugin.class)
     public static final String NIMBUS_TOPOLOGY_ACTION_NOTIFIER_PLUGIN = "nimbus.topology.action.notifier.plugin.class";
+
+    /**
+     * This controls the number of working threads for distributing master assignments to supervisors.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREADS = "nimbus.assignments.service.threads";
+
+    /**
+     * This controls the number of working thread queue size of assignment service.
+     */
+    @isInteger
+    public static final String NIMBUS_ASSIGNMENTS_SERVICE_THREAD_QUEUE_SIZE = "nimbus.assignments.service.thread.queue.size";
+
+    /**
+     * class controls heartbeats recovery strategy.
+     */
+    @isString
+    public static final String NIMBUS_WORKER_HEARTBEATS_RECOVERY_STRATEGY_CLASS = "nimbus.worker.heartbeats.recovery.strategy.class";
 
     /**
      * Storm UI binds to this host/interface.
@@ -804,7 +809,8 @@ public class DaemonConfig implements Validated {
      */
     @NotNull
     @isPositiveNumber
-    public static final String STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS = "storm.cluster.metrics.consumer.publish.interval.secs";
+    public static final String STORM_CLUSTER_METRICS_CONSUMER_PUBLISH_INTERVAL_SECS =
+            "storm.cluster.metrics.consumer.publish.interval.secs";
 
     /**
      * Enables user-first classpath. See topology.classpath.beginning.
@@ -838,8 +844,8 @@ public class DaemonConfig implements Validated {
 
     /**
      * For ArtifactoryConfigLoader, this can either be a reference to an individual file in Artifactory or to a directory.
-     * If it is a directory, the file with the largest lexographic name will be returned. Users need to add "artifactory+" to the beginning of
-     * the real URI to use ArtifactoryConfigLoader.
+     * If it is a directory, the file with the largest lexographic name will be returned. Users need to add "artifactory+"
+     * to the beginning of the real URI to use ArtifactoryConfigLoader.
      * For FileConfigLoader, this is the URI pointing to a file.
      */
     @isString
@@ -1032,13 +1038,20 @@ public class DaemonConfig implements Validated {
         "storm.supervisor.medium.memory.grace.period.ms";
 
     /**
-     * Class implementing MetricStore.
+     * Class implementing MetricStore.  Runs on Nimbus.
      */
     @NotNull
     @isString
     // Validating class implementation could fail on non-Nimbus Daemons.  Nimbus will catch the class not found on startup
     // and log an error message, so just validating this as a String for now.
     public static final String STORM_METRIC_STORE_CLASS = "storm.metricstore.class";
+
+    /**
+     * Class implementing WorkerMetricsProcessor.  Runs on Supervisors.
+     */
+    @NotNull
+    @isString
+    public static final String STORM_METRIC_PROCESSOR_CLASS = "storm.metricprocessor.class";
 
     /**
      * RocksDB file location. This setting is specific to the org.apache.storm.metricstore.rocksdb.RocksDbStore

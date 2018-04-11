@@ -23,5 +23,5 @@ import org.apache.storm.trident.tuple.TridentTuple;
 public interface TupleReceiver {
     //streaId indicates where tuple came from
     void execute(ProcessorContext processorContext, String streamId, TridentTuple tuple);
-    
+    void flush();
 }

@@ -90,8 +90,8 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
         dnsToSwitchMapping = ReflectionUtils.newInstance((String) conf.get(Config.STORM_NETWORK_TOPOGRAPHY_PLUGIN));
         localityGroup = new HashMap<>();
         currentScope = Scope.WORKER_LOCAL;
-        higherBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT));
-        lowerBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT));
+        higherBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND));
+        lowerBound = ObjectReader.getDouble(conf.get(Config.TOPOLOGY_LOCALITYAWARE_LOWER_BOUND));
 
         rets = (List<Integer>[]) new List<?>[targetTasks.size()];
         int i = 0;
@@ -295,7 +295,13 @@ public class LoadAwareShuffleGrouping implements LoadAwareCustomStreamGrouping, 
     private Map<String, String> getHostToRackMapping(Map<Integer, NodeInfo> taskToNodePort) {
         Set<String> hosts = new HashSet();
         for (int task: targetTasks) {
-            hosts.add(taskToNodePort.get(task).get_node());
+            //if this task containing worker will be killed by a assignments sync,
+            //taskToNodePort will be an empty map which is refreshed by WorkerState
+            if (taskToNodePort.containsKey(task)) {
+                hosts.add(taskToNodePort.get(task).get_node());
+            } else {
+                LOG.error("Could not find task NodeInfo from local cache.");
+            }
         }
         hosts.add(sourceNodeInfo.get_node());
         return dnsToSwitchMapping.resolve(new ArrayList<>(hosts));

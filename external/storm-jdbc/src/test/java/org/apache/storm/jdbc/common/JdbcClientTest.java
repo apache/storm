@@ -42,7 +42,7 @@ public class JdbcClientTest {
     private static final String tableName = "user_details";
     @Before
     public void setup() {
-        Map map = Maps.newHashMap();
+        Map<String, Object> map = Maps.newHashMap();
         map.put("dataSourceClassName","org.hsqldb.jdbc.JDBCDataSource");//com.mysql.jdbc.jdbc2.optional.MysqlDataSource
         map.put("dataSource.url", "jdbc:hsqldb:mem:test");//jdbc:mysql://localhost/test
         map.put("dataSource.user","SA");//root

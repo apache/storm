@@ -60,7 +60,7 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     public String metaStoreURI;
 
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
         if (conf.containsKey(HIVE_KEYTAB_FILE_KEY) && conf.containsKey(HIVE_PRINCIPAL_KEY)) {
             hiveKeytab = (String) conf.get(HIVE_KEYTAB_FILE_KEY);
             hivePrincipal = (String) conf.get(HIVE_PRINCIPAL_KEY);
@@ -79,18 +79,18 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
         return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
         Configuration configuration = new Configuration();
         return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
-    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+    private Configuration getHadoopConfiguration(Map<String, Object> topoConf, String configKey) {
         Configuration configuration = new Configuration();
         fillHadoopConfiguration(topoConf, configKey, configuration);
         return configuration;
@@ -107,7 +107,7 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, final Configuration configuration, final String topologySubmitterUser) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final Configuration configuration, final String topologySubmitterUser) {
         try {
             if (UserGroupInformation.isSecurityEnabled()) {
                 String hiveMetaStoreURI = getMetaStoreURI(configuration);
@@ -192,7 +192,7 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologyOwnerPrincipal) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologyOwnerPrincipal) {
         List<String> configKeys = getConfigKeys(topologyConf);
         for (Pair<String, Credentials> cred : getCredentials(credentials, configKeys)) {
             try {
@@ -204,7 +204,7 @@ public class AutoHiveNimbus extends AbstractHadoopNimbusPluginAutoCreds {
                 login(configuration);
 
                 if (tokens != null && !tokens.isEmpty()) {
-                    for (Token token : tokens) {
+                    for (Token<? extends TokenIdentifier> token : tokens) {
                         long expiration = renewToken(token, hiveMetaStoreURI, hiveMetaStorePrincipal);
                         LOG.info("Hive delegation token renewed, new expiration time {}", expiration);
                     }

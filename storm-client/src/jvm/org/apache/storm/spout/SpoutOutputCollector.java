@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -63,7 +63,7 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
      * @return the list of task ids that this tuple was sent to
      */
     public List<Integer> emit(List<Object> tuple, Object messageId) {
-        return emit(Utils.DEFAULT_STREAM_ID, tuple, messageId);
+        return _delegate.emit(Utils.DEFAULT_STREAM_ID, tuple, messageId);
     }
 
     /**
@@ -130,6 +130,11 @@ public class SpoutOutputCollector implements ISpoutOutputCollector {
      */
     public void emitDirect(int taskId, List<Object> tuple) {
         emitDirect(taskId, tuple, null);
+    }
+
+    @Override
+    public void flush() {
+        _delegate.flush();
     }
 
     @Override

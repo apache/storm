@@ -55,8 +55,9 @@ public class TickTupleTest {
             try (ILocalTopology topo = cluster.submitTopology("test", topoConf,  topology)) {
                 //Give the topology some time to come up
                 long time = 0;
+                int timeout = Math.max(Testing.TEST_TIMEOUT_MS, 100_000);
                 while (tickTupleTimes.size() <= 0) {
-                    assert time <= 100_000 : "took over " + time + " ms of simulated time to get a message back...";
+                    assert time <= timeout : "took over " + time + " ms of simulated time to get a message back...";
                     cluster.advanceClusterTime(10);
                     time += 10_000;
                 }

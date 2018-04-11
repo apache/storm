@@ -19,7 +19,6 @@ package org.apache.storm.serialization;
 
 import org.apache.storm.task.GeneralTopologyContext;
 import org.apache.storm.tuple.MessageId;
-import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.TupleImpl;
 import com.esotericsoftware.kryo.io.Input;
 import java.io.IOException;
@@ -39,7 +38,8 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
         _kryoInput = new Input(1);
     }        
 
-    public Tuple deserialize(byte[] ser) {
+    @Override
+    public TupleImpl deserialize(byte[] ser) {
         try {
             _kryoInput.setBuffer(ser);
             int taskId = _kryoInput.readInt(true);
@@ -48,7 +48,7 @@ public class KryoTupleDeserializer implements ITupleDeserializer {
             String streamName = _ids.getStreamName(componentName, streamId);
             MessageId id = MessageId.deserialize(_kryoInput);
             List<Object> values = _kryo.deserializeFrom(_kryoInput);
-            return new TupleImpl(_context, values, taskId, streamName, id);
+            return new TupleImpl(_context, values, componentName, taskId, streamName, id);
         } catch(IOException e) {
             throw new RuntimeException(e);
         }

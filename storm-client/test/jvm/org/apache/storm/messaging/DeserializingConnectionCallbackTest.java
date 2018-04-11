@@ -48,7 +48,7 @@ public class DeserializingConnectionCallbackTest {
 
     @Test
     public void testUpdateMetricsConfigOff() {
-        Map config = new HashMap();
+        Map<String, Object> config = new HashMap<>();
         config.put(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS, Boolean.FALSE);
         DeserializingConnectionCallback withoutMetrics = 
             new DeserializingConnectionCallback(config, mock(GeneralTopologyContext.class), mock(
@@ -64,7 +64,7 @@ public class DeserializingConnectionCallbackTest {
     
     @Test
     public void testUpdateMetricsConfigOn() {
-        Map config = new HashMap();
+        Map<String, Object> config = new HashMap<>();
         config.put(Config.TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS, Boolean.TRUE);
         DeserializingConnectionCallback withMetrics =
             new DeserializingConnectionCallback(config, mock(GeneralTopologyContext.class), mock(

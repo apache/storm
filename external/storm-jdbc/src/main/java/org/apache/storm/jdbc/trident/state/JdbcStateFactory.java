@@ -32,7 +32,7 @@ public class JdbcStateFactory implements StateFactory {
     }
 
     @Override
-    public State makeState(Map map, IMetricsContext iMetricsContext, int partitionIndex, int numPartitions) {
+    public State makeState(Map<String, Object> map, IMetricsContext iMetricsContext, int partitionIndex, int numPartitions) {
         JdbcState state = new JdbcState(map , partitionIndex, numPartitions, options);
         state.prepare();
         return state;

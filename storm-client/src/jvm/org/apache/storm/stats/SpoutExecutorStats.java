@@ -15,60 +15,56 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.stats;
 
+import com.codahale.metrics.Counter;
 import org.apache.storm.generated.ExecutorSpecificStats;
 import org.apache.storm.generated.ExecutorStats;
 import org.apache.storm.generated.SpoutStats;
-import org.apache.storm.metric.internal.MultiCountStatAndMetric;
 import org.apache.storm.metric.internal.MultiLatencyStatAndMetric;
 
 @SuppressWarnings("unchecked")
 public class SpoutExecutorStats extends CommonStats {
-
-    public static final String ACKED = "acked";
-    public static final String FAILED = "failed";
-    public static final String COMPLETE_LATENCIES = "complete-latencies";
+    private final MultiLatencyStatAndMetric completeLatencyStats;
 
     public SpoutExecutorStats(int rate,int numStatBuckets) {
         super(rate,numStatBuckets);
-        this.put(ACKED, new MultiCountStatAndMetric(numStatBuckets));
-        this.put(FAILED, new MultiCountStatAndMetric(numStatBuckets));
-        this.put(COMPLETE_LATENCIES, new MultiLatencyStatAndMetric(numStatBuckets));
-    }
-
-    public MultiCountStatAndMetric getAcked() {
-        return (MultiCountStatAndMetric) this.get(ACKED);
-    }
-
-    public MultiCountStatAndMetric getFailed() {
-        return (MultiCountStatAndMetric) this.get(FAILED);
+        this.completeLatencyStats = new MultiLatencyStatAndMetric(numStatBuckets);
     }
 
     public MultiLatencyStatAndMetric getCompleteLatencies() {
-        return (MultiLatencyStatAndMetric) this.get(COMPLETE_LATENCIES);
+        return completeLatencyStats;
     }
 
-    public void spoutAckedTuple(String stream, long latencyMs) {
+    @Override
+    public void cleanupStats() {
+        completeLatencyStats.close();
+        super.cleanupStats();
+    }
+
+    public void spoutAckedTuple(String stream, long latencyMs, Counter ackedCounter) {
         this.getAcked().incBy(stream, this.rate);
+        ackedCounter.inc(this.rate);
         this.getCompleteLatencies().record(stream, latencyMs);
     }
 
-    public void spoutFailedTuple(String stream, long latencyMs) {
+    public void spoutFailedTuple(String stream, long latencyMs, Counter failedCounter) {
         this.getFailed().incBy(stream, this.rate);
+        failedCounter.inc(this.rate);
     }
 
     @Override
     public ExecutorStats renderStats() {
         ExecutorStats ret = new ExecutorStats();
         // common fields
-        ret.set_emitted(valueStat(EMITTED));
-        ret.set_transferred(valueStat(TRANSFERRED));
+        ret.set_emitted(valueStat(getEmitted()));
+        ret.set_transferred(valueStat(getTransferred()));
         ret.set_rate(this.rate);
 
         // spout stats
         SpoutStats spoutStats = new SpoutStats(
-                valueStat(ACKED), valueStat(FAILED), valueStat(COMPLETE_LATENCIES));
+                valueStat(getAcked()), valueStat(getFailed()), valueStat(completeLatencyStats));
         ret.set_specific(ExecutorSpecificStats.spout(spoutStats));
 
         return ret;

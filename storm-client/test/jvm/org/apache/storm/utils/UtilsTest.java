@@ -23,11 +23,14 @@ import org.apache.thrift.transport.TTransportException;
 import org.junit.Assert;
 import org.junit.Test;
 
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
+
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.ArrayList;
 
 public class UtilsTest {
 
@@ -50,22 +53,22 @@ public class UtilsTest {
                 Utils.isZkAuthenticationConfiguredTopology(topologyMockMap("foobar")));
     }
 
-    private Map topologyMockMap(String value) {
+    private Map<String, Object> topologyMockMap(String value) {
         return mockMap(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME, value);
     }
 
-    private Map mockMap(String key, String value) {
-        Map<String, Object> map = new HashMap<String, Object>();
+    private Map<String, Object> mockMap(String key, String value) {
+        Map<String, Object> map = new HashMap<>();
         map.put(key, value);
         return map;
     }
 
-    private Map serverMockMap(String value) {
+    private Map<String, Object> serverMockMap(String value) {
         return mockMap(Config.STORM_ZOOKEEPER_AUTH_SCHEME, value);
     }
 
-    private Map emptyMockMap() {
-        return new HashMap<String, Object>();
+    private Map<String, Object> emptyMockMap() {
+        return new HashMap<>();
     }
     
     private void doParseJvmHeapMemByChildOptsTest(String message, String opt, double expected) {
@@ -172,5 +175,50 @@ public class UtilsTest {
                 System.setProperty(key, oldValue);
             }
         }
+    }
+
+    @Test
+    public void testIsValidConfEmpty() {
+        Map<String, Object> map0 = ImmutableMap.of();
+        Assert.assertTrue(Utils.isValidConf(map0, map0));
+    }
+
+    @Test
+    public void testIsValidConfIdentical() {
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+                "k2", "as");
+        Assert.assertTrue(Utils.isValidConf(map1, map1));
+    }
+
+    @Test
+    public void testIsValidConfEqual() {
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+                "k2", "as");
+	Map<String, Object> map2 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+                "k2", "as");
+        Assert.assertTrue(Utils.isValidConf(map1, map2)); // test deep equal
+    }
+
+    @Test
+    public void testIsValidConfNotEqual() {
+        Map<String, Object> map1 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 'f'),
+                "k2", "as");
+        Map<String, Object> map3 = ImmutableMap.of("k0", ImmutableList.of(1L, 2L), "k1", ImmutableSet.of('s', 't'),
+                "k2", "as");
+        Assert.assertFalse(Utils.isValidConf(map1, map3));
+    }
+
+    @Test
+    public void testIsValidConfPrimitiveNotEqual() {
+        Map<String, Object> map4 = ImmutableMap.of("k0", 2L);
+        Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
+        Assert.assertFalse(Utils.isValidConf(map4, map5));
+    }
+
+    @Test
+    public void testIsValidConfEmptyNotEqual() {
+        Map<String, Object> map0 = ImmutableMap.of();
+        Map<String, Object> map5 = ImmutableMap.of("k0", 3L);
+        Assert.assertFalse(Utils.isValidConf(map0, map5));
     }
 }

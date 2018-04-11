@@ -68,9 +68,9 @@ public class MongoMapState<T> implements IBackingMap<T> {
     private Options<T> options;
     private Serializer<T> serializer;
     private MongoDbClient mongoClient;
-    private Map map;
+    private Map<String, Object> map;
 
-    protected MongoMapState(Map map, Options options) {
+    protected MongoMapState(Map<String, Object> map, Options options) {
         this.options = options;
         this.map = map;
         this.serializer = options.serializer;

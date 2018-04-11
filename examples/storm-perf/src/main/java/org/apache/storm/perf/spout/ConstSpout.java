@@ -18,16 +18,15 @@
 
 package org.apache.storm.perf.spout;
 
+import java.util.ArrayList;
+import java.util.Map;
 
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
 import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
-
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import org.apache.storm.utils.ObjectReader;
 
 public class ConstSpout extends BaseRichSpout {
 
@@ -35,7 +34,9 @@ public class ConstSpout extends BaseRichSpout {
     private String value;
     private String fieldName = DEFAUT_FIELD_NAME;
     private SpoutOutputCollector collector = null;
-    private int count=0;
+    private int count = 0;
+    private Long sleep = 0L;
+    private int ackCount = 0;
 
     public ConstSpout(String value) {
         this.value = value;
@@ -54,16 +55,26 @@ public class ConstSpout extends BaseRichSpout {
     @Override
     public void open(Map<String, Object> conf, TopologyContext context, SpoutOutputCollector collector) {
         this.collector = collector;
+        this.sleep = ObjectReader.getLong(conf.get("spout.sleep"), 0L);
     }
 
     @Override
     public void nextTuple() {
-        List<Object> tuple = Collections.singletonList((Object) value);
+        ArrayList<Object> tuple = new ArrayList<Object>(1);
+        tuple.add(value);
         collector.emit(tuple, count++);
+        try {
+            if (sleep > 0) {
+                Thread.sleep(sleep);
+            }
+        } catch (InterruptedException e) {
+            return;
+        }
     }
 
     @Override
     public void ack(Object msgId) {
+        ++ackCount;
         super.ack(msgId);
     }
 

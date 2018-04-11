@@ -450,17 +450,7 @@ public class BatchSubtopologyBuilder {
         @Override
         public BoltDeclarer addConfigurations(Map<String, Object> conf) {
             if (conf != null) {
-                component.componentConf.putAll(conf);
-            }
-            return this;
-        }
-
-        @Override
-        public BoltDeclarer addResources(Map<String, Double> resources) {
-            if (resources != null) {
-                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-                currentResources.putAll(resources);
+                getComponentConfiguration().putAll(conf);
             }
             return this;
         }
@@ -471,14 +461,9 @@ public class BatchSubtopologyBuilder {
             return this;
         }
 
-        @SuppressWarnings("unchecked")
         @Override
-        public BoltDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-
-            resourcesMap.put(resourceName, resourceValue.doubleValue());
-            return this;
+        public Map<String, Object> getComponentConfiguration() {
+            return component.componentConf;
         }
     }
 }

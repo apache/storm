@@ -149,7 +149,7 @@
       (.advanceClusterTime cluster 12)
       (assert-failed tracker 2)
       )))
-      
+
 (defbolt reset-timeout-bolt {} {:prepare true}
   [conf context collector]
   (let [tuple-counter (atom 1)
@@ -179,7 +179,7 @@
           _ (.setAckFailDelegate feeder tracker)
           topology (Thrift/buildTopology
                      {"1" (Thrift/prepareSpoutDetails feeder)}
-                     {"2" (Thrift/prepareBoltDetails 
+                     {"2" (Thrift/prepareBoltDetails
                             {(Utils/getGlobalStreamId "1" nil)
                              (Thrift/prepareGlobalGrouping)} reset-timeout-bolt)})]
     (.submitTopology cluster
@@ -288,7 +288,7 @@
                                        (doto (CompleteTopologyParam.)
                                          (.setMockedSources (MockedSources. {"1" [["a"] ["b"] ["c"]]}))
                                          (.setStormConf {TOPOLOGY-WORKERS 2})))]
-        (is (Testing/multiseteq [["a"] ["b"] ["c"] ["startup"] ["startup"] ["startup"]]
+        (is (Testing/multiseteq [["a"] ["b"] ["c"] ]
                  (Testing/readTuples results "2")))
         )))
 
@@ -464,8 +464,8 @@
                             (Thrift/prepareGlobalGrouping)}
                            prepare-tracked-bolt)})]
       (reset! bolt-prepared? false)
-      (reset! spout-opened? false)      
-      
+      (reset! spout-opened? false)
+
       (.submitTopologyWithOpts cluster
         "test"
         {TOPOLOGY-MESSAGE-TIMEOUT-SECS 10}
@@ -475,7 +475,7 @@
       (.feed feeder ["a"] 1)
       (.advanceClusterTime cluster 9)
       (is (not @bolt-prepared?))
-      (is (not @spout-opened?))        
+      (is (not @spout-opened?))
       (.activate (.getNimbus cluster) "test")
 
       (.advanceClusterTime cluster 12)

@@ -24,23 +24,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.storm.Config;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.IContext;
 
 public class Context implements IContext {
-    @SuppressWarnings("rawtypes")
     private Map<String, Object> topoConf;
     private Map<String, IConnection> connections;
     private NioClientSocketChannelFactory clientChannelFactory;
-    
     private HashedWheelTimer clientScheduleService;
 
     /**
      * initialization per Storm configuration 
      */
-    @SuppressWarnings("rawtypes")
     public void prepare(Map<String, Object> topoConf) {
         this.topoConf = topoConf;
         connections = new HashMap<>();
@@ -72,13 +70,13 @@ public class Context implements IContext {
     /**
      * establish a connection to a remote server
      */
-    public synchronized IConnection connect(String storm_id, String host, int port) {
+    public synchronized IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
         IConnection connection = connections.get(key(host,port));
         if(connection !=null)
         {
             return connection;
         }
-        IConnection client =  new Client(topoConf, clientChannelFactory, 
+        IConnection client =  new Client(topoConf,remoteBpStatus, clientChannelFactory,
                 clientScheduleService, host, port, this);
         connections.put(key(host, client.getPort()), client);
         return client;

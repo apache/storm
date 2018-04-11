@@ -251,7 +251,7 @@ public class TestHdfsBolt {
                 return new Fields("id", "msg","city","state");
             }
         };
-        return new TupleImpl(topologyContext, new Values(id, msg,city,state), 1, "");
+        return new TupleImpl(topologyContext, new Values(id, msg,city,state), topologyContext.getComponentId(1), 1, "");
     }
 
     // Generally used to compare how files were actually written and compare to expectations based on total

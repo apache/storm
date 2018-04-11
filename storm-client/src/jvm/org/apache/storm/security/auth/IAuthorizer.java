@@ -37,10 +37,10 @@ import java.util.Map;
  */
 public interface IAuthorizer {
     /**
-     * Invoked once immediately after construction
-     * @param topoConf Storm configuration
+     * Invoked once immediately after construction.
+     * @param conf Storm cluster configuration
      */
-    void prepare(Map<String, Object> topoConf);
+    void prepare(Map<String, Object> conf);
     
     /**
      * permit() method is invoked for each incoming Thrift request.

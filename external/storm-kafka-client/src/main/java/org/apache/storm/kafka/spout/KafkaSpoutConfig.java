@@ -33,11 +33,11 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.storm.Config;
 import org.apache.storm.annotation.InterfaceStability;
 import org.apache.storm.kafka.spout.KafkaSpoutRetryExponentialBackoff.TimeInterval;
-import org.apache.storm.kafka.spout.subscription.ManualPartitionSubscription;
+import org.apache.storm.kafka.spout.subscription.ManualPartitioner;
 import org.apache.storm.kafka.spout.subscription.NamedTopicFilter;
 import org.apache.storm.kafka.spout.subscription.PatternTopicFilter;
 import org.apache.storm.kafka.spout.subscription.RoundRobinManualPartitioner;
-import org.apache.storm.kafka.spout.subscription.Subscription;
+import org.apache.storm.kafka.spout.subscription.TopicFilter;
 import org.apache.storm.tuple.Fields;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -75,7 +75,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
 
     // Kafka consumer configuration
     private final Map<String, Object> kafkaProps;
-    private final Subscription subscription;
+    private final TopicFilter topicFilter;
+    private final ManualPartitioner topicPartitioner;
     private final long pollTimeoutMs;
 
     // Kafka spout configuration
@@ -99,7 +100,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public KafkaSpoutConfig(Builder<K, V> builder) {
         setKafkaPropsForProcessingGuarantee(builder);
         this.kafkaProps = builder.kafkaProps;
-        this.subscription = builder.subscription;
+        this.topicFilter = builder.topicFilter;
+        this.topicPartitioner = builder.topicPartitioner;
         this.translator = builder.translator;
         this.pollTimeoutMs = builder.pollTimeoutMs;
         this.offsetCommitPeriodMs = builder.offsetCommitPeriodMs;
@@ -175,7 +177,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
     public static class Builder<K, V> {
 
         private final Map<String, Object> kafkaProps;
-        private final Subscription subscription;
+        private final TopicFilter topicFilter;
+        private final ManualPartitioner topicPartitioner;
         private RecordTranslator<K, V> translator;
         private long pollTimeoutMs = DEFAULT_POLL_TIMEOUT_MS;
         private long offsetCommitPeriodMs = DEFAULT_OFFSET_COMMIT_PERIOD_MS;
@@ -190,31 +193,32 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         private int metricsTimeBucketSizeInSecs = DEFAULT_METRICS_TIME_BUCKET_SIZE_SECONDS;
 
         public Builder(String bootstrapServers, String... topics) {
-            this(bootstrapServers, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new NamedTopicFilter(topics)));
+            this(bootstrapServers, new NamedTopicFilter(topics), new RoundRobinManualPartitioner());
         }
 
         public Builder(String bootstrapServers, Set<String> topics) {
-            this(bootstrapServers, new ManualPartitionSubscription(new RoundRobinManualPartitioner(),
-                new NamedTopicFilter(topics)));
+            this(bootstrapServers, new NamedTopicFilter(topics), new RoundRobinManualPartitioner());
         }
 
         public Builder(String bootstrapServers, Pattern topics) {
-            this(bootstrapServers, new ManualPartitionSubscription(new RoundRobinManualPartitioner(), new PatternTopicFilter(topics)));
+            this(bootstrapServers, new PatternTopicFilter(topics), new RoundRobinManualPartitioner());
         }
 
         /**
          * Create a KafkaSpoutConfig builder with default property values and no key/value deserializers.
          *
          * @param bootstrapServers The bootstrap servers the consumer will use
-         * @param subscription The subscription defining which topics and partitions each spout instance will read.
+         * @param topicFilter The topic filter defining which topics and partitions the spout will read
+         * @param topicPartitioner The topic partitioner defining which topics and partitions are assinged to each spout task
          */
-        public Builder(String bootstrapServers, Subscription subscription) {
+        public Builder(String bootstrapServers, TopicFilter topicFilter, ManualPartitioner topicPartitioner) {
             kafkaProps = new HashMap<>();
             if (bootstrapServers == null || bootstrapServers.isEmpty()) {
                 throw new IllegalArgumentException("bootstrap servers cannot be null");
             }
             kafkaProps.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-            this.subscription = subscription;
+            this.topicFilter = topicFilter;
+            this.topicPartitioner = topicPartitioner;
             this.translator = new DefaultRecordTranslator<>();
         }
 
@@ -358,9 +362,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         }
 
         /**
-         * Sets partition refresh period in milliseconds. This is how often kafka will be polled to check for new topics and/or new
-         * partitions. This is mostly for Subscription implementations that manually assign partitions. NamedSubscription and
-         * PatternSubscription rely on kafka to handle this instead.
+         * Sets partition refresh period in milliseconds. This is how often Kafka will be polled to check for new topics and/or new
+         * partitions.
          *
          * @param partitionRefreshPeriodMs time in milliseconds
          * @return the builder (this)
@@ -502,8 +505,12 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
         return kafkaProps;
     }
 
-    public Subscription getSubscription() {
-        return subscription;
+    public TopicFilter getTopicFilter() {
+        return topicFilter;
+    }
+
+    public ManualPartitioner getTopicPartitioner() {
+        return topicPartitioner;
     }
 
     public RecordTranslator<K, V> getTranslator() {
@@ -566,7 +573,8 @@ public class KafkaSpoutConfig<K, V> implements Serializable {
             + ", offsetCommitPeriodMs=" + offsetCommitPeriodMs
             + ", maxUncommittedOffsets=" + maxUncommittedOffsets
             + ", firstPollOffsetStrategy=" + firstPollOffsetStrategy
-            + ", subscription=" + subscription
+            + ", topicFilter=" + topicFilter
+            + ", topicPartitioner=" + topicPartitioner
             + ", translator=" + translator
             + ", retryService=" + retryService
             + ", tupleListener=" + tupleListener

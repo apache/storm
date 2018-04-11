@@ -39,7 +39,7 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class DeserializingConnectionCallback implements IConnectionCallback, IMetric {
     private final WorkerState.ILocalTransferCallback cb;
-    private final Map conf;
+    private final Map<String, Object> conf;
     private final GeneralTopologyContext context;
 
     private final ThreadLocal<KryoTupleDeserializer> _des =
@@ -55,7 +55,7 @@ public class DeserializingConnectionCallback implements IConnectionCallback, IMe
     private final ConcurrentHashMap<String, AtomicLong> byteCounts = new ConcurrentHashMap<>();
 
 
-    public DeserializingConnectionCallback(final Map conf, final GeneralTopologyContext context, WorkerState.ILocalTransferCallback callback) {
+    public DeserializingConnectionCallback(final Map<String, Object> conf, final GeneralTopologyContext context, WorkerState.ILocalTransferCallback callback) {
         this.conf = conf;
         this.context = context;
         cb = callback;

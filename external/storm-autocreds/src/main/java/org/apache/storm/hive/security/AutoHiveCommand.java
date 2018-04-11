@@ -40,7 +40,7 @@ public final class AutoHiveCommand {
 
   @SuppressWarnings("unchecked")
   public static void main(String[] args) throws Exception {
-    Map conf = new HashMap();
+    Map<String, Object> conf = new HashMap<>();
     conf.put(HIVE_PRINCIPAL_KEY, args[1]); // hive principal storm-hive@WITZEN.COM
     conf.put(HIVE_KEYTAB_FILE_KEY, args[2]); // storm hive keytab /etc/security/keytabs/storm-hive.keytab
     conf.put(HiveConf.ConfVars.METASTOREURIS.varname, args[3]); // hive.metastore.uris : "thrift://pm-eng1-cluster1.field.hortonworks.com:9083"

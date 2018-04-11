@@ -165,7 +165,7 @@ public class PartitionManager {
         _messageIneligibleForRetryCount = new CountMetric();
     }
 
-    public Map getMetricsDataMap() {
+    public Map<String, Object> getMetricsDataMap() {
         String metricPrefix = _partition.getId();
 
         Map<String, Object> ret = new HashMap<>();

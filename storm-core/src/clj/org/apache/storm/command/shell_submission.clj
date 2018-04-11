@@ -32,7 +32,7 @@
         root (.get conf Config/STORM_ZOOKEEPER_ROOT)
         zk (ClientZookeeper/mkClient conf servers port root (DefaultWatcherCallBack.) conf)
         ; since this is not a purpose to add to leader lock queue, passing nil as blob-store and topo cache is ok
-        zk-leader-elector (Zookeeper/zkLeaderElector conf zk nil nil)
+        zk-leader-elector (Zookeeper/zkLeaderElector conf zk nil nil nil nil)
         leader-nimbus (.getLeader zk-leader-elector)
         host (.getHost leader-nimbus)
         port (.getPort leader-nimbus)

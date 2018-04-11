@@ -37,8 +37,8 @@ public class MultiReducedMetric implements IMetric {
         return val;
     }
 
-    public Object getValueAndReset() {
-        Map ret = new HashMap();
+    public Map<String, Object> getValueAndReset() {
+        Map<String, Object> ret = new HashMap<>();
         for(Map.Entry<String, ReducedMetric> e : _value.entrySet()) {
             Object val = e.getValue().getValueAndReset();
             if(val != null) {

@@ -19,6 +19,7 @@
 package org.apache.storm.scheduler.blacklist;
 
 import com.google.common.collect.EvictingQueue;
+import com.google.common.collect.Sets;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -52,8 +53,7 @@ public class BlacklistScheduler implements IScheduler {
     public static final int DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_TIME = 300;
 
     private final IScheduler underlyingScheduler;
-    @SuppressWarnings("rawtypes")
-    private Map conf;
+    private Map<String, Object> conf;
 
     protected int toleranceTime;
     protected int toleranceCount;
@@ -75,7 +75,7 @@ public class BlacklistScheduler implements IScheduler {
     }
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         LOG.info("Preparing black list scheduler");
         underlyingScheduler.prepare(conf);
         this.conf = conf;
@@ -131,7 +131,7 @@ public class BlacklistScheduler implements IScheduler {
     }
 
     @Override
-    public Map<String, Object> config() {
+    public Map<String, Map<String, Double>> config() {
         return underlyingScheduler.config();
     }
 

@@ -86,7 +86,7 @@ public class HBaseMapState<T> implements IBackingMap<T> {
      * @param map topology config map.
      * @param partitionNum the number of partition.
      */
-    public HBaseMapState(final Options<T> options, Map map, int partitionNum) {
+    public HBaseMapState(final Options<T> options, Map<String, Object> map, int partitionNum) {
         this.options = options;
         this.serializer = options.serializer;
         this.partitionNum = partitionNum;

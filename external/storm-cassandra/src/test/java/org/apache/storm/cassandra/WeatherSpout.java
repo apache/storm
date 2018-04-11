@@ -56,7 +56,7 @@ public class WeatherSpout extends BaseRichSpout {
     }
 
     @Override
-    public void open(Map map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
+    public void open(Map<String, Object> map, TopologyContext topologyContext, SpoutOutputCollector spoutOutputCollector) {
         this.spoutOutputCollector = spoutOutputCollector;
     }
 

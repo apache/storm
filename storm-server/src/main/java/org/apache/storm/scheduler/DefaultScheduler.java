@@ -106,7 +106,7 @@ public class DefaultScheduler implements IScheduler {
     }
 
     @Override
-    public Map<String, Object> config() {
+    public Map<String, Map<String, Double>> config() {
         return new HashMap<>();
     }
 }

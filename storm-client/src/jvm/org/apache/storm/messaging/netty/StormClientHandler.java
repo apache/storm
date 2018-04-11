@@ -23,16 +23,14 @@ import org.apache.storm.serialization.KryoValuesDeserializer;
 import java.net.ConnectException;
 import java.util.Map;
 import java.util.List;
-import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-import org.jboss.netty.channel.Channel;
 import org.jboss.netty.channel.ChannelHandlerContext;
 import org.jboss.netty.channel.ChannelStateEvent;
 import org.jboss.netty.channel.ExceptionEvent;
 import org.jboss.netty.channel.MessageEvent;
 import org.jboss.netty.channel.SimpleChannelUpstreamHandler;
 
-import org.jboss.netty.channel.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,9 +38,11 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
     private static final Logger LOG = LoggerFactory.getLogger(StormClientHandler.class);
     private Client client;
     private KryoValuesDeserializer _des;
+    private AtomicBoolean[] remoteBpStatus;
 
-    StormClientHandler(Client client, Map<String, Object> conf) {
+    StormClientHandler(Client client, AtomicBoolean[] remoteBpStatus, Map<String, Object> conf) {
         this.client = client;
+        this.remoteBpStatus = remoteBpStatus;
         _des = new KryoValuesDeserializer(conf);
     }
 
@@ -55,20 +55,29 @@ public class StormClientHandler extends SimpleChannelUpstreamHandler  {
             if (msg==ControlMessage.FAILURE_RESPONSE) {
                 LOG.info("failure response:{}", msg);
             }
-        } else if (message instanceof List) {
-            try {
-                //This should be the metrics, and there should only be one of them
-                List<TaskMessage> list = (List<TaskMessage>)message;
-                if (list.size() < 1) throw new RuntimeException("Didn't see enough load metrics ("+client.getDstAddress()+") "+list);
-                TaskMessage tm = ((List<TaskMessage>)message).get(list.size() - 1);
-                if (tm.task() != -1) throw new RuntimeException("Metrics messages are sent to the system task ("+client.getDstAddress()+") "+tm);
-                List metrics = _des.deserialize(tm.message());
-                if (metrics.size() < 1) throw new RuntimeException("No metrics data in the metrics message ("+client.getDstAddress()+") "+metrics);
-                if (!(metrics.get(0) instanceof Map)) throw new RuntimeException("The metrics did not have a map in the first slot ("+client.getDstAddress()+") "+metrics);
-                client.setLoadMetrics((Map<Integer, Double>)metrics.get(0));
-            } catch (IOException e) {
-                throw new RuntimeException(e);
+        } else if (message instanceof BackPressureStatus) {
+            BackPressureStatus status = (BackPressureStatus) message;
+            if (status.bpTasks != null) {
+                for (Integer bpTask : status.bpTasks) {
+                    remoteBpStatus[bpTask].set(true);
+                }
             }
+            if (status.nonBpTasks != null) {
+                for (Integer bpTask : status.nonBpTasks) {
+                    remoteBpStatus[bpTask].set(false);
+                }
+            }
+            LOG.debug("Received BackPressure status update : {}", status);
+        } else if (message instanceof List) {
+            //This should be the metrics, and there should only be one of them
+            List<TaskMessage> list = (List<TaskMessage>)message;
+            if (list.size() < 1) throw new RuntimeException("Didn't see enough load metrics ("+client.getDstAddress()+") "+list);
+            TaskMessage tm = ((List<TaskMessage>)message).get(list.size() - 1);
+            if (tm.task() != -1) throw new RuntimeException("Metrics messages are sent to the system task ("+client.getDstAddress()+") "+tm);
+            List metrics = _des.deserialize(tm.message());
+            if (metrics.size() < 1) throw new RuntimeException("No metrics data in the metrics message ("+client.getDstAddress()+") "+metrics);
+            if (!(metrics.get(0) instanceof Map)) throw new RuntimeException("The metrics did not have a map in the first slot ("+client.getDstAddress()+") "+metrics);
+            client.setLoadMetrics((Map<Integer, Double>)metrics.get(0));
         } else {
             throw new RuntimeException("Don't know how to handle a message of type "
                                        + message + " (" + client.getDstAddress() + ")");

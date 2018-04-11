@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
+import java.util.function.BooleanSupplier;
 
 import org.apache.commons.io.FileUtils;
 import org.apache.storm.Config;
@@ -144,19 +145,19 @@ public class ConfigUtils {
         throw new IllegalArgumentException("Illegal topology.stats.sample.rate in conf: " + rate);
     }
 
-    public static Callable<Boolean> mkStatsSampler(Map<String, Object> conf) {
+    public static BooleanSupplier mkStatsSampler(Map<String, Object> conf) {
         return evenSampler(samplingRate(conf));
     }
 
-    public static Callable<Boolean> evenSampler(final int samplingFreq) {
+    public static BooleanSupplier evenSampler(final int samplingFreq) {
         final Random random = new Random();
 
-        return new Callable<Boolean>() {
+        return new BooleanSupplier() {
             private int curr = -1;
             private int target = random.nextInt(samplingFreq);
 
             @Override
-            public Boolean call() throws Exception {
+            public boolean getAsBoolean() {
                 curr++;
                 if (curr >= samplingFreq) {
                     curr = 0;
@@ -270,7 +271,7 @@ public class ConfigUtils {
         return ret;
     }
 
-    public static Map overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
+    public static Map<String, Object> overrideLoginConfigWithSystemProperty(Map<String, Object> conf) { // note that we delete the return value
         String loginConfFile = System.getProperty("java.security.auth.login.config");
         if (loginConfFile != null) {
             conf.put("java.security.auth.login.config", loginConfFile);
@@ -321,7 +322,7 @@ public class ConfigUtils {
         return conf;
     }
 
-    public static Map readYamlConfig(String name) {
+    public static Map<String, Object> readYamlConfig(String name) {
         return readYamlConfig(name, true);
     }
 

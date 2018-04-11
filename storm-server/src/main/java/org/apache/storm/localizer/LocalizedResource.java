@@ -451,4 +451,9 @@ public class LocalizedResource extends LocallyCachedBlob {
     public int hashCode() {
         return getKey().hashCode() + Boolean.hashCode(uncompressed) + baseDir.hashCode();
     }
+
+    @Override
+    public String toString() {
+        return this.user + ":" + getKey();
+    }
 }

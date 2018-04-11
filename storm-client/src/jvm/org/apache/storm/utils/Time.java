@@ -145,11 +145,15 @@ public class Time {
     }
 
     public static void sleep(long ms) throws InterruptedException {
-        sleepUntil(currentTimeMillis()+ms);
+        if(ms>0) {
+            sleepUntil(currentTimeMillis() + ms);
+        }
     }
     
     public static void sleepNanos(long nanos) throws InterruptedException {
-        sleepUntilNanos(nanoTime() + nanos);
+        if(nanos>0) {
+            sleepUntilNanos(nanoTime() + nanos);
+        }
     }
 
     public static void sleepSecs (long secs) throws InterruptedException {

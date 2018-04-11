@@ -15,21 +15,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm;
 
-import java.util.Arrays;
-import org.apache.storm.metric.IEventLogger;
-import org.apache.storm.serialization.IKryoDecorator;
-import org.apache.storm.serialization.IKryoFactory;
-import org.apache.storm.validation.ConfigValidation;
-import org.apache.storm.validation.ConfigValidationAnnotations.*;
-import org.apache.storm.validation.ConfigValidation.*;
 import com.esotericsoftware.kryo.Serializer;
-
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.apache.storm.metric.IEventLogger;
+import org.apache.storm.policy.IWaitStrategy;
+import org.apache.storm.serialization.IKryoDecorator;
+import org.apache.storm.serialization.IKryoFactory;
+import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.validation.ConfigValidation.*;
+import org.apache.storm.validation.ConfigValidationAnnotations.*;
 
 /**
  * Topology configs are specified as a plain old map. This class provides a
@@ -73,7 +74,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND_PERCENT = "topology.localityaware.higher.bound.percent";
+    public static final String TOPOLOGY_LOCALITYAWARE_HIGHER_BOUND = "topology.localityaware.higher.bound";
 
     /**
      * This signifies the load congestion among target tasks in scope. Currently it's only used in LoadAwareShuffleGrouping.
@@ -82,7 +83,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_LOCALITYAWARE_LOWER_BOUND_PERCENT = "topology.localityaware.lower.bound.percent";
+    public static final String TOPOLOGY_LOCALITYAWARE_LOWER_BOUND = "topology.localityaware.lower.bound";
 
     /**
      * Try to serialize all tuples, even for local transfers.  This should only be used
@@ -120,51 +121,12 @@ public class Config extends HashMap<String, Object> {
     public static final String TASK_CREDENTIALS_POLL_SECS = "task.credentials.poll.secs";
 
     /**
-     * How often to poll for changed topology backpressure flag from ZK
+     * Whether to enable backpressure in for a certain topology.
+     * @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon.
      */
-    @isInteger
-    @isPositiveNumber
-    public static final String TASK_BACKPRESSURE_POLL_SECS = "task.backpressure.poll.secs";
-
-    /**
-     * Whether to enable backpressure in for a certain topology
-     */
+    @Deprecated
     @isBoolean
     public static final String TOPOLOGY_BACKPRESSURE_ENABLE = "topology.backpressure.enable";
-
-    /**
-     * This signifies the tuple congestion in a disruptor queue.
-     * When the used ratio of a disruptor queue is higher than the high watermark,
-     * the backpressure scheme, if enabled, should slow down the tuple sending speed of
-     * the spouts until reaching the low watermark.
-     */
-    @isPositiveNumber
-    public static final String BACKPRESSURE_DISRUPTOR_HIGH_WATERMARK="backpressure.disruptor.high.watermark";
-
-    /**
-     * This signifies a state that a disruptor queue has left the congestion.
-     * If the used ratio of a disruptor queue is lower than the low watermark,
-     * it will unset the backpressure flag.
-     */
-    @isPositiveNumber
-    public static final String BACKPRESSURE_DISRUPTOR_LOW_WATERMARK="backpressure.disruptor.low.watermark";
-
-    /**
-     * How long until the backpressure znode is invalid.
-     * It's measured by the data (timestamp) of the znode, not the ctime (creation time) or mtime (modification time), etc.
-     * This must be larger than BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS.
-     */
-    @isInteger
-    @isPositiveNumber
-    public static final String BACKPRESSURE_ZNODE_TIMEOUT_SECS = "backpressure.znode.timeout.secs";
-
-    /**
-     * How often will the data (timestamp) of backpressure znode be updated.
-     * But if the worker backpressure status (on/off) changes, the znode will be updated anyway.
-     */
-    @isInteger
-    @isPositiveNumber
-    public static final String BACKPRESSURE_ZNODE_UPDATE_FREQ_SECS = "backpressure.znode.update.freq.secs";
 
     /**
      * A list of users that are allowed to interact with the topology.  To use this set
@@ -185,7 +147,7 @@ public class Config extends HashMap<String, Object> {
      * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
      */
     @isStringList
-    public static final String TOPOLOGY_READONLY_USERS="topology.readonly.users";
+    public static final String TOPOLOGY_READONLY_USERS = "topology.readonly.users";
 
     /**
      * A list of readonly groups that are allowed to interact with the topology.  To use this set
@@ -208,7 +170,7 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_DEBUG = "topology.debug";
 
     /**
-     * User defined version of this topology
+     * User defined version of this topology.
      */
     @isString
     public static final String TOPOLOGY_VERSION = "topology.version";
@@ -223,7 +185,7 @@ public class Config extends HashMap<String, Object> {
 
     /**
      * The serializer for communication between shell components and non-JVM
-     * processes
+     * processes.
      */
     @isString
     public static final String TOPOLOGY_MULTILANG_SERIALIZER = "topology.multilang.serializer";
@@ -305,14 +267,16 @@ public class Config extends HashMap<String, Object> {
      * to allocate slots on machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB = "topology.metrics.consumer.resources.onheap.memory.mb";
+    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_ONHEAP_MEMORY_MB =
+            "topology.metrics.consumer.resources.onheap.memory.mb";
 
     /**
      * The maximum amount of memory an instance of a metrics consumer will take off heap. This enables the scheduler
      * to allocate slots on machines with enough available memory.  A default value will be set for this config if user does not override
      */
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB = "topology.metrics.consumer.resources.offheap.memory.mb";
+    public static final String TOPOLOGY_METRICS_CONSUMER_RESOURCES_OFFHEAP_MEMORY_MB =
+            "topology.metrics.consumer.resources.offheap.memory.mb";
 
     /**
      * The config indicates the percentage of cpu for a core an instance(executor) of a metrics consumer will use.
@@ -348,13 +312,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_STATE_CHECKPOINT_INTERVAL = "topology.state.checkpoint.interval.ms";
 
     /**
-     * A per topology config that specifies the maximum amount of memory a worker can use for that specific topology
+     * A per topology config that specifies the maximum amount of memory a worker can use for that specific topology.
      */
     @isPositiveNumber
     public static final String TOPOLOGY_WORKER_MAX_HEAP_SIZE_MB = "topology.worker.max.heap.size.mb";
 
     /**
-     * The strategy to use when scheduling a topology with Resource Aware Scheduler
+     * The strategy to use when scheduling a topology with Resource Aware Scheduler.
      */
     @NotNull
     @isString
@@ -425,7 +389,7 @@ public class Config extends HashMap<String, Object> {
      * Note that EventLoggerBolt takes care of all the implementations of IEventLogger, hence registering
      * many implementations (especially they're implemented as 'blocking' manner) would slow down overall topology.
      */
-    @isListEntryCustom(entryValidatorClasses={EventLoggerRegistryValidator.class})
+    @isListEntryCustom(entryValidatorClasses = {EventLoggerRegistryValidator.class})
     public static final String TOPOLOGY_EVENT_LOGGER_REGISTER = "topology.event.logger.register";
 
     /**
@@ -489,10 +453,10 @@ public class Config extends HashMap<String, Object> {
      * rather than throw an error.
      */
     @isBoolean
-    public static final String TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS= "topology.skip.missing.kryo.registrations";
+    public static final String TOPOLOGY_SKIP_MISSING_KRYO_REGISTRATIONS = "topology.skip.missing.kryo.registrations";
 
     /**
-     * List of classes to register during state serialization
+     * List of classes to register during state serialization.
      */
     @isStringList
     public static final String TOPOLOGY_STATE_KRYO_REGISTER = "topology.state.kryo.register";
@@ -503,7 +467,7 @@ public class Config extends HashMap<String, Object> {
      * Each listed class maps 1:1 to a system bolt named __metrics_ClassName#N, and it's parallelism is configurable.
      */
 
-    @isListEntryCustom(entryValidatorClasses={MetricRegistryValidator.class})
+    @isListEntryCustom(entryValidatorClasses = {MetricRegistryValidator.class})
     public static final String TOPOLOGY_METRICS_CONSUMER_REGISTER = "topology.metrics.consumer.register";
 
     /**
@@ -514,13 +478,13 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_SERIALIZED_MESSAGE_SIZE_METRICS = "topology.serialized.message.size.metrics";
 
     /**
-     * A map of metric name to class name implementing IMetric that will be created once per worker JVM
+     * A map of metric name to class name implementing IMetric that will be created once per worker JVM.
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String TOPOLOGY_WORKER_METRICS = "topology.worker.metrics";
 
     /**
-     * A map of metric name to class name implementing IMetric that will be created once per worker JVM
+     * A map of metric name to class name implementing IMetric that will be created once per worker JVM.
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
     public static final String WORKER_METRICS = "worker.metrics";
@@ -531,7 +495,7 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_MAX_TASK_PARALLELISM="topology.max.task.parallelism";
+    public static final String TOPOLOGY_MAX_TASK_PARALLELISM = "topology.max.task.parallelism";
 
     /**
      * The maximum number of tuples that can be pending on a spout task at any given time.
@@ -543,24 +507,14 @@ public class Config extends HashMap<String, Object> {
      */
     @isInteger
     @isPositiveNumber
-    public static final String TOPOLOGY_MAX_SPOUT_PENDING="topology.max.spout.pending";
-
-    /**
-     * A class that implements a strategy for what to do when a spout needs to wait. Waiting is
-     * triggered in one of two conditions:
-     *
-     * 1. nextTuple emits no tuples
-     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
-     */
-    @isString
-    public static final String TOPOLOGY_SPOUT_WAIT_STRATEGY="topology.spout.wait.strategy";
+    public static final String TOPOLOGY_MAX_SPOUT_PENDING = "topology.max.spout.pending";
 
     /**
      * The amount of milliseconds the SleepEmptyEmitStrategy should sleep for.
      */
     @isInteger
     @isPositiveNumber(includeZero = true)
-    public static final String TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS="topology.sleep.spout.wait.strategy.time.ms";
+    public static final String TOPOLOGY_SLEEP_SPOUT_WAIT_STRATEGY_TIME_MS = "topology.sleep.spout.wait.strategy.time.ms";
 
     /**
      * The maximum amount of time a component gives a source of state to synchronize before it requests
@@ -569,49 +523,49 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_STATE_SYNCHRONIZATION_TIMEOUT_SECS="topology.state.synchronization.timeout.secs";
+    public static final String TOPOLOGY_STATE_SYNCHRONIZATION_TIMEOUT_SECS = "topology.state.synchronization.timeout.secs";
 
     /**
      * The percentage of tuples to sample to produce stats for a task.
      */
     @isPositiveNumber
-    public static final String TOPOLOGY_STATS_SAMPLE_RATE="topology.stats.sample.rate";
+    public static final String TOPOLOGY_STATS_SAMPLE_RATE = "topology.stats.sample.rate";
 
     /**
      * The time period that builtin metrics data in bucketed into.
      */
     @isInteger
-    public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS="topology.builtin.metrics.bucket.size.secs";
+    public static final String TOPOLOGY_BUILTIN_METRICS_BUCKET_SIZE_SECS = "topology.builtin.metrics.bucket.size.secs";
 
     /**
      * Whether or not to use Java serialization in a topology.
      */
     @isBoolean
-    public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION="topology.fall.back.on.java.serialization";
+    public static final String TOPOLOGY_FALL_BACK_ON_JAVA_SERIALIZATION = "topology.fall.back.on.java.serialization";
 
     /**
      * Topology-specific options for the worker child process. This is used in addition to WORKER_CHILDOPTS.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_CHILDOPTS="topology.worker.childopts";
+    public static final String TOPOLOGY_WORKER_CHILDOPTS = "topology.worker.childopts";
 
     /**
      * Topology-specific options GC for the worker child process. This overrides WORKER_GC_CHILDOPTS.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_GC_CHILDOPTS="topology.worker.gc.childopts";
+    public static final String TOPOLOGY_WORKER_GC_CHILDOPTS = "topology.worker.gc.childopts";
 
     /**
      * Topology-specific options for the logwriter process of a worker.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS="topology.worker.logwriter.childopts";
+    public static final String TOPOLOGY_WORKER_LOGWRITER_CHILDOPTS = "topology.worker.logwriter.childopts";
 
     /**
      * Topology-specific classpath for the worker child process. This is combined to the usual classpath.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_CLASSPATH="topology.classpath";
+    public static final String TOPOLOGY_CLASSPATH = "topology.classpath";
 
     /**
      * Topology-specific classpath for the worker child process. This will be *prepended* to
@@ -620,24 +574,14 @@ public class Config extends HashMap<String, Object> {
      * classpaths, set the storm.topology.classpath.beginning.enabled config to true.
      */
     @isStringOrStringList
-    public static final String TOPOLOGY_CLASSPATH_BEGINNING="topology.classpath.beginning";
+    public static final String TOPOLOGY_CLASSPATH_BEGINNING = "topology.classpath.beginning";
 
     /**
      * Topology-specific environment variables for the worker child process.
      * This is added to the existing environment (that of the supervisor)
      */
     @isMapEntryType(keyType = String.class, valueType = String.class)
-    public static final String TOPOLOGY_ENVIRONMENT="topology.environment";
-
-    /*
-     * Topology-specific option to disable/enable bolt's outgoing overflow buffer.
-     * Enabling this option ensures that the bolt can always clear the incoming messages,
-     * preventing live-lock for the topology with cyclic flow.
-     * The overflow buffer can fill degrading the performance gradually,
-     * eventually running out of memory.
-     */
-    @isBoolean
-    public static final String TOPOLOGY_BOLTS_OUTGOING_OVERFLOW_BUFFER_ENABLE="topology.bolts.outgoing.overflow.buffer.enable";
+    public static final String TOPOLOGY_ENVIRONMENT = "topology.environment";
 
     /*
      * Bolt-specific configuration for windowed bolts to specify the window length as a count of number of tuples
@@ -708,7 +652,7 @@ public class Config extends HashMap<String, Object> {
      * topology in Zookeeper.
      */
     @isString
-    public static final String TOPOLOGY_TRANSACTIONAL_ID="topology.transactional.id";
+    public static final String TOPOLOGY_TRANSACTIONAL_ID = "topology.transactional.id";
 
     /**
      * A list of task hooks that are automatically added to every spout and bolt in the topology. An example
@@ -716,26 +660,28 @@ public class Config extends HashMap<String, Object> {
      * monitoring system. These hooks are instantiated using the zero-arg constructor.
      */
     @isStringList
-    public static final String TOPOLOGY_AUTO_TASK_HOOKS="topology.auto.task.hooks";
+    public static final String TOPOLOGY_AUTO_TASK_HOOKS = "topology.auto.task.hooks";
 
     /**
-     * The size of the Disruptor receive queue for each executor. Must be a power of 2.
+     * The size of the receive queue for each executor.
      */
-    @isPowerOf2
-    public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE="topology.executor.receive.buffer.size";
-
-    /**
-     * The size of the Disruptor send queue for each executor. Must be a power of 2.
-     */
-    @isPowerOf2
-    public static final String TOPOLOGY_EXECUTOR_SEND_BUFFER_SIZE="topology.executor.send.buffer.size";
-
-    /**
-     * The size of the Disruptor transfer queue for each worker.
-     */
+    @isPositiveNumber
     @isInteger
-    @isPowerOf2
-    public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE="topology.transfer.buffer.size";
+    public static final String TOPOLOGY_EXECUTOR_RECEIVE_BUFFER_SIZE = "topology.executor.receive.buffer.size";
+
+    /**
+     * The size of the transfer queue for each worker.
+     */
+    @isPositiveNumber
+    @isInteger
+    public static final String TOPOLOGY_TRANSFER_BUFFER_SIZE = "topology.transfer.buffer.size";
+
+    /**
+     * The size of the transfer queue for each worker.
+     */
+    @isPositiveNumber
+    @isInteger
+    public static final String TOPOLOGY_TRANSFER_BATCH_SIZE="topology.transfer.batch.size";
 
     /**
      * How often a tick tuple from the "__system" component and "__tick" stream should be sent
@@ -745,13 +691,40 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_TICK_TUPLE_FREQ_SECS="topology.tick.tuple.freq.secs";
 
     /**
-     * @deprecated this is no longer supported
-     * Configure the wait strategy used for internal queuing. Can be used to tradeoff latency
-     * vs. throughput
+     * The number of tuples to batch before sending to the destination executor.
      */
-    @Deprecated
-    @isString
-    public static final String TOPOLOGY_DISRUPTOR_WAIT_STRATEGY="topology.disruptor.wait.strategy";
+    @isInteger
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_PRODUCER_BATCH_SIZE="topology.producer.batch.size";
+
+    /**
+     * If number of items in task's overflowQ exceeds this, new messages coming from other workers to this task will be dropped
+     * This prevents OutOfMemoryException that can occur in rare scenarios in the presence of BackPressure. This affects
+     * only inter-worker messages. Messages originating from within the same worker will not be dropped.
+     */
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    @NotNull
+    public static final String TOPOLOGY_EXECUTOR_OVERFLOW_LIMIT="topology.executor.overflow.limit";
+
+    /**
+     * How often a worker should check and notify upstream workers about its tasks that are no longer experiencing BP
+     * and able to receive new messages
+     */
+    @isInteger
+    @isPositiveNumber
+    @NotNull
+    public static final String TOPOLOGY_BACKPRESSURE_CHECK_MILLIS ="topology.backpressure.check.millis";
+
+    /**
+     * How often to send flush tuple to the executors for flushing out batched events.
+     */
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    @NotNull
+    public static final String TOPOLOGY_BATCH_FLUSH_INTERVAL_MILLIS ="topology.batch.flush.interval.millis";
+
 
     /**
      * The size of the shared thread pool for worker tasks to make use of. The thread pool can be accessed
@@ -890,30 +863,135 @@ public class Config extends HashMap<String, Object> {
     public static final String TOPOLOGY_ISOLATED_MACHINES = "topology.isolate.machines";
 
     /**
-     * Configure timeout milliseconds used for disruptor queue wait strategy. Can be used to tradeoff latency
-     * vs. CPU usage
+     * A class that implements a wait strategy for spout. Waiting is triggered in one of two conditions:
+     *
+     * 1. nextTuple emits no tuples
+     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     *
+     * This class must implement {@link IWaitStrategy}.
      */
-    @isInteger
-    @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_WAIT_TIMEOUT_MILLIS="topology.disruptor.wait.timeout.millis";
+    @isString
+    public static final String TOPOLOGY_SPOUT_WAIT_STRATEGY = "topology.spout.wait.strategy";
 
     /**
-     * The number of tuples to batch before sending to the next thread.  This number is just an initial suggestion and
-     * the code may adjust it as your topology runs.
+     * Configures park time for WaitStrategyPark for spout.  If set to 0, returns immediately (i.e busy wait).
      */
-    @isInteger
-    @isPositiveNumber
     @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_BATCH_SIZE="topology.disruptor.batch.size";
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PARK_MICROSEC = "topology.spout.wait.park.microsec";
 
     /**
-     * The maximum age in milliseconds a batch can be before being sent to the next thread.  This number is just an
-     * initial suggestion and the code may adjust it as your topology runs.
+     * Configures number of iterations to spend in level 1 of WaitStrategyProgressive, before progressing to level 2
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL1_COUNT =  "topology.spout.wait.progressive.level1.count";
+
+    /**
+     * Configures number of iterations to spend in level 2 of WaitStrategyProgressive, before progressing to level 3
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL2_COUNT =  "topology.spout.wait.progressive.level2.count";
+
+    /**
+     * Configures sleep time for WaitStrategyProgressive.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_SPOUT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.spout.wait.progressive.level3.sleep.millis";
+
+    /**
+     * Selects the Bolt's Wait Strategy to use when there are no incoming msgs. Used to trade off latency vs CPU usage.
+     * This class must implement {@link IWaitStrategy}.
+     */
+    @isString
+    public static final String TOPOLOGY_BOLT_WAIT_STRATEGY = "topology.bolt.wait.strategy";
+
+    /**
+     * Configures park time for WaitStrategyPark.  If set to 0, returns immediately (i.e busy wait).
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_PARK_MICROSEC = "topology.bolt.wait.park.microsec";
+
+    /**
+     * Configures number of iterations to spend in level 1 of WaitStrategyProgressive, before progressing to level 2
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL1_COUNT =  "topology.bolt.wait.progressive.level1.count";
+
+    /**
+     * Configures number of iterations to spend in level 2 of WaitStrategyProgressive, before progressing to level 3
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL2_COUNT =  "topology.bolt.wait.progressive.level2.count";
+
+    /**
+     * Configures sleep time for WaitStrategyProgressive.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BOLT_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.bolt.wait.progressive.level3.sleep.millis";
+
+
+    /**
+     * A class that implements a wait strategy for an upstream component (spout/bolt) trying to write to a downstream component
+     * whose recv queue is full
+     *
+     * 1. nextTuple emits no tuples
+     * 2. The spout has hit maxSpoutPending and can't emit any more tuples
+     *
+     * This class must implement {@link IWaitStrategy}.
+     */
+    @isString
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_STRATEGY="topology.backpressure.wait.strategy";
+
+    /**
+     * Configures park time if using WaitStrategyPark for BackPressure. If set to 0, returns immediately (i.e busy wait).
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PARK_MICROSEC = "topology.backpressure.wait.park.microsec";
+
+    /**
+     * Configures sleep time if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL3_SLEEP_MILLIS = "topology.backpressure.wait.progressive.level3.sleep.millis";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL1_COUNT = "topology.backpressure.wait.progressive.level1.count";
+
+    /**
+     * Configures steps used to determine progression to the next level of wait .. if using WaitStrategyProgressive for BackPressure.
+     */
+    @NotNull
+    @isInteger
+    @isPositiveNumber(includeZero = true)
+    public static final String TOPOLOGY_BACKPRESSURE_WAIT_PROGRESSIVE_LEVEL2_COUNT = "topology.backpressure.wait.progressive.level2.count";
+
+
+    /**
+     * Check recvQ after every N invocations of Spout's nextTuple() [when ACKing is disabled].
+     * Spouts receive very few msgs if ACK is disabled. This avoids checking the recvQ after each nextTuple().
      */
     @isInteger
-    @isPositiveNumber
+    @isPositiveNumber(includeZero = true)
     @NotNull
-    public static final String TOPOLOGY_DISRUPTOR_BATCH_TIMEOUT_MILLIS="topology.disruptor.batch.timeout.millis";
+    public static final String TOPOLOGY_SPOUT_RECVQ_SKIPS = "topology.spout.recvq.skips";
 
     /**
      * Minimum number of nimbus hosts where the code must be replicated before leader nimbus
@@ -931,17 +1009,6 @@ public class Config extends HashMap<String, Object> {
      */
     @isNumber
     public static final String TOPOLOGY_MAX_REPLICATION_WAIT_TIME_SEC = "topology.max.replication.wait.time.sec";
-
-    /**
-     * This is a config that is not likely to be used.  Internally the disruptor queue will batch entries written
-     * into the queue.  A background thread pool will flush those batches if they get too old.  By default that
-     * pool can grow rather large, and sacrifice some CPU time to keep the latency low.  In some cases you may
-     * want the queue to be smaller so there is less CPU used, but the latency will increase in some situations.
-     * This configs is on a per cluster bases, if you want to control this on a per topology bases you need to set
-     * the java System property for the worker "num_flusher_pool_threads" to the value you want.
-     */
-    @isInteger
-    public static final String STORM_WORKER_DISRUPTOR_FLUSHER_MAX_POOL_SIZE = "storm.worker.disruptor.flusher.max.pool.size";
 
     /**
      * The list of servers that Pacemaker is running on.
@@ -1034,6 +1101,13 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     public static final String NIMBUS_QUEUE_SIZE = "nimbus.queue.size";
+
+    /**
+     * Nimbus assignments backend for storing local assignments. We will use it to store physical plan and runtime storm ids.
+     */
+    @isString
+    @isImplementationOfClass(implementsClass = org.apache.storm.assignments.ILocalAssignmentsBackend.class)
+    public static final String NIMBUS_LOCAL_ASSIGNMENTS_BACKEND_CLASS = "nimbus.local.assignments.backend.class";
 
     /**
      * The number of threads that should be used by the nimbus thrift server.
@@ -1166,6 +1240,9 @@ public class Config extends HashMap<String, Object> {
      */
     @isString
     public static final String STORM_META_SERIALIZATION_DELEGATE = "storm.meta.serialization.delegate";
+
+    @isListEntryCustom(entryValidatorClasses={MetricReportersValidator.class})
+    public static final String STORM_METRICS_REPORTERS = "storm.metrics.reporters";
 
     /**
      * What blobstore implementation the storm client should use.
@@ -1345,6 +1422,44 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String SUPERVISOR_CPU_CAPACITY = "supervisor.cpu.capacity";
 
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Port used for supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_PORT = "supervisor.thrift.port";
+
+    @isString
+    /**
+     * The Supervisor invocations transport plug-in for Thrift client/server communication.
+     */
+    public static final String SUPERVISOR_THRIFT_TRANSPORT_PLUGIN = "supervisor.thrift.transport";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * Supervisor thrift server queue size.
+     */
+    public static final String SUPERVISOR_QUEUE_SIZE = "supervisor.queue.size";
+
+    @isInteger
+    @isPositiveNumber
+    /**
+     * The number of threads that should be used by the supervisor thrift server.
+     */
+    public static final String SUPERVISOR_THRIFT_THREADS = "supervisor.thrift.threads";
+
+    @isNumber
+    @isPositiveNumber
+    public static final String SUPERVISOR_THRIFT_MAX_BUFFER_SIZE = "supervisor.thrift.max_buffer_size";
+
+    /**
+     * How long before a supervisor Thrift Client socket hangs before timeout
+     * and restart the socket.
+     */
+    @isInteger
+    public static final String SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS = "supervisor.thrift.socket.timeout.ms";
+
     /**
      * A map of resources the Supervisor has e.g {"cpu.pcore.percent" : 200.0. "onheap.memory.mb": 256.0, "gpu.count" : 2.0 }
      */
@@ -1380,6 +1495,28 @@ public class Config extends HashMap<String, Object> {
     @isInteger
     @isPositiveNumber
     public static final String STORM_MESSAGING_NETTY_BUFFER_SIZE = "storm.messaging.netty.buffer_size";
+
+    /**
+     * Netty based messaging: The netty write buffer high watermark in bytes.
+     * <p>
+     * If the number of bytes queued in the netty's write buffer exceeds this value, the netty {@code Channel.isWritable()}
+     * will start to return {@code false}. The client will wait until the value falls below the {@linkplain #STORM_MESSAGING_NETTY_BUFFER_LOW_WATERMARK low water mark}.
+     * </p>
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_BUFFER_HIGH_WATERMARK = "storm.messaging.netty.buffer.high.watermark";
+
+    /**
+     * Netty based messaging: The netty write buffer low watermark in bytes.
+     * <p>
+     * Once the number of bytes queued in the write buffer exceeded the {@linkplain #STORM_MESSAGING_NETTY_BUFFER_HIGH_WATERMARK high water mark} and then
+     * dropped down below this value, the netty {@code Channel.isWritable()} will start to return true.
+     * </p>
+     */
+    @isInteger
+    @isPositiveNumber
+    public static final String STORM_MESSAGING_NETTY_BUFFER_LOW_WATERMARK = "storm.messaging.netty.buffer.low.watermark";
 
     /**
      * Netty based messaging: Sets the backlog value to specify when the channel binds to a local address
@@ -1436,6 +1573,12 @@ public class Config extends HashMap<String, Object> {
     public static final String SUPERVISOR_RUN_WORKER_AS_USER = "supervisor.run.worker.as.user";
 
     /**
+     * max timeout for supervisor reported heartbeats when master gains leadership
+     */
+    @isInteger
+    public static final String SUPERVISOR_WORKER_HEARTBEATS_MAX_TIMEOUT_SECS = "supervisor.worker.heartbeats.max.timeout.secs";
+
+    /**
      * On some systems (windows for example) symlinks require special privileges that not everyone wants to
      * grant a headless user.  You can completely disable the use of symlinks by setting this config to true, but
      * by doing so you may also lose some features from storm.  For example the blobstore feature
@@ -1484,10 +1627,18 @@ public class Config extends HashMap<String, Object> {
     /**
      * A list of users that run the supervisors and should be authorized to interact with
      * nimbus as a supervisor would.  To use this set
-     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer
+     * nimbus.authorizer to org.apache.storm.security.auth.authorizer.SimpleACLAuthorizer.
      */
     @isStringList
     public static final String NIMBUS_SUPERVISOR_USERS = "nimbus.supervisor.users";
+
+    /**
+     * A list of users that nimbus runs as and should be authorized to interact with
+     * the supervisor as nimbus would. To use this set supervisor.authorizer to
+     * org.apache.storm.security.auth.authorizer.SupervisorSimpleACLAuthorizer.
+     */
+    @isStringList
+    public static final String NIMBUS_DAEMON_USERS = "nimbus.daemon.users";
 
     /**
      * A list of users that are cluster admins and can run any command.  To use this set
@@ -1525,7 +1676,8 @@ public class Config extends HashMap<String, Object> {
     /**
      * Impersonation user ACL config entries.
      */
-    @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class}, valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
+    @isMapEntryCustom(keyValidatorClasses = {ConfigValidation.StringValidator.class},
+            valueValidatorClasses = {ConfigValidation.ImpersonationAclUserEntryValidator.class})
     public static final String NIMBUS_IMPERSONATION_ACL = "nimbus.impersonation.acl";
 
     /**
@@ -1693,8 +1845,17 @@ public class Config extends HashMap<String, Object> {
     public static final String WORKER_HEARTBEAT_FREQUENCY_SECS = "worker.heartbeat.frequency.secs";
 
     /**
-     * How often a task should heartbeat its status to the master.
+     * How often executor metrics should report to master, used for RPC heartbeat mode.
      */
+    @isInteger
+    @isPositiveNumber
+    public static final String EXECUTOR_METRICS_FREQUENCY_SECS = "executor.metrics.frequency.secs";
+
+    /**
+     * How often a task should heartbeat its status to the master,
+     * deprecated for 2.0 RPC heartbeat reporting, see {@code EXECUTOR_METRICS_FREQUENCY_SECS }.
+     */
+    @Deprecated
     @isInteger
     @isPositiveNumber
     public static final String TASK_HEARTBEAT_FREQUENCY_SECS = "task.heartbeat.frequency.secs";
@@ -1757,6 +1918,27 @@ public class Config extends HashMap<String, Object> {
     @isPositiveNumber
     public static final String WORKER_BLOB_UPDATE_POLL_INTERVAL_SECS = "worker.blob.update.poll.interval.secs";
 
+    /**
+     * A specify Locale for daemon metrics reporter plugin.
+     * Use the specified IETF BCP 47 language tag string for a Locale.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_LOCALE = "storm.daemon.metrics.reporter.plugin.locale";
+
+    /**
+     * A specify rate-unit in TimeUnit to specify reporting frequency for daemon metrics reporter plugin.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_RATE_UNIT = "storm.daemon.metrics.reporter.plugin.rate.unit";
+
+    /**
+     * A specify duration-unit in TimeUnit to specify reporting window for daemon metrics reporter plugin.
+     */
+    @isString
+    public static final String STORM_DAEMON_METRICS_REPORTER_PLUGIN_DURATION_UNIT = "storm.daemon.metrics.reporter.plugin.duration.unit";
+
+
+
     public static void setClasspath(Map<String, Object> conf, String cp) {
         conf.put(Config.TOPOLOGY_CLASSPATH, cp);
     }
@@ -1765,11 +1947,11 @@ public class Config extends HashMap<String, Object> {
         setClasspath(this, cp);
     }
 
-    public static void setEnvironment(Map<String, Object> conf, Map env) {
+    public static void setEnvironment(Map<String, Object> conf, Map<String, Object> env) {
         conf.put(Config.TOPOLOGY_ENVIRONMENT, env);
     }
 
-    public void setEnvironment(Map env) {
+    public void setEnvironment(Map<String, Object> env) {
         setEnvironment(this, env);
     }
 
@@ -1867,7 +2049,7 @@ public class Config extends HashMap<String, Object> {
     }
 
     public static void registerMetricsConsumer(Map<String, Object> conf, Class klass, Object argument, long parallelismHint) {
-        HashMap m = new HashMap();
+        HashMap<String, Object> m = new HashMap<>();
         m.put("class", klass.getCanonicalName());
         m.put("parallelism.hint", parallelismHint);
         m.put("argument", argument);

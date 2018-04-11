@@ -40,21 +40,59 @@ import org.apache.storm.generated.WorkerTokenServiceType;
 import org.apache.storm.nimbus.NimbusInfo;
 
 public interface IStormClusterState {
-    public List<String> assignments(Runnable callback);
+    List<String> assignments(Runnable callback);
 
-    public Assignment assignmentInfo(String stormId, Runnable callback);
+    /**
+     * Get the assignment based on storm id from local backend.
+     * @param stormId topology id
+     * @param callback callback function
+     * @return {@link Assignment}
+     */
+    Assignment assignmentInfo(String stormId, Runnable callback);
 
-    public VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
+    /**
+     * Get the assignment based on storm id from remote state store, eg: ZK.
+     * @param stormId topology id
+     * @param callback callback function
+     * @return {@link Assignment}
+     */
+    Assignment remoteAssignmentInfo(String stormId, Runnable callback);
 
-    public Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
+    /**
+     * Get all the topologies assignments mapping stormId -> Assignment from local backend.
+     * @return stormId -> Assignment mapping
+     */
+    Map<String, Assignment> assignmentsInfo();
 
-    public List<String> blobstoreInfo(String blobKey);
+    /**
+     * Sync the remote state store assignments to local backend, used when master gains leadership, see
+     * {@link LeaderListenerCallback}
+     * @param remote assigned assignments for a specific {@link IStormClusterState} instance, usually a supervisor/node.
+     */
+    void syncRemoteAssignments(Map<String, byte[]> remote);
 
-    public List<NimbusSummary> nimbuses();
+    /**
+     * Flag to indicate if the assignments synced successfully, see {@link #syncRemoteAssignments(Map)}.
+     * @return true if is synced successfully
+     */
+    boolean isAssignmentsBackendSynchronized();
 
-    public void addNimbusHost(String nimbusId, NimbusSummary nimbusSummary);
+    /**
+     * Mark the assignments as synced successfully, see {@link #isAssignmentsBackendSynchronized()}
+     */
+    void setAssignmentsBackendSynchronized();
 
-    public List<String> activeStorms();
+    VersionedData<Assignment> assignmentInfoWithVersion(String stormId, Runnable callback);
+
+    Integer assignmentVersion(String stormId, Runnable callback) throws Exception;
+
+    List<String> blobstoreInfo(String blobKey);
+
+    List<NimbusSummary> nimbuses();
+
+    void addNimbusHost(String nimbusId, NimbusSummary nimbusSummary);
+
+    List<String> activeStorms();
 
     /**
      * Get a storm base for a topology
@@ -62,87 +100,117 @@ public interface IStormClusterState {
      * @param callback something to call if the data changes (best effort)
      * @return the StormBase or null if it is not alive.
      */
-    public StormBase stormBase(String stormId, Runnable callback);
+    StormBase stormBase(String stormId, Runnable callback);
 
-    public ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
+    /**
+     * Get storm id from passed name, null if the name doesn't exist on cluster.
+     * @param stormName storm name
+     * @return storm id
+     */
+    String stormId(String stormName);
 
-    public List<ProfileRequest> getWorkerProfileRequests(String stormId, NodeInfo nodeInfo);
+    /**
+     * Sync all the active storm ids of the cluster, used now when master gains leadership.
+     * @param ids stormName -> stormId mapping
+     */
+    void syncRemoteIds(Map<String, String> ids);
 
-    public List<ProfileRequest> getTopologyProfileRequests(String stormId);
+    ClusterWorkerHeartbeat getWorkerHeartbeat(String stormId, String node, Long port);
 
-    public void setWorkerProfileRequest(String stormId, ProfileRequest profileRequest);
+    List<ProfileRequest> getWorkerProfileRequests(String stormId, NodeInfo nodeInfo);
 
-    public void deleteTopologyProfileRequests(String stormId, ProfileRequest profileRequest);
+    List<ProfileRequest> getTopologyProfileRequests(String stormId);
 
-    public Map<ExecutorInfo, ExecutorBeat> executorBeats(String stormId, Map<List<Long>, NodeInfo> executorNodePort);
+    void setWorkerProfileRequest(String stormId, ProfileRequest profileRequest);
 
-    public List<String> supervisors(Runnable callback);
+    void deleteTopologyProfileRequests(String stormId, ProfileRequest profileRequest);
 
-    public SupervisorInfo supervisorInfo(String supervisorId); // returns nil if doesn't exist
+    Map<ExecutorInfo, ExecutorBeat> executorBeats(String stormId, Map<List<Long>, NodeInfo> executorNodePort);
 
-    public void setupHeatbeats(String stormId);
+    List<String> supervisors(Runnable callback);
 
-    public void teardownHeartbeats(String stormId);
+    SupervisorInfo supervisorInfo(String supervisorId); // returns nil if doesn't exist
 
-    public void teardownTopologyErrors(String stormId);
+    void setupHeatbeats(String stormId);
 
-    public List<String> heartbeatStorms();
+    void teardownHeartbeats(String stormId);
 
-    public List<String> errorTopologies();
+    void teardownTopologyErrors(String stormId);
 
-    public List<String> backpressureTopologies();
+    List<String> heartbeatStorms();
 
-    public void setTopologyLogConfig(String stormId, LogConfig logConfig);
+    List<String> errorTopologies();
 
-    public LogConfig topologyLogConfig(String stormId, Runnable cb);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    List<String> backpressureTopologies();
 
-    public void workerHeartbeat(String stormId, String node, Long port, ClusterWorkerHeartbeat info);
+    /**
+     * Get leader info from state store, which was written when a master gains leadership.
+     * <p>Caution: it can not be used for fencing and is only for informational purposes because we use ZK as our
+     * backend now, which could have a overdue info of nodes.
+     * @param callback callback func
+     * @return {@link NimbusInfo}
+     */
+    NimbusInfo getLeader(Runnable callback);
 
-    public void removeWorkerHeartbeat(String stormId, String node, Long port);
+    void setTopologyLogConfig(String stormId, LogConfig logConfig);
 
-    public void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
+    LogConfig topologyLogConfig(String stormId, Runnable cb);
 
-    public void workerBackpressure(String stormId, String node, Long port, long timestamp);
+    void workerHeartbeat(String stormId, String node, Long port, ClusterWorkerHeartbeat info);
 
-    public boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
+    void removeWorkerHeartbeat(String stormId, String node, Long port);
 
-    public void setupBackpressure(String stormId);
+    void supervisorHeartbeat(String supervisorId, SupervisorInfo info);
 
-    public void removeBackpressure(String stormId);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    boolean topologyBackpressure(String stormId, long timeoutMs, Runnable callback);
 
-    public void removeWorkerBackpressure(String stormId, String node, Long port);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void setupBackpressure(String stormId);
 
-    public void activateStorm(String stormId, StormBase stormBase);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void removeBackpressure(String stormId);
 
-    public void updateStorm(String stormId, StormBase newElems);
+    /** @deprecated: In Storm 2.0. Retained for enabling transition from 1.x. Will be removed soon. */
+    @Deprecated
+    void removeWorkerBackpressure(String stormId, String node, Long port);
 
-    public void removeStormBase(String stormId);
+    void activateStorm(String stormId, StormBase stormBase);
 
-    public void setAssignment(String stormId, Assignment info);
+    void updateStorm(String stormId, StormBase newElems);
 
-    public void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
+    void removeStormBase(String stormId);
 
-    public List<String> activeKeys();
+    void setAssignment(String stormId, Assignment info);
 
-    public List<String> blobstore(Runnable callback);
+    void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
 
-    public void removeStorm(String stormId);
+    List<String> activeKeys();
 
-    public void removeBlobstoreKey(String blobKey);
+    List<String> blobstore(Runnable callback);
 
-    public void removeKeyVersion(String blobKey);
+    void removeStorm(String stormId);
 
-    public void reportError(String stormId, String componentId, String node, Long port, Throwable error);
+    void removeBlobstoreKey(String blobKey);
 
-    public List<ErrorInfo> errors(String stormId, String componentId);
+    void removeKeyVersion(String blobKey);
 
-    public ErrorInfo lastError(String stormId, String componentId);
+    void reportError(String stormId, String componentId, String node, Long port, Throwable error);
 
-    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException;
+    List<ErrorInfo> errors(String stormId, String componentId);
 
-    public Credentials credentials(String stormId, Runnable callback);
+    ErrorInfo lastError(String stormId, String componentId);
 
-    public void disconnect();
+    void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException;
+
+    Credentials credentials(String stormId, Runnable callback);
+
+    void disconnect();
 
     /**
      * Get a private key used to validate a token is correct.
@@ -225,23 +293,7 @@ public interface IStormClusterState {
      * @return the id of the topology or null if it is not alive.
      */
     default Optional<String> getTopoId(final String topologyName) {
-        String ret = null;
-        for (String topoId: activeStorms()) {
-            StormBase base = stormBase(topoId, null);
-            if (base != null && topologyName.equals(base.get_name())) {
-                ret = topoId;
-                break;
-            }
-        }
-        return Optional.ofNullable(ret);
-    }
-    
-    default Map<String, Assignment> topologyAssignments() {
-        Map<String, Assignment> ret = new HashMap<>();
-        for (String topoId: assignments(null)) {
-            ret.put(topoId, assignmentInfo(topoId, null));
-        }
-        return ret;
+        return Optional.ofNullable(stormId(topologyName));
     }
     
     default Map<String, StormBase> topologyBases() {

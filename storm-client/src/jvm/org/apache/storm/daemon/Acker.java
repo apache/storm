@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -17,6 +17,7 @@
  */
 package org.apache.storm.daemon;
 
+import org.apache.storm.Constants;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.task.OutputCollector;
 import org.apache.storm.task.TopologyContext;
@@ -102,14 +103,16 @@ public class Acker implements IBolt {
             if (curr != null) {
                 pending.put(id, curr);
             } //else if it has not been added yet, there is no reason time it out later on
+        } else if (Constants.SYSTEM_FLUSH_STREAM_ID.equals(streamId)) {
+            collector.flush();
+            return;
         } else {
             LOG.warn("Unknown source stream {} from task-{}", streamId, input.getSourceTask());
             return;
         }
 
         int task = curr.spoutTask;
-        if (curr != null && task >= 0
-            && (curr.val == 0 || curr.failed || resetTimeout)) {
+        if (task >= 0  && (curr.val == 0 || curr.failed || resetTimeout)) {
             Values tuple = new Values(id, getTimeDeltaMillis(curr.startTime));
             if (curr.val == 0) {
                 pending.remove(id);

@@ -58,8 +58,8 @@ public class BinaryEventDataScheme implements IEventDataScheme {
 				throw new RuntimeException(e);
 			}
 		}
-		Map metaDataMap =  eventData.getProperties();
-		Map systemMetaDataMap = eventData.getSystemProperties();
+		Map<String, Object> metaDataMap =  eventData.getProperties();
+		Map<String, Object> systemMetaDataMap = eventData.getSystemProperties();
 		fieldContents.add(messageData);
 		fieldContents.add(metaDataMap);
 		fieldContents.add(systemMetaDataMap);

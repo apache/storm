@@ -36,6 +36,7 @@ import java.util.Set;
 
 import org.apache.storm.Config;
 import org.apache.storm.utils.Utils;
+import org.apache.storm.validation.ConfigValidationAnnotations.ValidatorParams;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,9 +46,11 @@ import org.slf4j.LoggerFactory;
 public class ConfigValidation {
     private static final Logger LOG = LoggerFactory.getLogger(ConfigValidation.class);
 
-    public static abstract class Validator {
+    public abstract static class Validator {
         public Validator(Map<String, Object> params) {}
+
         public Validator() {}
+
         public abstract void validateField(String name, Object o);
     }
 
@@ -56,7 +59,7 @@ public class ConfigValidation {
      */
 
     /**
-     * Validates if an object is not null
+     * Validates if an object is not null.
      */
 
     public static class NotNullValidator extends Validator {
@@ -70,7 +73,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates basic types
+     * Validates basic types.
      */
     public static class SimpleTypeValidator extends Validator {
 
@@ -92,7 +95,40 @@ public class ConfigValidation {
             if (type.isInstance(o)) {
                 return;
             }
-            throw new IllegalArgumentException("Field " + name + " must be of type " + type + ". Object: " + o + " actual type: " + o.getClass());
+            throw new IllegalArgumentException(
+                    "Field " + name + " must be of type " + type + ". Object: " + o + " actual type: " + o.getClass());
+        }
+    }
+
+    /**
+     * Checks if the named type derives from the specified Class
+     */
+    public static class DerivedTypeValidator extends Validator {
+
+        private Class<?> baseType;
+
+        public DerivedTypeValidator(Map<String, Object> params) {
+            this.baseType = (Class<?>) params.get(ValidatorParams.BASE_TYPE);
+        }
+
+        @Override
+        public void validateField(String name, Object actualTypeName) {
+            validateField(name, this.baseType, actualTypeName);
+        }
+
+        public static void validateField(String name, Class<?> baseType, Object actualTypeName) {
+            if (actualTypeName == null) {
+                return;
+            }
+            try {
+                Class<?> actualType = Class.forName(actualTypeName.toString());
+                if (baseType.isAssignableFrom(actualType)) {
+                    return;
+                }
+                throw new IllegalArgumentException("Field " + name + " must represent a type that derives from '" + baseType + "'. Specified type = " + actualTypeName);
+            } catch (ClassNotFoundException e) {
+                throw new IllegalArgumentException(e.getMessage());
+            }
         }
     }
 
@@ -104,9 +140,10 @@ public class ConfigValidation {
 
         public StringValidator(Map<String, Object> params) {
 
-            this.acceptedValues = new HashSet<String>(Arrays.asList((String[])params.get(ConfigValidationAnnotations.ValidatorParams.ACCEPTED_VALUES)));
+            this.acceptedValues =
+                    new HashSet<String>(Arrays.asList((String[])params.get(ConfigValidationAnnotations.ValidatorParams.ACCEPTED_VALUES)));
 
-            if(this.acceptedValues.isEmpty() || (this.acceptedValues.size() == 1 && this.acceptedValues.contains(""))) {
+            if (this.acceptedValues.isEmpty() || (this.acceptedValues.size() == 1 && this.acceptedValues.contains(""))) {
                 this.acceptedValues = null;
             }
         }
@@ -114,7 +151,7 @@ public class ConfigValidation {
         @Override
         public void validateField(String name, Object o) {
             SimpleTypeValidator.validateField(name, String.class, o);
-            if(this.acceptedValues != null) {
+            if (this.acceptedValues != null) {
                 if (!this.acceptedValues.contains((String) o)) {
                     throw new IllegalArgumentException("Field " + name + " is not an accepted value. Value: " + o + " Accepted values: " + this.acceptedValues);
                 }
@@ -161,8 +198,8 @@ public class ConfigValidation {
                 return;
             }
             final long i;
-            if (o instanceof Number &&
-                    (i = ((Number) o).longValue()) == ((Number) o).doubleValue()) {
+            if (o instanceof Number
+                    && (i = ((Number) o).longValue()) == ((Number) o).doubleValue()) {
                 if (i <= Integer.MAX_VALUE && i >= Integer.MIN_VALUE) {
                     return;
                 }
@@ -172,7 +209,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates an entry for ImpersonationAclUser
+     * Validates an entry for ImpersonationAclUser.
      */
     public static class ImpersonationAclUserEntryValidator extends Validator {
 
@@ -181,7 +218,8 @@ public class ConfigValidation {
             if (o == null) {
                 return;
             }
-            ConfigValidationUtils.NestableFieldValidator validator = ConfigValidationUtils.mapFv(ConfigValidationUtils.fv(String.class, false),
+            ConfigValidationUtils.NestableFieldValidator validator =
+                    ConfigValidationUtils.mapFv(ConfigValidationUtils.fv(String.class, false),
                     ConfigValidationUtils.listFv(String.class, false), false);
             validator.validateField(name, o);
             @SuppressWarnings("unchecked")
@@ -196,7 +234,7 @@ public class ConfigValidation {
     }
 
     /**
-     * validates a list of has no duplicates
+     * validates a list of has no duplicates.
      */
     public static class NoDuplicateInListValidator extends Validator {
 
@@ -218,7 +256,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates a String or a list of Strings
+     * Validates a String or a list of Strings.
      */
     public static class StringOrStringListValidator extends Validator {
 
@@ -236,7 +274,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates Kryo Registration
+     * Validates Kryo Registration.
      */
     public static class KryoRegValidator extends Validator {
 
@@ -250,8 +288,8 @@ public class ConfigValidation {
                 for (Object e : (Iterable<?>) o) {
                     if (e instanceof Map) {
                         for (Map.Entry<Object, Object> entry : ((Map<Object, Object>) e).entrySet()) {
-                            if (!(entry.getKey() instanceof String) ||
-                                    !(entry.getValue() instanceof String)) {
+                            if (!(entry.getKey() instanceof String)
+                                    || !(entry.getValue() instanceof String)) {
                                 throw new IllegalArgumentException(
                                         "Each element of the list " + name + " must be a String or a Map of Strings");
                             }
@@ -269,7 +307,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates if a number is a power of 2
+     * Validates if a number is a power of 2.
      */
     public static class PowerOf2Validator extends Validator {
 
@@ -279,8 +317,8 @@ public class ConfigValidation {
                 return;
             }
             final long i;
-            if (o instanceof Number &&
-                    (i = ((Number) o).longValue()) == ((Number) o).doubleValue()) {
+            if (o instanceof Number
+                    && (i = ((Number) o).longValue()) == ((Number) o).doubleValue()) {
                 // Test whether the integer is a power of 2.
                 if (i > 0 && (i & (i - 1)) == 0) {
                     return;
@@ -291,7 +329,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates each entry in a list
+     * Validates each entry in a list.
      */
     public static class ListEntryTypeValidator extends Validator {
 
@@ -313,10 +351,10 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates each entry in a list against a list of custom Validators
+     * Validates each entry in a list against a list of custom Validators.
      * Each validator in the list of validators must inherit or be an instance of Validator class
      */
-    public static class ListEntryCustomValidator extends Validator{
+    public static class ListEntryCustomValidator extends Validator {
 
         private Class<?>[] entryValidators;
 
@@ -333,7 +371,8 @@ public class ConfigValidation {
             }
         }
 
-        public static void validateField(String name, Class<?>[] validators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        public static void validateField(String name, Class<?>[] validators, Object o)
+                throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
             if (o == null) {
                 return;
             }
@@ -353,9 +392,9 @@ public class ConfigValidation {
     }
 
     /**
-     * validates each key and value in a map of a certain type
+     * validates each key and value in a map of a certain type.
      */
-    public static class MapEntryTypeValidator extends Validator{
+    public static class MapEntryTypeValidator extends Validator {
 
         private Class<?> keyType;
         private Class<?> valueType;
@@ -377,9 +416,9 @@ public class ConfigValidation {
     }
 
     /**
-     * validates each key and each value against the respective arrays of validators
+     * validates each key and each value against the respective arrays of validators.
      */
-    public static class MapEntryCustomValidator extends Validator{
+    public static class MapEntryCustomValidator extends Validator {
 
         private Class<?>[] keyValidators;
         private Class<?>[] valueValidators;
@@ -399,7 +438,8 @@ public class ConfigValidation {
         }
 
         @SuppressWarnings("unchecked")
-        public static void validateField(String name, Class<?>[] keyValidators, Class<?>[] valueValidators, Object o) throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
+        public static void validateField(String name, Class<?>[] keyValidators, Class<?>[] valueValidators, Object o)
+                throws IllegalAccessException, InstantiationException, NoSuchMethodException, InvocationTargetException {
             if (o == null) {
                 return;
             }
@@ -427,9 +467,9 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates a positive number
+     * Validates a positive number.
      */
-    public static class PositiveNumberValidator extends Validator{
+    public static class PositiveNumberValidator extends Validator {
 
         private boolean includeZero;
 
@@ -451,7 +491,7 @@ public class ConfigValidation {
                 return;
             }
             if (o instanceof Number) {
-                if(includeZero) {
+                if (includeZero) {
                     if (((Number) o).doubleValue() >= 0.0) {
                         return;
                     }
@@ -485,14 +525,14 @@ public class ConfigValidation {
 
         @Override
         public void validateField(String name, Object o) {
-            if(o == null) {
+            if (o == null) {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if(!((Map<?, ?>) o).containsKey("class") ) {
-                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            if (!((Map<?, ?>) o).containsKey("class")) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
             }
-            if(!((Map<?, ?>) o).containsKey("parallelism.hint") ) {
+            if (!((Map<?, ?>) o).containsKey("parallelism.hint")) {
                 throw new IllegalArgumentException("Field " + name + " must have map entry with key: parallelism.hint");
             }
 
@@ -501,21 +541,65 @@ public class ConfigValidation {
         }
     }
 
+    public static class MetricReportersValidator extends Validator {
+        private static final String NIMBUS = "nimbus";
+        private static final String SUPERVISOR = "supervisor";
+        private static final String WORKER = "worker";
+        private static final String CLASS = "class";
+        private static final String FILTER = "filter";
+        private static final String DAEMONS = "daemons";
+
+        @Override
+        public void validateField(String name, Object o) {
+            if (o == null) {
+                return;
+            }
+            SimpleTypeValidator.validateField(name, Map.class, o);
+            if (!((Map) o).containsKey(CLASS)) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
+            }
+            if (!((Map) o).containsKey(DAEMONS)) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: daemons");
+            } else {
+                // daemons can only be 'nimbus', 'supervisor', or 'worker'
+                Object list = ((Map)o).get(DAEMONS);
+                if (!(list instanceof List)) {
+                    throw new IllegalArgumentException("Field 'daemons' must be a non-null list.");
+                }
+                List daemonList = (List)list;
+                for (Object string : daemonList) {
+                    if (string instanceof String
+                            && (string.equals(NIMBUS) || string.equals(SUPERVISOR) || string.equals(WORKER))) {
+                        continue;
+                    }
+                    throw new IllegalArgumentException("Field 'daemons' must contain at least one of the following:"
+                            + " \"nimbus\", \"supervisor\", or \"worker\"");
+                }
+
+            }
+            if (((Map)o).containsKey(FILTER)) {
+                Map filterMap = (Map)((Map)o).get(FILTER);
+                SimpleTypeValidator.validateField(CLASS, String.class, filterMap.get(CLASS));
+            }
+            SimpleTypeValidator.validateField(name, String.class, ((Map) o).get(CLASS));
+        }
+    }
+
     public static class EventLoggerRegistryValidator extends Validator {
 
         @Override
         public void validateField(String name, Object o) {
-            if(o == null) {
+            if (o == null) {
                 return;
             }
             SimpleTypeValidator.validateField(name, Map.class, o);
-            if(!((Map<?, ?>) o).containsKey("class") ) {
-                throw new IllegalArgumentException( "Field " + name + " must have map entry with key: class");
+            if (!((Map<?, ?>) o).containsKey("class")) {
+                throw new IllegalArgumentException("Field " + name + " must have map entry with key: class");
             }
 
             SimpleTypeValidator.validateField(name, String.class, ((Map<?, ?>) o).get("class"));
 
-            if(((Map<?, ?>) o).containsKey("arguments") ) {
+            if (((Map<?, ?>) o).containsKey("arguments")) {
                 SimpleTypeValidator.validateField(name, Map.class, ((Map<?, ?>) o).get("arguments"));
             }
         }
@@ -537,10 +621,9 @@ public class ConfigValidation {
                 throw new IllegalArgumentException("Field " + name + " must be set.");
             }
 
-            if (o instanceof String &&
-                    (((String) o).equals("NONE") ||
-                            ((String) o).equals("DIGEST") ||
-                            ((String) o).equals("KERBEROS"))) {
+            if (o instanceof String
+                    && (((String) o).equals("NONE") || ((String) o).equals("DIGEST")
+                    || ((String) o).equals("KERBEROS"))) {
                 return;
             }
             throw new IllegalArgumentException("Field " + name + " must be one of \"NONE\", \"DIGEST\", or \"KERBEROS\"");
@@ -651,9 +734,9 @@ public class ConfigValidation {
 
     private static List<Class<?>> configClasses = null;
     //We follow the model of service loaders (Even though it is not a service).
-    private static final String CONFIG_CLASSES_NAME = "META-INF/services/"+Validated.class.getName();
+    private static final String CONFIG_CLASSES_NAME = "META-INF/services/" + Validated.class.getName();
     
-    private synchronized static List<Class<?>> getConfigClasses() {
+    private static synchronized List<Class<?>> getConfigClasses() {
         if (configClasses == null) {
             List<Class<?>> ret = new ArrayList<>();
             Set<String> classesToScan = new HashSet<>();
@@ -662,7 +745,7 @@ public class ConfigValidation {
                 try {
                     try (BufferedReader in = new BufferedReader(new InputStreamReader(url.openStream()))) {
                         String line;
-                        while((line = in.readLine()) != null) {
+                        while ((line = in.readLine()) != null) {
                             line = line.replaceAll("#.*$", "").trim();
                             if (!line.isEmpty()) {
                                 classesToScan.add(line);
@@ -687,7 +770,7 @@ public class ConfigValidation {
     }
 
     /**
-     * Validates a field given field name as string
+     * Validates a field given field name as string.
      *
      * @param fieldName   provided as a string
      * @param conf        map of confs
@@ -750,9 +833,7 @@ public class ConfigValidation {
                     //If validator has a constructor that takes a Map as an argument call that constructor
                     if (hasConstructor(clazz, Map.class)) {
                         o = clazz.getConstructor(Map.class).newInstance(params);
-                    }
-                    //If not call default constructor
-                    else {
+                    } else { //If not call default constructor
                         o = clazz.newInstance();
                     }
                     o.validateField(field.getName(), conf.get(key));
@@ -764,7 +845,7 @@ public class ConfigValidation {
     }
     
     /**
-     * Validate all confs in map
+     * Validate all confs in map.
      *
      * @param conf map of configs
      */
@@ -778,15 +859,15 @@ public class ConfigValidation {
     private static final int ACC_STATIC = 0x0008;
     private static final int ACC_FINAL  = 0x0010;
     private static final int DESIRED_FIELD_ACC = ACC_PUBLIC | ACC_STATIC | ACC_FINAL;
+
     public static boolean isFieldAllowed(Field field) {
-        return field.getAnnotation(NotConf.class) == null &&
-                String.class.equals(field.getType()) &&
-                ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) &&
-                !field.isSynthetic();
+        return field.getAnnotation(NotConf.class) == null
+                && String.class.equals(field.getType())
+                && ((field.getModifiers() & DESIRED_FIELD_ACC) == DESIRED_FIELD_ACC) && !field.isSynthetic();
     }
     
     /**
-     * Validate all confs in map
+     * Validate all confs in map.
      *
      * @param conf        map of configs
      * @param classes config class
@@ -815,9 +896,10 @@ public class ConfigValidation {
         }
     }
 
-    private static Map<String,Object> getParamsFromAnnotation(Class<?> validatorClass, Object v) throws InvocationTargetException, IllegalAccessException {
+    private static Map<String,Object> getParamsFromAnnotation(Class<?> validatorClass, Object v)
+            throws InvocationTargetException, IllegalAccessException {
         Map<String, Object> params = new HashMap<String, Object>();
-        for(Method method : validatorClass.getDeclaredMethods()) {
+        for (Method method : validatorClass.getDeclaredMethods()) {
 
             Object value = null;
             try {
@@ -825,7 +907,7 @@ public class ConfigValidation {
             } catch (IllegalArgumentException ex) {
                 value = null;
             }
-            if(value != null) {
+            if (value != null) {
                 params.put(method.getName(), value);
             }
         }

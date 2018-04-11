@@ -181,6 +181,11 @@ public abstract class AbstractTridentWindowManager<T> implements ITridentWindowM
         }
 
         @Override
+        public void flush() {
+            // NO-OP
+        }
+
+        @Override
         public void reportError(Throwable t) {
             delegateCollector.reportError(t);
         }

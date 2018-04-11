@@ -65,7 +65,7 @@ public abstract class AbstractJdbcBolt extends BaseTickTupleAwareRichBolt {
      * {@inheritDoc}
      */
     @Override
-    public void prepare(final Map map, final TopologyContext topologyContext,
+    public void prepare(final Map<String, Object> map, final TopologyContext topologyContext,
                         final OutputCollector outputCollector) {
         this.collector = outputCollector;
 

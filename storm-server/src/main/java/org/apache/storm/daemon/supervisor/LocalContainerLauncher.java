@@ -30,17 +30,20 @@ import org.apache.storm.utils.LocalState;
 public class LocalContainerLauncher extends ContainerLauncher {
     private final Map<String, Object> _conf;
     private final String _supervisorId;
+    private final int _supervisorPort;
     private final IContext _sharedContext;
 
-    public LocalContainerLauncher(Map<String, Object> conf, String supervisorId, IContext sharedContext) {
+    public LocalContainerLauncher(Map<String, Object> conf, String supervisorId, int supervisorPort,
+        IContext sharedContext) {
         _conf = conf;
         _supervisorId = supervisorId;
+        _supervisorPort = supervisorPort;
         _sharedContext = sharedContext;
     }
 
     @Override
     public Container launchContainer(int port, LocalAssignment assignment, LocalState state) throws IOException {
-        LocalContainer ret = new LocalContainer(_conf, _supervisorId, port, assignment, _sharedContext);
+        LocalContainer ret = new LocalContainer(_conf, _supervisorId, _supervisorPort, port, assignment, _sharedContext);
         ret.setup();
         ret.launch();
         return ret;

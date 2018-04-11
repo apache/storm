@@ -159,7 +159,7 @@ public class EventHubSpout extends BaseRichSpout {
     context.registerMetric("EventHubReceiver", new IMetric() {
       @Override
       public Object getValueAndReset() {
-          Map concatMetricsDataMaps = new HashMap();
+          Map<String, Object> concatMetricsDataMaps = new HashMap<>();
           for (IPartitionManager partitionManager : 
             partitionCoordinator.getMyPartitionManagers()) {
             concatMetricsDataMaps.putAll(partitionManager.getMetricsData());

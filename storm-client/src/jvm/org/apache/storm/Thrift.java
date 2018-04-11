@@ -15,45 +15,43 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm;
 
-import org.apache.storm.generated.Bolt;
-import org.apache.storm.generated.JavaObjectArg;
-import org.apache.storm.generated.SpoutSpec;
-import org.apache.storm.generated.StateSpoutSpec;
-import org.apache.storm.generated.StreamInfo;
-
+import java.io.Serializable;
 import java.lang.reflect.Constructor;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.HashMap;
-import java.io.Serializable;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.apache.storm.generated.JavaObject;
+import org.apache.storm.generated.Bolt;
+import org.apache.storm.generated.ComponentCommon;
+import org.apache.storm.generated.ComponentObject;
+import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
+import org.apache.storm.generated.JavaObject;
+import org.apache.storm.generated.JavaObjectArg;
+import org.apache.storm.generated.NullStruct;
+import org.apache.storm.generated.SpoutSpec;
+import org.apache.storm.generated.StateSpoutSpec;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.StormTopology._Fields;
-import org.apache.storm.generated.ComponentCommon;
-import org.apache.storm.generated.NullStruct;
-import org.apache.storm.generated.GlobalStreamId;
-import org.apache.storm.generated.ComponentObject;
-
+import org.apache.storm.generated.StreamInfo;
 import org.apache.storm.task.IBolt;
 import org.apache.storm.topology.BoltDeclarer;
-import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IBasicBolt;
+import org.apache.storm.topology.IRichBolt;
 import org.apache.storm.topology.IRichSpout;
 import org.apache.storm.topology.SpoutDeclarer;
+import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.utils.Utils;
 import org.json.simple.JSONValue;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import org.apache.storm.topology.TopologyBuilder;
 
 public class Thrift {
     private static Logger LOG = LoggerFactory.getLogger(Thrift.class);
@@ -94,7 +92,7 @@ public class Thrift {
             return parallelism;
         }
 
-        public Map getConf() {
+        public Map<String, Object> getConf() {
             return conf;
         }
     }
@@ -117,7 +115,7 @@ public class Thrift {
             return bolt;
         }
 
-        public Map getConf() {
+        public Map<String, Object> getConf() {
             return conf;
         }
 
@@ -328,19 +326,19 @@ public class Thrift {
     public static StormTopology buildTopology(Map<String, SpoutDetails> spoutMap, Map<String, BoltDetails> boltMap) {
         TopologyBuilder builder = new TopologyBuilder();
         for (Entry<String, SpoutDetails> entry : spoutMap.entrySet()) {
-            String spoutID = entry.getKey();
+            String spoutId = entry.getKey();
             SpoutDetails spec = entry.getValue();
-            SpoutDeclarer spoutDeclarer = builder.setSpout(spoutID, spec.getSpout(), spec.getParallelism());
+            SpoutDeclarer spoutDeclarer = builder.setSpout(spoutId, spec.getSpout(), spec.getParallelism());
             spoutDeclarer.addConfigurations(spec.getConf());
         }
         for (Entry<String, BoltDetails> entry : boltMap.entrySet()) {
-            String spoutID = entry.getKey();
+            String spoutId = entry.getKey();
             BoltDetails spec = entry.getValue();
             BoltDeclarer boltDeclarer = null;
             if (spec.bolt instanceof IRichBolt) {
-                boltDeclarer = builder.setBolt(spoutID, (IRichBolt)spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IRichBolt)spec.getBolt(), spec.getParallelism());
             } else {
-                boltDeclarer = builder.setBolt(spoutID, (IBasicBolt)spec.getBolt(), spec.getParallelism());
+                boltDeclarer = builder.setBolt(spoutId, (IBasicBolt)spec.getBolt(), spec.getParallelism());
             }
             boltDeclarer.addConfigurations(spec.getConf());
             addInputs(boltDeclarer, spec.getInputs());

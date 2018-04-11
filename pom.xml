@@ -210,6 +210,16 @@
             </roles>
             <timezone>-8</timezone>
         </developer>
+        <developer>
+            <id>roshannaik</id>
+            <name>Roshan Naik</name>
+            <email>roshannaik@apache.org</email>
+            <roles>
+                <role>Committer</role>
+            </roles>
+            <timezone>-8</timezone>
+        </developer>
+
     </developers>
 
 
@@ -247,7 +257,7 @@
         <commons-codec.version>1.6</commons-codec.version>
         <commons-cli.version>1.3.1</commons-cli.version>
         <clj-time.version>0.8.0</clj-time.version>
-        <curator.version>4.0.0</curator.version>
+        <curator.version>4.0.1</curator.version>
         <curator-test.version>2.12.0</curator-test.version>
         <json-simple.version>1.1</json-simple.version>
         <ring.version>1.6.2</ring.version>
@@ -259,6 +269,7 @@
         <snakeyaml.version>1.11</snakeyaml.version>
         <httpclient.version>4.3.3</httpclient.version>
         <clojure.tools.cli.version>0.2.4</clojure.tools.cli.version>
+        <jctools.version>2.0.1</jctools.version>
         <disruptor.version>3.3.2</disruptor.version>
         <jgrapht.version>0.9.0</jgrapht.version>
         <guava.version>16.0.1</guava.version>
@@ -298,7 +309,7 @@
         <jedis.version>2.9.0</jedis.version>
         <rocketmq.version>4.0.0-incubating</rocketmq.version>
 
-        <jackson.version>2.9.2</jackson.version>
+        <jackson.version>2.9.4</jackson.version>
         <!-- Kafka version used by old storm-kafka spout code -->
         <storm.kafka.version>0.8.2.2</storm.kafka.version>
         <storm.kafka.artifact.id>kafka_2.10</storm.kafka.artifact.id>
@@ -319,7 +330,7 @@
         <wagonVersion>1.0</wagonVersion>
         <azure-eventhubs.version>0.13.1</azure-eventhubs.version>
         <jersey.version>2.24.1</jersey.version>
-        <dropwizard.version>1.1.2</dropwizard.version>
+        <dropwizard.version>1.3.0</dropwizard.version>
         <j2html.version>1.0.0</j2html.version>
         <jool.version>0.9.12</jool.version>
         <caffeine.version>2.3.5</caffeine.version>
@@ -364,6 +375,7 @@
         <module>external/storm-mqtt</module>
         <module>external/storm-mongodb</module>
         <module>external/storm-kafka-client</module>
+        <module>external/storm-kafka-migration</module>
         <module>external/storm-opentsdb</module>
         <module>external/storm-kafka-monitor</module>
         <module>external/storm-kinesis</module>
@@ -779,6 +791,13 @@
                 <groupId>org.apache.curator</groupId>
                 <artifactId>curator-client</artifactId>
                 <version>${curator.version}</version>
+                <exclusions>
+                    <!-- Curator depends on Zookeeper 3.5.x, since it is still in beta we should exclude it and depend on Zookeeper 3.4.x.-->
+                    <exclusion>
+                        <groupId>org.apache.zookeeper</groupId>
+                        <artifactId>zookeeper</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>org.apache.curator</groupId>
@@ -876,6 +895,11 @@
                 <version>${clojure.tools.cli.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jctools</groupId>
+                <artifactId>jctools-core</artifactId>
+                <version>${jctools.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.lmax</groupId>
                 <artifactId>disruptor</artifactId>
                 <version>${disruptor.version}</version>
@@ -890,12 +914,12 @@
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
             </dependency>
-            <dependency>
-                <groupId>com.google.auto.service</groupId>
-                <artifactId>auto-service</artifactId>
-                <version>${auto-service.version}</version>
-                <optional>true</optional>
-            </dependency>
+                <dependency>
+                    <groupId>com.google.auto.service</groupId>
+                    <artifactId>auto-service</artifactId>
+                    <version>${auto-service.version}</version>
+                    <optional>true</optional>
+                </dependency>
             <dependency>
                 <groupId>org.apache.logging.log4j</groupId>
                 <artifactId>log4j-api</artifactId>
@@ -929,6 +953,16 @@
             <dependency>
                 <groupId>io.dropwizard.metrics</groupId>
                 <artifactId>metrics-core</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-ganglia</artifactId>
+                <version>${metrics.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.dropwizard.metrics</groupId>
+                <artifactId>metrics-graphite</artifactId>
                 <version>${metrics.version}</version>
             </dependency>
             <dependency>
@@ -1094,7 +1128,7 @@
                         <includes>
                             <include>${java.unit.test.include}</include>
                         </includes>
-                        <argLine>-Xmx1536m</argLine>
+                        <argLine>-Xmx3g -XX:+HeapDumpOnOutOfMemoryError</argLine>
                         <trimStackTrace>false</trimStackTrace>
                         <forkCount>1.0C</forkCount>
                         <reuseForks>true</reuseForks>

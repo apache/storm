@@ -51,7 +51,7 @@ import static org.junit.Assert.fail;
  * Unit tests for {@link WindowedBoltExecutor}
  */
 public class WindowedBoltExecutorTest {
-    
+
     private WindowedBoltExecutor executor;
     private TestWindowedBolt testWindowedBolt;
 
@@ -77,8 +77,8 @@ public class WindowedBoltExecutorTest {
         };
     }
 
-    private Tuple getTuple(String streamId, final Fields fields, Values values) {
-        return new TupleImpl(getContext(fields), values, 1, streamId) {
+    private Tuple getTuple(String streamId, final Fields fields, Values values, String srcComponent) {
+        return new TupleImpl(getContext(fields), values, srcComponent, 1, streamId) {
             @Override
             public GlobalStreamId getSourceGlobalStreamId() {
                 return new GlobalStreamId("s1", "default");
@@ -118,14 +118,14 @@ public class WindowedBoltExecutorTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void testExecuteWithoutTs() throws Exception {
-        executor.execute(getTuple("s1", new Fields("a"), new Values(1)));
+        executor.execute(getTuple("s1", new Fields("a"), new Values(1), "s1Src"));
     }
 
     @Test
     public void testExecuteWithTs() throws Exception {
         long[] timestamps = {603, 605, 607, 618, 626, 636};
         for (long ts : timestamps) {
-            executor.execute(getTuple("s1", new Fields("ts"), new Values(ts)));
+            executor.execute(getTuple("s1", new Fields("ts"), new Values(ts), "s1Src"));
         }
         //Thread.sleep(120);
         executor.waterMarkEventGenerator.run();
@@ -216,13 +216,13 @@ public class WindowedBoltExecutorTest {
         List<Tuple> tuples = new ArrayList<>(timestamps.length);
 
         for (long ts : timestamps) {
-            Tuple tuple = getTuple("s1", new Fields("ts"), new Values(ts));
+            Tuple tuple = getTuple("s1", new Fields("ts"), new Values(ts), "s1Src");
             tuples.add(tuple);
             executor.execute(tuple);
-            
+
             //Update the watermark to this timestamp
             executor.waterMarkEventGenerator.run();
-        } 
+        }
         System.out.println(testWindowedBolt.tupleWindows);
         Tuple tuple = tuples.get(tuples.size() - 1);
         Mockito.verify(outputCollector).emit("$late", Arrays.asList(tuple), new Values(tuple));

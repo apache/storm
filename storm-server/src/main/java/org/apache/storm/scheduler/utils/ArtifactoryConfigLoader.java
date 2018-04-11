@@ -71,7 +71,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
     private String baseDirectory = DEFAULT_ARTIFACTORY_BASE_DIRECTORY;
     private int lastReturnedTime = 0;
     private int timeoutSeconds = DEFAULT_TIMEOUT_SECS;
-    private Map lastReturnedValue;
+    private Map<String, Object> lastReturnedValue;
     private URI targetURI = null;
     private JSONParser jsonParser;
     private String scheme;
@@ -110,7 +110,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
      * @return The scheduler configuration if exists; null otherwise.
      */
     @Override
-    public Map load(String configKey) {
+    public Map<String, Object> load(String configKey) {
         if (targetURI == null) {
             return null;
         }
@@ -120,13 +120,13 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         if (lastReturnedValue != null && ((currentTimeSecs - lastReturnedTime) < artifactoryPollTimeSecs)) {
             LOG.debug("currentTimeSecs: {}; lastReturnedTime {}; artifactoryPollTimeSecs: {}. Returning our last map.",
                     currentTimeSecs, lastReturnedTime, artifactoryPollTimeSecs);
-            return (Map) lastReturnedValue.get(configKey);
+            return (Map<String, Object>) lastReturnedValue.get(configKey);
         }
 
         try {
-            Map raw = loadFromURI(targetURI);
+            Map<String, Object> raw = loadFromURI(targetURI);
             if (raw != null) {
-                return (Map) raw.get(configKey);
+                return (Map<String, Object>) raw.get(configKey);
             }
         } catch (Exception e) {
             LOG.error("Failed to load from uri {}", targetURI);
@@ -284,11 +284,11 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         lastReturnedValue = ret;
     }
 
-    private Map loadFromFile(File file) {
-        Map ret = null;
+    private Map<String, Object> loadFromFile(File file) {
+        Map<String, Object> ret = null;
 
         try {
-            ret = (Map) Utils.readYamlFile(file.getCanonicalPath());
+            ret = (Map<String, Object>) Utils.readYamlFile(file.getCanonicalPath());
         } catch (IOException e) {
             LOG.error("Filed to load from file. Exception: {}", e.getMessage());
         }
@@ -305,7 +305,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         return null;
     }
 
-    private Map getLatestFromCache() {
+    private Map<String, Object> getLatestFromCache() {
         String localFileName = localCacheDir + File.separator + cacheFilename;
         return loadFromFile(new File(localFileName));
     }
@@ -348,7 +348,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
         cacheInitialized = true;
     }
 
-    private Map loadFromURI(URI uri) throws IOException {
+    private Map<String, Object> loadFromURI(URI uri) throws IOException {
         String host = uri.getHost();
         Integer port = uri.getPort();
         String location = uri.getPath();
@@ -365,7 +365,7 @@ public class ArtifactoryConfigLoader implements IConfigLoader {
 
         // If we failed to get anything from Artifactory try to get it from our local cache
         if (yamlConfig == null) {
-            Map ret = getLatestFromCache();
+            Map<String, Object> ret = getLatestFromCache();
             updateLastReturned(ret);
             return ret;
         }

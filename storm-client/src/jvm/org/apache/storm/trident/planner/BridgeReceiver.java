@@ -34,5 +34,9 @@ public class BridgeReceiver implements TupleReceiver {
     public void execute(ProcessorContext context, String streamId, TridentTuple tuple) {
         _collector.emit(streamId, new ConsList(context.batchId, tuple));
     }
-    
+
+    @Override
+    public void flush() {
+        _collector.flush();
+    }
 }

@@ -111,13 +111,13 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
 
             if(_savedCoordinatorMeta==null || !_savedCoordinatorMeta.equals(coordinatorMeta)) {
                 _partitionStates.clear();
-                final List<ISpoutPartition> taskPartitions = _emitter.getPartitionsForTask(_index, _numTasks, coordinatorMeta);
+                final List<ISpoutPartition> sortedPartitions = _emitter.getOrderedPartitions(coordinatorMeta);
+                final List<ISpoutPartition> taskPartitions = _emitter.getPartitionsForTask(_index, _numTasks, sortedPartitions);
                 for (ISpoutPartition partition : taskPartitions) {
                     _partitionStates.put(partition.getId(), new EmitterPartitionState(new RotatingTransactionalState(_state, partition.getId()), partition));
                 }
+                _emitter.refreshPartitions(taskPartitions);
 
-                // refresh all partitions for backwards compatibility with old spout
-                _emitter.refreshPartitions(_emitter.getOrderedPartitions(coordinatorMeta));
                 _savedCoordinatorMeta = coordinatorMeta;
                 _changedMeta = true;
             }
@@ -137,7 +137,9 @@ public class OpaquePartitionedTridentSpoutExecutor implements ICommitterTridentS
                 EmitterPartitionState s = e.getValue();
                 s.rotatingState.removeState(tx.getTransactionId());
                 Object lastMeta = prevCached.get(id);
-                if(lastMeta==null) lastMeta = s.rotatingState.getLastState();
+                if(lastMeta==null) {
+                    lastMeta = s.rotatingState.getLastState();
+                }
                 Object meta = _emitter.emitPartitionBatch(tx, collector, s.partition, lastMeta);
                 metas.put(id, meta);
             }

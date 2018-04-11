@@ -74,7 +74,7 @@ public class JdbcInsertBolt extends AbstractJdbcBolt {
     }
 
     @Override
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector collector) {
+    public void prepare(Map<String, Object> map, TopologyContext topologyContext, OutputCollector collector) {
         super.prepare(map, topologyContext, collector);
         if(StringUtils.isBlank(tableName) && StringUtils.isBlank(insertQuery)) {
             throw new IllegalArgumentException("You must supply either a tableName or an insert Query.");

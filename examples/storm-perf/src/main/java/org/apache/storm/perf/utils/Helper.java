@@ -70,11 +70,12 @@ public class Helper {
 
     /** Kill topo on Ctrl-C */
     public static void setupShutdownHook(final String topoName) {
-        Map clusterConf = Utils.readStormConfig();
+        Map<String, Object> clusterConf = Utils.readStormConfig();
         final Nimbus.Iface client = NimbusClient.getConfiguredClient(clusterConf).getClient();
         Runtime.getRuntime().addShutdownHook(new Thread() {
             public void run() {
                 try {
+                    System.out.println("Killing...");
                     Helper.kill(client, topoName);
                     System.out.println("Killed Topology");
                 } catch (Exception e) {
@@ -84,7 +85,8 @@ public class Helper {
         });
     }
 
-    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology) throws Exception {
+    public static void runOnClusterAndPrintMetrics(int durationSec, String topoName, Map<String, Object> topoConf, StormTopology topology)
+             throws Exception {
         // submit topology
         StormSubmitter.submitTopologyWithProgressBar(topoName, topoConf, topology);
         setupShutdownHook(topoName); // handle Ctrl-C

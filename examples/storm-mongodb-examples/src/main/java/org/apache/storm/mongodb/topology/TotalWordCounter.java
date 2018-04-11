@@ -37,7 +37,6 @@ public class TotalWordCounter implements IBasicBolt {
     private BigInteger total = BigInteger.ZERO;
     private static final Logger LOG = LoggerFactory.getLogger(TotalWordCounter.class);
     private static final Random RANDOM = new Random();
-    @SuppressWarnings("rawtypes")
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 

@@ -32,6 +32,10 @@ public class SupervisorDetails {
 
     private final String id;
     /**
+     * thrift server of this supervisor.
+     */
+    private final Integer serverPort;
+    /**
      * hostname of this supervisor.
      */
     private final String host;
@@ -52,16 +56,18 @@ public class SupervisorDetails {
     /**
      * Create the details of a new supervisor.
      * @param id the ID as reported by the supervisor.
+     * @param serverPort the thrift server for the supervisor.
      * @param host the host the supervisor is on.
      * @param meta meta data reported by the supervisor (should be a collection of the ports on the supervisor).
      * @param schedulerMeta Not used and can probably be removed.
      * @param allPorts all of the ports for the supervisor (a better version of meta)
      * @param totalResources all of the resources for this supervisor.
      */
-    public SupervisorDetails(String id, String host, Object meta, Object schedulerMeta,
+    public SupervisorDetails(String id, Integer serverPort, String host, Object meta, Object schedulerMeta,
                              Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
 
         this.id = id;
+        this.serverPort = serverPort;
         this.host = host;
         this.meta = meta;
         this.schedulerMeta = schedulerMeta;
@@ -75,24 +81,29 @@ public class SupervisorDetails {
     }
 
     public SupervisorDetails(String id, Object meta) {
-        this(id, null, meta, null, null, null);
+        this(id, null, null, meta, null, null, null);
     }
 
     public SupervisorDetails(String id, Object meta, Map<String, Double> totalResources) {
-        this(id, null, meta, null, null, totalResources);
+        this(id, null, null, meta, null, null, totalResources);
     }
 
     public SupervisorDetails(String id, Object meta, Collection<? extends Number> allPorts) {
-        this(id, null, meta, null, allPorts, null);
+        this(id, null, null, meta, null, allPorts, null);
     }
 
     public SupervisorDetails(String id, String host, Object schedulerMeta, Collection<? extends Number> allPorts) {
-        this(id, host, null, schedulerMeta, allPorts, null);
+        this(id, null, host, null, schedulerMeta, allPorts, null);
     }
 
     public SupervisorDetails(String id, String host, Object schedulerMeta,
                              Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
-        this(id, host, null, schedulerMeta, allPorts, totalResources);
+        this(id, null, host, null, schedulerMeta, allPorts, totalResources);
+    }
+
+    public SupervisorDetails(String id, int serverPort, String host, Object schedulerMeta,
+                             Collection<? extends Number> allPorts, Map<String, Double> totalResources) {
+        this(id, serverPort, host, null, schedulerMeta, allPorts, totalResources);
     }
     
     @Override
@@ -112,6 +123,10 @@ public class SupervisorDetails {
 
     public String getId() {
         return id;
+    }
+
+    public int getServerPort() {
+        return serverPort;
     }
 
     public String getHost() {

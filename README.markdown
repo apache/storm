@@ -94,7 +94,7 @@ under the License.
 * Michael G. Noll ([@miguno](https://github.com/miguno))
 * Kishor Patil ([@kishorvpatil](https://github.com/kishorvpatil))
 * Sriharsha Chintalapani([@harshach](https://github.com/harshach))
-* Sean Zhong ([@clockfly] (http://github.com/clockfly))
+* Sean Zhong ([@clockfly](http://github.com/clockfly))
 * Kyle Nusbaum ([@knusbaum](https://github.com/knusbaum))
 * Parth Brahmbhatt ([@Parth-Brahmbhatt](https://github.com/Parth-Brahmbhatt))
 * Jungtaek Lim ([@HeartSaVioR](https://github.com/HeartSaVioR))
@@ -112,6 +112,7 @@ under the License.
 * Xin Wang ([@vesense](https://github.com/vesense))
 * Hugo da Cruz Louro ([@hmcl](https://github.com/hmcl))
 * Stig Rohde Døssing ([@srdo](https://github.com/srdo/))
+* Roshan Naik ([@roshannaik](http://github.com/roshannaik))
 
 ## Acknowledgements
 

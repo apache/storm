@@ -24,6 +24,7 @@ import org.apache.storm.generated.GlobalStreamId;
 import org.apache.storm.generated.Grouping;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.tuple.Fields;
+import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.apache.storm.utils.ThriftTopologyUtils;
 import java.util.ArrayList;
@@ -41,8 +42,9 @@ public class GeneralTopologyContext implements JSONAware {
     private Map<String, List<Integer>> _componentToTasks;
     private Map<String, Map<String, Fields>> _componentToStreamToFields;
     private String _stormId;
-    protected Map _topoConf;
-    
+    protected Map<String, Object> _topoConf;
+    protected boolean _doSanityCheck;
+
     // pass in componentToSortedTasks for the case of running tons of tasks in single executor
     public GeneralTopologyContext(StormTopology topology, Map<String, Object> topoConf,
             Map<Integer, String> taskToComponent, Map<String, List<Integer>> componentToSortedTasks,
@@ -53,6 +55,7 @@ public class GeneralTopologyContext implements JSONAware {
         _stormId = stormId;
         _componentToTasks = componentToSortedTasks;
         _componentToStreamToFields = componentToStreamToFields;
+        _doSanityCheck = ConfigUtils.isLocalMode(_topoConf);
     }
 
     /**
@@ -157,7 +160,7 @@ public class GeneralTopologyContext implements JSONAware {
 
     @Override
     public String toJSONString() {
-        Map obj = new HashMap();
+        Map<String, Object> obj = new HashMap<>();
         obj.put("task->component", _taskToComponent);
         // TODO: jsonify StormTopology
         // at the minimum should send source info
@@ -202,5 +205,9 @@ public class GeneralTopologyContext implements JSONAware {
 
     public Map<String, Object> getConf() {
         return _topoConf;
+    }
+
+    public boolean doSanityCheck() {
+        return _doSanityCheck;
     }
 }

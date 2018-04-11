@@ -43,5 +43,5 @@ public interface IScheduler {
      *
      * @return The scheduler's configuration.
      */
-    Map<String, Object> config();
+    Map config();
 }

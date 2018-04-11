@@ -29,6 +29,13 @@ public interface ComponentConfigurationDeclarer<T extends ComponentConfiguration
     T addConfigurations(Map<String, Object> conf);
 
     /**
+     * return the current component configuration.
+     *
+     * @return the current configuration.
+     */
+    Map<String, Object> getComponentConfiguration();
+
+    /**
      * Add in a single config.
      * @param config the key for the config
      * @param value the value of the config

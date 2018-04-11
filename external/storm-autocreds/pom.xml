@@ -69,6 +69,18 @@
                     <artifactId>jersey-client</artifactId>
                     <groupId>com.sun.jersey</groupId>
                 </exclusion>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils-core</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>commons-beanutils</groupId>
+                    <artifactId>commons-beanutils</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -102,6 +114,10 @@
                 <exclusion>
                     <groupId>org.apache.calcite</groupId>
                     <artifactId>calcite-avatica</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.avro</groupId>
+                    <artifactId>avro</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>

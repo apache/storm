@@ -31,7 +31,7 @@ import org.apache.storm.eventhubs.trident.Partition;
  * Transactional Trident EventHub Spout
  */
 public class TransactionalTridentEventHubSpout implements 
-  IPartitionedTridentSpout<Partitions, Partition, Map> {
+  IPartitionedTridentSpout<Partitions, Partition, Map<String, Object>> {
   private static final long serialVersionUID = 1L;
   private final IEventDataScheme scheme;
   private final EventHubSpoutConfig spoutConfig;
@@ -53,7 +53,7 @@ public class TransactionalTridentEventHubSpout implements
   }
 
   @Override
-  public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map> getEmitter(
+  public IPartitionedTridentSpout.Emitter<Partitions, Partition, Map<String, Object>> getEmitter(
       Map<String, Object> conf, TopologyContext context) {
     return new TransactionalTridentEventHubEmitter(spoutConfig);
   }

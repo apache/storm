@@ -69,7 +69,7 @@ public class EsTestUtil {
                 return new Fields("source", "index", "type", "id");
             }
         };
-        return new TupleImpl(topologyContext, new Values(source, index, type, id), 1, "");
+        return new TupleImpl(topologyContext, new Values(source, index, type, id), source, 1, "");
     }
 
     public static TridentTuple generateTestTridentTuple(String source, String index, String type, String id) {

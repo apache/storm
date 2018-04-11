@@ -53,7 +53,7 @@ public class DefaultBlacklistStrategy implements IBlacklistStrategy {
     private TreeMap<String, Integer> blacklist;
 
     @Override
-    public void prepare(Map conf) {
+    public void prepare(Map<String, Object> conf) {
         toleranceCount = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_TOLERANCE_COUNT),
                 DEFAULT_BLACKLIST_SCHEDULER_TOLERANCE_COUNT);
         resumeTime = ObjectReader.getInt(conf.get(DaemonConfig.BLACKLIST_SCHEDULER_RESUME_TIME), DEFAULT_BLACKLIST_SCHEDULER_RESUME_TIME);

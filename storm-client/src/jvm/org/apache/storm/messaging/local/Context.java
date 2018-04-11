@@ -17,6 +17,7 @@
  */
 package org.apache.storm.messaging.local;
 
+import org.apache.storm.messaging.netty.BackPressureStatus;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -33,6 +34,9 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Supplier;
+
 import org.apache.storm.grouping.Load;
 import org.apache.storm.messaging.IConnection;
 import org.apache.storm.messaging.TaskMessage;
@@ -54,6 +58,11 @@ public class Context implements IContext {
         @Override
         public void registerRecv(IConnectionCallback cb) {
             _cb = cb;
+        }
+
+        @Override
+        public void registerNewConnectionResponse(Supplier<Object> cb) {
+            return;
         }
 
         @Override
@@ -81,6 +90,11 @@ public class Context implements IContext {
         @Override
         public void sendLoadMetrics(Map<Integer, Double> taskToLoad) {
             _load.putAll(taskToLoad);
+        }
+
+        @Override
+        public void sendBackPressureStatus(BackPressureStatus bpStatus) {
+            throw new RuntimeException("Local Server connection should not send BackPressure status");
         }
 
         @Override
@@ -130,7 +144,12 @@ public class Context implements IContext {
         public void registerRecv(IConnectionCallback cb) {
             throw new IllegalArgumentException("SHOULD NOT HAPPEN");
         }
-        
+
+        @Override
+        public void registerNewConnectionResponse(Supplier<Object> cb) {
+            throw new IllegalArgumentException("SHOULD NOT HAPPEN");
+        }
+
         private void flushPending(){
             IConnectionCallback serverCb = _server._cb;
             if (serverCb != null && !_pendingDueToUnregisteredServer.isEmpty()) {
@@ -180,6 +199,11 @@ public class Context implements IContext {
         }
 
         @Override
+        public void sendBackPressureStatus(BackPressureStatus bpStatus) {
+            throw new RuntimeException("Local Client connection should not send BackPressure status");
+        }
+
+        @Override
         public int getPort() {
             return _server.getPort();
         }
@@ -209,7 +233,6 @@ public class Context implements IContext {
         return ret;
     }
         
-    @SuppressWarnings("rawtypes")
     @Override
     public void prepare(Map<String, Object> topoConf) {
         //NOOP
@@ -221,11 +244,10 @@ public class Context implements IContext {
     }
 
     @Override
-    public IConnection connect(String storm_id, String host, int port) {
+    public IConnection connect(String storm_id, String host, int port, AtomicBoolean[] remoteBpStatus) {
         return new LocalClient(getLocalServer(storm_id, port));
     }
 
-    @SuppressWarnings("rawtypes")
     @Override
     public void term() {
         //NOOP

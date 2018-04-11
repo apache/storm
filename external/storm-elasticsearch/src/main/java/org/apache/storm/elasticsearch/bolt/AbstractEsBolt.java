@@ -49,7 +49,7 @@ public abstract class AbstractEsBolt extends BaseTickTupleAwareRichBolt {
     }
 
     @Override
-    public void prepare(Map map, TopologyContext topologyContext, OutputCollector outputCollector) {
+    public void prepare(Map<String, Object> map, TopologyContext topologyContext, OutputCollector outputCollector) {
         try {
             this.collector = outputCollector;
             synchronized (AbstractEsBolt.class) {

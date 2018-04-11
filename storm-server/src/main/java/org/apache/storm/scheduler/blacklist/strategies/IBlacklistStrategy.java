@@ -27,7 +27,7 @@ import org.apache.storm.scheduler.Topologies;
 
 public interface IBlacklistStrategy {
 
-    void prepare(Map conf);
+    void prepare(Map<String, Object> conf);
 
     /**
      * Get blacklist by blacklist strategy.

@@ -169,56 +169,50 @@ public class PacemakerClient implements ISaslClient {
         return secret;
     }
 
-    public HBMessage send(HBMessage m) throws PacemakerConnectionException {
+    public HBMessage send(HBMessage m) throws InterruptedException {
         LOG.debug("Sending message: {}", m.toString());
-        try {
-            int next = availableMessageSlots.take();
-            synchronized (m) {
-                m.set_message_id(next);
-                messages[next] = m;
-                LOG.debug("Put message in slot: {}", Integer.toString(next));
-                do {
-                    try {
-                        waitUntilReady();
-                        Channel channel = channelRef.get();
-                        if (channel != null) {
-                            channel.write(m);
-                            m.wait(1000);
-                        }
-                    } catch (Exception exp) {
-                        LOG.error("error attempting to write to a channel {}", exp);
-                    }
-                } while (messages[next] == m);
-            }
 
-            HBMessage ret = messages[next];
-            if(ret == null) {
-                // This can happen if we lost the connection and subsequently reconnected or timed out.
-                send(m);
-            }
-            messages[next] = null;
-            LOG.debug("Got Response: {}", ret);
-            return ret;
+        int next = availableMessageSlots.take();
+        synchronized (m) {
+            m.set_message_id(next);
+            messages[next] = m;
+            LOG.debug("Put message in slot: {}", Integer.toString(next));
+            do {
+                try {
+                    waitUntilReady();
+                    Channel channel = channelRef.get();
+                    if (channel != null) {
+                        channel.write(m);
+                        m.wait(1000);
+                    }
+                } catch (PacemakerConnectionException exp) {
+                    LOG.error("error attempting to write to a channel {}", exp);
+                }
+            } while (messages[next] == m);
         }
-        catch (InterruptedException e) {
-            LOG.error("PacemakerClient send interrupted: ", e);
-            throw new RuntimeException(e);
+
+        HBMessage ret = messages[next];
+        if (ret == null) {
+            // This can happen if we lost the connection and subsequently reconnected or timed out.
+            LOG.warn("Got null response. This can happen if we lost the connection and subsequently reconnected or timed out. "
+                    + "Resending message...");
+            ret = send(m);
         }
+        messages[next] = null;
+        LOG.debug("Got Response: {}", ret);
+        return ret;
+
     }
 
-    private void waitUntilReady() throws PacemakerConnectionException {
+    private void waitUntilReady() throws PacemakerConnectionException, InterruptedException {
         // Wait for 'ready' (channel connected and maybe authentication)
         if(!ready.get() || channelRef.get() == null) {
             synchronized(this) {
                 if(!ready.get()) {
                     LOG.debug("Waiting for netty channel to be ready.");
-                    try {
-                        this.wait(1000);
-                        if(!ready.get() || channelRef.get() == null) {
-                            throw new PacemakerConnectionException("Timed out waiting for channel ready.");
-                        }
-                    } catch (InterruptedException e) {
-                        throw new RuntimeException(e);
+                    this.wait(1000);
+                    if(!ready.get() || channelRef.get() == null) {
+                        throw new PacemakerConnectionException("Timed out waiting for channel ready.");
                     }
                 }
             }

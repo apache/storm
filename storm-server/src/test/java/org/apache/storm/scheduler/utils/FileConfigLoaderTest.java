@@ -42,7 +42,7 @@ public class FileConfigLoaderTest {
         Config conf = new Config();
         conf.put(DaemonConfig.SCHEDULER_CONFIG_LOADER_URI, FILE_SCHEME_PREFIX + "/file/not/exist/");
         FileConfigLoader testLoader = new FileConfigLoader(conf);
-        Map result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNull("Unexpectedly returned a map", result);
     }
 
@@ -50,7 +50,7 @@ public class FileConfigLoaderTest {
     public void testInvalidConfig() throws Exception {
         Config conf = new Config();
         FileConfigLoader testLoader = new FileConfigLoader(conf);
-        Map result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNull("Unexpectedly returned a map", result);
     }
 
@@ -70,7 +70,7 @@ public class FileConfigLoaderTest {
         conf.put(DaemonConfig.SCHEDULER_CONFIG_LOADER_URI, FILE_SCHEME_PREFIX + temp.getCanonicalPath());
 
         FileConfigLoader testLoader = new FileConfigLoader(conf);
-        Map result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> result = testLoader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
         Assert.assertNull("Unexpectedly returned a map", result);
     }
 
@@ -80,7 +80,7 @@ public class FileConfigLoaderTest {
         File temp = File.createTempFile("FileLoader", ".yaml");
         temp.deleteOnExit();
 
-        Map<String, Integer> testMap = new HashMap<String, Integer>();
+        Map<String, Integer> testMap = new HashMap<>();
         testMap.put("a", 1);
         testMap.put("b", 2);
         testMap.put("c", 3);
@@ -100,7 +100,7 @@ public class FileConfigLoaderTest {
         conf.put(DaemonConfig.SCHEDULER_CONFIG_LOADER_URI, FILE_SCHEME_PREFIX + temp.getCanonicalPath());
         FileConfigLoader loader = new FileConfigLoader(conf);
 
-        Map result = loader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
+        Map<String, Object> result = loader.load(DaemonConfig.MULTITENANT_SCHEDULER_USER_POOLS);
 
         Assert.assertNotNull("Unexpectedly returned null", result);
 

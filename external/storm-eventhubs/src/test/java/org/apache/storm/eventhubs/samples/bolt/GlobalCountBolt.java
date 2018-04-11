@@ -55,7 +55,7 @@ public class GlobalCountBolt extends BaseBasicBolt {
         long now = System.nanoTime();
         long millis = (now - lastMetricsTime) / 1000000;
         throughput = globalCountDiff / millis * 1000;
-        Map values = new HashMap();
+        Map<String, Object> values = new HashMap<>();
         values.put("global_count", globalCount);
         values.put("throughput", throughput);
         lastMetricsTime = now;

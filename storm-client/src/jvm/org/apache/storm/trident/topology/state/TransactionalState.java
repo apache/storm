@@ -59,7 +59,7 @@ public class TransactionalState {
     
     protected TransactionalState(Map<String, Object> conf, String id, String subroot) {
         try {
-            conf = new HashMap(conf);
+            conf = new HashMap<>(conf);
             String transactionalRoot = (String)conf.get(Config.TRANSACTIONAL_ZOOKEEPER_ROOT);
             String rootDir = transactionalRoot + "/" + id + "/" + subroot;
             List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
@@ -193,9 +193,11 @@ public class TransactionalState {
         _curator.close();
     }
     
-    private Object getWithBackup(Map amap, Object primary, Object backup) {
+    private Object getWithBackup(Map<String, Object> amap, String primary, String backup) {
         Object ret = amap.get(primary);
-        if(ret==null) return amap.get(backup);
+        if(ret==null) {
+            return amap.get(backup);
+        }
         return ret;
     }
 }

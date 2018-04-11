@@ -89,7 +89,7 @@ public class SystemBolt implements IBolt {
         }
     }
 
-    @SuppressWarnings({ "unchecked", "rawtypes" })
+    @SuppressWarnings({ "unchecked" })
     @Override
     public void prepare(final Map<String, Object> topoConf, TopologyContext context, OutputCollector collector) {
         if(_prepareWasCalled && !"local".equals(topoConf.get(Config.STORM_CLUSTER_MODE))) {

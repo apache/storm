@@ -82,4 +82,9 @@ public class JassPasswordProvider implements PasswordProvider {
     public Optional<char[]> getPasswordFor(String user) {
         return Optional.ofNullable(credentials.get(user));
     }
+
+    @Override
+    public boolean isImpersonationAllowed() {
+        return true;
+    }
 }

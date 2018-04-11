@@ -75,6 +75,9 @@ import org.apache.storm.generated.SettableBlobMeta;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.SubmitOptions;
 import org.apache.storm.generated.SupervisorPageInfo;
+import org.apache.storm.generated.SupervisorAssignments;
+import org.apache.storm.generated.SupervisorWorkerHeartbeats;
+import org.apache.storm.generated.SupervisorWorkerHeartbeat;
 import org.apache.storm.generated.TopologyHistoryInfo;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologyPageInfo;
@@ -808,6 +811,8 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
         
         Supervisor s = new Supervisor(superConf, sharedContext, isuper);
         s.launch();
+        s.setLocalNimbus(this.nimbus);
+        this.nimbus.addSupervisor(s);
         supervisors.add(s);
         return s;
     }
@@ -1138,6 +1143,20 @@ public class LocalCluster implements ILocalClusterTrackedTopologyAware, Iface {
     }
 
     @Override
+    public SupervisorAssignments getSupervisorAssignments(String node) throws AuthorizationException, TException {
+        return null;
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeats(SupervisorWorkerHeartbeats heartbeats) throws AuthorizationException, TException {
+
+    }
+
+    @Override
+    public void sendSupervisorWorkerHeartbeat(SupervisorWorkerHeartbeat heatbeat) throws AuthorizationException, TException {
+
+    }
+
     public void processWorkerMetrics(WorkerMetrics metrics) throws org.apache.thrift.TException {
         getNimbus().processWorkerMetrics(metrics);
     }

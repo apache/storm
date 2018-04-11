@@ -367,14 +367,14 @@ public class WorkerMetricList implements org.apache.thrift.TBase<WorkerMetricLis
           case 1: // METRICS
             if (schemeField.type == org.apache.thrift.protocol.TType.LIST) {
               {
-                org.apache.thrift.protocol.TList _list870 = iprot.readListBegin();
-                struct.metrics = new ArrayList<WorkerMetricPoint>(_list870.size);
-                WorkerMetricPoint _elem871;
-                for (int _i872 = 0; _i872 < _list870.size; ++_i872)
+                org.apache.thrift.protocol.TList _list896 = iprot.readListBegin();
+                struct.metrics = new ArrayList<WorkerMetricPoint>(_list896.size);
+                WorkerMetricPoint _elem897;
+                for (int _i898 = 0; _i898 < _list896.size; ++_i898)
                 {
-                  _elem871 = new WorkerMetricPoint();
-                  _elem871.read(iprot);
-                  struct.metrics.add(_elem871);
+                  _elem897 = new WorkerMetricPoint();
+                  _elem897.read(iprot);
+                  struct.metrics.add(_elem897);
                 }
                 iprot.readListEnd();
               }
@@ -400,9 +400,9 @@ public class WorkerMetricList implements org.apache.thrift.TBase<WorkerMetricLis
         oprot.writeFieldBegin(METRICS_FIELD_DESC);
         {
           oprot.writeListBegin(new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, struct.metrics.size()));
-          for (WorkerMetricPoint _iter873 : struct.metrics)
+          for (WorkerMetricPoint _iter899 : struct.metrics)
           {
-            _iter873.write(oprot);
+            _iter899.write(oprot);
           }
           oprot.writeListEnd();
         }
@@ -433,9 +433,9 @@ public class WorkerMetricList implements org.apache.thrift.TBase<WorkerMetricLis
       if (struct.is_set_metrics()) {
         {
           oprot.writeI32(struct.metrics.size());
-          for (WorkerMetricPoint _iter874 : struct.metrics)
+          for (WorkerMetricPoint _iter900 : struct.metrics)
           {
-            _iter874.write(oprot);
+            _iter900.write(oprot);
           }
         }
       }
@@ -447,14 +447,14 @@ public class WorkerMetricList implements org.apache.thrift.TBase<WorkerMetricLis
       BitSet incoming = iprot.readBitSet(1);
       if (incoming.get(0)) {
         {
-          org.apache.thrift.protocol.TList _list875 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
-          struct.metrics = new ArrayList<WorkerMetricPoint>(_list875.size);
-          WorkerMetricPoint _elem876;
-          for (int _i877 = 0; _i877 < _list875.size; ++_i877)
+          org.apache.thrift.protocol.TList _list901 = new org.apache.thrift.protocol.TList(org.apache.thrift.protocol.TType.STRUCT, iprot.readI32());
+          struct.metrics = new ArrayList<WorkerMetricPoint>(_list901.size);
+          WorkerMetricPoint _elem902;
+          for (int _i903 = 0; _i903 < _list901.size; ++_i903)
           {
-            _elem876 = new WorkerMetricPoint();
-            _elem876.read(iprot);
-            struct.metrics.add(_elem876);
+            _elem902 = new WorkerMetricPoint();
+            _elem902.read(iprot);
+            struct.metrics.add(_elem902);
           }
         }
         struct.set_metrics_isSet(true);

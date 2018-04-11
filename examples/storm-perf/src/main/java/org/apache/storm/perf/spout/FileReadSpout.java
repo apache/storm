@@ -18,13 +18,6 @@
 
 package org.apache.storm.perf.spout;
 
-import org.apache.storm.spout.SpoutOutputCollector;
-import org.apache.storm.task.TopologyContext;
-import org.apache.storm.topology.OutputFieldsDeclarer;
-import org.apache.storm.topology.base.BaseRichSpout;
-import org.apache.storm.tuple.Fields;
-import org.apache.storm.tuple.Values;
-
 import java.io.BufferedReader;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -34,6 +27,13 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.apache.storm.spout.SpoutOutputCollector;
+import org.apache.storm.task.TopologyContext;
+import org.apache.storm.topology.OutputFieldsDeclarer;
+import org.apache.storm.topology.base.BaseRichSpout;
+import org.apache.storm.tuple.Fields;
+import org.apache.storm.tuple.Values;
 
 public class FileReadSpout extends BaseRichSpout {
     public static final String FIELDS = "sentence";
@@ -53,6 +53,26 @@ public class FileReadSpout extends BaseRichSpout {
     // For testing
     FileReadSpout(FileReader reader) {
         this.reader = reader;
+    }
+
+    public static List<String> readLines(InputStream input) {
+        List<String> lines = new ArrayList<>();
+        try {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
+            try {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    lines.add(line);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException("Reading file failed", e);
+            } finally {
+                reader.close();
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error closing reader", e);
+        }
+        return lines;
     }
 
     @Override
@@ -82,26 +102,6 @@ public class FileReadSpout extends BaseRichSpout {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields(FIELDS));
-    }
-
-    public static List<String> readLines(InputStream input) {
-        List<String> lines = new ArrayList<>();
-        try {
-            BufferedReader reader = new BufferedReader(new InputStreamReader(input));
-            try {
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    lines.add(line);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Reading file failed", e);
-            } finally {
-                reader.close();
-            }
-        } catch (IOException e) {
-            throw new RuntimeException("Error closing reader", e);
-        }
-        return lines;
     }
 
     public static class FileReader implements Serializable {

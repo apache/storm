@@ -20,8 +20,9 @@
   (:import [org.apache.storm Testing Testing$Condition])
   (:use [org.apache.storm util config log])
   (:import [java.util ArrayList]
-           (org.apache.storm.daemon.worker WorkerState)))
-
+           (org.apache.storm.daemon.worker WorkerState))
+  (:import [java.util.concurrent.atomic AtomicBoolean] )
+  )
 (def task 1)
 
 ;; In a "real" cluster (or an integration test), Storm itself would ensure that a topology's workers would only be
@@ -71,7 +72,7 @@
         resp (atom nil)
         server (.bind context nil 0)
         _ (register-callback (fn [message] (reset! resp message)) server)
-        client (.connect context nil "localhost" (.getPort server))
+        client (.connect context nil "localhost" (.getPort server) (make-array AtomicBoolean 2))
         _ (wait-until-ready [server client])
         _ (.send client task (.getBytes req_msg))]
     (wait-for-not-nil resp)
@@ -90,6 +91,11 @@
                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                     STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                    STORM-MESSAGING-NETTY-BUFFER-LOW-WATERMARK 8388608
+                    STORM-MESSAGING-NETTY-BUFFER-HIGH-WATERMARK 16777216
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL1-COUNT  1
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL2-COUNT  1000
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL3-SLEEP-MILLIS 1
                     TOPOLOGY-KRYO-FACTORY "org.apache.storm.serialization.DefaultKryoFactory"
                     TOPOLOGY-TUPLE-SERIALIZER "org.apache.storm.serialization.types.ListDelegateSerializer"
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
@@ -108,7 +114,7 @@
         resp (atom nil)
         server (.bind context nil 0)
         _ (register-callback (fn [message] (reset! resp message)) server)
-        client (.connect context nil "localhost" (.getPort server))
+        client (.connect context nil "localhost" (.getPort server) (make-array AtomicBoolean 2))
         _ (wait-until-ready [server client])
         _ (.send client task (.getBytes req_msg))
         _ (.sendLoadMetrics server {(int 1) 0.0 (int 2) 1.0})
@@ -132,6 +138,11 @@
                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                     STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                    STORM-MESSAGING-NETTY-BUFFER-LOW-WATERMARK 8388608
+                    STORM-MESSAGING-NETTY-BUFFER-HIGH-WATERMARK 16777216
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL1-COUNT  1
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL2-COUNT  1000
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL3-SLEEP-MILLIS 1
                     TOPOLOGY-KRYO-FACTORY "org.apache.storm.serialization.DefaultKryoFactory"
                     TOPOLOGY-TUPLE-SERIALIZER "org.apache.storm.serialization.types.ListDelegateSerializer"
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
@@ -150,7 +161,7 @@
         resp (atom nil)
         server (.bind context nil 0)
         _ (register-callback (fn [message] (reset! resp message)) server)
-        client (.connect context nil "localhost" (.getPort server))
+        client (.connect context nil "localhost" (.getPort server) (make-array AtomicBoolean 2))
         _ (wait-until-ready [server client])
         _ (.send client task (.getBytes req_msg))]
     (wait-for-not-nil resp)
@@ -169,6 +180,11 @@
                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                     STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                    STORM-MESSAGING-NETTY-BUFFER-LOW-WATERMARK 8388608
+                    STORM-MESSAGING-NETTY-BUFFER-HIGH-WATERMARK 16777216
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL1-COUNT  1
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL2-COUNT  1000
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL3-SLEEP-MILLIS 1
                     TOPOLOGY-KRYO-FACTORY "org.apache.storm.serialization.DefaultKryoFactory"
                     TOPOLOGY-TUPLE-SERIALIZER "org.apache.storm.serialization.types.ListDelegateSerializer"
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
@@ -186,7 +202,7 @@
         context (TransportFactory/makeContext storm-conf)
         resp (atom nil)
         port (Utils/getAvailablePort (int 6700))
-        client (.connect context nil "localhost" port)
+        client (.connect context nil "localhost" port (make-array AtomicBoolean 2))
 
         server (Thread.
                  (fn []
@@ -215,6 +231,11 @@
                     STORM-MESSAGING-NETTY-MAX-SLEEP-MS 5000
                     STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                     STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                    STORM-MESSAGING-NETTY-BUFFER-LOW-WATERMARK 8388608
+                    STORM-MESSAGING-NETTY-BUFFER-HIGH-WATERMARK 16777216
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL1-COUNT  1
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL2-COUNT  1000
+                    TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL3-SLEEP-MILLIS 1
                     TOPOLOGY-KRYO-FACTORY "org.apache.storm.serialization.DefaultKryoFactory"
                     TOPOLOGY-TUPLE-SERIALIZER "org.apache.storm.serialization.types.ListDelegateSerializer"
                     TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
@@ -236,7 +257,7 @@
         context (TransportFactory/makeContext storm-conf)
         server (.bind context nil 0)
         _ (register-callback (fn [message] (.add resp message) (swap! received inc)) server)
-        client (.connect context nil "localhost" (.getPort server))
+        client (.connect context nil "localhost" (.getPort server) (make-array AtomicBoolean 2))
         _ (wait-until-ready [server client])]
     (doseq [num (range 1 num-messages)]
       (let [req_msg (str num)]
@@ -287,6 +308,11 @@
                       STORM-MESSAGING-NETTY-MAX-SLEEP-MS 50
                       STORM-MESSAGING-NETTY-SERVER-WORKER-THREADS 1
                       STORM-MESSAGING-NETTY-CLIENT-WORKER-THREADS 1
+                      STORM-MESSAGING-NETTY-BUFFER-LOW-WATERMARK 8388608
+                      STORM-MESSAGING-NETTY-BUFFER-HIGH-WATERMARK 16777216
+                      TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL1-COUNT  1
+                      TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL2-COUNT  1000
+                      TOPOLOGY-BACKPRESSURE-WAIT-PROGRESSIVE-LEVEL3-SLEEP-MILLIS 1
                       TOPOLOGY-KRYO-FACTORY "org.apache.storm.serialization.DefaultKryoFactory"
                       TOPOLOGY-TUPLE-SERIALIZER "org.apache.storm.serialization.types.ListDelegateSerializer"
                       TOPOLOGY-FALL-BACK-ON-JAVA-SERIALIZATION false
@@ -294,7 +320,7 @@
           resp (atom nil)
           context (TransportFactory/makeContext storm-conf)
           port (Utils/getAvailablePort (int 6700))
-          client (.connect context nil "localhost" port)
+          client (.connect context nil "localhost" port (make-array AtomicBoolean 2))
           _ (.send client task (.getBytes req_msg))
           server (.bind context nil port)
           _ (register-callback (fn [message] (reset! resp message)) server)

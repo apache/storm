@@ -15,21 +15,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.daemon.metrics.reporters;
 
 import com.codahale.metrics.JmxReporter;
 import com.codahale.metrics.MetricRegistry;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import org.apache.storm.DaemonConfig;
-import org.apache.storm.daemon.metrics.MetricsUtils;
+import org.apache.storm.daemon.metrics.ClientMetricsUtils;
 import org.apache.storm.utils.ObjectReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Map;
-import java.util.concurrent.TimeUnit;
-
 public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
-    private final static Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JmxPreparableReporter.class);
     JmxReporter reporter = null;
 
     @Override
@@ -40,7 +40,7 @@ public class JmxPreparableReporter implements PreparableReporter<JmxReporter> {
         if (domain != null) {
             builder.inDomain(domain);
         }
-        TimeUnit rateUnit = MetricsUtils.getMetricsRateUnit(topoConf);
+        TimeUnit rateUnit = ClientMetricsUtils.getMetricsRateUnit(topoConf);
         if (rateUnit != null) {
             builder.convertRatesTo(rateUnit);
         }

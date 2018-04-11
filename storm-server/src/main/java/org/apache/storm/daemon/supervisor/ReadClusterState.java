@@ -31,10 +31,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import org.apache.storm.DaemonConfig;
 import org.apache.storm.cluster.IStormClusterState;
-import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.daemon.supervisor.Slot.MachineState;
 import org.apache.storm.daemon.supervisor.Slot.TopoProfileAction;
-import org.apache.storm.event.EventManager;
 import org.apache.storm.generated.Assignment;
 import org.apache.storm.generated.ExecutorInfo;
 import org.apache.storm.generated.LocalAssignment;
@@ -42,6 +40,8 @@ import org.apache.storm.generated.NodeInfo;
 import org.apache.storm.generated.ProfileRequest;
 import org.apache.storm.generated.WorkerResources;
 import org.apache.storm.localizer.AsyncLocalizer;
+import org.apache.storm.metricstore.MetricStoreConfig;
+import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.scheduler.ISupervisor;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.Time;
@@ -54,11 +54,10 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     
     private final Map<String, Object> superConf;
     private final IStormClusterState stormClusterState;
-    private final EventManager syncSupEventManager;
-    private final AtomicReference<Map<String, VersionedData<Assignment>>> assignmentVersions;
     private final Map<Integer, Slot> slots = new HashMap<>();
     private final AtomicInteger readRetry = new AtomicInteger(0);
     private final String assignmentId;
+    private final int supervisorPort;
     private final ISupervisor iSuper;
     private final AsyncLocalizer localizer;
     private final ContainerLauncher launcher;
@@ -66,22 +65,30 @@ public class ReadClusterState implements Runnable, AutoCloseable {
     private final LocalState localState;
     private final AtomicReference<Map<Long, LocalAssignment>> cachedAssignments;
     private final OnlyLatestExecutor<Integer> metricsExec;
+    private WorkerMetricsProcessor metricsProcessor;
 
     public ReadClusterState(Supervisor supervisor) throws Exception {
         this.superConf = supervisor.getConf();
         this.stormClusterState = supervisor.getStormClusterState();
-        this.syncSupEventManager = supervisor.getEventManger();
-        this.assignmentVersions = new AtomicReference<>(new HashMap<>());
         this.assignmentId = supervisor.getAssignmentId();
+        this.supervisorPort = supervisor.getThriftServerPort();
         this.iSuper = supervisor.getiSupervisor();
         this.localizer = supervisor.getAsyncLocalizer();
         this.host = supervisor.getHostName();
         this.localState = supervisor.getLocalState();
         this.cachedAssignments = supervisor.getCurrAssignment();
         this.metricsExec = new OnlyLatestExecutor<>(supervisor.getHeartbeatExecutor());
-        
-        this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisor.getSharedContext());
-        
+
+        this.launcher = ContainerLauncher.make(superConf, assignmentId, supervisorPort, supervisor.getSharedContext());
+
+        this.metricsProcessor = null;
+        try {
+            this.metricsProcessor = MetricStoreConfig.configureMetricProcessor(superConf);
+        } catch (Exception e) {
+            // the metrics processor is not critical to the operation of the cluster, allow Supervisor to come up
+            LOG.error("Failed to initialize metric processor", e);
+        }
+
         @SuppressWarnings("unchecked")
         List<Number> ports = (List<Number>)superConf.get(DaemonConfig.SUPERVISOR_SLOTS_PORTS);
         for (Number port: ports) {
@@ -110,19 +117,16 @@ public class ReadClusterState implements Runnable, AutoCloseable {
 
     private Slot mkSlot(int port) throws Exception {
         return new Slot(localizer, superConf, launcher, host, port,
-                localState, stormClusterState, iSuper, cachedAssignments, metricsExec);
+                localState, stormClusterState, iSuper, cachedAssignments, metricsExec, metricsProcessor);
     }
     
     @Override
     public synchronized void run() {
         try {
-            Runnable syncCallback = new EventManagerPushCallback(this, syncSupEventManager);
-            List<String> stormIds = stormClusterState.assignments(syncCallback);
-            Map<String, VersionedData<Assignment>> assignmentsSnapshot =
-                    getAssignmentsSnapshot(stormClusterState, stormIds, assignmentVersions.get(), syncCallback);
+            List<String> stormIds = stormClusterState.assignments(null);
+            Map<String, Assignment> assignmentsSnapshot = getAssignmentsSnapshot(stormClusterState);
             
-            Map<Integer, LocalAssignment> allAssignments =
-                    readAssignments(assignmentsSnapshot);
+            Map<Integer, LocalAssignment> allAssignments = readAssignments(assignmentsSnapshot);
             if (allAssignments == null) {
                 //Something odd happened try again later
                 return;
@@ -178,26 +182,8 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         }
     }
     
-    protected Map<String, VersionedData<Assignment>> getAssignmentsSnapshot(IStormClusterState stormClusterState, List<String> topoIds,
-            Map<String, VersionedData<Assignment>> localAssignmentVersion, Runnable callback) throws Exception {
-        Map<String, VersionedData<Assignment>> updateAssignmentVersion = new HashMap<>();
-        for (String topoId : topoIds) {
-            Integer recordedVersion = -1;
-            Integer version = stormClusterState.assignmentVersion(topoId, callback);
-            VersionedData<Assignment> locAssignment = localAssignmentVersion.get(topoId);
-            if (locAssignment != null) {
-                recordedVersion = locAssignment.getVersion();
-            }
-            if (version == null) {
-                // ignore
-            } else if (version.equals(recordedVersion)) {
-                updateAssignmentVersion.put(topoId, locAssignment);
-            } else {
-                VersionedData<Assignment> assignmentVersion = stormClusterState.assignmentInfoWithVersion(topoId, callback);
-                updateAssignmentVersion.put(topoId, assignmentVersion);
-            }
-        }
-        return updateAssignmentVersion;
+    protected Map<String, Assignment> getAssignmentsSnapshot(IStormClusterState stormClusterState) throws Exception {
+        return stormClusterState.assignmentsInfo();
     }
     
     protected Map<String, List<ProfileRequest>> getProfileActions(IStormClusterState stormClusterState, List<String> stormIds) throws Exception {
@@ -209,12 +195,12 @@ public class ReadClusterState implements Runnable, AutoCloseable {
         return ret;
     }
     
-    protected Map<Integer, LocalAssignment> readAssignments(Map<String, VersionedData<Assignment>> assignmentsSnapshot) {
+    protected Map<Integer, LocalAssignment> readAssignments(Map<String, Assignment> assignmentsSnapshot) {
         try {
             Map<Integer, LocalAssignment> portLA = new HashMap<>();
-            for (Map.Entry<String, VersionedData<Assignment>> assignEntry : assignmentsSnapshot.entrySet()) {
+            for (Map.Entry<String, Assignment> assignEntry : assignmentsSnapshot.entrySet()) {
                 String topoId = assignEntry.getKey();
-                Assignment assignment = assignEntry.getValue().getData();
+                Assignment assignment = assignEntry.getValue();
 
                 Map<Integer, LocalAssignment> portTasks = readMyExecutors(topoId, assignmentId, assignment);
 
@@ -282,14 +268,15 @@ public class ReadClusterState implements Runnable, AutoCloseable {
                             }
                             if (hasShared) {
                                 localAssignment.set_total_node_shared(amountShared);
-			    }
+                            }
                             if (assignment.is_set_owner()) {
                                 localAssignment.set_owner(assignment.get_owner());
                             }
                             portTasks.put(port.intValue(), localAssignment);
                         }
                         List<ExecutorInfo> executorInfoList = localAssignment.get_executors();
-                        executorInfoList.add(new ExecutorInfo(entry.getKey().get(0).intValue(), entry.getKey().get(entry.getKey().size() - 1).intValue()));
+                        executorInfoList.add(new ExecutorInfo(entry.getKey().get(0).intValue(),
+                                entry.getKey().get(entry.getKey().size() - 1).intValue()));
                     }
                 }
             }

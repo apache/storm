@@ -125,7 +125,7 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
         return null;
     }
 
-    protected boolean permitClientOrInvocationRequest(ReqContext context, Map params,
+    protected boolean permitClientOrInvocationRequest(ReqContext context, Map<String, Object> params,
             String fieldName) {
         Map<String,AclFunctionEntry> acl = readAclFromConfig();
         String function = (String) params.get(FUNCTION_KEY);
@@ -165,13 +165,13 @@ public class DRPCSimpleACLAuthorizer extends DRPCAuthorizerBase {
 
     @Override
     protected boolean permitClientRequest(ReqContext context, String operation,
-            Map params) {
+            Map<String, Object> params) {
         return permitClientOrInvocationRequest(context, params, "clientUsers");
     }
 
     @Override
     protected boolean permitInvocationRequest(ReqContext context, String operation,
-            Map params) {
+            Map<String, Object> params) {
         return permitClientOrInvocationRequest(context, params, "invocationUser");
     }
 }

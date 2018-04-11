@@ -35,7 +35,7 @@ public class TestTransactionalState extends TransactionalState {
      * Matching constructor in absence of a default constructor in the parent
      * class.
      */
-    protected TestTransactionalState(Map<String, Object> conf, String id, Map componentConf, String subroot) {
+    protected TestTransactionalState(Map<String, Object> conf, String id, Map<String, Object> componentConf, String subroot) {
         super(conf, id, componentConf, subroot);
     }
 

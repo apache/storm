@@ -16,7 +16,6 @@
 
 package org.apache.storm.kafka.spout.subscription;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -50,8 +49,8 @@ public class NamedTopicFilter implements TopicFilter {
     }
     
     @Override
-    public List<TopicPartition> getFilteredTopicPartitions(KafkaConsumer<?, ?> consumer) {
-        List<TopicPartition> allPartitions = new ArrayList<>();
+    public Set<TopicPartition> getAllSubscribedPartitions(KafkaConsumer<?, ?> consumer) {
+        Set<TopicPartition> allPartitions = new HashSet<>();
         for (String topic : topics) {
             for (PartitionInfo partitionInfo: consumer.partitionsFor(topic)) {
                 allPartitions.add(new TopicPartition(partitionInfo.topic(), partitionInfo.partition()));

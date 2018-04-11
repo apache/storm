@@ -57,6 +57,8 @@ public enum DaemonType {
             }
             switch (type) {
                 case NIMBUS:
+                    //Fall through on purpose
+                case SUPERVISOR:
                     return ZooDefs.Ids.CREATOR_ALL_ACL;
                 case DRPC:
                     List<ACL> ret = new ArrayList<>(ZooDefs.Ids.CREATOR_ALL_ACL);

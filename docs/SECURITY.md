@@ -17,6 +17,9 @@ Authentication and Authorization. But to do so usually requires
 configuring your Operating System to restrict the operations that can be done.
 This is generally a good idea even if you plan on running your cluster with Auth.
 
+Storm's OS level security relies on running Storm processes using OS accounts that have only the permissions they need. 
+Note that workers run under the same OS account as the Supervisor daemon by default.
+
 The exact detail of how to setup these precautions varies a lot and is beyond
 the scope of this document.
 
@@ -89,9 +92,9 @@ curl  -i --negotiate -u:anyUser  -b ~/cookiejar.txt -c ~/cookiejar.txt  http://s
 **Caution**: In AD MIT Keberos setup the key size is bigger than the default UI jetty server request header size. Make sure you set ui.header.buffer.bytes to 65536 in storm.yaml. More details are on [STORM-633](https://issues.apache.org/jira/browse/STORM-633)
 
 
-## UI / DRPC SSL 
+## UI / DRPC / LOGVIEWER SSL 
 
-Both UI and DRPC allows users to configure ssl .
+UI,DRPC and LOGVIEWER allows users to configure ssl .
 
 ### UI
 
@@ -133,6 +136,26 @@ If users want to setup 2-way auth
 9. drpc.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
 10. drpc.https.need.client.auth (If this set to true server requires client to provide authentication)
 
+
+
+
+### LOGVIEWER
+similarly to UI and DRPC , users need to configure following for LOGVIEWER
+
+1. logviewer.https.port 
+2. logviewer.https.keystore.type (example "jks")
+3. logviewer.https.keystore.path (example "/etc/ssl/storm_keystore.jks")
+4. logviewer.https.keystore.password (keystore password)
+5. logviewer.https.key.password (private key password)
+
+optional config 
+6. logviewer.https.truststore.path (example "/etc/ssl/storm_truststore.jks")
+7. logviewer.https.truststore.password (truststore password)
+8. logviewer.https.truststore.type (example "jks")
+
+If users want to setup 2-way auth
+9. logviewer.https.want.client.auth (If this set to true server requests for client certifcate authentication, but keeps the connection if no authentication provided)
+10. logviewer.https.need.client.auth (If this set to true server requires client to provide authentication)
 
 
 

@@ -30,7 +30,7 @@ import static org.apache.storm.hdfs.security.HdfsSecurityUtil.HDFS_CREDENTIALS;
  */
 public class AutoHDFS extends AbstractHadoopAutoCreds {
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
     }
 
     @Override

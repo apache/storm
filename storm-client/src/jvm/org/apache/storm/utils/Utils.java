@@ -63,8 +63,14 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipFile;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.MapDifference;
+import com.google.common.collect.MapDifference.ValueDifference;
+import com.google.common.collect.Maps;
+
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.input.ClassLoaderObjectInputStream;
 import org.apache.storm.Config;
@@ -82,7 +88,6 @@ import org.apache.storm.generated.Nimbus;
 import org.apache.storm.generated.StormTopology;
 import org.apache.storm.generated.TopologyInfo;
 import org.apache.storm.generated.TopologySummary;
-import org.apache.storm.generated.WorkerToken;
 import org.apache.storm.security.auth.ReqContext;
 import org.apache.storm.serialization.DefaultSerializationDelegate;
 import org.apache.storm.serialization.SerializationDelegate;
@@ -341,20 +346,22 @@ public class Utils {
      * @return the newly created thread
      * @see Thread
      */
-    public static SmartThread asyncLoop(final Callable afn,
-            boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
-            int priority, final boolean isFactory, boolean startImmediately,
-            String threadName) {
+    public static SmartThread asyncLoop(final Callable afn, boolean isDaemon, final Thread.UncaughtExceptionHandler eh,
+                                        int priority, final boolean isFactory, boolean startImmediately,
+                                        String threadName) {
         SmartThread thread = new SmartThread(new Runnable() {
             public void run() {
-                Object s;
                 try {
-                    Callable fn = isFactory ? (Callable) afn.call() : afn;
-                    while ((s = fn.call()) instanceof Long) {
-                        Time.sleepSecs((Long) s);
+                    final Callable<Long> fn = isFactory ? (Callable<Long>) afn.call() : afn;
+                    while (true) {
+                        final Long s = fn.call();
+                        if (s==null) // then stop running it
+                            break;
+                        if (s>0)
+                            Time.sleep(s);
                     }
                 } catch (Throwable t) {
-                    if (exceptionCauseIsInstanceOf(
+                    if (Utils.exceptionCauseIsInstanceOf(
                             InterruptedException.class, t)) {
                         LOG.info("Async loop interrupted!");
                         return;
@@ -370,7 +377,7 @@ public class Utils {
             thread.setUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
                 public void uncaughtException(Thread t, Throwable e) {
                     LOG.error("Async loop died!", e);
-                    exitProcess(1, "Async loop died!");
+                    Utils.exitProcess(1, "Async loop died!");
                 }
             });
         }
@@ -931,18 +938,17 @@ public class Utils {
      * @param listSeq to reverse
      * @return a reversed map
      */
-    public static HashMap reverseMap(List listSeq) {
-        HashMap<Object, List<Object>> rtn = new HashMap();
+    public static Map<Object, List<Object>> reverseMap(List<List<Object>> listSeq) {
+        Map<Object, List<Object>> rtn = new HashMap<>();
         if (listSeq == null) {
             return rtn;
         }
-        for (Object entry : listSeq) {
-            List listEntry = (List) entry;
+        for (List<Object> listEntry : listSeq) {
             Object key = listEntry.get(0);
             Object val = listEntry.get(1);
-            List list = rtn.get(val);
+            List<Object> list = rtn.get(val);
             if (list == null) {
-                list = new ArrayList<Object>();
+                list = new ArrayList<>();
                 rtn.put(val, list);
             }
             list.add(key);
@@ -1028,8 +1034,44 @@ public class Utils {
         return ret;
     }
 
-    public static boolean isValidConf(Map<String, Object> topoConf) {
-        return normalizeConf(topoConf).equals(normalizeConf((Map<String, Object>) JSONValue.parse(JSONValue.toJSONString(topoConf))));
+    @SuppressWarnings("unchecked")
+    public static boolean isValidConf(Map<String, Object> topoConfIn) {
+	Map<String, Object> origTopoConf = normalizeConf(topoConfIn);
+	try {
+	    Map<String, Object> deserTopoConf = normalizeConf(
+		    (Map<String, Object>) JSONValue.parseWithException(JSONValue.toJSONString(topoConfIn)));
+	    return isValidConf(origTopoConf, deserTopoConf);
+	} catch (ParseException e) {
+	    LOG.error("Json serialized config could not be deserialized", e);
+	}
+	return false;
+    }
+
+    @VisibleForTesting
+    static boolean isValidConf(Map<String, Object> orig, Map<String, Object> deser) {
+	MapDifference<String, Object> diff = Maps.difference(orig, deser);
+	if (diff.areEqual()) {
+	    return true;
+	}
+	for (Map.Entry<String, Object> entryOnLeft : diff.entriesOnlyOnLeft().entrySet()) {
+	    LOG.warn("Config property ({}) is found in original config, but missing from the "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnLeft.getKey(), entryOnLeft.getKey(), entryOnLeft.getValue());
+	}
+	for (Map.Entry<String, Object> entryOnRight : diff.entriesOnlyOnRight().entrySet()) {
+	    LOG.warn("Config property ({}) is not found in original config, but present in "
+		    + "serialized-deserialized config. This is due to an internal error in "
+		    + "serialization. Name: {} - Value: {}",
+		    entryOnRight.getKey(), entryOnRight.getKey(), entryOnRight.getValue());
+	}
+	for (Map.Entry<String, ValueDifference<Object>> entryDiffers : diff.entriesDiffering().entrySet()) {
+	    Object leftValue = entryDiffers.getValue().leftValue();
+	    Object rightValue = entryDiffers.getValue().rightValue();
+	    LOG.warn("Config value differs after json serialization. Name: {} - Original Value: {} - DeSer. Value: {}",
+	            entryDiffers.getKey(), leftValue, rightValue);
+	}
+	return false;
     }
 
     public static TopologyInfo getTopologyInfo(String name, String asUser, Map<String, Object> topoConf) {
@@ -1502,37 +1544,58 @@ public class Utils {
         Yaml yaml = new Yaml(new SafeConstructor());
         Map<String, Object> defaultsConf = null;
         Map<String, Object> stormConf = null;
+
+        // Based on how Java handles the classpath
+        // https://docs.oracle.com/javase/8/docs/technotes/tools/unix/classpath.html
         for (String part: cp) {
             File f = new File(part);
-            if (f.isDirectory()) {
+
+            if (f.getName().equals("*")) {
+                // wildcard is given in file
+                // in java classpath, '*' is expanded to all jar/JAR files in the directory
+                File dir = f.getParentFile();
+                if (dir == null) {
+                    // it happens when part is just '*' rather than denoting some directory
+                    dir = new File(".");
+                }
+
+                File[] jarFiles = dir.listFiles((dir1, name) -> name.endsWith(".jar") || name.endsWith(".JAR"));
+
+                // Quoting Javadoc in File.listFiles(FilenameFilter filter):
+                // Returns {@code null} if this abstract pathname does not denote a directory, or if an I/O error occurs.
+                // Both things are not expected and should not happen.
+                if (jarFiles == null) {
+                    throw new IOException("Fail to list jar files in directory: " + dir);
+                }
+
+                for (File jarFile : jarFiles) {
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, jarFile).readJar();
+                    defaultsConf = jarConfigReader.getDefaultsConf();
+                    stormConf = jarConfigReader.getStormConf();
+                }
+            } else if (f.isDirectory()) {
+                // no wildcard, directory
                 if (defaultsConf == null) {
                     defaultsConf = readConfIgnoreNotFound(yaml, new File(f, "defaults.yaml"));
                 }
-                
+
                 if (stormConf == null) {
                     stormConf = readConfIgnoreNotFound(yaml, new File(f, "storm.yaml"));
                 }
-            } else {
-                //Lets assume it is a jar file
-                try (JarFile jarFile = new JarFile(f)) {
-                    Enumeration<JarEntry> jarEnums = jarFile.entries();
-                    while (jarEnums.hasMoreElements()) {
-                        JarEntry entry = jarEnums.nextElement();
-                        if (!entry.isDirectory()) {
-                            if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
-                                try (InputStream in = jarFile.getInputStream(entry)) {
-                                    defaultsConf = (Map<String, Object>) yaml.load(new InputStreamReader(in));
-                                }
-                            }
-                            
-                            if (stormConf == null && entry.getName().equals("storm.yaml")) {
-                                try (InputStream in = jarFile.getInputStream(entry)) {
-                                    stormConf = (Map<String, Object>) yaml.load(new InputStreamReader(in));
-                                }
-                            }
-                        }
-                    }
+            } else if (f.isFile()) {
+                // no wildcard, file
+                String fileName = f.getName();
+                if (fileName.endsWith(".zip") || fileName.endsWith(".ZIP")) {
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readZip();
+                    defaultsConf = jarConfigReader.getDefaultsConf();
+                    stormConf = jarConfigReader.getStormConf();
+                } else if (fileName.endsWith(".jar") || fileName.endsWith(".JAR")) {
+                    JarConfigReader jarConfigReader = new JarConfigReader(yaml, defaultsConf, stormConf, f).readJar();
+                    defaultsConf = jarConfigReader.getDefaultsConf();
+                    stormConf = jarConfigReader.getStormConf();
                 }
+                // Class path entries that are neither directories nor archives (.zip or JAR files)
+                // nor the asterisk (*) wildcard character are ignored.
             }
         }
         if (stormConf != null) {
@@ -1551,5 +1614,77 @@ public class Utils {
             ret.putAll(other);
         }
         return ret;
+    }
+
+    public static <V> ArrayList<V> convertToArray(Map<Integer, V> srcMap, int start) {
+        Set<Integer> ids = srcMap.keySet();
+        Integer largestId = ids.stream().max(Integer::compareTo).get();
+        int end = largestId - start;
+        ArrayList<V> result = new ArrayList<>(Collections.nCopies(end + 1, null)); // creates array[largestId+1] filled with nulls
+        for (Map.Entry<Integer, V> entry : srcMap.entrySet()) {
+            int id = entry.getKey();
+            if (id < start) {
+                LOG.debug("Entry {} will be skipped it is too small {} ...", id, start);
+            } else {
+                result.set(id - start, entry.getValue());
+            }
+        }
+        return result;
+    }
+
+    private static class JarConfigReader {
+        private Yaml yaml;
+        private Map<String, Object> defaultsConf;
+        private Map<String, Object> stormConf;
+        private File f;
+
+        public JarConfigReader(Yaml yaml, Map<String, Object> defaultsConf, Map<String, Object> stormConf, File f) {
+            this.yaml = yaml;
+            this.defaultsConf = defaultsConf;
+            this.stormConf = stormConf;
+            this.f = f;
+        }
+
+        public Map<String, Object> getDefaultsConf() {
+            return defaultsConf;
+        }
+
+        public Map<String, Object> getStormConf() {
+            return stormConf;
+        }
+
+        public JarConfigReader readZip() throws IOException {
+            try (ZipFile zipFile = new ZipFile(f)) {
+                readArchive(zipFile);
+            }
+            return this;
+        }
+
+        public JarConfigReader readJar() throws IOException {
+            try (JarFile jarFile = new JarFile(f)) {
+                readArchive(jarFile);
+            }
+            return this;
+        }
+
+        private void readArchive(ZipFile zipFile) throws IOException {
+            Enumeration<? extends ZipEntry> zipEnums = zipFile.entries();
+            while (zipEnums.hasMoreElements()) {
+                ZipEntry entry = zipEnums.nextElement();
+                if (!entry.isDirectory()) {
+                    if (defaultsConf == null && entry.getName().equals("defaults.yaml")) {
+                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
+                            defaultsConf = (Map<String, Object>) yaml.load(isr);
+                        }
+                    }
+
+                    if (stormConf == null && entry.getName().equals("storm.yaml")) {
+                        try (InputStreamReader isr = new InputStreamReader(zipFile.getInputStream(entry))) {
+                            stormConf = (Map<String, Object>) yaml.load(isr);
+                        }
+                    }
+                }
+            }
+        }
     }
 }

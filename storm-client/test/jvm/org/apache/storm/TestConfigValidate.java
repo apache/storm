@@ -212,8 +212,25 @@ public class TestConfigValidate {
         testList.add(2);
         testList.add(new Integer("3"));
         testList.add(new Long("4"));
+	testList.add(new Float("3"));
+	testList.add(new Double("4"));
+	testList.add(ImmutableList.of("asdf", 3));
         conf.put("eee", testList);
-        Utils.isValidConf(conf);
+	Assert.assertTrue(Utils.isValidConf(conf));
+    }
+
+    @Test
+    public void testNonValidConfigChar() {
+	Map<String, Object> conf = new HashMap<String, Object>();
+	conf.put("q", ImmutableList.of("asdf", 'c'));
+	Assert.assertFalse(Utils.isValidConf(conf));
+    }
+
+    @Test
+    public void testNonValidConfigRandomObject() {
+	Map<String, Object> conf = new HashMap<String, Object>();
+	conf.put("q", ImmutableList.of("asdf", new TestConfigValidate()));
+	Assert.assertFalse(Utils.isValidConf(conf));
     }
 
     @Test

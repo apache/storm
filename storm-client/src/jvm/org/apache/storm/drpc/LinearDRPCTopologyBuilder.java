@@ -50,9 +50,7 @@ import org.apache.storm.topology.TopologyBuilder;
 import org.apache.storm.tuple.Fields;
 
 
-// Trident subsumes the functionality provided by this class, so it's deprecated
-@Deprecated
-public class LinearDRPCTopologyBuilder {    
+public class LinearDRPCTopologyBuilder {
     String function;
     List<Component> components = new ArrayList<>();
     
@@ -407,24 +405,14 @@ public class LinearDRPCTopologyBuilder {
             return this;
         }
 
+        /**
+         * return the current component configuration.
+         *
+         * @return the current configuration.
+         */
         @Override
-        public LinearDRPCInputDeclarer addResources(Map<String, Double> resources) {
-            if (resources != null) {
-                Map<String, Double> currentResources = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                    Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-                currentResources.putAll(resources);
-            }
-            return this;
-        }
-
-        @SuppressWarnings("unchecked")
-        @Override
-        public LinearDRPCInputDeclarer addResource(String resourceName, Number resourceValue) {
-            Map<String, Double> resourcesMap = (Map<String, Double>) component.componentConf.computeIfAbsent(
-                Config.TOPOLOGY_COMPONENT_RESOURCES_MAP, (k) -> new HashMap<>());
-
-            resourcesMap.put(resourceName, resourceValue.doubleValue());
-            return this;
+        public Map<String, Object> getComponentConfiguration() {
+            return component.componentConf;
         }
 
         @Override

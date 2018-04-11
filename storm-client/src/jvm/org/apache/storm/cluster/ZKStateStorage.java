@@ -15,7 +15,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.cluster;
+
+import java.io.IOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.state.*;
@@ -33,13 +41,6 @@ import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicBoolean;
-
 public class ZKStateStorage implements IStateStorage {
 
     private static Logger LOG = LoggerFactory.getLogger(ZKStateStorage.class);
@@ -50,7 +51,7 @@ public class ZKStateStorage implements IStateStorage {
     private AtomicBoolean active;
 
     private boolean isNimbus;
-    private Map authConf;
+    private Map<String, Object> authConf;
     private Map<String, Object> conf;
 
     private class ZkWatcherCallBack implements WatcherCallBack{
@@ -73,7 +74,7 @@ public class ZKStateStorage implements IStateStorage {
         }
     }
 
-    public ZKStateStorage(Map<String, Object> conf, Map authConf, ClusterStateContext context) throws Exception {
+    public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
         if (context.getDaemonType().equals(DaemonType.NIMBUS))

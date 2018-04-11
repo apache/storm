@@ -15,6 +15,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.elasticsearch.bolt;
 
 import java.util.Map;
@@ -24,8 +25,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.apache.storm.Config;
 import org.apache.storm.StormSubmitter;
 import org.apache.storm.elasticsearch.common.EsConfig;
+import org.apache.storm.elasticsearch.common.EsConstants;
 import org.apache.storm.elasticsearch.common.EsTestUtil;
 import org.apache.storm.elasticsearch.common.EsTupleMapper;
+import org.apache.storm.generated.AlreadyAliveException;
+import org.apache.storm.generated.AuthorizationException;
+import org.apache.storm.generated.InvalidTopologyException;
 import org.apache.storm.spout.SpoutOutputCollector;
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -34,13 +39,38 @@ import org.apache.storm.topology.base.BaseRichSpout;
 import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Values;
 
-public class EsIndexTopology {
+/**
+ * Demonstrates an ElasticSearch Storm topology.
+ */
+public final class EsIndexTopology {
 
-    static final String SPOUT_ID = "spout";
-    static final String BOLT_ID = "bolt";
-    static final String TOPOLOGY_NAME = "elasticsearch-test-topology1";
+    /**
+     * The id of the used spout.
+     */
+    private static final String SPOUT_ID = "spout";
+    /**
+     * The id of the used bolt.
+     */
+    private static final String BOLT_ID = "bolt";
+    /**
+     * The name of the used topology.
+     */
+    private static final String TOPOLOGY_NAME = "elasticsearch-test-topology1";
+    /**
+     * The number of pending tuples triggering logging.
+     */
+    private static final int PENDING_COUNT_MAX = 1000;
 
-    public static void main(String[] args) throws Exception {
+    /**
+     * The example's main method.
+     * @param args the command line arguments
+     * @throws AlreadyAliveException if the topology is already started
+     * @throws InvalidTopologyException if the topology is invalid
+     * @throws AuthorizationException if the topology authorization fails
+     */
+    public static void main(final String[] args) throws AlreadyAliveException,
+            InvalidTopologyException,
+            AuthorizationException {
         Config config = new Config();
         config.setNumWorkers(1);
         TopologyBuilder builder = new TopologyBuilder();
@@ -48,21 +78,36 @@ public class EsIndexTopology {
         builder.setSpout(SPOUT_ID, spout, 1);
         EsTupleMapper tupleMapper = EsTestUtil.generateDefaultTupleMapper();
         EsConfig esConfig = new EsConfig("http://localhost:9300");
-        builder.setBolt(BOLT_ID, new EsIndexBolt(esConfig, tupleMapper), 1).shuffleGrouping(SPOUT_ID);
+        builder.setBolt(BOLT_ID, new EsIndexBolt(esConfig, tupleMapper), 1)
+                .shuffleGrouping(SPOUT_ID);
 
         EsTestUtil.startEsNode();
-        EsTestUtil.waitForSeconds(5);
-        StormSubmitter.submitTopology(TOPOLOGY_NAME, config, builder.createTopology());
+        EsTestUtil.waitForSeconds(EsConstants.WAIT_DEFAULT_SECS);
+        StormSubmitter.submitTopology(TOPOLOGY_NAME,
+                config,
+                builder.createTopology());
     }
 
+    /**
+     * The user data spout.
+     */
     public static class UserDataSpout extends BaseRichSpout {
+        private static final long serialVersionUID = 1L;
+        /**
+         * The pending values.
+         */
         private ConcurrentHashMap<UUID, Values> pending;
+        /**
+         * The collector passed in
+         * {@link #open(java.util.Map, org.apache.storm.task.TopologyContext,
+         * org.apache.storm.spout.SpoutOutputCollector) }.
+         */
         private SpoutOutputCollector collector;
         private String[] sources = {
-                "{\"user\":\"user1\"}",
-                "{\"user\":\"user2\"}",
-                "{\"user\":\"user3\"}",
-                "{\"user\":\"user4\"}"
+            "{\"user\":\"user1\"}",
+            "{\"user\":\"user2\"}",
+            "{\"user\":\"user3\"}",
+            "{\"user\":\"user4\"}"
         };
         private int index = 0;
         private int count = 0;
@@ -70,16 +115,33 @@ public class EsIndexTopology {
         private String indexName = "index1";
         private String typeName = "type1";
 
-        public void declareOutputFields(OutputFieldsDeclarer declarer) {
+        /**
+         * Declares {@code source}, {@code index}, {@code type} and {@code id}.
+         * @param declarer the declarer to pass to
+         */
+        @Override
+        public void declareOutputFields(final OutputFieldsDeclarer declarer) {
             declarer.declare(new Fields("source", "index", "type", "id"));
         }
 
-        public void open(Map<String, Object> config, TopologyContext context,
-                         SpoutOutputCollector collector) {
-            this.collector = collector;
-            this.pending = new ConcurrentHashMap<UUID, Values>();
+        /**
+         * Acquires {@code collector} and initializes {@code pending}.
+         * @param config unused
+         * @param context unused
+         * @param collectorArg the collector to acquire
+         */
+        @Override
+        public void open(final Map<String, Object> config,
+                final TopologyContext context,
+                final SpoutOutputCollector collectorArg) {
+            this.collector = collectorArg;
+            this.pending = new ConcurrentHashMap<>();
         }
 
+        /**
+         * Makes the spout emit the next tuple, if any.
+         */
+        @Override
         public void nextTuple() {
             String source = sources[index];
             UUID msgId = UUID.randomUUID();
@@ -92,20 +154,37 @@ public class EsIndexTopology {
             }
             count++;
             total++;
-            if (count > 1000) {
+            if (count > PENDING_COUNT_MAX) {
                 count = 0;
-                System.out.println("Pending count: " + this.pending.size() + ", total: " + this.total);
+                System.out.println("Pending count: " + this.pending.size()
+                        + ", total: " + this.total);
             }
             Thread.yield();
         }
 
-        public void ack(Object msgId) {
+        /**
+         * Acknowledges the message with id {@code msgId}.
+         * @param msgId the message id
+         */
+        @Override
+        public void ack(final Object msgId) {
             this.pending.remove(msgId);
         }
 
-        public void fail(Object msgId) {
+        /**
+         * Marks the message with id {@code msgId} as failed.
+         * @param msgId the message id
+         */
+        @Override
+        public void fail(final Object msgId) {
             System.out.println("**** RESENDING FAILED TUPLE");
             this.collector.emit(this.pending.get(msgId), msgId);
         }
+    }
+
+    /**
+     * Utility constructor to prevent initialization.
+     */
+    private EsIndexTopology() {
     }
 }

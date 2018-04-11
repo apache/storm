@@ -99,9 +99,9 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     }
 
     @Override
-    public TTransportFactory getServerTransportFactory() throws IOException {
+    public TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         //create an authentication callback handler
-        CallbackHandler server_callback_handler = new ServerCallbackHandler(loginConf);
+        CallbackHandler server_callback_handler = new ServerCallbackHandler(loginConf, impersonationAllowed);
         
         //login our principal
         Subject subject = null;
@@ -138,7 +138,7 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
 
         //Also add in support for worker tokens
         factory.addServerDefinition(DIGEST, AuthUtils.SERVICE, "localhost", null,
-            new SimpleSaslServerCallbackHandler(new WorkerTokenAuthorizer(conf, type)));
+            new SimpleSaslServerCallbackHandler(impersonationAllowed, new WorkerTokenAuthorizer(conf, type)));
 
         //create a wrap transport factory so that we could apply user credential during connections
         TUGIAssumingTransportFactory wrapFactory = new TUGIAssumingTransportFactory(factory, subject); 

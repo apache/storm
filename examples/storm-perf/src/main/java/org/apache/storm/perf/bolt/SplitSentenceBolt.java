@@ -18,6 +18,8 @@
 
 package org.apache.storm.perf.bolt;
 
+import java.util.Map;
+
 import org.apache.storm.task.TopologyContext;
 import org.apache.storm.topology.BasicOutputCollector;
 import org.apache.storm.topology.OutputFieldsDeclarer;
@@ -26,11 +28,16 @@ import org.apache.storm.tuple.Fields;
 import org.apache.storm.tuple.Tuple;
 import org.apache.storm.tuple.Values;
 
-import java.util.Map;
-
 
 public class SplitSentenceBolt extends BaseBasicBolt {
     public static final String FIELDS = "word";
+
+    public static String[] splitSentence(String sentence) {
+        if (sentence != null) {
+            return sentence.split("\\s+");
+        }
+        return null;
+    }
 
     @Override
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
@@ -46,13 +53,5 @@ public class SplitSentenceBolt extends BaseBasicBolt {
     @Override
     public void declareOutputFields(OutputFieldsDeclarer declarer) {
         declarer.declare(new Fields(FIELDS));
-    }
-
-
-    public static String[] splitSentence(String sentence) {
-        if (sentence != null) {
-            return sentence.split("\\s+");
-        }
-        return null;
     }
 }

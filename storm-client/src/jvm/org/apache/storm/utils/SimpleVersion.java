@@ -27,7 +27,7 @@ public class SimpleVersion implements Comparable <SimpleVersion> {
     private final int _major;
     private final int _minor;
     
-    private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)[.-_]+(\\d+).*");
+    private static final Pattern VERSION_PATTERN = Pattern.compile("(\\d+)[\\.\\-\\_]+(\\d+).*");
     
     public SimpleVersion(String version) {
         Matcher m = VERSION_PATTERN.matcher(version);

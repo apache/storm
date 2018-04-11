@@ -21,6 +21,11 @@ import org.apache.storm.task.IErrorReporter;
 
 import java.util.List;
 
+/**
+ *   Methods are not expected to be thread safe. Each thread expected to have a separate instance of this type of object, or else
+ *   externally synchronize any shared instance.
+ */
+
 public interface ISpoutOutputCollector extends IErrorReporter{
     /**
         Returns the task ids that received the tuples.
@@ -28,5 +33,6 @@ public interface ISpoutOutputCollector extends IErrorReporter{
     List<Integer> emit(String streamId, List<Object> tuple, Object messageId);
     void emitDirect(int taskId, String streamId, List<Object> tuple, Object messageId);
     long getPendingCount();
+    void flush();
 }
 

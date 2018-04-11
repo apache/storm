@@ -87,4 +87,12 @@ public class TupleInfo implements Serializable {
     public void setTaskId(int taskId) {
         this.taskId = taskId;
     }
+
+    public void clear() {
+        messageId = null;
+        stream = null;
+        values = null;
+        timestamp = 0;
+        id = null;
+    }
 }

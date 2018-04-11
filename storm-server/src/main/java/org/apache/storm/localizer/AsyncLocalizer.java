@@ -75,10 +75,13 @@ public class AsyncLocalizer implements AutoCloseable {
 
     private final boolean isLocalMode;
     // track resources - user to resourceSet
-    protected final ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> userFiles = new ConcurrentHashMap<>();
-    protected final ConcurrentMap<String, ConcurrentMap<String, LocalizedResource>> userArchives = new ConcurrentHashMap<>();
+    //ConcurrentHashMap is explicitly used everywhere in this class because it uses locks to guarantee atomicity for compute and
+    // computeIfAbsent where as ConcurrentMap allows for a retry of the function passed in, and would require the function to have
+    // no side effects.
+    protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userFiles = new ConcurrentHashMap<>();
+    protected final ConcurrentHashMap<String, ConcurrentHashMap<String, LocalizedResource>> userArchives = new ConcurrentHashMap<>();
     // topology to tracking of topology dir and resources
-    private final Map<String, CompletableFuture<Void>> blobPending;
+    private final ConcurrentHashMap<String, CompletableFuture<Void>> blobPending;
     private final Map<String, Object> conf;
     private final AdvancedFSOps fsOps;
     private final boolean symlinksDisabled;
@@ -118,7 +121,7 @@ public class AsyncLocalizer implements AutoCloseable {
         reconstructLocalizedResources();
 
         symlinksDisabled = (boolean)conf.getOrDefault(Config.DISABLE_SYMLINKS, false);
-        blobPending = new HashMap<>();
+        blobPending = new ConcurrentHashMap<>();
     }
 
     public AsyncLocalizer(Map<String, Object> conf) throws IOException {
@@ -126,48 +129,51 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     @VisibleForTesting
-    LocallyCachedBlob getTopoJar(final String topologyId) throws IOException {
-        String topoJarKey = ConfigUtils.masterStormJarKey(topologyId);
-        LocallyCachedBlob topoJar = topologyBlobs.get(topoJarKey);
-        if (topoJar == null) {
-            topoJar = new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR);
-            topologyBlobs.put(topoJarKey, topoJar);
-        }
-        return topoJar;
+    LocallyCachedBlob getTopoJar(final String topologyId) {
+        return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormJarKey(topologyId),
+            (tjk) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_JAR);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     @VisibleForTesting
-    LocallyCachedBlob getTopoCode(final String topologyId) throws IOException {
-        String topoCodeKey = ConfigUtils.masterStormCodeKey(topologyId);
-        LocallyCachedBlob topoCode = topologyBlobs.get(topoCodeKey);
-        if (topoCode == null) {
-            topoCode = new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CODE);
-            topologyBlobs.put(topoCodeKey, topoCode);
-        }
-        return topoCode;
+    LocallyCachedBlob getTopoCode(final String topologyId) {
+        return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormCodeKey(topologyId),
+            (tck) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CODE);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
     @VisibleForTesting
-    LocallyCachedBlob getTopoConf(final String topologyId) throws IOException {
-        String topoConfKey = ConfigUtils.masterStormConfKey(topologyId);
-        LocallyCachedBlob topoConf = topologyBlobs.get(topoConfKey);
-        if (topoConf == null) {
-            topoConf = new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
-                LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CONF);
-            topologyBlobs.put(topoConfKey, topoConf);
-        }
-        return topoConf;
+    LocallyCachedBlob getTopoConf(final String topologyId) {
+        return topologyBlobs.computeIfAbsent(ConfigUtils.masterStormConfKey(topologyId),
+            (tck) -> {
+                try {
+                    return new LocallyCachedTopologyBlob(topologyId, isLocalMode, conf, fsOps,
+                        LocallyCachedTopologyBlob.TopologyBlobType.TOPO_CONF);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
     }
 
-    private LocalizedResource getUserArchive(String user, String key) throws IOException {
+    private LocalizedResource getUserArchive(String user, String key) {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userArchives.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, (k) -> new LocalizedResource(key, localBaseDir, true, fsOps, conf, user));
     }
 
-    private LocalizedResource getUserFile(String user, String key) throws IOException {
+    private LocalizedResource getUserFile(String user, String key) {
         assert user != null : "All user archives require a user present";
         ConcurrentMap<String, LocalizedResource> keyToResource = userFiles.computeIfAbsent(user, (u) -> new ConcurrentHashMap<>());
         return keyToResource.computeIfAbsent(key, (k) -> new LocalizedResource(key, localBaseDir, false, fsOps, conf, user));
@@ -181,50 +187,45 @@ public class AsyncLocalizer implements AutoCloseable {
      * @return a Future that indicates when they are all downloaded.
      * @throws IOException if there was an error while trying doing it.
      */
-    public synchronized CompletableFuture<Void> requestDownloadTopologyBlobs(final LocalAssignment assignment, final int port,
+    public CompletableFuture<Void> requestDownloadTopologyBlobs(final LocalAssignment assignment, final int port,
                                                                              final BlobChangingCallback cb) throws IOException {
         final PortAndAssignment pna = new PortAndAssignment(port, assignment);
         final String topologyId = pna.getToplogyId();
 
         CompletableFuture<Void> baseBlobs = requestDownloadBaseTopologyBlobs(pna, cb);
-        return baseBlobs.thenComposeAsync((v) -> {
-            CompletableFuture<Void> localResource = blobPending.get(topologyId);
-            if (localResource == null) {
-                Supplier<Void> supplier = new DownloadBlobs(pna, cb);
-                localResource = CompletableFuture.supplyAsync(supplier, execService);
-                blobPending.put(topologyId, localResource);
-            } else {
-                try {
-                    addReferencesToBlobs(pna, cb);
-                } catch (Exception e) {
-                    throw new RuntimeException(e);
+        return baseBlobs.thenComposeAsync((v) ->
+            blobPending.compute(topologyId, (tid, old) -> {
+                CompletableFuture<Void> ret = old;
+                if (ret == null) {
+                    ret = CompletableFuture.supplyAsync(new DownloadBlobs(pna, cb), execService);
+                } else {
+                    try {
+                        addReferencesToBlobs(pna, cb);
+                    } catch (Exception e) {
+                        throw new RuntimeException(e);
+                    }
                 }
-            }
-            LOG.debug("Reserved blobs {} {}", topologyId, localResource);
-            return localResource;
-        });
+                LOG.debug("Reserved blobs {} {}", topologyId, ret);
+                return ret;
+            }));
     }
 
     @VisibleForTesting
-    synchronized CompletableFuture<Void> requestDownloadBaseTopologyBlobs(PortAndAssignment pna, BlobChangingCallback cb)
+    CompletableFuture<Void> requestDownloadBaseTopologyBlobs(PortAndAssignment pna, BlobChangingCallback cb)
         throws IOException {
         final String topologyId = pna.getToplogyId();
 
-        LocallyCachedBlob topoJar = getTopoJar(topologyId);
+        final LocallyCachedBlob topoJar = getTopoJar(topologyId);
         topoJar.addReference(pna, cb);
 
-        LocallyCachedBlob topoCode = getTopoCode(topologyId);
+        final LocallyCachedBlob topoCode = getTopoCode(topologyId);
         topoCode.addReference(pna, cb);
 
-        LocallyCachedBlob topoConf = getTopoConf(topologyId);
+        final LocallyCachedBlob topoConf = getTopoConf(topologyId);
         topoConf.addReference(pna, cb);
 
-        CompletableFuture<Void> ret = topologyBasicDownloaded.get(topologyId);
-        if (ret == null) {
-            ret = downloadOrUpdate(topoJar, topoCode, topoConf);
-            topologyBasicDownloaded.put(topologyId, ret);
-        }
-        return ret;
+        return topologyBasicDownloaded.computeIfAbsent(topologyId,
+            (tid) -> downloadOrUpdate(topoJar, topoCode, topoConf));
     }
 
     private static final int ATTEMPTS_INTERVAL_TIME = 100;
@@ -433,7 +434,7 @@ public class AsyncLocalizer implements AutoCloseable {
      *     indicate that if they change the worker should be restarted.
      * @throws IOException on any error trying to recover the state.
      */
-    public synchronized void recoverRunningTopology(final LocalAssignment currentAssignment, final int port,
+    public void recoverRunningTopology(final LocalAssignment currentAssignment, final int port,
                                                     final BlobChangingCallback cb) throws IOException {
         final PortAndAssignment pna = new PortAndAssignment(port, currentAssignment);
         final String topologyId = pna.getToplogyId();
@@ -447,11 +448,7 @@ public class AsyncLocalizer implements AutoCloseable {
         LocallyCachedBlob topoConf = getTopoConf(topologyId);
         topoConf.addReference(pna, cb);
 
-        CompletableFuture<Void> localResource = blobPending.get(topologyId);
-        if (localResource == null) {
-            localResource = ALL_DONE_FUTURE;
-            blobPending.put(topologyId, localResource);
-        }
+        CompletableFuture<Void> localResource = blobPending.computeIfAbsent(topologyId, (tid) -> ALL_DONE_FUTURE);
 
         try {
             addReferencesToBlobs(pna, cb);
@@ -469,7 +466,7 @@ public class AsyncLocalizer implements AutoCloseable {
      * @param port the port the topology is running on
      * @throws IOException on any error
      */
-    public synchronized void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
+    public void releaseSlotFor(LocalAssignment assignment, int port) throws IOException {
         PortAndAssignment pna = new PortAndAssignment(port, assignment);
         final String topologyId = assignment.get_topology_id();
         LOG.debug("Releasing slot for {} {}", topologyId, port);
@@ -546,7 +543,7 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     // ignores invalid user/topo/key
-    synchronized void removeBlobReference(String key, PortAndAssignment pna,
+    void removeBlobReference(String key, PortAndAssignment pna,
                                           boolean uncompress) throws AuthorizationException, KeyNotFoundException {
         String user = pna.getOwner();
         String topo = pna.getToplogyId();
@@ -575,7 +572,7 @@ public class AsyncLocalizer implements AutoCloseable {
      * cache, it downloads them in parallel (up to SUPERVISOR_BLOBSTORE_DOWNLOAD_THREAD_COUNT)
      * and will block until all of them have been downloaded.
      */
-    synchronized List<LocalizedResource> getBlobs(List<LocalResource> localResources, PortAndAssignment pna, BlobChangingCallback cb)
+    List<LocalizedResource> getBlobs(List<LocalResource> localResources, PortAndAssignment pna, BlobChangingCallback cb)
         throws AuthorizationException, KeyNotFoundException, IOException {
         if ((boolean) conf.getOrDefault(Config.DISABLE_SYMLINKS, false)) {
             throw new KeyNotFoundException("symlinks are disabled so blobs cannot be downloaded.");
@@ -632,15 +629,15 @@ public class AsyncLocalizer implements AutoCloseable {
     }
 
     @VisibleForTesting
-    synchronized void cleanup() {
+    void cleanup() {
         LocalizedResourceRetentionSet toClean = new LocalizedResourceRetentionSet(cacheTargetSize);
         // need one large set of all and then clean via LRU
-        for (Map.Entry<String, ConcurrentMap<String, LocalizedResource>> t : userArchives.entrySet()) {
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userArchives.entrySet()) {
             toClean.addResources(t.getValue());
             LOG.debug("Resources to be cleaned after adding {} archives : {}", t.getKey(), toClean);
         }
 
-        for (Map.Entry<String, ConcurrentMap<String, LocalizedResource>> t : userFiles.entrySet()) {
+        for (Map.Entry<String, ConcurrentHashMap<String, LocalizedResource>> t : userFiles.entrySet()) {
             toClean.addResources(t.getValue());
             LOG.debug("Resources to be cleaned after adding {} files : {}", t.getKey(), toClean);
         }

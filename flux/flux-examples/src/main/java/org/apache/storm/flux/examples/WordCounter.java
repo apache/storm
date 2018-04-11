@@ -43,7 +43,6 @@ public class WordCounter extends BaseBasicBolt {
 
 
 
-    @SuppressWarnings("rawtypes")
     public void prepare(Map<String, Object> topoConf, TopologyContext context) {
     }
 

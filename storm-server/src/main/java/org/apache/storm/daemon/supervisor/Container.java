@@ -44,6 +44,8 @@ import org.apache.storm.generated.WorkerMetricPoint;
 import org.apache.storm.generated.WorkerMetricList;
 import org.apache.storm.generated.WorkerMetrics;
 import org.apache.storm.metric.StormMetricsRegistry;
+import org.apache.storm.metricstore.MetricException;
+import org.apache.storm.metricstore.WorkerMetricsProcessor;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.LocalState;
 import org.apache.storm.utils.NimbusClient;
@@ -143,6 +145,7 @@ public abstract class Container implements Killable {
     protected String _workerId; 
     protected final String _topologyId; //Not set if RECOVER_PARTIAL
     protected final String _supervisorId;
+    protected final int _supervisorPort;
     protected final int _port; //Not set if RECOVER_PARTIAL
     protected final LocalAssignment _assignment; //Not set if RECOVER_PARTIAL
     protected final AdvancedFSOps _ops;
@@ -156,6 +159,7 @@ public abstract class Container implements Killable {
      * @param type the type of container being made.
      * @param conf the supervisor config
      * @param supervisorId the ID of the supervisor this is a part of.
+     * @param supervisorPort the thrift server port of the supervisor this is a part of.
      * @param port the port the container is on.  Should be <= 0 if only a partial recovery
      * @param assignment the assignment for this container. Should be null if only a partial recovery.
      * @param resourceIsolationManager used to isolate resources for a container can be null if no isolation is used.
@@ -165,7 +169,7 @@ public abstract class Container implements Killable {
      * @param ops file system operations (mostly for testing) if null a new one is made
      * @throws IOException on any error.
      */
-    protected Container(ContainerType type, Map<String, Object> conf, String supervisorId,
+    protected Container(ContainerType type, Map<String, Object> conf, String supervisorId, int supervisorPort,
             int port, LocalAssignment assignment, ResourceIsolationInterface resourceIsolationManager,
             String workerId, Map<String, Object> topoConf,  AdvancedFSOps ops) throws IOException {
         assert(type != null);
@@ -184,6 +188,7 @@ public abstract class Container implements Killable {
         _ops = ops;
         _conf = conf;
         _supervisorId = supervisorId;
+        _supervisorPort = supervisorPort;
         _resourceIsolationManager = resourceIsolationManager;
         _assignment = assignment;
         
@@ -710,7 +715,7 @@ public abstract class Container implements Killable {
     /**
      * Send worker metrics to Nimbus.
      */
-    void processMetrics(OnlyLatestExecutor<Integer> exec) {
+    void processMetrics(OnlyLatestExecutor<Integer> exec, WorkerMetricsProcessor processor) {
         try {
             if (_usedMemory.get(_port) != null) {
                 // Make sure we don't process too frequently.
@@ -733,9 +738,9 @@ public abstract class Container implements Killable {
                 WorkerMetrics metrics = new WorkerMetrics(_topologyId, _port, hostname, metricList);
 
                 exec.execute(_port, () -> {
-                    try (NimbusClient client = NimbusClient.getConfiguredClient(_conf)) {
-                        client.getClient().processWorkerMetrics(metrics);
-                    } catch (Exception e) {
+                    try {
+                        processor.processWorkerMetrics(_conf, metrics);
+                    } catch (MetricException e) {
                         LOG.error("Failed to process metrics", e);
                     }
                 });

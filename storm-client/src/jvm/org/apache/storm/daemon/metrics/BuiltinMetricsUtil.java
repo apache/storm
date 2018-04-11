@@ -21,40 +21,29 @@ import org.apache.storm.Config;
 import org.apache.storm.metric.api.IMetric;
 import org.apache.storm.metric.api.IStatefulObject;
 import org.apache.storm.metric.api.StateMetric;
-import org.apache.storm.stats.BoltExecutorStats;
-import org.apache.storm.stats.CommonStats;
-import org.apache.storm.stats.SpoutExecutorStats;
-import org.apache.storm.stats.StatsUtil;
 import org.apache.storm.task.TopologyContext;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.apache.storm.generated.NodeInfo;
+import org.apache.storm.messaging.IConnection;
+import org.apache.storm.utils.JCQueue;
 
 public class BuiltinMetricsUtil {
-    public static BuiltinMetrics mkData(String type, CommonStats stats) {
-        if (StatsUtil.SPOUT.equals(type)) {
-            return new BuiltinSpoutMetrics((SpoutExecutorStats) stats);
-        } else if (StatsUtil.BOLT.equals(type)) {
-            return new BuiltinBoltMetrics((BoltExecutorStats) stats);
-        }
-        throw new RuntimeException("Invalid component type!");
-    }
-
     public static void registerIconnectionServerMetric(Object server, Map<String, Object> topoConf, TopologyContext context) {
         if (server instanceof IStatefulObject) {
             registerMetric("__recv-iconnection", new StateMetric((IStatefulObject) server), topoConf, context);
         }
     }
 
-    public static void registerIconnectionClientMetrics(final Map nodePortToSocket, Map<String, Object> topoConf, TopologyContext context) {
+    public static void registerIconnectionClientMetrics(final Map<NodeInfo, IConnection> nodePortToSocket, Map<String, Object> topoConf, TopologyContext context) {
         IMetric metric = new IMetric() {
             @Override
             public Object getValueAndReset() {
                 Map<Object, Object> ret = new HashMap<>();
-                for (Object o : nodePortToSocket.entrySet()) {
-                    Map.Entry entry = (Map.Entry) o;
-                    Object nodePort = entry.getKey();
-                    Object connection = entry.getValue();
+                for (Map.Entry<NodeInfo, IConnection> entry : nodePortToSocket.entrySet()) {
+                    NodeInfo nodePort = entry.getKey();
+                    IConnection connection = entry.getValue();
                     if (connection instanceof IStatefulObject) {
                         ret.put(nodePort, ((IStatefulObject) connection).getState());
                     }
@@ -65,11 +54,10 @@ public class BuiltinMetricsUtil {
         registerMetric("__send-iconnection", metric, topoConf, context);
     }
 
-    public static void registerQueueMetrics(Map queues, Map<String, Object> topoConf, TopologyContext context) {
-        for (Object o : queues.entrySet()) {
-            Map.Entry entry = (Map.Entry) o;
+    public static void registerQueueMetrics(Map<String, JCQueue> queues, Map<String, Object> topoConf, TopologyContext context) {
+        for (Map.Entry<String, JCQueue> entry : queues.entrySet()) {
             String name = "__" + entry.getKey();
-            IMetric metric = new StateMetric((IStatefulObject) entry.getValue());
+            IMetric metric = new StateMetric(entry.getValue());
             registerMetric(name, metric, topoConf, context);
         }
     }

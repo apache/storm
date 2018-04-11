@@ -1,2 +1,11 @@
 # Some storm-webapp logviewer tests require input files to have LF line endings due to byte counting.
 storm-webapp/src/test/resources/*.log.test text eol=lf
+
+# Convert the test on check-in and check-out (the conversion of all files has been done once on master and should be enforced from now on)
+* text=auto
+
+# There're reports of EOL conversion messing up PNG files, but that might have been a bug in git 2.10 only (see https://github.com/git/git/blob/master/Documentation/RelNotes/2.10.0.txt#L248 for details)
+*.png binary
+*.tar.gz binary
+*.zip binary
+*.tgz binary

@@ -1,4 +1,4 @@
-/*
+/**
  * Licensed to the Apache Software Foundation (ASF) under one
  * or more contributor license agreements.  See the NOTICE file
  * distributed with this work for additional information
@@ -18,19 +18,19 @@
 
 package org.apache.storm;
 
-import org.apache.storm.utils.Utils;
-import org.apache.storm.utils.Time;
-
 import java.nio.channels.ClosedByInterruptException;
 import java.util.Comparator;
 import java.util.Random;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import org.apache.storm.utils.Time;
+import org.apache.storm.utils.Utils;
+
 /**
  * The timer defined in this file is very similar to java.util.Timer, except
  * it integrates with Storm's time simulation capabilities. This lets us test
- * code that does asynchronous work on the timer thread
+ * code that does asynchronous work on the timer thread.
  */
 
 public class StormTimer implements AutoCloseable {
@@ -97,6 +97,9 @@ public class StormTimer implements AutoCloseable {
                         // events.
                         Time.sleep(1000);
                     }
+                    if (Thread.interrupted()) {
+                        this.active.set(false);
+                    }
                 } catch (Throwable e) {
                     if (!(Utils.exceptionCauseIsInstanceOf(InterruptedException.class, e))
                             && !(Utils.exceptionCauseIsInstanceOf(ClosedByInterruptException.class, e))) {
@@ -128,7 +131,7 @@ public class StormTimer implements AutoCloseable {
     private StormTimerTask task = new StormTimerTask();
 
     /**
-     * Makes a Timer in the form of a StormTimerTask Object
+     * Makes a Timer in the form of a StormTimerTask Object.
      * @param name name of the timer
      * @param onKill function to call when timer is killed unexpectedly
      * @return StormTimerTask object that was initialized
@@ -151,13 +154,24 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * Schedule a function to be executed in the timer
+     * Schedule a function to be executed in the timer.
      * @param delaySecs the number of seconds to delay before running the function
      * @param func the function to run
      * @param checkActive whether to check is the timer is active
      * @param jitterMs add jitter to the run
      */
     public void schedule(int delaySecs, Runnable func, boolean checkActive, int jitterMs) {
+        scheduleMs(Time.secsToMillisLong(delaySecs), func, checkActive, jitterMs);
+    }
+
+    /**
+     * Same as schedule with millisecond resolution
+     * @param delayMs the number of milliseconds to delay before running the function
+     * @param func the function to run
+     * @param checkActive whether to check is the timer is active
+     * @param jitterMs add jitter to the run
+     */
+    public void scheduleMs(long delayMs, Runnable func, boolean checkActive, int jitterMs) {
         if (func == null) {
             throw new RuntimeException("function to schedule is null!");
         }
@@ -165,7 +179,7 @@ public class StormTimer implements AutoCloseable {
             checkActive();
         }
         String id = Utils.uuid();
-        long endTimeMs = Time.currentTimeMillis() + Time.secsToMillisLong(delaySecs);
+        long endTimeMs = Time.currentTimeMillis() + delayMs;
         if (jitterMs > 0) {
             endTimeMs = this.task.random.nextInt(jitterMs) + endTimeMs;
         }
@@ -176,8 +190,12 @@ public class StormTimer implements AutoCloseable {
         schedule(delaySecs, func, true, 0);
     }
 
+    public void scheduleMs(long delayMs, Runnable func) {
+        scheduleMs(delayMs, func, true, 0);
+    }
+
     /**
-     * Schedule a function to run recurrently
+     * Schedule a function to run recurrently.
      * @param delaySecs the number of seconds to delay before running the function
      * @param recurSecs the time between each invocation
      * @param func the function to run
@@ -194,7 +212,25 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * schedule a function to run recurrently with jitter
+     * Schedule a function to run recurrently.
+     * @param delayMs the number of millis to delay before running the function
+     * @param recurMs the time between each invocation
+     * @param func the function to run
+     */
+    public void scheduleRecurringMs(long delayMs, final long recurMs, final Runnable func) {
+        scheduleMs(delayMs, new Runnable() {
+            @Override
+            public void run() {
+                func.run();
+                // This avoids a race condition with cancel-timer.
+                scheduleMs(recurMs, this, true, 0);
+            }
+        });
+    }
+
+
+    /**
+     * Schedule a function to run recurrently with jitter.
      * @param delaySecs the number of seconds to delay before running the function
      * @param recurSecs the time between each invocation
      * @param jitterMs jitter added to the run
@@ -212,7 +248,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * check if timer is active
+     * check if timer is active.
      */
     private void checkActive() {
         if (!this.task.isActive()) {
@@ -221,7 +257,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * cancel timer
+     * cancel timer.
      */
 
     @Override
@@ -234,7 +270,7 @@ public class StormTimer implements AutoCloseable {
     }
 
     /**
-     * is timer waiting. Used in timer simulation
+     * is timer waiting. Used in timer simulation.
      */
     public boolean isTimerWaiting() {
         return Time.isThreadWaiting(task);

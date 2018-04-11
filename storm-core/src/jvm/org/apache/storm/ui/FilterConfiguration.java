@@ -22,16 +22,16 @@ import java.util.Map;
 public class FilterConfiguration {
     private String filterClass;
     private String filterName;
-    private Map filterParams;
+    private Map<String, String> filterParams;
 
 
-    public FilterConfiguration(String filterClass, Map filterParams) {
+    public FilterConfiguration(String filterClass, Map<String, String> filterParams) {
         this.filterParams = filterParams;
         this.filterClass = filterClass;
         this.filterName = null;
     }
 
-    public FilterConfiguration(String filterClass, String filterName, Map filterParams) {
+    public FilterConfiguration(String filterClass, String filterName, Map<String, String> filterParams) {
         this.filterClass = filterClass;
         this.filterName = filterName;
         this.filterParams = filterParams;
@@ -53,11 +53,11 @@ public class FilterConfiguration {
         this.filterClass = filterClass;
     }
 
-    public Map getFilterParams() {
+    public Map<String, String> getFilterParams() {
         return filterParams;
     }
 
-    public void setFilterParams(Map filterParams) {
+    public void setFilterParams(Map<String, String> filterParams) {
         this.filterParams = filterParams;
     }
 }

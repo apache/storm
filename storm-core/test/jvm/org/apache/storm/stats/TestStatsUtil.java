@@ -70,14 +70,8 @@ public class TestStatsUtil {
         HashMap<String, Object> exec2Beat = new HashMap<String, Object>();
         exec2Beat.put("uptime", 200);
 
-        Map<String, Object> beat1 = new HashMap<String, Object>();
-        beat1.put("heartbeat", exec1Beat);
-
-        Map<String, Object> beat2 = new HashMap<String, Object>();
-        beat2.put("heartbeat", exec2Beat);
-
-        beats.put(exec1, beat1);
-        beats.put(exec2, beat2);
+        beats.put(exec1, exec1Beat);
+        beats.put(exec2, exec2Beat);
 
         task2Component.put(1, "my-component");
         task2Component.put(2, "__sys1");

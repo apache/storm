@@ -36,6 +36,11 @@ public class CaptureCollector implements TridentCollector {
     }
 
     @Override
+    public void flush() {
+        _coll.flush();
+    }
+
+    @Override
     public void reportError(Throwable t) {
         _coll.reportError(t);
     }

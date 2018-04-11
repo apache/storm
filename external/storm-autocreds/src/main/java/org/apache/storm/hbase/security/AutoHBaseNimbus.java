@@ -51,7 +51,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     private static final Logger LOG = LoggerFactory.getLogger(AutoHBaseNimbus.class);
 
     @Override
-    public void doPrepare(Map conf) {
+    public void doPrepare(Map<String, Object> conf) {
         // we don't allow any cluster wide configuration
     }
 
@@ -66,24 +66,24 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    protected  byte[] getHadoopCredentials(Map conf, String configKey, final String topologyOwnerPrincipal) {
+    protected  byte[] getHadoopCredentials(Map<String, Object> conf, String configKey, final String topologyOwnerPrincipal) {
         Configuration configuration = getHadoopConfiguration(conf, configKey);
         return getHadoopCredentials(conf, configuration, topologyOwnerPrincipal);
     }
 
     @Override
-    protected byte[] getHadoopCredentials(Map conf, final String topologyOwnerPrincipal) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, final String topologyOwnerPrincipal) {
         return getHadoopCredentials(conf, HBaseConfiguration.create(), topologyOwnerPrincipal);
     }
 
-    private Configuration getHadoopConfiguration(Map topoConf, String configKey) {
+    private Configuration getHadoopConfiguration(Map<String, Object> topoConf, String configKey) {
         Configuration configuration = HBaseConfiguration.create();
         fillHadoopConfiguration(topoConf, configKey, configuration);
         return configuration;
     }
 
     @SuppressWarnings("unchecked")
-    protected byte[] getHadoopCredentials(Map conf, Configuration hbaseConf, final String topologySubmitterUser) {
+    protected byte[] getHadoopCredentials(Map<String, Object> conf, Configuration hbaseConf, final String topologySubmitterUser) {
         try {
             if(UserGroupInformation.isSecurityEnabled()) {
                 UserProvider provider = UserProvider.instantiate(hbaseConf);
@@ -128,7 +128,7 @@ public class AutoHBaseNimbus extends AbstractHadoopNimbusPluginAutoCreds {
     }
 
     @Override
-    public void doRenew(Map<String, String> credentials, Map topologyConf, final String topologySubmitterUser) {
+    public void doRenew(Map<String, String> credentials, Map<String, Object> topologyConf, final String topologySubmitterUser) {
         //HBASE tokens are not renewable so we always have to get new ones.
         populateCredentials(credentials, topologyConf, topologySubmitterUser);
     }

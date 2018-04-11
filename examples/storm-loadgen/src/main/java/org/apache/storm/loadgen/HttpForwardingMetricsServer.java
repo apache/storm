@@ -41,7 +41,7 @@ import org.eclipse.jetty.servlet.ServletHolder;
  * A server that can listen for metrics from the HttpForwardingMetricsConsumer.
  */
 public abstract class HttpForwardingMetricsServer {
-    private Map conf;
+    private Map<String, Object> conf;
     private Server server = null;
     private int port = -1;
     private String url = null;
