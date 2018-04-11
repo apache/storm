@@ -187,29 +187,4 @@ public class NormalizedResourceRequest implements NormalizedResourcesWithMemory 
     public NormalizedResources getNormalizedResources() {
         return this.normalizedResources;
     }
-
-    public void removeOffHeap(final double offHeap) {
-        this.offHeap += offHeap;
-    }
-
-    public void remove(WorkerResources value) {
-        this.normalizedResources.remove(value);
-        //The resources are already normalized
-        Map<String, Double> resources = value.get_resources();
-        onHeap -= resources.getOrDefault(Constants.COMMON_ONHEAP_MEMORY_RESOURCE_NAME, 0.0);
-        offHeap -= resources.getOrDefault(Constants.COMMON_OFFHEAP_MEMORY_RESOURCE_NAME, 0.0);
-    }
-
-    /**
-     * Remove the resources in other to this.
-     *
-     * @param other the other Request to add to this.
-     */
-    public void remove(NormalizedResourceRequest other) {
-        this.normalizedResources.remove(other.normalizedResources);
-        onHeap -= other.onHeap;
-        offHeap -= other.offHeap;
-    }
-
-
 }

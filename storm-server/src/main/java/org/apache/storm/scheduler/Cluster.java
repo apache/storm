@@ -82,7 +82,7 @@ public class Cluster implements ISchedulingState {
     private INimbus inimbus;
     private final Topologies topologies;
     private final Map<String, Map<WorkerSlot, NormalizedResourceRequest>> nodeToScheduledResourcesCache;
-    private final HashMap<String, Set<WorkerSlot>> nodeToUsedPortsCache;
+    private final Map<String, Set<WorkerSlot>> nodeToUsedSlotsCache;
 
     public Cluster(
         INimbus nimbus,
@@ -139,7 +139,7 @@ public class Cluster implements ISchedulingState {
         this.inimbus = nimbus;
         this.supervisors.putAll(supervisors);
         this.nodeToScheduledResourcesCache = new HashMap<>(this.supervisors.size());
-        this.nodeToUsedPortsCache = new HashMap<>(this.supervisors.size());
+        this.nodeToUsedSlotsCache = new HashMap<>(this.supervisors.size());
 
         for (Map.Entry<String, SupervisorDetails> entry : supervisors.entrySet()) {
             String nodeId = entry.getKey();
@@ -304,7 +304,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Set<Integer> getUsedPorts(SupervisorDetails supervisor) {
-        return nodeToUsedPortsCache.computeIfAbsent(supervisor.getId(), (x) -> new HashSet<>()).stream().map(WorkerSlot::getPort).collect(Collectors.toSet());
+        return nodeToUsedSlotsCache.computeIfAbsent(supervisor.getId(), (x) -> new HashSet<>()).stream().map(WorkerSlot::getPort).collect(Collectors.toSet());
     }
 
     @Override
@@ -561,7 +561,7 @@ public class Cluster implements ISchedulingState {
         String nodeId = slot.getNodeId();
         double sharedOffHeapMemory = calculateSharedOffHeapMemory(nodeId, assignment);
         assignment.setTotalSharedOffHeapMemory(nodeId, sharedOffHeapMemory);
-        updateScheduledResourcesCache(slot, resources, sharedOffHeapMemory);
+        updateCachesForWorkerSlot(slot, resources, sharedOffHeapMemory);
     }
 
     /**
@@ -631,7 +631,7 @@ public class Cluster implements ISchedulingState {
                 assignment.setTotalSharedOffHeapMemory(
                     nodeId, calculateSharedOffHeapMemory(nodeId, assignment));
                 nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(slot, new NormalizedResourceRequest());
-                nodeToUsedPortsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).remove(slot);
+                nodeToUsedSlotsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).remove(slot);
             }
         }
     }
@@ -651,7 +651,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public boolean isSlotOccupied(WorkerSlot slot) {
-        return nodeToUsedPortsCache.computeIfAbsent(slot.getNodeId(), (x) -> new HashSet<>()).contains(slot);
+        return nodeToUsedSlotsCache.computeIfAbsent(slot.getNodeId(), (x) -> new HashSet<>()).contains(slot);
     }
 
     @Override
@@ -679,7 +679,7 @@ public class Cluster implements ISchedulingState {
 
     @Override
     public Collection<WorkerSlot> getUsedSlots() {
-        return nodeToUsedPortsCache.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
+        return nodeToUsedSlotsCache.values().stream().flatMap(Set::stream).collect(Collectors.toSet());
     }
 
     @Override
@@ -718,7 +718,7 @@ public class Cluster implements ISchedulingState {
         }
         assignments.clear();
         nodeToScheduledResourcesCache.values().forEach(Map::clear);
-        nodeToUsedPortsCache.values().forEach(Set::clear);
+        nodeToUsedSlotsCache.values().forEach(Set::clear);
         for (SchedulerAssignment assignment : newAssignments.values()) {
             assign(assignment, ignoreSingleExceptions);
         }
@@ -923,13 +923,21 @@ public class Cluster implements ISchedulingState {
         return ret;
     }
 
-    private void updateScheduledResourcesCache(WorkerSlot workerSlot, WorkerResources workerResources, Double sharedoffHeapMemory) {
+
+    /**
+     *  This medhod updates ScheduledResources and UsedSlots cache for given workerSlot
+     *
+     * @param workerSlot
+     * @param workerResources
+     * @param sharedoffHeapMemory
+     */
+    private void updateCachesForWorkerSlot(WorkerSlot workerSlot, WorkerResources workerResources, Double sharedoffHeapMemory) {
         String nodeId = workerSlot.getNodeId();
         NormalizedResourceRequest normalizedResourceRequest = new NormalizedResourceRequest();
         normalizedResourceRequest.add(workerResources);
         normalizedResourceRequest.addOffHeap(sharedoffHeapMemory);
         nodeToScheduledResourcesCache.computeIfAbsent(nodeId, (x) -> new HashMap<>()).put(workerSlot, normalizedResourceRequest);
-        nodeToUsedPortsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).add(workerSlot);
+        nodeToUsedSlotsCache.computeIfAbsent(nodeId, (x) -> new HashSet<>()).add(workerSlot);
     }
 
     @Override
