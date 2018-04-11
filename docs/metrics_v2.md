@@ -28,7 +28,7 @@ API documentation: [Timer](http://metrics.dropwizard.io/4.0.0/apidocs/com/codaha
 [Histogram](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Histogram.html),
 [Meter](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Meter.html),
 [Counter](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Counter.html),
-[Guage](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Gauge.html)
+[Gauge](http://metrics.dropwizard.io/4.0.0/apidocs/com/codahale/metrics/Gauge.html)
 
 Each of these methods takes a `name` parameter that acts as an identifier. When metrics are 
 registered, Storm will add additional information such as hostname, port, topology ID, etc. to form a unique metric
