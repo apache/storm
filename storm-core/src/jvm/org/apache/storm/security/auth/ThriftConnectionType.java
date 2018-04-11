@@ -27,25 +27,27 @@ import java.util.Map;
  */
 public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
-         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE),
+         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, true),
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
-         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE),
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, false),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE);
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, false);
 
     private final String _transConf;
     private final String _portConf;
     private final String _qConf;
     private final String _threadsConf;
     private final String _buffConf;
+    private final boolean impersonationAllowed;
 
     ThriftConnectionType(String transConf, String portConf, String qConf,
-                         String threadsConf, String buffConf) {
+                         String threadsConf, String buffConf, boolean impersonationAllowed) {
         _transConf = transConf;
         _portConf = portConf;
         _qConf = qConf;
         _threadsConf = threadsConf;
         _buffConf = buffConf;
+        this.impersonationAllowed = impersonationAllowed;
     }
 
     public String getTransportPlugin(Map conf) {
@@ -79,5 +81,13 @@ public enum ThriftConnectionType {
     @Deprecated
     public int getMaxBufferSize(Map conf) {
         return Utils.getInt(conf.get(_buffConf));
+    }
+
+    /**
+     * Check if SASL impersonation is allowed for this transport type.
+     * @return true if it is else false.
+     */
+    public boolean isImpersonationAllowed() {
+        return impersonationAllowed;
     }
 }

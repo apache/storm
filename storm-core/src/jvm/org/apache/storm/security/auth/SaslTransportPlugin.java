@@ -64,7 +64,7 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
     @Override
     public TServer getServer(TProcessor processor) throws IOException, TTransportException {
         int port = type.getPort(storm_conf);
-        TTransportFactory serverTransportFactory = getServerTransportFactory();
+        TTransportFactory serverTransportFactory = getServerTransportFactory(type.isImpersonationAllowed());
         TServerSocket serverTransport = new TServerSocket(port);
         int numWorkerThreads = type.getNumThreads(storm_conf);
         Integer queueSize = type.getQueueSize(storm_conf);
@@ -90,10 +90,11 @@ public abstract class SaslTransportPlugin implements ITransportPlugin {
 
     /**
      * All subclass must implement this method
+     * @param impersonationAllowed true if SASL impersonation should be allowed, else false.
      * @return server transport factory
      * @throws IOException
      */
-    protected abstract TTransportFactory getServerTransportFactory() throws IOException;
+    protected abstract TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException;
 
 
     /**                                                                                                                                                                             

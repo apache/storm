@@ -36,9 +36,9 @@ public class PlainSaslTransportPlugin extends SaslTransportPlugin {
     private static final Logger LOG = LoggerFactory.getLogger(PlainSaslTransportPlugin.class);
 
     @Override
-    protected TTransportFactory getServerTransportFactory() throws IOException {
+    protected TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         //create an authentication callback handler
-        CallbackHandler serverCallbackHandler = new PlainServerCallbackHandler();
+        CallbackHandler serverCallbackHandler = new PlainServerCallbackHandler(impersonationAllowed);
         if (Security.getProvider(SaslPlainServer.SecurityProvider.SASL_PLAIN_SERVER) == null) {
             Security.addProvider(new SaslPlainServer.SecurityProvider());
         }

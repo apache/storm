@@ -28,7 +28,6 @@ import java.util.TreeMap;
 import javax.security.auth.Subject;
 import javax.security.auth.callback.CallbackHandler;
 import javax.security.auth.kerberos.KerberosTicket;
-import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
 import javax.security.auth.login.LoginException;
 import javax.security.sasl.Sasl;
@@ -51,9 +50,10 @@ public class KerberosSaslTransportPlugin extends SaslTransportPlugin {
     public static final String KERBEROS = "GSSAPI"; 
     private static final Logger LOG = LoggerFactory.getLogger(KerberosSaslTransportPlugin.class);
 
-    public TTransportFactory getServerTransportFactory() throws IOException {
+    @Override
+    public TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         //create an authentication callback handler
-        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, storm_conf);
+        CallbackHandler server_callback_handler = new ServerCallbackHandler(login_conf, storm_conf, impersonationAllowed);
         
         //login our principal
         Subject subject = null;

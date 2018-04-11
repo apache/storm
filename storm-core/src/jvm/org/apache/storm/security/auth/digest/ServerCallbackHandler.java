@@ -15,29 +15,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.apache.storm.security.auth.digest;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.Map;
-
-import org.apache.storm.security.auth.AbstractSaslServerCallbackHandler;
-import org.apache.storm.security.auth.ReqContext;
-import org.apache.storm.security.auth.SaslTransportPlugin;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.security.auth.callback.Callback;
-import javax.security.auth.callback.CallbackHandler;
-import javax.security.auth.callback.NameCallback;
 import javax.security.auth.callback.PasswordCallback;
-import javax.security.auth.callback.UnsupportedCallbackException;
 import javax.security.auth.login.AppConfigurationEntry;
 import javax.security.auth.login.Configuration;
-import javax.security.sasl.AuthorizeCallback;
-import javax.security.sasl.RealmCallback;
-
+import org.apache.storm.security.auth.AbstractSaslServerCallbackHandler;
 import org.apache.storm.security.auth.AuthUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * SASL server side callback handler
@@ -47,7 +36,8 @@ public class ServerCallbackHandler extends AbstractSaslServerCallbackHandler {
     private static final String USER_PREFIX = "user_";
     public static final String SYSPROP_SUPER_PASSWORD = "storm.SASLAuthenticationProvider.superPassword";
 
-    public ServerCallbackHandler(Configuration configuration) throws IOException {
+    public ServerCallbackHandler(Configuration configuration, boolean impersonationAllowed) throws IOException {
+        super(impersonationAllowed);
         if (configuration==null) return;
 
         AppConfigurationEntry configurationEntries[] = configuration.getAppConfigurationEntry(AuthUtils.LOGIN_CONTEXT_SERVER);
