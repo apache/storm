@@ -30,15 +30,15 @@ import java.util.Map;
 public enum ThriftConnectionType {
     NIMBUS(Config.NIMBUS_THRIFT_TRANSPORT_PLUGIN, Config.NIMBUS_THRIFT_PORT, Config.NIMBUS_QUEUE_SIZE,
         Config.NIMBUS_THRIFT_THREADS, Config.NIMBUS_THRIFT_MAX_BUFFER_SIZE, Config.STORM_THRIFT_SOCKET_TIMEOUT_MS,
-        WorkerTokenServiceType.NIMBUS),
+        WorkerTokenServiceType.NIMBUS, true),
     SUPERVISOR(Config.SUPERVISOR_THRIFT_TRANSPORT_PLUGIN, Config.SUPERVISOR_THRIFT_PORT, Config.SUPERVISOR_QUEUE_SIZE,
         Config.SUPERVISOR_THRIFT_THREADS, Config.SUPERVISOR_THRIFT_MAX_BUFFER_SIZE,
-        Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR),
+        Config.SUPERVISOR_THRIFT_SOCKET_TIMEOUT_MS, WorkerTokenServiceType.SUPERVISOR, false),
     //A DRPC token only works for the invocations transport, not for the basic thrift transport.
     DRPC(Config.DRPC_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_PORT, Config.DRPC_QUEUE_SIZE,
-         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null),
+         Config.DRPC_WORKER_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, null, false),
     DRPC_INVOCATIONS(Config.DRPC_INVOCATIONS_THRIFT_TRANSPORT_PLUGIN, Config.DRPC_INVOCATIONS_PORT, null,
-         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC),
+         Config.DRPC_INVOCATIONS_THREADS, Config.DRPC_MAX_BUFFER_SIZE, null, WorkerTokenServiceType.DRPC, false),
     LOCAL_FAKE;
 
     private final String transConf;
@@ -49,20 +49,21 @@ public enum ThriftConnectionType {
     private final String socketTimeoutConf;
     private final boolean isFake;
     private final WorkerTokenServiceType wtType;
+    private final boolean impersonationAllowed;
 
     ThriftConnectionType() {
-        this(null, null, null, null, null, null, true, null);
+        this(null, null, null, null, null, null, true, null, false);
     }
     
     ThriftConnectionType(String transConf, String portConf, String qConf,
                          String threadsConf, String buffConf, String socketTimeoutConf,
-                         WorkerTokenServiceType wtType) {
-        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false, wtType);
+                         WorkerTokenServiceType wtType, boolean impersonationAllowed) {
+        this(transConf, portConf, qConf, threadsConf, buffConf, socketTimeoutConf, false, wtType, impersonationAllowed);
     }
     
     ThriftConnectionType(String transConf, String portConf, String qConf,
                          String threadsConf, String buffConf, String socketTimeoutConf, boolean isFake,
-                         WorkerTokenServiceType wtType) {
+                         WorkerTokenServiceType wtType, boolean impersonationAllowed) {
         this.transConf = transConf;
         this.portConf = portConf;
         this.qConf = qConf;
@@ -71,6 +72,7 @@ public enum ThriftConnectionType {
         this.socketTimeoutConf = socketTimeoutConf;
         this.isFake = isFake;
         this.wtType = wtType;
+        this.impersonationAllowed = impersonationAllowed;
     }
 
     public boolean isFake() {
@@ -125,5 +127,13 @@ public enum ThriftConnectionType {
      */
     public WorkerTokenServiceType getWtType() {
         return wtType;
+    }
+
+    /**
+     * Check if SASL impersonation is allowed for this transport type.
+     * @return true if it is else false.
+     */
+    public boolean isImpersonationAllowed() {
+        return impersonationAllowed;
     }
 }

@@ -36,8 +36,10 @@ import java.io.IOException;
  */
 public class ServerCallbackHandler implements CallbackHandler {
     private static final Logger LOG = LoggerFactory.getLogger(ServerCallbackHandler.class);
+    private final boolean impersonationAllowed;
 
-    public ServerCallbackHandler(Configuration configuration) throws IOException {
+    public ServerCallbackHandler(Configuration configuration, boolean impersonationAllowed) throws IOException {
+        this.impersonationAllowed = impersonationAllowed;
         if (configuration == null) {
             return;
         }
@@ -94,6 +96,10 @@ public class ServerCallbackHandler implements CallbackHandler {
             //When authNid and authZid are not equal , authNId is attempting to impersonate authZid, We
             //add the authNid as the real user in reqContext's subject which will be used during authorization.
             if (!ac.getAuthenticationID().equals(ac.getAuthorizationID())) {
+                if (!impersonationAllowed) {
+                    throw new IllegalArgumentException(ac.getAuthenticationID() + " attempting to impersonate " + ac.getAuthorizationID()
+                        + ".  This is not allowed by this server.");
+                }
                 ReqContext.context().setRealPrincipal(new SaslTransportPlugin.User(ac.getAuthenticationID()));
             } else {
                 ReqContext.context().setRealPrincipal(null);

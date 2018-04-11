@@ -41,9 +41,9 @@ public class DigestSaslTransportPlugin extends SaslTransportPlugin {
     public static final String DIGEST = "DIGEST-MD5";
     private static final Logger LOG = LoggerFactory.getLogger(DigestSaslTransportPlugin.class);
 
-    protected TTransportFactory getServerTransportFactory() throws IOException {
+    protected TTransportFactory getServerTransportFactory(boolean impersonationAllowed) throws IOException {
         //create an authentication callback handler
-        CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(
+        CallbackHandler serverCallbackHandler = new SimpleSaslServerCallbackHandler(impersonationAllowed,
             new WorkerTokenAuthorizer(conf, type),
             new JassPasswordProvider(loginConf));
 
