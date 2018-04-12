@@ -101,6 +101,7 @@ public class HdfsSpout extends BaseRichSpout {
     private final AtomicBoolean commitTimeElapsed = new AtomicBoolean(false);
     private Timer commitTimer;
     private boolean fileReadCompletely = true;
+    private boolean newReader = false;
 
     private String configKey = Configs.DEFAULT_HDFS_CONFIG_KEY; // key for hdfs Kerberos configs
 
@@ -228,7 +229,10 @@ public class HdfsSpout extends BaseRichSpout {
                         return;
                     } else {
                         fileReadCompletely = false;
+                        newReader = true;
                     }
+                } else {
+                    newReader = false;
                 }
                 if (fileReadCompletely) { // wait for more ACKs before proceeding
                     return;
@@ -250,7 +254,8 @@ public class HdfsSpout extends BaseRichSpout {
                     return;
                 } else {
                     fileReadCompletely = true;
-                    if (!ackEnabled) {
+                    // if newReader is true and tuple is null then it is an empty reader
+                    if (!ackEnabled || newReader) {
                         markFileAsDone(reader.getFilePath());
                     }
                 }
