@@ -53,11 +53,11 @@
   (log-message "Zookeeper state update: " state type path))
 
 (defnk mk-client
-  [conf servers port
+  [conf servers port default-acl
    :root ""
    :watcher default-watcher
    :auth-conf nil]
-  (let [fk (Utils/newCurator conf servers port root (when auth-conf (ZookeeperAuthInfo. auth-conf)))]
+  (let [fk (Utils/newCurator conf servers port root (when auth-conf (ZookeeperAuthInfo. auth-conf)) default-acl)]
     (.. fk
         (getCuratorListenable)
         (addListener
@@ -273,9 +273,9 @@
 
 (defn zk-leader-elector
   "Zookeeper Implementation of ILeaderElector."
-  [conf blob-store]
+  [conf blob-store default-acl]
   (let [servers (conf STORM-ZOOKEEPER-SERVERS)
-        zk (mk-client conf (conf STORM-ZOOKEEPER-SERVERS) (conf STORM-ZOOKEEPER-PORT) :auth-conf conf)
+        zk (mk-client conf (conf STORM-ZOOKEEPER-SERVERS) (conf STORM-ZOOKEEPER-PORT) default-acl :auth-conf conf)
         leader-lock-path (str (conf STORM-ZOOKEEPER-ROOT) "/leader-lock")
         id (.toHostPortString (NimbusInfo/fromConf conf))
         leader-latch (atom (LeaderLatch. zk leader-lock-path id))

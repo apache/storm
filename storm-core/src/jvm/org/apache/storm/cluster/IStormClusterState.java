@@ -59,7 +59,7 @@ public interface IStormClusterState {
 
     public SupervisorInfo supervisorInfo(String supervisorId); // returns nil if doesn't exist
 
-    public void setupHeatbeats(String stormId);
+    public void setupHeatbeats(String stormId, Map<String, Object> topoConf);
 
     public void teardownHeartbeats(String stormId);
 
@@ -71,7 +71,7 @@ public interface IStormClusterState {
 
     public List<String> backpressureTopologies();
 
-    public void setTopologyLogConfig(String stormId, LogConfig logConfig);
+    public void setTopologyLogConfig(String stormId, LogConfig logConfig, Map<String, Object> topoConf);
 
     public LogConfig topologyLogConfig(String stormId, Runnable cb);
 
@@ -85,19 +85,19 @@ public interface IStormClusterState {
 
     public boolean topologyBackpressure(String stormId, Runnable callback);
 
-    public void setupBackpressure(String stormId);
+    public void setupBackpressure(String stormId, Map<String, Object> topoConf);
 
     public void removeBackpressure(String stormId);
 
     public void removeWorkerBackpressure(String stormId, String node, Long port);
 
-    public void activateStorm(String stormId, StormBase stormBase);
+    public void activateStorm(String stormId, StormBase stormBase, Map<String, Object> topoConf);
 
     public void updateStorm(String stormId, StormBase newElems);
 
     public void removeStormBase(String stormId);
 
-    public void setAssignment(String stormId, Assignment info);
+    public void setAssignment(String stormId, Assignment info, Map<String, Object> topoConf);
 
     public void setupBlobstore(String key, NimbusInfo nimbusInfo, Integer versionInfo);
 
@@ -113,11 +113,13 @@ public interface IStormClusterState {
 
     public void reportError(String stormId, String componentId, String node, Long port, Throwable error);
 
+    void setupErrors(String stormId, Map<String, Object> topoConf);
+
     public List<ErrorInfo> errors(String stormId, String componentId);
 
     public ErrorInfo lastError(String stormId, String componentId);
 
-    public void setCredentials(String stormId, Credentials creds, Map topoConf) throws NoSuchAlgorithmException;
+    public void setCredentials(String stormId, Credentials creds, Map topoConf);
 
     public Credentials credentials(String stormId, Runnable callback);
 

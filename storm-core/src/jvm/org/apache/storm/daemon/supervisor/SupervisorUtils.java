@@ -312,9 +312,6 @@ public class SupervisorUtils {
     }
     
     static List<ACL> supervisorZkAcls() {
-        final List<ACL> acls = new ArrayList<>();
-        acls.add(ZooDefs.Ids.CREATOR_ALL_ACL.get(0));
-        acls.add(new ACL((ZooDefs.Perms.READ ^ ZooDefs.Perms.CREATE), ZooDefs.Ids.ANYONE_ID_UNSAFE));
-        return acls;
+        return ZooDefs.Ids.CREATOR_ALL_ACL;
     }
 }
