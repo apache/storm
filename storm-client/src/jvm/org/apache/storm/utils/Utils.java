@@ -541,17 +541,30 @@ public class Utils {
         return new Id(split[0], split[1]);
     }
 
-    public static List<ACL> getWorkerACL(Map<String, Object> conf) {
-        //This is a work around to an issue with ZK where a sasl super user is not super unless there is an open SASL ACL so we are trying to give the correct perms
-        if (!isZkAuthenticationConfiguredTopology(conf)) {
-            return null;
-        }
+    /**
+     * Get the ACL for nimbus/supervisor.  The Super User ACL. This assumes that security is enabled.
+     * @param conf the config to get the super User ACL from
+     * @return the super user ACL.
+     */
+    public static ACL getSuperUserAcl(Map<String, Object> conf) {
         String stormZKUser = (String)conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
             throw new IllegalArgumentException("Authentication is enabled but " + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
         }
+        return new ACL(ZooDefs.Perms.ALL, parseZkId(stormZKUser, Config.STORM_ZOOKEEPER_SUPERACL));
+    }
+
+    /**
+     * Get the ZK ACLs that a worker should use when writing to ZK.
+     * @param conf the config for the topology.
+     * @return the ACLs
+     */
+    public static List<ACL> getWorkerACL(Map<String, Object> conf) {
+        if (!isZkAuthenticationConfiguredTopology(conf)) {
+            return null;
+        }
         ArrayList<ACL> ret = new ArrayList<>(ZooDefs.Ids.CREATOR_ALL_ACL);
-        ret.add(new ACL(ZooDefs.Perms.ALL, parseZkId(stormZKUser, Config.STORM_ZOOKEEPER_SUPERACL)));
+        ret.add(getSuperUserAcl(conf));
         return ret;
     }
 

@@ -77,19 +77,20 @@ public class ZKStateStorage implements IStateStorage {
     public ZKStateStorage(Map<String, Object> conf, Map<String, Object> authConf, ClusterStateContext context) throws Exception {
         this.conf = conf;
         this.authConf = authConf;
-        if (context.getDaemonType().equals(DaemonType.NIMBUS))
+        if (context.getDaemonType().equals(DaemonType.NIMBUS)) {
             this.isNimbus = true;
+        }
 
         // just mkdir STORM_ZOOKEEPER_ROOT dir
-        CuratorFramework zkTemp = mkZk();
+        CuratorFramework zkTemp = mkZk(context.getDaemonType());
         String rootPath = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
         ClientZookeeper.mkdirs(zkTemp, rootPath, context.getDefaultZkAcls());
         zkTemp.close();
 
         active = new AtomicBoolean(true);
-        zkWriter = mkZk(new ZkWatcherCallBack());
+        zkWriter = mkZk(new ZkWatcherCallBack(), context.getDaemonType());
         if (isNimbus) {
-            zkReader = mkZk(new ZkWatcherCallBack());
+            zkReader = mkZk(new ZkWatcherCallBack(), context.getDaemonType());
         } else {
             zkReader = zkWriter;
         }
@@ -97,15 +98,15 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk() throws IOException {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), "",
-                new DefaultWatcherCallBack(), authConf);
+    private CuratorFramework mkZk(DaemonType type) {
+        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
+            conf.get(Config.STORM_ZOOKEEPER_PORT), "", new DefaultWatcherCallBack(), authConf, type);
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher) throws NumberFormatException, IOException {
-        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT),
-                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf);
+    private CuratorFramework mkZk(WatcherCallBack watcher, DaemonType type) throws NumberFormatException {
+        return ClientZookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS),
+            conf.get(Config.STORM_ZOOKEEPER_PORT), String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf, type);
     }
 
     @Override

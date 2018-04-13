@@ -1094,6 +1094,21 @@ public class DaemonConfig implements Validated {
     @isPositiveNumber
     public static String STORM_WORKER_TOKEN_LIFE_TIME_HOURS = "storm.worker.token.life.time.hours";
 
+    /**
+     * In nimbus on startup check if all of the zookeeper ACLs are correct before starting.  If not
+     * don't start nimbus.
+     */
+    @isBoolean
+    public static final String STORM_NIMBUS_ZOOKEEPER_ACLS_CHECK = "storm.nimbus.zookeeper.acls.check";
+
+    /**
+     * In nimbus on startup check if all of the zookeeper ACLs are correct before starting.  If not do
+     * your best to fix them before nimbus starts, if it cannot fix them nimbus will not start.
+     * This overrides any value set for storm.nimbus.zookeeper.acls.check.
+     */
+    @isBoolean
+    public static final String STORM_NIMBUS_ZOOKEEPER_ACLS_FIXUP = "storm.nimbus.zookeeper.acls.fixup";
+
     // VALIDATION ONLY CONFIGS
     // Some configs inside Config.java may reference classes we don't want to expose in storm-client, but we still want to validate
     // That they reference a valid class.  To allow this to happen we do part of the validation on the client side with annotations on

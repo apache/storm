@@ -1777,7 +1777,7 @@
         (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
-        (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config))))))
+        (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config) (Mockito/any Map))))))
 
 (deftest log-level-update-merges-and-flags-existent-log-level
   (let [cluster-state (Mockito/mock IStormClusterState)
@@ -1826,7 +1826,7 @@
         (.thenReturn (Mockito/when (.topologyLogConfig cluster-state (Mockito/any String) (Mockito/anyObject))) previous-config)
 
         (.setLogConfig nimbus "foo" mock-config)
-        (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config))))))
+        (.setTopologyLogConfig (Mockito/verify cluster-state) (Mockito/any String) (Mockito/eq expected-config) (Mockito/any Map))))))
 
 (defn teardown-heartbeats [id])
 (defn teardown-topo-errors [id])

@@ -22,6 +22,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.api.PathAndBytesable;
 import org.apache.curator.framework.api.ProtectACLCreateModePathAndBytesable;
 import org.apache.storm.Config;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.CuratorUtils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
@@ -65,7 +66,7 @@ public class TransactionalState {
             List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
             ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
-            CuratorFramework initter = CuratorUtils.newCuratorStarted(conf, servers, port, auth);
+            CuratorFramework initter = CuratorUtils.newCuratorStarted(conf, servers, port, auth, DaemonType.WORKER.getDefaultZkAcls(conf));
             _zkAcls = Utils.getWorkerACL(conf);
             try {
                 TransactionalState.createNode(initter, transactionalRoot, null, null, null);
@@ -77,7 +78,7 @@ public class TransactionalState {
             }
             initter.close();
                                     
-            _curator = CuratorUtils.newCuratorStarted(conf, servers, port, rootDir, auth);
+            _curator = CuratorUtils.newCuratorStarted(conf, servers, port, rootDir, auth, DaemonType.WORKER.getDefaultZkAcls(conf));
         } catch (Exception e) {
            throw new RuntimeException(e);
         }

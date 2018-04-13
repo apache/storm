@@ -62,8 +62,11 @@ public enum DaemonType {
                     return ZooDefs.Ids.CREATOR_ALL_ACL;
                 case DRPC:
                     List<ACL> ret = new ArrayList<>(ZooDefs.Ids.CREATOR_ALL_ACL);
-                    ret.add(new ACL(ZooDefs.Perms.READ,
-                        Utils.parseZkId((String)conf.get(Config.STORM_ZOOKEEPER_DRPC_ACL), Config.STORM_ZOOKEEPER_DRPC_ACL)));
+                    String drpcAcl = (String)conf.get(Config.STORM_ZOOKEEPER_DRPC_ACL);
+                    if (drpcAcl != null) {
+                        ret.add(new ACL(ZooDefs.Perms.READ,
+                            Utils.parseZkId(drpcAcl, Config.STORM_ZOOKEEPER_DRPC_ACL)));
+                    } //else we assume it is the same as teh SUPER_ACL which is covered by CREATOR_ALL
                     return ret;
                 default:
                     throw new IllegalStateException("WorkerTokens for " + type + " are not currently supported.");
@@ -81,8 +84,7 @@ public enum DaemonType {
 
     private static final Logger LOG = LoggerFactory.getLogger(DaemonType.class);
     @VisibleForTesting
-    public static final List<ACL> NIMBUS_SUPERVISOR_ZK_ACLS = Arrays.asList(ZooDefs.Ids.CREATOR_ALL_ACL.get(0),
-        new ACL(ZooDefs.Perms.READ | ZooDefs.Perms.CREATE, ZooDefs.Ids.ANYONE_ID_UNSAFE));
+    public static final List<ACL> NIMBUS_SUPERVISOR_ZK_ACLS = ZooDefs.Ids.CREATOR_ALL_ACL;
     private static List<ACL> getDefaultNimbusSupervisorZkAcls(Map<String, Object> conf) {
         if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
             return NIMBUS_SUPERVISOR_ZK_ACLS;

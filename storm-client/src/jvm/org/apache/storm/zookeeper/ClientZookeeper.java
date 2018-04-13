@@ -25,6 +25,7 @@ import org.apache.curator.framework.api.CuratorListener;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.CuratorUtils;
@@ -73,8 +74,9 @@ public class ClientZookeeper {
         _instance.mkdirsImpl(zk, path, acls);
     }
 
-    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map<String, Object> authConf) {
-        return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf);
+    public static CuratorFramework mkClient(Map<String, Object> conf, List<String> servers, Object port,
+                                            String root, final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
+        return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf, type);
     }
 
     // Deletes the state inside the zookeeper for a key, for which the
@@ -300,33 +302,13 @@ public class ClientZookeeper {
         }
     }
 
-    /**
-     * connect ZK, register Watch/unhandle Watch
-     *
-     * @return
-     */
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher) {
-        return mkClientImpl(conf, servers, port, root, watcher, null);
-    }
-
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root) {
-        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack());
-    }
-
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, Map<String, Object> authConf) {
-        return mkClientImpl(conf, servers, port, "", new DefaultWatcherCallBack(), authConf);
-    }
-
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, Map<String, Object> authConf) {
-        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack(), authConf);
-    }
-
-    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map<String, Object> authConf) {
+    public  CuratorFramework mkClientImpl(Map<String, Object> conf, List<String> servers, Object port, String root,
+                                          final WatcherCallBack watcher, Map<String, Object> authConf, DaemonType type) {
         CuratorFramework fk;
         if (authConf != null) {
-            fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf));
+            fk = CuratorUtils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf), type.getDefaultZkAcls(conf));
         } else {
-            fk = CuratorUtils.newCurator(conf, servers, port, root);
+            fk = CuratorUtils.newCurator(conf, servers, port, root, null, type.getDefaultZkAcls(conf));
         }
 
         fk.getCuratorListenable().addListener(new CuratorListener() {

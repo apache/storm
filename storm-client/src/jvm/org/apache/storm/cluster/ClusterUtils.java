@@ -46,7 +46,6 @@ public class ClusterUtils {
     public static final String ZK_SEPERATOR = "/";
 
     public static final String ASSIGNMENTS_ROOT = "assignments";
-    public static final String CODE_ROOT = "code";
     public static final String STORMS_ROOT = "storms";
     public static final String SUPERVISORS_ROOT = "supervisors";
     public static final String WORKERBEATS_ROOT = "workerbeats";
@@ -98,15 +97,38 @@ public class ClusterUtils {
         _instance = INSTANCE;
     }
 
-    public static List<ACL> mkTopoOnlyAcls(Map<String, Object> topoConf) throws NoSuchAlgorithmException {
+    /**
+     * Get ZK ACLs for a topology to have read/write access.
+     * @param topoConf the topology config.
+     * @return the ACLs.
+     */
+    public static List<ACL> mkTopoReadWriteAcls(Map<String, Object> topoConf) {
+        return mkTopoAcls(topoConf, ZooDefs.Perms.ALL);
+    }
+
+    /**
+     * Get ZK ACLs for a topology to have read only access.
+     * @param topoConf the topology config.
+     * @return the ACLs.
+     */
+    public static List<ACL> mkTopoReadOnlyAcls(Map<String, Object> topoConf) {
+        return mkTopoAcls(topoConf, ZooDefs.Perms.READ);
+    }
+
+    private static List<ACL> mkTopoAcls(Map<String, Object> topoConf, int perms) {
         List<ACL> aclList = null;
         String payload = (String) topoConf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_PAYLOAD);
         if (Utils.isZkAuthenticationConfiguredTopology(topoConf)) {
             aclList = new ArrayList<>();
             ACL acl1 = ZooDefs.Ids.CREATOR_ALL_ACL.get(0);
             aclList.add(acl1);
-            ACL acl2 = new ACL(ZooDefs.Perms.READ, new Id("digest", DigestAuthenticationProvider.generateDigest(payload)));
-            aclList.add(acl2);
+            try {
+                ACL acl2 = new ACL(perms, new Id("digest", DigestAuthenticationProvider.generateDigest(payload)));
+                aclList.add(acl2);
+            } catch (NoSuchAlgorithmException e) {
+                //Should only happen on a badly configured system
+                throw new RuntimeException(e);
+            }
         }
         return aclList;
     }

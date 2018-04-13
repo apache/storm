@@ -19,7 +19,6 @@
 package org.apache.storm.cluster;
 
 import java.nio.ByteBuffer;
-import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.ArrayList;
@@ -294,7 +293,6 @@ public class StormClusterStateImpl implements IStormClusterState {
                     stateStorage.delete_node(ClusterUtils.nimbusPath(nimbusId));
                     stateStorage.set_ephemeral_node(ClusterUtils.nimbusPath(nimbusId), Utils.serialize(nimbusSummary), defaultAcls);
                 }
-
             }
         });
 
@@ -435,8 +433,9 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setupHeatbeats(String stormId) {
-        stateStorage.mkdirs(ClusterUtils.workerbeatStormRoot(stormId), defaultAcls);
+    public void setupHeatbeats(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.WORKERBEATS_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.workerbeatStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
     }
 
     @Override
@@ -491,8 +490,9 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setTopologyLogConfig(String stormId, LogConfig logConfig) {
-        stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), defaultAcls);
+    public void setTopologyLogConfig(String stormId, LogConfig logConfig, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.LOGCONFIG_SUBTREE, defaultAcls);
+        stateStorage.set_data(ClusterUtils.logConfigPath(stormId), Utils.serialize(logConfig), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
     }
 
     @Override
@@ -555,8 +555,9 @@ public class StormClusterStateImpl implements IStormClusterState {
         return ret;
     }
     @Override
-    public void setupBackpressure(String stormId) {
-        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), defaultAcls);
+    public void setupBackpressure(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.BACKPRESSURE_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.backpressureStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
     }
 
     @Override
@@ -582,9 +583,10 @@ public class StormClusterStateImpl implements IStormClusterState {
         }
     }
     @Override
-    public void activateStorm(String stormId, StormBase stormBase) {
+    public void activateStorm(String stormId, StormBase stormBase, Map<String, Object> topoConf) {
         String path = ClusterUtils.stormPath(stormId);
-        stateStorage.set_data(path, Utils.serialize(stormBase), defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.STORMS_SUBTREE, defaultAcls);
+        stateStorage.set_data(path, Utils.serialize(stormBase), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
         this.assignmentsBackend.keepStormId(stormBase.get_name(), stormId);
     }
 
@@ -596,7 +598,6 @@ public class StormClusterStateImpl implements IStormClusterState {
      */
     @Override
     public void updateStorm(String stormId, StormBase newElems) {
-
         StormBase stormBase = stormBase(stormId, null);
         if (stormBase.get_component_executors() != null) {
 
@@ -683,9 +684,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setAssignment(String stormId, Assignment info) {
+    public void setAssignment(String stormId, Assignment info, Map<String, Object> topoConf) {
         byte[] serAssignment = Utils.serialize(info);
-        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), serAssignment, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.ASSIGNMENTS_SUBTREE, defaultAcls);
+        stateStorage.set_data(ClusterUtils.assignmentPath(stormId), Utils.serialize(info), ClusterUtils.mkTopoReadOnlyAcls(topoConf));
         this.assignmentsBackend.keepOrUpdateAssignment(stormId, info);
     }
 
@@ -736,8 +738,13 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void reportError(String stormId, String componentId, String node, Long port, Throwable error) {
+    public void setupErrors(String stormId, Map<String, Object> topoConf) {
+        stateStorage.mkdirs(ClusterUtils.ERRORS_SUBTREE, defaultAcls);
+        stateStorage.mkdirs(ClusterUtils.errorStormRoot(stormId), ClusterUtils.mkTopoReadWriteAcls(topoConf));
+    }
 
+    @Override
+    public void reportError(String stormId, String componentId, String node, Long port, Throwable error) {
         String path = ClusterUtils.errorPath(stormId, componentId);
         String lastErrorPath = ClusterUtils.lastErrorPath(stormId, componentId);
         ErrorInfo errorInfo = new ErrorInfo(ClusterUtils.stringifyError(error), Time.currentTimeSecs());
@@ -795,7 +802,6 @@ public class StormClusterStateImpl implements IStormClusterState {
 
     @Override
     public ErrorInfo lastError(String stormId, String componentId) {
-
         String path = ClusterUtils.lastErrorPath(stormId, componentId);
         if (stateStorage.node_exists(path, false)) {
             ErrorInfo errorInfo = ClusterUtils.maybeDeserialize(stateStorage.get_data(path, false), ErrorInfo.class);
@@ -806,11 +812,10 @@ public class StormClusterStateImpl implements IStormClusterState {
     }
 
     @Override
-    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) throws NoSuchAlgorithmException {
-        List<ACL> aclList = ClusterUtils.mkTopoOnlyAcls(topoConf);
+    public void setCredentials(String stormId, Credentials creds, Map<String, Object> topoConf) {
+        List<ACL> aclList = ClusterUtils.mkTopoReadOnlyAcls(topoConf);
         String path = ClusterUtils.credentialsPath(stormId);
         stateStorage.set_data(path, Utils.serialize(creds), aclList);
-
     }
 
     @Override
@@ -841,6 +846,7 @@ public class StormClusterStateImpl implements IStormClusterState {
     @Override
     public void addPrivateWorkerKey(WorkerTokenServiceType type, String topologyId, long keyVersion, PrivateWorkerKey key) {
         assert context.getDaemonType() == DaemonType.NIMBUS;
+        stateStorage.mkdirs(ClusterUtils.SECRET_KEYS_SUBTREE, defaultAcls);
         List<ACL> secretAcls = context.getZkSecretAcls(type);
         String path = ClusterUtils.secretKeysPath(type, topologyId, keyVersion);
         LOG.debug("Storing private key for {} connecting to a {} at {} with ACL {}\n\n", topologyId, type, path, secretAcls);

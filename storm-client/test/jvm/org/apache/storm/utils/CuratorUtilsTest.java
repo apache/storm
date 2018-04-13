@@ -24,6 +24,7 @@ import org.apache.curator.framework.AuthInfo;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.Config;
+import org.apache.storm.cluster.DaemonType;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -44,7 +45,8 @@ public class CuratorUtilsTest {
         config.put(Config.STORM_ZOOKEEPER_RETRY_TIMES, expectedRetries);
         config.put(Config.STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING, expectedCeiling);
 
-        CuratorFramework curator = CuratorUtils.newCurator(config, Arrays.asList("bogus_server"), 42 /*port*/, "");
+        CuratorFramework curator = CuratorUtils.newCurator(config, Arrays.asList("bogus_server"), 42, "",
+            DaemonType.WORKER.getDefaultZkAcls(config));
         StormBoundedExponentialBackoffRetry policy =
                 (StormBoundedExponentialBackoffRetry) curator.getZookeeperClient().getRetryPolicy();
         Assert.assertEquals(policy.getBaseSleepTimeMs(), expectedInterval);

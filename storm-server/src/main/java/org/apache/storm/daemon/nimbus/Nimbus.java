@@ -200,6 +200,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.Utils.UptimeComputer;
 import org.apache.storm.utils.VersionInfo;
 import org.apache.storm.validation.ConfigValidation;
+import org.apache.storm.zookeeper.AclEnforcement;
 import org.apache.storm.zookeeper.ClientZookeeper;
 import org.apache.storm.zookeeper.Zookeeper;
 import org.apache.thrift.TException;
@@ -1056,6 +1057,11 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     public static Nimbus launch(INimbus inimbus) throws Exception {
         Map<String, Object> conf = Utils.merge(Utils.readStormConfig(),
                 ConfigUtils.readYamlConfig("storm-cluster-auth.yaml", false));
+        boolean fixupAcl = (boolean) conf.get(DaemonConfig.STORM_NIMBUS_ZOOKEEPER_ACLS_FIXUP);
+        boolean checkAcl = fixupAcl || (boolean) conf.get(DaemonConfig.STORM_NIMBUS_ZOOKEEPER_ACLS_CHECK);
+        if (checkAcl) {
+            AclEnforcement.verifyAcls(conf, fixupAcl);
+        }
         return launchServer(conf, inimbus);
     }
     
@@ -1121,7 +1127,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         String root = (String)conf.get(Config.STORM_ZOOKEEPER_ROOT);
         CuratorFramework ret = null;
         if (servers != null && port != null) {
-            ret = ClientZookeeper.mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), conf);
+            ret = ClientZookeeper.mkClient(conf, servers, port, root, new DefaultWatcherCallBack(), conf, DaemonType.NIMBUS);
         }
         return ret;
     }
@@ -2082,7 +2088,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                     TopologyDetails td = tds.get(id);
                     if (td != null) {
                         currentAssignment.set_owner(td.getTopologySubmitter());
-                        state.setAssignment(id, currentAssignment);
+                        state.setAssignment(id, currentAssignment, td.getConf());
                     }
                 }
                 existingAssignments.put(id, currentAssignment);
@@ -2191,12 +2197,12 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 String topoId = entry.getKey();
                 Assignment assignment = entry.getValue();
                 Assignment existingAssignment = existingAssignments.get(topoId);
-                //NOT Used TopologyDetails topologyDetails = topologies.getById(topoId);
+                TopologyDetails td = topologies.getById(topoId);
                 if (assignment.equals(existingAssignment)) {
                     LOG.debug("Assignment for {} hasn't changed", topoId);
                 } else {
                     LOG.info("Setting new assignment for topology id {}: {}", topoId, assignment);
-                    state.setAssignment(topoId, assignment);
+                    state.setAssignment(topoId, assignment, td.getConf());
                 }
             }
 
@@ -2269,7 +2275,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         base.set_owner(owner);
         base.set_principal(principal);
         base.set_component_debug(new HashMap<>());
-        state.activateStorm(topoId, base);
+        state.activateStorm(topoId, base, topoConf);
         notifyTopologyActionListener(topoName, "activate");
     }
     
@@ -3075,9 +3081,10 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 LOG.info("uploadedJar {}", uploadedJarLocation);
                 setupStormCode(conf, topoId, uploadedJarLocation, totalConfToSave, topology);
                 waitForDesiredCodeReplication(totalConf, topoId);
-                state.setupHeatbeats(topoId);
+                state.setupHeatbeats(topoId, topoConf);
+                state.setupErrors(topoId, topoConf);
                 if (ObjectReader.getBoolean(totalConf.get(Config.TOPOLOGY_BACKPRESSURE_ENABLE), false)) {
-                    state.setupBackpressure(topoId);
+                    state.setupBackpressure(topoId, topoConf);
                 }
                 notifyTopologyActionListener(topoName, "submitTopology");
                 TopologyStatus status = null;
@@ -3267,7 +3274,7 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
                 }
             }
             LOG.info("Setting log config for {}:{}", topoName, mergedLogConfig);
-            state.setTopologyLogConfig(topoId, mergedLogConfig);
+            state.setTopologyLogConfig(topoId, mergedLogConfig, topoConf);
         } catch (Exception e) {
             LOG.warn("set log config topology exception. (topology id='{}')", topoId, e);
             if (e instanceof TException) {

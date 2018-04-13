@@ -205,21 +205,21 @@
           base1 (mkStormBase "/tmp/storm1" 1 TopologyStatus/ACTIVE 2)
           base2 (mkStormBase "/tmp/storm2" 2 TopologyStatus/ACTIVE 2)]
       (is (= [] (.assignments state nil)))
-      (.setAssignment state "storm1" assignment1)
+      (.setAssignment state "storm1" assignment1 {})
       (is (= assignment1 (.assignmentInfo state "storm1" nil)))
       (is (= nil (.assignmentInfo state "storm3" nil)))
-      (.setAssignment state "storm1" assignment2)
-      (.setAssignment state "storm3" assignment1)
+      (.setAssignment state "storm1" assignment2 {})
+      (.setAssignment state "storm3" assignment1 {})
       (is (= #{"storm1" "storm3"} (set (.assignments state nil))))
       (is (= assignment2 (.assignmentInfo state "storm1" nil)))
       (is (= assignment1 (.assignmentInfo state "storm3" nil)))
 
       (is (= [] (.activeStorms state)))
-      (.activateStorm state "storm1" base1)
+      (.activateStorm state "storm1" base1 {})
       (is (= ["storm1"] (.activeStorms state)))
       (is (= base1 (.stormBase state "storm1" nil)))
       (is (= nil (.stormBase state "storm2" nil)))
-      (.activateStorm state "storm2" base2)
+      (.activateStorm state "storm2" base2 {})
       (is (= base1 (.stormBase state "storm1" nil)))
       (is (= base2 (.stormBase state "storm2" nil)))
       (is (= #{"storm1" "storm2"} (set (.activeStorms state))))
@@ -353,7 +353,8 @@
           curator-frameworke (reify CuratorFramework (^void close [this] nil))]
       ;; No need for when clauses because we just want to return nil
       (with-open [_ (MockedClientZookeeper. zk-mock)]
-        (. (Mockito/when (.mkClientImpl zk-mock (Mockito/anyMap) (Mockito/any) (Mockito/any) (Mockito/anyString) (Mockito/any) (Mockito/any))) (thenReturn curator-frameworke))
+        (. (Mockito/when (.mkClientImpl zk-mock (Mockito/anyMap) (Mockito/any) (Mockito/any) (Mockito/anyString) (Mockito/any)
+         (Mockito/any) (Mockito/any))) (thenReturn curator-frameworke))
         (ClusterUtils/mkStateStorage {} nil (ClusterStateContext.))
         (.mkdirsImpl (Mockito/verify zk-mock (Mockito/times 1)) (Mockito/any) (Mockito/anyString) (Mockito/eq nil))))
     (let [distributed-state-storage (reify IStateStorage

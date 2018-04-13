@@ -28,6 +28,7 @@ import javax.security.auth.Subject;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.storm.Config;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyAlreadyExistsException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -52,12 +53,13 @@ public class BlobStoreUtils {
         return BLOBSTORE_SUBTREE;
     }
 
-    public static CuratorFramework createZKClient(Map<String, Object> conf) {
+    public static CuratorFramework createZKClient(Map<String, Object> conf, DaemonType type) {
         @SuppressWarnings("unchecked")
         List<String> zkServers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
         ZookeeperAuthInfo zkAuthInfo = new ZookeeperAuthInfo(conf);
-        CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port, (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo);
+        CuratorFramework zkClient = CuratorUtils.newCurator(conf, zkServers, port,
+            (String) conf.get(Config.STORM_ZOOKEEPER_ROOT), zkAuthInfo, type.getDefaultZkAcls(conf));
         zkClient.start();
         return zkClient;
     }
