@@ -617,25 +617,13 @@ public class StatsUtil {
         // (merge-with merge-agg-comp-stats-topo-page-bolt/spout (acc-stats comp-key) cid->statk->num)
         // (acc-stats comp-key) ==> bolt2stats/spout2stats
         if (isSpout) {
-            Set<String> spouts = new HashSet<>();
-            spouts.addAll(spout2stats.keySet());
-            spouts.addAll(cid2stats.keySet());
-
-            Map<String, Object> mm = new HashMap<>();
-            for (String spout : spouts) {
-                mm.put(spout, mergeAggCompStatsTopoPageSpout((Map) spout2stats.get(spout), (Map) cid2stats.get(spout)));
+            for (String spout : cid2stats.keySet()) {
+                spout2stats.put(spout, mergeAggCompStatsTopoPageSpout((Map) spout2stats.get(spout), (Map) cid2stats.get(spout)));
             }
-            putKV(ret, SPOUT_TO_STATS, mm);
         } else {
-            Set<String> bolts = new HashSet<>();
-            bolts.addAll(bolt2stats.keySet());
-            bolts.addAll(cid2stats.keySet());
-
-            Map<String, Object> mm = new HashMap<>();
-            for (String bolt : bolts) {
-                mm.put(bolt, mergeAggCompStatsTopoPageBolt((Map) bolt2stats.get(bolt), (Map) cid2stats.get(bolt)));
+            for (String bolt : cid2stats.keySet()) {
+                bolt2stats.put(bolt, mergeAggCompStatsTopoPageBolt((Map) bolt2stats.get(bolt), (Map) cid2stats.get(bolt)));
             }
-            putKV(ret, BOLT_TO_STATS, mm);
         }
 
         return ret;
