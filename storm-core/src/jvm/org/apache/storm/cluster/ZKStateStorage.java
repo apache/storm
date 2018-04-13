@@ -80,15 +80,15 @@ public class ZKStateStorage implements IStateStorage {
             this.isNimbus = true;
 
         // just mkdir STORM_ZOOKEEPER_ROOT dir
-        CuratorFramework zkTemp = mkZk();
+        CuratorFramework zkTemp = mkZk(acls);
         String rootPath = String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT));
         Zookeeper.mkdirs(zkTemp, rootPath, acls);
         zkTemp.close();
 
         active = new AtomicBoolean(true);
-        zkWriter = mkZk(new ZkWatcherCallBack());
+        zkWriter = mkZk(acls, new ZkWatcherCallBack());
         if (isNimbus) {
-            zkReader = mkZk(new ZkWatcherCallBack());
+            zkReader = mkZk(acls, new ZkWatcherCallBack());
         } else {
             zkReader = zkWriter;
         }
@@ -96,15 +96,15 @@ public class ZKStateStorage implements IStateStorage {
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk() throws IOException {
+    private CuratorFramework mkZk(List<ACL> acls) throws IOException {
         return Zookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT), "",
-                new DefaultWatcherCallBack(), authConf);
+                new DefaultWatcherCallBack(), authConf, acls);
     }
 
     @SuppressWarnings("unchecked")
-    private CuratorFramework mkZk(WatcherCallBack watcher) throws NumberFormatException, IOException {
+    private CuratorFramework mkZk(List<ACL> acls, WatcherCallBack watcher) throws NumberFormatException, IOException {
         return Zookeeper.mkClient(conf, (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS), conf.get(Config.STORM_ZOOKEEPER_PORT),
-                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf);
+                String.valueOf(conf.get(Config.STORM_ZOOKEEPER_ROOT)), watcher, authConf, acls);
     }
 
     @Override

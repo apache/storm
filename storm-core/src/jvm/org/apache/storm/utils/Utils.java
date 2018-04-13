@@ -32,6 +32,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.curator.ensemble.exhibitor.DefaultExhibitorRestClient;
 import org.apache.curator.ensemble.exhibitor.ExhibitorEnsembleProvider;
 import org.apache.curator.ensemble.exhibitor.Exhibitors;
+import org.apache.curator.framework.api.ACLProvider;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.storm.Config;
@@ -1079,15 +1080,16 @@ public class Utils {
         return false;
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root) {
-        return newCurator(conf, servers, port, root, null);
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, List<ACL> defaultAcl) {
+        return newCurator(conf, servers, port, root, null, defaultAcl);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
-        return newCurator(conf, servers, port, "", auth);
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
+        return newCurator(conf, servers, port, "", auth, defaultAcl);
     }
 
-    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
+    public static CuratorFramework newCurator(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth,
+                                              final List<ACL> defaultAcl) {
         List<String> serverPorts = new ArrayList<String>();
         for (String zkServer : servers) {
             serverPorts.add(zkServer + ":" + Utils.getInt(port));
@@ -1096,6 +1098,19 @@ public class Utils {
         CuratorFrameworkFactory.Builder builder = CuratorFrameworkFactory.builder();
 
         setupBuilder(builder, zkStr, conf, auth);
+        if (defaultAcl != null) {
+            builder.aclProvider(new ACLProvider() {
+                @Override
+                public List<ACL> getDefaultAcl() {
+                    return defaultAcl;
+                }
+
+                @Override
+                public List<ACL> getAclForPath(String s) {
+                    return null;
+                }
+            });
+        }
 
         return builder.build();
     }
@@ -1142,15 +1157,15 @@ public class Utils {
         setupBuilder(builder, zkStr, conf, auth);
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth) {
-        CuratorFramework ret = newCurator(conf, servers, port, root, auth);
+    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, String root, ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
+        CuratorFramework ret = newCurator(conf, servers, port, root, auth, defaultAcl);
         LOG.info("Starting Utils Curator...");
         ret.start();
         return ret;
     }
 
-    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth) {
-        CuratorFramework ret = newCurator(conf, servers, port, auth);
+    public static CuratorFramework newCuratorStarted(Map conf, List<String> servers, Object port, ZookeeperAuthInfo auth, List<ACL> defaultAcl) {
+        CuratorFramework ret = newCurator(conf, servers, port, auth, defaultAcl);
         LOG.info("Starting Utils Curator (2)...");
         ret.start();
         return ret;
@@ -1227,23 +1242,39 @@ public class Utils {
                 && !((String)conf.get(Config.STORM_ZOOKEEPER_TOPOLOGY_AUTH_SCHEME)).isEmpty());
     }
 
-
-    public static List<ACL> getWorkerACL(Map conf) {
-        //This is a work around to an issue with ZK where a sasl super user is not super unless there is an open SASL ACL so we are trying to give the correct perms
-        if (!isZkAuthenticationConfiguredTopology(conf)) {
-            return null;
+    public static Id parseZkId(String id, String configName) {
+        String[] split = id.split(":", 2);
+        if (split.length != 2) {
+            throw new IllegalArgumentException(configName + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
         }
+        return new Id(split[0], split[1]);
+    }
+
+    /**
+     * Get the ACL for nimbus/supervisor.  The Super User ACL. This assumes that security is enabled.
+     * @param conf the config to get the super User ACL from
+     * @return the super user ACL.
+     */
+    public static ACL getSuperUserAcl(Map<String, Object> conf) {
         String stormZKUser = (String)conf.get(Config.STORM_ZOOKEEPER_SUPERACL);
         if (stormZKUser == null) {
             throw new IllegalArgumentException("Authentication is enabled but " + Config.STORM_ZOOKEEPER_SUPERACL + " is not set");
         }
-        String[] split = stormZKUser.split(":", 2);
-        if (split.length != 2) {
-            throw new IllegalArgumentException(Config.STORM_ZOOKEEPER_SUPERACL + " does not appear to be in the form scheme:acl, i.e. sasl:storm-user");
+        return new ACL(ZooDefs.Perms.ALL, parseZkId(stormZKUser, Config.STORM_ZOOKEEPER_SUPERACL));
+    }
+
+    /**
+     * Get the ZK ACLs that a worker should use when writing to ZK.
+     * @param conf the config for the topology.
+     * @return the ACLs
+     */
+    public static List<ACL> getWorkerACL(Map<String, Object> conf) {
+        if (!isZkAuthenticationConfiguredTopology(conf)) {
+            return null;
         }
         ArrayList<ACL> ret = new ArrayList<ACL>(ZooDefs.Ids.CREATOR_ALL_ACL);
-        ret.add(new ACL(ZooDefs.Perms.ALL, new Id(split[0], split[1])));
-        return ret;
+        ret.add(getSuperUserAcl(conf));
+	return ret;
     }
 
     /**

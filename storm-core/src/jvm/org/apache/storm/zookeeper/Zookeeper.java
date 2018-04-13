@@ -36,6 +36,7 @@ import org.apache.storm.blobstore.InputStreamWithMeta;
 import org.apache.storm.callback.DefaultWatcherCallBack;
 import org.apache.storm.callback.WatcherCallBack;
 import org.apache.storm.cluster.ClusterUtils;
+import org.apache.storm.cluster.DaemonType;
 import org.apache.storm.cluster.VersionedData;
 import org.apache.storm.generated.AuthorizationException;
 import org.apache.storm.generated.KeyNotFoundException;
@@ -47,6 +48,7 @@ import org.apache.storm.utils.Utils;
 import org.apache.storm.utils.ZookeeperAuthInfo;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.data.ACL;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.NIOServerCnxnFactory;
@@ -93,28 +95,28 @@ public class Zookeeper {
         _instance = INSTANCE;
     }
 
-    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root) {
-        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack());
+    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, List<ACL> defaultAcl) {
+        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack(), null, defaultAcl);
     }
 
-    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, Map authConf) {
-        return mkClientImpl(conf, servers, port, "", new DefaultWatcherCallBack(), authConf);
+    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, Map authConf, List<ACL> defaultAcl) {
+        return mkClientImpl(conf, servers, port, "", new DefaultWatcherCallBack(), authConf, defaultAcl);
     }
 
-    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, Map authConf) {
-        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack(), authConf);
+    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, Map authConf, List<ACL> defaultAcl) {
+        return mkClientImpl(conf, servers, port, root, new DefaultWatcherCallBack(), authConf, defaultAcl);
     }
 
-    public static CuratorFramework mkClient(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf) {
-        return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf);
+    public static CuratorFramework mkClient(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf, List<ACL> defaultAcl) {
+        return _instance.mkClientImpl(conf, servers, port, root, watcher, authConf, defaultAcl);
     }
 
-    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf) {
+    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher, Map authConf, List<ACL> defaultAcl) {
         CuratorFramework fk;
         if (authConf != null) {
-            fk = Utils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf));
+            fk = Utils.newCurator(conf, servers, port, root, new ZookeeperAuthInfo(authConf), defaultAcl);
         } else {
-            fk = Utils.newCurator(conf, servers, port, root);
+            fk = Utils.newCurator(conf, servers, port, root, defaultAcl);
         }
 
         fk.getCuratorListenable().addListener(new CuratorListener() {
@@ -136,8 +138,9 @@ public class Zookeeper {
      *
      * @return
      */
-    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher) {
-        return mkClientImpl(conf, servers, port, root, watcher, null);
+    public  CuratorFramework mkClientImpl(Map conf, List<String> servers, Object port, String root, final WatcherCallBack watcher,
+                                          List<ACL> defaultAcl) {
+        return mkClientImpl(conf, servers, port, root, watcher, null,defaultAcl);
     }
 
     public static String createNode(CuratorFramework zk, String path, byte[] data, org.apache.zookeeper.CreateMode mode, List<ACL> acls) {
@@ -454,14 +457,14 @@ public class Zookeeper {
         };
     }
 
-    public static ILeaderElector zkLeaderElector(Map conf, BlobStore blobStore) throws UnknownHostException {
-        return _instance.zkLeaderElectorImpl(conf, blobStore);
+    public static ILeaderElector zkLeaderElector(Map conf, BlobStore blobStore, List<ACL> defaultAcl) throws UnknownHostException {
+        return _instance.zkLeaderElectorImpl(conf, blobStore, defaultAcl);
     }
 
-    protected ILeaderElector zkLeaderElectorImpl(Map conf, BlobStore blobStore) throws UnknownHostException {
+    protected ILeaderElector zkLeaderElectorImpl(Map conf, BlobStore blobStore, List<ACL> defaultAcl) throws UnknownHostException {
         List<String> servers = (List<String>) conf.get(Config.STORM_ZOOKEEPER_SERVERS);
         Object port = conf.get(Config.STORM_ZOOKEEPER_PORT);
-        CuratorFramework zk = mkClientImpl(conf, servers, port, "", conf);
+        CuratorFramework zk = mkClientImpl(conf, servers, port, "", conf, defaultAcl);
         String leaderLockPath = conf.get(Config.STORM_ZOOKEEPER_ROOT) + "/leader-lock";
         String id = NimbusInfo.fromConf(conf).toHostPortString();
         AtomicReference<LeaderLatch> leaderLatchAtomicReference = new AtomicReference<>(new LeaderLatch(zk, leaderLockPath, id));

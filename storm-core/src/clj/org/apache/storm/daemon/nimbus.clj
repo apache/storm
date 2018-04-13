@@ -56,6 +56,7 @@
                             [stats :as stats]])
   (:require [org.apache.storm.ui.core :as ui])
   (:require [clojure.set :as set])
+  (:import [org.apache.storm.zookeeper AclEnforcement])
   (:import [org.apache.storm.daemon.common StormBase Assignment])
   (:use [org.apache.storm.daemon common])
   (:use [org.apache.storm config])
@@ -133,6 +134,16 @@
     scheduler
     ))
 
+(def NIMBUS-ZK-ACLS ZooDefs$Ids/CREATOR_ALL_ACL)
+
+(defn mk-zk-client [conf]
+  (let [zk-servers (conf STORM-ZOOKEEPER-SERVERS)
+        zk-port (conf STORM-ZOOKEEPER-PORT)
+        zk-root (conf STORM-ZOOKEEPER-ROOT)]
+    (if (and zk-servers zk-port)
+      (mk-client conf zk-servers zk-port (if (Utils/isZkAuthenticationConfiguredStormServer conf) NIMBUS-ZK-ACLS nil) :root zk-root
+      :auth-conf conf))))
+
 (defmulti blob-sync cluster-mode)
 
 (defnk is-leader [nimbus :throw-exception true]
@@ -141,10 +152,6 @@
       (if throw-exception
         (let [leader-address (.getLeader leader-elector)]
           (throw (RuntimeException. (str "not a leader, current leader is " leader-address))))))))
-
-(def NIMBUS-ZK-ACLS
-  [(first ZooDefs$Ids/CREATOR_ALL_ACL)
-   (ACL. (bit-or ZooDefs$Perms/READ ZooDefs$Perms/CREATE) ZooDefs$Ids/ANYONE_ID_UNSAFE)])
 
 (defn mk-blob-cache-map
   "Constructs a TimeCacheMap instance with a blob store timeout whose
@@ -213,7 +220,7 @@
                                  (exit-process! 20 "Error when processing an event")
                                  ))
      :scheduler (mk-scheduler conf inimbus)
-     :leader-elector (zk-leader-elector conf blob-store)
+     :leader-elector (zk-leader-elector conf blob-store (if (Utils/isZkAuthenticationConfiguredStormServer conf) NIMBUS-ZK-ACLS nil))
      :id->sched-status (atom {})
      :node-id->resources (atom {}) ;;resources of supervisors
      :id->resources (atom {}) ;;resources of topologies
@@ -454,7 +461,7 @@
 
 (defn- get-version-for-key [key nimbus-host-port-info conf]
   (let [version (KeySequenceNumber. key nimbus-host-port-info)]
-    (.getKeySequenceNumber version conf)))
+    (.getKeySequenceNumber version conf (if (Utils/isZkAuthenticationConfiguredStormServer conf) NIMBUS-ZK-ACLS nil))))
 
 (defn get-key-seq-from-blob-store [blob-store]
   (let [key-iter (.listKeys blob-store)]
@@ -1002,7 +1009,7 @@
                                                 td (.get tds tid)
                                                 assignment (if (and (not (:owner assignment)) (not (nil? td)))
                                                              (let [new-assignment (fixup-assignment assignment td)]
-                                                               (.set-assignment! storm-cluster-state tid new-assignment)
+                                                               (.set-assignment! storm-cluster-state tid new-assignment (.getConf td))
                                                                new-assignment)
                                                              assignment)]
                                             {tid assignment}))))]
@@ -1060,7 +1067,7 @@
             (log-debug "Assignment for " topology-id " hasn't changed")
             (do
               (log-message "Setting new assignment for topology id " topology-id ": " (pr-str assignment))
-              (.set-assignment! storm-cluster-state topology-id assignment)
+              (.set-assignment! storm-cluster-state topology-id assignment (.getConf topology-details))
               )))
         (->> new-assignments
             (map (fn [[topology-id assignment]]
@@ -1098,7 +1105,8 @@
                                   nil
                                   nil
                                   {}
-                                  principal))
+                                  principal)
+                      storm-conf)
     (notify-topology-action-listener nimbus storm-name "activate")))
 
 (defn storm-active? [storm-cluster-state storm-name]
@@ -1744,9 +1752,10 @@
             (log-message "uploadedJar " uploadedJarLocation)
             (setup-storm-code nimbus conf storm-id uploadedJarLocation total-storm-conf topology)
             (wait-for-desired-code-replication nimbus total-storm-conf storm-id)
-            (.setup-heartbeats! storm-cluster-state storm-id)
+            (.setup-heartbeats! storm-cluster-state storm-id total-storm-conf)
+            (.setup-errors! storm-cluster-state storm-id total-storm-conf)
             (if (total-storm-conf TOPOLOGY-BACKPRESSURE-ENABLE)
-              (.setup-backpressure! storm-cluster-state storm-id))
+              (.setup-backpressure! storm-cluster-state storm-id total-storm-conf))
             (notify-topology-action-listener nimbus storm-name "submitTopology")
             (let [thrift-status->kw-status {TopologyInitialStatus/INACTIVE :inactive
                                             TopologyInitialStatus/ACTIVE :active}]
@@ -1892,7 +1901,7 @@
                          (.containsKey named-loggers logger-name))
                   (.remove named-loggers logger-name))))))
         (log-message "Setting log config for " storm-name ":" merged-log-config)
-        (.set-topology-log-config! storm-cluster-state id merged-log-config)))
+        (.set-topology-log-config! storm-cluster-state id merged-log-config topology-conf)))
 
     (uploadNewCredentials [this storm-name credentials]
       (mark! nimbus:num-uploadNewCredentials-calls)
@@ -2565,8 +2574,12 @@
 (defn -launch [nimbus]
   (let [conf (merge
                (read-storm-config)
-               (read-yaml-config "storm-cluster-auth.yaml" false))]
-  (launch-server! conf nimbus)))
+               (read-yaml-config "storm-cluster-auth.yaml" false))
+        fixup-acl (conf STORM-NIMBUS-ZOOKEEPER-ACLS-FIXUP)
+        check-acl (or fixup-acl (conf STORM-NIMBUS-ZOOKEEPER-ACLS-CHECK))]
+    (when check-acl
+      (AclEnforcement/verifyAcls conf fixup-acl))
+    (launch-server! conf nimbus)))
 
 (defn standalone-nimbus []
   (reify INimbus

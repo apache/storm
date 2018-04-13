@@ -63,7 +63,7 @@ public class TransactionalState {
             List<String> servers = (List<String>) getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_SERVERS, Config.STORM_ZOOKEEPER_SERVERS);
             Object port = getWithBackup(conf, Config.TRANSACTIONAL_ZOOKEEPER_PORT, Config.STORM_ZOOKEEPER_PORT);
             ZookeeperAuthInfo auth = new ZookeeperAuthInfo(conf);
-            CuratorFramework initter = Utils.newCuratorStarted(conf, servers, port, auth);
+            CuratorFramework initter = Utils.newCuratorStarted(conf, servers, port, auth, null);
             _zkAcls = Utils.getWorkerACL(conf);
             try {
                 TransactionalState.createNode(initter, transactionalRoot, null, null, null);
@@ -75,7 +75,7 @@ public class TransactionalState {
             }
             initter.close();
                                     
-            _curator = Utils.newCuratorStarted(conf, servers, port, rootDir, auth);
+            _curator = Utils.newCuratorStarted(conf, servers, port, rootDir, auth, null);
         } catch (Exception e) {
            throw new RuntimeException(e);
         }

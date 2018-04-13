@@ -32,7 +32,7 @@
            Config/STORM_ZOOKEEPER_RETRY_INTERVAL_CEILING expected_ceiling})
         servers ["bogus_server"]
         arbitrary_port 42
-        curator (Utils/newCurator conf servers arbitrary_port nil)
+        curator (Utils/newCurator conf servers arbitrary_port nil nil)
         retry (-> curator .getZookeeperClient .getRetryPolicy)
        ]
     (is (.isAssignableFrom ExponentialBackoffRetry (.getClass retry)))

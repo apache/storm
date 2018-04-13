@@ -15,20 +15,18 @@
 ;; limitations under the License.
 (ns org.apache.storm.command.shell-submission
   (:import [org.apache.storm StormSubmitter])
-  (:use [org.apache.storm thrift util config log zookeeper])
+  (:use [org.apache.storm util config log])
   (:require [clojure.string :as str])
+  (:import [org.apache.storm.utils ConfigUtils NimbusClient])
   (:gen-class))
 
-
 (defn -main [^String tmpjarpath & args]
-  (let [conf (read-storm-config)
-        ; since this is not a purpose to add to leader lock queue, passing nil as blob-store is ok
-        zk-leader-elector (zk-leader-elector conf nil)
-        leader-nimbus (.getLeader zk-leader-elector)
-        host (.getHost leader-nimbus)
-        port (.getPort leader-nimbus)
-        no-op (.close zk-leader-elector)
-        jarpath (StormSubmitter/submitJar conf tmpjarpath)
-        args (concat args [host port jarpath])]
-    (exec-command! (str/join " " args))
-    ))
+  (let [conf (clojurify-structure (ConfigUtils/readStormConfig))]
+    (with-open [client (NimbusClient/getConfiguredClient conf)]
+      (let [c (.getClient client)
+            ns (.getLeader c)
+            host (.get_host ns)
+            port (.get_port ns)
+            jarpath (StormSubmitter/submitJar conf tmpjarpath)
+            args (concat args [host port jarpath])]
+        (exec-command! (str/join " " args))))))

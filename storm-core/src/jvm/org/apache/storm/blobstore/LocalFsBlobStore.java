@@ -28,6 +28,8 @@ import org.apache.storm.nimbus.NimbusInfo;
 import org.apache.storm.utils.ConfigUtils;
 import org.apache.storm.utils.Utils;
 import org.apache.curator.framework.CuratorFramework;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +85,11 @@ public class LocalFsBlobStore extends BlobStore {
     public void prepare(Map conf, String overrideBase, NimbusInfo nimbusInfo) {
         this.conf = conf;
         this.nimbusInfo = nimbusInfo;
-        zkClient = BlobStoreUtils.createZKClient(conf);
+        List<ACL> acl = null;
+        if (Utils.isZkAuthenticationConfiguredStormServer(conf)) {
+            acl = ZooDefs.Ids.CREATOR_ALL_ACL;
+        }
+        zkClient = BlobStoreUtils.createZKClient(conf, acl);
         if (overrideBase == null) {
             overrideBase = ConfigUtils.absoluteStormBlobStoreDir(conf);
         }

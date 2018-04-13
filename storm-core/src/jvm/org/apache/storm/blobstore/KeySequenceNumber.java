@@ -25,6 +25,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.zookeeper.CreateMode;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.data.ACL;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -132,9 +133,9 @@ public class KeySequenceNumber {
         this.nimbusInfo = nimbusInfo;
     }
 
-    public synchronized int getKeySequenceNumber(Map conf) throws KeyNotFoundException {
+    public synchronized int getKeySequenceNumber(Map conf, List<ACL> defaultAcls) throws KeyNotFoundException {
         TreeSet<Integer> sequenceNumbers = new TreeSet<Integer>();
-        CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf);
+        CuratorFramework zkClient = BlobStoreUtils.createZKClient(conf, defaultAcls);
         try {
             // Key has not been created yet and it is the first time it is being created
             if (zkClient.checkExists().forPath(BLOBSTORE_SUBTREE + "/" + key) == null) {
