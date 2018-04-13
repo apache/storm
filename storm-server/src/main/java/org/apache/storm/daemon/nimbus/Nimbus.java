@@ -968,22 +968,24 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
     }
 
     private static void validateTopologySize(Map<String, Object> topoConf, Map<String, Object> nimbusConf,
-                                             StormTopology topology) throws InvalidTopologyException {
-        int workerCount = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 1);
-        Integer allowedWorkers = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY), null);
+        StormTopology topology) throws InvalidTopologyException {
+        // check allowedWorkers only if the scheduler is not the Resource Aware Scheduler
+        if (!ServerUtils.isRAS(nimbusConf)) {
+            int workerCount = ObjectReader.getInt(topoConf.get(Config.TOPOLOGY_WORKERS), 1);
+            Integer allowedWorkers = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_SLOTS_PER_TOPOLOGY), null);
+            if (allowedWorkers != null && workerCount > allowedWorkers) {
+                throw new InvalidTopologyException("Failed to submit topology. Topology requests more than "
+                        + allowedWorkers + " workers.");
+            }
+        }
         int executorsCount = 0;
         for (Object comp : StormCommon.allComponents(topology).values()) {
             executorsCount += StormCommon.numStartExecutors(comp);
         }
         Integer allowedExecutors = ObjectReader.getInt(nimbusConf.get(DaemonConfig.NIMBUS_EXECUTORS_PER_TOPOLOGY), null);
         if (allowedExecutors != null && executorsCount > allowedExecutors) {
-            throw new InvalidTopologyException("Failed to submit topology. Topology requests more than " +
-                                               allowedExecutors + " executors.");
-        }
-
-        if (allowedWorkers != null && workerCount > allowedWorkers) {
-            throw new InvalidTopologyException("Failed to submit topology. Topology requests more than " +
-                                               allowedWorkers + " workers.");
+            throw new InvalidTopologyException("Failed to submit topology. Topology requests more than "
+                    + allowedExecutors + " executors.");
         }
     }
 
@@ -2860,23 +2862,6 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
         submitTopologyWithOpts(name, uploadedJarLocation, jsonConf, topology, new SubmitOptions(TopologyInitialStatus.ACTIVE));
     }
 
-    //get the number of acker executors. We need to estimate it if it's on RAS cluster.
-    private int getNumOfAckerExecs(Map<String, Object> totalConf, StormTopology topology) throws InvalidTopologyException {
-        Object ackerNum = totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS);
-        if (ackerNum != null) {
-            return ObjectReader.getInt(ackerNum);
-        } else {
-            // if it's resource aware scheduler, estimates the number of acker executors.
-            if (ServerUtils.isRAS(totalConf)) {
-                return ServerUtils.getEstimatedWorkerCountForRASTopo(totalConf, topology);
-            } else {
-                return ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_WORKERS));
-            }
-        }
-    }
-
-    //THRIFT SERVER METHODS...
-
     private void upsertWorkerTokensInCreds(Map<String, String> creds, String user, String topologyId) {
         if (workerTokenManager != null) {
             final long renewIfExpirationBefore = workerTokenManager.getMaxExpirationTimeForRenewal();
@@ -2987,9 +2972,19 @@ public class Nimbus implements Iface, Shutdownable, DaemonCommon {
             // if the other config does not have it set.
             topology = normalizeTopology(totalConf, topology);
 
-            //set the number of acker executors;
-            totalConfToSave.put(Config.TOPOLOGY_ACKER_EXECUTORS, getNumOfAckerExecs(totalConf, topology));
-            LOG.debug("Config.TOPOLOGY_ACKER_EXECUTORS set to: {}", totalConfToSave.get(Config.TOPOLOGY_ACKER_EXECUTORS));
+            // if the Resource Aware Scheduler is used,
+            // we might need to set the number of acker executors and eventlogger executors to be the estimated number of workers.
+            if (ServerUtils.isRAS(conf)) {
+                int estimatedNumWorker = ServerUtils.getEstimatedWorkerCountForRASTopo(totalConf, topology);
+                int numAckerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_ACKER_EXECUTORS), estimatedNumWorker);
+                int numEventLoggerExecs = ObjectReader.getInt(totalConf.get(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS), estimatedNumWorker);
+
+                totalConfToSave.put(Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
+                totalConfToSave.put(Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
+
+                LOG.debug("{} set to: {}", Config.TOPOLOGY_ACKER_EXECUTORS, numAckerExecs);
+                LOG.debug("{} set to: {}", Config.TOPOLOGY_EVENTLOGGER_EXECUTORS, numEventLoggerExecs);
+            }
 
             IStormClusterState state = stormClusterState;
 

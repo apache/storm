@@ -231,10 +231,8 @@ public class Worker implements Shutdownable, DaemonCommon {
         executorsAtom.set(newExecutors);
 
         // This thread will send out messages destined for remote tasks (on other workers)
-        // If there are no remote tasks, don't start the thread.
-        Set<Integer> remoteTasks = Sets.difference(new HashSet<>(workerState.getOutboundTasks()),
-                                                   new HashSet<>(workerState.getLocalTaskIds()));
-        if (!remoteTasks.isEmpty()) {
+        // If there are no remote outbound tasks, don't start the thread.
+        if (workerState.hasRemoteOutboundTasks()) {
             transferThread = workerState.makeTransferThread();
             transferThread.setName("Worker-Transfer");
         }
@@ -313,8 +311,7 @@ public class Worker implements Shutdownable, DaemonCommon {
     }
 
     private void setupBackPressureCheckTimer(final Map<String, Object> topologyConf) {
-        final Integer workerCount = ObjectReader.getInt(topologyConf.get(Config.TOPOLOGY_WORKERS));
-        if (workerCount <= 1) {
+        if (workerState.isSingleWorker()) {
             LOG.info("BackPressure change checking is disabled as there is only one worker");
             return;
         }
