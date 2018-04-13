@@ -31,13 +31,22 @@
   (:require [org.apache.storm [zookeeper :as zk]])
   (:require [org.apache.storm.daemon [common :as common]]))
 
-(defn mk-topo-only-acls
-  [topo-conf]
+(defn mk-topo-acls
+  [topo-conf type]
   (let [payload (.get topo-conf STORM-ZOOKEEPER-TOPOLOGY-AUTH-PAYLOAD)]
     (when (Utils/isZkAuthenticationConfiguredTopology topo-conf)
       [(first ZooDefs$Ids/CREATOR_ALL_ACL)
-       (ACL. ZooDefs$Perms/READ (Id. "digest" (DigestAuthenticationProvider/generateDigest payload)))])))
- 
+       (ACL. type (Id. "digest" (DigestAuthenticationProvider/generateDigest payload)))])))
+
+(defn mk-topo-read-write-acls
+  [topo-conf]
+  (mk-topo-acls topo-conf ZooDefs$Perms/ALL))
+
+(defn mk-topo-read-only-acls
+  [topo-conf]
+  [topo-conf]
+  (mk-topo-acls topo-conf ZooDefs$Perms/READ))
+
 (defnk mk-distributed-cluster-state
   [conf :auth-conf nil :acls nil :context (ClusterStateContext.)]
   (let [clazz (Class/forName (or (conf STORM-CLUSTER-STATE-STORE)
@@ -69,26 +78,27 @@
   (executor-beats [this storm-id executor->node+port])
   (supervisors [this callback])
   (supervisor-info [this supervisor-id]) ;; returns nil if doesn't exist
-  (setup-heartbeats! [this storm-id])
+  (setup-heartbeats! [this storm-id topo-conf])
   (teardown-heartbeats! [this storm-id])
   (teardown-topology-errors! [this storm-id])
   (heartbeat-storms [this])
   (error-topologies [this])
   (backpressure-topologies [this])
-  (set-topology-log-config! [this storm-id log-config])
+  (set-topology-log-config! [this storm-id log-config topo-conf])
   (topology-log-config [this storm-id cb])
   (worker-heartbeat! [this storm-id node port info])
   (remove-worker-heartbeat! [this storm-id node port])
   (supervisor-heartbeat! [this supervisor-id info])
   (worker-backpressure! [this storm-id node port info])
   (topology-backpressure [this storm-id timeout-ms callback])
-  (setup-backpressure! [this storm-id])
+  (setup-backpressure! [this storm-id topo-conf])
   (remove-backpressure! [this storm-id])
   (remove-worker-backpressure! [this storm-id node port])
-  (activate-storm! [this storm-id storm-base])
+  (activate-storm! [this storm-id storm-base topo-conf])
   (update-storm! [this storm-id new-elems])
   (remove-storm-base! [this storm-id])
-  (set-assignment! [this storm-id info])
+  (setup-errors! [this storm-id topo-conf])
+  (set-assignment! [this storm-id info topo-conf])
   ;; sets up information related to key consisting of nimbus
   ;; host:port and version info of the blob
   (setup-blobstore! [this key nimbusInfo versionInfo])
@@ -435,8 +445,9 @@
         (maybe-deserialize (.get_data cluster-state (log-config-path storm-id) (not-nil? cb)) LogConfig))
 
       (set-topology-log-config!
-        [this storm-id log-config]
-        (.set_data cluster-state (log-config-path storm-id) (Utils/serialize log-config) acls))
+        [this storm-id log-config topo-conf]
+        (.mkdirs cluster-state LOGCONFIG-SUBTREE acls)
+        (.set_data cluster-state (log-config-path storm-id) (Utils/serialize log-config) (mk-topo-read-only-acls topo-conf)))
 
       (set-worker-profile-request
         [this storm-id profile-request]
@@ -491,8 +502,9 @@
         (.delete_worker_hb cluster-state (workerbeat-path storm-id node port)))
 
       (setup-heartbeats!
-        [this storm-id]
-        (.mkdirs cluster-state (workerbeat-storm-root storm-id) acls))
+        [this storm-id topo-conf]
+        (.mkdirs cluster-state WORKERBEATS-SUBTREE acls)
+        (.mkdirs cluster-state (workerbeat-storm-root storm-id) (mk-topo-read-write-acls topo-conf)))
 
       (teardown-heartbeats!
         [this storm-id]
@@ -535,8 +547,9 @@
           ret))
       
       (setup-backpressure!
-        [this storm-id]
-        (.mkdirs cluster-state (backpressure-storm-root storm-id) acls))
+        [this storm-id topo-conf]
+        (.mkdirs cluster-state BACKPRESSURE-SUBTREE acls)
+        (.mkdirs cluster-state (backpressure-storm-root storm-id) (mk-topo-read-write-acls topo-conf)))
 
       (remove-backpressure!
         [this storm-id]
@@ -568,9 +581,10 @@
           (.set_ephemeral_node cluster-state (supervisor-path supervisor-id) (Utils/serialize thrift-supervisor-info) acls)))
 
       (activate-storm!
-        [this storm-id storm-base]
+        [this storm-id storm-base topo-conf]
         (let [thrift-storm-base (thriftify-storm-base storm-base)]
-          (.set_data cluster-state (storm-path storm-id) (Utils/serialize thrift-storm-base) acls)))
+          (.mkdirs cluster-state STORMS-SUBTREE acls)
+          (.set_data cluster-state (storm-path storm-id) (Utils/serialize thrift-storm-base) (mk-topo-read-only-acls topo-conf))))
 
       (update-storm!
         [this storm-id new-elems]
@@ -597,9 +611,10 @@
         (.delete_node cluster-state (storm-path storm-id)))
 
       (set-assignment!
-        [this storm-id info]
+        [this storm-id info topo-conf]
+        (.mkdirs cluster-state ASSIGNMENTS-SUBTREE acls)
         (let [thrift-assignment (thriftify-assignment info)]
-          (.set_data cluster-state (assignment-path storm-id) (Utils/serialize thrift-assignment) acls)))
+          (.set_data cluster-state (assignment-path storm-id) (Utils/serialize thrift-assignment) (mk-topo-read-only-acls topo-conf))))
 
       (remove-blobstore-key!
         [this blob-key]
@@ -620,9 +635,10 @@
 
       (set-credentials!
          [this storm-id creds topo-conf]
-         (let [topo-acls (mk-topo-only-acls topo-conf)
+         (let [topo-acls (mk-topo-read-only-acls topo-conf)
                path (credentials-path storm-id)
                thriftified-creds (thriftify-credentials creds)]
+           (.mkdirs cluster-state CREDENTIALS-SUBTREE acls)
            (.set_data cluster-state path (Utils/serialize thriftified-creds) topo-acls)))
 
       (credentials
@@ -630,6 +646,11 @@
         (when callback
           (swap! credentials-callback assoc storm-id callback))
         (clojurify-crdentials (maybe-deserialize (.get_data cluster-state (credentials-path storm-id) (not-nil? callback)) Credentials)))
+
+      (setup-errors!
+         [this storm-id topo-conf]
+         (.mkdirs cluster-state ERRORS-SUBTREE acls)
+         (.mkdirs cluster-state (error-storm-root storm-id) (mk-topo-read-write-acls topo-conf)))
 
       (report-error
          [this storm-id component-id node port error]

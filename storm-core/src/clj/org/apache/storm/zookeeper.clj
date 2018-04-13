@@ -54,11 +54,11 @@
   (log-message "Zookeeper state update: " state type path))
 
 (defnk mk-client
-  [conf servers port
+  [conf servers port default-acl
    :root ""
    :watcher default-watcher
    :auth-conf nil]
-  (let [fk (Utils/newCurator conf servers port root (when auth-conf (ZookeeperAuthInfo. auth-conf)))]
+  (let [fk (Utils/newCurator conf servers port root (when auth-conf (ZookeeperAuthInfo. auth-conf)) default-acl)]
     (.. fk
         (getCuratorListenable)
         (addListener

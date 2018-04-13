@@ -54,6 +54,21 @@ public class Config extends HashMap<String, Object> {
     private static final long serialVersionUID = -1550278723792864455L;
 
     /**
+     * In nimbus on startup check if all of the zookeeper ACLs are correct before starting.  If not
+     * don't start nimbus.
+     */
+    @isBoolean
+    public static final String STORM_NIMBUS_ZOOKEEPER_ACLS_CHECK = "storm.nimbus.zookeeper.acls.check";
+
+    /**
+     * In nimbus on startup check if all of the zookeeper ACLs are correct before starting.  If not do
+     * your best to fix them before nimbus starts, if it cannot fix them nimbus will not start.
+     * This overrides any value set for storm.nimbus.zookeeper.acls.check.
+     */
+    @isBoolean
+    public static final String STORM_NIMBUS_ZOOKEEPER_ACLS_FIXUP = "storm.nimbus.zookeeper.acls.fixup";
+
+    /**
      * This is part of a temporary workaround to a ZK bug, it is the 'scheme:acl' for
      * the user Nimbus and Supervisors use to authenticate with ZK.
      */
