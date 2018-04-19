@@ -109,6 +109,8 @@ import com.google.common.annotations.VisibleForTesting;
 
 import javax.security.auth.Subject;
 
+import static org.apache.commons.lang.exception.ExceptionUtils.*;
+
 public class Utils {
     public static final Logger LOG = LoggerFactory.getLogger(Utils.class);
     public static final String DEFAULT_STREAM_ID = "default";
@@ -361,6 +363,7 @@ public class Utils {
                             Time.sleep(s);
                     }
                 } catch (Throwable t) {
+                    LOG.info("Async loop Exception Stacktrace is: {} ", getStackTrace(t));
                     if (Utils.exceptionCauseIsInstanceOf(
                             InterruptedException.class, t)) {
                         LOG.info("Async loop interrupted!");
